@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -31,10 +31,28 @@ func main() {
 	// pausing before installation (to give time to stop running executables)
 	time.Sleep(time.Duration(timeout) * time.Second)
 
-	logging.Debug("Installing %s -> %s", fromDir, toDir)
-	err = installer.Install(fromDir, toDir)
+	err = run(fromDir, toDir)
 	if err != nil {
 		logging.Debug("Installation failed: %v", err)
+		os.Exit(1)
 	}
 	logging.Debug("Installation from %s -> %s was successful.", fromDir, toDir)
+
+}
+
+func run(fromDir, toDir string) error {
+	logging.Debug("Installing %s -> %s", fromDir, toDir)
+	inst, err := installation.New(fromDir, toDir)
+	if err != nil {
+		return err
+	}
+	defer inst.Close()
+
+	if err := inst.Install(); err != nil {
+		if restErr := inst.RestoreBackup(); restErr != nil {
+			logging.Error("Restoring the backup failed: %v", restErr)
+		}
+		return err
+	}
+	return nil
 }

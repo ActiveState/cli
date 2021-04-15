@@ -1,6 +1,6 @@
 // +build darwin
 
-package installer
+package installation
 
 import (
 	"github.com/ActiveState/cli/internal/errs"

@@ -1,6 +1,6 @@
 // +build linux windows
 
-package installer
+package installation
 
 func InstallSystemFiles(fromDir string) error {
 	return nil

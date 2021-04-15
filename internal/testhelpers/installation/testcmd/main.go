@@ -25,30 +25,29 @@ func main() {
 		time.Sleep(time.Second * time.Duration(timeout))
 		return
 	}
-	if len(os.Args) != 5 {
-		fmt.Fprintf(os.Stderr, "Need to run with argument <from-dir> <installer> <logFile> <timeout>")
+	if len(os.Args) != 4 {
+		fmt.Fprintf(os.Stderr, "Need to run with argument <from-dir> <installer> <timeout>")
 		os.Exit(1)
 	}
 
 	fromDir := os.Args[1]
 	installer := os.Args[2]
-	logFile := os.Args[3]
-	timeout := os.Args[4]
+	timeout := os.Args[3]
 
-	err := run(fromDir, installer, logFile, timeout)
+	err := run(fromDir, installer, timeout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v", errs.Join(err, ":"))
 		os.Exit(2)
 	}
 }
 
-func run(fromDir, installer, logFile, timeout string) error {
+func run(fromDir, installer, timeout string) error {
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not find executable path.")
 	}
 	toDir := filepath.Dir(exe)
-	proc, err := exeutils.ExecuteAndForget(installer, fromDir, toDir, logFile, timeout)
+	proc, err := exeutils.ExecuteAndForget(installer, fromDir, toDir, timeout)
 	if err != nil {
 		return errs.Wrap(err, "Failed to run installer.")
 	}

@@ -1,4 +1,4 @@
-package installer_test
+package installation_test
 
 import (
 	"bytes"
@@ -12,10 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +21,7 @@ import (
 
 var stateToolTestFile string = "state"
 var otherTestFile string = "other"
-var installerTestFile string = "installer"
+var installerTestFile string = "state-installer"
 
 var stateToolTestFileContent []byte
 var installerTestFileContent []byte
@@ -33,7 +31,7 @@ func init() {
 	if runtime.GOOS == "windows" {
 		stateToolTestFile = "state.exe"
 		otherTestFile = "other.exe"
-		installerTestFile = "installer.exe"
+		installerTestFile = "state-installer.exe"
 	}
 }
 
@@ -43,7 +41,7 @@ func buildTestExecutable(t *testing.T, dir, exe string) {
 
 	cmd := exec.Command(
 		"go", "build", "-o", exe,
-		filepath.Join(root, "cmd", "state-installer", "internal", "installer", dir),
+		filepath.Join(root, "internal", "testhelpers", "installation", dir),
 	)
 	err = cmd.Run()
 	require.NoError(t, err)
@@ -146,15 +144,22 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			err := installer.Install(from, to)
-
+			inst, err := installation.New(from, to)
 			if tt.ExpectSuccess {
 				require.NoError(t, err)
+
+				err = inst.Install()
+				require.NoError(t, err)
+
+				err = inst.Close()
+				require.NoError(t, err)
+
 				assertSuccessfulInstallation(t, to)
 			} else {
 				assert.Error(t, err)
 				assertRevertedInstallation(t, to)
 			}
+
 		})
 
 	}
@@ -168,9 +173,12 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	err := cmd.Start()
 	require.NoError(t, err)
 
+	inst, err := installation.New(from, to)
+	require.NoError(t, err)
+
 	errC := make(chan error)
 	go func() {
-		errC <- installer.Install(from, to)
+		errC <- inst.Install()
 	}()
 
 	err = cmd.Wait()
@@ -189,6 +197,8 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 		t.Fatalf("Timeout waiting for installation to finish")
 	}
 
+	err = inst.Close()
+	require.NoError(t, err)
 }
 
 // TestAutoUpdate tests that an executable can update itself, by spawning the installer process which eventually replaces the calling executable.
@@ -218,18 +228,26 @@ func TestAutoUpdate(t *testing.T) {
 			defer os.RemoveAll(from)
 			defer os.RemoveAll(to)
 
-			// run installer
-			stdout, stderr, err := exeutils.ExecSimple(
-				filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), tt.Timeout)
-			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr)
+			cfg, err := config.Get()
+			require.NoError(t, err)
+			configPath := cfg.ConfigPath()
 
-			pid, err := strconv.ParseInt(stdout, 10, 32)
+			// run installer
+			c := exec.Command(filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), tt.Timeout)
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			c.Stdout = &stdout
+			c.Stderr = &stderr
+			c.Env = os.Environ()
+			c.Env = append(c.Env, "ACTIVESTATE_CLI_CONFIGDIR="+configPath)
+			err = c.Run()
+			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr.String())
+
+			pid, err := strconv.ParseInt(stdout.String(), 10, 32)
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, pid)
 
-			cfg, err := config.Get()
-			require.NoError(t, err)
-			logFile := installation.LogfilePath(cfg.ConfigPath(), int(pid))
+			logFile := installation.LogfilePath(configPath, int(pid))
 
 			// poll for successful auto-update
 			for i := 0; i < 20; i++ {

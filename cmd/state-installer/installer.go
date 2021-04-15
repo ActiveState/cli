@@ -8,7 +8,6 @@ import (
 
 	"github.com/rollbar/rollbar-go"
 
-	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -113,16 +112,20 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	tmpDir := filepath.Dir(exe)
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
-	// Install binary files in installation directory
-	err = installer.Install(filepath.Join(tmpDir, "bin"), installPath)
-	if err != nil {
-		return errs.Wrap(err, "Installation failed")
-	}
 
-	// Install files into system directories.  This function is platform-specific
-	err = installer.InstallSystemFiles(filepath.Join(tmpDir, "system"))
+	inst, err := installation.New(filepath.Join(tmpDir, "bin"), installPath)
 	if err != nil {
-		return errs.Wrap(err, "Installation of system files failed")
+		return errs.Wrap(err, "Could not create new installation.")
+	}
+	defer inst.Close()
+
+	if err := inst.Install(); err != nil {
+		restErr := inst.RestoreBackup()
+		if restErr != nil {
+			logging.Error("restoring of backup files failed: %v", restErr)
+		}
+		logging.Debug("Successfully restored original files.")
+		return errs.Wrap(err, "Installation failed")
 	}
 
 	shell := subshell.New(cfg)
@@ -138,7 +141,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		out.Notice("Please start a new login shell in order to start using the State Tool executable.")
 	}
 
-	// Run _prepare after updates to facilitate anything the new version of the state tool might need to set up
+	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
