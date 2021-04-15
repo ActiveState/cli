@@ -180,14 +180,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	if runtime.GOOS == "windows" {
 		errorLevel = `echo %ERRORLEVEL%`
 	}
-	
+
 	if runtime.GOOS != "windows" {
 		cp.SendLine("which python3")
 		cp.Expect(filepath.Join("target", "exec"))
 		cp.SendLine("cat $(which python3)")
 	}
 
-	cp.SendLine("python3 --version")
+	cp.SendLine("VERBOSE=true python3 --version")
 	cp.Expect("Python 3")
 	cp.SendLine(errorLevel)
 	cp.Expect("0")
