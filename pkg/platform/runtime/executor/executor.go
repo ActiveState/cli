@@ -130,7 +130,7 @@ func (f *Executor) createExecutor(exe string) error {
 		"targetPath": f.targetPath,
 		"denote":     []string{executorDenoter, denoteTarget},
 	}
-	box := packr.NewBox("../../assets/executors")
+	box := packr.NewBox("../../../../assets/executors")
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
 		boxFile = "executor.bat"
