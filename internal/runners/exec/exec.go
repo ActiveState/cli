@@ -24,7 +24,7 @@ type configurable interface {
 	CachePath() string
 }
 
-type Shim struct {
+type Exec struct {
 	subshell subshell.SubShell
 	proj     *project.Project
 	out      output.Outputer
@@ -42,8 +42,8 @@ type Params struct {
 	Path string
 }
 
-func New(prime primeable) *Shim {
-	return &Shim{
+func New(prime primeable) *Exec {
+	return &Exec{
 		prime.Subshell(),
 		prime.Project(),
 		prime.Output(),
@@ -55,7 +55,7 @@ func NewParams() *Params {
 	return &Params{}
 }
 
-func (s *Shim) Run(params *Params, args ...string) error {
+func (s *Exec) Run(params *Params, args ...string) error {
 	var projectDir string
 	var rtTarget setup.Targeter
 
@@ -69,11 +69,11 @@ func (s *Shim) Run(params *Params, args ...string) error {
 			var err error
 			proj, err = project.FromPath(params.Path)
 			if err != nil {
-				return locale.WrapInputError(err, "shim_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
+				return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 			}
 		}
 		if s.proj == nil {
-			return locale.NewError("shim_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+			return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		rtTarget = runtime.NewProjectTarget(proj, s.cfg.CachePath(), nil)
