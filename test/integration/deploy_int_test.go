@@ -93,9 +93,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
@@ -170,23 +174,19 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
 	errorLevel := "echo $?"
 	if runtime.GOOS == "windows" {
 		errorLevel = `echo %ERRORLEVEL%`
-	}
-
-	if runtime.GOOS != "windows" {
-		cp.SendLine("which python3")
-		cp.Expect(filepath.Join("target", "exec"))
-		cp.SendLine("cat $(which python3)")
-		fmt.Println(cp.Snapshot())
-		cp.SendLine("echo $PATH")
 	}
 
 	cp.SendLine("VERBOSE=true python3 --version")
