@@ -11,7 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - `state shim` is aliased to `state exec`.
-  ([PR #????](https://github.com/ActiveState/cli/pull/????))
+  ([PR #1312](https://github.com/ActiveState/cli/pull/1312))
 
 ## 0.28.0
 
