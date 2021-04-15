@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 
 		files := fileutils.ListDir(fw.BinPath(), false)
 		require.Len(t, files, 1, "Cleanup should only keep one exe")
-		require.Equal(t, filepath.Base(nameExecutor(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
+		require.Equal(t, filepath.Base(NameForExe(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
 	})
 
 	t.Run("Update doesn't needlessly write", func(t *testing.T) {
@@ -69,7 +69,7 @@ func TestExecutor(t *testing.T) {
 	})
 }
 
-func TestNameExecutor(t *testing.T) {
+func TestNameForExe(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		return // Pointless to test outside windows
 	}
