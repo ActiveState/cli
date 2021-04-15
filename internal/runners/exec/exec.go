@@ -100,11 +100,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
 	// Ensure that we are not calling the exec recursively
-	oldval, ok := env[constants.ExecEnvVarName]
-	if ok && oldval == args[0] {
-		return locale.NewError("err_exec_recursive_loop", "Could not resolve executor executable {{.V0}}", args[0])
+	if _, isBeingShimmed := env[constants.ExecEnvVarName]; isBeingShimmed {
+		return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
 	}
-	env[constants.ExecEnvVarName] = args[0]
+	env[constants.ExecEnvVarName] = "true"
 
 	s.subshell.SetEnv(env)
 
