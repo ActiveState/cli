@@ -2,16 +2,19 @@ package installer_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/stretchr/testify/assert"
@@ -215,13 +218,18 @@ func TestAutoUpdate(t *testing.T) {
 			defer os.RemoveAll(from)
 			defer os.RemoveAll(to)
 
-			logFile := filepath.Join(to, "install.log")
-
 			// run installer
-			_, stderr, err := exeutils.ExecSimple(
-				filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile),
-				logFile, tt.Timeout)
+			stdout, stderr, err := exeutils.ExecSimple(
+				filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), tt.Timeout)
 			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr)
+
+			pid, err := strconv.ParseInt(stdout, 10, 32)
+			require.NoError(t, err)
+			assert.NotEqual(t, 0, pid)
+
+			cfg, err := config.Get()
+			require.NoError(t, err)
+			logFile := filepath.Join(cfg.ConfigPath(), fmt.Sprintf("state-installer-%d.log", pid))
 
 			// poll for successful auto-update
 			for i := 0; i < 20; i++ {

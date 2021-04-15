@@ -2,13 +2,13 @@ package installer
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 func backupFiles(targetFiles []string) ([]string, error) {
@@ -66,7 +66,7 @@ func Install(fromDir, toDir string) error {
 		targetFile := filepath.Join(toDir, filepath.Base(file))
 		targetFiles = append(targetFiles, targetFile)
 	}
-	log.Printf("Target files=%s", strings.Join(targetFiles, ","))
+	logging.Debug("Target files=%s", strings.Join(targetFiles, ","))
 
 	backups, err := backupFiles(targetFiles)
 	if err != nil {
@@ -79,9 +79,9 @@ func Install(fromDir, toDir string) error {
 		// on failure ... restore back-up files (hopefully!!)
 		restErr := restoreFiles(backups)
 		if restErr != nil {
-			log.Printf("restoring of backup files failed: %v", restErr)
+			logging.Error("restoring of backup files failed: %v", restErr)
 		}
-		log.Printf("Successfully restored original files.")
+		logging.Debug("Successfully restored original files.")
 		return errs.Wrap(err, "Failed to copy files to dir %s", toDir)
 	}
 	return nil

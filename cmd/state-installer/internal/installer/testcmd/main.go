@@ -48,9 +48,12 @@ func run(fromDir, installer, logFile, timeout string) error {
 		return errs.Wrap(err, "Could not find executable path.")
 	}
 	toDir := filepath.Dir(exe)
-	if err := exeutils.ExecuteAndForget(installer, fromDir, toDir, logFile, timeout); err != nil {
+	pid, err := exeutils.ExecuteAndForget(installer, fromDir, toDir, logFile, timeout)
+	if err != nil {
 		return errs.Wrap(err, "Failed to run installer.")
 	}
+
+	fmt.Printf("%d", pid)
 
 	// simulate some shutdown sequence after starting the installer...
 	time.Sleep(time.Second)

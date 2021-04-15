@@ -47,11 +47,8 @@ func (u *AvailableUpdate) InstallDeferred(configPath string) error {
 		return errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
-	installLogFile := filepath.Join(configPath, "installer.log")
-
 	installTargetPath := filepath.Dir(os.Args[0])
-	err = exeutils.ExecuteAndForget(filepath.Join(tmpDir, InstallerName),
-		installLogFile, installTargetPath)
+	_, err = exeutils.ExecuteAndForget(installerPath, installTargetPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not start installer")
 	}
