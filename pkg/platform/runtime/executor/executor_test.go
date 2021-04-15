@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 
 		files := fileutils.ListDir(fw.BinPath(), false)
 		require.Len(t, files, 1, "Cleanup should only keep one exe")
-		require.Equal(t, filepath.Base(exes[1]), filepath.Base(files[0]), "Cleanup should leave the exe we requested")
+		require.Equal(t, filepath.Base(nameExecutor(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
 	})
 
 	t.Run("Update doesn't needlessly write", func(t *testing.T) {

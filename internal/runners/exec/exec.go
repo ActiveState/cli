@@ -98,14 +98,13 @@ func (s *Shim) Run(params *Params, args ...string) error {
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
-
-	logging.Debug("Trying to shim %s on PATH=%s", args[0], env["PATH"])
-	// Ensure that we are not calling the shim recursively
-	oldval, ok := env[constants.ShimEnvVarName]
+	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
+	// Ensure that we are not calling the exec recursively
+	oldval, ok := env[constants.ExecEnvVarName]
 	if ok && oldval == args[0] {
-		return locale.NewError("err_shim_recursive_loop", "Could not resolve executable {{.V0}}", args[0])
+		return locale.NewError("err_exec_recursive_loop", "Could not resolve executor executable {{.V0}}", args[0])
 	}
-	env[constants.ShimEnvVarName] = args[0]
+	env[constants.ExecEnvVarName] = args[0]
 
 	s.subshell.SetEnv(env)
 
@@ -116,9 +115,9 @@ func (s *Shim) Run(params *Params, args ...string) error {
 		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
 	}
 
-	sf, err := scriptfile.New(lang, "state-shim", scriptArgs)
+	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)
 	if err != nil {
-		return locale.WrapError(err, "err_shim_create_scriptfile", "Could not generate script")
+		return locale.WrapError(err, "err_exec_create_scriptfile", "Could not generate script")
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)

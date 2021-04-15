@@ -213,7 +213,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp = ts.SpawnCmdWithOpts(
 		filepath.Join(ts.Dirs.DefaultBin, pythonShim),
 		e2e.WithArgs("-c", "import sys; print(sys.copyright);"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)

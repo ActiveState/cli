@@ -1,5 +1,14 @@
 package globaldefault
 
+import (
+	"os"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/thoas/go-funk"
+)
+
 func isOnPATH(binDir string) bool {
 	cmdEnv := cmd.NewCmdEnv(true)
 	path, err := cmdEnv.Get("PATH")
