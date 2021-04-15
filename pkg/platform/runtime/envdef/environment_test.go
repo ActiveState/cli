@@ -84,7 +84,9 @@ func (suite *EnvironmentTestSuite) TestInheritPath() {
 
 	err := json.Unmarshal([]byte(`{
 			"env": [{"env_name": "PATH", "values": ["NEWVALUE"]}],
-			"installdir": "abc"
+			"join": "prepend",
+			"inherit": true,
+			"separator": ":"
 		}`), ed1)
 	require.NoError(suite.T(), err)
 
