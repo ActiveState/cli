@@ -1,8 +1,10 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -22,7 +25,8 @@ import (
 
 type UpdateIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg projectfile.ConfigGetter
+	cfg    projectfile.ConfigGetter
+	server *http.Server
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -35,14 +39,33 @@ func init() {
 	}
 }
 
+var testPort = "24217"
+
 func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
+	root, err := environment.GetRootPath()
+	suite.Require().NoError(err)
+	testUpdateDir := filepath.Join(root, "build", "test-update")
+	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
+	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
+	go func() {
+		_ = suite.server.ListenAndServe()
+	}()
+
 	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
+}
+
+func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
+	err := suite.server.Shutdown(context.Background())
 	suite.Require().NoError(err)
 }
 
 func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 	env := []string{
+		"_TEST_UPDATE_URL=http://localhost:" + testPort,
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
 		"ACTIVESTATE_CLI_UPDATE_BRANCH=" + targetBranch,
 	}
@@ -62,7 +85,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	}
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
 	cp.ExpectExitCode(0)
@@ -80,7 +103,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	}
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
 	cp.ExpectExitCode(0)
@@ -115,7 +138,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
@@ -134,7 +157,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
@@ -164,7 +187,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save(suite.cfg)
@@ -182,15 +205,18 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating state tool:  Downloading latest version")
-	cp.Expect("Version updated", 60*time.Second)
+	cp := ts.SpawnCmd(ts.SvcExe, "start")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
+	cp.Expect("Updating state tool to latest version available")
+	cp.Expect(fmt.Sprintf("Version updating to %s@99.99.9999 in the background", constants.BranchName))
 	cp.ExpectExitCode(0)
 
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
@@ -211,7 +237,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	defer ts.Close()
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", targetBranch), e2e.AppendEnv(suite.env(false)...))
 	cp.Expect("Updating state tool:  Downloading latest version")
@@ -231,7 +257,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)

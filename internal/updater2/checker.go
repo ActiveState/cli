@@ -3,6 +3,7 @@ package updater2
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -25,7 +26,15 @@ type Checker struct {
 	httpreq        httpGetter
 }
 
-var DefaultChecker = NewChecker(constants.APIUpdateURL, constants.BranchName, constants.Version, httpreq.New())
+var DefaultChecker = newDefaultChecker()
+
+func newDefaultChecker() *Checker {
+	updateURL := constants.APIUpdateURL
+	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
+		updateURL = url
+	}
+	return NewChecker(updateURL, constants.BranchName, constants.Version, httpreq.New())
+}
 
 func NewChecker(apiURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
 	return &Checker{

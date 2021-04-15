@@ -24,7 +24,7 @@ EOF
 unset ACTIVESTATE_PROJECT
 
 # URL to fetch updates from.
-BASEURL=${_TEST_BASE_URL:-"https://state-tool.s3.amazonaws.com/update/state"}
+BASEURL=${_TEST_UPDATE_URL:-"https://state-tool.s3.amazonaws.com/update/state"}
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
