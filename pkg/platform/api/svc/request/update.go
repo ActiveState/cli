@@ -13,8 +13,8 @@ func NewUpdateRequest(channel, version string) *UpdateRequest {
 }
 
 func (u *UpdateRequest) Query() string {
-	return `query {
-		update(channel: $channel, version: $version) {
+	return `query($c: String, $v: String) {
+		update(channel: $c, version: $v) {
 			channel
 			version
 		}
@@ -23,7 +23,7 @@ func (u *UpdateRequest) Query() string {
 
 func (u *UpdateRequest) Vars() map[string]interface{} {
 	return map[string]interface{}{
-		"channel": u.channel,
-		"version": u.version,
+		"c": u.channel,
+		"v": u.version,
 	}
 }
