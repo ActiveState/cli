@@ -125,7 +125,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.ExpectExitCode(0)
 
 	// Test that executor exists    and works
-	exec := filepath.Join(ts.Dirs.Work, "exec", executor2.NameForExe("perl"))
+	exec := filepath.Join(ts.Dirs.Work, "target", "exec", executor2.NameForExe("perl"))
 	cp = ts.SpawnCmdWithOpts(exec, e2e.WithArgs("--version"))
 	cp.Expect("This is perl 5")
 	cp.ExpectExitCode(0)
