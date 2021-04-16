@@ -6,8 +6,6 @@ REM remains open and inaccessable while the State Tool is running.
 REM The expected arguments are the process ID, the executable name
 REM and a list of directories to be removed when the process has completed
 
-set logfile=C:\Users\Mike\Desktop\%random%.txt
-
 set pid=%1
 shift
 set exe=%1
