@@ -16,6 +16,7 @@ func removeDirs(dirs ...string) error {
 			return locale.WrapError(err, "err_uninstall_remove_dir", "Could not remove directory")
 		}
 	}
+	return nil
 }
 
 func removeConfig(configPath string) error {
