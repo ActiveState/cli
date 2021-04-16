@@ -3,17 +3,31 @@ REM remove files that are currently in use.
 REM In the case the State Tool, the binary cannot be removed while it is running.
 REM In the case of the config directory this is the log file, which 
 REM remains open and inaccessable while the State Tool is running.
-REM The expected arguments is a directory that will be removed are
-REM the directory to be removed, the State Tool PID, and the State Tool binary name
+REM The expected arguments are the process ID, the executable name
+REM and a list of directories to be removed when the process has completed
 
-@REM @echo off
-setlocal ENABLEDELAYEDEXPANSION
-@REM timeout 2
-set pid=%2
+set logfile=C:\Users\Mike\Desktop\%random%.txt
+
+set pid=%1
+shift
+set exe=%1
+shift
+
+set dirs=
+:set_dirs
+    if not "%1"=="" (
+        set dirs=%dirs% %1
+        shift
+        goto set_dirs
+    )
+
 for /f %%i in ('tasklist /NH /FI "PID eq %pid%"') do set proc=%%i
 :wait_for_exit
-    IF !proc! == %3 (
+    IF %proc% == %exe% (
         for /f %%i in ('tasklist /NH /FI "PID eq %pid%"') do set proc=%%i
         GOTO :wait_for_exit
     )
-rmdir /s /q %1
+
+for /d %%i in (%dirs%) do (
+    rmdir /s /q %%i
+)

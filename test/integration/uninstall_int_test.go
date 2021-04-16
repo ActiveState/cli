@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -31,6 +33,11 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	cp.SendLine("y")
 	cp.ExpectLongString("Successfully removed State Tool and related files")
 	cp.ExpectExitCode(0)
+
+	if runtime.GOOS == "windows" {
+		// Allow time for spawned script to remove directories
+		time.Sleep(500 * time.Millisecond)
+	}
 
 	if fileutils.DirExists(ts.Dirs.Cache) {
 		suite.Fail("Config dir should not exist after uninstall")

@@ -3,6 +3,7 @@ package clean
 import (
 	"errors"
 	"os"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
@@ -39,14 +40,21 @@ func (u *Uninstall) runUninstall() error {
 		return errs.Wrap(err, "Could not remove auto start file")
 	}
 
-	err = removeInstallDir(u.cfg.GetString(constants.InstallPath))
-	if err != nil {
-		return errs.Wrap(err, "Could not remove installation directory")
-	}
+	if runtime.GOOS == "windows" {
+		err = removeDirs(u.cfg.GetString(constants.InstallPath), u.cfg.ConfigPath())
+		if err != nil {
+			return errs.Wrap(err, "Could not remove installation directories")
+		}
+	} else {
+		err = removeInstallDir(u.cfg.GetString(constants.InstallPath))
+		if err != nil {
+			return errs.Wrap(err, "Could not remove installation directory")
+		}
 
-	err = removeConfig(u.cfg.ConfigPath())
-	if err != nil {
-		return errs.Wrap(err, "Could not remove config directory")
+		err = removeConfig(u.cfg.ConfigPath())
+		if err != nil {
+			return errs.Wrap(err, "Could not remove config directory")
+		}
 	}
 
 	u.out.Print(locale.T("clean_success_message"))

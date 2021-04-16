@@ -9,6 +9,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+func removeDirs(dirs ...string) error {
+	for _, dir := range dirs {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			return locale.WrapError(err, "err_uninstall_remove_dir", "Could not remove directory")
+		}
+	}
+}
+
 func removeConfig(configPath string) error {
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
