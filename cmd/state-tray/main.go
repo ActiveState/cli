@@ -90,7 +90,8 @@ func run() error {
 
 	systray.AddSeparator()
 	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
-	enabled, err := autostart.New().IsEnabled()
+	as := autostart.New()
+	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -151,7 +152,6 @@ func run() error {
 			localProjectsUpdater.Update(localProjects)
 		case <-mAutoStart.ClickedCh:
 			logging.Debug("Autostart event")
-			as := autostart.New()
 			var err error
 			enabled, err := as.IsEnabled()
 			if err != nil {
