@@ -21,7 +21,7 @@ func (u *Uninstall) runUninstall() error {
 
 	err = stopTrayApp(u.cfg.GetInt(constants.TrayConfigPid))
 	if err != nil {
-		return locale.WrapError(err, "err_clean_stop_try", "Could not stop the state tray application")
+		return locale.WrapError(err, "err_clean_stop_tray", "Could not stop the state tray application")
 	}
 
 	err = stopService()

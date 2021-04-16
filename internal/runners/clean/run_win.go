@@ -35,7 +35,7 @@ func removeDirs(dirs ...string) error {
 
 	exe, err := os.Executable()
 	if err != nil {
-		return errs.Wrap(err, "Could not get executable name")
+		return locale.WrapError(err, "err_clean_executable", "Could not get executable name")
 	}
 
 	args := []string{"/C", sf.Filename(), fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
