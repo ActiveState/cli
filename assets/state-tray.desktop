@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Exec="/home/devx1/code/src/github.com/ActiveState/cli/build/state-tray"
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Startup Script

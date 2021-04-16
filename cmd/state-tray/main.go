@@ -1,6 +1,8 @@
 package main
 
 import (
+	"C"
+
 	"context"
 	"fmt"
 	"os"
@@ -188,8 +190,6 @@ func run() error {
 			systray.Quit()
 		}
 	}
-
-	return nil
 }
 
 func onExit() {

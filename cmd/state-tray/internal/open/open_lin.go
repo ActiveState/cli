@@ -9,5 +9,5 @@ func Prompt(command string) error {
 }
 
 func getPrompt() string {
-	return errors.New("not implemented")
+	return "not implemented"
 }
