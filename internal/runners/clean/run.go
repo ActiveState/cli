@@ -2,6 +2,7 @@ package clean
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"runtime"
 
@@ -90,7 +91,7 @@ func stopService() error {
 		return locale.WrapError(err, "err_clean_stop_service", "Stopping {{.V0}} return error", svcInfo.Name())
 	}
 	if exitCode != 0 {
-		return locale.WrapError(err, "err_clean_stop_svc_exit_code", "Stopping {{.V0}} exited with code {{.V1}}", svcInfo.Name(), string(exitCode))
+		return locale.WrapError(err, "err_clean_stop_svc_exit_code", "Stopping {{.V0}} exited with code {{.V1}}", svcInfo.Name(), fmt.Sprintf("%d", exitCode))
 	}
 
 	return nil
