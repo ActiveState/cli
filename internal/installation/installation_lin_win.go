@@ -2,6 +2,6 @@
 
 package installation
 
-func InstallSystemFiles(fromDir string) error {
+func InstallSystemFiles(_ string) error {
 	return nil
 }

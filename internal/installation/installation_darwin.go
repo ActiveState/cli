@@ -7,6 +7,6 @@ import (
 )
 
 // InstallSystemFiles installs files in the /Application directory
-func InstallSystemFiles(fromDir string) error {
-	return errs.New("not implemented yet.")
+func InstallSystemFiles(installDir string) error {
+	return nil
 }
