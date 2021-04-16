@@ -127,3 +127,14 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 	}
 	return osutils.CmdExitCode(cmd), cmd, err
 }
+
+// ExecuteAndForget will run the given command in the background, returning immediately.
+func ExecuteAndForget(command string, args ...string) error {
+	cmd := exec.Command(command, args...)
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
+	if err := cmd.Start(); err != nil {
+		return errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+	cmd.Stdin = nil
+	return nil
+}
