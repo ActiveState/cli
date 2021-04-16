@@ -12,13 +12,13 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
-var StartupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
+var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func (a *App) Enable() error {
 	if a.IsEnabled() {
 		return nil
 	}
-	s, err := shortcut.New(StartupPath, a.Name, a.Exec)
+	s, err := shortcut.New(startupPath, a.Name, a.Exec)
 	if err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
@@ -39,13 +39,13 @@ func (a *App) Disable() error {
 	if !a.IsEnabled() {
 		return nil
 	}
-	return os.Remove(a.ShortcutFilename())
+	return os.Remove(a.shortcutFilename())
 }
 
 func (a *App) IsEnabled() bool {
-	return fileutils.FileExists(a.ShortcutFilename())
+	return fileutils.FileExists(a.shortcutFilename())
 }
 
-func (a *App) ShortcutFilename() string {
-	return filepath.Join(StartupPath, a.Name+".lnk")
+func (a *App) shortcutFilename() string {
+	return filepath.Join(startupPath, a.Name+".lnk")
 }
