@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,7 +23,17 @@ func backupFiles(targetFiles []string) ([]string, error) {
 	for _, t := range targetFiles {
 		if fileutils.TargetExists(t) {
 			newName := fmt.Sprintf("%s.bak", t)
-			err := os.Rename(t, newName)
+			if fileutils.TargetExists(newName) {
+				_ = os.Remove(newName)
+			}
+			var err error
+			if runtime.GOOS == "windows" {
+				// Note: We could also rename the files here, in which case the installation would always pass on Windows (even if the executable is still running), but we would not be able to remove the .bak file after the installation (if the executable is still running).
+				// We opted for this solution, as it is more compliant with other Windows installations, where the installation requires all existing programmes to be stopped prior to updates.
+				err = fileutils.CopyFile(t, newName)
+			} else {
+				err = os.Rename(t, newName)
+			}
 			if err != nil {
 				// restore already renamed files and return with error
 				_ = restoreFiles(renamed)

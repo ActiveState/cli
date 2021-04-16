@@ -14,7 +14,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -96,6 +98,17 @@ func initTempInstallDirs(t *testing.T, withAutoInstall bool) (string, string) {
 	return fromDir, toDir
 }
 
+func assertPermissions(t *testing.T, fp string) {
+	info, err := os.Stat(fp)
+	require.NoError(t, err)
+	pb := permbits.FileMode(info.Mode())
+	assert.True(t, pb.UserRead(), "%s should be readable")
+	if runtime.GOOS != "windows" {
+		// Windows does not need an executable flag (just the correct file ending)
+		assert.True(t, pb.UserExecute(), "%s should be executable")
+	}
+}
+
 func assertSuccessfulInstallation(t *testing.T, toDir string) {
 	for _, df := range []string{stateToolTestFile, otherTestFile} {
 		fp := filepath.Join(toDir, df)
@@ -105,9 +118,7 @@ func assertSuccessfulInstallation(t *testing.T, toDir string) {
 		if !bytes.Equal(updatedTestFileContent, b) {
 			t.Errorf("Test file %s was not correctly updated", fp)
 		}
-		info, err := os.Stat(fp)
-		require.NoError(t, err)
-		assert.Equal(t, "rwx", info.Mode().String()[1:4])
+		assertPermissions(t, fp)
 	}
 }
 
@@ -118,6 +129,7 @@ func assertRevertedInstallation(t *testing.T, toDir string) {
 	if !bytes.Equal(stateToolTestFileContent, b) {
 		t.Error("State Tool test file was not correctly restored.")
 	}
+	assertPermissions(t, fp)
 }
 
 // TestInstallation tests that an installation is working if there are no obstacles like running processes
@@ -144,11 +156,16 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			inst, err := installation.New(from, to)
-			if tt.ExpectSuccess {
-				require.NoError(t, err)
+			inst, err := func() (*installation.Installation, error) {
+				inst, err := installation.New(from, to)
+				if err != nil {
+					return nil, err
+				}
 
 				err = inst.Install()
+				return inst, err
+			}()
+			if tt.ExpectSuccess {
 				require.NoError(t, err)
 
 				err = inst.Close()
@@ -156,7 +173,7 @@ func TestInstallation(t *testing.T) {
 
 				assertSuccessfulInstallation(t, to)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assertRevertedInstallation(t, to)
 			}
 
@@ -168,8 +185,8 @@ func TestInstallation(t *testing.T) {
 func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	from, to := initTempInstallDirs(t, false)
 
-	// run the old command which waits for one second.
-	cmd := exec.Command(filepath.Join(to, stateToolTestFile), "1")
+	// run the old command which waits for two seconds.
+	cmd := exec.Command(filepath.Join(to, stateToolTestFile), "2")
 	err := cmd.Start()
 	require.NoError(t, err)
 
@@ -178,11 +195,15 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 
 	errC := make(chan error)
 	go func() {
-		errC <- inst.Install()
+		err := inst.Install()
+		if err != nil {
+			errC <- err
+		}
+		errC <- inst.Close()
 	}()
 
 	err = cmd.Wait()
-	require.NoError(t, err)
+	require.NoError(t, err, "%s", errs.Join(err, ": "))
 
 	select {
 	case err := <-errC:
@@ -196,9 +217,6 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	case <-time.After(time.Second * 2):
 		t.Fatalf("Timeout waiting for installation to finish")
 	}
-
-	err = inst.Close()
-	require.NoError(t, err)
 }
 
 // TestAutoUpdate tests that an executable can update itself, by spawning the
@@ -275,7 +293,13 @@ func TestAutoUpdate(t *testing.T) {
 				assertSuccessfulInstallation(t, to)
 			} else {
 				assert.Containsf(t, string(logs), "Installation failed", "logs should contains 'Installation failed', got=%s", string(logs))
-				assert.Contains(t, string(logs), "Successfully restored original files.")
+				if runtime.GOOS == "windows" {
+					// On Windows we expect the restore to fail on the State Tool executable.
+					// It cannot be restored, because it is still running, but that is okay, because for the same reason it could not be modified beforehand.
+					assert.Contains(t, string(logs), "Failed to restore some files")
+				} else {
+					assert.Contains(t, string(logs), "Successfully restored original files.")
+				}
 
 				assertRevertedInstallation(t, to)
 			}
