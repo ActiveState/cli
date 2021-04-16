@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -33,7 +34,7 @@ func run() int {
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
-	logging.SetupRollbar()
+	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 	defer rollbar.Close()
 
 	cfg, err := config.New()
