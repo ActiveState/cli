@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-	"syscall"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -21,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -59,9 +58,7 @@ func run() error {
 		return errs.New("Could not find: %s", stateSvcExe)
 	}
 
-	cmd := exec.Command(stateSvcExe, "start")
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
-	if err := cmd.Start(); err != nil {
+	if _, err := exeutils.ExecuteAndForget(stateSvcExe, "start"); err != nil {
 		return errs.Wrap(err, "Could not start %s", stateSvcExe)
 	}
 
