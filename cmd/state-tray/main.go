@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
@@ -14,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,10 +30,16 @@ func main() {
 }
 
 func onReady() {
+	var exitCode int
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+	defer exit(exitCode)
+
 	err := run()
 	if err != nil {
-		logging.Error("Systray encountered an error: %v", errs.Join(err, ": "))
-		os.Exit(1)
+		errMsg := errs.Join(err, ": ").Error()
+		logging.Error("Systray encountered an error: %v", errMsg)
+		fmt.Fprintln(os.Stderr, errMsg)
+		exitCode = 1
 	}
 }
 
@@ -184,4 +194,9 @@ func run() error {
 
 func onExit() {
 	// Not implemented
+}
+
+func exit(code int) {
+	events.WaitForEvents(1*time.Second, rollbar.Close)
+	os.Exit(code)
 }

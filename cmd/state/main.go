@@ -35,7 +35,7 @@ import (
 
 func main() {
 	// Set up logging
-	logging.SetupRollbar()
+	logging.SetupRollbar(constants.StateToolRollbarToken)
 	defer rollbar.Close()
 
 	// Handle panics gracefully
