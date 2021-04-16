@@ -4,23 +4,32 @@ package clean
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
 func removeConfig(configPath string) error {
-	return runScript("removeDir", configPath)
+	return removeDir(configPath)
 }
 
-func removeInstallDir(dir string) error {
-	return runScript("removeDir", dir)
+func removeInstallDir(installationPath string) error {
+	return removeDir(installationPath)
 }
 
-func runScript(scriptName, path string) error {
+func removeDir(path string) error {
+	// TODO: Batch scripts seem to be interferring with one another when
+	// run in an integration test. Update script to accept multiple dirs
+	time.Sleep(500 * time.Millisecond)
+	scriptName := "removeDir"
 	box := packr.NewBox("../../../assets/scripts/")
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
 	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
@@ -28,10 +37,16 @@ func runScript(scriptName, path string) error {
 		return err
 	}
 
-	cmd := exec.Command("cmd.exe", "/C", sf.Filename(), path)
+	exe, err := os.Executable()
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable name")
+	}
+
+	cmd := exec.Command("cmd.exe", "/C", sf.Filename(), path, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe))
+	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP | 0x08000000}
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not start script")
 	}
 
 	return nil
