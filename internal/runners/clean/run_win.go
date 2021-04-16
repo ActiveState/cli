@@ -30,7 +30,7 @@ func removeDirs(dirs ...string) error {
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
 	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_clean_script", "Could not create new scriptfile")
 	}
 
 	exe, err := os.Executable()
@@ -44,7 +44,7 @@ func removeDirs(dirs ...string) error {
 	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
 	err = cmd.Start()
 	if err != nil {
-		return errs.Wrap(err, "Could not start script")
+		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
 
 	return nil
