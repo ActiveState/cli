@@ -7,12 +7,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -41,7 +41,7 @@ func removeDirs(dirs ...string) error {
 	args := []string{"/C", sf.Filename(), fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, dirs...)
 	cmd := exec.Command("cmd.exe", args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP | 0x08000000}
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
 	err = cmd.Start()
 	if err != nil {
 		return errs.Wrap(err, "Could not start script")
