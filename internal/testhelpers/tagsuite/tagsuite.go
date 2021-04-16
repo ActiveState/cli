@@ -52,6 +52,7 @@ const (
 	Shell         = "shell"
 	Exec          = "exec"
 	Show          = "show"
+	Uninstall     = "uninstall"
 	Update        = "update"
 	VSCode        = "vscode"
 )

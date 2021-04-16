@@ -19,6 +19,7 @@ type UninstallIntegrationTestSuite struct {
 }
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
+	suite.OnlyRunForTags(tagsuite.Uninstall)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
