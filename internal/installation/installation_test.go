@@ -201,7 +201,8 @@ func TestInstallationWhileProcessesAreActive(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestAutoUpdate tests that an executable can update itself, by spawning the installer process which eventually replaces the calling executable.
+// TestAutoUpdate tests that an executable can update itself, by spawning the
+// installer process which eventually replaces the calling executable.
 func TestAutoUpdate(t *testing.T) {
 	tests := []struct {
 		Name          string
@@ -232,17 +233,21 @@ func TestAutoUpdate(t *testing.T) {
 			require.NoError(t, err)
 			configPath := cfg.ConfigPath()
 
-			// run installer
-			c := exec.Command(filepath.Join(to, stateToolTestFile), from, filepath.Join(from, installerTestFile), tt.Timeout)
+			// run the executable (called stateToolTestFile) that is trying to
+			// replace itself by triggering the installer
+			c := exec.Command(filepath.Join(to, stateToolTestFile), from,
+				filepath.Join(from, installerTestFile), tt.Timeout)
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 			c.Stdout = &stdout
 			c.Stderr = &stderr
+			// We set the CONFIGDIR to ensure that the installers log file is written there
 			c.Env = os.Environ()
 			c.Env = append(c.Env, "ACTIVESTATE_CLI_CONFIGDIR="+configPath)
 			err = c.Run()
 			require.NoError(t, err, "Error running auto-replacing test file: %v, stderr=%s", err, stderr.String())
 
+			// regenerate the log file name for the installer from its PID
 			pid, err := strconv.ParseInt(stdout.String(), 10, 32)
 			require.NoError(t, err)
 			assert.NotEqual(t, 0, pid)
