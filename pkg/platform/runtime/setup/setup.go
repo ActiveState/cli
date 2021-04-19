@@ -92,7 +92,9 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	ForceUseCache() bool
+
+	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)
+	OnlyUseCache() bool
 }
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.

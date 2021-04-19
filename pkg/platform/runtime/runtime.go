@@ -42,7 +42,7 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 
 	rt.store = store.New(target.Dir())
 	if !rt.store.MatchesCommit(target.CommitUUID()) {
-		if target.ForceUseCache() {
+		if target.OnlyUseCache() {
 			logging.Debug("Using forced cache")
 		} else {
 			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
@@ -101,12 +101,11 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 }
 
 // Env returns a key-value map of the environment variables that need to be set for this runtime
-// It's different from Env in that it merges in the current active environment as well as sets up projectDir related
-// environment variables.
-// projectDir is only used for legacy camel builds
+// It's different from envDef in that it merges in the current active environment and points the PATH variable to the
+// Executors directory if requested
 func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
-	
+
 	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
