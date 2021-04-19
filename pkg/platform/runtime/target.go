@@ -32,7 +32,7 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	return p.Project.CommitUUID()
 }
 
-func (p *ProjectTarget) ForceUseCache() bool {
+func (p *ProjectTarget) OnlyUseCache() bool {
 	return false
 }
 
@@ -69,7 +69,7 @@ func (c *CustomTarget) Dir() string {
 	return c.dir
 }
 
-func (c *CustomTarget) ForceUseCache() bool {
+func (c *CustomTarget) OnlyUseCache() bool {
 	return c.commitUUID == ""
 }
 
