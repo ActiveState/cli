@@ -17,14 +17,14 @@ type AppInfo struct {
 func TrayApp() *AppInfo {
 	return &AppInfo{
 		constants.TrayAppName,
-		absolute(filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt),
+		exePath(filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt),
 	}
 }
 
 func StateApp() *AppInfo {
 	return &AppInfo{
 		constants.StateAppName,
-		absolute(filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt),
+		exePath(filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt),
 	}
 }
 
@@ -36,11 +36,14 @@ func (a *AppInfo) Exec() string {
 	return a.executable
 }
 
-func absolute(path string) string {
-	result, err := filepath.Abs(path)
+func exePath(exeName string) string {
+	fallback := filepath.Join(filepath.Dir(os.Args[0]), exeName+osutils.ExeExt)
+
+	path, err := os.Executable()
 	if err != nil {
-		logging.Errorf("Could not get absolute path for %s: %v", path, err)
-		return path
+		logging.Errorf("Could not get executable path for: %v", err)
+		return fallback
 	}
-	return result
+
+	return filepath.Join(filepath.Dir(path), exeName+osutils.ExeExt)
 }
