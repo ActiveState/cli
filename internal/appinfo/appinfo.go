@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -13,14 +14,23 @@ type AppInfo struct {
 	executable string
 }
 
-func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
-	dir := filepath.Dir(os.Args[0])
+func execDir(baseDir ...string) string {
 	if len(baseDir) > 0 {
-		dir = baseDir[0]
+		return baseDir[0]
 	}
+	e, err := os.Executable()
+	if err != nil {
+		logging.Debug("Could not determine executable directory: %v", err)
+		e, _ = filepath.Abs(os.Args[0])
+	}
+
+	return filepath.Base(e)
+}
+
+func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
 	return &AppInfo{
 		name,
-		filepath.Join(dir, executableBase+osutils.ExeExt),
+		filepath.Join(execDir(baseDir...), executableBase+osutils.ExeExt),
 	}
 }
 
