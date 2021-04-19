@@ -24,39 +24,39 @@ import (
 )
 
 func main() {
-	exitCode := run()
-	if exitCode != 0 {
-		os.Exit(exitCode)
+	if !_run() {
+		os.Exit(1)
 	}
 }
 
-func run() int {
+func _run() bool {
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 	defer rollbar.Close()
 
+	out := mustOutputer()
+	err := run(out)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
+		logging.Error(errMsg)
+		out.Error(errMsg)
+		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
+		return false
+	}
+
+	return true
+}
+
+func run(out output.Outputer) error {
 	cfg, err := config.New()
 	if err != nil {
-		logging.Error("Could not initialize config: %v", err)
-		return 1
+		return errs.Wrap(err, "Could not initialize config.")
 	}
 	machineid.SetConfiguration(cfg)
 	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
-
-	// init outputer
-	out, err := output.New("plain", &output.Config{
-		OutWriter:   os.Stdout,
-		ErrWriter:   os.Stderr,
-		Colored:     true,
-		Interactive: false,
-	})
-	if err != nil {
-		logging.Error("Failed to initialize plain outputer: %v", err)
-		return 1
-	}
 
 	var installPath string
 	if len(os.Args) > 1 {
@@ -65,22 +65,17 @@ func run() int {
 		var err error
 		installPath, err = installation.InstallPath()
 		if err != nil {
-			logging.Error("Failed to retrieve default installPath: %v", err)
-			return 1
+			return errs.Wrap(err, "Failed to retrieve default installPath")
 		}
 	}
 
 	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
-		errMsg := errs.Join(err, ": ").Error()
-		logging.Error(errMsg)
-		out.Error(errMsg)
-		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
-		return 1
+		return errs.Wrap(err, "Installing to %s failed", installPath)
 	}
 	logging.Debug("Installation was successful.")
-	return 0
+	return nil
 }
 
 func install(installPath string, cfg *config.Instance, out output.Outputer) error {
@@ -153,4 +148,18 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	return nil
+}
+
+func mustOutputer() output.Outputer {
+	// init outputer
+	out, err := output.New("plain", &output.Config{
+		OutWriter:   os.Stdout,
+		ErrWriter:   os.Stderr,
+		Colored:     true,
+		Interactive: false,
+	})
+	if err != nil {
+		logging.Error("This shouldn't happen.  Err should never be != nil.")
+	}
+	return out
 }
