@@ -8,6 +8,7 @@ import (
 
 	"github.com/rollbar/rollbar-go"
 
+	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -109,7 +110,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
 
-	inst, err := installation.New(filepath.Join(tmpDir, "bin"), installPath)
+	inst, err := installer.New(filepath.Join(tmpDir, "bin"), installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new installation.")
 	}
