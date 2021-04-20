@@ -114,9 +114,10 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	defer inst.Close()
 
 	if err := inst.Install(); err != nil {
-		restErr := inst.Rollback()
-		if restErr != nil {
-			logging.Error("restoring of backup files failed: %v", restErr)
+		rbErr := inst.Rollback()
+		if rbErr != nil {
+			logging.Debug("Failed to restore files: %v", rbErr)
+			return errs.Wrap(err, "Installation failed and some files could not be rolled back with error: %v", rbErr)
 		}
 		logging.Debug("Successfully restored original files.")
 		return errs.Wrap(err, "Installation failed")
