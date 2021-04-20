@@ -31,7 +31,17 @@ func main() {
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 
-	out := mustOutputer()
+	out, err := output.New("plain", &output.Config{
+		OutWriter:   os.Stdout,
+		ErrWriter:   os.Stderr,
+		Colored:     true,
+		Interactive: false,
+	})
+	if err != nil {
+		logging.Error("Could not initialize outputer: %v", err)
+		rollbar.Close()
+		os.Exit(1)
+	}
 	if err := run(out); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
@@ -138,18 +148,4 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	return nil
-}
-
-func mustOutputer() output.Outputer {
-	// init outputer
-	out, err := output.New("plain", &output.Config{
-		OutWriter:   os.Stdout,
-		ErrWriter:   os.Stderr,
-		Colored:     true,
-		Interactive: false,
-	})
-	if err != nil {
-		logging.Error("This shouldn't happen.  Err should never be != nil.")
-	}
-	return out
 }
