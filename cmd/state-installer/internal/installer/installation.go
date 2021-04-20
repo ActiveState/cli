@@ -52,29 +52,31 @@ func restoreFiles(backupFiles []string) error {
 	return nil
 }
 
-func removeBackupFiles(backupFiles []string) error {
-	var errors []error
-	for _, b := range backupFiles {
-		err := os.Remove(b)
-		if err != nil {
-			errors = append(errors, err)
-		}
-	}
-	if len(errors) > 0 {
-		return errs.Wrap(errors[0], "Failed to remove some back-up files")
-	}
-
-	return nil
-}
-
 func New(fromDir, toDir string) *Installation {
 	return &Installation{
 		fromDir, toDir, nil,
 	}
 }
 
-func (i *Installation) Close() error {
-	return removeBackupFiles(i.backups)
+func (i *Installation) RemoveBackupFiles() error {
+	var es []error
+	for _, b := range i.backups {
+		err := os.Remove(b)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			// On Windows, if the executable was still running, the removal of the backup could fail here.
+			// We are trying to hide the file such that a .bak file does not (visually!) litter the folder.
+			errHide := fileutils.HideFile(b)
+			if errHide != nil {
+				logging.Error("Encountered error hiding file %s: %v", b, err)
+			}
+			es = append(es, err)
+		}
+	}
+	if len(es) > 0 {
+		return errs.Wrap(es[0], "Failed to remove some back-up files")
+	}
+
+	return nil
 }
 
 func (i *Installation) BackupFiles() error {
