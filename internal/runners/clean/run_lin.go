@@ -31,3 +31,7 @@ func removeTrayApp() error {
 
 	return nil
 }
+
+func autostartFilePath() (string, error) {
+	return "", errors.New("Not implemented")
+}

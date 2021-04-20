@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/shirou/gopsutil/process"
 )
@@ -20,7 +21,7 @@ func (u *Uninstall) runUninstall() error {
 		return locale.WrapError(err, "err_clean_cache", "Could not remove cache")
 	}
 
-	err = stopTrayApp(u.cfg.GetInt(constants.TrayConfigPid))
+	err = installation.StopTrayApp(u.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_stop_tray", "Could not stop the state tray application")
 	}
@@ -35,7 +36,7 @@ func (u *Uninstall) runUninstall() error {
 		return locale.WrapError(err, "err_clean_tray_app", "could not remove state tray application")
 	}
 
-	err = removeAutoStartFile(u.cfg.GetString(constants.AutoStartPath))
+	err = removeAutoStartFile()
 	if err != nil {
 		return locale.WrapError(err, "err_clean_remove_autostart", "Could not remove autostart file")
 	}
@@ -105,14 +106,18 @@ func removeCache(cachePath string) error {
 	return nil
 }
 
-func removeAutoStartFile(path string) error {
-	if path == "" || !fileutils.FileExists(path) {
+func removeAutoStartFile() error {
+	autostartPath, err := autostartFilePath()
+	if err != nil {
+		return locale.WrapError(err, "err_clean_autostart_path", "Could not get autostart file path")
+	}
+	if !fileutils.FileExists(autostartPath) {
 		return nil
 	}
 
-	err := os.Remove(path)
+	err = os.Remove(autostartPath)
 	if err != nil {
-		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", path)
+		return locale.WrapError(err, "err_remove_auto_start", "Could not remove auto start file at path: {{.V0}}", autostartPath)
 	}
 	return nil
 }

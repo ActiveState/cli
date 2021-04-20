@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -59,14 +57,6 @@ func run() error {
 	err = config.Set(constants.TrayConfigPid, os.Getpid())
 	if err != nil {
 		return errs.Wrap(err, "Could not save pid")
-	}
-
-	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
-	if runtime.GOOS == "windows" {
-		stateSvcExe = stateSvcExe + ".exe"
-	}
-	if !fileutils.FileExists(stateSvcExe) {
-		return errs.New("Could not find: %s", stateSvcExe)
 	}
 
 	svcInfo := appinfo.SvcApp()

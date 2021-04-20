@@ -3,17 +3,15 @@ package autostart
 type App struct {
 	Name string
 	Exec string
-	cfg  configable
 }
 
 type configable interface {
 	Set(key string, value interface{}) error
 }
 
-func New(name, exec string, cfg configable) *App {
+func New(name, exec string) *App {
 	return &App{
 		Name: name,
 		Exec: exec,
-		cfg:  cfg,
 	}
 }

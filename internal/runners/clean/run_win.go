@@ -50,6 +50,10 @@ func removeDirs(dirs ...string) error {
 	return nil
 }
 
+func autostartFilePath() (string, error) {
+	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup", "activestate-desktop.lnk")
+}
+
 func removeTrayApp() error {
 	// On Windows there is currently no separate app installation dir
 	return nil

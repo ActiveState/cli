@@ -6,7 +6,6 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
@@ -29,11 +28,6 @@ func (a *App) Enable() error {
 	box := packr.NewBox("../../../assets")
 	if err := s.SetIconBlob(box.Bytes("icon.ico")); err != nil {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
-	}
-
-	err = a.cfg.Set(constants.AutoStartPath, s.Filepath())
-	if err != nil {
-		return errs.Wrap(err, "Could not set auto start path in config")
 	}
 
 	return nil

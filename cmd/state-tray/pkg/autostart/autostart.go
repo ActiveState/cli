@@ -14,5 +14,5 @@ func New(cfg *config.Instance) *autostart.App {
 	if runtime.GOOS == "windows" {
 		suffix = ".exe"
 	}
-	return autostart.New("activestate-desktop", filepath.Join(filepath.Dir(os.Args[0]), "state-tray"+suffix), cfg)
+	return autostart.New("activestate-desktop", filepath.Join(filepath.Dir(os.Args[0]), "state-tray"+suffix))
 }
