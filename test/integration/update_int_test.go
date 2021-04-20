@@ -258,19 +258,19 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	tests := []struct {
-		Name             string
-		StateToolRunning bool
-		ExpectSuccess    bool
+		Name                string
+		StateToolRunning    bool
+		ExpectBackupCleaned bool
 	}{
 		{
-			Name:             "all-resources-free",
-			StateToolRunning: false,
-			ExpectSuccess:    true,
+			Name:                "all-resources-free",
+			StateToolRunning:    false,
+			ExpectBackupCleaned: true,
 		},
 		{
-			Name:             "old-state-tool-running",
-			StateToolRunning: true,
-			ExpectSuccess:    runtime.GOOS != "windows", // On Windows we cannot replace a State Tool that is still running.
+			Name:                "old-state-tool-running",
+			StateToolRunning:    true,
+			ExpectBackupCleaned: runtime.GOOS != "windows", // Note: On Windows we cannot remove the backup file when an old process is still running!
 		},
 	}
 	for _, tt := range tests {
@@ -322,15 +322,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			// ...and wait for it
 			wg.Wait()
 
-			if tt.ExpectSuccess {
-				suite.Assert().Contains(logs, "was successful")
-				suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+			suite.Assert().Contains(logs, "was successful")
+			suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+
+			if tt.ExpectBackupCleaned {
+				suite.Assert().Contains(logs, "Removed all backup files.")
 			} else {
-				suite.Assert().Contains(logs, "Installation failed")
-				suite.Assert().Contains(logs, "Successfully restored original files")
-				suite.versionCompare(ts, true, constants.Version, suite.Equal)
+				suite.Assert().Contains(logs, "Failed to remove backup files")
 			}
-			suite.Assert().Contains(logs, "Removed all backup files.")
 		})
 	}
 }
