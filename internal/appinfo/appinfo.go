@@ -45,5 +45,12 @@ func exePath(exeName string) string {
 		return fallback
 	}
 
+	pathEvaled, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		logging.Error("Could not eval symlinks: %v", err)
+	} else {
+		path = pathEvaled
+	}
+
 	return filepath.Join(filepath.Dir(path), exeName+osutils.ExeExt)
 }
