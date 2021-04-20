@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -129,11 +130,13 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
-	rcFile, err := shell.RcFile()
-	if err == nil {
-		out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
-	} else {
-		out.Notice("Please start a new login shell in order to start using the State Tool executable.")
+	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
+		rcFile, err := shell.RcFile()
+		if err == nil {
+			out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
+		} else {
+			out.Notice("Please start a new login shell in order to start using the State Tool executable.")
+		}
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
