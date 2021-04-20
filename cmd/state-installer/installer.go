@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -24,39 +26,39 @@ import (
 )
 
 func main() {
-	exitCode := run()
-	if exitCode != 0 {
-		os.Exit(exitCode)
+	if !_run() {
+		os.Exit(1)
 	}
 }
 
-func run() int {
+func _run() bool {
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 	defer rollbar.Close()
 
+	out := mustOutputer()
+	err := run(out)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
+		logging.Error(errMsg)
+		out.Error(errMsg)
+		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
+		return false
+	}
+
+	return true
+}
+
+func run(out output.Outputer) error {
 	cfg, err := config.New()
 	if err != nil {
-		logging.Error("Could not initialize config: %v", err)
-		return 1
+		return errs.Wrap(err, "Could not initialize config.")
 	}
 	machineid.SetConfiguration(cfg)
 	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
-
-	// init outputer
-	out, err := output.New("plain", &output.Config{
-		OutWriter:   os.Stdout,
-		ErrWriter:   os.Stderr,
-		Colored:     true,
-		Interactive: false,
-	})
-	if err != nil {
-		logging.Error("Failed to initialize plain outputer: %v", err)
-		return 1
-	}
 
 	var installPath string
 	if len(os.Args) > 1 {
@@ -65,22 +67,17 @@ func run() int {
 		var err error
 		installPath, err = installation.InstallPath()
 		if err != nil {
-			logging.Error("Failed to retrieve default installPath: %v", err)
-			return 1
+			return errs.Wrap(err, "Failed to retrieve default installPath")
 		}
 	}
 
 	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
-		errMsg := errs.Join(err, ": ").Error()
-		logging.Error(errMsg)
-		out.Error(errMsg)
-		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
-		return 1
+		return errs.Wrap(err, "Installing to %s failed", installPath)
 	}
 	logging.Debug("Installation was successful.")
-	return 0
+	return nil
 }
 
 func install(installPath string, cfg *config.Instance, out output.Outputer) error {
@@ -114,16 +111,14 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
 
-	inst, err := installation.New(filepath.Join(tmpDir, "bin"), installPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not create new installation.")
-	}
+	inst := installer.New(filepath.Join(tmpDir, "bin"), installPath)
 	defer inst.Close()
 
 	if err := inst.Install(); err != nil {
-		restErr := inst.RestoreBackup()
-		if restErr != nil {
-			logging.Error("restoring of backup files failed: %v", restErr)
+		rbErr := inst.Rollback()
+		if rbErr != nil {
+			logging.Debug("Failed to restore files: %v", rbErr)
+			return errs.Wrap(err, "Installation failed and some files could not be rolled back with error: %v", rbErr)
 		}
 		logging.Debug("Successfully restored original files.")
 		return errs.Wrap(err, "Installation failed")
@@ -135,11 +130,13 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
-	rcFile, err := shell.RcFile()
-	if err == nil {
-		out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
-	} else {
-		out.Notice("Please start a new login shell in order to start using the State Tool executable.")
+	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
+		rcFile, err := shell.RcFile()
+		if err == nil {
+			out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
+		} else {
+			out.Notice("Please start a new login shell in order to start using the State Tool executable.")
+		}
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
@@ -153,4 +150,18 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	return nil
+}
+
+func mustOutputer() output.Outputer {
+	// init outputer
+	out, err := output.New("plain", &output.Config{
+		OutWriter:   os.Stdout,
+		ErrWriter:   os.Stderr,
+		Colored:     true,
+		Interactive: false,
+	})
+	if err != nil {
+		logging.Error("This shouldn't happen.  Err should never be != nil.")
+	}
+	return out
 }

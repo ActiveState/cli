@@ -17,12 +17,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func autoUpdate(args []string, out output.Outputer, cfg *config.Instance, pjPath string) (bool, error) {
+func autoUpdate(args []string, cfg *config.Instance, pjPath string) (bool, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")

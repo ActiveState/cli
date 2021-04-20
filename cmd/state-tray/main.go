@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/getlantern/systray"
@@ -15,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -50,19 +49,16 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
-	if runtime.GOOS == "windows" {
-		stateSvcExe = stateSvcExe + ".exe"
-	}
-	if !fileutils.FileExists(stateSvcExe) {
-		return errs.New("Could not find: %s", stateSvcExe)
+	svcInfo := appinfo.SvcApp()
+	if !fileutils.FileExists(svcInfo.Exec()) {
+		return errs.New("Could not find: %s", svcInfo.Exec())
 	}
 
-	if _, err := exeutils.ExecuteAndForget(stateSvcExe, "start"); err != nil {
-		return errs.Wrap(err, "Could not start %s", stateSvcExe)
+	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
+		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
 	}
 
-	config, err := config.Get()
+	config, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
@@ -104,7 +100,12 @@ func run() error {
 
 	systray.AddSeparator()
 	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
-	if autostart.New().IsEnabled() {
+	as := autostart.New()
+	enabled, err := as.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
+	}
+	if enabled {
 		mAutoStart.Check()
 	}
 	systray.AddSeparator()
@@ -161,9 +162,12 @@ func run() error {
 			localProjectsUpdater.Update(localProjects)
 		case <-mAutoStart.ClickedCh:
 			logging.Debug("Autostart event")
-			as := autostart.New()
 			var err error
-			if as.IsEnabled() {
+			enabled, err := as.IsEnabled()
+			if err != nil {
+				logging.Error("Could not check if autostart is enabled: %v", err)
+			}
+			if enabled {
 				logging.Debug("Disable")
 				err = as.Disable()
 				if err == nil {
