@@ -6,15 +6,18 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/gobuffalo/packr"
 )
 
 const (
-	contentsDir  = "/Applications/state-tray.app/Contents"
+	contentsDir  = "/Applications/ActiveState Desktop.app/Contents"
 	macOSDir     = "MacOS"
 	resourcesDir = "Resources"
+	iconBundle   = "state-tray.icns"
+	infoFile     = "Info.plist"
 )
 
 // InstallSystemFiles installs files in the /Application directory
@@ -33,7 +36,7 @@ func InstallSystemFiles(installDir string) error {
 }
 
 func createAppDirStructure() error {
-	err := fileutils.Mkdir(contentsDir)
+	err := fileutils.Mkdir(filepath.Join(contentsDir))
 	if err != nil {
 		return errs.Wrap(err, "Could not create Contents app dir")
 	}
@@ -53,25 +56,35 @@ func createAppDirStructure() error {
 
 func populateAppDir(installDir string) error {
 	box := packr.NewBox("../../../../assets/macOS")
-	err := fileutils.WriteFile(filepath.Join(contentsDir, resourcesDir), box.Bytes("state-tray.icns"))
+	err := fileutils.WriteFile(filepath.Join(contentsDir, resourcesDir, iconBundle), box.Bytes(iconBundle))
 	if err != nil {
 		return errs.Wrap(err, "Could not write icon file")
 	}
 
-	err = fileutils.WriteFile(contentsDir, box.Bytes("Info.plist"))
+	err = fileutils.WriteFile(filepath.Join(contentsDir, infoFile), box.Bytes(infoFile))
 	if err != nil {
 		return errs.Wrap(err, "Could not write info plist file")
 	}
 
-	err = os.Symlink(filepath.Join(installDir, "state-tray"), filepath.Join(contentsDir, macOSDir, "state-tray"))
+	trayInfo := appinfo.TrayApp()
+	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(contentsDir, macOSDir, filepath.Base(trayInfo.Exec())))
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}
 
-	err = os.Symlink(filepath.Join(installDir, "state-svc"), filepath.Join(contentsDir, macOSDir, "state-svc"))
-	if err != nil {
-		return errs.Wrap(err, "Could not create state-svc symlink")
+	return nil
+}
+
+func createNewSymlink(target, filename string) error {
+	if fileutils.FileExists(filename) {
+		if err := os.Remove(filename); err != nil {
+			return errs.Wrap(err, "Could not delete existing symlink")
+		}
 	}
 
+	err := os.Symlink(target, filename)
+	if err != nil {
+		return errs.Wrap(err, "Could not create symlink")
+	}
 	return nil
 }
