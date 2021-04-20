@@ -75,34 +75,42 @@ func removeBackupFiles(backupFiles []string) error {
 	return nil
 }
 
-func New(fromDir, toDir string) (*Installation, error) {
-	// Todo: https://www.pivotaltracker.com/story/show/177600107
-	// Get target file paths.
-	var targetFiles []string
-	for _, file := range fileutils.ListDir(fromDir, false) {
-		targetFile := filepath.Join(toDir, filepath.Base(file))
-		targetFiles = append(targetFiles, targetFile)
-	}
-	logging.Debug("Target files=%s", strings.Join(targetFiles, ","))
-
-	backups, err := backupFiles(targetFiles)
-	if err != nil {
-		return nil, errs.Wrap(err, "Backup of existing files failed.")
-	}
+func New(fromDir, toDir string) *Installation {
 	return &Installation{
-		fromDir, toDir, backups,
-	}, nil
+		fromDir, toDir, nil,
+	}
 }
 
 func (i *Installation) Close() error {
 	return removeBackupFiles(i.backups)
 }
 
-func (i *Installation) RestoreBackup() error {
+func (i *Installation) BackupFiles() error {
+	// Todo: https://www.pivotaltracker.com/story/show/177600107
+	// Get target file paths.
+	var targetFiles []string
+	for _, file := range fileutils.ListDir(i.fromDir, false) {
+		targetFile := filepath.Join(i.toDir, filepath.Base(file))
+		targetFiles = append(targetFiles, targetFile)
+	}
+	logging.Debug("Target files=%s", strings.Join(targetFiles, ","))
+
+	backups, err := backupFiles(targetFiles)
+	if err != nil {
+		return errs.Wrap(err, "Backup of existing files failed.")
+	}
+	i.backups = backups
+	return nil
+}
+
+func (i *Installation) Rollback() error {
 	return restoreFiles(i.backups)
 }
 
 func (i *Installation) Install() error {
+	if err := i.BackupFiles(); err != nil {
+		return errs.Wrap(err, "Failed to backup original files.")
+	}
 	if err := fileutils.CopyAndRenameFiles(i.fromDir, i.toDir); err != nil {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s", i.toDir)
 	}

@@ -109,15 +109,9 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			inst, err := func() (*installer.Installation, error) {
-				inst, err := installer.New(from, to)
-				if err != nil {
-					return nil, err
-				}
+			inst := installer.New(from, to)
+			err := inst.Install()
 
-				err = inst.Install()
-				return inst, err
-			}()
 			if tt.ExpectSuccess {
 				require.NoError(t, err)
 
@@ -127,6 +121,10 @@ func TestInstallation(t *testing.T) {
 				assertSuccessfulInstallation(t, to)
 			} else {
 				require.Error(t, err)
+
+				err = inst.Close()
+				require.NoError(t, err)
+
 				assertRevertedInstallation(t, to)
 			}
 

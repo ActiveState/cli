@@ -110,14 +110,11 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
 
-	inst, err := installer.New(filepath.Join(tmpDir, "bin"), installPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not create new installation.")
-	}
+	inst := installer.New(filepath.Join(tmpDir, "bin"), installPath)
 	defer inst.Close()
 
 	if err := inst.Install(); err != nil {
-		restErr := inst.RestoreBackup()
+		restErr := inst.Rollback()
 		if restErr != nil {
 			logging.Error("restoring of backup files failed: %v", restErr)
 		}
