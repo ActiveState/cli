@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/updater2"
+	"github.com/ActiveState/cli/internal/updater"
 )
 
 var exit = os.Exit
@@ -149,7 +149,7 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		return errs.Wrap(err, "Archiving failed")
 	}
 
-	up := updater2.NewAvailableUpdate(version, channel, platform, relArchivePath, generateSha256(archivePath))
+	up := updater.NewAvailableUpdate(version, channel, platform, relArchivePath, generateSha256(archivePath))
 	b, err := json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
