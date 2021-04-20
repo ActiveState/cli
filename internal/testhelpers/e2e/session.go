@@ -50,6 +50,8 @@ type Options struct {
 	termtest.Options
 	// removes write-permissions in the bin directory from which executables are spawned.
 	NonWriteableBinDir bool
+	// expect the process to run in background (will not be stopped by subsequent processes)
+	BackgroundProcess bool
 }
 
 var (
@@ -240,7 +242,9 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	console, err := termtest.New(pOpts.Options)
 	require.NoError(s.t, err)
-	s.cp = console
+	if !pOpts.BackgroundProcess {
+		s.cp = console
+	}
 
 	return console
 }
