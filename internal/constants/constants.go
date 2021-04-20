@@ -194,8 +194,18 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
-// RollbarToken is the token used to talk to rollbar
-const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+// StateToolRollbarToken is the token used by the State Tool to talk to rollbar
+const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
+// StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
+const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+
+// StateServiceRollbarToken is the token used by the State Service to talk to rollbar
+const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+
+// StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
+// Todo It is currently the same as the State Tool's
+const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.

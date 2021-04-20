@@ -13,6 +13,7 @@ type StateVersion {
 type DeferredUpdate {
   channel: String!
   version: String!
+  logfile: String!
 }
 
 type Project {
@@ -22,6 +23,6 @@ type Project {
 
 type Query {
   version: Version
-  update(channel: String, version: String): DeferredUpdate!
+  update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }

@@ -136,7 +136,12 @@ func New(cfg *config.Instance) SubShell {
 }
 
 func DetectShellBinary(cfg *config.Instance) (binary string) {
+	configured := cfg.GetString(config.ConfigKeyShell)
 	defer func() {
+		// do not re-write shell binary to config, if the value did not change.
+		if configured == binary {
+			return
+		}
 		// We save and use the detected shell to our config so that we can use it when running code through
 		// a non-interactive shell
 		if err := cfg.Set(config.ConfigKeyShell, binary); err != nil {
@@ -148,19 +153,19 @@ func DetectShellBinary(cfg *config.Instance) (binary string) {
 		return binary
 	}
 
-	fallback := cfg.GetString(config.ConfigKeyShell)
+	if runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
+		if binary != "" {
+			return binary
+		}
+	}
+
+	fallback := configured
 	if fallback == "" {
 		if runtime.GOOS == "windows" {
 			fallback = "cmd.exe"
 		} else {
 			fallback = "bash"
-		}
-	}
-
-	if runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
-		if binary != "" {
-			return binary
 		}
 	}
 

@@ -1,106 +1,98 @@
 package main
 
 import (
-	"errors"
-	"io"
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/shirou/gopsutil/process"
+	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
-type params struct {
-	logFile     string
-	installPath string
-}
-
-func parseParams(args ...string) (*params, error) {
-	var p params
-
-	for _, arg := range args[1:] {
-		if strings.HasPrefix(arg, "--log-file=") {
-			p.logFile = strings.TrimPrefix(arg, "--log-file=")
-		} else {
-			p.installPath = arg
-		}
-	}
-
-	if p.installPath == "" {
-		installPath, err := installation.InstallPath()
-		if err != nil {
-			return nil, errs.Wrap(err, "Retrieving installPath")
-		}
-		p.installPath = installPath
-	}
-
-	return &p, nil
-}
-
 func main() {
-	params, err := parseParams(os.Args...)
-	if err != nil {
-		log.Printf("Error parsing command line parameters: %v", err)
-	}
-	// If a log file is set, update the default logger to also append logs to that file. Otherwise it is really difficult to debug what is going on.
-	if params.logFile != "" {
-		f, err := os.OpenFile(params.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Printf("error initializing log file: %v", err)
-		}
-		defer f.Close()
-		log.SetOutput(io.MultiWriter(os.Stderr, f))
-	}
-
-	if err := run(); err != nil {
-		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
-		// https://www.pivotaltracker.com/story/show/177691644
-		log.Println(errs.Join(err, ": ").Error())
-		log.Printf("To retry run %s", strings.Join(os.Args, " "))
+	if !_run() {
 		os.Exit(1)
 	}
-	log.Println("Installation was successful.")
 }
 
-func run() error {
+func _run() bool {
+	// init logging and rollbar
+	verbose := os.Getenv("VERBOSE") != ""
+	logging.CurrentHandler().SetVerbose(verbose)
+	logging.SetupRollbar(constants.StateInstallerRollbarToken)
+	defer rollbar.Close()
+
+	out := mustOutputer()
+	err := run(out)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
+		logging.Error(errMsg)
+		out.Error(errMsg)
+		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
+		return false
+	}
+
+	return true
+}
+
+func run(out output.Outputer) error {
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize config.")
+	}
+	machineid.SetConfiguration(cfg)
+	machineid.SetErrorLogger(logging.Error)
+	logging.UpdateConfig(cfg)
+
+	var installPath string
+	if len(os.Args) > 1 {
+		installPath = os.Args[1]
+	} else {
+		var err error
+		installPath, err = installation.InstallPath()
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve default installPath")
+		}
+	}
+
+	if err := install(installPath, cfg, out); err != nil {
+		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
+		// https://www.pivotaltracker.com/story/show/177691644
+		return errs.Wrap(err, "Installing to %s failed", installPath)
+	}
+	logging.Debug("Installation was successful.")
+	return nil
+}
+
+func install(installPath string, cfg *config.Instance, out output.Outputer) error {
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect executable path")
 	}
 
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize config")
-	}
-
-	var installPath string
-	if len(os.Args) > 2 {
-		installPath = os.Args[2]
-	} else {
-		installPath, err = installation.InstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Retrieving installPath")
-		}
-	}
-
-	svcInfo := appinfo.SvcApp()
-	trayInfo := appinfo.TrayApp()
+	svcInfo := appinfo.SvcApp(installPath)
+	trayInfo := appinfo.TrayApp(installPath)
+	stateInfo := appinfo.StateApp(installPath)
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
-	if err := stopTrayApp(cfg); err != nil {
+	if err := installation.StopTrayApp(cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
 
@@ -118,16 +110,18 @@ func run() error {
 	tmpDir := filepath.Dir(exe)
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
-	// Install binary files in installation directory
-	err = installer.Install(filepath.Join(tmpDir, "bin"), installPath)
-	if err != nil {
-		return errs.Wrap(err, "Installation failed")
-	}
 
-	// Install files into system directories.  This function is platform-specific
-	err = installer.InstallSystemFiles(filepath.Join(tmpDir, "system"))
-	if err != nil {
-		return errs.Wrap(err, "Installation of system files failed")
+	inst := installer.New(filepath.Join(tmpDir, "bin"), installPath)
+	defer inst.Close()
+
+	if err := inst.Install(); err != nil {
+		rbErr := inst.Rollback()
+		if rbErr != nil {
+			logging.Debug("Failed to restore files: %v", rbErr)
+			return errs.Wrap(err, "Installation failed and some files could not be rolled back with error: %v", rbErr)
+		}
+		logging.Debug("Successfully restored original files.")
+		return errs.Wrap(err, "Installation failed")
 	}
 
 	shell := subshell.New(cfg)
@@ -136,35 +130,38 @@ func run() error {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
-	// Run _prepare after updates to facilitate anything the new version of the state tool might need to set up
-	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(os.Args[0], "_prepare"); err != nil {
-		log.Printf("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
+	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
+		rcFile, err := shell.RcFile()
+		if err == nil {
+			out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
+		} else {
+			out.Notice("Please start a new login shell in order to start using the State Tool executable.")
+		}
 	}
 
-	if err := exeutils.ExecuteAndForget(trayInfo.Exec()); err != nil {
+	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
+	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
+	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
+		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
+	}
+
+	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec()); err != nil {
 		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
 	}
 
 	return nil
 }
 
-func stopTrayApp(cfg *config.Instance) error {
-	trayPid := cfg.GetInt(config.ConfigKeyTrayPid)
-	if trayPid <= 0 {
-		return nil
-	}
-
-	proc, err := process.NewProcess(int32(trayPid))
+func mustOutputer() output.Outputer {
+	// init outputer
+	out, err := output.New("plain", &output.Config{
+		OutWriter:   os.Stdout,
+		ErrWriter:   os.Stderr,
+		Colored:     true,
+		Interactive: false,
+	})
 	if err != nil {
-		if errors.Is(err, process.ErrorProcessNotRunning) {
-			return nil
-		}
-		return errs.Wrap(err, "Could not detect if state-tray pid exists")
+		logging.Error("This shouldn't happen.  Err should never be != nil.")
 	}
-	if err := proc.Kill(); err != nil {
-		return errs.Wrap(err, "Could not kill state-tray")
-	}
-
-	return nil
+	return out
 }

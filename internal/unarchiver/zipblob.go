@@ -3,7 +3,6 @@ package unarchiver
 import (
 	"archive/zip"
 	"bytes"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -47,15 +46,8 @@ func (z *ZipBlob) unzipFile(file *zip.File, dest string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE, file.Mode())
-	if err != nil {
-		return errs.Wrap(err, "Could not open file for writing: %s", file.Name)
-	}
-	defer f.Close()
-
-	_, err = io.Copy(f, rc)
-	if err != nil {
-		return errs.Wrap(err, "Could not write file: %s", file.Name)
+	if err := writeNewFile(fpath, rc, file.Mode()); err != nil {
+		return errs.Wrap(err, "Could write file %s", fpath)
 	}
 
 	return nil

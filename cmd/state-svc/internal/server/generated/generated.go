@@ -44,6 +44,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	DeferredUpdate struct {
 		Channel func(childComplexity int) int
+		Logfile func(childComplexity int) int
 		Version func(childComplexity int) int
 	}
 
@@ -98,6 +99,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeferredUpdate.Channel(childComplexity), true
+
+	case "DeferredUpdate.logfile":
+		if e.complexity.DeferredUpdate.Logfile == nil {
+			break
+		}
+
+		return e.complexity.DeferredUpdate.Logfile(childComplexity), true
 
 	case "DeferredUpdate.version":
 		if e.complexity.DeferredUpdate.Version == nil {
@@ -253,6 +261,7 @@ type StateVersion {
 type DeferredUpdate {
   channel: String!
   version: String!
+  logfile: String!
 }
 
 type Project {
@@ -262,7 +271,7 @@ type Project {
 
 type Query {
   version: Version
-  update(channel: String, version: String): DeferredUpdate!
+  update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }
 `, BuiltIn: false},
@@ -420,6 +429,41 @@ func (ec *executionContext) _DeferredUpdate_version(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _DeferredUpdate_logfile(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeferredUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Logfile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Project_namespace(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -554,14 +598,11 @@ func (ec *executionContext) _Query_update(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*graph.DeferredUpdate)
 	fc.Result = res
-	return ec.marshalNDeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx, field.Selections, res)
+	return ec.marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1996,6 +2037,11 @@ func (ec *executionContext) _DeferredUpdate(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "logfile":
+			out.Values[i] = ec._DeferredUpdate_logfile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2074,9 +2120,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_update(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "projects":
@@ -2442,20 +2485,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNDeferredUpdate2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v graph.DeferredUpdate) graphql.Marshaler {
-	return ec._DeferredUpdate(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.DeferredUpdate) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DeferredUpdate(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v []*graph.Project) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -2799,6 +2828,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.DeferredUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeferredUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v *graph.Project) graphql.Marshaler {
