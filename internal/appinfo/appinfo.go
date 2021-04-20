@@ -45,6 +45,7 @@ func StateApp(baseDir ...string) *AppInfo {
 func SvcApp(baseDir ...string) *AppInfo {
 	return newAppInfo(constants.SvcAppName, "state-svc", baseDir...)
 }
+
 func (a *AppInfo) Name() string {
 	return a.name
 }
