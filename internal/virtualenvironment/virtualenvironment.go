@@ -28,13 +28,13 @@ func New(runtime *runtime.Runtime) *VirtualEnvironment {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
+func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir string) (map[string]string, error) {
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
 	if v.runtime != runtime.DisabledRuntime {
 		var err error
-		envMap, err = v.runtime.Environ(inherit, projectDir)
+		envMap, err = v.runtime.Env(inherit, useExecutors)
 		if err != nil {
 			return envMap, err
 		}

@@ -7,7 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -31,28 +31,28 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 const executorTarget = "Target: "
 
 type Executor struct {
-	projectPath string
-	binPath     string
+	targetPath   string // The path of a project or a runtime
+	executorPath string // The location to store the executors
 }
 
-func New(projectPath string) (*Executor, error) {
+func New(targetPath string) (*Executor, error) {
 	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(projectPath, binPath), nil
+	return NewWithBinPath(targetPath, binPath), nil
 }
 
-func NewWithBinPath(projectPath, binPath string) *Executor {
-	return &Executor{projectPath, binPath}
+func NewWithBinPath(targetPath, executorPath string) *Executor {
+	return &Executor{targetPath, executorPath}
 }
 
 func (f *Executor) BinPath() string {
-	return f.binPath
+	return f.executorPath
 }
 
-func (f *Executor) Update(exes runtime.Executables) error {
-	logging.Debug("Creating executors at %s, exes: %v", f.binPath, exes)
+func (f *Executor) Update(exes envdef.ExecutablePaths) error {
+	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	if err := f.Cleanup(exes); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
@@ -68,13 +68,13 @@ func (f *Executor) Update(exes runtime.Executables) error {
 }
 
 func (f *Executor) Cleanup(keep []string) error {
-	if !fileutils.DirExists(f.binPath) {
+	if !fileutils.DirExists(f.executorPath) {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(f.binPath)
+	files, err := ioutil.ReadDir(f.executorPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not read dir: %s", f.binPath)
+		return errs.Wrap(err, "Could not read dir: %s", f.executorPath)
 	}
 
 	for _, file := range files {
@@ -86,7 +86,7 @@ func (f *Executor) Cleanup(keep []string) error {
 			continue
 		}
 
-		filePath := filepath.Join(f.binPath, file.Name())
+		filePath := filepath.Join(f.executorPath, file.Name())
 		b, err := fileutils.ReadFile(filePath)
 		if err != nil {
 			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())
@@ -104,8 +104,8 @@ func (f *Executor) Cleanup(keep []string) error {
 }
 
 func (f *Executor) createExecutor(exe string) error {
-	name := nameExecutor(filepath.Base(exe))
-	target := filepath.Clean(filepath.Join(f.binPath, name))
+	name := NameForExe(filepath.Base(exe))
+	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
 
@@ -125,12 +125,12 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	tplParams := map[string]interface{}{
-		"state":       appinfo.StateApp().Exec(),
-		"exe":         filepath.Base(exe),
-		"projectPath": f.projectPath,
-		"denote":      []string{executorDenoter, denoteTarget},
+		"state":      appinfo.StateApp().Exec(),
+		"exe":        filepath.Base(exe),
+		"targetPath": f.targetPath,
+		"denote":     []string{executorDenoter, denoteTarget},
 	}
-	box := packr.NewBox("../../assets/executors")
+	box := packr.NewBox("../../../../assets/executors")
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
 		boxFile = "executor.bat"
@@ -150,12 +150,20 @@ func (f *Executor) createExecutor(exe string) error {
 
 func containsBase(sourcePaths []string, targetPath string) bool {
 	for _, p := range sourcePaths {
-		p = nameExecutor(p)
+		p = NameForExe(p)
 		if filepath.Base(p) == filepath.Base(targetPath) {
 			return true
 		}
 	}
 	return false
+}
+
+func IsExecutor(filePath string) (bool, error) {
+	b, err := fileutils.ReadFile(filePath)
+	if err != nil {
+		return false, locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", filePath)
+	}
+	return isOwnedByUs(b), nil
 }
 
 func isOwnedByUs(fileContents []byte) bool {

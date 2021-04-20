@@ -47,7 +47,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv(constants.ProjectEnvVarName)
 
 	venv := New(runtime.DisabledRuntime)
-	env, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	env, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
 	require.NoError(t, err)
 
 	assert.NotContains(t, env, constants.ProjectEnvVarName)
