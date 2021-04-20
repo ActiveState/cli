@@ -274,11 +274,11 @@ func TestCopyFilesAndRename(t *testing.T) {
 	err = Mkdir(destDir)
 	require.NoError(t, err)
 
-	err = os.WriteFile(sourceFile1, []byte("overwritten"), 0660)
+	err = ioutil.WriteFile(sourceFile1, []byte("overwritten"), 0660)
 	require.NoError(t, err)
-	err = os.WriteFile(sourceFile2, []byte("new"), 0660)
+	err = ioutil.WriteFile(sourceFile2, []byte("new"), 0660)
 	require.NoError(t, err)
-	err = os.WriteFile(existingFile, []byte("original"), 0660)
+	err = ioutil.WriteFile(existingFile, []byte("original"), 0660)
 
 	err = CopyAndRenameFiles(sourceDir, destDir)
 	require.NoError(t, err)
