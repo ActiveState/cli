@@ -14,10 +14,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -121,7 +121,7 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		desiredVersion = ""
 	}
 
-	up := updater.Updater{
+	up := legacyupd.Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,

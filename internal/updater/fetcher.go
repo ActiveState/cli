@@ -1,4 +1,4 @@
-package updater2
+package updater
 
 import (
 	"crypto/sha256"

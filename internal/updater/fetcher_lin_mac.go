@@ -1,6 +1,6 @@
 // +build linux darwin
 
-package updater2
+package updater
 
 import "github.com/ActiveState/cli/internal/unarchiver"
 

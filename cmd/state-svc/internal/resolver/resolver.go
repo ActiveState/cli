@@ -11,9 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/updater2"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -53,7 +53,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if version != nil {
 		ver = *version
 	}
-	up, err := updater2.DefaultChecker.CheckFor(ch, ver)
+	up, err := legacyupd.DefaultChecker.CheckFor(ch, ver)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to check for update")
 	}

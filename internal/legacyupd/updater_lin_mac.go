@@ -1,6 +1,6 @@
 // +build !windows
 
-package updater
+package legacyupd
 
 import (
 	"archive/tar"
