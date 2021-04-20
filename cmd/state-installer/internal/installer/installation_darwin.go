@@ -12,62 +12,36 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-const (
-	contentsDir  = "/Applications/ActiveState Desktop.app/Contents"
-	macOSDir     = "MacOS"
-	resourcesDir = "Resources"
-	iconBundle   = "state-tray.icns"
-	infoFile     = "Info.plist"
-)
+const appDir = "/Applications/ActiveState Desktop.app"
 
 // InstallSystemFiles installs files in the /Application directory
 func InstallSystemFiles(installDir string) error {
-	err := createAppDirStructure()
-	if err != nil {
-		return errs.Wrap(err, "Could not create app directory structure")
-	}
-
-	err = populateAppDir(installDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not populate state-tray app directory")
-	}
-
-	return nil
-}
-
-func createAppDirStructure() error {
-	err := fileutils.Mkdir(filepath.Join(contentsDir))
+	err := fileutils.Mkdir(appDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not create Contents app dir")
 	}
 
-	err = fileutils.Mkdir(filepath.Join(contentsDir, macOSDir))
+	box := packr.NewBox("../../../../assets/macOS/ActiveState Desktop.App")
+	err = box.Walk(func(path string, file packr.File) error {
+		if fileutils.IsDir(path) {
+			err := fileutils.Mkdir(filepath.Join(appDir, path))
+			if err != nil {
+				return errs.Wrap(err, "Could not create directory")
+			}
+		} else {
+			err := fileutils.WriteFile(filepath.Join(appDir, path), box.Bytes(path))
+			if err != nil {
+				return errs.Wrap(err, "Could not write icon file")
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return errs.Wrap(err, "Could not create MacOS app dir")
-	}
-
-	err = fileutils.Mkdir(filepath.Join(contentsDir, resourcesDir))
-	if err != nil {
-		return errs.Wrap(err, "Could not create Resources app dir")
-	}
-
-	return nil
-}
-
-func populateAppDir(installDir string) error {
-	box := packr.NewBox("../../../../assets/macOS")
-	err := fileutils.WriteFile(filepath.Join(contentsDir, resourcesDir, iconBundle), box.Bytes(iconBundle))
-	if err != nil {
-		return errs.Wrap(err, "Could not write icon file")
-	}
-
-	err = fileutils.WriteFile(filepath.Join(contentsDir, infoFile), box.Bytes(infoFile))
-	if err != nil {
-		return errs.Wrap(err, "Could not write info plist file")
+		return errs.Wrap(err, "Could not create application directory")
 	}
 
 	trayInfo := appinfo.TrayApp()
-	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(contentsDir, macOSDir, filepath.Base(trayInfo.Exec())))
+	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(appDir, "Contents", "MacOS", filepath.Base(trayInfo.Exec())))
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}
