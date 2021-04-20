@@ -67,14 +67,14 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
+	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {
 		return err
 	}
 	s.sub.SetEnv(env)
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, "")
+	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}

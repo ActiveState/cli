@@ -18,13 +18,23 @@ func execDir(baseDir ...string) string {
 	if len(baseDir) > 0 {
 		return baseDir[0]
 	}
-	e, err := os.Executable()
+	path, err := os.Executable()
 	if err != nil {
-		logging.Debug("Could not determine executable directory: %v", err)
-		e, _ = filepath.Abs(os.Args[0])
+		logging.Error("Could not determine executable directory: %v", err)
+		path, err = filepath.Abs(os.Args[0])
+		if err != nil {
+			logging.Error("Could not get absolute directory of os.Args[0]", err)
+		}
 	}
 
-	return filepath.Base(e)
+	pathEvaled, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		logging.Error("Could not eval symlinks: %v", err)
+	} else {
+		path = pathEvaled
+	}
+
+	return filepath.Dir(path)
 }
 
 func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
