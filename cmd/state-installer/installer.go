@@ -44,7 +44,7 @@ func _run() bool {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
-		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
+		out.Error(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
 		return false
 	}
 
@@ -133,7 +133,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
 		rcFile, err := shell.RcFile()
 		if err == nil {
-			out.Notice(fmt.Sprintf("Please either run 'source %s' or start a new login shell in order to start using the State Tool executable.", rcFile))
+			out.Notice("Please start a new shell in order to start using the State Tool executable.")
 		} else {
 			out.Notice("Please start a new login shell in order to start using the State Tool executable.")
 		}
