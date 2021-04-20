@@ -26,29 +26,22 @@ import (
 )
 
 func main() {
-	if !_run() {
-		os.Exit(1)
-	}
-}
-
-func _run() bool {
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
-	defer rollbar.Close()
 
 	out := mustOutputer()
-	err := run(out)
-	if err != nil {
+	if err := run(out); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
 		out.Print(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
-		return false
-	}
 
-	return true
+		rollbar.Close()
+		os.Exit(1)
+	}
+	rollbar.Close()
 }
 
 func run(out output.Outputer) error {
