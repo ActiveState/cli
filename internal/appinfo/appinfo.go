@@ -17,14 +17,14 @@ type AppInfo struct {
 func TrayApp() *AppInfo {
 	return &AppInfo{
 		constants.TrayAppName,
-		exePath(filepath.Join(filepath.Dir(os.Args[0]), "state-tray") + osutils.ExeExt),
+		exePath("state-tray"),
 	}
 }
 
 func StateApp() *AppInfo {
 	return &AppInfo{
 		constants.StateAppName,
-		exePath(filepath.Join(filepath.Dir(os.Args[0]), "state") + osutils.ExeExt),
+		exePath("state"),
 	}
 }
 
