@@ -22,7 +22,7 @@ func InstallSystemFiles(installDir string) error {
 	}
 
 	box := packr.NewBox("../../../../assets/macOS/ActiveState Desktop.App")
-	err = box.Walk(func(path string, file packr.File) error {
+	err = box.Walk(func(path string, _ packr.File) error {
 		if fileutils.IsDir(path) {
 			err := fileutils.Mkdir(filepath.Join(appDir, path))
 			if err != nil {
