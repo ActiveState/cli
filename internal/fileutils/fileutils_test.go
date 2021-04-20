@@ -284,11 +284,11 @@ func TestCopyFilesAndRename(t *testing.T) {
 	require.NoError(t, err)
 	require.DirExists(t, destDir)
 	assert.FileExists(t, destFile2)
-	b, err := os.ReadFile(destFile2)
+	b, err := ioutil.ReadFile(destFile2)
 	require.NoError(t, err)
 	assert.Equal(t, "new", string(b))
 	assert.FileExists(t, existingFile)
-	b, err = os.ReadFile(existingFile)
+	b, err = ioutil.ReadFile(existingFile)
 	require.NoError(t, err)
 	assert.Equal(t, "overwritten", string(b))
 }
