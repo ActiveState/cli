@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -225,49 +227,112 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string) string {
-	regex := regexp.MustCompile(`Refer to logfile (.*) for progress.`)
+	regex := regexp.MustCompile(`Refer to log *file *(.*) *for *progress.`)
 	resultLogfile := regex.FindStringSubmatch(output)
 
-	suite.Equal(len(resultLogfile), 2, "expected to have logfile in output.")
+	suite.Require().Equal(len(resultLogfile), 2, "expected to have logfile in output %s", output)
 
-	return suite.pollForUpdateFromLogfile(resultLogfile[1])
+	return suite.pollForUpdateFromLogfile(strings.TrimSpace(resultLogfile[1]))
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
 	// poll for successful auto-update
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 30; i++ {
 		time.Sleep(time.Millisecond * 200)
 
 		logs, err := ioutil.ReadFile(logFile)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
 		suite.NoError(err)
 		if strings.Contains(string(logs), "was successful") || strings.Contains(string(logs), "Installation failed") {
 			return string(logs)
 		}
 	}
 
+	suite.T().Errorf("did not find logFile %s", logFile)
 	return ""
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
+	tests := []struct {
+		Name             string
+		StateToolRunning bool
+		ExpectSuccess    bool
+	}{
+		{
+			Name:             "all-resources-free",
+			StateToolRunning: false,
+			ExpectSuccess:    true,
+		},
+		{
+			Name:             "old-state-tool-running",
+			StateToolRunning: true,
+			ExpectSuccess:    runtime.GOOS != "windows", // On Windows we cannot replace a State Tool that is still running.
+		},
+	}
+	for _, tt := range tests {
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
-	cp.ExpectExitCode(0)
+			suite.addProjectFileWithWaitingScript(ts.Dirs.Work)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating State Tool to latest version available")
-	cp.Expect(fmt.Sprintf("Version updating to %s@99.99.9999 in the background", constants.BranchName))
-	cp.ExpectExitCode(0)
+			// Ensure we always use a unique exe for updates
+			ts.UseDistinctStateExes()
 
-	logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
-	suite.Assert().Contains(logs, "was successful")
+			stopBg := make(chan struct{})
+			var wg sync.WaitGroup
 
-	suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+			if tt.StateToolRunning {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					bgCp := ts.SpawnWithOpts(e2e.WithArgs("run", "wait", "10"), e2e.AppendEnv(suite.env(false)...), e2e.BackgroundProcess())
+					// need to close background process manually
+					defer bgCp.Close()
+					select {
+					case <-stopBg:
+					case <-time.After(time.Second * 10):
+					}
+					bgCp.Expect("Waiting for input")
+					// interrupting the background process
+					bgCp.SendLine("")
+					bgCp.ExpectExitCode(0)
+				}()
+			}
+			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
+			cp.ExpectExitCode(0)
+
+			fakeHome := filepath.Join(ts.Dirs.Work, "home")
+			err := fileutils.Mkdir(fakeHome)
+			suite.Require().NoError(err)
+
+			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+			cp.Expect("Updating State Tool to latest version available")
+			cp.Expect(fmt.Sprintf("Version update to %s@99.99.9999 has started", constants.BranchName))
+			cp.ExpectExitCode(0)
+
+			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+
+			// tell background process to stop...
+			close(stopBg)
+			// ...and wait for it
+			wg.Wait()
+
+			if tt.ExpectSuccess {
+				suite.Assert().Contains(logs, "was successful")
+				suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+			} else {
+				suite.Assert().Contains(logs, "Installation failed")
+				suite.Assert().Contains(logs, "Successfully restored original files")
+				suite.versionCompare(ts, true, constants.Version, suite.Equal)
+			}
+			suite.Assert().Contains(logs, "Removed all backup files.")
+		})
+	}
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
@@ -331,4 +396,17 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 
 func lockedProjectURL() string {
 	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+}
+
+func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(workDir string) {
+	pjfile := projectfile.Project{
+		Project: fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL),
+		Scripts: []projectfile.Script{
+			{Name: "wait", Value: "read -p \"Waiting for input\" -t $1", Conditional: "ne .OS.Name \"Windows\"", Language: "bash"},
+			{Name: "wait", Value: "echo \"Waiting for input\"\ntimeout %1", Conditional: "eq .OS.Name \"Windows\"", Language: "cmd"},
+		},
+	}
+	pjfile.SetPath(filepath.Join(workDir, constants.ConfigFileName))
+	err := pjfile.Save(suite.cfg)
+	suite.Require().NoError(err)
 }
