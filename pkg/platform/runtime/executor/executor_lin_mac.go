@@ -2,6 +2,6 @@
 
 package executor
 
-func nameExecutor(exe string) string {
+func NameForExe(exe string) string {
 	return exe
 }

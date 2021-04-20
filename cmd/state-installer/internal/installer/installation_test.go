@@ -115,14 +115,14 @@ func TestInstallation(t *testing.T) {
 			if tt.ExpectSuccess {
 				require.NoError(t, err)
 
-				err = inst.Close()
+				err = inst.RemoveBackupFiles()
 				require.NoError(t, err)
 
 				assertSuccessfulInstallation(t, to)
 			} else {
 				require.Error(t, err)
 
-				err = inst.Close()
+				err = inst.RemoveBackupFiles()
 				require.NoError(t, err)
 
 				assertRevertedInstallation(t, to)
