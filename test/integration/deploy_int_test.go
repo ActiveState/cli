@@ -189,7 +189,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		errorLevel = `echo %ERRORLEVEL%`
 	}
 
-	cp.SendLine("VERBOSE=true python3 --version")
+	cp.SendLine("python3 --version")
 	cp.Expect("Python 3")
 	cp.SendLine(errorLevel)
 	cp.Expect("0")
@@ -377,7 +377,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
+	cp.Expect("exec") // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
