@@ -101,7 +101,8 @@ func run() error {
 	)
 
 	systray.AddSeparator()
-	enabled, err := autostart.New().IsEnabled()
+	as := autostart.New()
+	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
