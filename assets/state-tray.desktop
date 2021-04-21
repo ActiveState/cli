@@ -1,15 +1,14 @@
 [Desktop Entry]
 Name=ActiveState Desktop
-GenericName=ActiveState Platform Desktop Interface
+GenericName=Language Runtime Manager
 Type=Application
 Comment=Manage ActiveState Platform Projects
-Exec="/home/devx1/code/src/github.com/ActiveState/cli/build/state-tray"
+Exec="state-tray"
 Terminal=false
 Keywords=activestate;state;tray;language;runtime;python;perl;tcl;
 Categories=Utility;Development;
 Hidden=false
 NoDisplay=false
-X-GNOME-Autostart-enabled=true
 StartupNotify=false
-Icon="/home/devx1/code/src/github.com/ActiveState/cli/build/state-tray"
-Name[en_US]=state-tray.desktop
+Icon="state-tray"
+Name[en_US]=ActiveState Desktop
