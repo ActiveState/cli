@@ -360,11 +360,6 @@ case "$RESPONSE" in
     ;;
 esac
 
-
-manual_update_instructions() {
-  info "State Tool installation complete."
-}
-
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
@@ -377,7 +372,7 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
 fi
 
 
-manual_update_instructions
+info "State Tool installation complete."
 
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
