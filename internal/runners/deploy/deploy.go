@@ -200,7 +200,7 @@ func (d *Deploy) configure(rtTarget setup.Targeter, userScope bool) error {
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
+	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}

@@ -508,6 +508,61 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 	return nil
 }
 
+// CopyAndRenameFiles copies files from fromDir to toDir.
+// If the target file exists already, it is first copied next to it, and then overwritten by renaming it.
+// This method is more robust and than copying directly, in case the target file is opened or executed.
+func CopyAndRenameFiles(fromPath, toPath string) error {
+	if !DirExists(fromPath) {
+		return locale.NewError("err_os_not_a_directory", "", fromPath)
+	} else if !DirExists(toPath) {
+		return locale.NewError("err_os_not_a_directory", "", toPath)
+	}
+
+	// read all child files and dirs
+	dir, err := os.Open(fromPath)
+	if err != nil {
+		return errs.Wrap(err, "os.Open %s failed", fromPath)
+	}
+	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
+	if err != nil {
+		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
+	}
+
+	// any found files and dirs
+	for _, fileInfo := range fileInfos {
+		fromPath := filepath.Join(fromPath, fileInfo.Name())
+		toPath := filepath.Join(toPath, fileInfo.Name())
+		if TargetExists(toPath) {
+			tmpToPath := fmt.Sprintf("%s.new", toPath)
+			err := CopyFile(fromPath, tmpToPath)
+			if err != nil {
+				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
+			}
+			err = os.Chmod(tmpToPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
+			}
+			err = os.Rename(tmpToPath, toPath)
+			if err != nil {
+				// cleanup
+				_ = os.Remove(tmpToPath)
+				return errs.Wrap(err, "os.Rename %s -> %s failed", tmpToPath, toPath)
+			}
+		} else {
+			err := CopyFile(fromPath, toPath)
+			if err != nil {
+				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
+			}
+			err = os.Chmod(toPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", toPath)
+			}
+		}
+	}
+	return nil
+}
+
 // MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
 // must already exist.
 func MoveAllFiles(fromPath, toPath string) error {

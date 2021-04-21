@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -41,7 +42,9 @@ func TestRunCommand(t *testing.T) {
 		os.Setenv("SHELL", "bash")
 	}
 
-	subs := New()
+	cfg, err := config.Get()
+	require.NoError(t, err)
+	subs := New(cfg)
 
 	filename, err := fileutils.WriteTempFile("", "testRunCommand*.bat", data, 0700)
 	require.NoError(t, err)

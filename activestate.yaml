@@ -24,6 +24,9 @@ constants:
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: ./build/state-svc
+  - name: BUILD_INSTALLER_TARGET
+    if: ne .OS.Name "Windows"
+    value: ./build/state-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -88,6 +91,12 @@ scripts:
     value: |
       set -e
       go build -o $constants.BUILD_DAEMON_TARGET ./cmd/state-svc
+  - name: build-installer
+    language: bash
+    description: Builds the state-installer
+    value: |
+      set -e
+      go build -o $constants.BUILD_INSTALLER_TARGET ./cmd/state-installer
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN

@@ -14,42 +14,17 @@ type AppInfo struct {
 	executable string
 }
 
-func TrayApp() *AppInfo {
-	return &AppInfo{
-		constants.TrayAppName,
-		exePath("state-tray"),
+func execDir(baseDir ...string) string {
+	if len(baseDir) > 0 {
+		return baseDir[0]
 	}
-}
-
-func StateApp() *AppInfo {
-	return &AppInfo{
-		constants.StateAppName,
-		exePath("state"),
-	}
-}
-
-func SvcApp() *AppInfo {
-	return &AppInfo{
-		constants.SvcAppName,
-		exePath("state-svc"),
-	}
-}
-
-func (a *AppInfo) Name() string {
-	return a.name
-}
-
-func (a *AppInfo) Exec() string {
-	return a.executable
-}
-
-func exePath(exeName string) string {
-	fallback := filepath.Join(filepath.Dir(os.Args[0]), exeName+osutils.ExeExt)
-
 	path, err := os.Executable()
 	if err != nil {
-		logging.Errorf("Could not get executable path for: %v", err)
-		return fallback
+		logging.Error("Could not determine executable directory: %v", err)
+		path, err = filepath.Abs(os.Args[0])
+		if err != nil {
+			logging.Error("Could not get absolute directory of os.Args[0]", err)
+		}
 	}
 
 	pathEvaled, err := filepath.EvalSymlinks(path)
@@ -59,5 +34,32 @@ func exePath(exeName string) string {
 		path = pathEvaled
 	}
 
-	return filepath.Join(filepath.Dir(path), exeName+osutils.ExeExt)
+	return filepath.Dir(path)
+}
+
+func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
+	return &AppInfo{
+		name,
+		filepath.Join(execDir(baseDir...), executableBase+osutils.ExeExt),
+	}
+}
+
+func TrayApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.TrayAppName, "state-tray", baseDir...)
+}
+
+func StateApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.StateAppName, "state", baseDir...)
+}
+
+func SvcApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.SvcAppName, "state-svc", baseDir...)
+}
+
+func (a *AppInfo) Name() string {
+	return a.name
+}
+
+func (a *AppInfo) Exec() string {
+	return a.executable
 }
