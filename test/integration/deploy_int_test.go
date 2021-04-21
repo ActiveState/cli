@@ -298,8 +298,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
-		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target", "exec"), "Windows user PATH should contain our executor dir")
+		suite.containsWindowsDirectory(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
+		suite.containsWindowsDirectory(string(out), filepath.Join(ts.Dirs.Work, "target", "exec"), "Windows user PATH should contain our executor dir")
 	}
 }
 
@@ -316,17 +316,21 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+		suite.Require().NoError(err)
 
-		// we need to look for either the short or the long version of the target PATH, because Windows translates between them arbitrarily
-		suite.Require().NoError(err)
 		targetDir := filepath.Join(ts.Dirs.Work, "target")
-		shortPath, err := fileutils.GetShortPathName(targetDir)
-		suite.Require().NoError(err)
-		longPath, err := fileutils.GetLongPathName(targetDir)
-		suite.Require().NoError(err)
-		if !strings.Contains(string(out), shortPath) && !strings.Contains(string(out), longPath) {
-			suite.Fail("Windows system PATH should contain our target dir %s, got = %s", targetDir, string(out))
-		}
+		suite.containsWindowsDirectory(string(out), targetDir, "Windows system PATH should contain our target dir")
+	}
+}
+
+func (suite *DeployIntegrationTestSuite) containsWindowsDirectory(out, dir, message string) {
+	// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
+	shortPath, err := fileutils.GetShortPathName(dir)
+	suite.Require().NoError(err)
+	longPath, err := fileutils.GetLongPathName(dir)
+	suite.Require().NoError(err)
+	if !strings.Contains(out, shortPath) && !strings.Contains(out, longPath) && !strings.Contains(out, dir) {
+		suite.T().Errorf("%s: %s does not contain \"%s\", \"%s\" or \"%s\"", message, out, dir, shortPath, longPath)
 	}
 }
 
