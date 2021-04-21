@@ -377,7 +377,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect("exec") // expect bin dir
+	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
