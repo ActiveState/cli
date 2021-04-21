@@ -7,8 +7,10 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/gobuffalo/packr"
+
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
@@ -53,6 +55,17 @@ func (f *Executor) BinPath() string {
 
 func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
+
+	// We need to cover the use case of someone running perl.exe/python.exe
+	// Proper fix scheduled here https://www.pivotaltracker.com/story/show/177845386
+	if rt.GOOS == "windows" {
+		for _, exe := range exes {
+			if !strings.HasSuffix(exe, exeutils.Extension) {
+				continue
+			}
+			exes = append(exes, exe+exeutils.Extension) // Double up on the ext so only the first on gets dropped
+		}
+	}
 
 	if err := f.Cleanup(exes); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
@@ -106,6 +119,16 @@ func (f *Executor) Cleanup(keep []string) error {
 func (f *Executor) createExecutor(exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
+
+	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
+		// This is super awkward, but we have a double .exe to temporarily work around an issue that will be fixed
+		// more correctly here - https://www.pivotaltracker.com/story/show/177845386
+		exe = strings.TrimSuffix(exe, exeutils.Extension)
+	}
+
+	if err := fileutils.MkdirUnlessExists(f.executorPath); err != nil {
+		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", f.executorPath)
+	}
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
 
