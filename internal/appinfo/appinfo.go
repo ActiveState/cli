@@ -14,10 +14,33 @@ type AppInfo struct {
 	executable string
 }
 
+func execDir(baseDir ...string) string {
+	if len(baseDir) > 0 {
+		return baseDir[0]
+	}
+	path, err := os.Executable()
+	if err != nil {
+		logging.Error("Could not determine executable directory: %v", err)
+		path, err = filepath.Abs(os.Args[0])
+		if err != nil {
+			logging.Error("Could not get absolute directory of os.Args[0]", err)
+		}
+	}
+
+	pathEvaled, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		logging.Error("Could not eval symlinks: %v", err)
+	} else {
+		path = pathEvaled
+	}
+
+	return filepath.Dir(path)
+}
+
 func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
 	return &AppInfo{
 		name,
-		exePath(executableBase, baseDir...),
+		filepath.Join(execDir(baseDir...), executableBase+osutils.ExeExt),
 	}
 }
 
@@ -39,27 +62,4 @@ func (a *AppInfo) Name() string {
 
 func (a *AppInfo) Exec() string {
 	return a.executable
-}
-
-func exePath(exeName string, baseDir ...string) string {
-	if len(baseDir) > 0 {
-		return filepath.Join(baseDir[0], exeName)
-	}
-
-	fallback := filepath.Join(filepath.Dir(os.Args[0]), exeName+osutils.ExeExt)
-
-	path, err := os.Executable()
-	if err != nil {
-		logging.Errorf("Could not get executable path for: %v", err)
-		return fallback
-	}
-
-	pathEvaled, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		logging.Error("Could not eval symlinks: %v", err)
-	} else {
-		path = pathEvaled
-	}
-
-	return filepath.Join(filepath.Dir(path), exeName+osutils.ExeExt)
 }

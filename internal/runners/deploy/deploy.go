@@ -88,13 +88,13 @@ func (d *Deploy) Run(params *Params) error {
 
 	if d.step == UnsetStep || d.step == InstallStep {
 		logging.Debug("Running install step")
-		if err := d.install(rtTarget); err != nil {
+		if err := d.install(params.Namespace, rtTarget); err != nil {
 			return err
 		}
 	}
 	if d.step == UnsetStep || d.step == ConfigureStep {
 		logging.Debug("Running configure step")
-		if err := d.configure(params.Namespace, rtTarget, params.UserScope); err != nil {
+		if err := d.configure(rtTarget, params.UserScope); err != nil {
 			return err
 		}
 	}
@@ -138,7 +138,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(rtTarget setup.Targeter) error {
+func (d *Deploy) install(namespace project.Namespaced, rtTarget setup.Targeter) error {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
 	rti, err := runtime.New(rtTarget)
@@ -163,30 +163,9 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		}
 	}
 
-	d.output.Print(locale.Tl("deploy_install_done", "Installation completed"))
-	return nil
-}
-
-func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget)
-	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
-			return locale.NewInputError("err_deploy_run_install")
-		}
-		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
-	}
-
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := rti.Env(false, true)
 	if err != nil {
 		return err
-	}
-
-	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
-
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
 	binPath := filepath.Join(rtTarget.Dir(), "bin")
@@ -201,6 +180,31 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}
 
+	d.output.Print(locale.Tl("deploy_install_done", "Installation completed"))
+	return nil
+}
+
+func (d *Deploy) configure(rtTarget setup.Targeter, userScope bool) error {
+	rti, err := runtime.New(rtTarget)
+	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
+		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
+	}
+
+	env, err := rti.Env(false, true)
+	if err != nil {
+		return err
+	}
+
+	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
+
+	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
+	}
+
 	return nil
 }
 
@@ -213,12 +217,6 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
-	if err != nil {
-		return err
-	}
-
 	var path string
 	if rt.GOOS != "windows" {
 		// Retrieve path to write symlinks to
@@ -228,10 +226,10 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		}
 	}
 
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
+	// Retrieve artifact binary directories
+	bins, err := rti.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
 
 	exes, err := exeutils.Executables(bins)
@@ -321,12 +319,6 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	return nil
 }
 
-type exeFile struct {
-	fpath string
-	name  string
-	ext   string
-}
-
 type Report struct {
 	BinaryDirectories []string
 	Environment       map[string]string
@@ -342,7 +334,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 	}
 
 	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}

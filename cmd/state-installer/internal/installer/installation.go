@@ -1,10 +1,10 @@
 package installer
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -26,15 +26,7 @@ func backupFiles(targetFiles []string) ([]string, error) {
 			if fileutils.TargetExists(newName) {
 				_ = os.Remove(newName)
 			}
-			var err error
-			if runtime.GOOS == "windows" {
-				// Note: We could also rename the files here, in which case the installation would always pass on Windows (even if the executable is still running), but we would not be able to remove the .bak file after the installation (if the executable is still running).
-				// We opted for this solution, as it is more compliant with other Windows installations, where the installation requires all existing programmes to be stopped prior to updates.
-				err = fileutils.CopyFile(t, newName)
-			} else {
-				err = os.Rename(t, newName)
-			}
-			if err != nil {
+			if err := os.Rename(t, newName); err != nil {
 				// restore already renamed files and return with error
 				_ = restoreFiles(renamed)
 				return nil, errs.Wrap(err, "Failed to backup file %s", t)
@@ -60,29 +52,31 @@ func restoreFiles(backupFiles []string) error {
 	return nil
 }
 
-func removeBackupFiles(backupFiles []string) error {
-	var errors []error
-	for _, b := range backupFiles {
-		err := os.Remove(b)
-		if err != nil {
-			errors = append(errors, err)
-		}
-	}
-	if len(errors) > 0 {
-		return errs.Wrap(errors[0], "Failed to remove some back-up files")
-	}
-
-	return nil
-}
-
 func New(fromDir, toDir string) *Installation {
 	return &Installation{
 		fromDir, toDir, nil,
 	}
 }
 
-func (i *Installation) Close() error {
-	return removeBackupFiles(i.backups)
+func (i *Installation) RemoveBackupFiles() error {
+	var es []error
+	for _, b := range i.backups {
+		err := os.Remove(b)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			// On Windows, if the executable was still running, the removal of the backup could fail here.
+			// We are trying to hide the file such that a .bak file does not (visually!) litter the folder.
+			errHide := fileutils.HideFile(b)
+			if errHide != nil {
+				logging.Error("Encountered error hiding file %s: %v", b, err)
+			}
+			es = append(es, err)
+		}
+	}
+	if len(es) > 0 {
+		return errs.Wrap(es[0], "Failed to remove some back-up files")
+	}
+
+	return nil
 }
 
 func (i *Installation) BackupFiles() error {

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
@@ -92,9 +93,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
@@ -118,6 +123,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+
+	// Test that executor exists    and works
+	exec := filepath.Join(ts.Dirs.Work, "target", "exec", executor.NameForExe("perl"))
+	cp = ts.SpawnCmdWithOpts(exec, e2e.WithArgs("--version"))
+	cp.Expect("This is perl 5")
+	cp.ExpectExitCode(0)
+
+	suite.Require().True(executor.IsExecutor(exec))
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
@@ -161,9 +174,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
@@ -171,6 +188,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	if runtime.GOOS == "windows" {
 		errorLevel = `echo %ERRORLEVEL%`
 	}
+
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3")
 	cp.SendLine(errorLevel)
@@ -280,6 +298,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
 		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
+		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target", "exec"), "Windows user PATH should contain our executor dir")
 	}
 }
 
@@ -358,7 +377,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
+	cp.Expect("exec") // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
