@@ -10,7 +10,7 @@ constants:
     value: ./cmd/state-svc
   - name: INSTALLER_PKGS
     value: ./cmd/state-installer
-  - name: BUILD_TARGET_DIR
+  - name: BUILD_TARGET_PREFIX_DIR
     value: ./build
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
@@ -39,7 +39,7 @@ constants:
       fi
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
-      BUILD_TARGET_DIR=$constants.BUILD_TARGET_DIR/${GOARCH#amd64}
+      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
 scripts:
   - name: install-deps
     language: bash
@@ -129,20 +129,25 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_DIR}/update us-east-1 state-tool update/state
+      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
     if: ne .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
-      cp installers/install.sh build/install.sh
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      mkdir -p $INSTALLERS_DIR
+
+      cp installers/install.sh $INSTALLERS_DIR/install.sh
+      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/install.sh us-east-1 state-tool update/state/install.sh
-      go run scripts/s3-deployer/main.go build/install.ps1 us-east-1 state-tool update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state/
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash
