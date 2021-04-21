@@ -10,5 +10,5 @@ Categories=Utility;Development;
 Hidden=false
 NoDisplay=false
 StartupNotify=false
-Icon="state-tray"
+Icon=state-tray
 Name[en_US]=ActiveState Desktop

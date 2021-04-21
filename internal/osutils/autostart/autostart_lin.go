@@ -5,7 +5,6 @@ package autostart
 import (
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -28,10 +27,11 @@ func (a *App) Enable() error {
 		return nil
 	}
 
-	path, err := filePath(autostartDir)
+	dir, err := dirPath(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get autostart file")
 	}
+	path := filepath.Join(dir, launchFile)
 
 	if err = os.Symlink(appPath, path); err != nil {
 		return errs.Wrap(err, "Could not create symlink")
@@ -48,45 +48,63 @@ func (a *App) Disable() error {
 		return nil
 	}
 
-	path, err := filePath(autostartDir)
+	dir, err := dirPath(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get autostart file")
 	}
+	path := filepath.Join(dir, launchFile)
+
 	return os.Remove(path)
 }
 
 func (a *App) IsEnabled() (bool, error) {
-	path, err := filePath(autostartDir)
+	dir, err := dirPath(autostartDir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get autostart file")
 	}
+	path := filepath.Join(dir, launchFile)
+
 	return fileutils.FileExists(path), nil
 }
 
 const (
-	applicationDir   = ".local/share/applications"
-	autostartDir     = ".config/autostart"
-	launchFileUbuntu = "state-tray.desktop"
+	applicationDir = ".local/share/applications"
+	autostartDir   = ".config/autostart"
+	iconsDir       = ".local/share/icons/hicolor/scalable/apps"
+	launchFile     = "state-tray.desktop"
+	iconFileState  = "state-tray.svg"
+	iconFileBase   = "icon.svg"
 )
 
-func filePath(dir string) (string, error) {
+func dirPath(dir string) (string, error) {
 	homeDir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(homeDir, dir, launchFileUbuntu), nil
+	return filepath.Join(homeDir, dir), nil
 }
 
 func ensuredAppPath() (string, error) {
-	appPath, err := filePath(applicationDir)
+	appDir, err := dirPath(applicationDir)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get application file")
 	}
+	appPath := filepath.Join(appDir, launchFile)
 
 	if !fileutils.FileExists(appPath) {
 		box := packr.NewBox("../../../assets")
-		fileName := path.Base(appPath)
-		if err := fileutils.WriteFile(appPath, box.Bytes(fileName)); err != nil {
+
+		icons, err := dirPath(iconsDir)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not get icons directory")
+		}
+		iconPath := filepath.Join(icons, iconFileState)
+
+		if err := fileutils.WriteFile(iconPath, box.Bytes(iconFileBase)); err != nil {
+			return "", errs.Wrap(err, "Could not write icon file")
+		}
+
+		if err := fileutils.WriteFile(appPath, box.Bytes(launchFile)); err != nil {
 			return "", errs.Wrap(err, "Could not write application file")
 		}
 
