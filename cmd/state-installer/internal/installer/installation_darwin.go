@@ -12,17 +12,12 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-const appDir = "/Applications/ActiveState Desktop.app"
+const appDir = "/Applications"
 
 // InstallSystemFiles installs files in the /Application directory
 func InstallSystemFiles(installDir string) error {
-	err := fileutils.Mkdir(appDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not create Contents app dir")
-	}
-
-	box := packr.NewBox("../../../../assets/macOS/ActiveState Desktop.App")
-	err = box.Walk(func(path string, _ packr.File) error {
+	box := packr.NewBox("../../../../assets/macOS/app")
+	err := box.Walk(func(path string, _ packr.File) error {
 		if fileutils.IsDir(path) {
 			err := fileutils.Mkdir(filepath.Join(appDir, path))
 			if err != nil {
@@ -41,7 +36,7 @@ func InstallSystemFiles(installDir string) error {
 	}
 
 	trayInfo := appinfo.TrayApp()
-	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(appDir, "Contents", "MacOS", filepath.Base(trayInfo.Exec())))
+	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(appDir, "ActiveState Desktop.app", "Contents", "MacOS", filepath.Base(trayInfo.Exec())))
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}
