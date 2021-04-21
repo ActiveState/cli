@@ -11,10 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/logging"
-
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,16 +34,6 @@ func TestCmdExitCode(t *testing.T) {
 	err = cmd.Run()
 	assert.Error(t, err)
 	assert.Equal(t, 255, CmdExitCode(cmd), "Exits with code 255")
-}
-
-func TestExecuteAndPipeStd(t *testing.T) {
-	out, err := osutil.CaptureStdout(func() {
-		logging.SetLevel(logging.NOTHING)
-		defer logging.SetLevel(logging.NORMAL)
-		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
-	})
-	require.NoError(t, err)
-	assert.Equal(t, "--out--\n", out, "captures output")
 }
 
 func TestBashifyPath(t *testing.T) {

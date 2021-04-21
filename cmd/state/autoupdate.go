@@ -1,24 +1,27 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error) {
+func autoUpdate(args []string, cfg *config.Instance, pjPath string) (bool, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")
@@ -29,20 +32,30 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error)
 		return false, nil
 	}
 
-	updated, resultVersion := updater.AutoUpdate(pjPath, out)
-	if !updated {
+	// skip if version is locked
+	// Todo: This may change
+	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, nil
 	}
 
-	defer updater.Cleanup()
-
-	out.Notice(output.Heading(locale.Tl("auto_update_title", "Auto Update")))
-	out.Notice(locale.Tr("auto_update_to_version", constants.Version, resultVersion))
-	code, err := relaunch()
-	if err != nil {
-		return true, errs.WrapExitCode(err, code)
+	seconds := 1
+	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
+		override, err := strconv.Atoi(secondsOverride)
+		if err == nil {
+			seconds = override
+		}
 	}
-	return true, nil
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
+	defer cancel()
+	m, err := model.NewSvcModel(ctx, cfg)
+	if err != nil {
+		return false, errs.Wrap(err, "Failed to create state-svc model")
+	}
+	up, err := m.InitiateDeferredUpdate("", "")
+	if err != nil {
+		return false, errs.Wrap(err, "Failed schedule the update.")
+	}
+	return up.Channel != "" && up.Version != "", nil
 }
 
 // When an update was found and applied, re-launch the update with the current

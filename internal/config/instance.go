@@ -24,6 +24,9 @@ import (
 
 var defaultConfig *Instance
 
+const ConfigKeyShell = "shell"
+const ConfigKeyTrayPid = "tray-pid"
+
 // Instance holds our main config logic
 type Instance struct {
 	configDir     *configdir.Config
@@ -85,9 +88,9 @@ func configPathInTest() (string, error) {
 
 // New creates a new config instance
 func New() (*Instance, error) {
-	localPath := os.Getenv(C.ConfigEnvVarName)
+	localPath, envSet := os.LookupEnv(C.ConfigEnvVarName)
 
-	if condition.InTest() {
+	if !envSet && condition.InTest() {
 		var err error
 		localPath, err = configPathInTest()
 		if err != nil {

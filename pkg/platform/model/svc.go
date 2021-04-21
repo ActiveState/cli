@@ -41,3 +41,12 @@ func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 	}
 	return response.Projects, nil
 }
+
+func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.DeferredUpdate, error) {
+	r := request.NewUpdateRequest(channel, version)
+	u := graph.UpdateResponse{}
+	if err := m.client.Run(r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error updating to version %s at channel %s", version, channel)
+	}
+	return &u.DeferredUpdate, nil
+}
