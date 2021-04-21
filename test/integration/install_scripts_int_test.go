@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -9,11 +11,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -69,10 +74,13 @@ func getEnvironmentPath(userScope bool) string {
 	return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
 }
 
-func scriptPath(t *testing.T) string {
+func scriptPath(t *testing.T, legacy bool) string {
 	name := "install.ps1"
 	if runtime.GOOS != "windows" {
 		name = "install.sh"
+	}
+	if legacy {
+		name = "legacy-" + name
 	}
 	root := environment.GetRootPathUnsafe()
 	subdir := "installers"
@@ -87,15 +95,25 @@ func scriptPath(t *testing.T) string {
 
 type InstallScriptsIntegrationTestSuite struct {
 	tagsuite.Suite
+	cfg    projectfile.ConfigGetter
+	server *http.Server
 }
 
-func expectStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
+func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
 	cp.Expect("Allow $PATH to be appended in your")
 	cp.SendLine(addToPathAnswer)
+	cp.Expect("State Tool installation complete")
+}
+
+func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect("Fetching the latest version")
 	cp.Expect("State Tool installation complete")
 }
 
@@ -112,37 +130,79 @@ func expectDefaultActivation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Choose Destination")
 	cp.Send("")
 	cp.Expect("Cloning Repository")
-	cp.Expect("Downloading missing artifacts")
-	cp.Expect("Updating missing artifacts", 20*time.Second)
+	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")
 	cp.Expect("activated state")
 	cp.SendLine("exit")
+}
+
+func env(useTestBranch bool) []string {
+	var res []string
+	if useTestBranch {
+		res = append(res, "_TEST_UPDATE_URL=http://localhost:"+testPort)
+	}
+	return res
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
+	if runtime.GOOS == "windows" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false, env(true)...)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), true)
+
+	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
+	expectLegacyStateToolInstallation(cp, "n")
+	cp.Expect("State Tool Installed")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 	if runtime.GOOS == "windows" {
 		suite.T().SkipNow()
 	}
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
+	tests := []struct {
+		Name        string
+		TestInstall bool
+		Channel     string
+	}{
+		{"install-local-test-update", true, constants.BranchName},
+		// Todo Replace the target branch for this test to release, as soon as we have a working deployment there.
+		{"install-release", false, "beta"},
+	}
 
-	script := scriptPath(suite.T())
+	for _, tt := range tests {
+		if !tt.TestInstall {
+			// Todo update on beta
+			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
+		}
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false, env(tt.TestInstall)...)
+			defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
-	expectStateToolInstallation(cp, "n")
-	cp.Expect("State Tool Installed")
-	cp.ExpectExitCode(0)
+			script := scriptPath(suite.T(), false)
+
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
+			expectStateToolInstallation(cp)
+			cp.Expect("State Tool Installed")
+			cp.ExpectExitCode(0)
+		})
+	}
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32Default() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 	suite.runInstallTest("-c", "state activate ActiveState/Perl-5.32 --default")
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32ActivateDefault() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 	suite.runInstallTest("--activate-default", "ActiveState/Perl-5.32")
 }
 
@@ -150,42 +210,60 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	if runtime.GOOS != "windows" {
 		suite.T().SkipNow()
 	}
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
+	tests := []struct {
+		Name        string
+		TestInstall bool
+		Channel     string
+	}{
+		{"install-local-test-update", true, constants.BranchName},
+		// Todo Replace the target branch for this test to release, as soon as we have a working deployment there.
+		{"install-release", false, "beta"},
+	}
 
-	script := scriptPath(suite.T())
+	for _, tt := range tests {
+		if !tt.TestInstall {
+			// Todo update on beta
+			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
+		}
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false, env(tt.TestInstall)...)
+			defer ts.Close()
 
-	isAdmin, err := osutils.IsWindowsAdmin()
-	suite.Require().NoError(err, "Could not determine if running as administrator")
+			script := scriptPath(suite.T(), false)
 
-	cmdEnv := newCmdEnv(!isAdmin)
-	oldPathEnv, err := cmdEnv.get("PATH")
-	suite.Require().NoError(err, "could not get PATH")
+			isAdmin, err := osutils.IsWindowsAdmin()
+			suite.Require().NoError(err, "Could not determine if running as administrator")
 
-	defer func() {
-		err := cmdEnv.set("PATH", oldPathEnv)
-		suite.Assert().NoError(err, "Unexpected error re-setting paths")
-	}()
+			cmdEnv := newCmdEnv(!isAdmin)
+			oldPathEnv, err := cmdEnv.get("PATH")
+			suite.Require().NoError(err, "could not get PATH")
 
-	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work))
-	expectStateToolInstallationWindows(cp)
-	cp.ExpectExitCode(0)
+			defer func() {
+				err := cmdEnv.set("PATH", oldPathEnv)
+				suite.Assert().NoError(err, "Unexpected error re-setting paths")
+			}()
 
-	pathEnv, err := cmdEnv.get("PATH")
-	suite.Require().NoError(err, "could not get PATH")
-	paths := strings.Split(pathEnv, string(os.PathListSeparator))
-	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
+			cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
+			expectStateToolInstallationWindows(cp)
+			cp.ExpectExitCode(0)
+
+			pathEnv, err := cmdEnv.get("PATH")
+			suite.Require().NoError(err, "could not get PATH")
+			paths := strings.Split(pathEnv, string(os.PathListSeparator))
+			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
+		})
+	}
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 	suite.runInstallTestWindows("-c", "\"state activate ActiveState/Perl-5.32 --default\"")
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_ActivateDefaultWindows() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 	suite.runInstallTestWindows("-activate-default", "ActiveState/Perl-5.32")
 }
 
@@ -194,10 +272,10 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 		suite.T().SkipNow()
 	}
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), false, env(true)...)
 	defer ts.Close()
 
-	script := scriptPath(suite.T())
+	script := scriptPath(suite.T(), false)
 
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
@@ -212,7 +290,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 		)
 	}()
 
-	computedCommand := append([]string{script, "-t", ts.Dirs.Work}, installScriptArgs...)
+	computedCommand := append([]string{script, "-t", ts.Dirs.Work, "-b", constants.BranchName}, installScriptArgs...)
 
 	cp.ExpectExitCode(0)
 	cp = ts.SpawnCmdWithOpts(
@@ -220,7 +298,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 		e2e.WithArgs(computedCommand...),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL=bash"),
 	)
-	expectStateToolInstallation(cp, "y")
+	expectStateToolInstallation(cp)
 
 	expectDefaultActivation(cp)
 	cp.ExpectExitCode(0)
@@ -241,10 +319,10 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.T().SkipNow()
 	}
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), false, env(true)...)
 	defer ts.Close()
 
-	script := scriptPath(suite.T())
+	script := scriptPath(suite.T(), false)
 
 	isAdmin, err := osutils.IsWindowsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
@@ -258,7 +336,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.Assert().NoError(err, "Unexpected error re-setting paths")
 	}()
 
-	computedCommand := append([]string{script, "-t", ts.Dirs.Work}, installScriptArgs...)
+	computedCommand := append([]string{script, "-t", ts.Dirs.Work, "-b", constants.BranchName}, installScriptArgs...)
 
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
@@ -277,6 +355,29 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	}
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 }
+
+func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
+	root, err := environment.GetRootPath()
+	suite.Require().NoError(err)
+	testUpdateDir := filepath.Join(root, "build", "update")
+	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
+	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
+	go func() {
+		_ = suite.server.ListenAndServe()
+	}()
+
+	suite.cfg, err = config.Get()
+	suite.Require().NoError(err)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) AfterTest(suiteName, testName string) {
+	err := suite.server.Shutdown(context.Background())
+	suite.Require().NoError(err)
+}
+
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InstallScriptsIntegrationTestSuite))
 }
