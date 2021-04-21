@@ -38,6 +38,7 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 
 var targetBranch = "release"
 var testBranch = "test-channel"
+var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -69,9 +70,11 @@ func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
 	suite.Require().NoError(err)
 }
 
-func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
+// env prepares environment variables for the test
+// disableUpdates prevents all update code from running
+// testUpdate directs to the locally running update directory and requires that a test update bundles has been generated with `state run generate-test-update`
+func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []string {
 	env := []string{
-		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
 	}
 
@@ -81,10 +84,16 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
 	}
 
+	if testUpdate {
+		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort))
+	} else {
+		env = append(env, "%s=%s", constants.UpdateBranchEnvVarName, targetBranch)
+	}
+
 	return env
 }
 
-func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
+func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates, testUpdate bool, expected string, matcher matcherFunc) {
 	type versionData struct {
 		Version string `json:"version"`
 	}
@@ -94,18 +103,20 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 
 	before := fileutils.ListDir(ts.Dirs.Config, false)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 	cp.ExpectExitCode(0)
 
-	// short timeout to wait for installation log file to be created
-	time.Sleep(500 * time.Millisecond)
-	after := fileutils.ListDir(ts.Dirs.Config, false)
-	onlyAfter, _ := funk.Difference(after, before)
-	logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
-	if ok {
-		suite.pollForUpdateFromLogfile(logFile)
-		cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
-		cp.ExpectExitCode(0)
+	if !disableUpdates {
+		// short timeout to wait for installation log file to be created
+		time.Sleep(500 * time.Millisecond)
+		after := fileutils.ListDir(ts.Dirs.Config, false)
+		onlyAfter, _ := funk.Difference(after, before)
+		logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
+		if ok {
+			suite.pollForUpdateFromLogfile(logFile)
+			cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
+			cp.ExpectExitCode(0)
+		}
 	}
 
 	version := versionData{}
@@ -115,7 +126,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
 }
 
-func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
+func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableUpdates bool, testUpdate bool, expected string, matcher matcherFunc) {
 	type branchData struct {
 		Branch string `json:"branch"`
 	}
@@ -123,8 +134,8 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
-	cp.ExpectExitCode(0)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
+	cp.ExpectExitCode(0, 30*time.Second)
 
 	branch := branchData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
@@ -138,7 +149,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.versionCompare(ts, true, constants.Version, suite.Equal)
+	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
@@ -147,7 +158,7 @@ func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
 	defer ts.Close()
 
 	// update should not run because the exe is less than a day old
-	suite.versionCompare(ts, false, constants.Version, suite.Equal)
+	suite.versionCompare(ts, false, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
@@ -158,7 +169,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
 	// Spoof modtime
@@ -166,7 +177,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
 	// update should run because the exe is more than a day old
-	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
+	suite.versionCompare(ts, false, true, constants.Version, suite.NotEqual)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
@@ -180,14 +191,14 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
@@ -199,31 +210,6 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	)
 
 	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
-}
-
-func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.ExpectLongString("This version of the State Tool does not support version locking")
-	cp.ExpectExitCode(1)
-
-	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string) string {
@@ -259,23 +245,35 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 	tests := []struct {
 		Name                string
+		TestUpdate          bool
 		StateToolRunning    bool
 		ExpectBackupCleaned bool
 	}{
 		{
-			Name:                "all-resources-free",
+			Name:                "test-update",
+			TestUpdate:          true,
+			StateToolRunning:    false,
+			ExpectBackupCleaned: true,
+		},
+		{
+			Name:                "actual update",
+			TestUpdate:          false,
 			StateToolRunning:    false,
 			ExpectBackupCleaned: true,
 		},
 		{
 			Name:                "old-state-tool-running",
+			TestUpdate:          true,
 			StateToolRunning:    true,
 			ExpectBackupCleaned: runtime.GOOS != "windows", // Note: On Windows we cannot remove the backup file when an old process is still running!
 		},
 	}
 	for _, tt := range tests {
+		if !tt.TestUpdate {
+			suite.T().Skip("This requires an update bundle to be released to the release branch")
+		}
 		suite.Run(tt.Name, func() {
-			ts := e2e.New(suite.T(), false)
+			ts := e2e.New(suite.T(), true)
 			defer ts.Close()
 
 			suite.addProjectFileWithWaitingScript(ts.Dirs.Work)
@@ -290,7 +288,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					bgCp := ts.SpawnWithOpts(e2e.WithArgs("run", "wait", "10"), e2e.AppendEnv(suite.env(false)...), e2e.BackgroundProcess())
+					bgCp := ts.SpawnWithOpts(e2e.WithArgs("run", "wait", "10"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.BackgroundProcess())
 					// need to close background process manually
 					defer bgCp.Close()
 					select {
@@ -303,16 +301,16 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 					bgCp.ExpectExitCode(0)
 				}()
 			}
-			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
+			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
 			fakeHome := filepath.Join(ts.Dirs.Work, "home")
 			err := fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
-			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
-			cp.Expect(fmt.Sprintf("Version update to %s@99.99.9999 has started", constants.BranchName))
+			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 			cp.ExpectExitCode(0)
 
 			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
@@ -323,7 +321,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			wg.Wait()
 
 			suite.Assert().Contains(logs, "was successful")
-			suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
 
 			if tt.ExpectBackupCleaned {
 				suite.Assert().Contains(logs, "Removed all backup files.")
@@ -335,25 +333,41 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
+	tests := []struct {
+		Name       string
+		TestUpdate bool
+		Channel    string
+	}{
+		{"test-update", true, testBranch},
+		{"release-channel", false, targetBranch},
+	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
+	for _, tt := range tests {
+		if !tt.TestUpdate {
+			suite.T().Skipf("This requires a new update bundle to be deployed to the %s channel", targetBranch)
+		}
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
-	cp.ExpectExitCode(0)
+			// Ensure we always use a unique exe for updates
+			ts.UseDistinctStateExes()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", testBranch), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating State Tool to latest version available")
-	cp.Expect(fmt.Sprintf("Version updating to %s@99.99.9999 in the background", testBranch))
-	cp.ExpectExitCode(0)
+			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			cp.ExpectExitCode(0)
 
-	logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
-	suite.Assert().Contains(logs, "was successful")
+			cp = ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", tt.Channel), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			cp.Expect("Updating State Tool to latest version available")
+			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
+			cp.ExpectExitCode(0)
 
-	suite.branchCompare(ts, false, testBranch, suite.Equal)
+			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+			suite.Assert().Contains(logs, "was successful")
+
+			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
+		})
+	}
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
@@ -367,23 +381,23 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false)...))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...), e2e.NonWriteableBinDir())
+	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("Updating State Tool to latest version available")
-	cp.Expect(fmt.Sprintf("Version updating to %s@99.99.9999 in the background", constants.BranchName))
+	cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 	cp.ExpectExitCode(0)
 
 	suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
 	logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
 	suite.Assert().Contains(logs, "Installation failed")
 
-	suite.versionCompare(ts, true, constants.Version, suite.Equal)
+	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
 func TestUpdateIntegrationTestSuite(t *testing.T) {
