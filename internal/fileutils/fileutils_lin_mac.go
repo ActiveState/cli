@@ -37,3 +37,7 @@ func ResolveUniquePath(path string) (string, error) {
 
 	return filepath.Clean(evalPath), nil
 }
+
+func HideFile(path string) error {
+	return nil
+}

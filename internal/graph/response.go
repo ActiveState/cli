@@ -7,3 +7,7 @@ type VersionResponse struct {
 type ProjectsResponse struct {
 	Projects []*Project `json:"projects"`
 }
+
+type UpdateResponse struct {
+	DeferredUpdate DeferredUpdate `json:"update"`
+}

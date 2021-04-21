@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -22,7 +23,9 @@ func TestBash(t *testing.T) {
 	setup(t)
 
 	os.Setenv("SHELL", `C:\Program Files\bash.exe`)
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 
 }
@@ -32,7 +35,9 @@ func TestBashDontEscapeSpace(t *testing.T) {
 
 	// Reproduce bug in which paths are being incorrectly escaped on windows
 	os.Setenv("SHELL", `C:\Program\ Files\bash.exe`)
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 	assert.Equal(t, `C:\Program Files\bash.exe`, subs.Binary())
 }
 
@@ -46,7 +51,9 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 	os.Unsetenv("SHELL")
 
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 
 	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
 	filename, err := fileutils.WriteTempFile("", "test*.bat", data, 0700)
@@ -73,9 +80,11 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Unsetenv("SHELL")
 
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 
-	err := subs.Run("some-file-that-doesnt-exist.bat")
+	err = subs.Run("some-file-that-doesnt-exist.bat")
 	assert.Error(t, err, "Returns an error")
 
 	data := []byte("exit 2")

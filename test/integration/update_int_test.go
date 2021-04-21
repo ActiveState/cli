@@ -15,7 +15,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -156,8 +155,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
 }
 
-func (suite *UpdateIntegrationTestSuite) TestLocked() {
-	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
+func (suite *UpdateIntegrationTestSuite) TestUpdateLock() {
 	suite.OnlyRunForTags(tagsuite.Update)
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
@@ -176,147 +174,10 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 		e2e.AppendEnv(suite.env(false)...),
 	)
 
-	cp.Expect("Version locked at")
-	cp.ExpectExitCode(0)
+	cp.Expect("This version of the State Tool does not support version locking")
+	cp.ExpectExitCode(1)
 
-	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
-	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--set-channel", targetBranch),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.Expect("Version locked at")
-	cp.Expect(targetBranch + "@")
-	cp.ExpectExitCode(0)
-
-	suite.branchCompare(ts, false, targetBranch, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestLockedChannelVersion() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-	pjfile.SetPath(yamlPath)
-	pjfile.Save(suite.cfg)
-
-	lock := targetBranch + "@latest"
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--set-channel", lock),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.Expect("Version locked at")
-	cp.Expect(targetBranch + "@")
-	cp.ExpectExitCode(0)
-
-	yamlContents, err := fileutils.ReadFile(yamlPath)
-	suite.Require().NoError(err)
-	suite.Contains(string(yamlContents), lock)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("sure you want")
-	cp.Send("n")
-	cp.Expect("not confirm")
-	cp.ExpectNotExitCode(0)
-}
-
-// TestUpdateLockedConfirmationPositive does not verify the effects of the
-// update behavior. That is left to TestUpdate.
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("sure you want")
-	cp.Send("y")
-	cp.Expect("Version locked at")
-	cp.ExpectExitCode(0)
-}
-
-// TestUpdateLockedConfirmationForce does not verify the effects of the
-// update behavior. That is left to TestUpdate.
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--force"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("Version locked at")
-	cp.ExpectExitCode(0)
+	suite.versionCompare(ts, false, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {

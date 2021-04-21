@@ -4,6 +4,11 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_uniqueExes(t *testing.T) {
@@ -57,4 +62,14 @@ func Test_uniqueExes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExecuteAndPipeStd(t *testing.T) {
+	out, err := osutil.CaptureStdout(func() {
+		logging.SetLevel(logging.NOTHING)
+		defer logging.SetLevel(logging.NORMAL)
+		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "--out--\n", out, "captures output")
 }

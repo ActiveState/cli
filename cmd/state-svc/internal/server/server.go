@@ -14,7 +14,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
@@ -25,14 +26,14 @@ type Server struct {
 	port        int
 }
 
-func New() (*Server, error) {
+func New(cfg *config.Instance) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
 	s := &Server{}
-	s.graphServer = newGraphServer()
+	s.graphServer = newGraphServer(cfg)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
 
@@ -70,8 +71,8 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func newGraphServer() *handler.Server {
-	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New()}))
+func newGraphServer(cfg *config.Instance) *handler.Server {
+	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg)}))
 	graphServer.AddTransport(&transport.Websocket{})
 	graphServer.SetQueryCache(lru.New(1000))
 	graphServer.Use(extension.Introspection{})
