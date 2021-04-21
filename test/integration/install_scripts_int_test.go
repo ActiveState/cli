@@ -173,13 +173,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		Channel     string
 	}{
 		{"install-local-test-update", true, constants.BranchName},
-		// Todo Replace the target branch for this test to release, as soon as we have a working deployment there.
+		// Todo https://www.pivotaltracker.com/story/show/177863116
+		// Replace the target branch for this test to release, as soon as we have a working deployment there.
 		{"install-release", false, "beta"},
 	}
 
 	for _, tt := range tests {
 		if !tt.TestInstall {
-			// Todo update on beta
+			// Todo https://www.pivotaltracker.com/story/show/177858645
 			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
 		}
 		suite.Run(tt.Name, func() {
@@ -218,13 +219,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		Channel     string
 	}{
 		{"install-local-test-update", true, constants.BranchName},
-		// Todo Replace the target branch for this test to release, as soon as we have a working deployment there.
+		// Todo https://www.pivotaltracker.com/story/show/177863116
+		// Replace the target branch for this test to release, as soon as we have a working deployment there.
 		{"install-release", false, "beta"},
 	}
 
 	for _, tt := range tests {
 		if !tt.TestInstall {
-			// Todo update on beta
+			// Todo https://www.pivotaltracker.com/story/show/177858645
 			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
 		}
 		suite.Run(tt.Name, func() {
