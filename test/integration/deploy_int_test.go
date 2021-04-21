@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -315,8 +316,17 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+
+		// we need to look for either the short or the long version of the target PATH, because Windows translates between them arbitrarily
 		suite.Require().NoError(err)
-		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows system PATH should contain our target dir")
+		targetDir := filepath.Join(ts.Dirs.Work, "target")
+		shortPath, err := fileutils.GetShortPathName(targetDir)
+		suite.Require().NoError(err)
+		longPath, err := fileutils.GetLongPathName(targetDir)
+		suite.Require().NoError(err)
+		if !strings.Contains(string(out), shortPath) && !strings.Contains(string(out), longPath) {
+			suite.T().Failf("Windows system PATH should contain our target dir %s, got = %s", targetDir, string(out))
+		}
 	}
 }
 
