@@ -36,7 +36,9 @@ type UpdateIntegrationTestSuite struct {
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
 
-var targetBranch = "release"
+// Todo https://www.pivotaltracker.com/story/show/177863116
+// Update to release branch when possible
+var targetBranch = "beta"
 var testBranch = "test-channel"
 var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
 
@@ -256,7 +258,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			ExpectBackupCleaned: true,
 		},
 		{
-			Name:                "actual update",
+			Name:                "actual-update",
 			TestUpdate:          false,
 			StateToolRunning:    false,
 			ExpectBackupCleaned: true,
@@ -270,6 +272,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	}
 	for _, tt := range tests {
 		if !tt.TestUpdate {
+			// Todo https://www.pivotaltracker.com/story/show/177858645
 			suite.T().Skip("This requires an update bundle to be released to the release branch")
 		}
 		suite.Run(tt.Name, func() {
