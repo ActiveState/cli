@@ -58,7 +58,7 @@ func New(fromDir, toDir string) *Installation {
 	}
 }
 
-func (i *Installation) RemoveBackup() error {
+func (i *Installation) RemoveBackupFiles() error {
 	var es []error
 	for _, b := range i.backups {
 		err := os.Remove(b)

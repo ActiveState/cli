@@ -116,7 +116,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 
 	inst := installer.New(filepath.Join(tmpDir, "bin"), installPath)
 	defer func() {
-		err := inst.RemoveBackup()
+		err := inst.RemoveBackupFiles()
 		if err != nil {
 			logging.Debug("Failed to remove backup files: %v", err)
 		} else {
