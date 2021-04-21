@@ -17,10 +17,6 @@ param (
     ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][string]$c
     ,[Parameter(Mandatory=$False)][switch]$h
-    ,[Parameter(Mandatory=$False)]
-        [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
-        [string]
-        $e = "state.exe"
     ,[Parameter(Mandatory=$False)][string]$activate = ""
     ,[Parameter(Mandatory=$False)][string]${activate-default} = ""
 )
@@ -33,7 +29,7 @@ $Env:ACTIVESTATE_PROJECT=""
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($e).Trim()
+$script:STATEEXE = "state.exe"
 $script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
@@ -41,7 +37,7 @@ $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
 # For recipe installation without prompts we need to be able to disable
-# prompots through an environment variable.
+# prompts through an environment variable.
 if ($Env:NOPROMPT_INSTALL -eq "true") {
     $script:NOPROMPT = $true
     $script:FORCEOVERWRITE = $true
@@ -49,24 +45,6 @@ if ($Env:NOPROMPT_INSTALL -eq "true") {
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
-
-# Helpers
-function notifySettingChange(){
-    $HWND_BROADCAST = [IntPtr] 0xffff;
-    $WM_SETTINGCHANGE = 0x1a;
-    $result = [UIntPtr]::Zero
-
-    if (-not ("Win32.NativeMethods" -as [Type]))
-    {
-        # import sendmessagetimeout from win32
-        Add-Type -Namespace Win32 -Name NativeMethods -MemberDefinition @"
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
-"@
-    }
-    # notify all windows of environment block change
-    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result) | Out-Null;
-}
 
 function isAdmin
 {
@@ -207,7 +185,9 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Write-Error $_.Exception.Message
         return 1
     }
-    $latestChecksum = $versionedJson.Sha256v2
+    $latestChecksum = $versionedJson.Sha256
+    $relUrl = $versionedJson.Path
+    $zipUrl = "$STATEURL/$relurl"
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -216,7 +196,6 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         download $zipURL $zipPath
@@ -278,7 +257,6 @@ function install() {
     -b <branch>          Default 'release'.  Specify an alternative branch to install from (eg. beta)
     -n                   Don't prompt for anything, just install and override any existing executables
     -t <dir>             Install target dir
-    -f <file>            Default 'state.exe'.  Binary filename to use
     -c <command>         Run any command after the install script has completed
     -activate <project>  Activate a project when State Tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
@@ -310,15 +288,14 @@ function install() {
     Write-Host "╚═══════════════════════╝" -ForegroundColor DarkGray;
 
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
+    $installerexe="state-installer.exe"
     if (test-64Bit) {
-        $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
-        $stateexe="windows-amd64.exe"
+        $statejson="windows-amd64/info.json"
 
     } else {
-        $statejson="windows-386.json"
         $statepkg="windows-386.zip"
-        $stateexe="windows-386.exe"
+        $statejson="windows-386/info.json"
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -361,7 +338,7 @@ function install() {
         }
     }
 
-    #  If the install dir doesn't exist
+    #  If the install dir doesn't exist, create it
     $installPath = Join-Path $installDir $script:STATEEXE
     if( -Not (Test-Path -LiteralPath $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
@@ -382,7 +359,10 @@ function install() {
     if ($err -eq 1){
         return 1
     }
-    Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
+
+    # Installing to installPath
+    $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
+    & "$InstallerPath" "$installPath"
 
     # Write install file
     $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
@@ -412,34 +392,8 @@ function install() {
         return
     }
 
-    $PATH = [Environment]::GetEnvironmentVariable("PATH")
-    if (!$PATH.Contains($installDir)) {
-        # Update PATH for State Tool installation directory
-        $envTarget = [EnvironmentVariableTarget]::User
-        $envTargetName = "user"
-        if (isAdmin) {
-            $envTarget = [EnvironmentVariableTarget]::Machine
-            $envTargetName = "system"
-        }
-        
-        Write-Host "Updating environment...`n"
-        Write-Host "Adding $installDir to $envTargetName PATH`n"
-        # This only sets it in the registry and it will NOT be accessible in the current session
-        [Environment]::SetEnvironmentVariable(
-            'Path',
-            $installDir + ";" + [Environment]::GetEnvironmentVariable(
-                'Path', $envTarget),
-            $envTarget)
-
-        notifySettingChange
-
-        $env:Path = $installDir + ";" + $env:Path
-    }
-
-
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
-    Write-Host "Please close your current terminal window and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
     return
 }
 
