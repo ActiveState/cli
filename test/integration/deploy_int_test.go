@@ -325,7 +325,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		longPath, err := fileutils.GetLongPathName(targetDir)
 		suite.Require().NoError(err)
 		if !strings.Contains(string(out), shortPath) && !strings.Contains(string(out), longPath) {
-			suite.T().Failf("Windows system PATH should contain our target dir %s, got = %s", targetDir, string(out))
+			suite.Fail("Windows system PATH should contain our target dir %s, got = %s", targetDir, string(out))
 		}
 	}
 }
