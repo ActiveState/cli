@@ -52,7 +52,11 @@ func (u *Checker) Check() (*AvailableUpdate, error) {
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 	if desiredChannel == "" {
-		desiredChannel = u.currentChannel
+		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
+			desiredChannel = overrideBranch
+		} else {
+			desiredChannel = u.currentChannel
+		}
 	}
 	versionPath := ""
 	if desiredVersion != "" {
