@@ -4,7 +4,6 @@ package autostart
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -109,8 +108,6 @@ func setupAppFile(appPath string) error {
 	}
 
 	buf := &bytes.Buffer{}
-	trayExec := appinfo.TrayApp().Exec()
-	fmt.Println(trayExec)
 	data := desktopFileData{Exec: appinfo.TrayApp().Exec()}
 	if err = t.Execute(buf, data); err != nil {
 		return errs.Wrap(err, "Could not execute template")
