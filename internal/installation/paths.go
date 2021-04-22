@@ -18,6 +18,10 @@ func InstallPath() (string, error) {
 	return defaultInstallPath()
 }
 
+func SystemInstallPath() (string, error) {
+	return defaultSystemInstallPath()
+}
+
 func LogfilePath(configPath string, pid int) string {
 	return filepath.Join(configPath, fmt.Sprintf("state-installer-%d.log", pid))
 }

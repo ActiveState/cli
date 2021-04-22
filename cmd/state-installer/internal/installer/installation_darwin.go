@@ -9,42 +9,27 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/gobuffalo/packr"
 )
 
 const (
-	appDir  = "/Applications"
 	appName = "ActiveState Desktop.app"
 )
 
 // InstallSystemFiles installs files in the /Application directory
-func InstallSystemFiles(installDir string) error {
-	err := os.RemoveAll(filepath.Join(appDir, appName))
+func InstallSystemFiles(fromDir, binaryDir, systemInstallPath string) error {
+	err := os.RemoveAll(filepath.Join(systemInstallPath, appName))
 	if err != nil {
 		return errs.Wrap(err, "Could not remove old app directory")
 	}
 
-	box := packr.NewBox("../../../../assets/macOS/app")
-	err = box.Walk(func(path string, _ packr.File) error {
-		if fileutils.IsDir(path) {
-			err := fileutils.Mkdir(filepath.Join(appDir, path))
-			if err != nil {
-				return errs.Wrap(err, "Could not create directory")
-			}
-		} else {
-			err := fileutils.WriteFile(filepath.Join(appDir, path), box.Bytes(path))
-			if err != nil {
-				return errs.Wrap(err, "Could not write icon file")
-			}
-		}
-		return nil
-	})
+	err = fileutils.MoveAllFilesCrossDisk(fromDir, systemInstallPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not create application directory")
 	}
 
-	trayInfo := appinfo.TrayApp()
-	err = createNewSymlink(filepath.Join(installDir, filepath.Base(trayInfo.Exec())), filepath.Join(appDir, appName, "Contents", "MacOS", filepath.Base(trayInfo.Exec())))
+	fromTray := appinfo.TrayApp(binaryDir)
+	toTray := appinfo.TrayApp(filepath.Join(systemInstallPath, appName, "Contents", "MacOS"))
+	err = createNewSymlink(fromTray.Exec(), toTray.Exec())
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}
@@ -53,7 +38,7 @@ func InstallSystemFiles(installDir string) error {
 }
 
 func createNewSymlink(target, filename string) error {
-	if fileutils.FileExists(filename) {
+	if fileutils.TargetExists(filename) {
 		if err := os.Remove(filename); err != nil {
 			return errs.Wrap(err, "Could not delete existing symlink")
 		}
