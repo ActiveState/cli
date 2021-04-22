@@ -10,45 +10,31 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 func TestCreateUpdate(t *testing.T) {
-	executable := os.Args[0]
-
 	dir, err := ioutil.TempDir(os.TempDir(), "update-generator-test")
 	if err != nil {
 		log.Fatalf("Cannot create temp dir: %s", err.Error())
 	}
 	defer os.RemoveAll(dir)
 
-	exitCode := -1
-	exit = func(code int) {
-		exitCode = code
+	installerPath := filepath.Join(dir, "installer")
+	binary1 := filepath.Join(dir, "binary1")
+	binary2 := filepath.Join(dir, "binary2")
+
+	for _, f := range []string{installerPath, binary1, binary2} {
+		err = fileutils.Touch(f)
+		require.NoError(t, err)
 	}
 
-	os.Chdir(environment.GetRootPathUnsafe())
-	os.Args = []string{"", "-o", dir, executable, "1.0"}
-	run()
+	err = createUpdate(dir, "channel", "version", "platform", installerPath, []string{binary1, binary2})
+	require.NoError(t, err)
 
-	require.Equal(t, -1, exitCode, "exit was not called")
+	_, ext := archiveMeta()
 
-	_, ext, _ := archiveMeta()
-
-	assert.FileExists(t, filepath.Join(dir, constants.BranchName, defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, constants.BranchName, "1.0", defaultPlatform+ext), "Should create update bits")
-
-	// Test with branch override
-	os.Chdir(environment.GetRootPathUnsafe())
-	branchName := "foo"
-	os.Args = []string{"", "--b", branchName, "-o", dir, executable, "1.0"}
-	run()
-
-	require.Equal(t, -1, exitCode, "exit was not called")
-
-	assert.FileExists(t, filepath.Join(dir, branchName, defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+".json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, branchName, "1.0", defaultPlatform+ext), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, "channel", "platform", "info.json"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, "channel", "version", "platform", "info.json"), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, "channel", "version", "platform", "state-platform-version"+ext), "Should create update bits")
 }

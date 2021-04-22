@@ -119,6 +119,8 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		err := inst.RemoveBackupFiles()
 		if err != nil {
 			logging.Debug("Failed to remove backup files: %v", err)
+		} else {
+			logging.Debug("Removed all backup files.")
 		}
 	}()
 
@@ -132,8 +134,12 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Installation failed")
 	}
 
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
 	shell := subshell.New(cfg)
-	err = shell.WriteUserEnv(cfg, map[string]string{"PATH": installPath}, sscommon.InstallID, true)
+	err = shell.WriteUserEnv(cfg, map[string]string{"PATH": installPath}, sscommon.InstallID, !isAdmin)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
 	}
