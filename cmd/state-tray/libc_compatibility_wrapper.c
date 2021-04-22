@@ -2,6 +2,8 @@
 // older versions rather than by whatever the build machine has available. The
 // alternative to this is to always build on machines with older versions of
 // glibc.
+//
+// This solution was borrowed from https://github.com/containers/toolbox/pull/534
 
 /*
  * Copyright © 2020 Red Hat Inc.
