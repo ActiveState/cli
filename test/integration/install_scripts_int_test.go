@@ -1,8 +1,10 @@
 package integration
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -74,7 +77,8 @@ func getEnvironmentPath(userScope bool) string {
 	return `SYSTEM\ControlSet001\Control\Session Manager\Environment`
 }
 
-func scriptPath(t *testing.T, legacy bool) string {
+// scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
+func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string {
 	name := "install.ps1"
 	if runtime.GOOS != "windows" {
 		name = "install.sh"
@@ -90,7 +94,18 @@ func scriptPath(t *testing.T, legacy bool) string {
 		t.Fatalf("Could not find install script %s", exec)
 	}
 
-	return exec
+	b, err := fileutils.ReadFile(exec)
+	require.NoError(t, err)
+
+	if useTestUrl {
+		b = bytes.Replace(b, []byte(fmt.Sprintf("%sstate", constants.APIUpdateURL)), []byte("http://localhost:"+testPort), -1)
+	}
+
+	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
+	err = ioutil.WriteFile(scriptPath, b, 0775)
+	require.NoError(t, err)
+
+	return scriptPath
 }
 
 type InstallScriptsIntegrationTestSuite struct {
@@ -145,24 +160,16 @@ func expectDefaultActivation(cp *termtest.ConsoleProcess) {
 	cp.SendLine("exit")
 }
 
-func env(useTestBranch bool) []string {
-	var res []string
-	if useTestBranch {
-		res = append(res, "_TEST_UPDATE_URL=http://localhost:"+testPort)
-	}
-	return res
-}
-
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	if runtime.GOOS == "windows" {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false, env(true)...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), true)
+	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
 
 	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
 	expectLegacyStateToolInstallation(cp, "n")
@@ -193,10 +200,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
 		}
 		suite.Run(tt.Name, func() {
-			ts := e2e.New(suite.T(), false, env(tt.TestInstall)...)
+			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			script := scriptPath(suite.T(), false)
+			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
 			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
 			expectStateToolInstallation(cp)
@@ -239,10 +246,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
 		}
 		suite.Run(tt.Name, func() {
-			ts := e2e.New(suite.T(), false, env(tt.TestInstall)...)
+			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			script := scriptPath(suite.T(), false)
+			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
 			isAdmin, err := osutils.IsWindowsAdmin()
 			suite.Require().NoError(err, "Could not determine if running as administrator")
@@ -274,10 +281,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false, env(false)...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), true)
+	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
 	isAdmin, err := osutils.IsWindowsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
@@ -316,10 +323,10 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 		suite.T().SkipNow()
 	}
 
-	ts := e2e.New(suite.T(), false, env(true)...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), false)
+	script := scriptPath(suite.T(), ts.Dirs.Work, false, true)
 
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
@@ -363,10 +370,10 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.T().SkipNow()
 	}
 
-	ts := e2e.New(suite.T(), false, env(true)...)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), false)
+	script := scriptPath(suite.T(), ts.Dirs.Work, false, true)
 
 	isAdmin, err := osutils.IsWindowsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")

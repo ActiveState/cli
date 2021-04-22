@@ -168,7 +168,7 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # State Tool binary base dir
-    $STATEURL= if ($env:_TEST_UPDATE_URL) { $env:_TEST_UPDATE_URL } else { "https://state-tool.s3.amazonaws.com/update/state" };
+    $STATEURL= "https://state-tool.s3.amazonaws.com/update/state"
     
     Write-Host "Preparing for installation...`n"
 
