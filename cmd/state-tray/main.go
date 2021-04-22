@@ -69,7 +69,7 @@ func run() error {
 	}
 
 	box := packr.NewBox("../../assets")
-	systray.SetIcon(box.Bytes("icon.ico"))
+	defer superviseIcon(box)()
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
 
 	mAbout := systray.AddMenuItem(
