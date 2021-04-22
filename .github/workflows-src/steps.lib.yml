@@ -113,6 +113,12 @@ if: runner.os == 'Windows'
 run: GOARCH=386 state run generate-update
 #@ end
 ---
+#@ def steps_gentest_update():
+name: "Generate Test Update"
+shell: bash
+run: state run generate-test-update
+#@ end
+---
 #@ def steps_installgo():
 name: "Install Go"
 uses: actions/setup-go@v2
