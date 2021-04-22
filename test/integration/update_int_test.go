@@ -171,6 +171,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
+	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
@@ -193,6 +194,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
+	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
@@ -304,6 +306,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 					bgCp.ExpectExitCode(0)
 				}()
 			}
+
+			// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
@@ -357,6 +361,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
 
+			// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
@@ -384,6 +389,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	// use unique exe
 	ts.UseDistinctStateExes()
 
+	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
