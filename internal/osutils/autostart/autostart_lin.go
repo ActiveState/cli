@@ -141,6 +141,8 @@ func setupAppFile(appPath string) error {
 		return errs.Wrap(err, "Could not make file executable")
 	}
 
+	// set the executable as trusted so users do not need to do it manually
+	// gio is "Gnome input/output"
 	cmd := exec.Command("gio", "set", appPath, "metadata::trusted", "true")
 	if err := cmd.Run(); err != nil {
 		return errs.Wrap(err, "Could not set application file as trusted")
