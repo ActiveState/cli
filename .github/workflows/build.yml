@@ -227,6 +227,20 @@ jobs:
     - name: Build Service
       shell: bash
       run: state run build-svc
+    - name: Build Tray App
+      shell: bash
+      if: runner.os != 'Linux'
+      run: |
+        state run build-tray
+    - name: Build Tray App (linux)
+      shell: bash
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get install libgtk-3-dev libappindicator3-dev -y
+        state run build-tray
+    - name: Build Installer
+      shell: bash
+      run: state run build-installer
     - name: Generate Update
       shell: bash
       run: state run generate-update

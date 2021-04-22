@@ -147,7 +147,7 @@ scripts:
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state/
+      go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash
