@@ -3,22 +3,22 @@
 package open
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
+	"os/user"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
 )
 
+// Prompt brings up the user's preferred shell within a new terminal.
 func Prompt(command string) error {
-	shellData, err := exec.Command("bash", "-c",
-		"grep ^$(id -un): /etc/passwd | cut -d: -f7-",
-	).Output()
+	shell, err := preferredShell()
 	if err != nil {
-		return locale.WrapError(err,
-			"err_determine_default_shell", "Could not determine default shell",
-		)
+		return locale.WrapError(err, "err_get_shell", "Cannot get preferred shell")
 	}
-	shell := string(shellData[:len(shellData)-1]) // trim newline
 
 	command = fmt.Sprintf("%s;%s", command, shell)
 	cmd := exec.Command("x-terminal-emulator", "-e", shell, "-c", command)
@@ -27,4 +27,39 @@ func Prompt(command string) error {
 	}
 
 	return nil
+}
+
+func preferredShell() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", locale.WrapError(err, "err_user_unknown", "Cannot get current user")
+	}
+
+	f, err := os.Open("/etc/passwd")
+	if err != nil {
+		return "", locale.WrapError(err, "err_open_passwd", "Cannot open passwd file")
+	}
+	defer f.Close()
+
+	prefix := currentUser.Name + ":"
+	var shell string
+
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := sc.Text()
+		if !strings.HasPrefix(line, prefix) {
+			continue
+		}
+		parts := strings.Split(line, ":")
+		shell = parts[len(parts)-1]
+	}
+	if err := sc.Err(); err != nil {
+		return "", locale.WrapError(err, "err_scan_passwd", "/etc/passwd file scan failed")
+	}
+
+	if shell == "" {
+		return "", locale.NewError("err_shell_not_found", "Shell not found in passwd file")
+	}
+
+	return shell, nil
 }
