@@ -149,7 +149,7 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		return errs.Wrap(err, "Archiving failed")
 	}
 
-	up := updater.NewAvailableUpdate(version, channel, platform, relArchivePath, generateSha256(archivePath))
+	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath))
 	b, err := json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
