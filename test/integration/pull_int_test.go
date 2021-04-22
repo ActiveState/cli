@@ -2,7 +2,6 @@ package integration
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -27,10 +26,10 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("You're Activated")
 
 	cp.SendLine(`python3 -c "import requests"`)
-	cp.Expect("ModuleNotFoundError")
+	cp.Expect("No module named 'requests'")
 
 	cp = ts.Spawn("pull")
 	cp.Expect("activestate.yaml has been updated")
