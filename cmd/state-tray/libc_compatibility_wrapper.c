@@ -1,3 +1,8 @@
+// This file is included to ensure glibc version dependencies are fixed to older
+// older versions rather than by whatever the build machine has available. The
+// alternative to this is to always build on machines with older versions of
+// glibc.
+
 /*
  * Copyright © 2020 Red Hat Inc.
  *
