@@ -376,6 +376,7 @@ info "State Tool installation complete."
 
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
+  # Ensure that new installation dir is on the PATH for follow up commands
   export PATH="$PATH:$INSTALLDIR"
   exec $POST_INSTALL_COMMAND
 elif [ -n "${ACTIVATE}" ]; then

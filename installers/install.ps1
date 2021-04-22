@@ -384,6 +384,9 @@ function install() {
 
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
+
+    # Ensure that the new install dir is on the PATH variable for follow-up commands
+    $Env:PATH = "$installDir;$Env:PATH"
     return 0
 }
 
