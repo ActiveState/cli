@@ -89,7 +89,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 	if testUpdate {
 		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort))
 	} else {
-		env = append(env, "%s=%s", constants.UpdateBranchEnvVarName, targetBranch)
+		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}
 
 	return env
