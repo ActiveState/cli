@@ -15,7 +15,7 @@ import (
 
 // Prompt brings up the user's preferred shell within a new terminal.
 func Prompt(command string) error {
-	shell, err := preferredShell()
+	shell, err := preferredShellWithFallback("/bin/bash")
 	if err != nil {
 		return locale.WrapError(err, "err_get_shell", "Cannot get preferred shell")
 	}
@@ -29,7 +29,7 @@ func Prompt(command string) error {
 	return nil
 }
 
-func preferredShell() (string, error) {
+func preferredShellWithFallback(fallback string) (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", locale.WrapError(err, "err_user_unknown", "Cannot get current user")
@@ -58,7 +58,7 @@ func preferredShell() (string, error) {
 	}
 
 	if shell == "" {
-		return "", locale.NewError("err_shell_not_found", "Shell not found in passwd file")
+		shell = fallback
 	}
 
 	return shell, nil
