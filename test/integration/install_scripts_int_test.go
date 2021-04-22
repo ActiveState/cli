@@ -169,7 +169,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
+	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
 	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
 	expectLegacyStateToolInstallation(cp, "n")
