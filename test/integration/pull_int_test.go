@@ -2,6 +2,7 @@ package integration
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -26,7 +27,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.WaitForInput()
+	cp.WaitForInput(60 * time.Second)
 
 	cp.SendLine(`python3 -c "import requests"`)
 	cp.Expect("ModuleNotFoundError")
