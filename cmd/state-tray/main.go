@@ -68,8 +68,12 @@ func run() error {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
+	mUpdate := systray.AddMenuItem(
+		locale.Tl("tray_update_title", "Update Available"),
+		locale.Tl("tray_update_tooltip", "Update your State Tool installation"),
+	)
 	box := packr.NewBox("../../assets")
-	defer superviseIcon(box)()
+	defer superviseUpdate(box, mUpdate)()
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
 
 	mAbout := systray.AddMenuItem(

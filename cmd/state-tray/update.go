@@ -14,19 +14,23 @@ const (
 	iconUpdatingFile = "icon-updating.ico"
 )
 
-func superviseIcon(box packr.Box) func() {
+func superviseUpdate(box packr.Box, updMenuItem *systray.MenuItem) func() {
 	var done chan struct{}
 
 	go func() {
 		for {
 			ico := iconFile
+			hideFn := updMenuItem.Hide
 			if needsUpdate() {
 				ico = iconUpdateFile
+				hideFn = updMenuItem.Show
 			}
 			if isUpdating() {
 				ico = iconUpdatingFile
+				hideFn = updMenuItem.Hide
 			}
 			systray.SetIcon(box.Bytes(ico))
+			hideFn()
 			time.Sleep(time.Second * 3)
 
 			select {
