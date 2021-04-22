@@ -10,14 +10,16 @@ import (
 	"os/user"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 )
 
 // Prompt brings up the user's preferred shell within a new terminal.
 func Prompt(command string) error {
-	shell, err := preferredShellWithFallback("/bin/bash")
+	shell, err := preferredShellWithFallback()
 	if err != nil {
-		return locale.WrapError(err, "err_get_shell", "Cannot get preferred shell")
+		// log locale.WrapError(err, "err_get_shell", "Cannot get preferred shell")
+		shell = "bash"
 	}
 
 	command = fmt.Sprintf("%s;%s", command, shell)
@@ -29,15 +31,16 @@ func Prompt(command string) error {
 	return nil
 }
 
-func preferredShellWithFallback(fallback string) (string, error) {
+func preferredShellWithFallback() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", locale.WrapError(err, "err_user_unknown", "Cannot get current user")
 	}
 
+	// searching /etc/passwd is the standard way to find one's default shell
 	f, err := os.Open("/etc/passwd")
 	if err != nil {
-		return "", locale.WrapError(err, "err_open_passwd", "Cannot open passwd file")
+		return "", locale.WrapError(err, "err_open_passwd", "Cannot open user info file")
 	}
 	defer f.Close()
 
@@ -54,11 +57,15 @@ func preferredShellWithFallback(fallback string) (string, error) {
 		shell = parts[len(parts)-1]
 	}
 	if err := sc.Err(); err != nil {
-		return "", locale.WrapError(err, "err_scan_passwd", "/etc/passwd file scan failed")
+		return "", locale.WrapError(err, "err_scan_passwd", "Error parsing user info file")
 	}
 
 	if shell == "" {
-		shell = fallback
+		return "", locale.NewError("err_shell_unknown", "No preferred shell obtained")
+	}
+
+	if !fileutils.IsExecutable(shell) || fileutils.IsDir(shell) {
+		return "", locale.NewError("err_shell_not_exec", "Preferred shell cannot execute")
 	}
 
 	return shell, nil
