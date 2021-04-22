@@ -122,6 +122,15 @@ func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
+	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
+	cp.Expect("State Tool successfully installed to")
+}
+
+func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect("Fetching the latest version")
 	cp.Expect("State Tool successfully installed to")
 }
 
@@ -247,16 +256,49 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 				suite.Assert().NoError(err, "Unexpected error re-setting paths")
 			}()
 
-			cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
+			cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv("SHELL="))
 			expectStateToolInstallationWindows(cp)
 			cp.ExpectExitCode(0)
 
 			pathEnv, err := cmdEnv.get("PATH")
 			suite.Require().NoError(err, "could not get PATH")
 			paths := strings.Split(pathEnv, string(os.PathListSeparator))
-			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
+			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 		})
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
+	if runtime.GOOS != "windows" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), false, env(false)...)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), true)
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	suite.Require().NoError(err, "Could not determine if running as administrator")
+
+	cmdEnv := newCmdEnv(!isAdmin)
+	oldPathEnv, err := cmdEnv.get("PATH")
+	suite.Require().NoError(err, "could not get PATH")
+
+	defer func() {
+		err := cmdEnv.set("PATH", oldPathEnv)
+		suite.Assert().NoError(err, "Unexpected error re-setting paths")
+	}()
+
+	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work), e2e.AppendEnv("SHELL="))
+	expectLegacyStateToolInstallationWindows(cp)
+	cp.ExpectExitCode(0)
+
+	pathEnv, err := cmdEnv.get("PATH")
+	suite.Require().NoError(err, "could not get PATH")
+	paths := strings.Split(pathEnv, string(os.PathListSeparator))
+	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
@@ -343,7 +385,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
 		e2e.WithArgs(computedCommand...),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL="))
 	expectStateToolInstallationWindows(cp)
 	expectDefaultActivation(cp)
 	cp.ExpectExitCode(0)

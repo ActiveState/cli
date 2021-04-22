@@ -30,7 +30,6 @@ $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
 $script:STATEEXE = "state.exe"
-$script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
@@ -169,7 +168,7 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
 
 function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # State Tool binary base dir
-    $STATEURL="https://state-tool.s3.amazonaws.com/update/state"
+    $STATEURL= if ($env:_TEST_UPDATE_URL) { $env:_TEST_UPDATE_URL } else { "https://state-tool.s3.amazonaws.com/update/state" };
     
     Write-Host "Preparing for installation...`n"
 
@@ -288,7 +287,7 @@ function install() {
     Write-Host "╚═══════════════════════╝" -ForegroundColor DarkGray;
 
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
-    $installerexe="state-installer.exe"
+    $installerexe = (Join-Path "state-install" "state-installer.exe")
     if (test-64Bit) {
         $statepkg="windows-amd64.zip"
         $statejson="windows-amd64/info.json"
@@ -343,15 +342,6 @@ function install() {
     if( -Not (Test-Path -LiteralPath $installDir)) {
         Write-host "NOTE: $installDir will be created`n"
         New-Item -Path $installDir -ItemType Directory | Out-Null
-    } else {
-        if(Test-Path -LiteralPath $installPath -PathType Leaf) {
-            Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
-            $occurance = errorOccured $False "$err"
-            if($occurance[0]){
-                Write-Host "Aborting Installation" -ForegroundColor Yellow
-                return 1
-            }
-        }
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
@@ -360,9 +350,9 @@ function install() {
         return 1
     }
 
-    # Installing to installPath
+    # Installing to installDir
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
-    & "$InstallerPath" "$installPath"
+    & "$InstallerPath" "$installDir"
 
     # Write install file
     $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
@@ -389,15 +379,15 @@ function install() {
         Write-Host "╚══════════════════════╝" -ForegroundColor DarkGreen;
 
         warningIfAdmin
-        return
+        return 0
     }
 
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
-    return
+    return 0
 }
 
-$code = install
+$code = install | Select-Object -Last 1
 if (($null -eq $code) -or ($code -eq 0)) {
     if ($script:POST_INSTALL_COMMAND) {
         # Extract executable from post install command string
