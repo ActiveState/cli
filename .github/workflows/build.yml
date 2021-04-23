@@ -50,7 +50,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-latest
         - macos-latest
@@ -99,7 +99,12 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
+        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
+        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
+        sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state32.exe \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -156,7 +161,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-latest
         - macos-latest
@@ -197,14 +202,15 @@ jobs:
     - name: Unit Tests
       shell: bash
       run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray`
+        go test `go list ./... | grep -v api | grep -v integration | grep -v expect`
   inttest_critical:
-    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
+    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
+      != 'refs/heads/release'
     name: Critical Integration Test
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-latest
         - macos-latest
@@ -275,7 +281,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-latest
         - macos-latest
@@ -404,7 +410,8 @@ jobs:
       run: rm build/state* || true
     - name: Deploy
       shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
+        github.ref)
       run: |
         state run deploy-updates
         state run deploy-installers
