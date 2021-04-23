@@ -15,7 +15,7 @@ var html string
 //go:embed frontend/main.js
 var js string
 
-//go:embed frontend/main.css
+//go:embed frontend/generated/main.css
 var css string
 
 type App struct {
@@ -25,8 +25,8 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	a.wails = wails.CreateApp(&wails.AppConfig{
-		Width:            1024,
-		Height:           768,
+		Width:            600,
+		Height:           400,
 		Title:            "ActiveState Desktop - Update Available",
 		HTML:             html,
 		JS:               js,

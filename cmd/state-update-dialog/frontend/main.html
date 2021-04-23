@@ -5,6 +5,31 @@
     <title>Update ActiveState Desktop</title>
 </head>
 <body>
-    <p>Hello World!</p>
+    <div class="container">
+        <h4>A New Update is Available!</h4>
+        <div class="row">
+            <div class="column">
+                ActiveState Desktop <strong id="AvailableVersion"></strong> is now available, you are currently using
+                <strong id="CurrentVersion"></strong>. Would you like to install the new version?
+            </div>
+        </div>
+        <h4>Update Notes:</h4>
+        <div class="row fill">
+            <div class="column changelog">
+                <p>
+                    Please refer to the <a href="">documentation</a>.
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column column-50">
+                <button class="button">Update</button>
+                <!--<button class="button button-outline">Remind Me Later</button>-->
+            </div>
+            <div class="column">
+                <button class="button button-outline" style="float: right">Close</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

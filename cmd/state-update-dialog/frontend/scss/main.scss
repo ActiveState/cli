@@ -1,0 +1,50 @@
+@import "_normalize";
+
+$color-initial: #fff;
+$color-primary: #2035B2;
+$color-secondary: #21292C;
+$color-tertiary: #f4f5f6;
+$color-quaternary: #d1d1d1;
+$color-quinary: #e1e1e1;
+
+@import "../vendor/milligram/milligram";
+
+html {
+  zoom: 100%;
+  font-family: sans-serif;
+  font-size: 10px; /* can't depend on defaults as at least on mac they are messed up, likely due to hidpi  */
+  color: $color-secondary;
+  background: $color-initial;
+}
+
+.container {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+}
+
+.row.fill {
+  flex: 1;
+
+  textarea {
+    height: 100%;
+  }
+}
+
+button:not(:last-child) {
+  margin-right: 8px;
+}
+
+.row:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+h4 {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-bottom: 0;
+}
+
+textarea, button {
+  margin-bottom: 0;
+}

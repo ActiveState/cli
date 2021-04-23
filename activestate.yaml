@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=96e72fc8-c86d-4f86-b8c7-6fcb393f3941
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -109,6 +109,11 @@ scripts:
     language: bash
     value: |
       go build -o $constants.UPDLG_BUILD_TARGET -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" ./cmd/state-update-dialog
+  - name: build-updlg-front
+    description: Builds the State Tool update dialog app's frontend.
+    language: bash
+    value: |
+      sassc cmd/state-update-dialog/frontend/scss/main.scss cmd/state-update-dialog/frontend/generated/main.css
   - name: run-updlg
     description: Runs the update dialog in debug mode
     standalone: true

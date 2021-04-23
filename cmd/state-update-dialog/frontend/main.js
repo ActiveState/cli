@@ -11,7 +11,8 @@ function start() {
         window.backend.Bindings.CurrentVersion(),
         window.backend.Bindings.AvailableVersion()
     ]).then(result => {
-        document.body.append(document.createTextNode("Current: " + result[0] + ", Available: " + result[1]));
+        document.getElementById("CurrentVersion").innerText = result[0];
+        document.getElementById("AvailableVersion").innerText = result[1];
     })
 }
 
