@@ -213,6 +213,10 @@ func (ai *AlternativeInstall) PreInstall() error {
 			if !fileutils.TargetExists(file) {
 				continue // don't care it's already deleted (might have been deleted by another artifact that supplied the same file)
 			}
+			if artifactsContainFile(ai.cache, file) {
+				logging.Debug("File %s was marked for deletion, but is also present in artifact that is still installed. File contents may be wrong!", file)
+				continue
+			}
 			if err := os.Remove(file); err != nil {
 				return locale.WrapError(err, "err_rm_artf", "", "Could not remove old package file at {{.V0}}.", file)
 			}
