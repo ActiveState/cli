@@ -63,7 +63,7 @@ scripts:
 
 	cfg, err := config.Get()
 	require.NoError(t, err)
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -98,7 +98,7 @@ func TestEnvIsSet(t *testing.T) {
 	require.NoError(t, err)
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 	})
@@ -139,7 +139,7 @@ scripts:
 	require.NoError(t, err)
 
 	out := outputhelper.NewCatcher()
-	scriptRun := New(out, subshell.New(), proj, cfg)
+	scriptRun := New(out, subshell.New(cfg), proj, cfg)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -164,7 +164,7 @@ scripts:
 	cfg, err := config.Get()
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -189,7 +189,7 @@ scripts:
 	cfg, err := config.Get()
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -236,7 +236,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -259,7 +259,7 @@ func TestPathProvidesLang(t *testing.T) {
 
 	require.NoError(t, os.Chmod(tf, 0770))
 
-	exec := language.Python3.Executable().Name()
+	exec := language.Python3.Executable().Filename()
 
 	home, err := os.UserHomeDir()
 	require.NoError(t, err)
@@ -325,7 +325,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	require.NoError(t, err)
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(), proj, cfg)
+		scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -25,14 +26,12 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	root := environment.GetRootPathUnsafe()
 
 	ext := ".tar.gz"
-	exe := ""
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
-		exe = ".exe"
 	}
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 
-	archivePath := filepath.Join(root, "build/update", constants.BranchName, constants.Version, platform+ext)
+	archivePath := filepath.Join(root, "build/update", constants.BranchName, constants.Version, platform, fmt.Sprintf("state-%s-%s%s", platform, constants.Version, ext))
 	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
 	suite.T().Logf("file %s exists\n", archivePath)
 
@@ -53,7 +52,8 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd(filepath.Join(tempPath, platform+exe), "--version")
+	state := appinfo.StateApp(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin"))
+	cp = ts.SpawnCmd(state.Exec(), "--version")
 	cp.Expect(constants.RevisionHashShort)
 	cp.ExpectExitCode(0)
 }

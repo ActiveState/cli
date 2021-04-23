@@ -43,22 +43,6 @@ func CmdString(c *exec.Cmd) string {
 	return b.String()
 }
 
-// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
-func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
-	logging.Debug("Executing command and piping std: %s, %v", command, arg)
-
-	cmd := exec.Command(command, arg...)
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, env...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		logging.Debug("Executing command returned error: %v", err)
-	}
-	return CmdExitCode(cmd), cmd, err
-}
-
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
 func BashifyPath(absolutePath string) (string, error) {

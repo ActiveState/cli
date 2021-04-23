@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/executor"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 )
 
 type DefaultConfigurer interface {
@@ -49,7 +49,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.Default, true); err != nil {
+	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true); err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
@@ -64,7 +64,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	exes, err := runtime.Executables()
+	exes, err := runtime.ExecutablePaths()
 	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}

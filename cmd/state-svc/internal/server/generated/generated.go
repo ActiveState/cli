@@ -42,6 +42,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	DeferredUpdate struct {
+		Channel func(childComplexity int) int
+		Logfile func(childComplexity int) int
+		Version func(childComplexity int) int
+	}
+
 	Project struct {
 		Locations func(childComplexity int) int
 		Namespace func(childComplexity int) int
@@ -49,6 +55,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Projects func(childComplexity int) int
+		Update   func(childComplexity int, channel *string, version *string) int
 		Version  func(childComplexity int) int
 	}
 
@@ -67,6 +74,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
+	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 }
 
@@ -84,6 +92,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "DeferredUpdate.channel":
+		if e.complexity.DeferredUpdate.Channel == nil {
+			break
+		}
+
+		return e.complexity.DeferredUpdate.Channel(childComplexity), true
+
+	case "DeferredUpdate.logfile":
+		if e.complexity.DeferredUpdate.Logfile == nil {
+			break
+		}
+
+		return e.complexity.DeferredUpdate.Logfile(childComplexity), true
+
+	case "DeferredUpdate.version":
+		if e.complexity.DeferredUpdate.Version == nil {
+			break
+		}
+
+		return e.complexity.DeferredUpdate.Version(childComplexity), true
 
 	case "Project.locations":
 		if e.complexity.Project.Locations == nil {
@@ -105,6 +134,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Projects(childComplexity), true
+
+	case "Query.update":
+		if e.complexity.Query.Update == nil {
+			break
+		}
+
+		args, err := ec.field_Query_update_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Update(childComplexity, args["channel"].(*string), args["version"].(*string)), true
 
 	case "Query.version":
 		if e.complexity.Query.Version == nil {
@@ -217,6 +258,12 @@ type StateVersion {
   date: String!
 }
 
+type DeferredUpdate {
+  channel: String!
+  version: String!
+  logfile: String!
+}
+
 type Project {
   namespace: String!
   locations: [String!]!
@@ -224,6 +271,7 @@ type Project {
 
 type Query {
   version: Version
+  update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }
 `, BuiltIn: false},
@@ -246,6 +294,30 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_update_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["channel"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channel"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channel"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["version"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["version"] = arg1
 	return args, nil
 }
 
@@ -286,6 +358,111 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _DeferredUpdate_channel(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeferredUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DeferredUpdate_version(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeferredUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DeferredUpdate_logfile(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeferredUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Logfile, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Project_namespace(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
 	defer func() {
@@ -387,6 +564,45 @@ func (ec *executionContext) _Query_version(ctx context.Context, field graphql.Co
 	res := resTmp.(*graph.Version)
 	fc.Result = res
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_update(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_update_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Update(rctx, args["channel"].(*string), args["version"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.DeferredUpdate)
+	fc.Result = res
+	return ec.marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1800,6 +2016,43 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
+var deferredUpdateImplementors = []string{"DeferredUpdate"}
+
+func (ec *executionContext) _DeferredUpdate(ctx context.Context, sel ast.SelectionSet, obj *graph.DeferredUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deferredUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeferredUpdate")
+		case "channel":
+			out.Values[i] = ec._DeferredUpdate_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "version":
+			out.Values[i] = ec._DeferredUpdate_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logfile":
+			out.Values[i] = ec._DeferredUpdate_logfile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var projectImplementors = []string{"Project"}
 
 func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *graph.Project) graphql.Marshaler {
@@ -1856,6 +2109,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_version(ctx, field)
+				return res
+			})
+		case "update":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_update(ctx, field)
 				return res
 			})
 		case "projects":
@@ -2564,6 +2828,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalODeferredUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeferredUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.DeferredUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeferredUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v *graph.Project) graphql.Marshaler {

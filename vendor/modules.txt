@@ -58,7 +58,8 @@ github.com/StackExchange/wmi
 github.com/VividCortex/ewma
 # github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 github.com/acarl005/stripansi
-# github.com/agnivade/levenshtein v1.0.3
+# github.com/agnivade/levenshtein v1.1.0
+## explicit
 github.com/agnivade/levenshtein
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 ## explicit
@@ -246,7 +247,8 @@ github.com/hashicorp/go-retryablehttp
 # github.com/hashicorp/go-version v1.1.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/hashicorp/golang-lru v0.5.1
+# github.com/hashicorp/golang-lru v0.5.4
+## explicit
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
 # github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
@@ -311,6 +313,8 @@ github.com/mailru/easyjson/jwriter
 github.com/mash/go-tempfile-suffix
 # github.com/matryer/is v1.2.0
 ## explicit
+# github.com/matryer/moq v0.2.1
+## explicit
 # github.com/mattn/go-colorable v0.1.7
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.12
@@ -326,7 +330,8 @@ github.com/mitchellh/go-homedir
 # github.com/mitchellh/go-wordwrap v1.0.0
 ## explicit
 github.com/mitchellh/go-wordwrap
-# github.com/mitchellh/mapstructure v1.1.2
+# github.com/mitchellh/mapstructure v1.4.1
+## explicit
 github.com/mitchellh/mapstructure
 # github.com/nicksnyder/go-i18n v1.10.0
 ## explicit
@@ -350,7 +355,7 @@ github.com/phayes/permbits
 ## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
-# github.com/pkg/errors v0.8.1
+# github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
@@ -363,6 +368,8 @@ github.com/rivo/uniseg
 # github.com/rollbar/rollbar-go v1.1.0
 ## explicit
 github.com/rollbar/rollbar-go
+# github.com/russross/blackfriday/v2 v2.1.0
+## explicit
 # github.com/sergi/go-diff v1.1.0
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
@@ -410,6 +417,8 @@ github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
 github.com/ulikunitz/xz/lzma
+# github.com/urfave/cli/v2 v2.3.0
+## explicit
 # github.com/valyala/bytebufferpool v1.0.0
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.2.1
@@ -420,6 +429,8 @@ github.com/vbauerster/mpb/v6
 github.com/vbauerster/mpb/v6/cwriter
 github.com/vbauerster/mpb/v6/decor
 github.com/vbauerster/mpb/v6/internal
+# github.com/vektah/dataloaden v0.3.0
+## explicit
 # github.com/vektah/gqlparser/v2 v2.1.0
 ## explicit
 github.com/vektah/gqlparser/v2
@@ -473,6 +484,8 @@ golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
 golang.org/x/crypto/ssh/terminal
+# golang.org/x/mod v0.4.2
+## explicit
 # golang.org/x/net v0.0.0-20201021035429-f5854403a974
 ## explicit
 golang.org/x/net/context
@@ -492,7 +505,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
+# golang.org/x/sys v0.0.0-20210412220455-f1c623a9e750
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
@@ -508,6 +521,8 @@ golang.org/x/text/unicode/norm
 golang.org/x/text/width
 # golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 golang.org/x/time/rate
+# golang.org/x/tools v0.1.0
+## explicit
 # google.golang.org/api v0.30.0
 google.golang.org/api/internal
 google.golang.org/api/iterator
@@ -690,7 +705,7 @@ gopkg.in/src-d/go-git.v4/utils/merkletrie/noder
 gopkg.in/tomb.v1
 # gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
-# gopkg.in/yaml.v2 v2.3.0
+# gopkg.in/yaml.v2 v2.4.0
 ## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776

@@ -3,15 +3,20 @@
 package fileutils
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"unsafe"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
+	"golang.org/x/sys/windows"
 )
 
 const LineEnd = "\r\n"
@@ -100,10 +105,25 @@ func ResolveUniquePath(path string) (string, error) {
 	longPath, err := GetLongPathName(evalPath)
 	if err != nil {
 		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
-		// => just log the error and resume with resolved path
-		logging.Error("could not resolve long version of %s: %v", evalPath, err)
+		// => just log the error (unless err due to file not existing) and resume with resolved path
+		if !errors.Is(err, os.ErrNotExist) {
+			logging.Error("could not resolve long version of %s: %v", evalPath, err)
+		}
 		return filepath.Clean(evalPath), nil
 	}
 
 	return filepath.Clean(longPath), nil
+}
+
+func HideFile(path string) error {
+	k32 := syscall.NewLazyDLL("kernel32.dll")
+	setFileAttrs := k32.NewProc("SetFileAttributesW")
+
+	uipPath := uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(path)))
+	r1, _, err := setFileAttrs.Call(uipPath, 2)
+	if r1 == 0 && !errors.Is(err, windows.ERROR_SUCCESS) {
+		return fmt.Errorf("Hide file (set attributes): %w", err)
+	}
+
+	return nil
 }

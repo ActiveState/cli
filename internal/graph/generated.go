@@ -2,6 +2,12 @@
 
 package graph
 
+type DeferredUpdate struct {
+	Channel string `json:"channel"`
+	Version string `json:"version"`
+	Logfile string `json:"logfile"`
+}
+
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`

@@ -128,7 +128,12 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("activated state")
+	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
+	if runtime.GOOS == "windows" {
+		cp.Expect("Running Activation Events")
+	} else {
+		cp.Expect("You're Activated!")
+	}
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

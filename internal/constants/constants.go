@@ -203,6 +203,10 @@ const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
 const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
 
+// StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
+// Todo It is currently the same as the State Tool's
+const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
 const (
@@ -264,6 +268,12 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
+// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
+
+// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
@@ -287,3 +297,7 @@ const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// Cf., https://www.pivotaltracker.com/story/show/177781411
+const ToplevelInstallArchiveDir = "state-install"
