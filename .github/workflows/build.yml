@@ -202,7 +202,7 @@ jobs:
     - name: Unit Tests
       shell: bash
       run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray`
+        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
   inttest_critical:
     if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
       != 'refs/heads/release'
