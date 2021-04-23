@@ -162,6 +162,8 @@ function displayConsent() {
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
 By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
+
+Please note that the installer may have to modify your system environment to add the installation PATH.
 "
     Write-Host $consentText
 }
