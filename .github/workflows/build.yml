@@ -87,6 +87,10 @@ jobs:
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
+    - name: Build Systray App
+      shell: bash
+      if: runner.os == 'macOS'
+      run: state run build-systray-app
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'

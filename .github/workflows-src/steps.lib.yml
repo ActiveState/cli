@@ -67,6 +67,13 @@ shell: bash
 run: state run build-install-scripts
 #@ end
 ---
+#@ def steps_build_systrayapp():
+name: Build Systray App
+shell: bash
+if: runner.os == 'macOS'
+run: state run build-systray-app
+#@ end
+---
 #@ def steps_sign():
 name: Sign
 shell: bash
