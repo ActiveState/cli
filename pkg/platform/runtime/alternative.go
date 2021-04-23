@@ -225,15 +225,20 @@ func (ai *AlternativeInstall) PreInstall() error {
 			if !fileutils.DirExists(dir) {
 				continue
 			}
-			empty, err := fileutils.IsEmptyDir(dir)
-			if err != nil {
-				return locale.WrapError(err, "err_check_empty_artf_dir", "Could not check if artifact directory at {{.V0}} is emtpy", dir)
+			if artifactsContainDir(ai.cache, dir) {
+				continue
 			}
-			if empty && !artifactsContainDir(ai.cache, dir) {
-				err := os.RemoveAll(dir)
-				if err != nil {
-					return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
-				}
+			deleteDir, err := dirCanBeDeleted(dir, ai.cache)
+			if err != nil {
+				logging.Error("Could not determine if directory %s can be deleted: %v", dir, err)
+				continue
+			}
+			if !deleteDir {
+				continue
+			}
+			err = os.RemoveAll(dir)
+			if err != nil {
+				return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
 			}
 		}
 	}
@@ -249,7 +254,10 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 	keep = []artifactCacheMeta{}
 	delete = []artifactCacheMeta{}
 	for _, v := range artifactCache {
+		sort.Strings(v.Dirs)
+		sort.Strings(v.Files)
 		if funk.Contains(artifactRequestUuids, v.ArtifactID) {
+			// Ensure dirs and files are sorted, so they can be efficiently searched
 			keep = append(keep, v)
 			continue
 		}
@@ -258,9 +266,44 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 	return keep, delete
 }
 
+// dirCanBeDeleted checks if the given directory is empty - ignoring files and sub-directories that
+// are not in the cache.
+func dirCanBeDeleted(dir string, cache []artifactCacheMeta) (bool, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not read directory.")
+	}
+	for _, entry := range entries {
+		if entry.Type().IsDir() {
+			if artifactsContainDir(cache, filepath.Join(dir, entry.Name())) {
+				return false, nil
+			}
+		} else {
+			if artifactsContainFile(cache, filepath.Join(dir, entry.Name())) {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
+func sortedStringSliceContains(slice []string, x string) bool {
+	i := sort.SearchStrings(slice, x)
+	return i != len(slice) && slice[i] == x
+}
+
 func artifactsContainDir(artifactCache []artifactCacheMeta, dir string) bool {
 	for _, v := range artifactCache {
-		if funk.Contains(v.Dirs, dir) {
+		if sortedStringSliceContains(v.Dirs, dir) {
+			return true
+		}
+	}
+	return false
+}
+
+func artifactsContainFile(artifactCache []artifactCacheMeta, file string) bool {
+	for _, v := range artifactCache {
+		if sortedStringSliceContains(v.Files, file) {
 			return true
 		}
 	}
