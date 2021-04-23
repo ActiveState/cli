@@ -6,24 +6,27 @@ constants:
     value: ./cmd/state
   - name: SYSTRAY_PKGS
     value: ./cmd/state-tray
+  - name: DAEMON_PKGS
+    value: ./cmd/state-svc
+  - name: INSTALLER_PKGS
+    value: ./cmd/state-installer
+  - name: BUILD_TARGET_PREFIX_DIR
+    value: ./build
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
-    value: ./build/state
-  - name: BUILD_TARGET_32BIT
+    value: state
+  - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
-    value: ./build/state32
-  - name: SYSTRAY_BUILD_TARGET
-    if: ne .OS.Name "Windows"
-    value: ./build/state-tray
+    value: state-tray
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
-    value: ./build/state-svc
+    value: state-svc
   - name: BUILD_INSTALLER_TARGET
     if: ne .OS.Name "Windows"
-    value: ./build/state-installer
+    value: state-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -34,6 +37,9 @@ constants:
       if [ "$CI" = "true" ]; then
         GO_BUILD_TAGS="CI"
       fi
+
+      # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
+      BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
 scripts:
   - name: install-deps
     language: bash
@@ -64,15 +70,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-  - name: build-32bit
-    language: bash
-    description: Builds the project with the host OS as the target OS for 32-bit architecture.
-    value: |
-      set -e
-      $constants.SET_ENV
-      export GOARCH=386
-      go build -tags "$GO_BUILD_TAGS" -o $constants.BUILD_TARGET_32BIT $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -87,13 +85,37 @@ scripts:
     description: Builds the state-svc daemon
     value: |
       set -e
-      go build -o $constants.BUILD_DAEMON_TARGET ./cmd/state-svc
+      $constants.SET_ENV
+
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.DAEMON_PKGS
+  - name: build-tray
+    description: Builds the State Tool system tray application
+    standalone: true
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+  - name: build-all
+    description: Builds all our tools
+    standalone: true
+    language: bash
+    value: |
+      echo "Building State Tool"
+      $scripts.build.path()
+      echo "Building State Service"
+      $scripts.build-svc.path()
+      echo "Building State Tray App"
+      $scripts.build-tray.path()
   - name: build-installer
     language: bash
     description: Builds the state-installer
     value: |
       set -e
-      go build -o $constants.BUILD_INSTALLER_TARGET ./cmd/state-installer
+      $constants.SET_ENV
+
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
@@ -105,20 +127,27 @@ scripts:
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       set -e
-      go run scripts/s3-deployer/main.go build/update us-east-1 state-tool update/state
+      $constants.SET_ENV
+
+      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
     if: ne .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
-      cp installers/install.sh build/install.sh
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      mkdir -p $INSTALLERS_DIR
+
+      cp installers/install.sh $INSTALLERS_DIR/install.sh
+      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/install.sh us-east-1 state-tool update/state/install.sh
-      go run scripts/s3-deployer/main.go build/install.ps1 us-east-1 state-tool update/state/install.ps1
+      go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash
@@ -138,12 +167,6 @@ scripts:
       $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
-  - name: build-tray
-    description: Builds the State Tool system tray application
-    standalone: true
-    language: bash
-    value: |
-      go build -tags "$GO_BUILD_TAGS" -o $constants.SYSTRAY_BUILD_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
