@@ -35,7 +35,7 @@ func init() {
 			"Project":  testProject,
 			"Shell":    shell,
 			"Language": "python2",
-			"LangExe":  language.MakeByName("python2").Executable().Name(),
+			"LangExe":  language.MakeByName("python2").Executable().Filename(),
 		})
 	if err != nil {
 		panic(err.Error())
@@ -47,7 +47,7 @@ func init() {
 			"Project":  testProject,
 			"Shell":    shell,
 			"Language": "python3",
-			"LangExe":  language.MakeByName("python3").Executable().Name(),
+			"LangExe":  language.MakeByName("python3").Executable().Filename(),
 		})
 	if err != nil {
 		panic(err.Error())
