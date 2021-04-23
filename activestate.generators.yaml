@@ -60,7 +60,11 @@ scripts:
 
       export GOARCH=${1:-amd64}
       mkdir -p ./build/update
-      go run scripts/update-generator/main.go -o ./build/update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      go run scripts/update-generator/main.go -o ./build/update \
+        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+        $BUILD_TARGET_DIR/$constants.BUILD_TARGET \
+        $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
+        $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
@@ -85,11 +89,18 @@ scripts:
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_STATE_TOOL $TEST_STATE_SVC $TEST_STATE_TRAY
+      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update \
+        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+        $TEST_STATE_TOOL $TEST_STATE_SVC \
+        $TEST_STATE_TRAY
 
       echo "compile test-channel update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=test-channel" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_STATE_TOOL $TEST_STATE_SVC $TEST_STATE_TRAY
+      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update \
+        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+        $TEST_STATE_TOOL \
+        $TEST_STATE_SVC \
+        $TEST_STATE_TRAY
