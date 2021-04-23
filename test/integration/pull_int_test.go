@@ -18,28 +18,14 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Pull?commitID=b490d8f1-9e0c-4294-a9a1-88c5957665b5"`)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.ExpectLongString("default project?")
-	cp.Send("n")
-	cp.Expect("You're Activated")
-
-	cp.SendLine(`python3 -c "import requests"`)
-	cp.Expect("No module named 'requests'")
-
-	cp = ts.Spawn("pull")
+	cp := ts.Spawn("pull")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnCmd("python3", "-c", `"import requests"`)
 	cp.ExpectExitCode(0)
 }
 
