@@ -93,6 +93,23 @@ func copyFileToDir(filePath, dir string, isExecutable bool) error {
 	return nil
 }
 
+func copyDirToDir(fromDir, toDir string) error {
+	targetPath := filepath.Join(toDir, filepath.Base(fromDir))
+	fmt.Printf("Copying %s -> %s\n", fromDir, targetPath)
+
+	err := fileutils.Mkdir(targetPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not create target path %s", targetPath)
+	}
+
+	err = fileutils.CopyFiles(fromDir, targetPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not copy directory %s -> %s", fromDir, targetPath)
+	}
+
+	return nil
+}
+
 func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	if runtime.GOOS == "windows" {
 		return archiver.NewZip(), ".zip"
@@ -100,7 +117,7 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(targetPath string, channel, version, platform string, installerPath string, binaries []string) error {
+func createUpdate(targetPath string, channel, version, platform string, installerPath string, files []string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
 	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
@@ -129,10 +146,23 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		return errs.Wrap(err, "Could not create temp binary dir")
 	}
 
-	for _, bf := range binaries {
-		err := copyFileToDir(bf, binTempDir, true)
-		if err != nil {
-			return errs.Wrap(err, "Failed to copy binary file %s", bf)
+	sysTempDir := filepath.Join(tempDir, "system")
+	err = os.MkdirAll(sysTempDir, 0755)
+	if err != nil {
+		return errs.Wrap(err, "Could not create temp system dir")
+	}
+
+	for _, f := range files {
+		if fileutils.IsDir(f) {
+			err := copyDirToDir(f, sysTempDir)
+			if err != nil {
+				return errs.Wrap(err, "Failed to copy directory %s", f)
+			}
+		} else {
+			err := copyFileToDir(f, binTempDir, true)
+			if err != nil {
+				return errs.Wrap(err, "Failed to copy binary file %s", f)
+			}
 		}
 	}
 

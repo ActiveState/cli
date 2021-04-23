@@ -53,6 +53,7 @@ scripts:
     value: python3 scripts/locale-generator.py
   - name: generate-update
     language: bash
+    if: ne .OS.Name "MacOS"
     description: Generate update files
     value: |
       set -e

@@ -1,0 +1,25 @@
+constants:
+  - name: SYSTRAY_APP
+    if: eq .OS.Name "MacOS"
+    value: ActiveState\ Desktop.app
+scripts:
+  - name: build-systray-app
+    language: bash
+    standalone: true
+    if: eq .OS.Name "MacOS"
+    description: Copies the MacOS application directory to the build dir
+    value: |
+      mkdir -p build/${constants.SYSTRAY_APP}
+
+      cp -r installers/${constants.SYSTRAY_APP} build/
+  - name: generate-update
+    language: bash
+    if: eq .OS.Name "MacOS"
+    description: Generate update files
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      export GOARCH=${1:-amd64}
+      mkdir -p ./build/update
+      go run scripts/update-generator/main.go -o ./build/update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BUILD_TARGET_DIR/$constants.SYSTRAY_APP
