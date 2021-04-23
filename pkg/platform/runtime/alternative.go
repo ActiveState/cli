@@ -273,12 +273,12 @@ func artifactsToKeepAndDelete(artifactCache []artifactCacheMeta, artifactRequest
 // dirCanBeDeleted checks if the given directory is empty - ignoring files and sub-directories that
 // are not in the cache.
 func dirCanBeDeleted(dir string, cache []artifactCacheMeta) (bool, error) {
-	entries, err := os.ReadDir(dir)
+	entries, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not read directory.")
 	}
 	for _, entry := range entries {
-		if entry.Type().IsDir() {
+		if entry.IsDir() {
 			if artifactsContainDir(cache, filepath.Join(dir, entry.Name())) {
 				return false, nil
 			}
