@@ -198,7 +198,6 @@ func createUpdate(targetPath, channel, version, platform, installerPath, systemA
 
 func run() error {
 	flag.Parse()
-	fmt.Println("NArg:", flag.NArg())
 	if flag.NArg() < 1 && !condition.InTest() {
 		flag.Usage()
 		printUsage()

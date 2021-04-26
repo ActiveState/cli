@@ -74,8 +74,10 @@ scripts:
       go run github.com/99designs/gqlgen
   - name: generate-test-update
     language: bash
+    standalone: true
+    if: ne .OS.Name "MacOS"
     description: |
-      Generate tests update files.  These can be safely uploaded to s3, and can be used to test an installation/update
+      Generate tests update files. These can be safely uploaded to s3, and can be used to test an installation/update
     value: |
       set -e
       $constants.SET_ENV
