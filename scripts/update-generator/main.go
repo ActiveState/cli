@@ -210,7 +210,6 @@ func run() error {
 	binaries := flag.Args()[1:]
 
 	appDir := *systemAppDirFlag
-	fmt.Println("AppDir:", appDir)
 
 	branch := constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
