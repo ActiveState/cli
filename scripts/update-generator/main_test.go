@@ -18,6 +18,10 @@ func TestCreateUpdate(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Cannot create temp dir: %s", err.Error())
 	}
+
+	systemInstall := filepath.Join(dir, "system-install")
+	err = fileutils.Mkdir(systemInstall)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	installerPath := filepath.Join(dir, "installer")
@@ -29,7 +33,7 @@ func TestCreateUpdate(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	err = createUpdate(dir, "channel", "version", "platform", installerPath, []string{binary1, binary2})
+	err = createUpdate(dir, "channel", "version", "platform", installerPath, systemInstall, []string{binary1, binary2})
 	require.NoError(t, err)
 
 	_, ext := archiveMeta()

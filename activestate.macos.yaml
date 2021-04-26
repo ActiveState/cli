@@ -22,4 +22,8 @@ scripts:
 
       export GOARCH=${1:-amd64}
       mkdir -p ./build/update
-      go run scripts/update-generator/main.go -o ./build/update $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BUILD_TARGET_DIR/$constants.SYSTRAY_APP
+      go run scripts/update-generator/main.go --systemAppDir $BUILD_TARGET_DIR/$constants.SYSTRAY_APP -o ./build/update \
+      $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+      $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
+      $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET \
+      $BUILD_TARGET_DIR/$constants.BUILD_TARGET \

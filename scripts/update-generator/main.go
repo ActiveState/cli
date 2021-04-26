@@ -24,11 +24,11 @@ import (
 
 var exit = os.Exit
 
-var outputDirFlag, platformFlag, branchFlag, versionFlag *string
+var outputDirFlag, platformFlag, branchFlag, versionFlag, systemAppDirFlag *string
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <installer> <binaries>...")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] [--systemAppDir appDirectory] <installer> <binaries>...")
 }
 
 func main() {
@@ -47,6 +47,7 @@ func init() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
+	systemAppDirFlag = flag.String("systemAppDir", "", "The directory that contains the system application to be installed")
 }
 
 func fetchPlatform() string {
@@ -117,7 +118,7 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(targetPath string, channel, version, platform string, installerPath string, files []string) error {
+func createUpdate(targetPath, channel, version, platform, installerPath, systemAppDir string, files []string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
 	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
@@ -146,23 +147,23 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		return errs.Wrap(err, "Could not create temp binary dir")
 	}
 
-	sysTempDir := filepath.Join(tempDir, "system")
-	err = os.MkdirAll(sysTempDir, 0755)
-	if err != nil {
-		return errs.Wrap(err, "Could not create temp system dir")
+	for _, f := range files {
+		err := copyFileToDir(f, binTempDir, true)
+		if err != nil {
+			return errs.Wrap(err, "Failed to copy binary file %s", f)
+		}
 	}
 
-	for _, f := range files {
-		if fileutils.IsDir(f) {
-			err := copyDirToDir(f, sysTempDir)
-			if err != nil {
-				return errs.Wrap(err, "Failed to copy directory %s", f)
-			}
-		} else {
-			err := copyFileToDir(f, binTempDir, true)
-			if err != nil {
-				return errs.Wrap(err, "Failed to copy binary file %s", f)
-			}
+	if systemAppDir != "" {
+		sysTempDir := filepath.Join(tempDir, "system")
+		err = os.MkdirAll(sysTempDir, 0755)
+		if err != nil {
+			return errs.Wrap(err, "Could not create temp system dir")
+		}
+
+		err = copyDirToDir(systemAppDir, sysTempDir)
+		if err != nil {
+			return errs.Wrap(err, "Failed to copy directory %s", systemAppDir)
 		}
 	}
 
@@ -197,6 +198,7 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 
 func run() error {
 	flag.Parse()
+	fmt.Println("NArg:", flag.NArg())
 	if flag.NArg() < 1 && !condition.InTest() {
 		flag.Usage()
 		printUsage()
@@ -206,6 +208,9 @@ func run() error {
 	installerPath := flag.Arg(0)
 
 	binaries := flag.Args()[1:]
+
+	appDir := *systemAppDirFlag
+	fmt.Println("AppDir:", appDir)
 
 	branch := constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
@@ -219,5 +224,5 @@ func run() error {
 	targetDir := *outputDirFlag
 	os.MkdirAll(targetDir, 0755)
 
-	return createUpdate(targetDir, branch, version, platform, installerPath, binaries)
+	return createUpdate(targetDir, branch, version, platform, installerPath, appDir, binaries)
 }
