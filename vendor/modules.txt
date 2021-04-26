@@ -482,6 +482,15 @@ github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 ## explicit
 github.com/xi2/xz
+# github.com/yuin/goldmark v1.1.32
+## explicit
+github.com/yuin/goldmark
+github.com/yuin/goldmark/ast
+github.com/yuin/goldmark/parser
+github.com/yuin/goldmark/renderer
+github.com/yuin/goldmark/renderer/html
+github.com/yuin/goldmark/text
+github.com/yuin/goldmark/util
 # go.opencensus.io v0.22.4
 go.opencensus.io
 go.opencensus.io/internal

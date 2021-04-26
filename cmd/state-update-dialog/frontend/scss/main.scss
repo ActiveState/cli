@@ -1,4 +1,5 @@
 @import "_normalize";
+@import "_img";
 
 $color-initial: #fff;
 $color-primary: #2035B2;
@@ -9,12 +10,33 @@ $color-quinary: #e1e1e1;
 
 @import "../vendor/milligram/milligram";
 
-html {
+body {
   zoom: 100%;
-  font-family: sans-serif;
-  font-size: 10px; /* can't depend on defaults as at least on mac they are messed up, likely due to hidpi  */
+  font-family: Roboto, sans-serif;
+  font-size: 1.4em;
   color: $color-secondary;
   background: $color-initial;
+
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+.red {
+  color: #FB113C;
+}
+
+h1.logo {
+  @extend .img-logo;
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 24px;
+  padding-left: 28px;
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  margin: 0.5em 0;
 }
 
 .container {
@@ -25,9 +47,51 @@ html {
 
 .row.fill {
   flex: 1;
+  position: relative;
 
-  textarea {
-    height: 100%;
+  .column {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+  }
+}
+
+#changelog {
+  border: .1rem solid $color-quaternary;
+  border-radius: .4rem;
+  padding: .6rem 1.0rem .7rem;
+  background: white;
+
+  flex-grow: 1;
+  overflow: auto;
+  cursor: auto;
+
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+
+  &, * {
+    font-size: 12px !important;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-weight: bold;
+  }
+
+  h1, h2, h3, h4, h5 {
+    margin-bottom: 0;
+    margin-top: 0.5rem;
+  }
+
+  ul {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 0.5rem;
   }
 }
 
@@ -47,4 +111,8 @@ h4 {
 
 textarea, button {
   margin-bottom: 0;
+}
+
+#warning-wrapper {
+  display: none;
 }

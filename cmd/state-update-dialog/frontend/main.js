@@ -1,6 +1,6 @@
 // Main entry point
 function start() {
-    showContextMenu = document.oncontextmenu;
+    let showContextMenu = document.oncontextmenu;
     document.oncontextmenu = () => false;
     backend.Bindings.DebugMode().then(debugMode => {
         console.log(debugMode);
@@ -8,11 +8,36 @@ function start() {
     })
 
     Promise.all([
-        window.backend.Bindings.CurrentVersion(),
-        window.backend.Bindings.AvailableVersion()
+        backend.Bindings.CurrentVersion(),
+        backend.Bindings.AvailableVersion()
     ]).then(result => {
         document.getElementById("CurrentVersion").innerText = result[0];
         document.getElementById("AvailableVersion").innerText = result[1];
+    })
+
+    backend.Bindings.Warning().then(result => {
+        if (result === "") return;
+        document.getElementById("warning-wrapper").style.display = "block";
+        document.getElementById("warning").innerHTML = result;
+    });
+
+    populateChangelog();
+
+    document.getElementById("close-btn").addEventListener("click", () => window.close())
+}
+
+function populateChangelog(tries) {
+    tries = tries || 0;
+    if (tries > 10) {
+        return;
+    }
+    backend.Bindings.Changelog().then(result => {
+        if (result === "") {
+            tries++;
+            setTimeout(populateChangelog.bind(null, tries), tries * 100);
+        } else {
+            document.getElementById("changelog").innerHTML = result;
+        }
     })
 }
 

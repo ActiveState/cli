@@ -6,6 +6,7 @@
 </head>
 <body>
     <div class="container">
+        <h1 class="logo">ActiveState Desktop</h1>
         <h4>A New Update is Available!</h4>
         <div class="row">
             <div class="column">
@@ -15,10 +16,17 @@
         </div>
         <h4>Update Notes:</h4>
         <div class="row fill">
-            <div class="column changelog">
-                <p>
-                    Please refer to the <a href="">documentation</a>.
-                </p>
+            <div class="column">
+                <div id="changelog">
+                    <p>
+                        Please refer to the <a href="">documentation</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="warning-wrapper">
+            <div class="column">
+                <strong class="red">WARNING:</strong> <span id="warning"></span>
             </div>
         </div>
         <div class="row">
@@ -27,7 +35,7 @@
                 <!--<button class="button button-outline">Remind Me Later</button>-->
             </div>
             <div class="column">
-                <button class="button button-outline" style="float: right">Close</button>
+                <button class="button button-outline" style="float: right" id="close-btn">Close</button>
             </div>
         </div>
     </div>

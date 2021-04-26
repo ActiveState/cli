@@ -130,10 +130,31 @@ scripts:
     value: |
       go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" ./cmd/state-update-dialog
   - name: build-updlg-front
-    description: Builds the State Tool update dialog app's frontend.
+    description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
     language: bash
     value: |
+      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
       sassc cmd/state-update-dialog/frontend/scss/main.scss cmd/state-update-dialog/frontend/generated/main.css
+  - name: build-updlg-assets
+    description: Builds the State Tool update dialog app's assets.
+    language: python3
+    value: |
+      import base64
+      import os
+      lines = []
+      for root, dirs, filenames in os.walk("./cmd/state-update-dialog/frontend/scss/img"):
+          for filename in filenames:
+              fpath = os.path.join(root, filename)
+              name, ext = os.path.splitext(os.path.basename(fpath))
+              if ext != ".png":
+                raise Exception("Only PNG's are supported, found: %s" % filename)
+              with open(fpath, "rb") as file:
+                  lines.append(".img-" + name + "{")
+                  lines.append("  background-image: url(\"data:image/png;base64," + base64.b64encode(file.read()).decode("utf-8") + "\");")
+                  lines.append("}")
+          break
+      with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
+          file.write("\n".join(lines) + "\n")
   - name: run-updlg
     description: Runs the update dialog in debug mode
     standalone: true
