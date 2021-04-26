@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -43,7 +44,7 @@ func (u *AvailableUpdate) InstallDeferred(configPath string) (int, error) {
 		return 0, errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	installerPath := filepath.Join(tmpDir, InstallerName)
+	installerPath := filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir, InstallerName)
 	if !fileutils.FileExists(installerPath) {
 		return 0, errs.Wrap(err, "Downloaded update does not have installer")
 	}

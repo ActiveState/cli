@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_prepare", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit")
+#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit")
 #@ load("@ytt:template", "template")
 name: Build-Test-Deploy
 
@@ -12,7 +12,6 @@ name: Build-Test-Deploy
     types: [labeled, opened, synchronize, reopened]
 
 jobs:
-  prepare: #@ jobs_prepare()
   build: #@ jobs_build()
   unittest: #@ jobs_unittest()
   inttest_critical:

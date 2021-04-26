@@ -1,21 +1,15 @@
 constants:
   - name: BUILD_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state.exe
-  - name: BUILD_TARGET_32BIT
-    if: eq .OS.Name "Windows"
-    value: ./build/state32.exe
+    value: state.exe
   - name: BUILD_DAEMON_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state-svc.exe
+    value: state-svc.exe
   - name: BUILD_INSTALLER_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state-installer.exe
-  - name: SYSTRAY_BUILD_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state-tray.exe
+    value: state-installer.exe
+  - name: BUILD_SYSTRAY_TARGET
+    value: state-tray.exe
+  - name: BUILD_UPDLG_TARGET
+    value: ./build/state-update-dialog.exe
   - name: SYSTRAY_BUILDFLAGS
-    if: eq .OS.Name "Windows"
     value: -ldflags="-s -w -H=windowsgui"
 scripts:
   - name: build-install-scripts
@@ -24,7 +18,14 @@ scripts:
     if: eq .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
-      cp installers/install.ps1 build/install.ps1
+
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      mkdir -p $INSTALLERS_DIR
+
+      cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
+      cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
