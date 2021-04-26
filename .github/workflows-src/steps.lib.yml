@@ -149,7 +149,7 @@ run: |
 name: "Unit Tests"
 shell: bash
 run: |
-  go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray`
+  go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
 #@ end
 ---
 #@ def steps_inttestcrit():
