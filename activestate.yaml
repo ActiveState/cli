@@ -18,6 +18,9 @@ constants:
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
+  - name: BUILD_UPDLG_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-update-dialog
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
@@ -108,6 +111,8 @@ scripts:
       $scripts.build-svc.path()
       echo "Building State Tray App"
       $scripts.build-tray.path()
+      echo "Building State Update Dialog"
+      $scripts.build-updlg.path()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -116,6 +121,18 @@ scripts:
       $constants.SET_ENV
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+  - name: build-updlg
+    description: Builds the State Tool update dialog app. Run with `prod` argument to build non-dev version.
+    standalone: true
+    language: bash
+    value: |
+      go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" ./cmd/state-update-dialog
+  - name: run-updlg
+    description: Runs the update dialog in debug mode
+    standalone: true
+    language: bash
+    value: |
+      go run -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" github.com/ActiveState/cli/cmd/state-update-dialog
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN

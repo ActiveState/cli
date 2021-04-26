@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-18.04
         - macos-latest
@@ -90,12 +90,28 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe \nsigntool.exe sign -d \"ActiveState State Service (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
+        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
+        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
+        sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f
+        \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe \nsigntool.exe
+        sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState State Tool
+        (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe
+        \nsigntool.exe sign -d \"ActiveState State Service (32bit)\" -f \"Cert.p12\"
+        -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe \nsigntool.exe sign -d
+        \"ActiveState State Tray (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/386/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer
+        (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe
+        \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Sign install.PS1
-      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta",
+        "refs/heads/release"]'), github.ref)
       shell: powershell
       run: |
         $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
@@ -149,7 +165,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-18.04
         - macos-latest
@@ -183,14 +199,15 @@ jobs:
     - name: Unit Tests
       shell: bash
       run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray`
+        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
   inttest_critical:
-    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
+    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
+      != 'refs/heads/release'
     name: Critical Integration Test
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-18.04
         - macos-latest
@@ -281,7 +298,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
         - ubuntu-18.04
         - macos-latest
@@ -406,7 +423,8 @@ jobs:
       run: rm build/state* || true
     - name: Deploy
       shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
+        github.ref)
       run: |
         state run deploy-updates
         state run deploy-installers

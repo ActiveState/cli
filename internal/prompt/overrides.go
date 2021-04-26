@@ -2,7 +2,6 @@ package prompt
 
 import (
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type Select struct {
@@ -10,7 +9,7 @@ type Select struct {
 }
 
 func (s *Select) Cleanup(interface{}) error {
-	terminal.CursorNextLine(1)
+	s.NewCursor().NextLine(1)
 	return nil
 }
 
@@ -19,7 +18,7 @@ type Input struct {
 }
 
 func (i *Input) Cleanup(val interface{}) error {
-	terminal.CursorNextLine(1)
+	i.NewCursor().NextLine(1)
 	return nil
 }
 
@@ -28,7 +27,7 @@ type Password struct {
 }
 
 func (i *Password) Cleanup(val interface{}) error {
-	terminal.CursorNextLine(1)
+	i.NewCursor().NextLine(1)
 	return nil
 }
 
@@ -37,7 +36,7 @@ type Confirm struct {
 }
 
 func (s *Confirm) Cleanup(interface{}) error {
-	terminal.CursorNextLine(1)
+	s.NewCursor().NextLine(1)
 	// Keep the answer
 	return nil
 }
