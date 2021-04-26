@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -196,6 +198,10 @@ func applySuffix(suffix string, paths []string) []string {
 }
 
 func isExecutableFile(name string) bool {
+	if !fileutils.FileExists(name) {
+		name = executor.NameForExe(name)
+	}
+
 	f, err := os.Stat(name)
 	if err != nil { // unlikely unless file does not exist
 		return false
