@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,24 +13,49 @@ import (
 	"runtime"
 
 	"github.com/phayes/permbits"
-	"github.com/pkg/errors"
 
 	"github.com/ActiveState/archiver"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/updater"
 )
 
 var exit = os.Exit
 
-var appPath, version, genDir, defaultPlatform, branch string
+var outputDirFlag, platformFlag, branchFlag, versionFlag *string
 
-var outputDirFlag, platformFlag, branchFlag *string
+func printUsage() {
+	fmt.Println("")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <installer> <binaries>...")
+}
 
-type current struct {
-	Version  string
-	Sha256v2 string
+func main() {
+	if !condition.InTest() {
+		err := run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.Join(err, ":"))
+		}
+	}
+}
+
+func init() {
+	defaultPlatform := fetchPlatform()
+	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
+	platformFlag = flag.String("platform", defaultPlatform,
+		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
+	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
+	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
+}
+
+func fetchPlatform() string {
+	goos := os.Getenv("GOOS")
+	goarch := os.Getenv("GOARCH")
+	if goos != "" && goarch != "" {
+		return goos + "-" + goarch
+	}
+	return runtime.GOOS + "-" + runtime.GOARCH
 }
 
 func generateSha256(path string) string {
@@ -45,143 +68,104 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func createUpdate(path string, platform string) {
-	os.MkdirAll(filepath.Join(genDir, branch, version), 0755)
+func copyFileToDir(filePath, dir string, isExecutable bool) error {
+	targetPath := filepath.Join(dir, filepath.Base(filePath))
+	fmt.Printf("Copying %s -> %s\n", filePath, targetPath)
+	err := fileutils.CopyFile(filePath, targetPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not copy file %s -> %s", filePath, targetPath)
+	}
+	if !isExecutable {
+		return nil
+	}
+	// Permissions may be lost due to the file copy, so ensure it's still executable
+	permissions, err := permbits.Stat(targetPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not stat target file %s", targetPath)
+	}
+	permissions.SetUserExecute(true)
+	permissions.SetGroupExecute(true)
+	permissions.SetOtherExecute(true)
+	err = permbits.Chmod(targetPath, permissions)
+	if err != nil {
+		return errs.Wrap(err, "Could not make file executable")
+	}
+	return nil
+}
 
-	// Prepare the archiver
-	archive, ext, binExt := archiveMeta()
+func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
+	if runtime.GOOS == "windows" {
+		return archiver.NewZip(), ".zip"
+	}
+	return archiver.NewTarGz(), ".tar.gz"
+}
 
-	// Copy to a temp path so we can use a custom filename
+func createUpdate(targetPath string, channel, version, platform string, installerPath string, binaries []string) error {
+	relChannelPath := filepath.Join(channel, platform)
+	relVersionedPath := filepath.Join(channel, version, platform)
+	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
+	os.MkdirAll(filepath.Join(targetPath, relVersionedPath), 0755)
+
+	// Copy files to a temporary directory that we can create the archive from
 	tempDir, err := ioutil.TempDir("", "cli-update-generator")
 	if err != nil {
-		panic(errors.Wrap(err, "Could not create temp dir"))
+		return errs.Wrap(err, "Could not create temp dir")
 	}
-	tempPath := filepath.Join(tempDir, platform+binExt)
-	err = fileutils.CopyFile(path, tempPath)
+	defer os.RemoveAll(tempDir)
+
+	// Todo The archiver package we are using, creates an archive with a toplevel directory, so we need to give it a deterministic name ("root")
+	tempDir = filepath.Join(tempDir, constants.ToplevelInstallArchiveDir)
+
+	// copy installer to temp dir
+	err = copyFileToDir(installerPath, tempDir, true)
 	if err != nil {
-		panic(errors.Wrap(err, "Copy failed"))
+		return errs.Wrap(err, "Failed to copy installer.")
 	}
 
-	// Permissions may be lost due to the file copy, so ensure it's still executable
-	permissions, _ := permbits.Stat(tempPath)
-	permissions.SetUserExecute(true)
-	err = permbits.Chmod(tempPath, permissions)
+	// copy binary files to binary temp dir
+	binTempDir := filepath.Join(tempDir, "bin")
+	err = os.MkdirAll(binTempDir, 0755)
 	if err != nil {
-		panic(errors.Wrap(err, "Could not make file executable"))
+		return errs.Wrap(err, "Could not create temp binary dir")
 	}
 
-	targetDir := filepath.Join(genDir, branch, version)
-	targetPath := filepath.Join(targetDir, platform+ext)
-
-	// Remove target path if it already exists
-	os.Remove(targetPath)
-
-	// Create main archive
-	fmt.Printf("Creating %s\n", targetPath)
-	err = archive.Archive([]string{tempPath}, targetPath)
-	if err != nil {
-		panic(errors.Wrap(err, "Archiving failed"))
-	}
-
-	c := current{Version: version, Sha256v2: generateSha256(targetPath)}
-	b, err := json.MarshalIndent(c, "", "    ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	jsonPath := filepath.Join(genDir, branch, platform+".json")
-	fmt.Printf("Creating %s\n", jsonPath)
-	err = ioutil.WriteFile(jsonPath, b, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	versionPath := filepath.Join(genDir, "version.json")
-	fmt.Printf("Updating version file at %s\n", versionPath)
-	err = ioutil.WriteFile(versionPath, b, 0755)
-	if err != nil {
-		panic(err)
-	}
-
-	copy(jsonPath, filepath.Join(genDir, branch, version, platform+".json"))
-}
-
-func createGzip(path string, target string) {
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	f, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(f)
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing to gzip writer"))
-	}
-	err = w.Close() // You must close this first to flush the bytes to the buffer.
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored closing gzip writter"))
-	}
-	err = ioutil.WriteFile(target, buf.Bytes(), 0755)
-	if err != nil {
-		panic(errors.Wrapf(err,
-			"Errored writing gzipped buffer to file"))
-	}
-}
-
-func archiveMeta() (archiveMethod archiver.Archiver, ext string, binExt string) {
-	if runtime.GOOS == "windows" {
-		return archiver.NewZip(), ".zip", ".exe"
-	}
-	return archiver.NewTarGz(), ".tar.gz", ""
-}
-
-func copy(path, target string) {
-	fmt.Printf("Copying %s to %s\n", path, target)
-	err := fileutils.CopyFile(path, target)
-	if err != nil {
-		panic(errors.Wrap(err, "Copy failed"))
-	}
-}
-
-func remove(paths ...string) {
-	for _, path := range paths {
-		if fileutils.FileExists(path) {
-			err := os.Remove(path)
-			if err != nil {
-				panic(errors.Wrap(err, "Could not remove path: "+path))
-			}
+	for _, bf := range binaries {
+		err := copyFileToDir(bf, binTempDir, true)
+		if err != nil {
+			return errs.Wrap(err, "Failed to copy binary file %s", bf)
 		}
 	}
-}
 
-func printUsage() {
-	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [--platform platformOverride] <appPath> [<versionOverride>]")
-}
+	archive, archiveExt := archiveMeta()
+	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
+	archivePath := filepath.Join(targetPath, relArchivePath)
 
-func createBuildDir() {
-	os.MkdirAll(genDir, 0755)
-}
-
-func main() {
-	if !condition.InTest() {
-		run()
+	// Remove archive path if it already exists
+	_ = os.Remove(archivePath)
+	// Create main archive
+	fmt.Printf("Creating %s\n", archivePath)
+	err = archive.Archive([]string{tempDir}, archivePath)
+	if err != nil {
+		return errs.Wrap(err, "Archiving failed")
 	}
+
+	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath))
+	b, err := json.MarshalIndent(up, "", "    ")
+	if err != nil {
+		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
+	}
+
+	infoPath := filepath.Join(targetPath, relChannelPath, "info.json")
+	fmt.Printf("Creating %s\n", infoPath)
+	err = ioutil.WriteFile(infoPath, b, 0755)
+	if err != nil {
+		return errs.Wrap(err, "Failed to write info.json.")
+	}
+
+	return copyFileToDir(infoPath, filepath.Join(targetPath, relVersionedPath), false)
 }
 
-func init() {
-	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
-	platformFlag = flag.String("platform", defaultPlatform,
-		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
-	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
-}
-
-func run() {
-	defaultPlatform = fetchPlatform()
-
+func run() error {
 	flag.Parse()
 	if flag.NArg() < 1 && !condition.InTest() {
 		flag.Usage()
@@ -189,57 +173,21 @@ func run() {
 		exit(0)
 	}
 
-	if appPath == "" {
-		appPath = flag.Arg(0)
-	}
+	installerPath := flag.Arg(0)
 
-	if version == "" {
-		version = flag.Arg(1)
-		if flag.Arg(1) == "" {
-			version = constants.Version
-		}
-	}
+	binaries := flag.Args()[1:]
 
-	branch = constants.BranchName
+	branch := constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
 		branch = *branchFlag
 	}
 
-	platform := defaultPlatform
-	if platformFlag != nil && *platformFlag != "" {
-		platform = *platformFlag
-	}
+	platform := *platformFlag
 
-	if genDir == "" {
-		genDir = *outputDirFlag
-	}
+	version := *versionFlag
 
-	createBuildDir()
+	targetDir := *outputDirFlag
+	os.MkdirAll(targetDir, 0755)
 
-	// If dir is given create update for each file
-	fi, err := os.Stat(appPath)
-	if err != nil {
-		panic(err)
-	}
-
-	if fi.IsDir() {
-		files, err := ioutil.ReadDir(appPath)
-		if err == nil {
-			for _, file := range files {
-				createUpdate(filepath.Join(appPath, file.Name()), file.Name())
-			}
-			os.Exit(0)
-		}
-	}
-
-	createUpdate(appPath, platform)
-}
-
-func fetchPlatform() string {
-	goos := os.Getenv("GOOS")
-	goarch := os.Getenv("GOARCH")
-	if goos != "" && goarch != "" {
-		return goos + "-" + goarch
-	}
-	return runtime.GOOS + "-" + runtime.GOARCH
+	return createUpdate(targetDir, branch, version, platform, installerPath, binaries)
 }

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
@@ -124,14 +123,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-
-	// Test that executor exists    and works
-	exec := filepath.Join(ts.Dirs.Work, "target", "exec", executor.NameForExe("perl"))
-	cp = ts.SpawnCmdWithOpts(exec, e2e.WithArgs("--version"))
-	cp.Expect("This is perl 5")
-	cp.ExpectExitCode(0)
-
-	suite.Require().True(executor.IsExecutor(exec))
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
@@ -298,8 +289,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.containsWindowsDirectory(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
-		suite.containsWindowsDirectory(string(out), filepath.Join(ts.Dirs.Work, "target", "exec"), "Windows user PATH should contain our executor dir")
+		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
 	}
 }
 
@@ -391,7 +381,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect("exec") // expect bin dir
+	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
