@@ -17,6 +17,7 @@ Flags:
  --activate <project>            Activate a project when State Tool is correctly installed
  --activate-default <project>    Activate a project and make it the system default
  -h                              Show usage information (what you're currently reading)
+ -v <version-SHA>                The version of the State Tool to install
 EOF
 `
 
@@ -33,6 +34,7 @@ TARGET=""
 ACTIVATE=""
 ACTIVATE_DEFAULT=""
 POST_INSTALL_COMMAND=""
+VERSION=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -136,9 +138,9 @@ set_tempdir () {
 
 set_tempdir
 
-CHANNEL='release'
+CHANNEL='master'
 # Process command line arguments.
-while getopts "nb:t:e:c:f?h-:" opt; do
+while getopts "nb:t:e:c:v:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -167,6 +169,9 @@ while getopts "nb:t:e:c:f?h-:" opt; do
     ;;
   n)
     NOPROMPT=true
+    ;;
+  v)
+    VERSION=$OPTARG
     ;;
   h|?)
     echo "${USAGE}"
@@ -249,19 +254,33 @@ else
 fi
 
 fetchArtifact () {
-  info "Determining latest version..."
-  # Determine the latest version to fetch.
-  $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON || exit 1
-  VERSION=`cat $TMPDIR/info.json | grep -m 1 '"version":' | awk '{print $2}' | tr -d '",'`
+  if [ ! -z "$VERSION" ]; then
+    info "Attempting to fetch version: $VERSION..."
+    STATEURL=$STATEURL/$VERSION
+    if ! $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON ; then
+      error "Could not fetch version: $VERSION, please verify the version number and try again."
+      exit 1
+    fi
+
+    info "Fetching version: $VERSION..."
+  else
+    info "Determining latest version..."
+    # Determine the latest version to fetch.
+    $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON || exit 1
+    VERSION=`cat $TMPDIR/info.json | grep -m 1 '"version":' | awk '{print $2}' | tr -d '",'`
+
+    if [ -z "$VERSION" ]; then
+      error "Unable to retrieve the latest version number"
+      exit 1
+    fi
+
+    info "Fetching the latest version: $VERSION..."
+  fi
+
   SUM=`cat $TMPDIR/info.json | grep -m 1 '"sha256":' | awk '{print $2}' | tr -d '",'`
   RELURL=`cat $TMPDIR/info.json | grep -m 1 '"path":' | awk '{print $2}' | tr -d '",'`
   rm $TMPDIR/info.json
 
-  if [ -z "$VERSION" ]; then
-    error "Unable to retrieve the latest version number"
-    exit 1
-  fi
-  info "Fetching the latest version: $VERSION..."
 
   URL="${BASEURL}/${RELURL}"
   # Fetch it.
