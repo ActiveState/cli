@@ -21,6 +21,8 @@ constants:
   - name: BUILD_UPDLG_TARGET
     if: ne .OS.Name "Windows"
     value: state-update-dialog
+  - name: UPDLG_BUILDFLAGS
+    value: -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
@@ -128,13 +130,19 @@ scripts:
     standalone: true
     language: bash
     value: |
-      go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" ./cmd/state-update-dialog
+      set -e
+      $constants.SET_ENV
+
+      go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET $constants.UPDLG_BUILDFLAGS ./cmd/state-update-dialog
   - name: build-updlg-front
     description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
     language: bash
     value: |
       echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
-      sassc cmd/state-update-dialog/frontend/scss/main.scss cmd/state-update-dialog/frontend/generated/main.css
+      pushd cmd/state-update-dialog/frontend
+      sassc scss/main.scss generated/main.css
+      npm run build
+      popd
   - name: build-updlg-assets
     description: Builds the State Tool update dialog app's assets.
     language: python3
@@ -156,6 +164,7 @@ scripts:
       with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
           file.write("\n".join(lines) + "\n")
   - name: run-updlg
+    if: ne .OS.Name "Windows"
     description: Runs the update dialog in debug mode
     standalone: true
     language: bash

@@ -17,7 +17,7 @@ import (
 //go:embed frontend/main.html
 var html string
 
-//go:embed frontend/main.js
+//go:embed frontend/generated/main.js
 var js string
 
 //go:embed frontend/generated/main.css
@@ -37,8 +37,6 @@ func NewApp() *App {
 		JS:               js,
 		CSS:              css,
 		Colour:           "#FFF", // Wails uses this to detect dark mode
-		Resizable:        false,
-		DisableInspector: false,
 	})
 	return a
 }
