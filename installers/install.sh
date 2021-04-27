@@ -240,7 +240,7 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
-  FETCH="wget -q -O"
+  FETCH="wget -O"
 elif [ ! -z "`command -v curl`" ]; then
   FETCH="curl -sS -o"
 else
