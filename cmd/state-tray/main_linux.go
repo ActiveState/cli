@@ -1,5 +1,5 @@
 package main
 
 import (
-	"C"
+	_ "github.com/ActiveState/cli/cmd/state-tray/internal/libc-compatwrap"
 )
