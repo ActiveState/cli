@@ -15,6 +15,7 @@ name: Install Wails Dependencies
 shell: bash
 if: runner.os == 'Linux'
 run: |
+  sudo apt-get update
   sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev -y
 #@ end
 ---
