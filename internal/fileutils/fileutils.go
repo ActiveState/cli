@@ -486,24 +486,33 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 			if fileInfo.Mode() != toInfo.Mode() {
 				logging.Warning(locale.Tr("warn_move_incompatible_modes", "", subFromPath, subToPath))
 			}
+
+			// If we are moving to an existing directory, call function recursively to overwrite and add files in that directory
+			if toInfo.IsDir() {
+				err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
+				if err != nil {
+					return err
+				}
+				// source path should be empty now
+				err = os.Remove(subFromPath)
+				if err != nil {
+					return errs.Wrap(err, "os.Remove %s failed", subFromPath)
+				}
+
+				continue
+			}
+
+			// If the subToPath file exists, we remove it first - in order to ensure compatibility between platforms:
+			// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
+			err = os.Remove(subToPath)
+			logging.Error("Failed to remove destination file %s: %v", subToPath, err)
 		}
-		if toPathExists && toInfo.IsDir() {
-			err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
-			if err != nil {
-				return err
-			}
-			// source path should be empty now
-			err = os.Remove(subFromPath)
-			if err != nil {
-				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
-			}
-		} else {
-			err = os.Rename(subFromPath, subToPath)
-			if err != nil {
-				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
-			}
-			cb(subFromPath, subToPath)
+
+		err = os.Rename(subFromPath, subToPath)
+		if err != nil {
+			return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
 		}
+		cb(subFromPath, subToPath)
 	}
 	return nil
 }
