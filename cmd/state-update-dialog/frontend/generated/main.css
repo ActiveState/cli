@@ -316,7 +316,7 @@ html {
   font-size: 62.5%; }
 
 body {
-  color: #21292C;
+  color: #2C363A;
   font-family: 'Roboto', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   font-size: 1.6em;
   font-weight: 300;
@@ -342,7 +342,8 @@ input[type='submit'] {
   color: #fff;
   cursor: pointer;
   display: inline-block;
-  font-size: 1.1rem;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
   font-weight: 700;
   height: 3.8rem;
   letter-spacing: .1rem;
@@ -350,7 +351,6 @@ input[type='submit'] {
   padding: 0 3rem;
   text-align: center;
   text-decoration: none;
-  text-transform: uppercase;
   white-space: nowrap; }
   .button:focus,
   .button:hover,
@@ -362,8 +362,8 @@ input[type='submit'] {
   input[type='reset']:hover,
   input[type='submit']:focus,
   input[type='submit']:hover {
-    background-color: #21292C;
-    border-color: #21292C;
+    background-color: #8098E7;
+    border-color: #2035B2;
     color: #fff;
     outline: 0; }
   .button[disabled],
@@ -403,8 +403,8 @@ input[type='submit'] {
     input[type='submit'].button-outline:focus,
     input[type='submit'].button-outline:hover {
       background-color: transparent;
-      border-color: #21292C;
-      color: #21292C; }
+      border-color: #2C363A;
+      color: #2C363A; }
     .button.button-outline[disabled]:focus,
     .button.button-outline[disabled]:hover,
     button.button-outline[disabled]:focus,
@@ -437,7 +437,7 @@ input[type='submit'] {
     input[type='submit'].button-clear:hover {
       background-color: transparent;
       border-color: transparent;
-      color: #21292C; }
+      color: #2C363A; }
     .button.button-clear[disabled]:focus,
     .button.button-clear[disabled]:hover,
     button.button-clear[disabled]:focus,
@@ -663,7 +663,7 @@ a {
   text-decoration: none; }
   a:focus,
   a:hover {
-    color: #21292C; }
+    color: #2C363A; }
 
 dl,
 ol,
@@ -798,8 +798,9 @@ img {
 body {
   zoom: 100%;
   font-family: Roboto, sans-serif;
-  font-size: 1.4em;
-  color: #21292C;
+  font-size: 16px;
+  font-weight: normal;
+  color: #2C363A;
   background: #fff;
   -webkit-user-select: none;
   -ms-user-select: none;
@@ -815,8 +816,8 @@ h1.logo {
   background-size: 24px;
   padding-left: 28px;
   font-size: 24px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
+  font-weight: normal;
+  letter-spacing: 1px;
   margin: 0.5em 0; }
 
 .container {
@@ -852,7 +853,8 @@ h1.logo {
     font-weight: bold; }
   #changelog h1, #changelog h2, #changelog h3, #changelog h4, #changelog h5 {
     margin-bottom: 0;
-    margin-top: 0.5rem; }
+    margin-top: 0.5rem;
+    letter-spacing: .5px; }
   #changelog ul {
     margin-bottom: 0; }
   #changelog p {
@@ -867,6 +869,7 @@ button:not(:last-child) {
 h4 {
   font-size: 1.1em;
   font-weight: bold;
+  letter-spacing: .5px;
   margin-bottom: 0; }
 
 textarea, button {

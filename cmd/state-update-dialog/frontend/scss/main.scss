@@ -3,17 +3,19 @@
 
 $color-initial: #fff;
 $color-primary: #2035B2;
-$color-secondary: #21292C;
+$color-secondary: #2C363A;
 $color-tertiary: #f4f5f6;
 $color-quaternary: #d1d1d1;
 $color-quinary: #e1e1e1;
+$highlight-blue: #8098E7;
 
 @import "../vendor/milligram/milligram";
 
 body {
   zoom: 100%;
   font-family: Roboto, sans-serif;
-  font-size: 1.4em;
+  font-size: 16px;
+  font-weight: normal;
   color: $color-secondary;
   background: $color-initial;
 
@@ -34,8 +36,8 @@ h1.logo {
   background-size: 24px;
   padding-left: 28px;
   font-size: 24px;
-  font-weight: 400;
-  letter-spacing: 0.5px;
+  font-weight: normal;
+  letter-spacing: 1px;
   margin: 0.5em 0;
 }
 
@@ -84,6 +86,7 @@ h1.logo {
   h1, h2, h3, h4, h5 {
     margin-bottom: 0;
     margin-top: 0.5rem;
+    letter-spacing: .5px;
   }
 
   ul {
@@ -106,6 +109,7 @@ button:not(:last-child) {
 h4 {
   font-size: 1.1em;
   font-weight: bold;
+  letter-spacing: .5px;
   margin-bottom: 0;
 }
 
