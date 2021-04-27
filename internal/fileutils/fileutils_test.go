@@ -466,7 +466,13 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 
 	counter := mock.NewMockIncrementer()
 
-	MoveAllFilesRecursively(fromDir, toDir, func(string, string) { counter.Increment() })
+	err = os.Chmod(filepath.Join(fromDir, "root_in_1_and_2"), 0440)
+	require.NoError(t, err)
+	err = os.Chmod(filepath.Join(toDir, "root_in_1_and_2"), 0440)
+	require.NoError(t, err)
+
+	err = MoveAllFilesRecursively(fromDir, toDir, func(string, string) { counter.Increment() })
+	assert.NoError(t, err)
 
 	assertFileWithContent(t, "1", toDir, "only_in_1", "t1")
 	assertFileWithContent(t, "1", toDir, "in_1_and_2", "only_in_1")
