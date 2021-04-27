@@ -1,8 +1,6 @@
 package main
 
 import (
-	"C"
-
 	"context"
 	"fmt"
 	"os"
