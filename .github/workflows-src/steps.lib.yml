@@ -10,6 +10,14 @@ shell: bash
 run: state run build-svc
 #@ end
 ---
+#@ def steps_install_wails_deps():
+name: Install Wails Dependencies
+shell: bash
+if: runner.os == 'Linux'
+run: |
+  sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev -y
+#@ end
+---
 #@ def steps_build_tray_linux():
 name: Build Tray App (linux)
 shell: bash
