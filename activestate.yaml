@@ -138,6 +138,7 @@ scripts:
     description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
     language: bash
     value: |
+      set -e
       echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
       pushd cmd/state-update-dialog/frontend
       sassc scss/main.scss generated/main.css

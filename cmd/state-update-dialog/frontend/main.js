@@ -23,7 +23,7 @@ function start() {
 
     populateChangelog();
 
-    document.getElementById("close-btn").addEventListener("click", () => window.close())
+    document.getElementById("close-btn").addEventListener("click", () => backend.Bindings.Exit());
 }
 
 function populateChangelog(tries) {
@@ -36,7 +36,9 @@ function populateChangelog(tries) {
             tries++;
             setTimeout(populateChangelog.bind(null, tries), tries * 100);
         } else {
-            document.getElementById("changelog").innerHTML = result;
+            let changelog = document.getElementById("changelog");
+            changelog.style.height = "";
+            changelog.innerHTML = result;
         }
     })
 }

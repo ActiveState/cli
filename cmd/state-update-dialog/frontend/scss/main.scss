@@ -98,6 +98,15 @@ h1.logo {
   }
 }
 
+.buttons {
+  /* We have to force the height here because for whatever reason IE11 shifts dimensions around on button hover otherwise */
+  height: 50px;
+
+  .push-right {
+    float: right;
+  }
+}
+
 button:not(:last-child) {
   margin-right: 8px;
 }
