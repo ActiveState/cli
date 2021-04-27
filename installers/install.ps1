@@ -179,7 +179,17 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     if ($script:VERSION -ne "") {
         Write-Host "Attempting to fetch version: $script:VERSION...`n"
         $jsonURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
-        $infoJson = ConvertFrom-Json -InputObject (download $jsonurl)
+
+        try {
+            $jsonString = download $jsonURL
+        } catch [System.Exception] {
+            Write-Error "Could not fetch version: $script:VERSION, please verify the version number and try again."
+            return 1
+        }
+
+        Write-Host $jsonString
+        $infoJson = ConvertFrom-Json -InputObject $jsonString
+
         $version = $script:VERSION
 
         Write-Host "Fetching version: $version...`n"
