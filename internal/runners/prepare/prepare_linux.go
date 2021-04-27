@@ -1,42 +1,45 @@
-//+build linux
-
-package autostart
+package prepare
 
 import (
-	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/gobuffalo/packr"
 	"github.com/mitchellh/go-homedir"
 )
 
-const (
-	autostartDir = ".config/autostart"
-)
-
-func (a *App) Enable() error {
-	enabled, err := a.IsEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-	if enabled {
+func (r *Prepare) prepareOS() error {
+	if rtutils.BuiltViaCI { // disabled while we're still testing this functionality
 		return nil
 	}
 
-	dir, err := dirPath(autostartDir)
+	if err := autostart.New().Enable(); err != nil {
+		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
+	}
+
+	if err := r.prepareDesktopShortcut(); err != nil {
+		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
+	}
+
+	return nil
+}
+
+func (r *Prepare) prepareDesktopShortcut() error {
+	dir, err := dirPath(constants.ApplicationDir)
 	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
+		return errs.Wrap(err, "Could not find application directory")
 	}
 	path := filepath.Join(dir, constants.TrayLaunchFileName)
 
 	scut, err := shortcut.New(appinfo.TrayApp().Exec(), path)
 	if err != nil {
-		return errs.Wrap(err, "Could not construct autostart shortcut")
+		return errs.Wrap(err, "Could not construct shortcut")
 	}
 
 	iconsDir, err := dirPath(constants.IconsDir)
@@ -56,38 +59,10 @@ func (a *App) Enable() error {
 		IconPath:    iconsPath,
 	}
 	if err := scut.Save(constants.TrayAppName, scutOpts); err != nil {
-		return errs.Wrap(err, "Could not save autostart shortcut")
+		return errs.Wrap(err, "Could not save shortcut")
 	}
 
 	return nil
-}
-
-func (a *App) Disable() error {
-	enabled, err := a.IsEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-	if !enabled {
-		return nil
-	}
-
-	dir, err := dirPath(autostartDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
-	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
-
-	return os.Remove(path)
-}
-
-func (a *App) IsEnabled() (bool, error) {
-	dir, err := dirPath(autostartDir)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not find autostart directory")
-	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
-
-	return fileutils.FileExists(path), nil
 }
 
 func dirPath(dir string) (string, error) {
