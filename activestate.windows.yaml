@@ -1,18 +1,15 @@
 constants:
   - name: BUILD_TARGET
-    if: eq .OS.Name "Windows"
     value: state.exe
   - name: BUILD_DAEMON_TARGET
-    if: eq .OS.Name "Windows"
     value: state-svc.exe
   - name: BUILD_INSTALLER_TARGET
-    if: eq .OS.Name "Windows"
     value: state-installer.exe
   - name: BUILD_SYSTRAY_TARGET
-    if: eq .OS.Name "Windows"
     value: state-tray.exe
+  - name: BUILD_UPDLG_TARGET
+    value: ./build/state-update-dialog.exe
   - name: SYSTRAY_BUILDFLAGS
-    if: eq .OS.Name "Windows"
     value: -ldflags="-s -w -H=windowsgui"
 scripts:
   - name: build-install-scripts

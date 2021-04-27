@@ -1,6 +1,8 @@
 module github.com/ActiveState/cli
 
-go 1.15
+go 1.16
+
+replace github.com/ActiveState/cli => ./
 
 require (
 	cloud.google.com/go v0.64.0
@@ -24,7 +26,7 @@ require (
 	github.com/denisbrodbeck/machineid v0.8.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
-	github.com/fatih/color v1.7.0
+	github.com/fatih/color v1.10.0
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gammazero/workerpool v1.1.1
@@ -65,7 +67,8 @@ require (
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.10
-	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/nicksnyder/go-i18n v1.10.0
@@ -88,18 +91,19 @@ require (
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v6 v6.0.2
 	github.com/vektah/gqlparser/v2 v2.1.0
+	github.com/wailsapp/wails v1.16.3
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974
-	golang.org/x/sys v0.0.0-20210412220455-f1c623a9e750
-	golang.org/x/text v0.3.3
+	golang.org/x/net v0.0.0-20210420210106-798c2154c571
+	golang.org/x/sys v0.0.0-20210420205809-ac73e9fd8988
+	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.36.0 // indirect
-	gopkg.in/AlecAivazis/survey.v1 v1.4.2
+	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20160818020120-3f83fa500528 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
