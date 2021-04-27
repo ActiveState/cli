@@ -138,7 +138,7 @@ set_tempdir () {
 
 set_tempdir
 
-CHANNEL='master'
+CHANNEL='release'
 # Process command line arguments.
 while getopts "nb:t:e:c:v:f?h-:" opt; do
   case $opt in
