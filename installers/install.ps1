@@ -187,7 +187,6 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
             return 1
         }
 
-        Write-Host $jsonString
         $infoJson = ConvertFrom-Json -InputObject $jsonString
 
         $version = $script:VERSION
