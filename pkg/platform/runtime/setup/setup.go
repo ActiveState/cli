@@ -415,11 +415,14 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, un
 	defer os.RemoveAll(unpackedDir)
 
 	var files []string
+	var dirs []string
 	onMoveFile := func(fromPath, toPath string) {
-		if !fileutils.IsDir(toPath) {
-			s.events.ArtifactStepProgress(events.Install, a, 1)
+		if fileutils.IsDir(toPath) {
+			dirs = append(dirs, toPath)
+		} else {
 			files = append(files, toPath)
 		}
+		s.events.ArtifactStepProgress(events.Install, a, 1)
 	}
 	s.events.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
 	err := fileutils.MoveAllFilesRecursively(
@@ -433,7 +436,7 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, un
 	}
 	s.events.ArtifactStepCompleted(events.Install, a)
 
-	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, envDef)); err != nil {
+	if err := s.store.StoreArtifact(store.NewStoredArtifact(a, files, dirs, envDef)); err != nil {
 		return errs.Wrap(err, "Could not store artifact meta info")
 	}
 
