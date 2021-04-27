@@ -1,5 +1,3 @@
-//+build linux
-
 package open
 
 import (
@@ -12,13 +10,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Prompt brings up the user's preferred shell within a new terminal.
 func Prompt(command string) error {
-	shell, err := preferredShellWithFallback()
+	shell, err := preferredShell()
 	if err != nil {
-		// log locale.WrapError(err, "err_get_shell", "Cannot get preferred shell")
+		logging.Errorf("Preferred shell failure (falling back to bash): %v", err)
 		shell = "bash"
 	}
 
@@ -31,7 +30,7 @@ func Prompt(command string) error {
 	return nil
 }
 
-func preferredShellWithFallback() (string, error) {
+func preferredShell() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", locale.WrapError(err, "err_user_unknown", "Cannot get current user")
