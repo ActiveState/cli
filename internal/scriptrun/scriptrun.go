@@ -198,6 +198,8 @@ func applySuffix(suffix string, paths []string) []string {
 }
 
 func isExecutableFile(name string) bool {
+	// TODO: We want a better way to find the executable on Windows.
+	// Follow up filed here: https://www.pivotaltracker.com/n/projects/2203557/stories/177934469
 	if !fileutils.FileExists(name) {
 		name = executor.NameForExe(name)
 	}
