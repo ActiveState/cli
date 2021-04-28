@@ -11,6 +11,9 @@ constants:
     value: ./build/state-update-dialog.exe
   - name: SYSTRAY_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
+  - name: UPDLG_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: -ldflags "-w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
 scripts:
   - name: build-install-scripts
     language: bash
@@ -77,3 +80,10 @@ scripts:
       mkdir -p build/msi
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
       rm -Rf build/msi-language
+  - name: run-updlg
+    description: Runs the update dialog in debug mode
+    standalone: true
+    language: bash
+    value: |
+      /c/Windows/System32/F12/IEChooser.exe & // debugger
+      go run $constants.UPDLG_BUILDFLAGS github.com/ActiveState/cli/cmd/state-update-dialog
