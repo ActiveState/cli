@@ -32,8 +32,8 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	a.wails = wails.CreateApp(&wails.AppConfig{
-		Width:  800,
-		Height: 600,
+		Width:  600,
+		Height: 400,
 		Title:  "ActiveState Desktop - Update Available",
 		HTML:   html,
 		JS:     js,
