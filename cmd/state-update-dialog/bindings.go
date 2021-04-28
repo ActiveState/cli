@@ -3,17 +3,21 @@ package main
 import (
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/rollbar/rollbar-go"
+	"github.com/wailsapp/wails"
 )
 
 type Bindings struct {
 	update    *updater.AvailableUpdate
 	changelog string
+	runtime   *wails.Runtime
+}
+
+func (b *Bindings) WailsInit(runtime *wails.Runtime) error {
+	b.runtime = runtime
+	return nil
 }
 
 func (b *Bindings) CurrentVersion() string {
@@ -33,10 +37,7 @@ func (b *Bindings) Warning() string {
 }
 
 func (b *Bindings) Exit() {
-	// This is SUPER dirty, but as of right now wails leaves us no other choice:
-	// https://github.com/wailsapp/wails/issues/693
-	events.WaitForEvents(1*time.Second, rollbar.Close)
-	os.Exit(0)
+	b.runtime.Window.Close()
 }
 
 func (b *Bindings) DebugMode() bool {
