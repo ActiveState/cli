@@ -28,7 +28,7 @@ func (a *App) Enable() error {
 		return nil
 	}
 
-	dir, err := dirPath(autostartDir)
+	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
@@ -39,7 +39,7 @@ func (a *App) Enable() error {
 		return errs.Wrap(err, "Could not construct autostart shortcut")
 	}
 
-	iconsDir, err := dirPath(constants.IconsDir)
+	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
 		return errs.Wrap(err, "")
 	}
@@ -71,7 +71,7 @@ func (a *App) Disable() error {
 		return nil
 	}
 
-	dir, err := dirPath(autostartDir)
+	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
@@ -81,7 +81,7 @@ func (a *App) Disable() error {
 }
 
 func (a *App) IsEnabled() (bool, error) {
-	dir, err := dirPath(autostartDir)
+	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find autostart directory")
 	}
@@ -90,10 +90,10 @@ func (a *App) IsEnabled() (bool, error) {
 	return fileutils.FileExists(path), nil
 }
 
-func dirPath(dir string) (string, error) {
+func prependHomeDir(path string) (string, error) {
 	homeDir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(homeDir, dir), nil
+	return filepath.Join(homeDir, path), nil
 }

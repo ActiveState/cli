@@ -31,7 +31,7 @@ func (r *Prepare) prepareOS() error {
 }
 
 func (r *Prepare) prepareDesktopShortcut() error {
-	dir, err := dirPath(constants.ApplicationDir)
+	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find application directory")
 	}
@@ -42,9 +42,9 @@ func (r *Prepare) prepareDesktopShortcut() error {
 		return errs.Wrap(err, "Could not construct shortcut")
 	}
 
-	iconsDir, err := dirPath(constants.IconsDir)
+	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
-		return errs.Wrap(err, "")
+		return errs.Wrap(err, "Could not find icons directory")
 	}
 	iconsPath := filepath.Join(iconsDir, constants.TrayIconFileName)
 
@@ -65,10 +65,10 @@ func (r *Prepare) prepareDesktopShortcut() error {
 	return nil
 }
 
-func dirPath(dir string) (string, error) {
+func prependHomeDir(path string) (string, error) {
 	homeDir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(homeDir, dir), nil
+	return filepath.Join(homeDir, path), nil
 }
