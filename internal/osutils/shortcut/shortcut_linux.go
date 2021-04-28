@@ -98,7 +98,7 @@ type desktopFileData struct {
 	IconName    string
 }
 
-var desktopFileTmpl = `
+var desktopFileTmpl = strings.TrimPrefix(`
 [Desktop Entry]
 Name={{ .Name }}
 GenericName={{ .GenericName }}
@@ -113,4 +113,4 @@ NoDisplay=false
 StartupNotify=false
 Icon={{ .IconName }}
 Name[en_US]={{ .Name }}
-`
+`, "\n")
