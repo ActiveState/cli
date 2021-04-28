@@ -20,17 +20,23 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if err := autostart.New().Enable(); err != nil {
-		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
+		r.reportError(locale.Tr(
+			"err_prepare_autostart",
+			"Could not enable auto-start, error received: {{.V0}}.", err.Error(),
+		), err)
 	}
 
-	if err := r.prepareDesktopShortcut(); err != nil {
-		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
+	if err := r.setupDesktopApplicationFile(); err != nil {
+		r.reportError(locale.Tr(
+			"err_prepare_shortcut_linux",
+			"Could not create desktop application file: {{.V0}}.", err.Error(),
+		), err)
 	}
 
 	return nil
 }
 
-func (r *Prepare) prepareDesktopShortcut() error {
+func (r *Prepare) setupDesktopApplicationFile() error {
 	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find application directory")
