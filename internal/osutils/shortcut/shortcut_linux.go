@@ -1,15 +1,14 @@
 package shortcut
 
 import (
-	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/strutils"
 )
 
 type Shortcut struct {
@@ -39,16 +38,9 @@ type ShortcutSaveOpts struct {
 }
 
 func (s *Shortcut) Save(name string, opts ShortcutSaveOpts) error {
-	t := template.New("")
-	t, err := t.Parse(desktopFileTmpl)
-	if err != nil {
-		return errs.Wrap(err, "Could not parse desktop file template")
-	}
-
 	iconName := filepath.Base(opts.IconPath)
 	iconName = strings.TrimSuffix(iconName, filepath.Ext(iconName))
 
-	buf := &bytes.Buffer{}
 	data := desktopFileData{
 		Name:        name,
 		GenericName: opts.GenericName,
@@ -57,7 +49,8 @@ func (s *Shortcut) Save(name string, opts ShortcutSaveOpts) error {
 		Keywords:    opts.Keywords,
 		IconName:    iconName,
 	}
-	if err = t.Execute(buf, data); err != nil {
+	desktopFile, err := strutils.ParseTemplate(desktopFileTmpl, data)
+	if err != nil {
 		return errs.Wrap(err, "Could not execute template")
 	}
 
@@ -65,7 +58,7 @@ func (s *Shortcut) Save(name string, opts ShortcutSaveOpts) error {
 		return errs.Wrap(err, "Could not write icon file")
 	}
 
-	if err := fileutils.WriteFile(s.path, buf.Bytes()); err != nil {
+	if err := fileutils.WriteFile(s.path, []byte(desktopFile)); err != nil {
 		return errs.Wrap(err, "Could not write desktop file")
 	}
 
