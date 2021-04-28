@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=96e72fc8-c86d-4f86-b8c7-6fcb393f3941
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -21,6 +21,8 @@ constants:
   - name: BUILD_UPDLG_TARGET
     if: ne .OS.Name "Windows"
     value: state-update-dialog
+  - name: UPDLG_BUILDFLAGS
+    value: -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
@@ -56,6 +58,16 @@ scripts:
         go get -u github.com/gobuffalo/packr/...
         popd
       fi
+      $scripts.install-deps-os
+  - name: install-deps-os
+    language: bash
+    description: Install OS specific deps
+    value: ""
+  - name: install-deps-os
+    if: eq .OS.Name "Linux"
+    language: bash
+    description: Install OS specific deps
+    value: sudo apt install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
@@ -114,6 +126,8 @@ scripts:
       $scripts.build-svc.path()
       echo "Building State Tray App"
       $scripts.build-tray.path()
+      echo "Building State Update Dialog Frontend"
+      $scripts.build-updlg-front.path()
       echo "Building State Update Dialog"
       $scripts.build-updlg.path()
   - name: build-installer
@@ -129,8 +143,42 @@ scripts:
     standalone: true
     language: bash
     value: |
-      go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" ./cmd/state-update-dialog
+      set -e
+      $constants.SET_ENV
+
+      go build -o $BUILD_TARGET_DIR/$constants.UPDLG_BUILD_TARGET $constants.UPDLG_BUILDFLAGS ./cmd/state-update-dialog
+  - name: build-updlg-front
+    description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
+    language: bash
+    value: |
+      set -e
+      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
+      pushd cmd/state-update-dialog/frontend
+      sassc scss/main.scss generated/main.css
+      npm run build
+      popd
+  - name: build-updlg-assets
+    description: Builds the State Tool update dialog app's assets.
+    language: python3
+    value: |
+      import base64
+      import os
+      lines = []
+      for root, dirs, filenames in os.walk("./cmd/state-update-dialog/frontend/scss/img"):
+          for filename in filenames:
+              fpath = os.path.join(root, filename)
+              name, ext = os.path.splitext(os.path.basename(fpath))
+              if ext != ".png":
+                raise Exception("Only PNG's are supported, found: %s" % filename)
+              with open(fpath, "rb") as file:
+                  lines.append(".img-" + name + "{")
+                  lines.append("  background-image: url(\"data:image/png;base64," + base64.b64encode(file.read()).decode("utf-8") + "\");")
+                  lines.append("}")
+          break
+      with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
+          file.write("\n".join(lines) + "\n")
   - name: run-updlg
+    if: ne .OS.Name "Windows"
     description: Runs the update dialog in debug mode
     standalone: true
     language: bash

@@ -1,0 +1,131 @@
+@import "_normalize";
+@import "_img";
+
+$color-initial: #fff;
+$color-primary: #2035B2;
+$color-secondary: #2C363A;
+$color-tertiary: #f4f5f6;
+$color-quaternary: #d1d1d1;
+$color-quinary: #e1e1e1;
+$highlight-blue: #8098E7;
+
+@import "../vendor/milligram/milligram";
+
+body {
+  zoom: 100%;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  font-weight: normal;
+  color: $color-secondary;
+  background: $color-initial;
+
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+.red {
+  color: #FB113C;
+}
+
+h1.logo {
+  @extend .img-logo;
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 24px;
+  padding-left: 28px;
+  font-size: 24px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  margin: 0.5em 0;
+}
+
+.container {
+  display: flex;
+  flex-flow: column;
+  height: 100vh;
+}
+
+.row.fill {
+  flex: 1;
+  position: relative;
+
+  .column {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+  }
+}
+
+#changelog {
+  border: .1rem solid $color-quaternary;
+  border-radius: .4rem;
+  padding: .6rem 1.0rem .7rem;
+  background: white;
+
+  flex-grow: 1;
+  overflow: auto;
+  cursor: auto;
+
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+
+  &, * {
+    font-size: 12px !important;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-weight: bold;
+  }
+
+  h1, h2, h3, h4, h5 {
+    margin-bottom: 0;
+    margin-top: 0.5rem;
+    letter-spacing: .5px;
+  }
+
+  ul {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.buttons {
+  /* We have to force the height here because for whatever reason IE11 shifts dimensions around on button hover otherwise */
+  height: 50px;
+
+  .push-right {
+    float: right;
+  }
+}
+
+button:not(:last-child) {
+  margin-right: 8px;
+}
+
+.row:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+h4 {
+  font-size: 1.1em;
+  font-weight: bold;
+  letter-spacing: .5px;
+  margin-bottom: 0;
+}
+
+textarea, button {
+  margin-bottom: 0;
+}
+
+#warning-wrapper {
+  display: none;
+}

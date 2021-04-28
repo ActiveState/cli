@@ -1,9 +1,9 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_build_svc", "steps_build_tray", "steps_build_tray_linux", "steps_build_installer", "steps_build_32bit", "steps_build_svc_32bit", "steps_build_tray_32bit", "steps_build_installer_32bit", "steps_genupdate", "steps_gentest_update", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_build_svc", "steps_build_tray", "steps_build_installer", "steps_build_32bit", "steps_build_svc_32bit", "steps_build_tray_32bit", "steps_build_installer_32bit", "steps_genupdate", "steps_gentest_update", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_test_linux", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts")
 
 #@ def strategy(fail_fast=True):
 matrix:
   go-version: [1.16.x]
-  platform: [ ubuntu-18.04, macos-latest, windows-latest ]
+  platform: [ ubuntu-20.04, macos-latest, windows-latest ]
 fail-fast: #@ fail_fast
 #@ end
 
@@ -29,7 +29,6 @@ steps:
   - #@ steps_build()
   - #@ steps_build_svc()
   - #@ steps_build_tray()
-  - #@ steps_build_tray_linux()
   - #@ steps_build_installer()
   - #@ steps_build_32bit()
   - #@ steps_build_svc_32bit()
@@ -58,6 +57,7 @@ steps:
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_test()
+  - #@ steps_test_linux()
 #@ end
 
 #@ def jobs_inttestcrit():
@@ -75,7 +75,6 @@ steps:
   - #@ steps_build()
   - #@ steps_build_svc()
   - #@ steps_build_tray()
-  - #@ steps_build_tray_linux()
   - #@ steps_build_installer()
   - #@ steps_genupdate()
   - #@ steps_gentest_update()
@@ -105,7 +104,7 @@ steps:
 #@ def jobs_deploy():
 name: Deploy
 needs: [ build, unittest ]
-runs-on: ubuntu-18.04
+runs-on: ubuntu-20.04
 env: *env
 timeout-minutes: 10
 steps:

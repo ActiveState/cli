@@ -93,6 +93,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/wailsapp/wails v1.16.3
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	github.com/yuin/goldmark v1.1.32
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210420210106-798c2154c571
 	golang.org/x/sys v0.0.0-20210420205809-ac73e9fd8988

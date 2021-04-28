@@ -51,7 +51,7 @@ func ParseVersion(buildEnv Env) (*semver.Version, error) {
 }
 
 func VersionWithRevision(version *semver.Version, revision string) (*semver.Version, error) {
-	v := version
+	v := &*version // Make a new pointer, so we don't change the input version
 
 	prVersion, err := semver.NewPRVersion("SHA" + revision)
 	if err != nil {

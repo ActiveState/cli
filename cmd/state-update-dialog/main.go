@@ -21,6 +21,10 @@ func main() {
 		os.Exit(exit)
 	}()
 
+	if os.Getenv("VERBOSE") == "true" {
+		logging.CurrentHandler().SetVerbose(true)
+	}
+
 	err := run()
 	if err != nil {
 		exit = 1
