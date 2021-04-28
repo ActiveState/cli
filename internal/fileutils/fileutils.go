@@ -493,19 +493,21 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				err = os.Remove(subToPath)
 				logging.Error("Failed to remove destination file %s: %v", subToPath, err)
 			}
-		} else if fileInfo.IsDir() { // create target directories that don't exist yet
-			err = Mkdir(subToPath)
-			if err != nil {
-				return errs.Wrap(err, "Failed to create directory %s", subToPath)
-			}
-			err = os.Chmod(subToPath, fileInfo.Mode())
-			if err != nil {
-				return errs.Wrap(err, "Failed to set file mode for directory %s", subToPath)
-			}
 		}
 
 		// If we are moving to a directory, call function recursively to overwrite and add files in that directory
 		if fileInfo.IsDir() {
+			// create target directories that don't exist yet
+			if !toPathExists {
+				err = Mkdir(subToPath)
+				if err != nil {
+					return locale.WrapError(err, "err_move_create_directory", "Failed to create directory {{.V0}}", subToPath)
+				}
+				err = os.Chmod(subToPath, fileInfo.Mode())
+				if err != nil {
+					return locale.WrapError(err, "err_move_set_dir_permissions", "Failed to set file mode for directory {{.V0}}", subToPath)
+				}
+			}
 			err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
 			if err != nil {
 				return err

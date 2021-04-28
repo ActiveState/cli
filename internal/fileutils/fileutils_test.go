@@ -468,6 +468,7 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 	touchFile(t, "2", toDir, "root_in_2_only")
 	touchFile(t, "2", toDir, "root_in_1_and_2")
 
+	// Test that we handle symlinks to existing directories correctly
 	if runtime.GOOS != "windows" {
 		dirSymlink := filepath.Join(fromDir, "dirSymlink")
 		err = os.Symlink(filepath.Join(".", "in_1_and_2"), dirSymlink)
