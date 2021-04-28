@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -109,7 +111,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	var attempted []string
 	for _, l := range script.Languages() {
-		execPath := l.Executable().Name()
+		execPath := l.Executable().Filename()
 		searchPath := s.venvExePath
 		if l.Executable().CanUseThirdParty() {
 			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")
@@ -196,6 +198,12 @@ func applySuffix(suffix string, paths []string) []string {
 }
 
 func isExecutableFile(name string) bool {
+	// TODO: We want a better way to find the executable on Windows.
+	// Follow up filed here: https://www.pivotaltracker.com/n/projects/2203557/stories/177934469
+	if !fileutils.FileExists(name) {
+		name = executor.NameForExe(name)
+	}
+
 	f, err := os.Stat(name)
 	if err != nil { // unlikely unless file does not exist
 		return false
