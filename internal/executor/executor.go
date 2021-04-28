@@ -116,7 +116,7 @@ func (f *Executor) Cleanup(keep []string) error {
 }
 
 func (f *Executor) createExecutor(exe string) error {
-	name := nameExecutor(filepath.Base(exe))
+	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.binPath, name))
 
 	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
@@ -172,7 +172,7 @@ func (f *Executor) createExecutor(exe string) error {
 
 func containsBase(sourcePaths []string, targetPath string) bool {
 	for _, p := range sourcePaths {
-		p = nameExecutor(p)
+		p = NameForExe(p)
 		if filepath.Base(p) == filepath.Base(targetPath) {
 			return true
 		}

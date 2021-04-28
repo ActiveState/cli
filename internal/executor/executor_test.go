@@ -26,7 +26,7 @@ func TestExecutor(t *testing.T) {
 
 	// Verify executors
 	for _, exe := range exes {
-		path := filepath.Join(fw.BinPath(), nameExecutor(filepath.Base(exe)))
+		path := filepath.Join(fw.BinPath(), NameForExe(filepath.Base(exe)))
 		t.Run("Executor Exists", func(t *testing.T) {
 			if !fileutils.FileExists(path) {
 				t.Errorf("Could not locate exe: %s", path)
@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 
 		files := fileutils.ListDir(fw.BinPath(), false)
 		require.Len(t, files, 1, "Cleanup should only keep one exe")
-		require.Equal(t, filepath.Base(nameExecutor(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
+		require.Equal(t, filepath.Base(NameForExe(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
 	})
 
 	t.Run("Update doesn't needlessly write", func(t *testing.T) {
@@ -74,5 +74,5 @@ func TestNameExecutor(t *testing.T) {
 		return // Pointless to test outside windows
 	}
 
-	assert.Equal(t, "filename.bat", nameExecutor("filename.exe"))
+	assert.Equal(t, "filename.bat", NameForExe("filename.exe"))
 }
