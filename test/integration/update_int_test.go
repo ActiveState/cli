@@ -107,6 +107,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 	cp.ExpectExitCode(0)
+	fmt.Println("Snapshot1:", cp.TrimmedSnapshot())
 
 	if !disableUpdates {
 		// short timeout to wait for installation log file to be created
@@ -115,9 +116,11 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 		onlyAfter, _ := funk.Difference(after, before)
 		logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
 		if ok {
-			suite.pollForUpdateFromLogfile(logFile)
+			logs := suite.pollForUpdateFromLogfile(logFile)
+			fmt.Println("Logs:", logs)
 			cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 			cp.ExpectExitCode(0)
+			fmt.Println("Snapshot2:", cp.TrimmedSnapshot())
 		}
 	}
 
@@ -227,10 +230,12 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
 	// poll for successful auto-update
+	var logs []byte
+	var err error
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Millisecond * 200)
 
-		logs, err := ioutil.ReadFile(logFile)
+		logs, err = ioutil.ReadFile(logFile)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
@@ -241,7 +246,7 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 	}
 
 	suite.T().Errorf("did not find logFile %s", logFile)
-	return ""
+	return string(logs)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
