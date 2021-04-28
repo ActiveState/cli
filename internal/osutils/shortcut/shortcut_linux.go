@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -76,7 +77,7 @@ func (s *Shortcut) Save(name string, opts ShortcutSaveOpts) error {
 	// gio is "Gnome input/output"
 	cmd := exec.Command("gio", "set", s.path, "metadata::trusted", "true")
 	if err := cmd.Run(); err != nil {
-		return errs.Wrap(err, "Could not set desktop file as trusted")
+		logging.Errorf("Could not set desktop file as trusted: %v", err)
 	}
 
 	return nil
