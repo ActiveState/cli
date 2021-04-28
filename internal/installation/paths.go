@@ -19,6 +19,9 @@ func InstallPath() (string, error) {
 }
 
 func SystemInstallPath() (string, error) {
+	if path, ok := os.LookupEnv("_TEST_SYSTEM_PATH"); ok {
+		return path, nil
+	}
 	return defaultSystemInstallPath()
 }
 

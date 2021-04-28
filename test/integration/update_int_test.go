@@ -63,6 +63,15 @@ func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) 
 		_ = suite.server.ListenAndServe()
 	}()
 
+	// if runtime.GOOS == "darwin" {
+	// 	home, err := homedir.Dir()
+	// 	suite.NoError(err)
+	// 	if !fileutils.DirExists(home) {
+	// 		err = fileutils.Mkdir(home)
+	// 		suite.NoError(err)
+	// 	}
+	// }
+
 	suite.cfg, err = config.Get()
 	suite.Require().NoError(err)
 }
@@ -88,6 +97,10 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 
 	if testUpdate {
 		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort))
+
+		dir, err := ioutil.TempDir("", "system*")
+		suite.NoError(err)
+		env = append(env, fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
 	} else {
 		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}
