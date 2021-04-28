@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -27,8 +26,12 @@ func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted store.StoredArtifactMap) error {
-	keep := storedArtifacted
-	del := map[strfmt.UUID]struct{}{}
+	// copy storedArtifactMap
+	keep := make(map[artifact.ArtifactID]store.StoredArtifact)
+	for k, v := range storedArtifacted {
+		keep[k] = v
+	}
+	del := map[artifact.ArtifactID]struct{}{}
 	for _, upd := range changeset.Updated {
 		delete(keep, upd.FromID)
 		del[upd.FromID] = struct{}{}
