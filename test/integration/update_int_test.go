@@ -61,7 +61,7 @@ func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) 
 	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
 	go func() {
 		_ = suite.server.ListenAndServe()
-	}()s
+	}()
 
 	suite.cfg, err = config.Get()
 	suite.Require().NoError(err)
