@@ -29,13 +29,15 @@ type Store struct {
 type StoredArtifact struct {
 	ArtifactID artifact.ArtifactID           `json:"artifactID"`
 	Files      []string                      `json:"files"`
+	Dirs       []string                      `json:"dirs"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
 
-func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
 	return StoredArtifact{
 		ArtifactID: artifactID,
 		Files:      files,
+		Dirs:       dirs,
 		EnvDef:     envDef,
 	}
 }
