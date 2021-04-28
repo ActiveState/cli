@@ -61,16 +61,7 @@ func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) 
 	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
 	go func() {
 		_ = suite.server.ListenAndServe()
-	}()
-
-	// if runtime.GOOS == "darwin" {
-	// 	home, err := homedir.Dir()
-	// 	suite.NoError(err)
-	// 	if !fileutils.DirExists(home) {
-	// 		err = fileutils.Mkdir(home)
-	// 		suite.NoError(err)
-	// 	}
-	// }
+	}()s
 
 	suite.cfg, err = config.Get()
 	suite.Require().NoError(err)
