@@ -3,7 +3,7 @@
 #@ def strategy(fail_fast=True):
 matrix:
   go-version: [1.16.x]
-  platform: [ ubuntu-18.04, macos-latest, windows-latest ]
+  platform: [ ubuntu-20.04, macos-latest, windows-latest ]
 fail-fast: #@ fail_fast
 #@ end
 
@@ -29,7 +29,6 @@ steps:
   - #@ steps_build()
   - #@ steps_build_svc()
   - #@ steps_build_tray()
-  - #@ steps_build_tray_linux()
   - #@ steps_build_installer()
   - #@ steps_build_32bit()
   - #@ steps_build_svc_32bit()
@@ -58,7 +57,6 @@ steps:
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
-  - #@ steps_install_wails_deps()
   - #@ steps_test()
   - #@ steps_test_linux()
 #@ end
@@ -78,7 +76,6 @@ steps:
   - #@ steps_build()
   - #@ steps_build_svc()
   - #@ steps_build_tray()
-  - #@ steps_build_tray_linux()
   - #@ steps_build_installer()
   - #@ steps_build_systrayapp()
   - #@ steps_genupdate()
@@ -110,7 +107,7 @@ steps:
 #@ def jobs_deploy():
 name: Deploy
 needs: [ build, unittest ]
-runs-on: ubuntu-18.04
+runs-on: ubuntu-20.04
 env: *env
 timeout-minutes: 10
 steps:
