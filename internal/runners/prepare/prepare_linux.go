@@ -9,16 +9,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/gobuffalo/packr"
 	"github.com/mitchellh/go-homedir"
 )
 
 func (r *Prepare) prepareOS() error {
-	if rtutils.BuiltViaCI { // disabled while we're still testing this functionality
-		return nil
-	}
-
 	if err := autostart.New().Enable(); err != nil {
 		r.reportError(locale.Tr(
 			"err_prepare_autostart",

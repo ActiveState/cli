@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -24,14 +23,12 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
 
-	if !rtutils.BuiltViaCI { // disabled while we're still testing this functionality
-		if err := autostart.New().Enable(); err != nil {
-			r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
-		}
+	if err := autostart.New().Enable(); err != nil {
+		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
+	}
 
-		if err := r.prepareStartShortcut(); err != nil {
-			r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
-		}
+	if err := r.prepareStartShortcut(); err != nil {
+		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
 
 	return nil
