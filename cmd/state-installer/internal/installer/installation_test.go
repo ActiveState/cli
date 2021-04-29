@@ -9,28 +9,20 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var stateToolTestFile string = "state"
-var stateTrayTestFile string = "state-tray"
-var otherTestFile string = "other"
-var installerTestFile string = "state-installer"
+var stateToolTestFile string = "state" + exeutils.Extension
+var stateTrayTestFile string = "state-tray" + exeutils.Extension
+var otherTestFile string = "other" + exeutils.Extension
+var installerTestFile string = "state-installer" + exeutils.Extension
 
 var stateToolTestFileContent []byte = []byte("#!/bin/bash\necho I want to be replaced;")
 var updatedTestFileContent []byte = []byte("#!/bin/bash\necho updated;")
-
-func init() {
-	if runtime.GOOS == "windows" {
-		stateToolTestFile = "state.exe"
-		stateTrayTestFile = "state-tray.exe"
-		otherTestFile = "other.exe"
-		installerTestFile = "state-installer.exe"
-	}
-}
 
 func copyStateToolTestFile(t *testing.T, targetPath string) {
 	err := ioutil.WriteFile(targetPath, stateToolTestFileContent, 0755)
