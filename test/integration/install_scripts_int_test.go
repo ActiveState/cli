@@ -308,7 +308,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1Version() {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS != "windows" {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts)
