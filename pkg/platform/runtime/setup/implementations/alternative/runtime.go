@@ -25,7 +25,9 @@ func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
 }
 
-func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted store.StoredArtifactMap) error {
+func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted store.StoredArtifactMap) ([]artifact.ArtifactID, error) {
+	var alreadyInstalled []artifact.ArtifactID
+
 	// copy storedArtifactMap
 	keep := make(map[artifact.ArtifactID]store.StoredArtifact)
 	for k, v := range storedArtifacted {
@@ -60,7 +62,7 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 				continue
 			}
 			if err := os.Remove(file); err != nil {
-				return locale.WrapError(err, "err_rm_artf", "Could not remove old package file at {{.V0}}.", file)
+				return nil, locale.WrapError(err, "err_rm_artf", "Could not remove old package file at {{.V0}}.", file)
 			}
 		}
 
@@ -85,16 +87,19 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 
 			err = os.RemoveAll(dir)
 			if err != nil {
-				return locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
+				return alreadyInstalled, locale.WrapError(err, "err_rm_artf_dir", "Could not remove empty artifact directory at {{.V0}}", dir)
 			}
 		}
 
 		if err := s.store.DeleteArtifactStore(artf.ArtifactID); err != nil {
-			return errs.Wrap(err, "Could not delete artifact store")
+			return alreadyInstalled, errs.Wrap(err, "Could not delete artifact store")
 		}
 	}
 
-	return nil
+	for k := range keep {
+		alreadyInstalled = append(alreadyInstalled, k)
+	}
+	return alreadyInstalled, nil
 }
 
 // dirCanBeDeleted checks if the given directory is empty - ignoring files and sub-directories that

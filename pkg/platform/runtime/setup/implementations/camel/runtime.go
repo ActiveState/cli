@@ -18,10 +18,10 @@ func NewSetup(s *store.Store) *Setup {
 	return &Setup{s}
 }
 
-func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _ store.StoredArtifactMap) error {
+func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _ store.StoredArtifactMap) ([]artifact.ArtifactID, error) {
 	err := os.RemoveAll(s.store.InstallPath())
 	logging.Error("Error removing previous camel installation: %v", err)
-	return nil
+	return []artifact.ArtifactID{}, nil
 }
 
 func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
