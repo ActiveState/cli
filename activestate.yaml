@@ -26,6 +26,9 @@ constants:
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
+  - name: SYSTRAY_BUILDFLAGS
+    if: eq .OS.Name "Linux"
+    value: -ldflags="-s -w -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: state-svc
@@ -64,7 +67,14 @@ scripts:
     if: eq .OS.Name "Linux"
     language: bash
     description: Install OS specific deps
-    value: sudo apt install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+    value: |
+      aptin() {
+        for pkg in "${@}"; do
+          dpkg -s "${pkg}" &>/dev/null && continue
+          echo Installing package "${pkg}" && sudo apt install "${pkg}"
+        done
+      }
+      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
