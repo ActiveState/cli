@@ -301,3 +301,6 @@ const StateAppName = "State Tool"
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
+
+// FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
+const FirstMultiFileStateToolVersion = "0.29.0"

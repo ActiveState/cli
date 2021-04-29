@@ -1223,6 +1223,30 @@ func GetProjectMapping(config ConfigGetter) map[string][]string {
 	return projects
 }
 
+func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
+	projects := GetProjectMapping(config)
+
+	res := make(map[string][]*Project)
+	for name, paths := range projects {
+		if name == "/" {
+			continue
+		}
+		var pFiles []*Project
+		for _, path := range paths {
+			prj, err := FromExactPath(path)
+			if err != nil {
+				logging.Error("Could not read project file at %s: %v", path, err)
+				continue
+			}
+			pFiles = append(pFiles, prj)
+		}
+		if len(pFiles) > 0 {
+			res[name] = pFiles
+		}
+	}
+	return res
+}
+
 func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
 	projects := GetProjectMapping(config)
 
