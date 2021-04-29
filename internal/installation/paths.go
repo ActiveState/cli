@@ -18,7 +18,7 @@ func InstallPath() (string, error) {
 	return defaultInstallPath()
 }
 
-func SystemInstallPath() (string, error) {
+func LauncherInstallPath() (string, error) {
 	if path, ok := os.LookupEnv("_TEST_SYSTEM_PATH"); ok {
 		return path, nil
 	}

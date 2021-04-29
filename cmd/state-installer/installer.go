@@ -114,7 +114,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	// clean-up temp directory when we are done.
 	defer os.RemoveAll(tmpDir)
 
-	appDir, err := installation.SystemInstallPath()
+	appDir, err := installation.LauncherInstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get system install path")
 	}
