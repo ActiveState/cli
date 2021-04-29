@@ -56,9 +56,13 @@ scripts:
     description: Generate update files
     value: |
       set -e
+      export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      export GOARCH=${1:-amd64}
+      # Generate legacy update
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
+      go run scripts/legacy-update-generator/main.go -o build/update $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET
+
       mkdir -p ./build/update
       go run scripts/update-generator/main.go -o ./build/update \
         $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \

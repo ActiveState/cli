@@ -50,6 +50,19 @@ func (u *Checker) Check() (*AvailableUpdate, error) {
 }
 
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
+	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get update info")
+	}
+
+	if info.Channel == u.currentChannel && info.Version == u.currentVersion {
+		return nil, nil
+	}
+
+	return info, nil
+}
+
+func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	platform := runtime.GOOS + "-" + runtime.GOARCH
 	if desiredChannel == "" {
 		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
@@ -71,10 +84,6 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	info := &AvailableUpdate{}
 	if err := json.Unmarshal(res, &info); err != nil {
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
-	}
-
-	if info.Channel == u.currentChannel && info.Version == u.currentVersion {
-		return nil, nil
 	}
 
 	info.url = u.apiURL + info.Path
