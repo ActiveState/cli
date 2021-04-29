@@ -156,7 +156,7 @@ func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, ve
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
 	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed to")
 }
 
 func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
