@@ -12,25 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
-type Shortcut struct {
-	target string
-	path   string
-}
-
-func New(target, path string) (*Shortcut, error) {
-	if !fileutils.FileExists(target) {
-		return nil, errs.New("Target does not exist")
-	}
-
-	scut := Shortcut{
-		target: target,
-		path:   path,
-	}
-
-	return &scut, nil
-}
-
-type ShortcutSaveOpts struct {
+type SaveOpts struct {
+	Name        string
 	GenericName string
 	Comment     string
 	Keywords    string
@@ -38,49 +21,58 @@ type ShortcutSaveOpts struct {
 	IconPath    string
 }
 
-func (s *Shortcut) Save(name string, opts ShortcutSaveOpts) error {
+func Save(target, path string, opts SaveOpts) (file string, err error) {
+	if !fileutils.FileExists(target) {
+		return "", errs.New("Target does not exist")
+	}
+
 	iconName := filepath.Base(opts.IconPath)
 	iconName = strings.TrimSuffix(iconName, filepath.Ext(iconName))
+
+	name := opts.Name
+	if name == "" {
+		filepath.Base(path)
+	}
 
 	data := desktopFileData{
 		Name:        name,
 		GenericName: opts.GenericName,
 		Comment:     opts.Comment,
-		Exec:        s.target,
+		Exec:        target,
 		Keywords:    opts.Keywords,
 		IconName:    iconName,
 	}
 	desktopFile, err := strutils.ParseTemplate(desktopFileTmpl, data)
 	if err != nil {
-		return errs.Wrap(err, "Could not execute template")
+		return "", errs.Wrap(err, "Could not execute template")
 	}
 
 	if err := fileutils.WriteFile(opts.IconPath, opts.IconData); err != nil {
-		return errs.Wrap(err, "Could not write icon file")
+		return "", errs.Wrap(err, "Could not write icon file")
 	}
 
-	if err := fileutils.WriteFile(s.path, []byte(desktopFile)); err != nil {
-		return errs.Wrap(err, "Could not write desktop file")
+	if err := fileutils.WriteFile(path, []byte(desktopFile)); err != nil {
+		return "", errs.Wrap(err, "Could not write desktop file")
 	}
 
-	file, err := os.Open(s.path)
+	f, err := os.Open(path)
 	if err != nil {
-		return errs.Wrap(err, "Could not open desktop file")
+		return "", errs.Wrap(err, "Could not open desktop file")
 	}
-	err = file.Chmod(0770)
-	file.Close()
+	err = f.Chmod(0770)
+	f.Close()
 	if err != nil {
-		return errs.Wrap(err, "Could not make file executable")
+		return "", errs.Wrap(err, "Could not make file executable")
 	}
 
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
-	cmd := exec.Command("gio", "set", s.path, "metadata::trusted", "true")
+	cmd := exec.Command("gio", "set", path, "metadata::trusted", "true")
 	if err := cmd.Run(); err != nil {
 		logging.Errorf("Could not set desktop file as trusted: %v", err)
 	}
 
-	return nil
+	return path, nil
 }
 
 type desktopFileData struct {

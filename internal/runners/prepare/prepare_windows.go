@@ -8,12 +8,12 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
@@ -23,7 +23,10 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
 
-	if err := autostart.New().Enable(); err != nil {
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
+
+	if err := autostart.New(name, exec).Enable(); err != nil {
 		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
 	}
 

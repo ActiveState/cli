@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -98,8 +98,10 @@ func run() error {
 		locale.Tl("tray_account_tooltip", "Open your account page"),
 	)
 
+	trayInfo := appinfo.TrayApp()
+
 	systray.AddSeparator()
-	as := autostart.New()
+	as := autostart.New(trayInfo.Name(), trayInfo.Exec())
 	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")

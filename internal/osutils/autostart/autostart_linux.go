@@ -1,12 +1,9 @@
-//+build linux
-
 package autostart
 
 import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -34,11 +31,6 @@ func (a *App) Enable() error {
 	}
 	path := filepath.Join(dir, constants.TrayLaunchFileName)
 
-	scut, err := shortcut.New(appinfo.TrayApp().Exec(), path)
-	if err != nil {
-		return errs.Wrap(err, "Could not construct autostart shortcut")
-	}
-
 	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
 		return errs.Wrap(err, "")
@@ -48,14 +40,15 @@ func (a *App) Enable() error {
 	box := packr.NewBox("../../../assets")
 	iconData := box.Bytes(constants.TrayIconFileSource)
 
-	scutOpts := shortcut.ShortcutSaveOpts{
+	scutOpts := shortcut.SaveOpts{
+		Name:        a.Name,
 		GenericName: constants.TrayGenericName,
 		Comment:     constants.TrayComment,
 		Keywords:    constants.TrayKeywords,
 		IconData:    iconData,
 		IconPath:    iconsPath,
 	}
-	if err := scut.Save(constants.TrayAppName, scutOpts); err != nil {
+	if _, err := shortcut.Save(a.Exec, path, scutOpts); err != nil {
 		return errs.Wrap(err, "Could not save autostart shortcut")
 	}
 
