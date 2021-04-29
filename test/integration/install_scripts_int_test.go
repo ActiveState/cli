@@ -352,7 +352,6 @@ func (suite *InstallScriptsIntegrationTestSuite) installVersion(ts *e2e.Session,
 	expected := "0.28.0-SHA249ab6f"
 	cp := ts.SpawnCmdWithOpts(shell, e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
 	expectVersionInstall(cp, expected)
-	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
 
 	return cp
