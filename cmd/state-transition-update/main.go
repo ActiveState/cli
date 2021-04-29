@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
-	ps "github.com/mitchellh/go-ps"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -58,38 +55,4 @@ func run() error {
 	}
 
 	return nil
-}
-
-// needsDeferredUpdate checks if the transitional update needs to update in the background
-// Of course, it is preferable to install in the foreground, such that the user gets feedback that the installation is finished and actually succeeded.
-// On Windows, however, we can have this situation:
-//   - Legacy State Tool is invoked eg., as `state.exe update`
-//   - This executable is pulled down and invoked as `state.exe _prepare` (invoking state tool is now called `state.exe.bak`)
-//   - If run in the foreground, the installer cannot rename the transitional `state.exe` to `state.exe.bak`
-// has been invoked by a parent State Tool process eg., during an auto-update or by running `state update`
-func needsDeferredUpdate() bool {
-	if runtime.GOOS != "windows" {
-		return false
-	}
-
-	pid := os.Getppid()
-	for true {
-		p, err := ps.FindProcess(pid)
-		if err != nil {
-			logging.Errorf("Could not detect process information: %s", err)
-			return false
-		}
-		if p == nil {
-			return false
-		}
-		if strings.HasPrefix(p.Executable(), constants.CommandName) {
-			return true
-		}
-		ppid := p.PPid()
-		if p.PPid() == pid {
-			break
-		}
-		pid = ppid
-	}
-	return false
 }
