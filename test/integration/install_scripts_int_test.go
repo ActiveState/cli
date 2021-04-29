@@ -150,6 +150,15 @@ func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("State Tool successfully installed to")
 }
 
+func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, version string) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
+	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
+	cp.Expect("State Tool installation complete")
+}
+
 func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
@@ -228,28 +237,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts)
 
-	type versionData struct {
-		Version string `json:"version"`
-	}
-
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	script := scriptPath(suite.T(), ts.Dirs.Work, false, false)
-
 	expected := "0.28.0-SHA249ab6f"
-	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
-	expectVersionedStateToolInstallation(cp, expected)
-	cp.Expect("State Tool Installed")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state"), "--version", "--output=json")
-	cp.ExpectExitCode(0)
-	actual := versionData{}
-	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
-	json.Unmarshal([]byte(out), &actual)
-
-	suite.Equal(expected, actual.Version)
+	suite.installVersion(ts, ts.Dirs.Work, expected)
+	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), expected)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32Default() {
@@ -312,6 +305,64 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 		})
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1Version() {
+	if runtime.GOOS == "windows" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	suite.Require().NoError(err, "Could not determine if running as administrator")
+
+	cmdEnv := newCmdEnv(!isAdmin)
+	oldPathEnv, err := cmdEnv.get("PATH")
+	suite.Require().NoError(err, "could not get PATH")
+
+	defer func() {
+		err := cmdEnv.set("PATH", oldPathEnv)
+		suite.Assert().NoError(err, "Unexpected error re-setting paths")
+	}()
+
+	expected := "0.28.0-SHA249ab6f"
+	cp := suite.installVersion(ts, ts.Dirs.Work, expected)
+
+	pathEnv, err := cmdEnv.get("PATH")
+	suite.Require().NoError(err, "could not get PATH")
+	paths := strings.Split(pathEnv, string(os.PathListSeparator))
+	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
+
+	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state.exe"), expected)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) installVersion(ts *e2e.Session, target, version string) *termtest.ConsoleProcess {
+	script := scriptPath(suite.T(), ts.Dirs.Work, false, false)
+
+	expected := "0.28.0-SHA249ab6f"
+	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
+	expectVersionedStateToolInstallationWindows(cp, expected)
+	cp.Expect("State Tool Installed")
+	cp.ExpectExitCode(0)
+
+	return cp
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) compareVersionedInstall(ts *e2e.Session, installPath, expected string) {
+	type versionData struct {
+		Version string `json:"version"`
+	}
+
+	cp := ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state"), "--version", "--output=json")
+	cp.ExpectExitCode(0)
+	actual := versionData{}
+	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	json.Unmarshal([]byte(out), &actual)
+
+	suite.Equal(expected, actual.Version)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
