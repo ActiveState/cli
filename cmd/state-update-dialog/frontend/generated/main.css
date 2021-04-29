@@ -883,3 +883,7 @@ textarea, button {
 
 #warning-wrapper {
   display: none; }
+  #warning-wrapper ul {
+    list-style: none; }
+    #warning-wrapper ul li > span {
+      font-weight: bold; }

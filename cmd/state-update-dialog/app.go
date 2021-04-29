@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"fmt"
 
+	"github.com/ActiveState/cli/cmd/state-update-dialog/internal/lockedprj"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
@@ -30,13 +32,13 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	a.wails = wails.CreateApp(&wails.AppConfig{
-		Width:            600,
-		Height:           400,
-		Title:            "ActiveState Desktop - Update Available",
-		HTML:             html,
-		JS:               js,
-		CSS:              css,
-		Colour:           "#FFF", // Wails uses this to detect dark mode
+		Width:  600,
+		Height: 400,
+		Title:  "ActiveState Desktop - Update Available",
+		HTML:   html,
+		JS:     js,
+		CSS:    css,
+		Colour: "#FFF", // Wails uses this to detect dark mode
 	})
 	return a
 }
@@ -58,8 +60,15 @@ func (a *App) Start() error {
 	if update == nil {
 		return errs.New("No updates available")
 	}
-
 	bindings.update = update
+
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not create config instance")
+	}
+
+	lockedProjects := lockedprj.LockedProjectMapping(cfg)
+	bindings.lockedProjects = lockedProjects
 
 	go func() {
 		url := fmt.Sprintf("https://raw.githubusercontent.com/ActiveState/cli/%s/changelog.md", update.Channel)
