@@ -53,7 +53,6 @@ scripts:
     value: python3 scripts/locale-generator.py
   - name: generate-update
     language: bash
-    if: ne .OS.Name "MacOS"
     description: Generate update files
     value: |
       set -e
@@ -61,11 +60,19 @@ scripts:
 
       export GOARCH=${1:-amd64}
       mkdir -p ./build/update
-      go run scripts/update-generator/main.go -o ./build/update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        go run scripts/update-generator/main.go --systemAppDir $BUILD_TARGET_DIR/$constants.SYSTRAY_APP -o ./build/update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      else
+        go run scripts/update-generator/main.go -o ./build/update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
+          $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      fi
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
@@ -75,7 +82,6 @@ scripts:
   - name: generate-test-update
     language: bash
     standalone: true
-    if: ne .OS.Name "MacOS"
     description: |
       Generate tests update files. These can be safely uploaded to s3, and can be used to test an installation/update
     value: |
@@ -92,18 +98,38 @@ scripts:
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $TEST_STATE_TOOL $TEST_STATE_SVC \
-        $TEST_STATE_TRAY
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        TEST_AS_DESKTOP=./build/test/$constants.SYSTRAY_APP
+        cp -r installers/${constants.SYSTRAY_APP} build/test/
+
+        go run scripts/update-generator/main.go -v ${TEST_VERSION} --systemAppDir "$TEST_AS_DESKTOP" -o ./build/test-update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $TEST_STATE_TOOL $TEST_STATE_SVC \
+          $TEST_STATE_TRAY
+      else
+        go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $TEST_STATE_TOOL $TEST_STATE_SVC \
+          $TEST_STATE_TRAY
+      fi
 
       echo "compile test-channel update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=test-channel" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $TEST_STATE_TOOL \
-        $TEST_STATE_SVC \
-        $TEST_STATE_TRAY
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        cp -r installers/${constants.SYSTRAY_APP} build/test/
+
+        go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} --systemAppDir "$TEST_AS_DESKTOP" -o ./build/test-update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $TEST_STATE_TOOL \
+          $TEST_STATE_SVC \
+          $TEST_STATE_TRAY
+      else
+        go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update \
+          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
+          $TEST_STATE_TOOL \
+          $TEST_STATE_SVC \
+          $TEST_STATE_TRAY
+      fi
