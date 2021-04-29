@@ -94,23 +94,6 @@ func copyFileToDir(filePath, dir string, isExecutable bool) error {
 	return nil
 }
 
-func copyDirToDir(fromDir, toDir string) error {
-	targetPath := filepath.Join(toDir, filepath.Base(fromDir))
-	fmt.Printf("Copying %s -> %s\n", fromDir, targetPath)
-
-	err := fileutils.Mkdir(targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not create target path %s", targetPath)
-	}
-
-	err = fileutils.CopyFiles(fromDir, targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not copy directory %s -> %s", fromDir, targetPath)
-	}
-
-	return nil
-}
-
 func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	if runtime.GOOS == "windows" {
 		return archiver.NewZip(), ".zip"
@@ -161,7 +144,15 @@ func createUpdate(targetPath, channel, version, platform, installerPath, systemA
 			return errs.Wrap(err, "Could not create temp system dir")
 		}
 
-		err = copyDirToDir(systemAppDir, sysTempDir)
+		targetPath := filepath.Join(sysTempDir, filepath.Base(systemAppDir))
+		fmt.Printf("Copying %s -> %s\n", systemAppDir, targetPath)
+
+		err := fileutils.Mkdir(targetPath)
+		if err != nil {
+			return errs.Wrap(err, "Could not create target path %s", targetPath)
+		}
+
+		err = fileutils.CopyAndRenameFiles(systemAppDir, targetPath)
 		if err != nil {
 			return errs.Wrap(err, "Failed to copy directory %s", systemAppDir)
 		}
