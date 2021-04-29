@@ -343,12 +343,15 @@ func (suite *InstallScriptsIntegrationTestSuite) installVersion(ts *e2e.Session,
 	script := scriptPath(suite.T(), ts.Dirs.Work, false, false)
 
 	shell := "bash"
+	expectVersionInstall := expectVersionedStateToolInstallation
 	if runtime.GOOS == "windows" {
 		shell = "powershell.exe"
+		expectVersionInstall = expectVersionedStateToolInstallationWindows
 	}
+
 	expected := "0.28.0-SHA249ab6f"
 	cp := ts.SpawnCmdWithOpts(shell, e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
-	expectVersionedStateToolInstallationWindows(cp, expected)
+	expectVersionInstall(cp, expected)
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
 
