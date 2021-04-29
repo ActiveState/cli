@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -115,8 +114,10 @@ type ModelProvider interface {
 }
 
 type Setuper interface {
-	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can, and returns the IDs of those that are already installed
-	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) ([]artifact.ArtifactID, error)
+	// ReusableArtifact returns artifact stores for the artifacts that are already installed and can be re-used for this setup.
+	ReusableArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) store.StoredArtifactMap
+	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
+	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
 	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error)
 }
@@ -186,7 +187,9 @@ func (s *Setup) update() error {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled, err := setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
+	alreadyInstalled := setup.ReusableArtifacts(changedArtifacts, storedArtifacts)
+
+	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
 		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
@@ -272,7 +275,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled []artifact.ArtifactID, setup Setuper) error {
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 	}
@@ -303,7 +306,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyInstalled []artifact.ArtifactID, setup Setuper) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
@@ -315,7 +318,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyIn
 		defer close(errs)
 		wp := workerpool.New(MaxConcurrency)
 		for _, a := range downloads {
-			if funk.Contains(alreadyInstalled, a.ArtifactID) {
+			if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 				continue
 			}
 			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
@@ -327,7 +330,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyIn
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled []artifact.ArtifactID, setup Setuper) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -356,7 +359,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 			defer wp.StopWait()
 
 			for a := range buildLog.BuiltArtifactsChannel() {
-				if funk.Contains(alreadyInstalled, a.ArtifactID) {
+				if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 					continue
 				}
 				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
