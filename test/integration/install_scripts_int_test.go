@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -132,6 +133,14 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("State Tool installation complete")
 }
 
+func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
+	cp.Expect("Installing to")
+	cp.Expect("Continue?")
+	cp.SendLine("y")
+	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
+	cp.Expect("State Tool installation complete")
+}
+
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
@@ -211,6 +220,36 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cp.ExpectExitCode(0)
 		})
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
+	if runtime.GOOS == "windows" {
+		suite.T().SkipNow()
+	}
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+
+	type versionData struct {
+		Version string `json:"version"`
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), ts.Dirs.Work, false, false)
+
+	expected := "0.28.0-SHA249ab6f"
+	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
+	expectVersionedStateToolInstallation(cp, expected)
+	cp.Expect("State Tool Installed")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state"), "--version", "--output=json")
+	cp.ExpectExitCode(0)
+	actual := versionData{}
+	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	json.Unmarshal([]byte(out), &actual)
+
+	suite.Equal(expected, actual.Version)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32Default() {
