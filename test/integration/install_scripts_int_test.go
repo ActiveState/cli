@@ -362,7 +362,7 @@ func (suite *InstallScriptsIntegrationTestSuite) compareVersionedInstall(ts *e2e
 		Version string `json:"version"`
 	}
 
-	cp := ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state"), "--version", "--output=json")
+	cp := ts.SpawnCmd(installPath, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
