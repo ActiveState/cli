@@ -128,4 +128,12 @@ textarea, button {
 
 #warning-wrapper {
   display: none;
+
+  ul {
+    list-style: none;
+    li > span {
+      margin: 0;
+      font-weight: bold;
+    }
+  }
 }

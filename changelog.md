@@ -10,8 +10,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- We install the State Tool along side with the service and the tray
-  executable. ([PR #1311](https://github.com/ActiveState/cli/pull/1311))
+- The State Tool now comes with the ActiveState Desktop application, which is
+  currently a system tray application.
+- We've replaced the auto updating system with a manual updating system, updates
+  will from now on be made available through the system tray application and you
+  will have the choice to install it now or later.
 
 ## 0.28.0
 
