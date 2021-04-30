@@ -3,51 +3,67 @@ package main
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 )
 
 const (
-	iconFile         = "icon.ico"
-	iconUpdateFile   = "icon-update.ico"
-	iconUpdatingFile = "icon-updating.ico"
+	iconFile            = "icon.ico"
+	iconUpdateFile      = "icon-update.ico"
+	updateCheckInterval = time.Second * 24
 )
 
-func superviseUpdate(box packr.Box, updMenuItem *systray.MenuItem) func() {
+func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
 	var done chan struct{}
 
 	go func() {
 		for {
-			ico := iconFile
-			hideFn := updMenuItem.Hide
-			if needsUpdate() {
-				ico = iconUpdateFile
-				hideFn = updMenuItem.Show
-			}
-			if isUpdating() {
-				ico = iconUpdatingFile
-				hideFn = updMenuItem.Hide
-			}
-			systray.SetIcon(box.Bytes(ico))
-			hideFn()
-			time.Sleep(time.Second * 3)
+			notice.show(needsUpdate(mdl))
 
 			select {
-			case <-time.After(time.Second * 3):
+			case <-time.After(updateCheckInterval):
 			case <-done:
 				return
 			}
 		}
 	}()
 
-	return func() { done <- struct{}{} }
+	return func() { close(done) }
 }
 
-func needsUpdate() bool {
-	return fileutils.FileExists("/home/devx1/update")
+func needsUpdate(mdl *model.SvcModel) bool {
+	for i := 1; i <= 3; i++ {
+		stateVersion, err := mdl.StateVersion()
+		if err != nil {
+			time.Sleep(time.Second * 10 * time.Duration(i))
+			continue
+		}
+		currentVersion := constants.Version
+		possibleVersion := stateVersion.State.Version
+
+		return currentVersion != possibleVersion
+	}
+
+	logging.Error("Cannot contact servers to determine the latest state version")
+
+	return false
 }
 
-func isUpdating() bool {
-	return fileutils.FileExists("/home/devx1/updating")
+type updateNotice struct {
+	box  packr.Box
+	item *systray.MenuItem
+}
+
+func (n *updateNotice) show(show bool) {
+	switch {
+	case true:
+		n.item.Show()
+		systray.SetIcon(n.box.Bytes(iconUpdateFile))
+	case false:
+		n.item.Hide()
+		systray.SetIcon(n.box.Bytes(iconFile))
+	}
 }

@@ -68,13 +68,17 @@ func run() error {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
+	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
+
 	mUpdate := systray.AddMenuItem(
 		locale.Tl("tray_update_title", "Update Available"),
 		locale.Tl("tray_update_tooltip", "Update your State Tool installation"),
 	)
-	box := packr.NewBox("../../assets")
-	defer superviseUpdate(box, mUpdate)()
-	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
+	updNotice := updateNotice{
+		box:  packr.NewBox("../../assets"),
+		item: mUpdate,
+	}
+	defer superviseUpdate(model, &updNotice)()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
@@ -188,6 +192,8 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
+		case <-mUpdate.ClickedCh:
+			updNotice.show(false)
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
