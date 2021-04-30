@@ -3,6 +3,7 @@ package updater
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"runtime"
 
@@ -29,7 +30,7 @@ type Checker struct {
 var DefaultChecker = newDefaultChecker()
 
 func newDefaultChecker() *Checker {
-	updateURL := constants.APIUpdateURL
+	updateURL := constants.APIUpdateURL + url.QueryEscape(constants.CommandName)
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		updateURL = url
 	}
@@ -62,7 +63,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	if desiredVersion != "" {
 		versionPath = "/" + desiredVersion
 	}
-	url := fmt.Sprintf("%s%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
+	url := fmt.Sprintf("%s/%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
 	res, err := u.httpreq.Get(url)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", url)

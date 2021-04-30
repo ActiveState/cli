@@ -98,7 +98,7 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(fmt.Sprintf("%sstate", constants.APIUpdateURL)), []byte("http://localhost:"+testPort), -1)
+		b = bytes.Replace(b, []byte(fmt.Sprintf("%s%s", constants.APIUpdateURL, constants.CommandName)), []byte("http://localhost:"+testPort), -1)
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
@@ -191,14 +191,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		{"install-local-test-update", true, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "beta"},
+		{"install-release", false, "master"},
 	}
 
 	for _, tt := range tests {
-		if !tt.TestInstall {
-			// Todo https://www.pivotaltracker.com/story/show/177858645
-			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
-		}
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -237,14 +233,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		{"install-local-test-update", true, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "beta"},
+		{"install-release", false, "master"},
 	}
 
 	for _, tt := range tests {
-		if !tt.TestInstall {
-			// Todo https://www.pivotaltracker.com/story/show/177858645
-			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
-		}
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
