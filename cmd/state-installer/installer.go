@@ -31,17 +31,6 @@ func main() {
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 
-	// callingConfigDir is the configuration dir set by the calling process (Note: This might have changed if the channel was switched)
-	callingConfigDir := os.Getenv(constants.ConfigEnvVarName)
-	// Now, that the logging module has been initialized, set the config dir overwrite back to the user's choice.
-	if userConfigDir, ok := os.LookupEnv("ACTIVESTATE_USER_CONFIGDIR"); ok {
-		if userConfigDir == "" {
-			os.Unsetenv(constants.ConfigEnvVarName)
-		} else {
-			os.Setenv(constants.ConfigEnvVarName, userConfigDir)
-		}
-	}
-
 	out, err := output.New("plain", &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
@@ -53,7 +42,7 @@ func main() {
 		rollbar.Close()
 		os.Exit(1)
 	}
-	if err := run(out, callingConfigDir); err != nil {
+	if err := run(out); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
@@ -65,7 +54,7 @@ func main() {
 	rollbar.Close()
 }
 
-func run(out output.Outputer, callingConfigDir string) error {
+func run(out output.Outputer) error {
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config.")
@@ -85,15 +74,7 @@ func run(out output.Outputer, callingConfigDir string) error {
 		}
 	}
 
-	callingCfg := cfg
-	if callingConfigDir != "" {
-		callingCfg, err = config.NewWithDir(callingConfigDir)
-		if err != nil {
-			return errs.Wrap(err, "Could not initialize calling config.")
-		}
-	}
-
-	if err := install(installPath, cfg, callingCfg, out); err != nil {
+	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
 		return errs.Wrap(err, "Installing to %s failed", installPath)
@@ -102,7 +83,7 @@ func run(out output.Outputer, callingConfigDir string) error {
 	return nil
 }
 
-func install(installPath string, cfg *config.Instance, callingCfg *config.Instance, out output.Outputer) error {
+func install(installPath string, cfg *config.Instance, out output.Outputer) error {
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect executable path")
@@ -114,7 +95,7 @@ func install(installPath string, cfg *config.Instance, callingCfg *config.Instan
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
-	if err := installation.StopTrayApp(callingCfg); err != nil {
+	if err := installation.StopTrayApp(cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
 
