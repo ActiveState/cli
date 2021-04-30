@@ -140,6 +140,18 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 	})
 }
 
+func ExecuteAndForgetWithEnv(command string, args []string, env []string) (*os.Process, error) {
+	cmd := exec.Command(command, args...)
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
+	if err := cmd.Start(); err != nil {
+		return nil, errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+	cmd.Stdin = nil
+	return cmd.Process, nil
+}
+
 // ExecuteAndForget will run the given command in the background, returning immediately.
 func ExecuteAndForget(command string, args ...string) (*os.Process, error) {
 	cmd := exec.Command(command, args...)

@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,8 +50,15 @@ func (u *AvailableUpdate) InstallDeferred(configPath string) (int, error) {
 		return 0, errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
+	var env []string
+	if configPath != "" {
+		// Overwrite the installers configuration directory to ensure that it knows about the existing State Tool's configuration
+		env = append(env, fmt.Sprintf("%s=%s", constants.ConfigEnvVarName, configPath))
+		// In case the variable was set in the user's environment also provide that value
+		env = append(env, fmt.Sprintf("ACTIVESTATE_USER_CONFIGDIR=%s", os.Getenv(constants.ConfigEnvVarName)))
+	}
 	installTargetPath := filepath.Dir(os.Args[0])
-	proc, err := exeutils.ExecuteAndForget(installerPath, installTargetPath)
+	proc, err := exeutils.ExecuteAndForgetWithEnv(installerPath, []string{installTargetPath}, env)
 	if err != nil {
 		return 0, errs.Wrap(err, "Could not start installer")
 	}
