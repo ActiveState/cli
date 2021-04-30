@@ -78,7 +78,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, nil
 	}
 
-	info.url = u.apiURL + info.Path
+	info.url = fmt.Sprintf("%s/%s", u.apiURL, info.Path)
 
 	return info, nil
 }
