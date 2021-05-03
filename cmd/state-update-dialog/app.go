@@ -34,7 +34,7 @@ func NewApp(cfg *config.Instance) *App {
 	a := &App{cfg: cfg}
 	a.wails = wails.CreateApp(&wails.AppConfig{
 		Width:  600,
-		Height: 400,
+		Height: 500,
 		Title:  "ActiveState Desktop - Update Available",
 		HTML:   html,
 		JS:     js,

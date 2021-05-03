@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
+	"encoding/json"
 	"os"
 	"strings"
 
@@ -22,7 +21,7 @@ type Bindings struct {
 	installDone    bool
 	installLog     string
 	cfg            *config.Instance
-	lockedProjects map[string][]lockedprj.LockedCheckout
+	lockedProjects []lockedprj.LockedCheckout
 }
 
 func (b *Bindings) WailsInit(runtime *wails.Runtime) error {
@@ -42,23 +41,12 @@ func (b *Bindings) AvailableVersion() string {
 
 func (b *Bindings) Warning() string {
 	logging.Debug("Bindings:Warning called")
-	if len(b.lockedProjects) == 0 {
+	v, err := json.Marshal(b.lockedProjects)
+	if err != nil {
+		logging.Error("Could not marshal lockedProject: %v", errs.Join(err, ": "))
 		return ""
 	}
-
-	var buf bytes.Buffer
-	buf.WriteString("The following local projects will be affected if the latest update to State Tool is applied:<ul>")
-	for name, prjs := range b.lockedProjects {
-		buf.WriteString(fmt.Sprintf("<li><span>%s</span>: <ul>", name))
-		for _, prj := range prjs {
-			buf.WriteString(fmt.Sprintf("<li>The activestate.yaml file at <code>%s</code> is locked at State Tool version <em>%s@%s</em> for the above project, the latest update can impact the project adversely. Please run <code>state update lock --force</code> after updating.</li>", prj.Path, prj.Channel, prj.Version))
-		}
-		buf.WriteString("</ul></li>")
-	}
-
-	buf.WriteString("</ul>")
-
-	return buf.String()
+	return string(v)
 }
 
 func (b *Bindings) Changelog() string {

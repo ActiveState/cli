@@ -81,6 +81,7 @@ h1.logo {
 #changelog {
   border: .1rem solid $color-quaternary;
   background: white;
+  min-height: 200px;
 
   h1, h2, h3, h4, h5 {
     font-weight: bold;
@@ -131,14 +132,6 @@ textarea, button {
 
 #warning-wrapper {
   display: none;
-
-  ul {
-    list-style: none;
-    li > span {
-      margin: 0;
-      font-weight: bold;
-    }
-  }
 }
 
 #installlog {

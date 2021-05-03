@@ -18,7 +18,17 @@ function start() {
     })
 
     backend.Bindings.Warning().then(result => {
+        console.log(result);
         if (result === "") return;
+        let projects = JSON.parse(result);
+        if (projects.length === 0) return;
+
+        for (let project of projects) {
+            let li = document.createElement("li");
+            li.textContent = project.Path;
+            el("warning-projects").appendChild(li);
+        }
+
         el("warning-wrapper").style.display = "block";
         el("warning").innerHTML = result;
     });
@@ -70,8 +80,7 @@ function populateChangelog(tries) {
             tries++;
             setTimeout(populateChangelog.bind(null, tries), tries * 100);
         } else {
-            let changelog = el("changelog");
-            changelog.style.height = "";
+            let changelog = el("changelog-content");
             changelog.innerHTML = result;
         }
     })
