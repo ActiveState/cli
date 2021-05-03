@@ -86,7 +86,7 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	info.url = u.apiURL + info.Path
+	info.url = u.apiURL + "/" + info.Path
 
 	return info, nil
 }
