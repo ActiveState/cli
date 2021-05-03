@@ -58,7 +58,7 @@ type updateNotice struct {
 }
 
 func (n *updateNotice) show(show bool) {
-	switch {
+	switch show {
 	case true:
 		n.item.Show()
 		systray.SetIcon(n.box.Bytes(iconUpdateFile))

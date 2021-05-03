@@ -74,11 +74,13 @@ func run() error {
 		locale.Tl("tray_update_title", "Update Available"),
 		locale.Tl("tray_update_tooltip", "Update your State Tool installation"),
 	)
+	mUpdate.Hide()
 	updNotice := updateNotice{
 		box:  packr.NewBox("../../assets"),
 		item: mUpdate,
 	}
-	defer superviseUpdate(model, &updNotice)()
+	closeUpdateSupervision := superviseUpdate(model, &updNotice)
+	defer closeUpdateSupervision()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
@@ -193,7 +195,7 @@ func run() error {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
 		case <-mUpdate.ClickedCh:
-			updNotice.show(false)
+			fmt.Println("UPDATE DIALOG")
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
