@@ -56,8 +56,6 @@ scripts:
     description: Builds a transitional State Tool that just updates to a mult-file version
     value: |
       set -e
-
-      export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
       # Generate legacy update
