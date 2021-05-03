@@ -42,6 +42,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AvailableVersion struct {
+		Branch  func(childComplexity int) int
+		Date    func(childComplexity int) int
+		Version func(childComplexity int) int
+	}
+
 	DeferredUpdate struct {
 		Channel func(childComplexity int) int
 		Logfile func(childComplexity int) int
@@ -54,9 +60,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Projects func(childComplexity int) int
-		Update   func(childComplexity int, channel *string, version *string) int
-		Version  func(childComplexity int) int
+		AvailableVersion func(childComplexity int) int
+		Projects         func(childComplexity int) int
+		Update           func(childComplexity int, channel *string, version *string) int
+		Version          func(childComplexity int) int
 	}
 
 	StateVersion struct {
@@ -74,6 +81,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
+	AvailableVersion(ctx context.Context) (*graph.AvailableVersion, error)
 	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 }
@@ -92,6 +100,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AvailableVersion.branch":
+		if e.complexity.AvailableVersion.Branch == nil {
+			break
+		}
+
+		return e.complexity.AvailableVersion.Branch(childComplexity), true
+
+	case "AvailableVersion.date":
+		if e.complexity.AvailableVersion.Date == nil {
+			break
+		}
+
+		return e.complexity.AvailableVersion.Date(childComplexity), true
+
+	case "AvailableVersion.version":
+		if e.complexity.AvailableVersion.Version == nil {
+			break
+		}
+
+		return e.complexity.AvailableVersion.Version(childComplexity), true
 
 	case "DeferredUpdate.channel":
 		if e.complexity.DeferredUpdate.Channel == nil {
@@ -127,6 +156,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Project.Namespace(childComplexity), true
+
+	case "Query.availableVersion":
+		if e.complexity.Query.AvailableVersion == nil {
+			break
+		}
+
+		return e.complexity.Query.AvailableVersion(childComplexity), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -258,6 +294,12 @@ type StateVersion {
   date: String!
 }
 
+type AvailableVersion {
+  version: String!
+  branch: String!
+  date: String!
+}
+
 type DeferredUpdate {
   channel: String!
   version: String!
@@ -271,6 +313,7 @@ type Project {
 
 type Query {
   version: Version
+  availableVersion: AvailableVersion
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }
@@ -358,6 +401,111 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AvailableVersion_version(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableVersion",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableVersion_branch(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableVersion",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Branch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableVersion_date(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableVersion",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Date, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _DeferredUpdate_channel(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
 	defer func() {
@@ -564,6 +712,38 @@ func (ec *executionContext) _Query_version(ctx context.Context, field graphql.Co
 	res := resTmp.(*graph.Version)
 	fc.Result = res
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_availableVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AvailableVersion(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.AvailableVersion)
+	fc.Result = res
+	return ec.marshalOAvailableVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAvailableVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_update(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2016,6 +2196,43 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
+var availableVersionImplementors = []string{"AvailableVersion"}
+
+func (ec *executionContext) _AvailableVersion(ctx context.Context, sel ast.SelectionSet, obj *graph.AvailableVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, availableVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AvailableVersion")
+		case "version":
+			out.Values[i] = ec._AvailableVersion_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "branch":
+			out.Values[i] = ec._AvailableVersion_branch(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "date":
+			out.Values[i] = ec._AvailableVersion_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var deferredUpdateImplementors = []string{"DeferredUpdate"}
 
 func (ec *executionContext) _DeferredUpdate(ctx context.Context, sel ast.SelectionSet, obj *graph.DeferredUpdate) graphql.Marshaler {
@@ -2109,6 +2326,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_version(ctx, field)
+				return res
+			})
+		case "availableVersion":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_availableVersion(ctx, field)
 				return res
 			})
 		case "update":
@@ -2804,6 +3032,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOAvailableVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAvailableVersion(ctx context.Context, sel ast.SelectionSet, v *graph.AvailableVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AvailableVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

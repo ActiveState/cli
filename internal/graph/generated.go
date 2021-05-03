@@ -2,6 +2,12 @@
 
 package graph
 
+type AvailableVersion struct {
+	Version string `json:"version"`
+	Branch  string `json:"branch"`
+	Date    string `json:"date"`
+}
+
 type DeferredUpdate struct {
 	Channel string `json:"channel"`
 	Version string `json:"version"`
