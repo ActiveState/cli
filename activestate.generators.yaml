@@ -51,12 +51,27 @@ scripts:
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
+  - name: build-transitional-update
+    language: bash
+    description: Builds a transitional State Tool that just updates to a mult-file version
+    value: |
+      set -e
+
+      export GOARCH=${1:-amd64}
+      $constants.SET_ENV
+
+      # Generate legacy update
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
   - name: generate-update
     language: bash
     description: Generate update files
     value: |
       set -e
+      export GOARCH=${1:-amd64}
       $constants.SET_ENV
+
+      # Generate legacy update
+      go run scripts/legacy-update-generator/main.go -o build/update $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET
 
       TEMPDIR=$(mktemp -d)
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
@@ -67,7 +82,6 @@ scripts:
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
 
-      export GOARCH=${1:-amd64}
       mkdir -p ./build/update
       if [ ! -z $constants.SYSTRAY_APP ]; then
         mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP

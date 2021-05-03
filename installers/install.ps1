@@ -17,6 +17,7 @@ param (
     ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][string]$c
     ,[Parameter(Mandatory=$False)][switch]$h
+    ,[Parameter(Mandatory=$False)][string]$v
     ,[Parameter(Mandatory=$False)][string]$activate = ""
     ,[Parameter(Mandatory=$False)][string]${activate-default} = ""
 )
@@ -31,6 +32,7 @@ $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
 $script:STATEEXE = "state.exe"
 $script:BRANCH = ($b).Trim()
+$script:VERSION = ($v).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
@@ -174,20 +176,33 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     
     Write-Host "Preparing for installation...`n"
 
-    # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
-    Write-Host "Determining latest version...`n"
-    try{
-        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
-        $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
-    } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number from $STATEURL/$script:BRANCH/$latestVersion/$statejson"
-        Write-Error $_.Exception.Message
-        return 1
+    if ($script:VERSION -ne "") {
+        Write-Host "Attempting to fetch version: $script:VERSION...`n"
+        $jsonURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
+
+        try {
+            $jsonString = download $jsonURL
+        } catch [System.Exception] {
+            Write-Error "Could not fetch version: $script:VERSION, please verify the version number and try again."
+            return 1
+        }
+
+        $infoJson = ConvertFrom-Json -InputObject $jsonString
+
+        $version = $script:VERSION
+
+        Write-Host "Fetching version: $version...`n"
+    } else {
+        Write-Host "Determining latest version...`n"
+        $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonurl)
+        $version = $infoJson.Version
+
+        Write-Host "Fetching the latest version: $version...`n"
     }
-    $latestChecksum = $versionedJson.Sha256
-    $relUrl = $versionedJson.Path
+
+    $checksum = $infoJson.Sha256
+    $relUrl = $infoJson.Path
     $zipUrl = "$STATEURL/$relurl"
 
     # Download pkg file
@@ -197,7 +212,6 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         download $zipURL $zipPath
     } catch [System.Exception] {
@@ -210,9 +224,9 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     # Check the sums
     Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-    if ($hash -ne $latestChecksum){
+    if ($hash -ne $checksum){
         Write-Warning "SHA256 sum did not match:"
-        Write-Warning "Expected: $latestChecksum"
+        Write-Warning "Expected: $checksum"
         Write-Warning "Received: $hash"
         Write-Warning "Aborting installation"
         return 1

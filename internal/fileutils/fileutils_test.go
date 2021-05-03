@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/runbits/mock"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -427,7 +426,7 @@ func (mi *mockIncrementer) Increment() {
 	mi.Count++
 }
 
-func touchFile(t *testing.T, contents string, paths ...string) {
+func touchFile(t *testing.T, contents string, paths ...string) string {
 	pd := filepath.Join(paths[:len(paths)-1]...)
 	fp := filepath.Join(pd, paths[len(paths)-1])
 	if pd != "" {
@@ -436,6 +435,7 @@ func touchFile(t *testing.T, contents string, paths ...string) {
 	}
 	err := ioutil.WriteFile(fp, []byte(contents), 0666)
 	require.NoError(t, err, "Touching %s", fp)
+	return fp
 }
 
 func assertFileWithContent(t *testing.T, contents string, paths ...string) {
@@ -453,25 +453,37 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 	fromDir := filepath.Join(tempDir, "from")
 	toDir := filepath.Join(tempDir, "to")
 
-	touchFile(t, "1", fromDir, "only_in_1", "t1")
-	touchFile(t, "1", fromDir, "in_1_and_2", "only_in_1")
-	touchFile(t, "1", fromDir, "in_1_and_2", "in_1_and_2")
-	touchFile(t, "1", fromDir, "root_in_1_only")
-	touchFile(t, "1", fromDir, "root_in_1_and_2")
+	var movedFiles []string
+	var expected []string
+
+	expected = append(expected, touchFile(t, "1", fromDir, "only_in_1", "t1"))
+	expected = append(expected, touchFile(t, "1", fromDir, "in_1_and_2", "only_in_1"))
+	expected = append(expected, touchFile(t, "1", fromDir, "in_1_and_2", "in_1_and_2"))
+	expected = append(expected, touchFile(t, "1", fromDir, "root_in_1_only"))
+	expected = append(expected, touchFile(t, "1", fromDir, "root_in_1_and_2"))
+	expected = append(expected, filepath.Join(fromDir, "only_in_1"), filepath.Join(fromDir, "in_1_and_2"))
 	touchFile(t, "2", toDir, "only_in_2", "t2")
 	touchFile(t, "2", toDir, "in_1_and_2", "only_in_2")
 	touchFile(t, "2", toDir, "in_1_and_2", "in_1_and_2")
 	touchFile(t, "2", toDir, "root_in_2_only")
 	touchFile(t, "2", toDir, "root_in_1_and_2")
 
-	counter := mock.NewMockIncrementer()
+	// Test that we handle symlinks to existing directories correctly
+	if runtime.GOOS != "windows" {
+		dirSymlink := filepath.Join(fromDir, "dirSymlink")
+		err = os.Symlink(filepath.Join(".", "in_1_and_2"), dirSymlink)
+		require.NoError(t, err)
+		err = os.Symlink(filepath.Join(".", "in_1_and_2"), filepath.Join(toDir, "dirSymlink"))
+		require.NoError(t, err)
+		expected = append(expected, dirSymlink)
+	}
 
 	err = os.Chmod(filepath.Join(fromDir, "root_in_1_and_2"), 0440)
 	require.NoError(t, err)
 	err = os.Chmod(filepath.Join(toDir, "root_in_1_and_2"), 0440)
 	require.NoError(t, err)
 
-	err = MoveAllFilesRecursively(fromDir, toDir, func(string, string) { counter.Increment() })
+	err = MoveAllFilesRecursively(fromDir, toDir, func(from string, _ string) { movedFiles = append(movedFiles, from) })
 	assert.NoError(t, err)
 
 	assertFileWithContent(t, "1", toDir, "only_in_1", "t1")
@@ -482,7 +494,7 @@ func TestMoveAllFilesRecursively(t *testing.T) {
 	assertFileWithContent(t, "2", toDir, "root_in_2_only")
 	assertFileWithContent(t, "1", toDir, "root_in_1_and_2")
 
-	assert.Equal(t, 5, counter.Count)
+	assert.ElementsMatch(t, expected, movedFiles, "callback should have triggered for all files and directories")
 
 	fp, err := os.Open(fromDir)
 	require.NoError(t, err, "reading from dir")
