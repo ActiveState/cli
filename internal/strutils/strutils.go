@@ -14,7 +14,7 @@ func UUID() strfmt.UUID {
 	return strfmt.UUID(uuid.New().String())
 }
 
-func ParseTemplate(contents string, params map[string]interface{}) (string, error) {
+func ParseTemplate(contents string, params interface{}) (string, error) {
 	tpl, err := template.New("template").Parse(contents)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not parse template")

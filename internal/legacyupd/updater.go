@@ -233,7 +233,7 @@ func (u *Updater) fetchInfo(ctx context.Context) error {
 		return nil
 	}
 	branchName := u.fetchBranch()
-	var fullURL = u.APIURL + branchName + "/"
+	var fullURL = u.APIURL + "/" + branchName + "/"
 	if u.DesiredVersion != "" {
 		fullURL += u.DesiredVersion + "/"
 	}
@@ -289,7 +289,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s%s",
+	var fetchURL = u.APIURL + fmt.Sprintf("/%s/%s/%s%s",
 		branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)

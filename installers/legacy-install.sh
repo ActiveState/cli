@@ -145,7 +145,7 @@ while getopts "nb:t:e:c:f?h-:" opt; do
     esac
     ;;
   b)
-    STATEURL=`echo $STATEURL | sed -e "s/release/$OPTARG/;"`
+    STATEURL=`echo $STATEURL | sed -e "s|release|$OPTARG|;"`
     ;;
   c)
     POST_INSTALL_COMMAND=$OPTARG

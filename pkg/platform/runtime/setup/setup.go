@@ -114,7 +114,10 @@ type ModelProvider interface {
 }
 
 type Setuper interface {
-	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) error
+	// ReusableArtifact returns artifact stores for the artifacts that are already installed and can be re-used for this setup.
+	ReusableArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) store.StoredArtifactMap
+	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
+	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
 	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error)
 }
@@ -184,12 +187,24 @@ func (s *Setup) update() error {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts)
+	alreadyInstalled := setup.ReusableArtifacts(changedArtifacts, storedArtifacts)
 
-	// if we get here, we dowload artifacts
-	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
+	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
+	if err != nil {
+		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
+		err = os.RemoveAll(s.store.InstallPath())
+		if err != nil {
+			return locale.WrapError(err, "Failed to clean installation path")
+		}
+	}
 
-	err = s.installArtifacts(buildResult, artifacts, setup)
+	// only send the download analytics event, if we have to install artifacts that are not yet installed
+	if len(artifacts) != len(alreadyInstalled) {
+		// if we get here, we dowload artifacts
+		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
+	}
+
+	err = s.installArtifacts(buildResult, artifacts, alreadyInstalled, setup)
 	if err != nil {
 		return err
 	}
@@ -260,7 +275,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 	}
@@ -270,9 +285,9 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromBuildResult(buildResult, setup)
+		err = s.installFromBuildResult(buildResult, alreadyInstalled, setup)
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, setup)
+		err = s.installFromBuildLog(buildResult, artifacts, alreadyInstalled, setup)
 	}
 
 	return err
@@ -291,18 +306,21 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Setuper) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch artifacts to download.")
 	}
-	s.events.TotalArtifacts(len(downloads))
+	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
 		defer close(errs)
 		wp := workerpool.New(MaxConcurrency)
 		for _, a := range downloads {
+			if _, ok := alreadyInstalled[a.ArtifactID]; ok {
+				continue
+			}
 			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 		}
 
@@ -312,8 +330,8 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, setup Set
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, setup Setuper) error {
-	s.events.TotalArtifacts(len(artifacts))
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -341,6 +359,9 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 			defer wp.StopWait()
 
 			for a := range buildLog.BuiltArtifactsChannel() {
+				if _, ok := alreadyInstalled[a.ArtifactID]; ok {
+					continue
+				}
 				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 			}
 		}()

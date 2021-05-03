@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/string/string?commitID=00010001-0001-0001-0001-000100010001"
+project: https://platform.activestate.com/string/string?branch=main&commitID=00010001-0001-0001-0001-000100010001
 version: master
 environments: dev,qa,prod
 platforms:
