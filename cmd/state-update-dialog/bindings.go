@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/shirou/gopsutil/process"
 	"github.com/wailsapp/wails"
 )
 
@@ -20,7 +19,7 @@ type Bindings struct {
 	update         *updater.AvailableUpdate
 	changelog      string
 	runtime        *wails.Runtime
-	installPid     int
+	installDone    bool
 	installLog     string
 	cfg            *config.Instance
 	lockedProjects map[string][]lockedprj.LockedCheckout
@@ -32,14 +31,17 @@ func (b *Bindings) WailsInit(runtime *wails.Runtime) error {
 }
 
 func (b *Bindings) CurrentVersion() string {
+	logging.Debug("Bindings:CurrentVersion called")
 	return constants.VersionNumber
 }
 
 func (b *Bindings) AvailableVersion() string {
+	logging.Debug("Bindings:AvailableVersion called")
 	return b.update.Version
 }
 
 func (b *Bindings) Warning() string {
+	logging.Debug("Bindings:Warning called")
 	if len(b.lockedProjects) == 0 {
 		return ""
 	}
@@ -60,43 +62,36 @@ func (b *Bindings) Warning() string {
 }
 
 func (b *Bindings) Changelog() string {
+	logging.Debug("Bindings:Changelog called")
 	return b.changelog
 }
 
 func (b *Bindings) Install() error {
-	proc, out, err := b.update.Install()
+	logging.Debug("Bindings:Install called")
+	proc, err := b.update.InstallWithProgress(func(output string, done bool) {
+		b.installLog = b.installLog + "\n" + output
+		b.installDone = done
+	})
+	logging.Debug("Started installer: %d", proc.Pid)
 	if err != nil {
 		logging.Error("InstallDeferred failed: %v", errs.Join(err, ": "))
 		return formatError(err, "Installation failed")
 	}
-
-	go func() {
-		for {
-			v := <-out
-			if v == "" {
-				return
-			}
-			b.installLog = b.installLog + "\n" + v
-		}
-	}()
-
-	b.installPid = proc.Pid
 	return nil
 }
 
 func (b *Bindings) InstallReady() bool {
-	exists, err := process.PidExists(int32(b.installPid))
-	if err != nil {
-		logging.Error("Could not check PidExists: %v", err)
-	}
-	return exists
+	logging.Debug("Bindings:InstallReady called")
+	return b.installDone
 }
 
 func (b *Bindings) InstallLog() string {
-	return b.installLog
+	logging.Debug("Bindings:InstallLog called")
+	return strings.TrimSpace(b.installLog)
 }
 
 func (b *Bindings) Exit() {
+	logging.Debug("Bindings:Exit called")
 	b.runtime.Window.Close()
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -57,17 +56,17 @@ func (u *AvailableUpdate) prepare() (string, string, error) {
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred() (int, error) {
+func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
 	installerPath, installTargetPath, err := u.prepare()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, installTargetPath)
+	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath})
 	if err != nil {
-		return 0, errs.Wrap(err, "Could not start installer")
+		return nil, errs.Wrap(err, "Could not start installer")
 	}
 
-	return installerPath, nil
+	return proc, nil
 }
 
 func (u *AvailableUpdate) InstallBlocking() error {
@@ -84,20 +83,13 @@ func (u *AvailableUpdate) InstallBlocking() error {
 	return nil
 }
 
-
-// Install will fetch the update and run its installer
-func (u *AvailableUpdate) Install() (*os.Process, chan string, error) {
-	installerPath, err := u.download()
+// InstallWithProgress will fetch the update and run its installer
+func (u *AvailableUpdate) InstallWithProgress(progressCb func(string, bool)) (*os.Process, error) {
+	installerPath, installTargetPath, err := u.prepare()
 	if err != nil {
-		return nil, nil, errs.Wrap(err, "Could not download update")
+		return nil, errs.Wrap(err, "Could not download update")
 	}
 
-	installTargetPath, err := installation.InstallPath()
-	if err != nil {
-		return nil, nil, errs.Wrap(err, "Could not detect install path")
-	}
-
-	outputChannel := make(chan string, 999)
 	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
@@ -107,20 +99,22 @@ func (u *AvailableUpdate) Install() (*os.Process, chan string, error) {
 		if stdout, err = cmd.StdoutPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
-		scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
-		for scanner.Scan() {
-			outputChannel <- scanner.Text()
-		}
-		close(outputChannel)
+		go func() {
+			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
+			for scanner.Scan() {
+				progressCb(scanner.Text(), false)
+			}
+			progressCb(scanner.Text(), true)
+		}()
 		return nil
 	})
 	if err != nil {
-		return nil, nil, errs.Wrap(err, "Could not start installer")
+		return nil, errs.Wrap(err, "Could not start installer")
 	}
 
 	if proc == nil {
-		return nil, nil, errs.Wrap(err, "Could not obtain process information for installer")
+		return nil, errs.Wrap(err, "Could not obtain process information for installer")
 	}
 
-	return proc, outputChannel, nil
+	return proc, nil
 }

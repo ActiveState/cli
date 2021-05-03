@@ -32,6 +32,7 @@ function start() {
 
 function install() {
     el("install-btn").setAttribute("disabled", "true");
+    el("close-btn2").setAttribute("disabled", "true");
     el("initial-screen").style.display = "none";
     el("install-screen").style.display = "";
     backend.Bindings.Install()
@@ -45,15 +46,16 @@ function installFailure(message) {
 }
 
 function installProgress() {
-    console.log("Progress");
     Promise.all([
         backend.Bindings.InstallReady(),
         backend.Bindings.InstallLog()
     ]).then(result => {
-        console.log(result);
         let [installReady, installLog] = result;
         el("installog-content").innerText = installLog;
-        if (!!installReady) return;
+        if (!!installReady) {
+            el("close-btn2").setAttribute("disabled", "");
+            return;
+        }
         setTimeout(installProgress, 1000);
     }).catch(installFailure)
 }
