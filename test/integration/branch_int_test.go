@@ -26,20 +26,20 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
 	cp := ts.Spawn("branch")
-	expectations := []string{
-		"main",
-		"firstbranch",
-		"firstbranchchild",
-		"secondbranch",
-	}
-	for _, expectation := range expectations {
-		cp.Expect(expectation)
-	}
+	expected := `main (Current)
+ ├─ firstbranch
+ │  └─ firstbranchchild
+ │     └─ childoffirstbranchchild
+ ├─ secondbranch
+ └─ thirdbranch
+`
+	cp.ExpectLongString(expected)
 	cp.ExpectExitCode(0)
 }
 
 func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	suite.OnlyRunForTags(tagsuite.Branches)
+	suite.T().Skip("Skip test as state branch add functionality is currently disabled")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

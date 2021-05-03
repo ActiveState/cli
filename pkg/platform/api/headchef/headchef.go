@@ -23,6 +23,7 @@ import (
 var (
 	ErrBuildResp        = errs.New("Build responded with error")
 	ErrBuildUnknownType = errs.New("Unknown build type")
+	ErrBuildFailedResp  = errs.New("Build failed remotely")
 )
 
 type BuildStatus struct {
@@ -87,6 +88,10 @@ func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *Bui
 	return buildStatus
 }
 
+func (r *Client) RequestBuildSync(buildRequest *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+	return r.reqBuildSync(buildRequest)
+}
+
 func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnotations) (*headchef_models.V1BuildRequest, error) {
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
@@ -130,6 +135,69 @@ func (b *BuildParams) WriteToRequest(req runtime.ClientRequest, reg strfmt.Regis
 	}
 
 	return nil
+}
+
+type BuildStatusEnum int
+
+const (
+	Accepted BuildStatusEnum = iota
+	Started
+	Completed
+	Failed
+	Error
+)
+
+func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+	startParams := headchef_operations.StartBuildV1Params{
+		Context:      context.Background(),
+		BuildRequest: buildReq,
+		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+	}
+
+	created, accepted, err := r.client.StartBuildV1(&startParams)
+
+	switch {
+	case err != nil:
+		msg := err.Error()
+		if startErr, ok := err.(*headchef_operations.StartBuildV1Default); ok {
+			msg = *startErr.Payload.Message
+		}
+		return Error, nil, errs.Wrap(ErrBuildResp, msg)
+	case accepted != nil:
+		return Accepted, accepted.Payload, nil
+	case created != nil:
+		if created.Payload.Type == nil {
+			requestBytes, err := buildReq.MarshalBinary()
+			if err != nil {
+				requestBytes = []byte(
+					fmt.Sprintf("cannot marshal request: %v", err),
+				)
+			}
+			msg := fmt.Sprintf(
+				"created response cannot be handled: nil type from request %q",
+				string(requestBytes),
+			)
+			return Error, nil, errs.New("Payload type was nil, message: %s", msg)
+		}
+		payloadType := *created.Payload.Type
+
+		switch payloadType {
+		case headchef_models.BuildStatusResponseTypeBuildCompleted:
+			return Completed, created.Payload, nil
+		case headchef_models.BuildStatusResponseTypeBuildFailed:
+			return Failed, created.Payload, locale.WrapError(ErrBuildFailedResp, "headchef_build_failure", "Build Failed: {{.V0}}", created.Payload.Message)
+		case headchef_models.BuildStatusResponseTypeBuildStarted:
+			return Started, created.Payload, nil
+		default:
+			msg := fmt.Sprintf(
+				"created response cannot be handled: unknown type %q",
+				payloadType,
+			)
+			return Error, nil, errs.Wrap(ErrBuildUnknownType, msg)
+		}
+	default:
+		return Error, nil, errs.New("no response")
+	}
 }
 
 func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus *BuildStatus) {

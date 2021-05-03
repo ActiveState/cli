@@ -259,7 +259,7 @@ func TestPathProvidesLang(t *testing.T) {
 
 	require.NoError(t, os.Chmod(tf, 0770))
 
-	exec := language.Python3.Executable().Name()
+	exec := language.Python3.Executable().Filename()
 
 	home, err := os.UserHomeDir()
 	require.NoError(t, err)

@@ -1,4 +1,4 @@
-build
+/build/
 debug
 debug.test
 internal/constants/generated.go

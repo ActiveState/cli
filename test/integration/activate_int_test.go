@@ -188,7 +188,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default something/else")
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
 
-	cp.SendLine("state activate --default")
+	cp.SendLine("VERBOSE=true state activate --default")
 	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {

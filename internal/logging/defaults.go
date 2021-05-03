@@ -16,6 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -65,7 +66,16 @@ func FileName() string {
 }
 
 func FileNameFor(pid int) string {
-	return fmt.Sprintf("%d%s", pid, FileNameSuffix)
+	return fmt.Sprintf("%s-%d%s", FileNamePrefix(), pid, FileNameSuffix)
+}
+
+func FileNamePrefix() string {
+	exe, err := os.Executable()
+	if err != nil {
+		exe = os.Args[0]
+	}
+	exe = filepath.Base(exe)
+	return strings.TrimSuffix(exe, filepath.Ext(exe))
 }
 
 func FilePath() string {
@@ -110,7 +120,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if l.file == nil {
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
 		}
 		l.file = f
 	}
@@ -155,7 +165,7 @@ func init() {
 
 	c := 0
 	for _, file := range files {
-		if strings.HasSuffix(file.Name(), FileNameSuffix) {
+		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
 			c = c + 1
 			if c > 9 {
 				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
@@ -164,4 +174,6 @@ func init() {
 			}
 		}
 	}
+
+	Debug("Args: %v", os.Args)
 }

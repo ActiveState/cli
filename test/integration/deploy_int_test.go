@@ -230,7 +230,6 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
 	)
 
 	cp.Expect("Installing Runtime")
-	cp.Expect("Downloading")
 	cp.Expect("Installing", 120*time.Second)
 	cp.Expect("Installation completed", 120*time.Second)
 	cp.ExpectExitCode(0)

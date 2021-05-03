@@ -164,7 +164,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		tutorialCmd,
 		prepareCmd,
 		newProtocolCommand(prime),
-		newShimCommand(prime, args...),
+		newExecCommand(prime, args...),
 		newRevertCommand(prime),
 		secretsCmd,
 		branchCmd,

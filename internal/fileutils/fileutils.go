@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/iafan/cwalk"
 
@@ -474,7 +475,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 	for _, fileInfo := range fileInfos {
 		subFromPath := filepath.Join(fromPath, fileInfo.Name())
 		subToPath := filepath.Join(toPath, fileInfo.Name())
-		toInfo, err := os.Stat(subToPath)
+		toInfo, err := os.Lstat(subToPath)
 		// if stat returns, the destination path exists (either file or directory)
 		toPathExists := err == nil
 		// handle case where destination exists
@@ -485,8 +486,28 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 			if fileInfo.Mode() != toInfo.Mode() {
 				logging.Warning(locale.Tr("warn_move_incompatible_modes", "", subFromPath, subToPath))
 			}
+
+			if !toInfo.IsDir() {
+				// If the subToPath file exists, we remove it first - in order to ensure compatibility between platforms:
+				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
+				err = os.Remove(subToPath)
+				logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+			}
 		}
-		if toPathExists && toInfo.IsDir() {
+
+		// If we are moving to a directory, call function recursively to overwrite and add files in that directory
+		if fileInfo.IsDir() {
+			// create target directories that don't exist yet
+			if !toPathExists {
+				err = Mkdir(subToPath)
+				if err != nil {
+					return locale.WrapError(err, "err_move_create_directory", "Failed to create directory {{.V0}}", subToPath)
+				}
+				err = os.Chmod(subToPath, fileInfo.Mode())
+				if err != nil {
+					return locale.WrapError(err, "err_move_set_dir_permissions", "Failed to set file mode for directory {{.V0}}", subToPath)
+				}
+			}
 			err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
 			if err != nil {
 				return err
@@ -496,13 +517,70 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 			if err != nil {
 				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
 			}
-		} else {
-			logging.Warning(locale.Tr("warn_move_destination_overwritten", "", subFromPath))
-			err = os.Rename(subFromPath, subToPath)
-			if err != nil {
-				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
-			}
+
 			cb(subFromPath, subToPath)
+			continue
+		}
+
+		err = os.Rename(subFromPath, subToPath)
+		if err != nil {
+			return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
+		}
+		cb(subFromPath, subToPath)
+	}
+	return nil
+}
+
+// CopyAndRenameFiles copies files from fromDir to toDir.
+// If the target file exists already, it is first copied next to it, and then overwritten by renaming it.
+// This method is more robust and than copying directly, in case the target file is opened or executed.
+func CopyAndRenameFiles(fromPath, toPath string) error {
+	if !DirExists(fromPath) {
+		return locale.NewError("err_os_not_a_directory", "", fromPath)
+	} else if !DirExists(toPath) {
+		return locale.NewError("err_os_not_a_directory", "", toPath)
+	}
+
+	// read all child files and dirs
+	dir, err := os.Open(fromPath)
+	if err != nil {
+		return errs.Wrap(err, "os.Open %s failed", fromPath)
+	}
+	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
+	if err != nil {
+		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
+	}
+
+	// any found files and dirs
+	for _, fileInfo := range fileInfos {
+		fromPath := filepath.Join(fromPath, fileInfo.Name())
+		toPath := filepath.Join(toPath, fileInfo.Name())
+		if TargetExists(toPath) {
+			tmpToPath := fmt.Sprintf("%s.new", toPath)
+			err := CopyFile(fromPath, tmpToPath)
+			if err != nil {
+				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
+			}
+			err = os.Chmod(tmpToPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
+			}
+			err = os.Rename(tmpToPath, toPath)
+			if err != nil {
+				// cleanup
+				_ = os.Remove(tmpToPath)
+				return errs.Wrap(err, "os.Rename %s -> %s failed", tmpToPath, toPath)
+			}
+		} else {
+			err := CopyFile(fromPath, toPath)
+			if err != nil {
+				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
+			}
+			err = os.Chmod(toPath, fileInfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", toPath)
+			}
 		}
 	}
 	return nil
@@ -867,4 +945,23 @@ func PathInList(listSep, pathList, path string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func FileContains(path string, searchText []byte) (bool, error) {
+	if !TargetExists(path) {
+		return false, nil
+	}
+	b, err := ReadFile(path)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not read file")
+	}
+	return bytes.Contains(b, searchText), nil
+}
+
+func ModTime(path string) (time.Time, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return time.Now(), errs.Wrap(err, "Could not stat file %s", path)
+	}
+	return stat.ModTime(), nil
 }

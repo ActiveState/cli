@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
+	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -134,4 +135,17 @@ func (r *Request) responseReader(conn *websocket.Conn, errCh chan error) {
 func (r *Request) writeError(errCh chan error, err error) {
 	r.msgHandler.BuildFinished()
 	errCh <- err
+}
+
+func Connect(ctx context.Context) (*websocket.Conn, error) {
+	url := api.GetServiceURL(api.BuildLogStreamer)
+	header := make(http.Header)
+	header.Add("Origin", "https://"+url.Host)
+
+	logging.Debug("Creating websocket for %s (origin: %s)", url.String(), header.Get("Origin"))
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, url.String(), header)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create websocket dialer")
+	}
+	return conn, nil
 }

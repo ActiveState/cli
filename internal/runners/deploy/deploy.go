@@ -7,6 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -24,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -47,9 +49,6 @@ type Deploy struct {
 	subshell subshell.SubShell
 	step     Step
 	cfg      *config.Instance
-
-	DefaultBranchForProjectName defaultBranchForProjectNameFunc
-	NewRuntimeInstaller         newInstallerFunc
 }
 
 type primeable interface {
@@ -64,8 +63,6 @@ func NewDeploy(step Step, prime primeable) *Deploy {
 		prime.Subshell(),
 		step,
 		prime.Config(),
-		model.DefaultBranchForProjectName,
-		newInstaller,
 	}
 }
 
@@ -80,27 +77,53 @@ func (d *Deploy) Run(params *Params) error {
 		}
 	}
 
-	targetPath := params.Path
-	runtime, installer, err := d.createRuntimeInstaller(params.Namespace, targetPath)
+	commitID, err := d.commitID(params.Namespace)
 	if err != nil {
-		return locale.WrapError(
-			err, "err_deploy_create_install",
-			"Could not initialize an installer for {{.V0}}.", params.Namespace.String())
+		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	return runSteps(targetPath, params.Force, params.UserScope, params.Namespace, d.step, runtime, installer, d.output, d.cfg, d.subshell)
+	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path) /* TODO: handle empty path */
+
+	logging.Debug("runSteps: %s", d.step.String())
+
+	if d.step == UnsetStep || d.step == InstallStep {
+		logging.Debug("Running install step")
+		if err := d.install(rtTarget); err != nil {
+			return err
+		}
+	}
+	if d.step == UnsetStep || d.step == ConfigureStep {
+		logging.Debug("Running configure step")
+		if err := d.configure(params.Namespace, rtTarget, params.UserScope); err != nil {
+			return err
+		}
+	}
+	if d.step == UnsetStep || d.step == SymlinkStep {
+		logging.Debug("Running symlink step")
+		if err := d.symlink(rtTarget, params.Force); err != nil {
+			return err
+		}
+	}
+	if d.step == UnsetStep || d.step == ReportStep {
+		logging.Debug("Running report step")
+		if err := d.report(rtTarget); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath string) (*runtime.Runtime, installable, error) {
+func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	commitID := namespace.CommitID
 	if commitID == nil {
-		branch, err := d.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
+		branch, err := model.DefaultBranchForProjectName(namespace.Owner, namespace.Project)
 		if err != nil {
-			return nil, nil, errs.Wrap(err, "Could not create installer")
+			return "", errs.Wrap(err, "Could not detect default branch")
 		}
 
 		if branch.CommitID == nil {
-			return nil, nil, locale.NewInputError(
+			return "", locale.NewInputError(
 				"err_deploy_no_commits",
 				"The project '{{.V0}}' does not have any packages configured, please add add some packages first.", namespace.String())
 		}
@@ -108,116 +131,72 @@ func (d *Deploy) createRuntimeInstaller(namespace project.Namespaced, targetPath
 		commitID = branch.CommitID
 	}
 
-	runtime, err := runtime.NewRuntime("", d.cfg.CachePath(), *commitID, namespace.Owner, namespace.Project, runbits.NewRuntimeMessageHandler(d.output))
-	if err != nil {
-		return nil, nil, locale.WrapError(err, "err_deploy_init_runtime", "Could not initialize runtime for deployment.")
+	if commitID == nil {
+		return "", errs.New("commitID is nil")
 	}
 
-	// NewRuntime will set a default installation path
-	// Override the default path if one was provided
-	if targetPath != "" {
-		runtime.SetInstallPath(targetPath)
-	}
-	return runtime, d.NewRuntimeInstaller(runtime), nil
+	return *commitID, nil
 }
 
-func runSteps(targetPath string, force bool, userScope bool, namespace project.Namespaced, step Step, runtime *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell) error {
-	return runStepsWithFuncs(
-		targetPath, force, userScope, namespace, step, runtime, installer, out, cfg, subshell,
-		install, configure, symlink, report)
-}
+func (d *Deploy) install(rtTarget setup.Targeter) error {
+	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
-func runStepsWithFuncs(targetPath string, force, userScope bool, namespace project.Namespaced, step Step, rt *runtime.Runtime, installer installable, out output.Outputer, cfg sscommon.Configurable, subshell subshell.SubShell, installf installFunc, configuref configureFunc, symlinkf symlinkFunc, reportf reportFunc) error {
-	logging.Debug("runSteps: %s", step.String())
-
-	var err error
-
-	installed, err := installer.IsInstalled()
-	if err != nil {
-		return err
+	rti, err := runtime.New(rtTarget)
+	if err == nil {
+		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
+		return nil
+	}
+	if !runtime.IsNeedsUpdateError(err) {
+		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	if !installed && step != UnsetStep && step != InstallStep {
-		return locale.NewInputError("err_deploy_run_install", "Please run the install step at least once")
-	}
-
-	if step == UnsetStep || step == InstallStep {
-		logging.Debug("Running install step")
-		if err := installf(targetPath, installer, out); err != nil {
-			return err
-		}
-	}
-	if step == UnsetStep || step == ConfigureStep {
-		logging.Debug("Running configure step")
-		if err := configuref(targetPath, rt, cfg, out, subshell, namespace, userScope); err != nil {
-			return err
-		}
-	}
-	if step == UnsetStep || step == SymlinkStep {
-		logging.Debug("Running symlink step")
-		if err := symlinkf(targetPath, force, rt, out); err != nil {
-			return err
-		}
-	}
-	if step == UnsetStep || step == ReportStep {
-		logging.Debug("Running report step")
-		if err := reportf(targetPath, rt, out); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type installFunc func(path string, installer installable, out output.Outputer) error
-
-func install(path string, installer installable, out output.Outputer) error {
-	out.Notice(output.Heading(locale.T("deploy_install")))
-	_, installed, err := installer.Install()
-	if err != nil {
+	if err := rti.Update(runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
-	}
-	if !installed {
-		out.Notice(locale.T("using_cached_env"))
 	}
 
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
 		contents := box.Bytes("setenv.bat")
-		err = fileutils.WriteFile(filepath.Join(path, "setenv.bat"), contents)
+		err := fileutils.WriteFile(filepath.Join(rtTarget.Dir(), "setenv.bat"), contents)
 		if err != nil {
-			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", path)
+			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", rtTarget.Dir())
 		}
 	}
 
-	out.Print(locale.Tl("deploy_install_done", "Installation completed"))
+	d.output.Print(locale.Tl("deploy_install_done", "Installation completed"))
 	return nil
 }
 
-type configureFunc func(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error
+func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
+	rti, err := runtime.New(rtTarget)
+	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
+		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
+	}
 
-func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Configurable, out output.Outputer, sshell subshell.SubShell, namespace project.Namespaced, userScope bool) error {
-	venv := virtualenvironment.New(runtime)
+	venv := virtualenvironment.New(rti)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err
 	}
 
-	out.Notice(output.Heading(locale.Tr("deploy_configure_shell", sshell.Shell())))
+	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = sshell.WriteUserEnv(cfg, env, sscommon.Deploy, userScope)
+	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
-	binPath := filepath.Join(installpath, "bin")
+	binPath := filepath.Join(rtTarget.Dir(), "bin")
 	if err := fileutils.MkdirUnlessExists(binPath); err != nil {
 		return locale.WrapError(err, "err_deploy_binpath", "Could not create bin directory.")
 	}
 
 	// Write global env file
-	out.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(installpath, "bin")))
-	err = sshell.SetupShellRcFile(binPath, env, namespace)
+	d.output.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(rtTarget.Dir(), "bin")))
+	err = d.subshell.SetupShellRcFile(binPath, env, namespace)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}
@@ -225,10 +204,16 @@ func configure(installpath string, runtime *runtime.Runtime, cfg sscommon.Config
 	return nil
 }
 
-type symlinkFunc func(installPath string, overwrite bool, runtime *runtime.Runtime, out output.Outputer) error
+func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
+	rti, err := runtime.New(rtTarget)
+	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
+		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
+	}
 
-func symlink(installPath string, overwrite bool, runtime *runtime.Runtime, out output.Outputer) error {
-	venv := virtualenvironment.New(runtime)
+	venv := virtualenvironment.New(rti)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err
@@ -262,7 +247,7 @@ func symlink(installPath string, overwrite bool, runtime *runtime.Runtime, out o
 
 	if rt.GOOS != "windows" {
 		// Symlink to PATH (eg. /usr/local/bin)
-		if err := symlinkWithTarget(overwrite, path, exes, out); err != nil {
+		if err := symlinkWithTarget(overwrite, path, exes, d.output); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
 	}
@@ -347,10 +332,16 @@ type Report struct {
 	Environment       map[string]string
 }
 
-type reportFunc func(path string, runtime *runtime.Runtime, out output.Outputer) error
+func (d *Deploy) report(rtTarget setup.Targeter) error {
+	rti, err := runtime.New(rtTarget)
+	if err != nil {
+		if runtime.IsNeedsUpdateError(err) {
+			return locale.NewInputError("err_deploy_run_install")
+		}
+		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
+	}
 
-func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
-	venv := virtualenvironment.New(runtime)
+	venv := virtualenvironment.New(rti)
 	env, err := venv.GetEnv(false, "")
 	if err != nil {
 		return err
@@ -362,19 +353,19 @@ func report(path string, runtime *runtime.Runtime, out output.Outputer) error {
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
 
-	out.Notice(output.Heading(locale.T("deploy_info")))
+	d.output.Notice(output.Heading(locale.T("deploy_info")))
 
-	out.Print(Report{
+	d.output.Print(Report{
 		BinaryDirectories: bins,
 		Environment:       env,
 	})
 
-	out.Notice(output.Heading(locale.T("deploy_restart")))
+	d.output.Notice(output.Heading(locale.T("deploy_restart")))
 
 	if rt.GOOS == "windows" {
-		out.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(path, "setenv.bat")))
+		d.output.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(rtTarget.Dir(), "setenv.bat")))
 	} else {
-		out.Notice(locale.T("deploy_restart_shell"))
+		d.output.Notice(locale.T("deploy_restart_shell"))
 	}
 
 	return nil

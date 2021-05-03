@@ -135,7 +135,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.out, nil, i.proj, i.cfg.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.out, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {

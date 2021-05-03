@@ -3,6 +3,7 @@ package run
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,7 +22,7 @@ type Run struct {
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
-	cfg      scriptrun.Configurable
+	cfg      *config.Instance
 }
 
 type primeable interface {
@@ -46,7 +47,7 @@ func (r *Run) Run(name string, args []string) error {
 	return run(r.out, r.subshell, r.proj, r.cfg, name, args)
 }
 
-func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg scriptrun.Configurable, name string, args []string) error {
+func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
 	if proj == nil {

@@ -136,50 +136,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32() {
-	if runtime.GOOS != "linux" {
-		suite.T().SkipNow()
-	}
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32Default() {
 	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.runInstallTest("-c", "state activate ActiveState/Perl-5.32 --default")
+}
 
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	script := scriptPath(suite.T())
-
-	cp := ts.SpawnCmdWithOpts(
-		"bash",
-		e2e.WithArgs("-c", fmt.Sprintf("cp $HOME/.bashrc %s/bashrc.bak", ts.Dirs.Work)),
-	)
-	cp.ExpectExitCode(0)
-
-	defer func() {
-		cp = ts.SpawnCmdWithOpts(
-			"bash",
-			e2e.WithArgs("-c", fmt.Sprintf("cp %s/.bashrc.bak $HOME/.bashrc", ts.Dirs.Work)),
-		)
-	}()
-
-	cp.ExpectExitCode(0)
-	cp = ts.SpawnCmdWithOpts(
-		"bash",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "--activate-default", "ActiveState/Perl-5.32"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL=bash"),
-	)
-	expectStateToolInstallation(cp, "y")
-
-	expectDefaultActivation(cp)
-	cp.ExpectExitCode(0)
-
-	// we need to run an interactive bash session to ensure that the modified ~/.bashrc is being parsed
-	cp = ts.SpawnCmd("bash")
-	cp.SendLine("echo $PATH; exit")
-	// Expect Global Binary directory on PATH
-	globalBinDir := filepath.Join(ts.Dirs.Cache, "bin")
-	cp.ExpectLongString(globalBinDir, 1*time.Second)
-	// expect State Tool Installation directory
-	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
-	cp.ExpectExitCode(0)
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32ActivateDefault() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.runInstallTest("--activate-default", "ActiveState/Perl-5.32")
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
@@ -215,11 +179,67 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_Windows() {
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.runInstallTestWindows("-c", "\"state activate ActiveState/Perl-5.32 --default\"")
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_ActivateDefaultWindows() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.runInstallTestWindows("-activate-default", "ActiveState/Perl-5.32")
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArgs ...string) {
+	if runtime.GOOS != "linux" {
+		suite.T().SkipNow()
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T())
+
+	cp := ts.SpawnCmdWithOpts(
+		"bash",
+		e2e.WithArgs("-c", fmt.Sprintf("cp $HOME/.bashrc %s/bashrc.bak", ts.Dirs.Work)),
+	)
+	cp.ExpectExitCode(0)
+
+	defer func() {
+		cp = ts.SpawnCmdWithOpts(
+			"bash",
+			e2e.WithArgs("-c", fmt.Sprintf("cp %s/.bashrc.bak $HOME/.bashrc", ts.Dirs.Work)),
+		)
+	}()
+
+	computedCommand := append([]string{script, "-t", ts.Dirs.Work}, installScriptArgs...)
+
+	cp.ExpectExitCode(0)
+	cp = ts.SpawnCmdWithOpts(
+		"bash",
+		e2e.WithArgs(computedCommand...),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "SHELL=bash"),
+	)
+	expectStateToolInstallation(cp, "y")
+
+	expectDefaultActivation(cp)
+	cp.ExpectExitCode(0)
+
+	// we need to run an interactive bash session to ensure that the modified ~/.bashrc is being parsed
+	cp = ts.SpawnCmd("bash")
+	cp.SendLine("echo $PATH; exit")
+	// Expect Global Binary directory on PATH
+	globalBinDir := filepath.Join(ts.Dirs.Cache, "bin")
+	cp.ExpectLongString(globalBinDir, 1*time.Second)
+	// expect State Tool Installation directory
+	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installScriptArgs ...string) {
 	if runtime.GOOS != "windows" {
 		suite.T().SkipNow()
 	}
-	suite.OnlyRunForTags(tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -238,9 +258,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32_Windows() {
 		suite.Assert().NoError(err, "Unexpected error re-setting paths")
 	}()
 
+	computedCommand := append([]string{script, "-t", ts.Dirs.Work}, installScriptArgs...)
+
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-activate-default", "ActiveState/Perl-5.32"),
+		e2e.WithArgs(computedCommand...),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	expectStateToolInstallationWindows(cp)
 	expectDefaultActivation(cp)

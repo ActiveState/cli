@@ -1575,16 +1575,10 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
-shim_description:
-  other: Intercept and run a script via the State Tool
-flag_state_shim_language:
-  other: language
-flag_state_shim_language_description:
-  other: The language to run the script with
-args_state_shim_script:
-  other: Script
-args_state_shim_script_description:
-  other: The script to be run
+exec_description:
+  other: Intercept and run a script via a project runtime environment
+flag_state_exec_path_description:
+  other: The path of the project that you want to use the runtime environment of. If no path is given the current working directory is used.
 artifact_started:
   other: "Build Starting Remotely: [NOTICE]{{.V0}}[/RESET]"
 artifact_started_cached:
@@ -1650,6 +1644,14 @@ err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
   other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
+artifact_progress_step_download:
+  other: Downloading
+artifact_progress_step_unpack:
+  other: Unpacking
+artifact_progress_step_install:
+  other: Installing
+artifact_setup_failed:
+  other: Failed to install artifact {{.V0}} ({{.V1}})
 err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:

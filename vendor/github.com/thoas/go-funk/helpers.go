@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"math/rand"
 	"reflect"
-	"time"
 )
 
 var numericZeros = []interface{}{
@@ -76,7 +75,7 @@ func PtrOf(itf interface{}) interface{} {
 func IsFunction(in interface{}, num ...int) bool {
 	funcType := reflect.TypeOf(in)
 
-	result := funcType.Kind() == reflect.Func
+	result := funcType != nil && funcType.Kind() == reflect.Func
 
 	if len(num) >= 1 {
 		result = result && funcType.NumIn() == num[0]
@@ -84,6 +83,27 @@ func IsFunction(in interface{}, num ...int) bool {
 
 	if len(num) == 2 {
 		result = result && funcType.NumOut() == num[1]
+	}
+
+	return result
+}
+
+// IsPredicate returns if the argument is a predicate function.
+func IsPredicate(in interface{}, inTypes ...reflect.Type) bool {
+	if len(inTypes) == 0 {
+		inTypes = append(inTypes, nil)
+	}
+
+	funcType := reflect.TypeOf(in)
+
+	result := funcType != nil && funcType.Kind() == reflect.Func
+
+	result = result && funcType.NumOut() == 1 && funcType.Out(0).Kind() == reflect.Bool
+	result = result && funcType.NumIn() == len(inTypes)
+
+	for i := 0; result && i < len(inTypes); i++ {
+		inType := inTypes[i]
+		result = inType == nil || inType.ConvertibleTo(funcType.In(i))
 	}
 
 	return result
@@ -129,11 +149,23 @@ func NotEqual(expected interface{}, actual interface{}) bool {
 
 // IsIteratee returns if the argument is an iteratee.
 func IsIteratee(in interface{}) bool {
+	if in == nil {
+		return false
+	}
 	arrType := reflect.TypeOf(in)
 
 	kind := arrType.Kind()
 
 	return kind == reflect.Array || kind == reflect.Slice || kind == reflect.Map
+}
+
+// IsCollection returns if the argument is a collection.
+func IsCollection(in interface{}) bool {
+	arrType := reflect.TypeOf(in)
+
+	kind := arrType.Kind()
+
+	return kind == reflect.Array || kind == reflect.Slice
 }
 
 // SliceOf returns a slice which contains the element.
@@ -147,6 +179,36 @@ func SliceOf(in interface{}) interface{} {
 	slice.Elem().Set(sliceValue)
 
 	return slice.Elem().Interface()
+}
+
+// Any returns true if any element of the iterable is not empty. If the iterable is empty, return False.
+func Any(objs ...interface{}) bool {
+	if len(objs) == 0 {
+		return false
+	}
+
+	for _, obj := range objs {
+		if !IsEmpty(obj) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// All returns true if all elements of the iterable are not empty (or if the iterable is empty)
+func All(objs ...interface{}) bool {
+	if len(objs) == 0 {
+		return true
+	}
+
+	for _, obj := range objs {
+		if IsEmpty(obj) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // IsEmpty returns if the object is considered as empty or not.
@@ -214,8 +276,6 @@ func ZeroOf(in interface{}) interface{} {
 
 // RandomInt generates a random int, based on a min and max values
 func RandomInt(min, max int) int {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	return min + rand.Intn(max-min)
 }
 
