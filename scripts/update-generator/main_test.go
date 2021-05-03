@@ -33,7 +33,7 @@ func TestCreateUpdate(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	err = createUpdate(dir, "channel", "version", "platform", installerPath, systemInstall, []string{binary1, binary2})
+	err = createUpdate(dir, "channel", "version", "platform", installerPath, dir)
 	require.NoError(t, err)
 
 	_, ext := archiveMeta()
