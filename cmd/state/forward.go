@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/version"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -41,7 +42,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 	versionInfo, err := projectfile.ParseVersionInfo(pj.Source().Path())
 	if err != nil {
 		// if we are running `state update`, we just print the error message, but don't err, as we can still update the state tool executable
-		logging.Error("Could not parse version info from projectifle: %s", err.Error())
+		logging.Error("Could not parse version info from projectfile: %s", err.Error())
 		if funk.Contains(args, "update") { // Handle use case of update being called as anything but the first argument (unlikely, but possible)
 			out.Error(locale.T("err_version_parse"))
 			return nil, nil
@@ -50,33 +51,49 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return nil, locale.WrapError(err, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
 	}
 
-	// Check if we need to forward
+	// Do we pass the version look check?
 	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Branch == constants.BranchName) {
 		return nil, nil
 	}
 
-	fn := func() error {
-		// Perform the forward
-		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
-		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, err := forward(bindir, args, versionInfo, out)
-		if err != nil {
-			if code == 0 {
-				code = 1
-			}
-			if errs.Matches(err, &exec.ExitError{}) {
-				err = &SilencedError{err}
-			}
-			return locale.WrapError(err, "forward_fail")
-		}
-		if code > 0 {
-			return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to 'state update'."), code)
-		}
-
-		return nil
+	sv, err := version.ParseStateToolVersion(versionInfo.Version)
+	if err != nil {
+		return nil, locale.WrapInputError(err, "Failed to parse locked State Tool Version.")
 	}
 
-	return fn, nil
+	// Todo Remove this block for the next release
+	if !version.IsMultiFileUpdate(sv) {
+		fn := func() error {
+			// Perform the forward
+			out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
+			out.Notice(locale.Tr("forward_version", versionInfo.Version))
+			code, err := forward(bindir, args, versionInfo, out)
+			if err != nil {
+				if code == 0 {
+					code = 1
+				}
+				if errs.Matches(err, &exec.ExitError{}) {
+					err = &SilencedError{err}
+				}
+				return locale.WrapError(err, "forward_fail")
+			}
+			if code > 0 {
+				return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may be running an older version of the state tool, you may want to 'state update'."), code)
+			}
+			return nil
+		}
+		return fn, nil
+	}
+
+	updateTip := locale.Tl("lock_update_legacy_version", "You can revert the installed State Tool to the locked version by running[ACTIONABLE]{{.V0}}[/RESET]", legacyInstallCommand(versionInfo.Branch, versionInfo.Branch))
+	if version.IsMultiFileUpdate(sv) {
+		updateTip = locale.Tl("lock_update_to_multi_file_version", "You can revert the version of the installed State Tool by running [ACTIONABLE]state update --set-channel {{.V0}}@{{.V1}}[/RESET]", versionInfo.Branch, versionInfo.Version)
+	}
+	return nil, errs.AddTips(
+		locale.NewInputError("This project is locked at State Tool Version {{.V0}}. The current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
+		updateTip,
+		locale.Tl("lock_update_lock", "You can lock the project to the running State Tool version with [ACTIONABLE]state update --lock[/ACTIONABLE]", versionInfo.Branch, versionInfo.Version),
+	)
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
