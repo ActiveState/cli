@@ -3,7 +3,6 @@ package updater
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"runtime"
 
@@ -30,7 +29,7 @@ type Checker struct {
 var DefaultChecker = newDefaultChecker()
 
 func newDefaultChecker() *Checker {
-	updateURL := constants.APIUpdateURL + url.QueryEscape(constants.CommandName)
+	updateURL := constants.APIUpdateURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		updateURL = url
 	}

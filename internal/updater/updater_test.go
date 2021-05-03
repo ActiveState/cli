@@ -3,7 +3,6 @@ package updater
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"runtime"
 	"testing"
 
@@ -89,7 +88,7 @@ func TestCheckerCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			m := newMock(t, tt.MockChannel, tt.MockVersion)
-			check := NewChecker(constants.APIUpdateURL+url.QueryEscape(constants.CommandName), "master", "1.2.3", m)
+			check := NewChecker(constants.APIUpdateURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {

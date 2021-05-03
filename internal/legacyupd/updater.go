@@ -37,7 +37,6 @@ type Info struct {
 type Updater struct {
 	CurrentVersion string // Currently running version.
 	APIURL         string // Base URL for API requests (json files).
-	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
 	DesiredBranch  string
 	DesiredVersion string
@@ -48,7 +47,6 @@ func New(currentVersion string) *Updater {
 	return &Updater{
 		CurrentVersion: currentVersion,
 		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
 	}
 }
 
@@ -235,7 +233,7 @@ func (u *Updater) fetchInfo(ctx context.Context) error {
 		return nil
 	}
 	branchName := u.fetchBranch()
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
+	var fullURL = u.APIURL + branchName + "/"
 	if u.DesiredVersion != "" {
 		fullURL += u.DesiredVersion + "/"
 	}
@@ -284,7 +282,6 @@ func (u *Updater) fetchAndVerifyFullBin() ([]byte, error) {
 }
 
 func (u *Updater) fetchArchive() ([]byte, error) {
-	var argCmdName = url.QueryEscape(u.CmdName)
 	var argInfoVersion = url.QueryEscape(u.info.Version)
 	var argPlatform = url.QueryEscape(plat)
 	var branchName = u.fetchBranch()
@@ -292,8 +289,8 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s%s",
-		argCmdName, branchName, argInfoVersion, argPlatform, ext)
+	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s%s",
+		branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
 

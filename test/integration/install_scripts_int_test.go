@@ -98,7 +98,7 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(fmt.Sprintf("%s%s", constants.APIUpdateURL, constants.CommandName)), []byte("http://localhost:"+testPort), -1)
+		b = bytes.Replace(b, []byte("https://state-tool.s3.amazonaws.com/update/state", []byte("http://localhost:"+testPort), -1)
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))

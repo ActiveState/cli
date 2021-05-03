@@ -58,7 +58,6 @@ func createUpdater() *Updater {
 	return &Updater{
 		CurrentVersion: "1.2",
 		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName, // app name
 	}
 }
 
