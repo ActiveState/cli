@@ -44,6 +44,10 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
+func (r *Resolver) AvailableVersion(ctx context.Context) (*graph.AvailableVersion, error) {
+	return nil, nil
+}
+
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
 	ch := ""
 	ver := ""
