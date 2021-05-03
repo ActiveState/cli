@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"bufio"
 	"io"
 	"io/ioutil"
 	"os"
@@ -61,37 +62,43 @@ func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
 }
 
 // Install will fetch the update and run its installer
-func (u *AvailableUpdate) Install() (*os.Process, io.ReadCloser, io.ReadCloser, error) {
+func (u *AvailableUpdate) Install() (*os.Process, chan string, error) {
 	installerPath, err := u.download()
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not download update")
+		return nil, nil, errs.Wrap(err, "Could not download update")
 	}
 
 	installTargetPath, err := installation.InstallPath()
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not detect install path")
+		return nil, nil, errs.Wrap(err, "Could not detect install path")
 	}
 
-	var stdout io.ReadCloser
-	var stderr io.ReadCloser
+	outputChannel := make(chan string, 999)
 	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
+		var stdout io.ReadCloser
+		var stderr io.ReadCloser
 		if stderr, err = cmd.StderrPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
 		if stdout, err = cmd.StdoutPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
+		scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
+		for scanner.Scan() {
+			outputChannel <- scanner.Text()
+		}
+		close(outputChannel)
 		return nil
 	})
 	if err != nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not start installer")
+		return nil, nil, errs.Wrap(err, "Could not start installer")
 	}
 
 	if proc == nil {
-		return nil, nil, nil, errs.Wrap(err, "Could not obtain process information for installer")
+		return nil, nil, errs.Wrap(err, "Could not obtain process information for installer")
 	}
 
-	return proc, stdout, stderr, nil
+	return proc, outputChannel, nil
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process

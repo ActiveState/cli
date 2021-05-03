@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -23,7 +21,7 @@ type Bindings struct {
 	changelog      string
 	runtime        *wails.Runtime
 	installPid     int
-	installLog     *bufio.Scanner
+	installLog     string
 	cfg            *config.Instance
 	lockedProjects map[string][]lockedprj.LockedCheckout
 }
@@ -66,13 +64,22 @@ func (b *Bindings) Changelog() string {
 }
 
 func (b *Bindings) Install() error {
-	proc, stdout, stderr, err := b.update.Install()
+	proc, out, err := b.update.Install()
 	if err != nil {
 		logging.Error("InstallDeferred failed: %v", errs.Join(err, ": "))
 		return formatError(err, "Installation failed")
 	}
 
-	b.installLog = bufio.NewScanner(io.MultiReader(stderr, stdout))
+	go func() {
+		for {
+			v := <-out
+			if v == "" {
+				return
+			}
+			b.installLog = b.installLog + "\n" + v
+		}
+	}()
+
 	b.installPid = proc.Pid
 	return nil
 }
@@ -85,9 +92,8 @@ func (b *Bindings) InstallReady() bool {
 	return exists
 }
 
-func (b *Bindings) InstallLog() (string, error) {
-	b.installLog.Scan()
-	return b.installLog.Text(), nil
+func (b *Bindings) InstallLog() string {
+	return b.installLog
 }
 
 func (b *Bindings) Exit() {

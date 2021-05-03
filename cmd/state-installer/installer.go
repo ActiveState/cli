@@ -34,7 +34,7 @@ func main() {
 	out, err := output.New("plain", &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
-		Colored:     true,
+		Colored:     false,
 		Interactive: false,
 	})
 	if err != nil {
@@ -55,6 +55,8 @@ func main() {
 }
 
 func run(out output.Outputer) error {
+	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
+
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config.")
@@ -84,6 +86,7 @@ func run(out output.Outputer) error {
 }
 
 func install(installPath string, cfg *config.Instance, out output.Outputer) error {
+	out.Print(fmt.Sprintf(" - Install Location: %s", installPath))
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect executable path")
@@ -92,6 +95,8 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	svcInfo := appinfo.SvcApp(installPath)
 	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
+
+	out.Print("Stopping services")
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
@@ -111,11 +116,10 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	tmpDir := filepath.Dir(exe)
-	// clean-up temp directory when we are done.
-	defer os.RemoveAll(tmpDir)
-
 	inst := installer.New(filepath.Join(tmpDir, "bin"), installPath)
 	defer func() {
+		out.Print("Cleaning up temporary files")
+		// os.RemoveAll(tmpDir)
 		err := inst.RemoveBackupFiles()
 		if err != nil {
 			logging.Debug("Failed to remove backup files: %v", err)
@@ -125,6 +129,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}()
 
 	if err := inst.Install(); err != nil {
+		out.Error("Installation failed, rolling back")
 		rbErr := inst.Rollback()
 		if rbErr != nil {
 			logging.Debug("Failed to restore files: %v", rbErr)
@@ -134,6 +139,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Installation failed")
 	}
 
+	out.Print("Updating environment")
 	isAdmin, err := osutils.IsWindowsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
@@ -145,7 +151,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
-		out.Notice("Please start a new shell in order to start using the State Tool executable.")
+		out.Print("Please start a new shell in order to start using the ActiveState Desktop tools.")
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
@@ -154,9 +160,12 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
+	out.Print("Starting ActiveState Desktop")
 	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
 		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
 	}
+
+	out.Print("Installation Complete")
 
 	return nil
 }

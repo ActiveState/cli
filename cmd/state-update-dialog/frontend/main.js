@@ -36,20 +36,23 @@ function install() {
     el("install-screen").style.display = "";
     backend.Bindings.Install()
         .then(installProgress)
-        .catch(installFailure)
+        .catch(installFailure);
 }
 
 function installFailure(message) {
-    el("installog-content").innerText += message;
+    console.log("Failure: " + message);
+    el("installerror-content").innerText = message;
 }
 
 function installProgress() {
+    console.log("Progress");
     Promise.all([
         backend.Bindings.InstallReady(),
         backend.Bindings.InstallLog()
     ]).then(result => {
+        console.log(result);
         let [installReady, installLog] = result;
-        el("installog-content").innerText += installLog;
+        el("installog-content").innerText = installLog;
         if (!!installReady) return;
         setTimeout(installProgress, 1000);
     }).catch(installFailure)
