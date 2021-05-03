@@ -261,7 +261,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	suite.installVersion(ts, ts.Dirs.Work, expected)
 	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), expected)
 }
@@ -345,7 +345,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1Version() {
 		suite.Assert().NoError(err, "Unexpected error re-setting paths")
 	}()
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	cp := suite.installVersion(ts, ts.Dirs.Work, expected)
 
 	pathEnv, err := cmdEnv.get("PATH")
@@ -366,7 +366,7 @@ func (suite *InstallScriptsIntegrationTestSuite) installVersion(ts *e2e.Session,
 		expectVersionInstall = expectVersionedStateToolInstallationWindows
 	}
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	cp := ts.SpawnCmdWithOpts(shell, e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
 	expectVersionInstall(cp, expected)
 	cp.ExpectExitCode(0)
