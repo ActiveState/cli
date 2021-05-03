@@ -58,21 +58,25 @@ scripts:
       set -e
       $constants.SET_ENV
 
+      TEMPDIR=$(mktemp -d)
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
+
+      BINDIR=$TEMPDIR/bin
+      mkdir $TEMPDIR/bin
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
+
       export GOARCH=${1:-amd64}
       mkdir -p ./build/update
       if [ ! -z $constants.SYSTRAY_APP ]; then
-        go run scripts/update-generator/main.go --systemAppDir $BUILD_TARGET_DIR/$constants.SYSTRAY_APP -o ./build/update \
-          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_TARGET
-      else
-        go run scripts/update-generator/main.go -o ./build/update \
-          $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
-          $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+        mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP
+        cp -r $BUILD_TARGET_DIR/$constants.SYSTRAY_APP $TEMPDIR/system
       fi
+
+      go run scripts/update-generator/main.go -o ./build/update $TEMPDIR
+
+      rm -rf $TEMPDIR
   - name: generate-graph
     language: bash
     description: Generates graph server and client files

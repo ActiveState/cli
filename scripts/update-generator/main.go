@@ -28,7 +28,7 @@ var outputDirFlag, platformFlag, branchFlag, versionFlag, systemAppDirFlag *stri
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] [--systemAppDir appDirectory] <installer> <binaries>...")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <directory>")
 }
 
 func main() {
@@ -47,7 +47,6 @@ func init() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
-	systemAppDirFlag = flag.String("systemAppDir", "", "The directory that contains the system application to be installed")
 }
 
 func fetchPlatform() string {
@@ -101,72 +100,21 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(targetPath, channel, version, platform, installerPath, systemAppDir string, files []string) error {
+func createUpdate(outputPath, channel, version, platform, installerPath, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
-	os.MkdirAll(filepath.Join(targetPath, relVersionedPath), 0755)
-
-	// Copy files to a temporary directory that we can create the archive from
-	tempDir, err := ioutil.TempDir("", "cli-update-generator")
-	if err != nil {
-		return errs.Wrap(err, "Could not create temp dir")
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Todo The archiver package we are using, creates an archive with a toplevel directory, so we need to give it a deterministic name ("root")
-	tempDir = filepath.Join(tempDir, constants.ToplevelInstallArchiveDir)
-
-	// copy installer to temp dir
-	err = copyFileToDir(installerPath, tempDir, true)
-	if err != nil {
-		return errs.Wrap(err, "Failed to copy installer.")
-	}
-
-	// copy binary files to binary temp dir
-	binTempDir := filepath.Join(tempDir, "bin")
-	err = os.MkdirAll(binTempDir, 0755)
-	if err != nil {
-		return errs.Wrap(err, "Could not create temp binary dir")
-	}
-
-	for _, f := range files {
-		err := copyFileToDir(f, binTempDir, true)
-		if err != nil {
-			return errs.Wrap(err, "Failed to copy binary file %s", f)
-		}
-	}
-
-	if systemAppDir != "" {
-		sysTempDir := filepath.Join(tempDir, "system")
-		err = os.MkdirAll(sysTempDir, 0755)
-		if err != nil {
-			return errs.Wrap(err, "Could not create temp system dir")
-		}
-
-		targetPath := filepath.Join(sysTempDir, filepath.Base(systemAppDir))
-		fmt.Printf("Copying %s -> %s\n", systemAppDir, targetPath)
-
-		err := fileutils.Mkdir(targetPath)
-		if err != nil {
-			return errs.Wrap(err, "Could not create target path %s", targetPath)
-		}
-
-		err = fileutils.CopyAndRenameFiles(systemAppDir, targetPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to copy directory %s", systemAppDir)
-		}
-	}
+	os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
+	os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
-	archivePath := filepath.Join(targetPath, relArchivePath)
+	archivePath := filepath.Join(outputPath, relArchivePath)
 
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err = archive.Archive([]string{tempDir}, archivePath)
+	err := archive.Archive([]string{target}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
@@ -177,14 +125,14 @@ func createUpdate(targetPath, channel, version, platform, installerPath, systemA
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
 
-	infoPath := filepath.Join(targetPath, relChannelPath, "info.json")
+	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
 	err = ioutil.WriteFile(infoPath, b, 0755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}
 
-	return copyFileToDir(infoPath, filepath.Join(targetPath, relVersionedPath), false)
+	return copyFileToDir(infoPath, filepath.Join(outputPath, relVersionedPath), false)
 }
 
 func run() error {
@@ -197,9 +145,7 @@ func run() error {
 
 	installerPath := flag.Arg(0)
 
-	binaries := flag.Args()[1:]
-
-	appDir := *systemAppDirFlag
+	target := flag.Args()[0]
 
 	branch := constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
@@ -210,8 +156,8 @@ func run() error {
 
 	version := *versionFlag
 
-	targetDir := *outputDirFlag
-	os.MkdirAll(targetDir, 0755)
+	outputDir := *outputDirFlag
+	os.MkdirAll(outputDir, 0755)
 
-	return createUpdate(targetDir, branch, version, platform, installerPath, appDir, binaries)
+	return createUpdate(outputDir, branch, version, platform, installerPath, target)
 }
