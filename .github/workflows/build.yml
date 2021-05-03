@@ -61,6 +61,9 @@ jobs:
     - name: Build Installer
       shell: bash
       run: state run build-installer
+    - name: Build transitional State Tool
+      shell: bash
+      run: state run build-transitional-update
     - name: Build CLI (32bit)
       shell: bash
       if: runner.os == 'Windows'
@@ -77,6 +80,10 @@ jobs:
       shell: bash
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-installer
+    - name: Build transitional State Tool
+      shell: bash
+      if: runner.os == 'Windows'
+      run: GOARCH=386 state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -252,6 +259,9 @@ jobs:
     - name: Build Installer
       shell: bash
       run: state run build-installer
+    - name: Build transitional State Tool
+      shell: bash
+      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: state run generate-update
@@ -329,6 +339,9 @@ jobs:
     - name: Build Service
       shell: bash
       run: state run build-svc
+    - name: Build transitional State Tool
+      shell: bash
+      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: state run generate-update
