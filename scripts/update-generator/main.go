@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/phayes/permbits"
-
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -68,31 +66,6 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func copyFileToDir(filePath, dir string, isExecutable bool) error {
-	targetPath := filepath.Join(dir, filepath.Base(filePath))
-	fmt.Printf("Copying %s -> %s\n", filePath, targetPath)
-	err := fileutils.CopyFile(filePath, targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not copy file %s -> %s", filePath, targetPath)
-	}
-	if !isExecutable {
-		return nil
-	}
-	// Permissions may be lost due to the file copy, so ensure it's still executable
-	permissions, err := permbits.Stat(targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not stat target file %s", targetPath)
-	}
-	permissions.SetUserExecute(true)
-	permissions.SetGroupExecute(true)
-	permissions.SetOtherExecute(true)
-	err = permbits.Chmod(targetPath, permissions)
-	if err != nil {
-		return errs.Wrap(err, "Could not make file executable")
-	}
-	return nil
-}
-
 func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	if runtime.GOOS == "windows" {
 		return archiver.NewZip(), ".zip"
@@ -132,7 +105,12 @@ func createUpdate(outputPath, channel, version, platform, installerPath, target 
 		return errs.Wrap(err, "Failed to write info.json.")
 	}
 
-	return copyFileToDir(infoPath, filepath.Join(outputPath, relVersionedPath), false)
+	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
+	if err != nil {
+		return errs.Wrap(err, "Could not copy info.json file")
+	}
+
+	return nil
 }
 
 func run() error {
