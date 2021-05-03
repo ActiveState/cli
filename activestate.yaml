@@ -15,6 +15,9 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: state
+  - name: BUILD_TRANSITION_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-transition-update
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
