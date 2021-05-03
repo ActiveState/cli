@@ -836,19 +836,21 @@ h1.logo {
     flex-grow: 1;
     flex-direction: column; }
 
-#changelog {
-  border: 0.1rem solid #d1d1d1;
+#changelog, #installlog {
   border-radius: .4rem;
   padding: 0.6rem 1rem 0.7rem;
-  background: white;
   flex-grow: 1;
   overflow: auto;
   cursor: auto;
   -webkit-user-select: text;
   -ms-user-select: text;
   user-select: text; }
-  #changelog, #changelog * {
+  #changelog, #changelog *, #installlog, #installlog * {
     font-size: 12px !important; }
+
+#changelog {
+  border: 0.1rem solid #d1d1d1;
+  background: white; }
   #changelog h1, #changelog h2, #changelog h3, #changelog h4, #changelog h5 {
     font-weight: bold; }
   #changelog h1, #changelog h2, #changelog h3, #changelog h4, #changelog h5 {
@@ -886,4 +888,11 @@ textarea, button {
   #warning-wrapper ul {
     list-style: none; }
     #warning-wrapper ul li > span {
+      margin: 0;
       font-weight: bold; }
+
+#installlog {
+  font-family: monospace;
+  white-space: pre-line;
+  background: #171717;
+  color: #fff; }

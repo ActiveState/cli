@@ -154,7 +154,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
-	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec()); err != nil {
+	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
 		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
 	}
 

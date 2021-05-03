@@ -6,7 +6,7 @@
     <base target="_blank"/>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="initial-screen" style="display: none">
         <h1 class="logo">ActiveState Desktop</h1>
         <h4>A New Update is Available!</h4>
         <div class="row">
@@ -25,7 +25,7 @@
                 </div>
             </div>
         </div>
-        <div class="row" id="warning-wrapper">
+        <div class="row" id="warning-wrapper" style="display: none">
             <div class="column">
                 <strong class="red">WARNING:</strong> <span id="warning"></span>
             </div>
@@ -33,8 +33,23 @@
         <div class="row">
             <div class="column buttons">
                 <button class="button button-outline push-right" id="close-btn">Close</button>
-                <button class="button">Update</button>
-                <!--<button class="button button-outline">Remind Me Later</button>-->
+                <button class="button" id="install-btn">Update</button>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="install-screen" style="display: none">
+        <h1 class="logo">ActiveState Desktop</h1>
+        <div class="row fill">
+            <div class="column">
+                <div id="installlog">
+                    Downloading update ..
+                    <span id="installog-content"></span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column buttons">
+                <button class="button button-outline push-right" id="close-btn2">Close</button>
             </div>
         </div>
     </div>

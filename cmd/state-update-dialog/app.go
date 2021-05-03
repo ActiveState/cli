@@ -27,10 +27,11 @@ var css string
 
 type App struct {
 	wails *wails.App
+	cfg   *config.Instance
 }
 
-func NewApp() *App {
-	a := &App{}
+func NewApp(cfg *config.Instance) *App {
+	a := &App{cfg: cfg}
 	a.wails = wails.CreateApp(&wails.AppConfig{
 		Width:  600,
 		Height: 400,
@@ -48,30 +49,19 @@ func (a *App) CurrentVersion() string {
 }
 
 func (a *App) Start() error {
-	// var err error
-	// a.update, err = updater.DefaultChecker.Check()
-	// if err != nil {
-	//	return errs.Wrap(err, "Could not check for updates")
-	// }
-
-	bindings := &Bindings{}
-
-	update := updater.NewAvailableUpdate("2.0.0", "release", "darwin", "", "")
-	if update == nil {
-		return errs.New("No updates available")
-	}
-	bindings.update = update
-
-	cfg, err := config.New()
+	bindings := &Bindings{cfg: a.cfg}
+	var err error
+	// bindings.update, err = updater.NewChecker(constants.APIUpdateURL, "master", "", httpreq.New()).Check()
+	bindings.update, err = updater.DefaultChecker.Check() // TODO: Replace with this!
 	if err != nil {
-		return errs.Wrap(err, "Could not create config instance")
+		return errs.Wrap(err, "Could not check for updates")
 	}
 
-	lockedProjects := lockedprj.LockedProjectMapping(cfg)
+	lockedProjects := lockedprj.LockedProjectMapping(a.cfg)
 	bindings.lockedProjects = lockedProjects
 
 	go func() {
-		url := fmt.Sprintf("https://raw.githubusercontent.com/ActiveState/cli/%s/changelog.md", update.Channel)
+		url := fmt.Sprintf("https://raw.githubusercontent.com/ActiveState/cli/%s/changelog.md", bindings.update.Channel)
 		changelog, err := httpreq.New().Get(url)
 		if err != nil {
 			logging.Error(fmt.Sprintf("Could not retrieve changelog: %v", errs.Join(err, ": ")))

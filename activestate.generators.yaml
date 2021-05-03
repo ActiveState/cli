@@ -81,6 +81,7 @@ scripts:
       mkdir -p ./build/test
       mkdir -p ./build/test-update
       TEST_VERSION="99.99.9999"
+      TEST_CHANNEL=${1:-test-channel}
 
       TEST_STATE_TOOL=./build/test/$constants.BUILD_TARGET
       TEST_STATE_SVC=./build/test/$constants.BUILD_DAEMON_TARGET
@@ -94,12 +95,12 @@ scripts:
         $TEST_STATE_TOOL $TEST_STATE_SVC \
         $TEST_STATE_TRAY
 
-      echo "compile test-channel update"
-      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=test-channel" ./internal/testhelpers/installation/fakeversioncmd
+      echo "compile ${TEST_CHANNEL} update"
+      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update \
+      go run scripts/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/update \
         $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
         $TEST_STATE_TOOL \
         $TEST_STATE_SVC \

@@ -29,9 +29,13 @@ func (e *UserNetworkError) ExitCode() int {
 	return 11
 }
 
-var solutionLocale = locale.Tl("err_user_network_solution",
-	`Please ensure your device has access to internet during installation. Make sure software like Firewalls or Anti-Virus are not blocking your connectivity.`+
-		`If your issue persists consider reporting it on our forums at {{.V0}}.`, constants.ForumsURL)
+var solutionLocale = "Internet access required"
+
+func init() {
+	solutionLocale = locale.Tl("err_user_network_solution",
+		`Please ensure your device has access to internet during installation. Make sure software like Firewalls or Anti-Virus are not blocking your connectivity.`+
+			`If your issue persists consider reporting it on our forums at {{.V0}}.`, constants.ForumsURL)
+}
 
 type Logger interface {
 	Printf(string, ...interface{})

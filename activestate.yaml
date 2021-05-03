@@ -119,6 +119,8 @@ scripts:
     value: |
       echo "Building State Tool"
       $scripts.build.path()
+      echo "Building State Installer"
+      $scripts.build-installer.path()
       echo "Building State Service"
       $scripts.build-svc.path()
       echo "Building State Tray App"

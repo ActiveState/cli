@@ -1,22 +1,31 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/cmd/state-update-dialog/internal/lockedprj"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/shirou/gopsutil/process"
 	"github.com/wailsapp/wails"
 )
 
 type Bindings struct {
-	update    *updater.AvailableUpdate
+	update         *updater.AvailableUpdate
+	changelog      string
+	runtime        *wails.Runtime
+	installPid     int
+	installLog     *bufio.Scanner
+	cfg            *config.Instance
 	lockedProjects map[string][]lockedprj.LockedCheckout
-	changelog string
-	runtime   *wails.Runtime
 }
 
 func (b *Bindings) WailsInit(runtime *wails.Runtime) error {
@@ -56,6 +65,31 @@ func (b *Bindings) Changelog() string {
 	return b.changelog
 }
 
+func (b *Bindings) Install() error {
+	proc, stdout, stderr, err := b.update.Install()
+	if err != nil {
+		logging.Error("InstallDeferred failed: %v", errs.Join(err, ": "))
+		return formatError(err, "Installation failed")
+	}
+
+	b.installLog = bufio.NewScanner(io.MultiReader(stderr, stdout))
+	b.installPid = proc.Pid
+	return nil
+}
+
+func (b *Bindings) InstallReady() bool {
+	exists, err := process.PidExists(int32(b.installPid))
+	if err != nil {
+		logging.Error("Could not check PidExists: %v", err)
+	}
+	return exists
+}
+
+func (b *Bindings) InstallLog() (string, error) {
+	b.installLog.Scan()
+	return b.installLog.Text(), nil
+}
+
 func (b *Bindings) Exit() {
 	b.runtime.Window.Close()
 }
@@ -63,4 +97,8 @@ func (b *Bindings) Exit() {
 func (b *Bindings) DebugMode() bool {
 	args := strings.Join(os.Args, "")
 	return strings.Contains(args, "wails.BuildMode=debug") || strings.Contains(args, "go-build")
+}
+
+func formatError(err error, message string) error {
+	return errs.Join(errs.Wrap(err, message), ": ")
 }
