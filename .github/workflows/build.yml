@@ -80,7 +80,7 @@ jobs:
       shell: bash
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-installer
-    - name: Build transitional State Tool
+    - name: Build transitional State Tool (32bit)
       shell: bash
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-transitional-update
