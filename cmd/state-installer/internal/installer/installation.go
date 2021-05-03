@@ -22,7 +22,12 @@ func backupFiles(targetFiles []string) ([]string, error) {
 	var renamed []string
 	for _, t := range targetFiles {
 		if fileutils.TargetExists(t) {
-			newName := fmt.Sprintf("%s.bak", t)
+			// Note: We use the unconventional suffix .bac to support transitional updates on Windows, as the following can happen:
+			//   - Legacy State Tool is invoked eg., as `state.exe update`
+			//   - The transitional executable is pulled down and invoked as `state.exe _prepare` (invoking state tool is now called `state.exe.bak`)
+			//   - The installer cannot rename the transitional `state.exe` to `state.exe.bak` (but to `state.exe.bac`)
+			// Phew!
+			newName := fmt.Sprintf("%s.bac", t)
 			if fileutils.TargetExists(newName) {
 				_ = os.Remove(newName)
 			}
@@ -40,7 +45,7 @@ func backupFiles(targetFiles []string) ([]string, error) {
 func restoreFiles(backupFiles []string) error {
 	var errors []error
 	for _, b := range backupFiles {
-		origName := strings.TrimSuffix(b, ".bak")
+		origName := strings.TrimSuffix(b, ".bac")
 		err := os.Rename(b, origName)
 		if err != nil {
 			errors = append(errors, err)
@@ -64,7 +69,7 @@ func (i *Installation) RemoveBackupFiles() error {
 		err := os.Remove(b)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			// On Windows, if the executable was still running, the removal of the backup could fail here.
-			// We are trying to hide the file such that a .bak file does not (visually!) litter the folder.
+			// We are trying to hide the file such that a .bac file does not (visually!) litter the folder.
 			errHide := fileutils.HideFile(b)
 			if errHide != nil {
 				logging.Error("Encountered error hiding file %s: %v", b, err)

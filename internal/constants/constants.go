@@ -290,7 +290,7 @@ const SvcConfigPort = "svc-port"
 const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
-const TrayAppName = "ActiveState Platform"
+const TrayAppName = "ActiveState Desktop"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
