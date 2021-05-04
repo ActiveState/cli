@@ -24,16 +24,15 @@ func TestCreateUpdate(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	installerPath := filepath.Join(dir, "installer")
 	binary1 := filepath.Join(dir, "binary1")
 	binary2 := filepath.Join(dir, "binary2")
 
-	for _, f := range []string{installerPath, binary1, binary2} {
+	for _, f := range []string{binary1, binary2} {
 		err = fileutils.Touch(f)
 		require.NoError(t, err)
 	}
 
-	err = createUpdate(dir, "channel", "version", "platform", installerPath, dir)
+	err = createUpdate(dir, "channel", "version", "platform", dir)
 	require.NoError(t, err)
 
 	_, ext := archiveMeta()
