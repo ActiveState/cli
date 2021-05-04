@@ -22,7 +22,7 @@ import (
 
 var exit = os.Exit
 
-var outputDirFlag, platformFlag, branchFlag, versionFlag, systemAppDirFlag *string
+var outputDirFlag, platformFlag, branchFlag, versionFlag *string
 
 func printUsage() {
 	fmt.Println("")
@@ -73,7 +73,7 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(outputPath, channel, version, platform, installerPath, target string) error {
+func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
 	os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
@@ -121,8 +121,6 @@ func run() error {
 		exit(0)
 	}
 
-	installerPath := flag.Arg(0)
-
 	target := flag.Args()[0]
 
 	branch := constants.BranchName
@@ -137,5 +135,5 @@ func run() error {
 	outputDir := *outputDirFlag
 	os.MkdirAll(outputDir, 0755)
 
-	return createUpdate(outputDir, branch, version, platform, installerPath, target)
+	return createUpdate(outputDir, branch, version, platform, target)
 }
