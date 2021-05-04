@@ -1,4 +1,4 @@
-#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_build_svc", "steps_build_tray", "steps_build_installer", "steps_build_32bit", "steps_build_svc_32bit", "steps_build_tray_32bit", "steps_build_installer_32bit", "steps_genupdate", "steps_gentest_update", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_test_linux", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts", "steps_build_transition_update", "steps_build_transition_update_32bit")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_build_svc", "steps_build_tray", "steps_build_installer", "steps_build_32bit", "steps_build_svc_32bit", "steps_build_tray_32bit", "steps_build_installer_32bit", "steps_genupdate", "steps_gentest_update", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_test_linux", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts", "steps_build_transition_update", "steps_build_transition_update_32bit", "steps_sign_mac")
 
 #@ def strategy(fail_fast=True):
 matrix:
@@ -38,6 +38,7 @@ steps:
   - #@ steps_build_transition_update_32bit()
   - #@ steps_build_installscripts()
   - #@ steps_sign()
+  - #@ steps_sign_mac()
   - #@ steps_sign_installscript()
   - #@ steps_genupdate()
   - #@ steps_genupdate_32bit()

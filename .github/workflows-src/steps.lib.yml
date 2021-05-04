@@ -107,6 +107,23 @@ env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 #@ end
 ---
+#@ def steps_sign_mac():
+name: Sign (MacOS)
+shell: bash
+if: runner.os == 'MacOS'
+run: |
+  echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+  security create-keychain -p ${CODE_SIGNING_PASSWD} build.keychain security default-keychain -s build.keychain
+  security unlock-keychain -p ${CODE_SIGNING_PASSWD} build.keychain
+  security import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign
+  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} build.keychain
+  IDENTITY=$(security find-identity -v)
+  /usr/bin/codesign --force -s $IDENTITY ./build/state -v
+env:
+  CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+  MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+#@ end
+---
 #@ def steps_genupdate():
 name: "Generate Update"
 shell: bash
