@@ -213,7 +213,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort, fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))))
+		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
 
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
