@@ -89,7 +89,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 	return nil, errs.AddTips(
 		locale.NewInputError("locked_version_mismatch", "This project is locked at State Tool version {{.V0}}. The current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
 		updateTip,
-		locale.Tl("lock_update_lock", "You can lock the project to the running State Tool version with [ACTIONABLE]state update --lock[/RESET]", versionInfo.Branch, versionInfo.Version),
+		locale.Tl("lock_update_lock", "You can lock the project to the running State Tool version with [ACTIONABLE]state update lock[/RESET]", versionInfo.Branch, versionInfo.Version),
 	)
 }
 
