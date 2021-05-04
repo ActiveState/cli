@@ -564,7 +564,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 
 		if TargetExists(toPath) {
 			tmpToPath := fmt.Sprintf("%s.new", toPath)
-			err := copyPath(fileInfo, fromPath, tmpToPath)
+			err := CopyFiles(fromPath, tmpToPath)
 			if err != nil {
 				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
 			}
@@ -579,7 +579,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 				return errs.Wrap(err, "os.Rename %s -> %s failed", tmpToPath, toPath)
 			}
 		} else {
-			err := copyPath(fileInfo, fromPath, toPath)
+			err := CopyFiles(fromPath, toPath)
 			if err != nil {
 				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
 			}
@@ -590,17 +590,6 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 		}
 	}
 	return nil
-}
-
-func copyPath(info os.FileInfo, fromPath, toPath string) error {
-	if info.IsDir() {
-		err := MkdirUnlessExists(toPath)
-		if err != nil {
-			return errs.Wrap(err, "MkdirUnlessExists %s failed", toPath)
-		}
-		return CopyFiles(fromPath, toPath)
-	}
-	return CopyFile(fromPath, toPath)
 }
 
 // MoveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
