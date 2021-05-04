@@ -85,10 +85,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return fn, nil
 	}
 
-	updateTip := locale.Tl("lock_update_legacy_version", "You can revert the installed State Tool to the locked version by running[ACTIONABLE]{{.V0}}[/RESET]", legacyInstallCommand(versionInfo.Branch, versionInfo.Branch))
-	if version.IsMultiFileUpdate(sv) {
-		updateTip = locale.Tl("lock_update_to_multi_file_version", "You can revert the version of the installed State Tool by running [ACTIONABLE]state update --set-channel {{.V0}}@{{.V1}}[/RESET]", versionInfo.Branch, versionInfo.Version)
-	}
+	updateTip := locale.Tl("lock_update_legacy_version", "You can update the installed State Tool to the required version by running [ACTIONABLE]{{.V0}}[/RESET]", versionInstallCommand(versionInfo.Branch, versionInfo.Version, !version.IsMultiFileUpdate(sv)))
 	return nil, errs.AddTips(
 		locale.NewInputError("locked_version_mismatch", "This project is locked at State Tool version {{.V0}}. The current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
 		updateTip,

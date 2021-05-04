@@ -95,7 +95,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			if tt.expectLockError {
 				cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(true, false)...))
 				cp.Expect("This project is locked at State Tool version")
-				cp.ExpectLongString("You can revert the version of the installed State Tool by running")
+				cp.ExpectLongString("You can update the installed State Tool to the required version by running")
 				cp.ExpectExitCode(1)
 				return
 			}

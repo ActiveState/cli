@@ -4,6 +4,10 @@ package main
 
 import "fmt"
 
-func legacyInstallCommand(branch, version string) string {
-	return fmt.Sprintf(`sh <(curl -q https://platform.activestate.com/dl/cli/install.sh) -v %s -b %s`, version, branch)
+func versionInstallCommand(branch, version string, isLegacy bool) string {
+	prefix := ""
+	if isLegacy {
+		prefix = "legacy-"
+	}
+	return fmt.Sprintf(`sh <(curl -q https://platform.activestate.com/dl/cli/%sinstall.sh) -v %s -b %s`, prefix, version, branch)
 }
