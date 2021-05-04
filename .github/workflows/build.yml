@@ -97,15 +97,7 @@ jobs:
     - name: Sign (MacOS)
       shell: bash
       if: runner.os == 'MacOS'
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        security list-keychains
-        # security create-keychain -p ${CODE_SIGNING_PASSWD} sign.keychain security default-keychain -s sign.keychain
-        # security unlock-keychain -p ${CODE_SIGNING_PASSWD} sign.keychain
-        # security import Cert.p12 -k sign.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign
-        # security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} sign.keychain
-        # IDENTITY=$(security find-identity -v)
-        # /usr/bin/codesign --force -s $IDENTITY ./build/state -v
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nsecurity list-keychains\nsecurity create-keychain -p ${CODE_SIGNING_PASSWD} build.keychain \nsecurity default-keychain -s build.keychain\nsecurity unlock-keychain -p ${CODE_SIGNING_PASSWD} build.keychain\nsecurity import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign\nsecurity set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} build.keychain\nIDENTITY=$(security find-identity -v)\n/usr/bin/codesign --force -s $IDENTITY ./build/state -v\n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
