@@ -10,10 +10,8 @@ type StateVersion {
   date: String!
 }
 
-type AvailableVersion {
-  version: String!
-  branch: String!
-  date: String!
+type AvailableUpdate {
+  available: Boolean!
 }
 
 type DeferredUpdate {
@@ -29,7 +27,7 @@ type Project {
 
 type Query {
   version: Version
-  availableVersion: AvailableVersion
+  availableUpdate: AvailableUpdate
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }

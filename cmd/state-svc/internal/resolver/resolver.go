@@ -44,8 +44,17 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
-func (r *Resolver) AvailableVersion(ctx context.Context) (*graph.AvailableVersion, error) {
-	return nil, nil
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
+	if err != nil {
+		return nil, err // TODO: wrap
+	}
+
+	av := graph.AvailableUpdate{
+		Available: update != nil,
+	}
+
+	return &av, nil
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {

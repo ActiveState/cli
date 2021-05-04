@@ -2,10 +2,8 @@
 
 package graph
 
-type AvailableVersion struct {
-	Version string `json:"version"`
-	Branch  string `json:"branch"`
-	Date    string `json:"date"`
+type AvailableUpdate struct {
+	Available bool `json:"available"`
 }
 
 type DeferredUpdate struct {

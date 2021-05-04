@@ -3,7 +3,6 @@ package main
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
@@ -36,15 +35,13 @@ func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
 
 func needsUpdate(mdl *model.SvcModel) bool {
 	for i := 1; i <= 3; i++ {
-		stateVersion, err := mdl.StateVersion()
+		availableUpdate, err := mdl.CheckUpdate()
 		if err != nil {
 			time.Sleep(time.Second * 10 * time.Duration(i))
 			continue
 		}
-		currentVersion := constants.Version
-		possibleVersion := stateVersion.State.Version
 
-		return currentVersion != possibleVersion
+		return availableUpdate.Available
 	}
 
 	logging.Error("Cannot contact servers to determine the latest state version")

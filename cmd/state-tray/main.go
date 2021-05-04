@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -26,20 +27,28 @@ import (
 )
 
 func main() {
-	systray.Run(onReady, onExit)
+	var verbose bool
+	flag.BoolVar(&verbose, "verbose", verbose, "set logging to verbose")
+	flag.Parse()
+
+	systray.Run(onReadyFn(verbose), onExit)
 }
 
-func onReady() {
-	var exitCode int
-	logging.SetupRollbar(constants.StateTrayRollbarToken)
-	defer exit(exitCode)
+func onReadyFn(verbose bool) func() {
+	return func() {
+		logging.CurrentHandler().SetVerbose(verbose)
 
-	err := run()
-	if err != nil {
-		errMsg := errs.Join(err, ": ").Error()
-		logging.Error("Systray encountered an error: %v", errMsg)
-		fmt.Fprintln(os.Stderr, errMsg)
-		exitCode = 1
+		var exitCode int
+		logging.SetupRollbar(constants.StateTrayRollbarToken)
+		defer exit(exitCode)
+
+		err := run()
+		if err != nil {
+			errMsg := errs.Join(err, ": ").Error()
+			logging.Error("Systray encountered an error: %v", errMsg)
+			fmt.Fprintln(os.Stderr, errMsg)
+			exitCode = 1
+		}
 	}
 }
 
