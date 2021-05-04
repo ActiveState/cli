@@ -557,14 +557,9 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 		fromPath := filepath.Join(fromPath, fileInfo.Name())
 		toPath := filepath.Join(toPath, fileInfo.Name())
 
-		fileInfo, err := os.Lstat(fromPath)
-		if err != nil {
-			return errs.Wrap(err, "os.Lstat %s failed", fromPath)
-		}
-
 		if TargetExists(toPath) {
 			tmpToPath := fmt.Sprintf("%s.new", toPath)
-			err := CopyFiles(fromPath, tmpToPath)
+			err := CopyFile(fromPath, tmpToPath)
 			if err != nil {
 				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
 			}
@@ -579,7 +574,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 				return errs.Wrap(err, "os.Rename %s -> %s failed", tmpToPath, toPath)
 			}
 		} else {
-			err := CopyFiles(fromPath, toPath)
+			err := CopyFile(fromPath, toPath)
 			if err != nil {
 				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
 			}
