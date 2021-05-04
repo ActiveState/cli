@@ -51,8 +51,7 @@ func (a *App) CurrentVersion() string {
 func (a *App) Start() error {
 	bindings := &Bindings{cfg: a.cfg}
 	var err error
-	// bindings.update, err = updater.NewChecker(constants.APIUpdateURL, "master", "", httpreq.New()).Check()
-	bindings.update, err = updater.DefaultChecker.Check() // TODO: Replace with this!
+	bindings.update, err = updater.DefaultChecker.Check()
 	if err != nil {
 		return errs.Wrap(err, "Could not check for updates")
 	}
