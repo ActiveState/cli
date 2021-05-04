@@ -99,7 +99,7 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(fmt.Sprintf("%sstate", constants.APIUpdateURL)), []byte("http://localhost:"+testPort), -1)
+		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+testPort), -1)
 		require.Contains(t, string(b), "http://localhost:"+testPort)
 	}
 
@@ -234,14 +234,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		{"install-local-test-update", true, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "beta"},
+		{"install-release", false, "master"},
 	}
 
 	for _, tt := range tests {
-		if !tt.TestInstall {
-			// Todo https://www.pivotaltracker.com/story/show/177858645
-			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
-		}
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -265,7 +261,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	suite.installVersion(ts, ts.Dirs.Work, expected)
 	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), expected)
 }
@@ -294,14 +290,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		{"install-local-test-update", true, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "beta"},
+		{"install-release", false, "master"},
 	}
 
 	for _, tt := range tests {
-		if !tt.TestInstall {
-			// Todo https://www.pivotaltracker.com/story/show/177858645
-			suite.T().Skipf("Non-local State Tool installations will only work once we have a new State Tool installer deployed.")
-		}
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
@@ -353,7 +345,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1Version() {
 		suite.Assert().NoError(err, "Unexpected error re-setting paths")
 	}()
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	cp := suite.installVersion(ts, ts.Dirs.Work, expected)
 
 	pathEnv, err := cmdEnv.get("PATH")
@@ -374,7 +366,7 @@ func (suite *InstallScriptsIntegrationTestSuite) installVersion(ts *e2e.Session,
 		expectVersionInstall = expectVersionedStateToolInstallationWindows
 	}
 
-	expected := "0.28.0-SHA249ab6f"
+	expected := "0.29.0-SHA9ccb928"
 	cp := ts.SpawnCmdWithOpts(shell, e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", "master", "-v", expected))
 	expectVersionInstall(cp, expected)
 	cp.ExpectExitCode(0)

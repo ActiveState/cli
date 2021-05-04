@@ -38,7 +38,7 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
-var targetBranch = "beta"
+var targetBranch = "master"
 var testBranch = "test-channel"
 var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
 
@@ -351,9 +351,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	for _, tt := range tests {
-		if !tt.TestUpdate {
-			suite.T().Skipf("This requires a new update bundle to be deployed to the %s channel", targetBranch)
-		}
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()

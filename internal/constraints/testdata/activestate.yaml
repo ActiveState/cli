@@ -1,4 +1,4 @@
-project: "https://platform.activestate.com/constraints-tests/ActiveState?commitID=00010001-0001-0001-0001-000100010001"
+project: https://platform.activestate.com/constraints-tests/ActiveState?branch=main&commitID=00010001-0001-0001-0001-000100010001
 platforms: 
   - name: windows-label
     os: windows
