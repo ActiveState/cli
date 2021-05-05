@@ -130,6 +130,7 @@ scripts:
     standalone: true
     language: bash
     value: |
+      set -e
       echo "Building State Tool"
       $scripts.build.path()
       echo "Building State Installer"
