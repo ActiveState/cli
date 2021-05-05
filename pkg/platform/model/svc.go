@@ -47,7 +47,7 @@ func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.Defer
 	r := request.NewUpdateRequest(channel, version)
 	u := graph.UpdateResponse{}
 	if err := m.client.Run(r, &u); err != nil {
-		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version %s at channel %s: %s", version, channel, errs.Join(err, ": ").Error())
+		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version {{.V0}} at channel {{.V1}}: {{.V2}}", version, channel, errs.Join(err, ": ").Error())
 	}
 	return &u.DeferredUpdate, nil
 }
