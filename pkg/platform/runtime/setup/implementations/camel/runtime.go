@@ -24,8 +24,9 @@ func (s *Setup) ReusableArtifacts(_ artifact.ArtifactChangeset, _ store.StoredAr
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, _ store.StoredArtifactMap) error {
-	err := os.RemoveAll(s.store.InstallPath())
-	logging.Error("Error removing previous camel installation: %v", err)
+	if err := os.RemoveAll(s.store.InstallPath()); err != nil {
+		logging.Error("Error removing previous camel installation: %v", err)
+	}
 	return nil
 }
 
