@@ -26,10 +26,17 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+const (
+	assetsPath = "../../assets"
+	iconFile   = "icon.ico"
+)
+
 func main() {
 	var verbose bool
 	flag.BoolVar(&verbose, "v", verbose, "set logging to verbose")
 	flag.Parse()
+
+	verbose = os.Getenv("VERBOSE") != "" || verbose
 
 	systray.Run(onReadyFn(verbose), onExit)
 }
@@ -53,18 +60,12 @@ func onReadyFn(verbose bool) func() {
 }
 
 func run() error {
-	if os.Getenv("VERBOSE") == "true" {
-		// Doesn't seem to work, I think the systray lib and its logging solution is interfering
-		logging.CurrentHandler().SetVerbose(true)
-	}
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
 
 	svcInfo := appinfo.SvcApp()
-	if !fileutils.FileExists(svcInfo.Exec()) {
-		return errs.New("Could not find: %s", svcInfo.Exec())
-	}
-
-	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
-		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
+	if err := execute(svcInfo.Exec()); err != nil {
+		return errs.New("Could not execute: %s", svcInfo.Name())
 	}
 
 	config, err := config.New()
@@ -84,8 +85,9 @@ func run() error {
 		locale.Tl("tray_update_tooltip", "Update your State Tool installation"),
 	)
 	mUpdate.Hide()
+
 	updNotice := updateNotice{
-		box:  packr.NewBox("../../assets"),
+		box:  box,
 		item: mUpdate,
 	}
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
@@ -204,7 +206,11 @@ func run() error {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
 		case <-mUpdate.ClickedCh:
-			fmt.Println("UPDATE DIALOG")
+			logging.Debug("Update event")
+			svcInfo := appinfo.UpdateDialogApp()
+			if err := execute(svcInfo.Exec()); err != nil {
+				return errs.New("Could not execute: %s", svcInfo.Name())
+			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
@@ -219,4 +225,16 @@ func onExit() {
 func exit(code int) {
 	events.WaitForEvents(1*time.Second, rollbar.Close)
 	os.Exit(code)
+}
+
+func execute(exec string) error {
+	if !fileutils.FileExists(exec) {
+		return errs.New("Could not find: %s", exec)
+	}
+
+	if _, err := exeutils.ExecuteAndForget(exec, "start"); err != nil {
+		return errs.Wrap(err, "Could not start %s", exec)
+	}
+
+	return nil
 }

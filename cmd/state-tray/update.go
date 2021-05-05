@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	iconFile            = "icon.ico"
 	iconUpdateFile      = "icon-update.ico"
 	updateCheckInterval = time.Second * 24
 )
