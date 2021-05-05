@@ -63,7 +63,7 @@ function installProgress() {
         let [installReady, installLog] = result;
         el("installog-content").innerText = installLog;
         if (!!installReady) {
-            el("close-btn2").setAttribute("disabled", "");
+            el("close-btn2").removeAttribute("disabled");
             return;
         }
         setTimeout(installProgress, 1000);
