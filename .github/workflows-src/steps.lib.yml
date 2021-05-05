@@ -119,7 +119,7 @@ run: |
   security unlock-keychain -p ${CODE_SIGNING_PASSWD} build.keychain
   security import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} build.keychain
-  security find-identity -v
+  security find-identity -v build.keychain
   # IDENTITY=$(security find-identity -v)
   # /usr/bin/codesign --force -s $IDENTITY ./build/state -v
 env:
