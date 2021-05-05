@@ -260,14 +260,13 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	aggErr := make(chan error)
 	bgErrs := make(chan error)
 	go func() {
-		var es []error
+		var errs []error
 		for err := range bgErrs {
-			es = append(es, err)
+			errs = append(errs, err)
 		}
-		es = append(es, errs.New("test error"))
 
-		if len(es) > 0 {
-			aggErr <- &ArtifactSetupErrors{es}
+		if len(errs) > 0 {
+			aggErr <- &ArtifactSetupErrors{errs}
 		} else {
 			aggErr <- nil
 		}
