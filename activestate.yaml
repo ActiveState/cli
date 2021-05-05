@@ -86,15 +86,6 @@ scripts:
   - name: packr
     language: bash
     value: packr
-  - name: generate-svc
-    language: bash
-    value: |
-      if ! type "gqlgen" &> /dev/null; then
-        go install github.com/99designs/gqlgen@v0.13.0
-      fi
-      pushd ./cmd/state-svc &>/dev/null
-      gqlgen
-      popd &>/dev/null
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.

@@ -69,8 +69,8 @@ scripts:
     language: bash
     description: Generates graph server and client files
     value: |
-      cd cmd/state-svc
-      go run github.com/99designs/gqlgen
+      ! type "gqlgen" &>/dev/null && go install github.com/99designs/gqlgen@v0.13.0
+      cd ./cmd/state-svc && gqlgen
   - name: generate-test-update
     language: bash
     description: |
