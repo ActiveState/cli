@@ -34,7 +34,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func main() {
+func _main() (exitCode int) {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 	defer func() {
@@ -50,7 +50,7 @@ func main() {
 	out, err := initOutput(outFlags, "")
 	if err != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
-		os.Exit(1)
+		return 1
 	}
 
 	if runtime.GOOS == "windows" {
@@ -93,7 +93,14 @@ func main() {
 		}
 	}
 
-	os.Exit(code)
+	return code
+}
+
+func main() {
+	code := _main()
+	if code != 0 {
+		os.Exit(code)
+	}
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) error {
