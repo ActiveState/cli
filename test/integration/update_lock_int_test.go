@@ -38,6 +38,10 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	targetBranch := "release"
+	if constants.BranchName == "release" {
+		targetBranch = "master"
+	}
 	suite.OnlyRunForTags(tagsuite.Update)
 	tests := []struct {
 		name            string
