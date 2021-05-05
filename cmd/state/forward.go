@@ -78,7 +78,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 				return locale.WrapError(err, "forward_fail")
 			}
 			if code > 0 {
-				return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may be running an older version of the state tool, you may want to 'state update'."), code)
+				return errs.WrapExitCode(locale.NewError("err_forward", "Error occurred while running older version of the state tool, you may want to update the State Tool by running 'state update'."), code)
 			}
 			return nil
 		}
@@ -87,7 +87,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 
 	updateTip := locale.Tl("lock_update_legacy_version", "See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.", "https://docs.activestate.com/platform/state/advanced-topics/locking/")
 	return nil, errs.AddTips(
-		locale.NewInputError("locked_version_mismatch", "This project is locked at State Tool version {{.V0}}. The current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
+		locale.NewInputError("locked_version_mismatch", "This project is locked at State Tool version {{.V0}}. Your current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
 		updateTip,
 		locale.Tl("lock_update_lock", "You can lock the project to the running State Tool version with [ACTIONABLE]state update lock[/RESET]", versionInfo.Branch, versionInfo.Version),
 	)
