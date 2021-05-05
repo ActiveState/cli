@@ -120,8 +120,7 @@ run: |
   security import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} build.keychain
   security find-identity -v build.keychain
-  # IDENTITY=$(security find-identity -v)
-  # /usr/bin/codesign --force -s $IDENTITY ./build/state -v
+  /usr/bin/codesign --force -s 04DDEB9CED0B3F2FDB0731E574BEDF68038A6341 ./build/state -v
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
