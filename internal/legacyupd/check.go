@@ -36,7 +36,6 @@ func AutoUpdate(pjPath string, out output.Outputer) (updated bool, resultVersion
 	update := Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
 	}
 	seconds := 1
 	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {

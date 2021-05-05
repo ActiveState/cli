@@ -75,7 +75,7 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	if desiredVersion != "" {
 		versionPath = "/" + desiredVersion
 	}
-	url := fmt.Sprintf("%s%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
+	url := fmt.Sprintf("%s/%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
 	res, err := u.httpreq.Get(url)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", url)
@@ -86,7 +86,7 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	info.url = u.apiURL + info.Path
+	info.url = u.apiURL + "/" + info.Path
 
 	return info, nil
 }

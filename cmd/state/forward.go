@@ -124,7 +124,6 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 	up := legacyupd.Updater{
 		CurrentVersion: constants.Version,
 		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
 		DesiredBranch:  versionInfo.Branch,
 		DesiredVersion: desiredVersion,
 	}
