@@ -32,8 +32,14 @@ func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
 	return func() { close(done) }
 }
 
+var track = true
+
 func needsUpdate(mdl *model.SvcModel) bool {
 	for i := 1; i <= 3; i++ {
+		if i == 3 {
+			defer func() { track = false }()
+			return track
+		}
 		availableUpdate, err := mdl.CheckUpdate()
 		if err != nil {
 			time.Sleep(time.Second * 10 * time.Duration(i))
