@@ -85,7 +85,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return fn, nil
 	}
 
-	updateTip := locale.Tl("lock_update_legacy_version", "You can update the installed State Tool to the required version by running [ACTIONABLE]{{.V0}}[/RESET]", versionInstallCommand(versionInfo.Branch, versionInfo.Version, !version.IsMultiFileUpdate(sv)))
+	updateTip := locale.Tl("lock_update_legacy_version", "See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.", "https://docs.activestate.com/platform/state/advanced-topics/locking/")
 	return nil, errs.AddTips(
 		locale.NewInputError("locked_version_mismatch", "This project is locked at State Tool version {{.V0}}. The current State Tool version is {{.V1}}.", versionInfo.Version, constants.Version),
 		updateTip,
