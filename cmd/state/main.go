@@ -202,8 +202,8 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	if childCmd == nil || !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
 		// Todo: This is better done in the `state-svc` process  https://www.pivotaltracker.com/story/show/177730748
-		if updated, err := autoUpdate(args, cfg, pjPath); err != nil || updated {
-			return err
+		if _, err := autoUpdate(args, cfg, pjPath); err != nil {
+			logging.Error("Failed to initialize auto update: %v", err)
 		}
 	}
 
