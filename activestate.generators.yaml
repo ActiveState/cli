@@ -56,8 +56,6 @@ scripts:
     description: Builds a transitional State Tool that just updates to a mult-file version
     value: |
       set -e
-
-      export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
       # Generate legacy update
@@ -73,12 +71,25 @@ scripts:
       # Generate legacy update
       go run scripts/legacy-update-generator/main.go -o build/update $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET
 
+      TEMPDIR=$BUILD_TARGET_DIR/state-install
+      mkdir -p $TEMPDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
+
+      BINDIR=$TEMPDIR/bin
+      mkdir $TEMPDIR/bin
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
+
       mkdir -p ./build/update
-      go run scripts/update-generator/main.go -o ./build/update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET \
-        $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP
+        cp -r $BUILD_TARGET_DIR/$constants.SYSTRAY_APP $TEMPDIR/system
+      fi
+
+      go run scripts/update-generator/main.go -o ./build/update $TEMPDIR
+
+      rm -rf $TEMPDIR
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
@@ -87,34 +98,42 @@ scripts:
       go run github.com/99designs/gqlgen
   - name: generate-test-update
     language: bash
+    standalone: true
     description: |
-      Generate tests update files.  These can be safely uploaded to s3, and can be used to test an installation/update
+      Generate tests update files. These can be safely uploaded to s3, and can be used to test an installation/update
     value: |
       set -e
       $constants.SET_ENV
-      mkdir -p ./build/test
+      mkdir -p ./build/test/state-install/bin
       mkdir -p ./build/test-update
       TEST_VERSION="99.99.9999"
 
-      TEST_STATE_TOOL=./build/test/$constants.BUILD_TARGET
-      TEST_STATE_SVC=./build/test/$constants.BUILD_DAEMON_TARGET
-      TEST_STATE_TRAY=./build/test/$constants.BUILD_SYSTRAY_TARGET
+      TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
+      TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
+      TEST_STATE_TRAY=./build/test/state-install/bin/$constants.BUILD_SYSTRAY_TARGET
+      TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
       go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
 
-      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $TEST_STATE_TOOL $TEST_STATE_SVC \
-        $TEST_STATE_TRAY
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        TEST_AS_DESKTOP=./build/test/state-install/system/$constants.SYSTRAY_APP
+        mkdir -p "$TEST_AS_DESKTOP"
+        cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
+      fi
+
+      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
 
       echo "compile test-channel update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=test-channel" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
-      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update \
-        $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET \
-        $TEST_STATE_TOOL \
-        $TEST_STATE_SVC \
-        $TEST_STATE_TRAY
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        TEST_AS_DESKTOP=./build/test/state-install/system/$constants.SYSTRAY_APP
+        mkdir -p "$TEST_AS_DESKTOP"
+        cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
+      fi
+
+      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install

@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/phayes/permbits"
-
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -28,7 +26,7 @@ var outputDirFlag, platformFlag, branchFlag, versionFlag *string
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <installer> <binaries>...")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <directory>")
 }
 
 func main() {
@@ -68,31 +66,6 @@ func generateSha256(path string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func copyFileToDir(filePath, dir string, isExecutable bool) error {
-	targetPath := filepath.Join(dir, filepath.Base(filePath))
-	fmt.Printf("Copying %s -> %s\n", filePath, targetPath)
-	err := fileutils.CopyFile(filePath, targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not copy file %s -> %s", filePath, targetPath)
-	}
-	if !isExecutable {
-		return nil
-	}
-	// Permissions may be lost due to the file copy, so ensure it's still executable
-	permissions, err := permbits.Stat(targetPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not stat target file %s", targetPath)
-	}
-	permissions.SetUserExecute(true)
-	permissions.SetGroupExecute(true)
-	permissions.SetOtherExecute(true)
-	err = permbits.Chmod(targetPath, permissions)
-	if err != nil {
-		return errs.Wrap(err, "Could not make file executable")
-	}
-	return nil
-}
-
 func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	if runtime.GOOS == "windows" {
 		return archiver.NewZip(), ".zip"
@@ -100,51 +73,21 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(targetPath string, channel, version, platform string, installerPath string, binaries []string) error {
+func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	os.MkdirAll(filepath.Join(targetPath, relChannelPath), 0755)
-	os.MkdirAll(filepath.Join(targetPath, relVersionedPath), 0755)
-
-	// Copy files to a temporary directory that we can create the archive from
-	tempDir, err := ioutil.TempDir("", "cli-update-generator")
-	if err != nil {
-		return errs.Wrap(err, "Could not create temp dir")
-	}
-	defer os.RemoveAll(tempDir)
-
-	// Todo The archiver package we are using, creates an archive with a toplevel directory, so we need to give it a deterministic name ("root")
-	tempDir = filepath.Join(tempDir, constants.ToplevelInstallArchiveDir)
-
-	// copy installer to temp dir
-	err = copyFileToDir(installerPath, tempDir, true)
-	if err != nil {
-		return errs.Wrap(err, "Failed to copy installer.")
-	}
-
-	// copy binary files to binary temp dir
-	binTempDir := filepath.Join(tempDir, "bin")
-	err = os.MkdirAll(binTempDir, 0755)
-	if err != nil {
-		return errs.Wrap(err, "Could not create temp binary dir")
-	}
-
-	for _, bf := range binaries {
-		err := copyFileToDir(bf, binTempDir, true)
-		if err != nil {
-			return errs.Wrap(err, "Failed to copy binary file %s", bf)
-		}
-	}
+	os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
+	os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
-	archivePath := filepath.Join(targetPath, relArchivePath)
+	archivePath := filepath.Join(outputPath, relArchivePath)
 
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err = archive.Archive([]string{tempDir}, archivePath)
+	err := archive.Archive([]string{target}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
@@ -155,14 +98,19 @@ func createUpdate(targetPath string, channel, version, platform string, installe
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
 
-	infoPath := filepath.Join(targetPath, relChannelPath, "info.json")
+	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
 	err = ioutil.WriteFile(infoPath, b, 0755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}
 
-	return copyFileToDir(infoPath, filepath.Join(targetPath, relVersionedPath), false)
+	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
+	if err != nil {
+		return errs.Wrap(err, "Could not copy info.json file")
+	}
+
+	return nil
 }
 
 func run() error {
@@ -173,9 +121,7 @@ func run() error {
 		exit(0)
 	}
 
-	installerPath := flag.Arg(0)
-
-	binaries := flag.Args()[1:]
+	target := flag.Args()[0]
 
 	branch := constants.BranchName
 	if branchFlag != nil && *branchFlag != "" {
@@ -186,8 +132,8 @@ func run() error {
 
 	version := *versionFlag
 
-	targetDir := *outputDirFlag
-	os.MkdirAll(targetDir, 0755)
+	outputDir := *outputDirFlag
+	os.MkdirAll(outputDir, 0755)
 
-	return createUpdate(targetDir, branch, version, platform, installerPath, binaries)
+	return createUpdate(outputDir, branch, version, platform, target)
 }

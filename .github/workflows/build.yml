@@ -80,13 +80,17 @@ jobs:
       shell: bash
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-installer
-    - name: Build transitional State Tool
+    - name: Build transitional State Tool (32bit)
       shell: bash
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
+    - name: Build Systray App
+      shell: bash
+      if: runner.os == 'macOS'
+      run: state run build-systray-app
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
@@ -249,6 +253,10 @@ jobs:
     - name: Build Installer
       shell: bash
       run: state run build-installer
+    - name: Build Systray App
+      shell: bash
+      if: runner.os == 'macOS'
+      run: state run build-systray-app
     - name: Build transitional State Tool
       shell: bash
       run: state run build-transitional-update
@@ -329,6 +337,10 @@ jobs:
     - name: Build Service
       shell: bash
       run: state run build-svc
+    - name: Build Systray App
+      shell: bash
+      if: runner.os == 'macOS'
+      run: state run build-systray-app
     - name: Build transitional State Tool
       shell: bash
       run: state run build-transitional-update
