@@ -556,6 +556,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 	for _, fileInfo := range fileInfos {
 		fromPath := filepath.Join(fromPath, fileInfo.Name())
 		toPath := filepath.Join(toPath, fileInfo.Name())
+
 		if TargetExists(toPath) {
 			tmpToPath := fmt.Sprintf("%s.new", toPath)
 			err := CopyFile(fromPath, tmpToPath)
