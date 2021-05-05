@@ -61,7 +61,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return nil, locale.WrapInputError(err, "Failed to parse locked State Tool Version.")
 	}
 
-	// Todo Remove this block for the next release
+	// Todo Remove this block with story: https://www.pivotaltracker.com/story/show/178043272
 	if !version.IsMultiFileUpdate(sv) {
 		fn := func() error {
 			// Perform the forward
