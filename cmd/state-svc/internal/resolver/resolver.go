@@ -47,7 +47,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
 	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
 	if err != nil {
-		return nil, err // TODO: wrap
+		return nil, errs.Wrap(err, "Failed to check for update")
 	}
 
 	av := graph.AvailableUpdate{

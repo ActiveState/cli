@@ -28,7 +28,7 @@ import (
 
 func main() {
 	var verbose bool
-	flag.BoolVar(&verbose, "verbose", verbose, "set logging to verbose")
+	flag.BoolVar(&verbose, "v", verbose, "set logging to verbose")
 	flag.Parse()
 
 	systray.Run(onReadyFn(verbose), onExit)
