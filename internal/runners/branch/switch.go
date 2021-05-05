@@ -34,6 +34,10 @@ func NewSwitch(prime primeable) *Switch {
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
 
+	if s.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())

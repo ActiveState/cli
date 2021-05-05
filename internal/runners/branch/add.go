@@ -27,6 +27,10 @@ func NewAdd(prime primeable) *Add {
 func (a *Add) Run(params AddParams) error {
 	logging.Debug("ExecuteAdd")
 
+	if a.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	project, err := model.FetchProjectByName(a.project.Owner(), a.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", a.project.Namespace().String())
