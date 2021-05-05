@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -36,7 +37,10 @@ import (
 func main() {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
-	defer rollbar.Close()
+	defer func() {
+		rollbar.Close()
+		fmt.Printf("closing rollbar")
+	}()
 
 	// Handle panics gracefully
 	defer handlePanics(os.Exit)
