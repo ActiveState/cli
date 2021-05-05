@@ -51,7 +51,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		return nil, locale.WrapError(err, "err_version_parse", "Could not determine the State Tool version to use to run this command.")
 	}
 
-	// Do we pass the version look check?
+	// Do we pass the version lock check?
 	if versionInfo == nil || (versionInfo.Version == constants.Version && versionInfo.Branch == constants.BranchName) {
 		return nil, nil
 	}
