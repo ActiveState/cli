@@ -207,9 +207,9 @@ func run() error {
 			}
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
-			svcInfo := appinfo.UpdateDialogApp()
-			if err := execute(svcInfo.Exec()); err != nil {
-				return errs.New("Could not execute: %s", svcInfo.Name())
+			updlgInfo := appinfo.UpdateDialogApp()
+			if err := execute(updlgInfo.Exec()); err != nil {
+				return errs.New("Could not execute: %s", updlgInfo.Name())
 			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
