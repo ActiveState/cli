@@ -207,10 +207,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
 
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort)))
+		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
 
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
@@ -244,7 +247,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
-			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
+			dir, err := ioutil.TempDir("", "system*")
+			suite.NoError(err)
+
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
 			expectStateToolInstallation(cp)
 			cp.Expect("State Tool Installed")
 			cp.ExpectExitCode(0)

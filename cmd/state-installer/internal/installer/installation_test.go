@@ -9,46 +9,63 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var stateToolTestFile string = "state"
-var otherTestFile string = "other"
-var installerTestFile string = "state-installer"
+var stateToolTestFile string = "state" + exeutils.Extension
+var stateTrayTestFile string = "state-tray" + exeutils.Extension
+var otherTestFile string = "other" + exeutils.Extension
+var installerTestFile string = "state-installer" + exeutils.Extension
 
 var stateToolTestFileContent []byte = []byte("#!/bin/bash\necho I want to be replaced;")
 var updatedTestFileContent []byte = []byte("#!/bin/bash\necho updated;")
-
-func init() {
-	if runtime.GOOS == "windows" {
-		stateToolTestFile = "state.exe"
-		otherTestFile = "other.exe"
-		installerTestFile = "state-installer.exe"
-	}
-}
 
 func copyStateToolTestFile(t *testing.T, targetPath string) {
 	err := ioutil.WriteFile(targetPath, stateToolTestFileContent, 0755)
 	require.NoError(t, err)
 }
 
-func initTempInstallDirs(t *testing.T) (string, string) {
+func createSystemDirectoryStructure(t *testing.T, targetPath string) {
+	var err error
+	switch runtime.GOOS {
+	case "darwin":
+		err = fileutils.Mkdir(filepath.Join(targetPath, "ActiveState Desktop.app", "Contents", "MacOS"))
+	case "linux":
+		err = nil
+	default:
+		err = nil
+	}
+	require.NoError(t, err)
+}
+
+func initTempInstallDirs(t *testing.T) (string, string, string) {
 	fromDir, err := ioutil.TempDir("", "from*")
 	require.NoError(t, err)
+	err = fileutils.Mkdir(filepath.Join(fromDir, "bin"))
+	require.NoError(t, err)
+	err = fileutils.Mkdir(filepath.Join(fromDir, "system"))
+	require.NoError(t, err)
+
 	toDir, err := ioutil.TempDir("", "to*")
 	require.NoError(t, err)
-	for _, df := range []string{otherTestFile, stateToolTestFile} {
+	for _, df := range []string{otherTestFile, stateToolTestFile, stateTrayTestFile} {
 		// populate fromDir with a file that is going to be installed
-		err = ioutil.WriteFile(filepath.Join(fromDir, df), updatedTestFileContent, 0775)
+		err = ioutil.WriteFile(filepath.Join(fromDir, "bin", df), updatedTestFileContent, 0775)
 		require.NoError(t, err, "Failed to write test file %s", df)
-
 	}
 	// populate State Tool test file that gets replaced in installation directory
 	copyStateToolTestFile(t, filepath.Join(toDir, stateToolTestFile))
+	// populate system installation directory to be copied
+	createSystemDirectoryStructure(t, filepath.Join(fromDir, "system"))
 
-	return fromDir, toDir
+	system, err := ioutil.TempDir("", "system*")
+	require.NoError(t, err)
+
+	return fromDir, toDir, system
 }
 
 func assertPermissions(t *testing.T, fp string) {
@@ -103,7 +120,7 @@ func TestInstallation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			from, to := initTempInstallDirs(t)
+			from, to, systemPath := initTempInstallDirs(t)
 
 			if tt.SimulateAdminInstallation {
 				// Simulate that a previous installation has been installed with administrator rights:
@@ -114,7 +131,7 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			inst := installer.New(from, to)
+			inst := installer.New(from, to, systemPath)
 			err := inst.Install()
 
 			if tt.ExpectSuccess {

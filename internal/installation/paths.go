@@ -17,6 +17,13 @@ func InstallPath() (string, error) {
 	return defaultInstallPath()
 }
 
+func LauncherInstallPath() (string, error) {
+	if path, ok := os.LookupEnv("_TEST_SYSTEM_PATH"); ok {
+		return path, nil
+	}
+	return defaultSystemInstallPath()
+}
+
 func LogfilePath(configPath string, pid int) string {
 	return filepath.Join(configPath, fmt.Sprintf("state-installer-%d.log", pid))
 }

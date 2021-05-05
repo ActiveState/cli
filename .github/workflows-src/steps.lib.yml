@@ -58,7 +58,7 @@ run: GOARCH=386 state run build-installer
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():
-name: Build transitional State Tool
+name: Build transitional State Tool (32bit)
 shell: bash
 if: runner.os == 'Windows'
 run: GOARCH=386 state run build-transitional-update
@@ -68,6 +68,13 @@ run: GOARCH=386 state run build-transitional-update
 name: Build Install Scripts
 shell: bash
 run: state run build-install-scripts
+#@ end
+---
+#@ def steps_build_systrayapp():
+name: Build Systray App
+shell: bash
+if: runner.os == 'macOS'
+run: state run build-systray-app
 #@ end
 ---
 #@ def steps_sign():
