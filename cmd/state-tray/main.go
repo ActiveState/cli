@@ -38,24 +38,22 @@ func main() {
 
 	verbose = os.Getenv("VERBOSE") != "" || verbose
 
-	systray.Run(onReadyFn(verbose), onExit)
+	logging.CurrentHandler().SetVerbose(verbose)
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+
+	systray.Run(onReadyFn, onExit)
 }
 
-func onReadyFn(verbose bool) func() {
-	return func() {
-		logging.CurrentHandler().SetVerbose(verbose)
+func onReadyFn() {
+	var exitCode int
+	defer exit(exitCode)
 
-		var exitCode int
-		logging.SetupRollbar(constants.StateTrayRollbarToken)
-		defer exit(exitCode)
-
-		err := run()
-		if err != nil {
-			errMsg := errs.Join(err, ": ").Error()
-			logging.Error("Systray encountered an error: %v", errMsg)
-			fmt.Fprintln(os.Stderr, errMsg)
-			exitCode = 1
-		}
+	err := run()
+	if err != nil {
+		errMsg := errs.Join(err, ": ").Error()
+		logging.Error("Systray encountered an error: %v", errMsg)
+		fmt.Fprintln(os.Stderr, errMsg)
+		exitCode = 1
 	}
 }
 
