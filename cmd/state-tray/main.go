@@ -41,10 +41,10 @@ func main() {
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
 
-	systray.Run(onReadyFn, onExit)
+	systray.Run(onReady, onExit)
 }
 
-func onReadyFn() {
+func onReady() {
 	var exitCode int
 	defer exit(exitCode)
 
