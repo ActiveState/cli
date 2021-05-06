@@ -69,6 +69,9 @@ func (r *Run) Run(name string, args []string) error {
 	}
 
 	img := script.Image()
+	if img == nil && r.proj.Config().Image() != nil {
+		img = r.proj.Config().Image()
+	}
 	if img != nil && img.UniqueName() != os.Getenv(constants.DockerImageEnvVarName) {
 		return r.runViaDocker(script)
 	}
