@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -44,13 +45,9 @@ func New(prime primeable) *Run {
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.proj, r.cfg, name, args)
-}
-
-func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
-	if proj == nil {
+	if r.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
@@ -58,18 +55,22 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 		return locale.NewError("error_state_run_undefined_name")
 	}
 
-	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
+	r.out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.Get().Authenticated() {
-		checker.RunCommitsBehindNotifier(proj, out)
+		checker.RunCommitsBehindNotifier(r.proj, r.out)
 	}
 
-	script := proj.ScriptByName(name)
+	script := r.proj.ScriptByName(name)
 	if script == nil {
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(out, subs, proj, cfg)
+	if script.Image() != nil {
+		return r.runViaDocker(script)
+	}
+
+	scriptrunner := scriptrun.New(r.out, r.subshell, r.proj, r.cfg)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
@@ -77,13 +78,25 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 	}
 
 	if len(script.Languages()) == 0 {
-		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
-		out.Notice(locale.Tl(
+		r.out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
+		r.out.Notice(locale.Tl(
 			"run_warn_deprecated_script_without_language",
 			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
 			strings.Join(language.RecognizedNames(), ", ")))
 	}
 
-	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
+	r.out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
 	return scriptrunner.Run(script, args)
+}
+
+func (r *Run) runViaDocker(script *project.Script) error {
+	if script.Image() == nil {
+		return errs.New("Script image is nil")
+	}
+
+	r.out.Notice(output.Heading(locale.Tl("run_script_docker", "Launching Docker Container: [ACTIONABLE]{{.V0}}[/RESET]", script.Image().Name())))
+
+	// Run docker container
+
+	return nil
 }
