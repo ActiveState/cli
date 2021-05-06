@@ -391,6 +391,7 @@ type Script struct {
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Image       Image       `yaml:"image,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}
@@ -429,6 +430,34 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 		}
 	}
 	return scripts
+}
+
+// Image covers the image structure, which goes under Script
+type Image struct {
+	Name        string      `yaml:"name"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Conditional Conditional `yaml:"if"`
+}
+
+// ID returns the image name
+func (i Image) ID() string {
+	return i.Name
+}
+
+func (i Image) ConstraintsFilter() Constraint {
+	return i.Constraints
+}
+
+func (i Image) ConditionalFilter() Conditional {
+	return i.Conditional
+}
+
+// MakeImageFromConstrainedEntity unboxes ConstraintedEntity as an Image
+func MakeImageFromConstrainedEntity(v ConstrainedEntity) *Image {
+	if o, ok := v.(*Image); ok {
+		return o
+	}
+	return nil
 }
 
 // Job covers the job structure, which goes under Project

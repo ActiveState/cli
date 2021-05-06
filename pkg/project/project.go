@@ -653,6 +653,21 @@ func (script *Script) Raw() string {
 // Standalone returns if the script is standalone or not
 func (script *Script) Standalone() bool { return script.script.Standalone }
 
+// Image returns the image used by this script (if any)
+func (script *Script) Image() *Image {
+	constrained, err := constraints.FilterUnconstrained(pConditional, []projectfile.ConstrainedEntity{script.script.Image})
+	if err != nil {
+		logging.Warning("Could not filter unconstrained constants: %v", err)
+	}
+	if len(constrained) == 0 {
+		return nil
+	}
+	return &Image{
+		projectfile.MakeImageFromConstrainedEntity(constrained[0]),
+		script.project,
+	}
+}
+
 // cacheFile allows this script to have an associated file
 func (script *Script) setCachedFile(filename string) {
 	script.script.Filename = filename
@@ -661,6 +676,19 @@ func (script *Script) setCachedFile(filename string) {
 // filename returns the name of the file associated with this script
 func (script *Script) cachedFile() string {
 	return script.script.Filename
+}
+
+// Image covers the image structure
+type Image struct {
+	image   *projectfile.Image
+	project *Project
+}
+
+// Source returns the source projectfile
+func (i *Image) Source() *projectfile.Project { return i.project.projectfile }
+
+func (i *Image) Name() string {
+	return i.image.Name
 }
 
 // Job covers the command structure
