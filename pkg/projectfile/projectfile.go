@@ -81,6 +81,7 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
+	Config        Config        `yaml:"config,omitempty"`
 	Platforms     []Platform    `yaml:"platforms,omitempty"`
 	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
@@ -93,6 +94,11 @@ type Project struct {
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
 	parsedVersion string
+}
+
+// Config covers the config structure of our yaml
+type Config struct {
+	Image Image `yaml:"image,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -454,8 +460,8 @@ func (i Image) ConditionalFilter() Conditional {
 
 // MakeImageFromConstrainedEntity unboxes ConstraintedEntity as an Image
 func MakeImageFromConstrainedEntity(v ConstrainedEntity) *Image {
-	if o, ok := v.(*Image); ok {
-		return o
+	if o, ok := v.(Image); ok {
+		return &o
 	}
 	return nil
 }
