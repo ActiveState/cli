@@ -1,9 +1,11 @@
 package run
 
 import (
+	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -66,7 +68,8 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	if script.Image() != nil {
+	img := script.Image()
+	if img != nil && img.UniqueName() != os.Getenv(constants.DockerImageEnvVarName) {
 		return r.runViaDocker(script)
 	}
 
@@ -97,6 +100,7 @@ func (r *Run) runViaDocker(script *project.Script) error {
 	r.out.Notice(output.Heading(locale.Tl("run_script_docker", "Launching Docker Container: [ACTIONABLE]{{.V0}}[/RESET]", script.Image().Name())))
 
 	// Run docker container
+	// Should effectively `run state <os.Args[1:]> --output=simple`
 
 	return nil
 }

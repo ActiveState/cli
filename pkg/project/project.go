@@ -691,6 +691,10 @@ func (i *Image) Name() string {
 	return i.image.Name
 }
 
+func (i *Image) UniqueName() string {
+	return i.image.Name + "-" + i.project.CommitID()
+}
+
 // Job covers the command structure
 type Job struct {
 	job     *projectfile.Job
