@@ -289,7 +289,9 @@ scripts:
     language: bash
     image:
       name: "tutum/curl"
-    value: lsb_release -a
+    value: |
+      echo "Checking lsb_release"
+      lsb_release -a
 events:
   - name: activate
     if: ne .Shell "cmd"

@@ -50,7 +50,7 @@ func (r *Runner) Run(command []string, logWriter io.Writer) (runError error) {
 			},*/
 		}},
 	}
-	res, err := r.client.ContainerCreate(context.Background(), containerCfg, hostCfg, nil, nil, "")
+	container, err := r.client.ContainerCreate(context.Background(), containerCfg, hostCfg, nil, nil, "")
 	if err != nil {
 		return locale.WrapError(
 			err, "err_docker_containercreate",
@@ -58,14 +58,14 @@ func (r *Runner) Run(command []string, logWriter io.Writer) (runError error) {
 			errs.Join(err, ": ").Error())
 	}
 	defer func() {
-		if err := r.client.ContainerStop(context.Background(), res.ID, nil); err != nil {
+		if err := r.client.ContainerStop(context.Background(), container.ID, nil); err != nil {
 			if runError == nil {
 				runError = err
 			} else {
 				logging.Error("Could not stop container: %v", errs.Join(err, ": "))
 			}
 		}
-		if err := r.client.ContainerRemove(context.Background(), res.ID, types.ContainerRemoveOptions{}); err != nil {
+		if err := r.client.ContainerRemove(context.Background(), container.ID, types.ContainerRemoveOptions{}); err != nil {
 			if runError == nil {
 				runError = err
 			} else {
@@ -74,34 +74,39 @@ func (r *Runner) Run(command []string, logWriter io.Writer) (runError error) {
 		}
 	}()
 
-	if len(res.Warnings) > 0 {
-		for _, warning := range res.Warnings {
+	if len(container.Warnings) > 0 {
+		for _, warning := range container.Warnings {
 			logWriter.Write([]byte(warning + "\n"))
 		}
 	}
 
-	logErr := make(chan error, 1)
-	go func() {
-		logs, err := r.client.ContainerLogs(context.Background(), res.ID, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
-		if err != nil {
-			logErr <- locale.WrapError(err, "err_docker_container_logs",
-				"Could not grab container logs, returned error: {{.V0}}.", err.Error())
-			return
-		}
-		defer logs.Close()
-
-		if _, err := io.Copy(logWriter, logs); err != nil {
-			logErr <- locale.WrapError(err, "err_docker_container_log_copy",
-				"Could not read logs, returned error: {{.V0}}.", errs.Join(err, ": ").Error())
-			return
-		}
-		logErr <- nil
-	}()
-
-	if err := r.client.ContainerStart(context.Background(), res.ID, types.ContainerStartOptions{}); err != nil {
+	if err := r.client.ContainerStart(context.Background(), container.ID, types.ContainerStartOptions{}); err != nil {
 		return locale.WrapError(err, "err_docker_container_start",
 			"Could not start container, returned error: {{.V0}}.", err.Error())
 	}
 
-	return <-logErr
+	exec, err := r.client.ContainerExecCreate(context.Background(), container.ID, types.ExecConfig{
+		Env:          []string{constants.DockerLabelCommitEnvVarName + "=" + r.opts.Commit},
+		Cmd:          command,
+		AttachStdout: true,
+		AttachStderr: true,
+		AttachStdin:  true,
+	})
+	if err != nil {
+		return locale.WrapError(err, "err_docker_container_exec",
+			"Could not prepare executor, returned error: {{.V0}}.", err.Error())
+	}
+
+	attach, err := r.client.ContainerExecAttach(context.Background(), exec.ID, types.ExecStartCheck{})
+	if err != nil {
+		return locale.WrapError(err, "err_docker_container_execattach",
+			"Could not attach to executor, returned error: {{.V0}}.", err.Error())
+	}
+
+	if _, err := io.Copy(logWriter, attach.Reader); err != nil {
+		return locale.WrapError(err, "err_docker_container_iocopy",
+			"Could not copy output stream, returned error: {{.V0}}.", err.Error())
+	}
+
+	return nil
 }
