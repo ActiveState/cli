@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/docker"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -72,7 +73,7 @@ func (r *Run) Run(name string, args []string) error {
 	if img == nil && r.proj.Config().Image() != nil {
 		img = r.proj.Config().Image()
 	}
-	if img != nil && img.UniqueName() != os.Getenv(constants.DockerImageEnvVarName) {
+	if img != nil && r.proj.CommitID() != os.Getenv(constants.DockerLabelCommitEnvVarName) {
 		return r.runViaDocker(script)
 	}
 
@@ -95,6 +96,15 @@ func (r *Run) Run(name string, args []string) error {
 	return scriptrunner.Run(script, args)
 }
 
+type writer struct {
+	out output.Outputer
+}
+
+func (w *writer) Write(p []byte) (n int, err error) {
+	w.out.Print(p)
+	return len(p), nil
+}
+
 func (r *Run) runViaDocker(script *project.Script) error {
 	if script.Image() == nil {
 		return errs.New("Script image is nil")
@@ -103,7 +113,30 @@ func (r *Run) runViaDocker(script *project.Script) error {
 	r.out.Notice(output.Heading(locale.Tl("run_script_docker", "Launching Docker Container: [ACTIONABLE]{{.V0}}[/RESET]", script.Image().Name())))
 
 	// Run docker container
-	// Should effectively `run state <os.Args[1:]> --output=simple`
+	opts := docker.TargetOptions{
+		Image:    script.Image().Name(),
+		Commit:   r.proj.CommitID(),
+		YamlPath: r.proj.Source().Path(),
+	}
+	builder, err := docker.NewBuilder(opts)
+	if err != nil {
+		return errs.Wrap(err, "Could not create builder")
+	}
+	if !builder.TargetImageExists() {
+		if err := builder.Build(&writer{r.out}); err != nil {
+			return locale.WrapError(err, "err_run_build_docker", "Could not build Docker image.")
+		}
+	}
+	runner, err := docker.NewRunner(opts)
+	if err != nil {
+		return errs.Wrap(err, "Could not create runner")
+	}
+	cmd := os.Args
+	cmd[0] = constants.CommandName
+	cmd = append(cmd, "--output=simple")
+	if err := runner.Run(cmd, &writer{r.out}); err != nil {
+		return locale.WrapError(err, "err_run_build_docker", "Could not run Docker container.")
+	}
 
 	return nil
 }

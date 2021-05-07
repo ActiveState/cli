@@ -285,6 +285,11 @@ scripts:
       export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
       export PT_DAYS_AGED=190 # set this value to control cleanup
       python3 ./scripts/story-cleanup/story-cleanup.py
+  - name: docker-test
+    language: bash
+    image:
+      name: "tutum/curl"
+    value: lsb_release -a
 events:
   - name: activate
     if: ne .Shell "cmd"
@@ -302,9 +307,9 @@ events:
         popd
       fi
       set +e # Take care not to run the shell too aggressively
-  - name: file-changed
+  - name: file-changed-disabled
     scope: [ ".github/workflows-src" ]
     value: build-workflows
-  - name: file-changed
+  - name: file-changed-disabled
     scope: [ "locale" ]
     value: packr
