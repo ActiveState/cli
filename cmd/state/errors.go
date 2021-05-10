@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -110,7 +109,8 @@ func unwrapError(err error) (int, error) {
 	return code, &OutputError{err}
 }
 
-func handlePanics(exiter func(int)) {
+// handlePanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled
+func handlePanics() bool {
 	if r := recover(); r != nil {
 		if msg, ok := r.(string); ok && msg == "exiter" {
 			panic(r) // don't capture exiter panics
@@ -122,10 +122,9 @@ func handlePanics(exiter func(int)) {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Check the error log for more information.
 Your error log is located at: %s`, logging.FilePath()))
-
-		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
-		exiter(1)
+		return true
 	}
+	return false
 }
 
 type SilencedError struct{ error }
