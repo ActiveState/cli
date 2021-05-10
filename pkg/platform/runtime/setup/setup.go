@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -103,13 +104,14 @@ type Setup struct {
 	target Targeter
 	events Events
 	store  *store.Store
+	auth   *authentication.Auth
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
 type ModelProvider interface {
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
-	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
-	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
+	RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
+	FetchBuildResult(auth *authentication.Auth, commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
 	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
@@ -130,13 +132,13 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault())
+func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
+	return NewWithModel(target, msgHandler, auth, model.NewDefault())
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setup {
-	return &Setup{model, target, msgHandler, nil}
+func NewWithModel(target Targeter, msgHandler Events, auth *authentication.Auth, model ModelProvider) *Setup {
+	return &Setup{model, target, msgHandler, nil, auth}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -151,7 +153,7 @@ func (s *Setup) Update() error {
 
 func (s *Setup) update() error {
 	// Request build
-	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	buildResult, err := s.model.FetchBuildResult(s.auth, s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}

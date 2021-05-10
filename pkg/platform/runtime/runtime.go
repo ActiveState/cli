@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
@@ -68,7 +69,7 @@ func New(target setup.Targeter) (*Runtime, error) {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
+func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...
@@ -77,7 +78,7 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	go func() {
 		defer prod.Close()
 
-		if err := setup.New(r.target, prod).Update(); err != nil {
+		if err := setup.New(r.target, prod, auth).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
