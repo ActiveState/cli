@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -61,15 +62,20 @@ type Client struct {
 }
 
 func InitClient() *Client {
-	return NewClient(api.GetServiceURL(api.ServiceHeadChef))
+	auth := auth.Get()
+	return NewClient(api.GetServiceURL(api.ServiceHeadChef), auth.ClientAuth())
 }
 
-func NewClient(apiURL *url.URL) *Client {
+func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
 	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	transportRuntime.Transport = api.NewRoundTripper()
 
 	// transportRuntime.SetDebug(true)
+
+	if auth != nil {
+		transportRuntime.DefaultAuthentication = auth
+	}
 
 	return &Client{
 		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
