@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
@@ -27,7 +26,7 @@ import (
 
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
-	auth    *auth.Auth
+	auth    *authentication.Auth
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project

@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
@@ -28,7 +28,7 @@ type configurable interface {
 type Exec struct {
 	subshell subshell.SubShell
 	proj     *project.Project
-	auth     *auth.Auth
+	auth     *authentication.Auth
 	out      output.Outputer
 	cfg      configurable
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var (
@@ -60,8 +61,8 @@ type Client struct {
 	transport *httptransport.Runtime
 }
 
-func InitClient(auth runtime.ClientAuthInfoWriter) *Client {
-	return NewClient(api.GetServiceURL(api.ServiceHeadChef), auth)
+func InitClient(auth *authentication.Auth) *Client {
+	return NewClient(api.GetServiceURL(api.ServiceHeadChef), auth.ClientAuth())
 }
 
 func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {

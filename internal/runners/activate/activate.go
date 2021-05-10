@@ -35,7 +35,6 @@ import (
 type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
-	auth             *authentication.Auth
 	out              output.Outputer
 	config           *config.Instance
 	proj             *project.Project
@@ -53,7 +52,6 @@ type ActivateParams struct {
 }
 
 type primeable interface {
-	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
@@ -65,7 +63,6 @@ func NewActivate(prime primeable) *Activate {
 	return &Activate{
 		NewNamespaceSelect(prime.Config(), prime),
 		NewCheckout(git.NewRepo(), prime),
-		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 		prime.Project(),
@@ -191,7 +188,10 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err = rt.Update(r.auth, runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+			if errs.Matches(err, &model.ErrOrderAuth{}) {
+				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+			}
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 		if err != nil {

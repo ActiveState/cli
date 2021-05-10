@@ -41,5 +41,5 @@ func requestBuild(auth *authentication.Auth, recipeID, orgID, projID strfmt.UUID
 	if err != nil {
 		return headchef.Error, nil, err
 	}
-	return headchef.InitClient(auth.ClientAuth()).RequestBuildSync(buildRequest)
+	return headchef.InitClient(auth).RequestBuildSync(buildRequest)
 }
