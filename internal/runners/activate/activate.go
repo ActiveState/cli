@@ -189,6 +189,9 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
 		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+			if errs.Matches(err, &model.ErrOrderAuth{}) {
+				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `state auth`")
+			}
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 		if err != nil {
