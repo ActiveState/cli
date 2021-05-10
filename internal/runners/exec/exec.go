@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
@@ -28,13 +27,11 @@ type configurable interface {
 type Exec struct {
 	subshell subshell.SubShell
 	proj     *project.Project
-	auth     *auth.Auth
 	out      output.Outputer
 	cfg      configurable
 }
 
 type primeable interface {
-	primer.Auther
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
@@ -49,7 +46,6 @@ func New(prime primeable) *Exec {
 	return &Exec{
 		prime.Subshell(),
 		prime.Project(),
-		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 	}
@@ -92,7 +88,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err := rt.Update(s.auth, runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
+		if err := rt.Update(runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

@@ -12,7 +12,7 @@ The general usage pattern is as follows:
 		if !runtime.IsNeedsUpdateError(err) {
 			return err
 		}
-		if err = rt.Update(auth, messageHandler); err != nil {
+		if err = rt.Update(messageHandler); err != nil {
 			return err
 		}
 	}

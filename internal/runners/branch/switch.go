@@ -58,7 +58,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.project, s.config.CachePath(), *branch.CommitID, false)
+	err = runbits.RefreshRuntime(s.out, s.project, s.config.CachePath(), *branch.CommitID, false)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

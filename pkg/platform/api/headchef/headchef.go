@@ -60,20 +60,16 @@ type Client struct {
 	transport *httptransport.Runtime
 }
 
-func InitClient(auth runtime.ClientAuthInfoWriter) *Client {
-	return NewClient(api.GetServiceURL(api.ServiceHeadChef), auth)
+func InitClient() *Client {
+	return NewClient(api.GetServiceURL(api.ServiceHeadChef))
 }
 
-func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
+func NewClient(apiURL *url.URL) *Client {
 	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
-	transportRuntime.Transport = api.NewRoundTripper(auth)
+	transportRuntime.Transport = api.NewRoundTripper()
 
 	// transportRuntime.SetDebug(true)
-
-	if auth != nil {
-		transportRuntime.DefaultAuthentication = auth
-	}
 
 	return &Client{
 		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
