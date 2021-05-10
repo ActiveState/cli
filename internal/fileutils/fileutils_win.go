@@ -3,6 +3,7 @@
 package fileutils
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -100,8 +101,10 @@ func ResolveUniquePath(path string) (string, error) {
 	longPath, err := GetLongPathName(evalPath)
 	if err != nil {
 		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
-		// => just log the error and resume with resolved path
-		logging.Error("could not resolve long version of %s: %v", evalPath, err)
+		// => just log the error (unless err due to file not existing) and resume with resolved path
+		if !errors.Is(err, os.ErrNotExist) && !errs.Matches(err, os.ErrNotExist) {
+			logging.Error("could not resolve long version of %s: %v", evalPath, err)
+		}
 		return filepath.Clean(evalPath), nil
 	}
 

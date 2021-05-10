@@ -139,7 +139,11 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setu
 func (s *Setup) Update() error {
 	err := s.update()
 	if err != nil {
-		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailUpdate)
+		category := analytics.ActRuntimeFailure
+		if locale.IsInputError(err) {
+			category = analytics.ActRuntimeUserFailure
+		}
+		analytics.EventWithLabel(analytics.CatRuntime, category, analytics.LblRtFailUpdate)
 		return err
 	}
 	return nil
