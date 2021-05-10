@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -22,7 +21,6 @@ import (
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
-	model       *model.Model
 	envAccessed bool
 }
 
@@ -39,7 +37,6 @@ func IsNeedsUpdateError(err error) bool {
 
 func newRuntime(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
-	rt.model = model.NewDefault()
 
 	rt.store = store.New(target.Dir())
 	if !rt.store.MatchesCommit(target.CommitUUID()) {

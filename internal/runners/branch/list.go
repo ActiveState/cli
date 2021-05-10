@@ -10,6 +10,7 @@ import (
 )
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Configurer

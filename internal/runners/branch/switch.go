@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -14,6 +15,7 @@ type configurable interface {
 }
 
 type Switch struct {
+	auth    *authentication.Auth
 	out     output.Outputer
 	project *project.Project
 	config  configurable
@@ -25,6 +27,7 @@ type SwitchParams struct {
 
 func NewSwitch(prime primeable) *Switch {
 	return &Switch{
+		auth:    prime.Auth(),
 		out:     prime.Output(),
 		project: prime.Project(),
 		config:  prime.Config(),

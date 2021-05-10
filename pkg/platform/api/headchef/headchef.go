@@ -67,7 +67,7 @@ func InitClient(auth runtime.ClientAuthInfoWriter) *Client {
 func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
 	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
-	transportRuntime.Transport = api.NewRoundTripper(auth)
+	transportRuntime.Transport = api.NewRoundTripper()
 
 	// transportRuntime.SetDebug(true)
 

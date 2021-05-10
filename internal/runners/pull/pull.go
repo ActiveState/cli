@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -17,6 +18,7 @@ import (
 type Pull struct {
 	prompt  prompt.Prompter
 	project *project.Project
+	auth    *authentication.Auth
 	out     output.Outputer
 	cfg     *config.Instance
 }
@@ -29,6 +31,7 @@ type PullParams struct {
 type primeable interface {
 	primer.Prompter
 	primer.Projecter
+	primer.Auther
 	primer.Outputer
 	primer.Configurer
 }
@@ -37,6 +40,7 @@ func New(prime primeable) *Pull {
 	return &Pull{
 		prime.Prompt(),
 		prime.Project(),
+		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 	}
@@ -118,7 +122,7 @@ func (p *Pull) Run(params *PullParams) error {
 		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
 	}
 
-	err = runbits.RefreshRuntime(p.out, p.project, p.cfg.CachePath(), *target.CommitID, len(revertCommit.Changeset) > 0)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *target.CommitID, len(revertCommit.Changeset) > 0)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
