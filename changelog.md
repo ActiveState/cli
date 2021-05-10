@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.28.2
+
+### Fixed
+
+* Fixed projects with private ingredients cannot
+  activate ([PR #1346](https://github.com/ActiveState/cli/pull/1346))
+
+### Changed
+
+* Using a private project while unauthenticated will now give a friendly error
+  message ([PR #1345](https://github.com/ActiveState/cli/pull/1345))
+
 ## 0.28.1
 
 ### Fixed
