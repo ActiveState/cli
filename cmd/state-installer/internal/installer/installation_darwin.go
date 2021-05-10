@@ -37,6 +37,10 @@ func InstallSystemFiles(fromDir, binaryDir, systemInstallPath string) error {
 	return nil
 }
 
+func RemoveSystemFiles(systemInstallPath string) error {
+	return os.RemoveAll(filepath.Join(systemInstallPath, appName))
+}
+
 func createNewSymlink(target, filename string) error {
 	if fileutils.TargetExists(filename) {
 		if err := os.Remove(filename); err != nil {
