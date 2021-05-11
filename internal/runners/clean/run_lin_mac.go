@@ -29,7 +29,7 @@ func (u *Uninstall) runUninstall() error {
 	return nil
 }
 
-func removeConfig(cfg configurable) error {
+func removeConfig(configPath string) error {
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func removeConfig(cfg configurable) error {
 		return err
 	}
 
-	return os.RemoveAll(cfg.ConfigPath())
+	return os.RemoveAll(configPath)
 }
 
 func removeInstall(installPath string) error {
