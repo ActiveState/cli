@@ -93,5 +93,11 @@ func InstalledPreparedFiles() []string {
 		files = append(files, filepath.Join(dir, constants.TrayLaunchFileName))
 	}
 
+	iconsDir, err := prependHomeDir(constants.IconsDir)
+	if err != nil {
+		logging.Error("Could not find icons directory: %v", err)
+	} else {
+		files = append(files, filepath.Join(iconsDir, constants.TrayIconFileName))
+	}
 	return files
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
 )
 
 type openKeyFn func(path string) (osutils.RegistryKey, error)
@@ -247,15 +248,46 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
-			dir, err := ioutil.TempDir("", "system*")
+			dir, err := ioutil.TempDir("", "temp_home*")
 			suite.NoError(err)
 
-			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir)))
 			expectStateToolInstallation(cp)
 			cp.Expect("State Tool Installed")
 			cp.ExpectExitCode(0)
+
+			assertApplicationDirContents(suite.Contains, dir)
+			assertBinDirContents(suite.Contains, ts.Dirs.Work)
+
+			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir)))
+			cp.Expect("Please Confirm")
+			cp.SendLine("y")
+			cp.ExpectExitCode(0)
+
+			assertApplicationDirContents(suite.NotContains, dir)
+			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
 	}
+}
+
+func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
+	homeDirFiles := listFilesOnly(dir)
+	assertFunc(homeDirFiles, "state-tray.desktop")
+	assertFunc(homeDirFiles, "state-tray.svg")
+}
+
+func assertBinDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
+	binFiles := listFilesOnly(dir)
+	assertFunc(binFiles, "state"+osutils.ExeExt)
+	assertFunc(binFiles, "state-tray"+osutils.ExeExt)
+	assertFunc(binFiles, "state-svc"+osutils.ExeExt)
+}
+func listFilesOnly(dir string) []string {
+	files := fileutils.ListDir(dir, true)
+	files = funk.Filter(files, func(f string) bool {
+		return !fileutils.IsDir(f)
+	}).([]string)
+	return funk.Map(files, filepath.Base).([]string)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
@@ -322,10 +354,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			expectStateToolInstallationWindows(cp)
 			cp.ExpectExitCode(0)
 
+			assertBinDirContents(suite.Contains, ts.Dirs.Work)
+
 			pathEnv, err := cmdEnv.get("PATH")
 			suite.Require().NoError(err, "could not get PATH")
 			paths := strings.Split(pathEnv, string(os.PathListSeparator))
 			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
+
+			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
+			cp.Expect("Please Confirm")
+			cp.SendLine("y")
+			cp.ExpectExitCode(0)
+
+			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
 	}
 }
