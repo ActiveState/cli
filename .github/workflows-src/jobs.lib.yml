@@ -106,6 +106,7 @@ steps:
   - #@ steps_build_systrayapp()
   - #@ steps_build_transition_update()
   - #@ steps_genupdate()
+  - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttest()
 #@ end

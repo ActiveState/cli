@@ -62,6 +62,9 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Generate Test Update
+      shell: bash
+      run: state run generate-test-update
     - name: Build Languages MSI
       if: runner.os == 'Windows'
       shell: bash
