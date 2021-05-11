@@ -57,12 +57,12 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}", *project.RepoURL)
+		return locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}, error received: {{.V1}}.", *project.RepoURL, err.Error())
 	}
 
 	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
 	if err != nil {
-		return locale.WrapError(err, "err_git_ensure_repo", "Clone project may not match ActiveState platform project. Please check your project repository URL.")
+		return locale.WrapError(err, "err_git_ensure_repo", "The activestate.yaml in the cloned repository does not match the project you are activating.")
 	}
 
 	err = moveFiles(tempDir, path)
