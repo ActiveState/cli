@@ -20,13 +20,19 @@ type Shortcut struct {
 	dispatch *ole.IDispatch
 }
 
-func New(dir, name, target string) (*Shortcut, error) {
+func New(dir, name, target string) *Shortcut {
+	return &Shortcut{
+		dir, name, target, nil,
+	}
+}
+
+func (s *Shortcut) Enable() error {
 	// ALWAYS errors with "Incorrect function", which can apparently be safely ignored..
 	ole.CoInitializeEx(0, ole.COINIT_APARTMENTTHREADED|ole.COINIT_SPEED_OVER_MEMORY)
 
 	oleShellObject, err := oleutil.CreateObject("WScript.Shell")
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not create shell object")
+		return errs.Wrap(err, "Could not create shell object")
 	}
 	defer oleShellObject.Release()
 
@@ -36,19 +42,20 @@ func New(dir, name, target string) (*Shortcut, error) {
 	}
 	defer wshell.Release()
 
-	filename := filepath.Join(dir, name+".lnk")
+	filename := filepath.Join(s.dir, s.name+".lnk")
 	logging.Debug("Creating Shortcut: %s", filename)
 	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", filename)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not call CreateShortcut on shell object")
+		return errs.Wrap(err, "Could not call CreateShortcut on shell object")
 	}
 
-	s := &Shortcut{dir, name, target, cs.ToIDispatch()}
-	if err := s.setTarget(target); err != nil {
-		return nil, errs.Wrap(err, "Could not set Shortcut target")
+	s.dispatch = cs.ToIDispatch()
+
+	if err := s.setTarget(s.target); err != nil {
+		return errs.Wrap(err, "Could not set Shortcut target")
 	}
 
-	return s, nil
+	return nil
 }
 
 func (s *Shortcut) setTarget(target string) error {
@@ -97,4 +104,8 @@ func (s *Shortcut) SetIconBlob(blob []byte) error {
 	}
 
 	return s.setIcon(filepath)
+}
+
+func (s *Shortcut) Path() string {
+	return filepath.Join(s.dir, s.name+".lnk")
 }

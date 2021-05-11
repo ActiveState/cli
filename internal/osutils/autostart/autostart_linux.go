@@ -55,20 +55,29 @@ func (a *App) Enable() error {
 	return nil
 }
 
-func (a *App) Disable() error {
+func (a *App) Path() (string, error) {
 	enabled, err := a.IsEnabled()
 	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
+		return "", errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
 	if !enabled {
-		return nil
+		return "", nil
 	}
 
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
+		return "", errs.Wrap(err, "Could not find autostart directory")
 	}
 	path := filepath.Join(dir, constants.TrayLaunchFileName)
+
+	return path, nil
+}
+
+func (a *App) Disable() error {
+	path, err := a.Path()
+	if err != nil {
+		return err
+	}
 
 	return os.Remove(path)
 }

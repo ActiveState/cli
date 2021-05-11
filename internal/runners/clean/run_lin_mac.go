@@ -50,7 +50,5 @@ func removeInstall(installDir string) error {
 		return errs.Wrap(err, "Could not determine OS specific launcher install path")
 	}
 
-	return installer.RemoveSystemFiles(appPath)
-
-	return nil
+	return installation.RemoveSystemFiles(appPath)
 }
