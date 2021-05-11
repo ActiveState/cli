@@ -20,7 +20,7 @@ func (u *Uninstall) runUninstall() error {
 		return locale.WrapError(err, "err_clean_install_dir", "Coul dnot remove installation directory")
 	}
 
-	err = removeConfig(u.cfg)
+	err = removeConfig(u.cfg.ConfigPath())
 	if err != nil {
 		return locale.WrapError(err, "err_clean_config_dir", "Could not remove config directory")
 	}
