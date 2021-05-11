@@ -251,7 +251,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			dir, err := ioutil.TempDir("", "temp_home*")
 			suite.NoError(err)
 
-			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir)))
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
 			expectStateToolInstallation(cp)
 			cp.Expect("State Tool Installed")
 			cp.ExpectExitCode(0)
@@ -276,8 +276,17 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
 	homeDirFiles := listFilesOnly(dir)
-	assertFunc(homeDirFiles, "state-tray.desktop")
-	assertFunc(homeDirFiles, "state-tray.svg")
+	switch runtime.GOOS {
+	case "linux":
+		assertFunc(homeDirFiles, "state-tray.desktop")
+		assertFunc(homeDirFiles, "state-tray.svg")
+	case "darwin":
+		assertFunc(homeDirFiles, "Info.plist")
+		assertFunc(homeDirFiles, "state-tray.icns")
+	case "windows":
+		assertFunc(homeDirFiles, "state-tray.lnk")
+		assertFunc(homeDirFiles, "state-tray.icns")
+	}
 }
 
 func assertBinDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
