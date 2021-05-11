@@ -2,29 +2,10 @@ package clean
 
 import (
 	"os"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
-
-func (suite *CleanTestSuite) TestConfig() {
-	runner := newConfig(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
-	err := runner.Run(&ConfigParams{})
-	suite.Require().NoError(err)
-	time.Sleep(2 * time.Second)
-
-	if fileutils.DirExists(suite.configPath) {
-		suite.Fail("config directory should not exist after clean config")
-	}
-	if !fileutils.DirExists(suite.cachePath) {
-		suite.Fail("cache directory should exist after clean config")
-	}
-	if !fileutils.FileExists(suite.installPath) {
-		suite.Fail("installed file should exist after clean config")
-	}
-}
 
 func (suite *CleanTestSuite) TestConfig_PromptNo() {
 	runner := newConfig(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))

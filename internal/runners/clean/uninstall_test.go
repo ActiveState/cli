@@ -4,12 +4,10 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
 
@@ -47,25 +45,6 @@ func (suite *CleanTestSuite) SetupTest() {
 	suite.cachePath, err = ioutil.TempDir("", "")
 	suite.Require().NoError(err)
 	suite.Require().DirExists(suite.cachePath)
-}
-
-func (suite *CleanTestSuite) TestUninstall() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{confirm: true}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
-	suite.Require().NoError(err)
-	runner.installPath = suite.installPath
-	err = runner.Run(&UninstallParams{})
-	suite.Require().NoError(err)
-	time.Sleep(2 * time.Second)
-
-	if fileutils.DirExists(suite.configPath) {
-		suite.Fail("config directory should not exist after uninstall")
-	}
-	if fileutils.DirExists(suite.cachePath) {
-		suite.Fail("cache directory should not exist after uninstall")
-	}
-	if fileutils.FileExists(suite.installPath) {
-		suite.Fail("installed file should not exist after uninstall")
-	}
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
