@@ -82,7 +82,7 @@ scripts:
           sudo apt update && sudo apt install "${pkgs}" -y
         fi
       }
-      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev bbtools
+      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
