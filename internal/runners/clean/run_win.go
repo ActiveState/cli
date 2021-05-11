@@ -5,15 +5,14 @@ package clean
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -53,9 +52,7 @@ func removePaths(dirs ...string) error {
 
 	args := []string{"/C", sf.Filename(), fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, dirs...)
-	cmd := exec.Command("cmd.exe", args...)
-	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
-	err = cmd.Start()
+	_, err = exeutils.ExecuteAndForget("cmd.exe", args...)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
