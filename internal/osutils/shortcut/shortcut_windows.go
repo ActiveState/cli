@@ -38,7 +38,7 @@ func (s *Shortcut) Enable() error {
 
 	wshell, err := oleShellObject.QueryInterface(ole.IID_IDispatch)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not interface with shell object")
+		return errs.Wrap(err, "Could not interface with shell object")
 	}
 	defer wshell.Release()
 

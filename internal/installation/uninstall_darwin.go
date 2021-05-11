@@ -2,6 +2,11 @@
 
 package installation
 
+import (
+	"filepath"
+	"os"
+)
+
 const (
 	appName = "ActiveState Desktop.app"
 )
