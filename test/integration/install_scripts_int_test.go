@@ -259,6 +259,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			assertApplicationDirContents(suite.Contains, dir)
 			assertBinDirContents(suite.Contains, ts.Dirs.Work)
 
+			// Only test the un-installation on local update
+			if !tt.TestInstall {
+				return
+			}
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir)))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
@@ -361,6 +365,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			paths := strings.Split(pathEnv, string(os.PathListSeparator))
 			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 
+			// Only test the un-installation on local update
+			if !tt.TestInstall {
+				return
+			}
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")

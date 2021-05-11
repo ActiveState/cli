@@ -127,13 +127,6 @@ func installedPreparedFiles() []string {
 		files = append(files, shortcut)
 	}
 
-	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
-	if err != nil {
-		logging.Error("Failed to set application dir: %v", err)
-	} else {
-		files = append(files, filepath.Join(dir, constants.TrayLaunchFileName))
-	}
-
 	return files
 }
 
@@ -142,16 +135,12 @@ func InstalledPreparedFiles() []string {
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-	shortcut, err := autostart.New(name, exec).Path()
+	sc, err := autostart.New(name, exec).Path()
 	if err != nil {
 		logging.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if shortcut != "" {
-		files = append(files, shortcut)
+	} else if sc != "" {
+		files = append(files, sc)
 	}
-
-	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
-
-	files = append(files, shortcut.New(dir, name, exec).Path())
 
 	return files
 }

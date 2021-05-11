@@ -52,7 +52,7 @@ func (a *App) IsEnabled() (bool, error) {
 }
 
 func (a *App) Path() (string, error) {
-	return a.shortcutFileName(), nil
+	return a.shortcutFilename(), nil
 }
 
 func (a *App) shortcutFilename() string {
