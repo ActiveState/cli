@@ -71,6 +71,7 @@ scripts:
     language: bash
     description: Install OS specific deps
     value: |
+      sudo apt-get update
       aptin() {
         for pkg in "${@}"; do
           dpkg -s "${pkg}" &>/dev/null && continue
