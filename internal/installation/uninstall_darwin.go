@@ -3,8 +3,8 @@
 package installation
 
 import (
-	"filepath"
 	"os"
+	"path/filepath"
 )
 
 const (
