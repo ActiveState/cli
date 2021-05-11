@@ -79,7 +79,7 @@ scripts:
         done
         if [ -n "${pkgs}" ]; then 
           echo Installing packages "${pkgs}"
-          sudo apt update && sudo apt install "${pkgs}" -y
+          sudo apt-get update && sudo apt-get install ${pkgs} -y
         fi
       }
       aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
