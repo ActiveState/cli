@@ -51,6 +51,10 @@ func (a *App) IsEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
+func (a *App) Path() (string, error) {
+	return a.shortcutFileName(), nil
+}
+
 func (a *App) shortcutFilename() string {
 	name := formattedName(a.Name)
 	return filepath.Join(startupPath, name+".lnk")
