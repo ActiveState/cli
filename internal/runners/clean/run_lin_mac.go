@@ -5,6 +5,7 @@ package clean
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -14,12 +15,12 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = removeInstallDir(u.installPath)
+	err = removeInstall(u.installPath)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_install_dir", "Coul dnot remove installation directory")
 	}
 
-	err = removeConfig(u.cfg.ConfigPath())
+	err = removeConfig(u.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_config_dir", "Could not remove config directory")
 	}
