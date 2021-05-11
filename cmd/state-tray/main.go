@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -32,11 +31,7 @@ const (
 )
 
 func main() {
-	var verbose bool
-	flag.BoolVar(&verbose, "v", verbose, "set logging to verbose")
-	flag.Parse()
-
-	verbose = os.Getenv("VERBOSE") != "" || verbose
+	verbose := os.Getenv("VERBOSE") != ""
 
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
