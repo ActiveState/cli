@@ -67,6 +67,7 @@ scripts:
     description: Install OS specific deps
     value: |
       aptin() {
+        [ $# -gt 0 ] && sudo apt update
         for pkg in "${@}"; do
           dpkg -s "${pkg}" &>/dev/null && continue
           echo Installing package "${pkg}" && sudo apt install "${pkg}"
