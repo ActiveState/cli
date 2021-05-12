@@ -33,19 +33,13 @@ func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
 }
 
 func needsUpdate(mdl *model.SvcModel) bool {
-	for i := 1; i <= 3; i++ {
-		availableUpdate, err := mdl.CheckUpdate()
-		if err != nil {
-			time.Sleep(time.Second * 10 * time.Duration(i))
-			continue
-		}
-
-		return availableUpdate.Available
+	availableUpdate, err := mdl.CheckUpdate()
+	if err != nil {
+		logging.Error("Cannot contact servers to determine the latest state version")
+		return false
 	}
 
-	logging.Error("Cannot contact servers to determine the latest state version")
-
-	return false
+	return availableUpdate.Available
 }
 
 type updateNotice struct {
