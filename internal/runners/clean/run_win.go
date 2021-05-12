@@ -27,7 +27,7 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	u.out.Print(locale.Tl("clean_message", "Attempting to remove State Tool and related files"))
+	u.out.Print(locale.Tr("clean_message_windows", u.installPath, u.cfg.ConfigPath()))
 	return nil
 }
 

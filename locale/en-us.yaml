@@ -1314,6 +1314,11 @@ clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
+clean_message_windows:
+  other: |
+    Attempting to remove State Tool and related files.
+    To verify that the State Tool has been uninstalled please check the files at: [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET].
+    If the files have not been removed please ensure no State Tool processes are running and try [ACTIONABLE]state clean uninstall[/RESET] again
 languages_cmd_description:
   other: View the languages of a project
 languages_install_cmd_description:
