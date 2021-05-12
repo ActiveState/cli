@@ -81,6 +81,7 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
+	Config        Config        `yaml:"config,omitempty"`
 	Platforms     []Platform    `yaml:"platforms,omitempty"`
 	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
@@ -93,6 +94,11 @@ type Project struct {
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
 	parsedVersion string
+}
+
+// Config covers the config structure of our yaml
+type Config struct {
+	Image Image `yaml:"image,omitempty"`
 }
 
 // Platform covers the platform structure of our yaml
@@ -391,6 +397,7 @@ type Script struct {
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
 	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Image       Image       `yaml:"image,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}
@@ -429,6 +436,34 @@ func MakeScriptsFromConstrainedEntities(items []ConstrainedEntity) (scripts []*S
 		}
 	}
 	return scripts
+}
+
+// Image covers the image structure, which goes under Script
+type Image struct {
+	Name        string      `yaml:"name"`
+	Constraints Constraint  `yaml:"constraints,omitempty"`
+	Conditional Conditional `yaml:"if"`
+}
+
+// ID returns the image name
+func (i Image) ID() string {
+	return i.Name
+}
+
+func (i Image) ConstraintsFilter() Constraint {
+	return i.Constraints
+}
+
+func (i Image) ConditionalFilter() Conditional {
+	return i.Conditional
+}
+
+// MakeImageFromConstrainedEntity unboxes ConstraintedEntity as an Image
+func MakeImageFromConstrainedEntity(v ConstrainedEntity) *Image {
+	if o, ok := v.(Image); ok {
+		return &o
+	}
+	return nil
 }
 
 // Job covers the job structure, which goes under Project

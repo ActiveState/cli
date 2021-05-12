@@ -52,6 +52,30 @@ type Project struct {
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
 
+func (p *Project) Config() *Config { return &Config{p} }
+
+type Config struct {
+	project *Project
+}
+
+func (c *Config) Image() *Image {
+	constrained, err := constraints.FilterUnconstrained(pConditional, []projectfile.ConstrainedEntity{c.project.projectfile.Config.Image})
+	if err != nil {
+		logging.Warning("Could not filter unconstrained image: %v", err)
+	}
+	if len(constrained) == 0 {
+		return nil
+	}
+	img := projectfile.MakeImageFromConstrainedEntity(constrained[0])
+	if img == nil || img.Name == "" {
+		return nil
+	}
+	return &Image{
+		img,
+		c.project,
+	}
+}
+
 // Platforms gets platforms
 func (p *Project) Platforms() []*Platform {
 	platforms := []*Platform{}
@@ -653,6 +677,25 @@ func (script *Script) Raw() string {
 // Standalone returns if the script is standalone or not
 func (script *Script) Standalone() bool { return script.script.Standalone }
 
+// Image returns the image used by this script (if any)
+func (script *Script) Image() *Image {
+	constrained, err := constraints.FilterUnconstrained(pConditional, []projectfile.ConstrainedEntity{script.script.Image})
+	if err != nil {
+		logging.Warning("Could not filter unconstrained image: %v", err)
+	}
+	if len(constrained) == 0 {
+		return nil
+	}
+	img := projectfile.MakeImageFromConstrainedEntity(constrained[0])
+	if img == nil || img.Name == "" {
+		return nil
+	}
+	return &Image{
+		img,
+		script.project,
+	}
+}
+
 // cacheFile allows this script to have an associated file
 func (script *Script) setCachedFile(filename string) {
 	script.script.Filename = filename
@@ -661,6 +704,19 @@ func (script *Script) setCachedFile(filename string) {
 // filename returns the name of the file associated with this script
 func (script *Script) cachedFile() string {
 	return script.script.Filename
+}
+
+// Image covers the image structure
+type Image struct {
+	image   *projectfile.Image
+	project *Project
+}
+
+// Source returns the source projectfile
+func (i *Image) Source() *projectfile.Project { return i.project.projectfile }
+
+func (i *Image) Name() string {
+	return i.image.Name
 }
 
 // Job covers the command structure

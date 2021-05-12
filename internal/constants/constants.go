@@ -81,6 +81,9 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 // NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
+// DockerLabelCommitEnvVarName is the name of the docker image that's currently being used
+const DockerLabelCommitEnvVarName = "ACTIVESTATE_DOCKER_LABEL_COMMIT"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 

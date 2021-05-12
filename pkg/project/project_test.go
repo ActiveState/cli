@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -299,6 +298,48 @@ func (suite *ProjectTestSuite) TestSecrets() {
 
 	// Value and Save not tested here as they require refactoring so we can test against interfaces (out of scope at this time)
 	// https://www.pivotaltracker.com/story/show/166586988
+}
+
+func (suite *ProjectTestSuite) TestConfigImage() {
+	suite.Run("Fields properly nilled", func() {
+		projectfile.Reset()
+		prj, err := project.New(&projectfile.Project{}, nil)
+		suite.Require().NoError(err)
+		suite.NotNil(prj.Config())
+		suite.Nil(prj.Config().Image())
+	})
+
+	suite.Run("Image name is properly set", func() {
+		projectfile.Reset()
+		prj, err := project.New(&projectfile.Project{
+			Project: "https://platform.activestate.com/owner/project?branch=main&commitID=00010001-0001-0001-0001-000100010001",
+			Config: projectfile.Config{
+				Image: projectfile.Image{
+					Name: "image",
+				},
+			},
+		}, nil)
+		suite.Require().NoError(prj.Source().Init()) // Required for the commitID to be set
+		suite.Require().NoError(err)
+		suite.Require().NotNil(prj.Config().Image())
+		suite.Equal("image", prj.Config().Image().Name())
+		suite.Equal("image-00010001-0001-0001-0001-000100010001", prj.Config().Image().UniqueName())
+	})
+
+	suite.Run("Image isn't set due to conditional", func() {
+		projectfile.Reset()
+		prj, err := project.New(&projectfile.Project{
+			Project: "https://platform.activestate.com/owner/project?branch=main&commitID=00010001-0001-0001-0001-000100010001",
+			Config: projectfile.Config{
+				Image: projectfile.Image{
+					Name:        "image",
+					Conditional: "false",
+				},
+			},
+		}, nil)
+		suite.Require().NoError(err)
+		suite.Nil(prj.Config().Image())
+	})
 }
 
 func Test_ProjectTestSuite(t *testing.T) {
