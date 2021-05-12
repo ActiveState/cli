@@ -33,6 +33,10 @@ func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
 }
 
 func CommitsBehind(p *project.Project) (int, error) {
+	if p.IsHeadless() {
+		return 0, nil
+	}
+
 	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
 	if err != nil {
 		return 0, locale.WrapError(err, "Could not get branch information for {{.V0}}/{{.V1}}", p.Owner(), p.Name())
