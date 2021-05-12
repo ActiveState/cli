@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -63,7 +64,7 @@ scripts:
 
 	cfg, err := config.Get()
 	require.NoError(t, err)
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -98,7 +99,7 @@ func TestEnvIsSet(t *testing.T) {
 	require.NoError(t, err)
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+		scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 	})
@@ -139,7 +140,7 @@ scripts:
 	require.NoError(t, err)
 
 	out := outputhelper.NewCatcher()
-	scriptRun := New(out, subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.Get(), out, subshell.New(cfg), proj, cfg)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -164,7 +165,7 @@ scripts:
 	cfg, err := config.Get()
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -189,7 +190,7 @@ scripts:
 	cfg, err := config.Get()
 	require.NoError(t, err)
 
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -236,7 +237,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -325,7 +326,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	require.NoError(t, err)
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := New(outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+		scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

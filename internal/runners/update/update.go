@@ -53,7 +53,7 @@ func (u *Update) Run(params *Params) error {
 	}
 	up, err := m.InitiateDeferredUpdate(channel, "")
 	if err != nil {
-		return errs.Wrap(err, "Update failed.")
+		return locale.WrapError(err, "err_update_initiate", "Failed to initiate update.")
 	}
 	if up.Channel == "" && up.Version == "" {
 		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))

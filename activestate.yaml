@@ -72,10 +72,15 @@ scripts:
     description: Install OS specific deps
     value: |
       aptin() {
+        pkgs=""
         for pkg in "${@}"; do
           dpkg -s "${pkg}" &>/dev/null && continue
-          echo Installing package "${pkg}" && sudo apt install "${pkg}"
+          pkgs="$pkgs ${pkg}"
         done
+        if [ -n "${pkgs}" ]; then 
+          echo Installing packages "${pkgs}"
+          sudo apt-get update && sudo apt-get install ${pkgs} -y
+        fi
       }
       aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
   - name: preprocess
@@ -130,8 +135,11 @@ scripts:
     standalone: true
     language: bash
     value: |
+      set -e
       echo "Building State Tool"
       $scripts.build.path()
+      echo "Building State Installer"
+      $scripts.build-installer.path()
       echo "Building State Service"
       $scripts.build-svc.path()
       echo "Building State Tray App"
@@ -206,6 +214,8 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
+
+      echo "If using tokens make sure to run 'state run aws-mfa-auth' on TheHomeRepot first."
 
       go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts

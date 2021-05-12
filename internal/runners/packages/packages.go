@@ -119,7 +119,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// refresh runtime
-	err = runbits.RefreshRuntime(out, pj, cfg.CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(authentication, out, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}

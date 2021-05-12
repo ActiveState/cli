@@ -107,6 +107,7 @@ scripts:
       mkdir -p ./build/test/state-install/bin
       mkdir -p ./build/test-update
       TEST_VERSION="99.99.9999"
+      TEST_CHANNEL=${1:-test-channel}
 
       TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
       TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
@@ -125,8 +126,8 @@ scripts:
 
       go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
 
-      echo "compile test-channel update"
-      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=test-channel" ./internal/testhelpers/installation/fakeversioncmd
+      echo "compile ${TEST_CHANNEL} update"
+      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
@@ -136,4 +137,4 @@ scripts:
         cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
       fi
 
-      go run scripts/update-generator/main.go -b test-channel -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      go run scripts/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
