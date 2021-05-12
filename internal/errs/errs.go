@@ -81,6 +81,10 @@ func Join(err error, sep string) *WrapperError {
 	return Wrap(err, strings.Join(message, sep))
 }
 
+func JoinMessage(err error) string {
+	return Join(err, ": ").Error()
+}
+
 func AddTips(err error, tips ...string) error {
 	if _, ok := err.(ErrorTips); !ok {
 		// use original error message with identifier in case this bubbles all the way up

@@ -21,7 +21,11 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
-	return &SvcModel{ctx, client}, nil
+	return NewSvcModelWithClient(ctx, client), nil
+}
+
+func NewSvcModelWithClient(ctx context.Context, client *gqlclient.Client) *SvcModel {
+	return &SvcModel{ctx, client}
 }
 
 func (m *SvcModel) StateVersion() (*graph.Version, error) {
