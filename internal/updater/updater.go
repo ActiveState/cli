@@ -1,8 +1,11 @@
 package updater
 
 import (
+	"bufio"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -53,21 +56,17 @@ func (u *AvailableUpdate) prepare() (string, string, error) {
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred() (int, error) {
+func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
 	installerPath, installTargetPath, err := u.prepare()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, installTargetPath)
+	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath})
 	if err != nil {
-		return 0, errs.Wrap(err, "Could not start installer")
+		return nil, errs.Wrap(err, "Could not start installer")
 	}
 
-	if proc == nil {
-		return 0, errs.Wrap(err, "Could not obtain process information for installer")
-	}
-
-	return proc.Pid, nil
+	return proc, nil
 }
 
 func (u *AvailableUpdate) InstallBlocking() error {
@@ -82,4 +81,40 @@ func (u *AvailableUpdate) InstallBlocking() error {
 	}
 
 	return nil
+}
+
+// InstallWithProgress will fetch the update and run its installer
+func (u *AvailableUpdate) InstallWithProgress(progressCb func(string, bool)) (*os.Process, error) {
+	installerPath, installTargetPath, err := u.prepare()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not download update")
+	}
+
+	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
+		var stdout io.ReadCloser
+		var stderr io.ReadCloser
+		if stderr, err = cmd.StderrPipe(); err != nil {
+			return errs.Wrap(err, "Could not obtain stderr pipe")
+		}
+		if stdout, err = cmd.StdoutPipe(); err != nil {
+			return errs.Wrap(err, "Could not obtain stderr pipe")
+		}
+		go func() {
+			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
+			for scanner.Scan() {
+				progressCb(scanner.Text(), false)
+			}
+			progressCb(scanner.Text(), true)
+		}()
+		return nil
+	})
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not start installer")
+	}
+
+	if proc == nil {
+		return nil, errs.Wrap(err, "Could not obtain process information for installer")
+	}
+
+	return proc, nil
 }

@@ -13,6 +13,7 @@ import (
 )
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
@@ -38,7 +39,7 @@ func New(p primeable, cmdList string) *CmdCall {
 		subshell:  p.Subshell(),
 		cmdList:   cmdList,
 		p:         p,
-		scriptrun: scriptrun.New(p.Output(), p.Subshell(), p.Project(), p.Config()),
+		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config()),
 	}
 }
 

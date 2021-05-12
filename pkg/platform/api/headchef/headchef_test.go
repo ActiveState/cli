@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	headchefMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 var maxWait = time.Second * 2
@@ -32,9 +32,7 @@ func (suite *HeadchefTestSuite) AfterTest(suiteName, testName string) {
 func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headchef.BuildStatus {
 	suite.mock.MockBuilds(rt)
 
-	auth := auth.Get()
-
-	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef), auth.ClientAuth())
+	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef), authentication.Get().ClientAuth())
 	buildRequest := &headchef_models.V1BuildRequest{
 		Requester: &headchef_models.V1Requester{},
 	}
