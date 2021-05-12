@@ -27,7 +27,7 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	u.out.Print(locale.T("clean_success_message"))
+	u.out.Print(locale.Tl("clean_message", "Attempting to remove State Tool and related files"))
 	return nil
 }
 
