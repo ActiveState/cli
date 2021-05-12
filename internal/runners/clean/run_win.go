@@ -3,7 +3,9 @@
 package clean
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/gobuffalo/packr"
 
@@ -39,6 +41,17 @@ func removeInstall(cfg configurable, installPath string) error {
 		}
 		if exitCode != 0 {
 			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+		}
+	}
+
+	var aggErr error
+	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
+		err := os.Remove(info.Exec())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
 		}
 	}
 
