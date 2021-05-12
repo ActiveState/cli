@@ -3,6 +3,7 @@
 package installation
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,5 +11,7 @@ import (
 )
 
 func RemoveSystemFiles(systemInstallPath string) error {
-	return os.RemoveAll(filepath.Join(systemInstallPath, constants.MacOSApplicationName))
+	appDir := filepath.Join(systemInstallPath, constants.MacOSApplicationName)
+	fmt.Printf("removing %s\n", appDir)
+	return os.RemoveAll(appDir)
 }
