@@ -130,8 +130,11 @@ scripts:
     standalone: true
     language: bash
     value: |
+      set -e
       echo "Building State Tool"
       $scripts.build.path()
+      echo "Building State Installer"
+      $scripts.build-installer.path()
       echo "Building State Service"
       $scripts.build-svc.path()
       echo "Building State Tray App"
@@ -206,6 +209,8 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
+
+      echo "If using tokens make sure to run 'state run aws-mfa-auth' on TheHomeRepot first."
 
       go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts

@@ -54,7 +54,7 @@ func run() error {
 		return errs.New("Could not find: %s", svcInfo.Exec())
 	}
 
-	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), "start"); err != nil {
+	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), []string{"start"}); err != nil {
 		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
 	}
 
