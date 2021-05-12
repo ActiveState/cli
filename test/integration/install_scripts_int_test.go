@@ -266,8 +266,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cp.SendLine("y")
 			cp.ExpectExitCode(0)
 
-			fmt.Println(cp.TrimmedSnapshot())
-
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
@@ -276,7 +274,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
 	homeDirFiles := listFilesOnly(dir)
-	fmt.Printf("checking home dir %s\n", dir)
 	switch runtime.GOOS {
 	case "linux":
 		assertFunc(homeDirFiles, "state-tray.desktop")
@@ -296,7 +293,6 @@ func assertBinDirContents(assertFunc func(s, c interface{}, msg ...interface{}) 
 	assertFunc(binFiles, "state-tray"+osutils.ExeExt)
 	assertFunc(binFiles, "state-svc"+osutils.ExeExt)
 }
-
 func listFilesOnly(dir string) []string {
 	files := fileutils.ListDir(dir, true)
 	files = funk.Filter(files, func(f string) bool {
