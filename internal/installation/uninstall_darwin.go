@@ -5,12 +5,10 @@ package installation
 import (
 	"os"
 	"path/filepath"
-)
 
-const (
-	appName = "ActiveState Desktop.app"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func RemoveSystemFiles(systemInstallPath string) error {
-	return os.RemoveAll(filepath.Join(systemInstallPath, appName))
+	return os.RemoveAll(filepath.Join(systemInstallPath, constants.MacOSApplicationName))
 }
