@@ -53,7 +53,7 @@ func runScript(scriptName, path string) error {
 		return err
 	}
 
-	_, err = exeutils.ExecuteAndForget("cmd.exe", "/C", sf.Filename(), path)
+	_, err = exeutils.ExecuteAndForget("cmd.exe", []string{"/C", sf.Filename(), path})
 	if err != nil {
 		return err
 	}
