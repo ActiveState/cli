@@ -4,7 +4,7 @@ REM In the case the State Tool, the binary cannot be removed while it is running
 REM In the case of the config directory this is the log file, which 
 REM remains open and inaccessable while the State Tool is running.
 REM The expected arguments are the process ID, the executable name
-REM and a list of directories to be removed when the process has completed
+REM and a list of paths to be removed when the process has completed
 
 set pid=%1
 shift
