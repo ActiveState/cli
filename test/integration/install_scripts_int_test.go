@@ -266,6 +266,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cp.SendLine("y")
 			cp.ExpectExitCode(0)
 
+			fmt.Println(cp.TrimmedSnapshot())
+
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
