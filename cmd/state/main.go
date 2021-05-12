@@ -84,8 +84,9 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
+		silent := isSilent(err)
 		exitCode, err = unwrapError(err)
-		if !isSilent(err) {
+		if !silent {
 			out.Error(err)
 		}
 
