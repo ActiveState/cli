@@ -6,17 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.29.1
+## 0.29.0
 
 ### Changed
 
 - Enhanced error reporting for errors that occur when cloning a project's
   associated git repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
-
-## 0.29.0
-
-### Changed
-
 - The State Tool now comes with the ActiveState Desktop application, which is
   currently a system tray application.
 - We've replaced the auto updating system with a manual updating system, updates
