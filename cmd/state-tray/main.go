@@ -75,7 +75,7 @@ func run() error {
 
 	mUpdate := systray.AddMenuItem(
 		locale.Tl("tray_update_title", "Update Available"),
-		locale.Tl("tray_update_tooltip", "Update your State Tool installation"),
+		locale.Tl("tray_update_tooltip", "Update your ActiveState Desktop installation"),
 	)
 	mUpdate.Hide()
 
