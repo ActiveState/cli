@@ -4,10 +4,14 @@ package clean
 
 import (
 	"fmt"
-	"os/exec"
 
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
@@ -16,7 +20,28 @@ func removeConfig(cfg configurable) error {
 	return runScript("removeConfig", cfg.ConfigPath())
 }
 
-func removeInstall(installPath string) error {
+func removeInstall(cfg configurable, installPath string) error {
+	// On Windows we need to halt the state tray and the state service before we can remove them
+	svcInfo := appinfo.SvcApp(installPath)
+	trayInfo := appinfo.TrayApp(installPath)
+
+	// Todo: https://www.pivotaltracker.com/story/show/177585085
+	// Yes this is awkward right now
+	if err := installation.StopTrayApp(cfg); err != nil {
+		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
+	}
+
+	// Stop state-svc before accessing its files
+	if fileutils.FileExists(svcInfo.Exec()) {
+		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
+		if err != nil {
+			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
+		}
+		if exitCode != 0 {
+			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+		}
+	}
+
 	return runScript("removeInstall", installPath)
 }
 
@@ -28,8 +53,7 @@ func runScript(scriptName, path string) error {
 		return err
 	}
 
-	cmd := exec.Command("cmd.exe", "/C", sf.Filename(), path)
-	err = cmd.Start()
+	_, err = exeutils.ExecuteAndForget("cmd.exe", "/C", sf.Filename(), path)
 	if err != nil {
 		return err
 	}

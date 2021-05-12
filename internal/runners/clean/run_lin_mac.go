@@ -29,7 +29,7 @@ func removeConfig(cfg configurable) error {
 	return os.RemoveAll(cfg.ConfigPath())
 }
 
-func removeInstall(installDir string) error {
+func removeInstall(_ configurable, installDir string) error {
 	stateInfo := appinfo.StateApp(installDir)
 	stateSvcInfo := appinfo.SvcApp(installDir)
 	stateTrayInfo := appinfo.TrayApp(installDir)

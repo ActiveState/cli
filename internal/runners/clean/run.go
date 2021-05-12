@@ -16,7 +16,7 @@ func (u *Uninstall) runUninstall() error {
 		u.reportError(locale.Tl("uninstall_remove_cache_err", "Failed to remove cache directory."), err)
 	}
 
-	err = removeInstall(u.installDir)
+	err = removeInstall(u.cfg, u.installDir)
 	if err != nil {
 		u.reportError(locale.Tl("uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir), err)
 	}
