@@ -63,7 +63,7 @@ func (suite *CleanTestSuite) TestUninstall() {
 
 	// On windows the files are deleted in the background, so we have to wait for that process to finish
 	if runtime.GOOS == "windows" {
-		time.Sleep(2 * time.Second)
+		time.Sleep(3 * time.Second)
 	}
 
 	if fileutils.DirExists(suite.configPath) {
