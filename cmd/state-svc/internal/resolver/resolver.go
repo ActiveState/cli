@@ -50,11 +50,22 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 		return nil, errs.Wrap(err, "Failed to check for update")
 	}
 
-	av := graph.AvailableUpdate{
-		Available: update != nil,
+	available := true
+	if update == nil {
+		available = false
+		update = &updater.AvailableUpdate{}
 	}
 
-	return &av, nil
+	availableUpdate := graph.AvailableUpdate{
+		Available: available,
+		Version:   update.Version,
+		Channel:   update.Channel,
+		Path:      update.Path,
+		Platform:  update.Platform,
+		Sha256:    update.Sha256,
+	}
+
+	return &availableUpdate, nil
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {

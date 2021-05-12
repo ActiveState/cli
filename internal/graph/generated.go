@@ -3,7 +3,12 @@
 package graph
 
 type AvailableUpdate struct {
-	Available bool `json:"available"`
+	Available bool   `json:"available"`
+	Version   string `json:"version"`
+	Channel   string `json:"channel"`
+	Path      string `json:"path"`
+	Platform  string `json:"platform"`
+	Sha256    string `json:"sha256"`
 }
 
 type DeferredUpdate struct {

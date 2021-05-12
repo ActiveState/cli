@@ -12,6 +12,11 @@ type StateVersion {
 
 type AvailableUpdate {
   available: Boolean!
+  version: String!
+  channel: String!
+  path: String!
+  platform: String!
+  sha256: String!
 }
 
 type DeferredUpdate {
