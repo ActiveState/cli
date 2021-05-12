@@ -33,7 +33,11 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	cp := ts.Spawn("clean", "uninstall")
 	cp.Expect("You are about to remove")
 	cp.SendLine("y")
-	cp.ExpectLongString("Successfully removed State Tool and related files")
+	if runtime.GOOS == "windows" {
+		cp.ExpectLongString("Attempting to remove State Tool and related files")
+	} else {
+		cp.ExpectLongString("Successfully removed State Tool and related files")
+	}
 	cp.ExpectExitCode(0)
 
 	if runtime.GOOS == "windows" {
