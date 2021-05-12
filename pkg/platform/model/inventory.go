@@ -67,7 +67,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	}
 
 	lim := int64(32)
-	client := inventory.Get(authentication.Get())
+	client := inventory.Get()
 
 	params := inventory_operations.NewGetIngredientVersionAuthorsParams()
 	params.SetIngredientID(*ingredID)
@@ -86,7 +86,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
 	lim := int64(limit)
 
-	client := inventory.Get(authentication.Get())
+	client := inventory.Get()
 
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(name)
@@ -113,7 +113,7 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 
 func FetchPlatforms() ([]*Platform, error) {
 	if platformCache == nil {
-		client := inventory.Get(authentication.Get())
+		client := inventory.Get()
 
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
@@ -305,7 +305,7 @@ func FetchLanguageVersions(name string) ([]string, error) {
 }
 
 func FetchLanguages() ([]Language, error) {
-	client := inventory.Get(authentication.Get())
+	client := inventory.Get()
 
 	params := inventory_operations.NewGetNamespaceIngredientsParams()
 	params.SetNamespace("language")
@@ -330,7 +330,7 @@ func FetchLanguages() ([]Language, error) {
 }
 
 func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.IngredientVersion, error) {
-	client := inventory.Get(authentication.Get())
+	client := inventory.Get()
 
 	params := inventory_operations.NewGetIngredientVersionsParams()
 	params.SetIngredientID(*ingredientID)
