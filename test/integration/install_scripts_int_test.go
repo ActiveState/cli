@@ -241,15 +241,15 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
-			ts := e2e.New(suite.T(), false)
+			dir, err := ioutil.TempDir("", "temp_home*")
+			suite.NoError(err)
+
+			ts := e2e.New(suite.T(), false, fmt.Sprintf("HOME=%s", dir), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
-			dir, err := ioutil.TempDir("", "temp_home*")
-			suite.NoError(err)
-
-			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
 			expectStateToolInstallation(cp)
 			cp.Expect("State Tool Installed")
 			cp.ExpectExitCode(0)
@@ -261,7 +261,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			if !tt.TestInstall {
 				return
 			}
-			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"), e2e.AppendEnv(fmt.Sprintf("HOME=%s", dir)))
+			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
 			cp.ExpectExitCode(0)
