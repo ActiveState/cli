@@ -52,7 +52,7 @@ func removePaths(dirs ...string) error {
 
 	args := []string{"/C", sf.Filename(), fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, dirs...)
-	_, err = exeutils.ExecuteAndForget("cmd.exe", args...)
+	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
