@@ -81,7 +81,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		return locale.WrapError(err, "err_could_not_get_commit_behind_count")
 	}
 	if behind > 0 {
-		return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run state pull to update your local project and try again", strconv.Itoa(behind))
+		return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
 	}
 
 	parentCommitID := pj.CommitUUID()
