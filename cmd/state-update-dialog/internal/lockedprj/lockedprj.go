@@ -9,32 +9,34 @@ import (
 )
 
 type LockedCheckout struct {
+	Name    string
 	Path    string // The path at which the project is checked out
 	Channel string // The channel at which the State Tool version is locked at
 	Version string // The version at which the State Tool is locked at
 }
 
-func LockedProjectMapping(cfg projectfile.ConfigGetter) map[string][]LockedCheckout {
+func LockedProjectMapping(cfg projectfile.ConfigGetter) []LockedCheckout {
 	localProjects := projectfile.GetProjectFileMapping(cfg)
-	lockedProjects := make(map[string][]LockedCheckout)
+	var lockedProjects []LockedCheckout
 	for name, prjs := range localProjects {
-
-		var locks []LockedCheckout
 		for _, prj := range prjs {
-			if prj.VersionBranch() != "" && prj.Version() != "" {
-				ver, err := version.ParseStateToolVersion(prj.Version())
-				if err != nil {
-					logging.Error("Failed to parse State Tool version %s: %v", prj.Version, err)
-				}
-				// We can ignore projects that are locked to a multi-file update version
-				if version.IsMultiFileUpdate(ver) {
-					continue
-				}
-				locks = append(locks, LockedCheckout{filepath.Dir(prj.Path()), prj.VersionBranch(), prj.Version()})
+			if prj.Version() == "" {
+				continue
 			}
-		}
-		if len(locks) > 0 {
-			lockedProjects[name] = locks
+			ver, err := version.ParseStateToolVersion(prj.Version())
+			if err != nil {
+				logging.Error("Failed to parse State Tool version %s: %v", prj.Version, err)
+			}
+			// We can ignore projects that are locked to a multi-file update version
+			if version.IsMultiFileUpdate(ver) {
+				continue
+			}
+			lockedProjects = append(lockedProjects, LockedCheckout{
+				name,
+				filepath.Dir(prj.Path()),
+				prj.VersionBranch(),
+				prj.Version(),
+			})
 		}
 	}
 	return lockedProjects

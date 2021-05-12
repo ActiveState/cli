@@ -106,7 +106,7 @@ func ResolveUniquePath(path string) (string, error) {
 	if err != nil {
 		// GetLongPathName can fail on unsupported file-systems or if evalPath is not a physical path.
 		// => just log the error (unless err due to file not existing) and resume with resolved path
-		if !errors.Is(err, os.ErrNotExist) {
+		if !errors.Is(err, os.ErrNotExist) && !errs.Matches(err, os.ErrNotExist) {
 			logging.Error("could not resolve long version of %s: %v", evalPath, err)
 		}
 		return filepath.Clean(evalPath), nil

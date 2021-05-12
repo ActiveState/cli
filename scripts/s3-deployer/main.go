@@ -53,12 +53,25 @@ func run() {
 	}
 }
 
+type logger struct{}
+
+func (l *logger) Log(v ...interface{}) {
+	fmt.Printf("AWS Log: %v", v)
+}
+
 func createSession() {
 	// Specify profile to load for the session's config
 	var err error
+	var verboseErr = true
+	var logLevel = aws.LogDebug
+	_ = logLevel
 	sess, err = session.NewSessionWithOptions(session.Options{
-		Profile: awsProfileName,
-		Config:  aws.Config{Region: aws.String(awsRegionName)},
+		Config: aws.Config{
+			CredentialsChainVerboseErrors: &verboseErr,
+			Region:                        aws.String(awsRegionName),
+			/*Logger:                        &logger{},*/
+			/*LogLevel:                      &logLevel,*/
+		},
 	})
 	if err != nil {
 		log.Fatalf("failed to create session, %s", err.Error())

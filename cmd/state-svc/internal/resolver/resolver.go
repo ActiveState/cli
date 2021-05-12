@@ -60,7 +60,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
-	pid, err := up.InstallDeferred()
+	proc, err := up.InstallDeferred()
 	if err != nil {
 		return nil, errs.Wrap(err, "Deferring update failed: %s", errs.Join(err, ": "))
 	}
@@ -68,7 +68,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), pid),
+		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
 	}, nil
 }
 

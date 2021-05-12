@@ -923,6 +923,9 @@ func SymlinkTarget(symlink string) (string, error) {
 func ListDir(sourcePath string, includeDirs bool) []string {
 	result := []string{}
 	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return errs.Wrap(err, "Could not walk path: %s", path)
+		}
 		if includeDirs == false && f.IsDir() {
 			return nil
 		}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
@@ -34,7 +35,12 @@ func main() {
 }
 
 func run() error {
-	a := NewApp()
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize config")
+	}
+
+	a := NewApp(cfg)
 	if err := a.Start(); err != nil {
 		return errs.Wrap(err, "Could not start application")
 	}

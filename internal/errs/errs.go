@@ -83,7 +83,9 @@ func Join(err error, sep string) *WrapperError {
 
 func AddTips(err error, tips ...string) error {
 	if _, ok := err.(ErrorTips); !ok {
-		err = newError("wrapped error to add tips", err)
+		// use original error message with identifier in case this bubbles all the way up
+		// this helps us identify it on rollbar without affecting the UX too much
+		err = newError(err.Error()+" (wrapped)", err)
 	}
 	err.(ErrorTips).AddTips(tips...)
 	return err

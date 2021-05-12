@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -46,7 +47,7 @@ func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.Defer
 	r := request.NewUpdateRequest(channel, version)
 	u := graph.UpdateResponse{}
 	if err := m.client.Run(r, &u); err != nil {
-		return nil, errs.Wrap(err, "Error updating to version %s at channel %s", version, channel)
+		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version {{.V0}} at channel {{.V1}}: {{.V2}}", version, channel, errs.Join(err, ": ").Error())
 	}
 	return &u.DeferredUpdate, nil
 }

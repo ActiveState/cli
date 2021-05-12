@@ -111,6 +111,9 @@ func (i *Installation) Install() error {
 	if err := i.BackupFiles(); err != nil {
 		return errs.Wrap(err, "Failed to backup original files.")
 	}
+	if err := fileutils.MkdirUnlessExists(i.binaryDir); err != nil {
+		return errs.Wrap(err, "Could not create target directory: %s", i.binaryDir)
+	}
 	if err := fileutils.CopyAndRenameFiles(filepath.Join(i.fromDir, "bin"), i.binaryDir); err != nil {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s", i.binaryDir)
 	}

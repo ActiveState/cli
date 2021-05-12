@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -130,8 +131,8 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault())
+func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
+	return NewWithModel(target, msgHandler, model.NewDefault(auth))
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
@@ -143,7 +144,11 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setu
 func (s *Setup) Update() error {
 	err := s.update()
 	if err != nil {
-		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailUpdate)
+		category := analytics.ActRuntimeFailure
+		if locale.IsInputError(err) {
+			category = analytics.ActRuntimeUserFailure
+		}
+		analytics.EventWithLabel(analytics.CatRuntime, category, analytics.LblRtFailUpdate)
 		return err
 	}
 	return nil
