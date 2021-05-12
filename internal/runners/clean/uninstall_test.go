@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -59,7 +60,11 @@ func (suite *CleanTestSuite) TestUninstall() {
 	runner.installDir = filepath.Dir(suite.installPath)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
-	time.Sleep(2 * time.Second)
+
+	// On windows the files are deleted in the background, so we have to wait for that process to finish
+	if runtime.GOOS == "windows" {
+		time.Sleep(2 * time.Second)
+	}
 
 	if fileutils.DirExists(suite.configPath) {
 		suite.Fail("config directory should not exist after uninstall")
