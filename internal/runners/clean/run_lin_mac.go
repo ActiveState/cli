@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -35,20 +34,26 @@ func removeInstall(installDir string) error {
 	stateSvcInfo := appinfo.SvcApp(installDir)
 	stateTrayInfo := appinfo.TrayApp(installDir)
 
+	var aggErr error
+
 	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
 		err := os.Remove(info.Exec())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
-			return locale.WrapError(err, "err_remove_install", "Failed to remove executable {{.V0}}", info.Exec())
+			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
 		}
 	}
 
 	appPath, err := installation.LauncherInstallPath()
 	if err != nil {
-		return errs.Wrap(err, "Could not determine OS specific launcher install path")
+		return errs.Wrap(aggErr, "Could not determine OS specific launcher install path")
 	}
 
-	return installation.RemoveSystemFiles(appPath)
+	if err := installation.RemoveSystemFiles(appPath); err != nil {
+		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
+	}
+
+	return aggErr
 }
