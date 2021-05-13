@@ -57,7 +57,7 @@ func removeInstall(cfg configurable, installPath string) error {
 		}
 	}
 
-	return runScript("removeInstall", installPath)
+	return runScript("removeInstall", filepath.Join(installPath, "state"+osutils.ExeExt))
 }
 
 func runScript(scriptName, path string) error {
@@ -68,7 +68,7 @@ func runScript(scriptName, path string) error {
 		return err
 	}
 
-	_, err = exeutils.ExecuteAndForget("cmd.exe", []string{"/C", sf.Filename(), filepath.Join(path, "state"+osutils.ExeExt)})
+	_, err = exeutils.ExecuteAndForget("cmd.exe", []string{"/C", sf.Filename(), path})
 	if err != nil {
 		return err
 	}
