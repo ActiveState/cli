@@ -49,7 +49,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_config_remove", "Could not remove config directory")
 	}
 
-	out.Print(locale.Tl("clean_config_succes", "Succsessfully removed State Tool config directory"))
+	out.Print(locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"))
 	return nil
 }
 

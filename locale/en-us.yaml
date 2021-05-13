@@ -1316,14 +1316,12 @@ clean_success_message:
   other: "Successfully removed State Tool and related files\n"
 clean_message_windows:
   other: |
-    Attempting to remove State Tool and related files.
-    To verify that the State Tool has been uninstalled please check the files at: [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET].
-    To access a log of the uninstallation please see: [NOTICE]{{.V2}}[/RESET]
+    Deletion of State Tool has been scheduled.
+    To access the uninstall log please see: [NOTICE]{{.V0}}[/RESET]
 clean_config_message_windows:
   other: |
-    Attempting to remove State Tool config directory.
-    To verify that the config directory has been removed please check [NOTICE]{{.V0}}[/RESET].
-    To access a log of the process please see: [NOTICE]{{.V1}}[/RESET]
+    Deletion of State Tool config directory has been scheduled.
+    To access a log of the process please see: [NOTICE]{{.V0}}[/RESET]
 languages_cmd_description:
   other: View the languages of a project
 languages_install_cmd_description:

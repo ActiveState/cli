@@ -34,7 +34,7 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	u.out.Print(locale.Tr("clean_message_windows", u.installPath, u.cfg.ConfigPath(), logFile.Name()))
+	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
 	return nil
 }
 
@@ -44,7 +44,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	out.Print(locale.Tr("clean_config_message_windows", configPath, logFile.Name()))
+	out.Print(locale.Tr("clean_config_message_windows", logFile.Name()))
 	return removePaths(logFile.Name(), configPath)
 }
 
