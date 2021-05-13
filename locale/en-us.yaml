@@ -1318,7 +1318,12 @@ clean_message_windows:
   other: |
     Attempting to remove State Tool and related files.
     To verify that the State Tool has been uninstalled please check the files at: [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET].
-    If the files have not been removed please verify you have the correct access rights on the above directories and ensure no State Tool processes are running, then try [ACTIONABLE]state clean uninstall[/RESET] again
+    To access a log of the uninstallation please see: [NOTICE]{{.V2}}[/RESET]
+clean_config_message_windows:
+  other: |
+    Attempting to remove State Tool config directory.
+    To verify that the config directory has been removed please check [NOTICE]{{.V0}}[/RESET].
+    To access a log of the process please see: [NOTICE]{{.V1}}[/RESET]
 languages_cmd_description:
   other: View the languages of a project
 languages_install_cmd_description:

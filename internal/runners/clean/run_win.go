@@ -4,6 +4,7 @@ package clean
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -22,20 +24,31 @@ func (u *Uninstall) runUninstall() error {
 		return err
 	}
 
-	err = removePaths(u.installPath, u.cfg.ConfigPath())
+	logFile, err := ioutil.TempFile("", "state-clean-uninstall")
+	if err != nil {
+		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
+	}
+
+	err = removePaths(logFile.Name(), u.installPath, u.cfg.ConfigPath())
 	if err != nil {
 		return err
 	}
 
-	u.out.Print(locale.Tr("clean_message_windows", u.installPath, u.cfg.ConfigPath()))
+	u.out.Print(locale.Tr("clean_message_windows", u.installPath, u.cfg.ConfigPath(), logFile.Name()))
 	return nil
 }
 
-func removeConfig(configPath string) error {
-	return removePaths(configPath)
+func removeConfig(configPath string, out output.Outputer) error {
+	logFile, err := ioutil.TempFile("", "state-clean-config")
+	if err != nil {
+		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
+	}
+
+	out.Print(locale.Tr("clean_config_message_windows", configPath, logFile.Name()))
+	return removePaths(logFile.Name(), configPath)
 }
 
-func removePaths(dirs ...string) error {
+func removePaths(logFile string, dirs ...string) error {
 	logging.Debug("Removing paths: %v", dirs)
 	scriptName := "removePaths"
 	box := packr.NewBox("../../../assets/scripts/")
@@ -50,7 +63,7 @@ func removePaths(dirs ...string) error {
 		return locale.WrapError(err, "err_clean_executable", "Could not get executable name")
 	}
 
-	args := []string{"/C", sf.Filename(), fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
+	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, dirs...)
 	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {

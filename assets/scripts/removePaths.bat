@@ -6,6 +6,8 @@ REM remains open and inaccessable while the State Tool is running.
 REM The expected arguments are the process ID, the executable name
 REM and a list of paths to be removed when the process has completed
 
+set logfile=%1
+shift
 set pid=%1
 shift
 set exe=%1
@@ -20,16 +22,22 @@ set paths=
     )
 
 for /f %%i in ('tasklist /NH /FI "PID eq %pid%"') do set proc=%%i
+echo "Waiting for process %exe% with PID %pid% to end..." >> %logfile%
 :wait_for_exit
     if %proc% == %exe% (
         for /f %%i in ('tasklist /NH /FI "PID eq %pid%"') do set proc=%%i
         goto :wait_for_exit
     )
 
+echo "Process %exe% has ended" >> %logfile%
 for /d %%i in (%paths%) do (
+    echo "Attempting to remove path %%i" >> %logfile%
     if exist %%i\* (
-        rmdir /s /q %%i
+        rmdir /s /q %%i >> %logfile%
     ) else (
-        del /s /q %%i
+        del /s /q %%i >> %logfile%
     )
+    echo "Successfully removed path %%i" >> %logfile%
 )
+
+echo "Successfully removed State Tool installation and related files." >> %logfile%
