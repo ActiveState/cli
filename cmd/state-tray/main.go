@@ -57,7 +57,7 @@ func run() error {
 	systray.SetIcon(box.Bytes(iconFile))
 
 	svcInfo := appinfo.SvcApp()
-	if err := execute(svcInfo.Exec()); err != nil {
+	if err := execute(svcInfo.Exec(), []string{"start"}); err != nil {
 		return errs.New("Could not execute: %s", svcInfo.Name())
 	}
 
@@ -201,7 +201,7 @@ func run() error {
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
 			updlgInfo := appinfo.UpdateDialogApp()
-			if err := execute(updlgInfo.Exec()); err != nil {
+			if err := execute(updlgInfo.Exec(), nil); err != nil {
 				return errs.New("Could not execute: %s", updlgInfo.Name())
 			}
 		case <-mQuit.ClickedCh:
@@ -220,12 +220,12 @@ func exit(code int) {
 	os.Exit(code)
 }
 
-func execute(exec string) error {
+func execute(exec string, args []string) error {
 	if !fileutils.FileExists(exec) {
 		return errs.New("Could not find: %s", exec)
 	}
 
-	if _, err := exeutils.ExecuteAndForget(exec, "start"); err != nil {
+	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return errs.Wrap(err, "Could not start %s", exec)
 	}
 

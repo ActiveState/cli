@@ -13,16 +13,22 @@ import (
 )
 
 type Installation struct {
-	fromDir string
-	toDir   string
-	backups []string
+	fromDir   string
+	binaryDir string
+	appDir    string
+	backups   []string
 }
 
 func backupFiles(targetFiles []string) ([]string, error) {
 	var renamed []string
 	for _, t := range targetFiles {
 		if fileutils.TargetExists(t) {
-			newName := fmt.Sprintf("%s.bak", t)
+			// Note: We use the unconventional suffix .bac to support transitional updates on Windows, as the following can happen:
+			//   - Legacy State Tool is invoked eg., as `state.exe update`
+			//   - The transitional executable is pulled down and invoked as `state.exe _prepare` (invoking state tool is now called `state.exe.bak`)
+			//   - The installer cannot rename the transitional `state.exe` to `state.exe.bak` (but to `state.exe.bac`)
+			// Phew!
+			newName := fmt.Sprintf("%s.bac", t)
 			if fileutils.TargetExists(newName) {
 				_ = os.Remove(newName)
 			}
@@ -40,7 +46,7 @@ func backupFiles(targetFiles []string) ([]string, error) {
 func restoreFiles(backupFiles []string) error {
 	var errors []error
 	for _, b := range backupFiles {
-		origName := strings.TrimSuffix(b, ".bak")
+		origName := strings.TrimSuffix(b, ".bac")
 		err := os.Rename(b, origName)
 		if err != nil {
 			errors = append(errors, err)
@@ -52,9 +58,9 @@ func restoreFiles(backupFiles []string) error {
 	return nil
 }
 
-func New(fromDir, toDir string) *Installation {
+func New(fromDir, binaryDir, appDir string) *Installation {
 	return &Installation{
-		fromDir, toDir, nil,
+		fromDir, binaryDir, appDir, nil,
 	}
 }
 
@@ -64,7 +70,7 @@ func (i *Installation) RemoveBackupFiles() error {
 		err := os.Remove(b)
 		if err != nil && !errors.Is(err, os.ErrNotExist) {
 			// On Windows, if the executable was still running, the removal of the backup could fail here.
-			// We are trying to hide the file such that a .bak file does not (visually!) litter the folder.
+			// We are trying to hide the file such that a .bac file does not (visually!) litter the folder.
 			errHide := fileutils.HideFile(b)
 			if errHide != nil {
 				logging.Error("Encountered error hiding file %s: %v", b, err)
@@ -84,7 +90,7 @@ func (i *Installation) BackupFiles() error {
 	// Get target file paths.
 	var targetFiles []string
 	for _, file := range fileutils.ListDir(i.fromDir, false) {
-		targetFile := filepath.Join(i.toDir, filepath.Base(file))
+		targetFile := filepath.Join(i.binaryDir, filepath.Base(file))
 		targetFiles = append(targetFiles, targetFile)
 	}
 	logging.Debug("Target files=%s", strings.Join(targetFiles, ","))
@@ -105,10 +111,13 @@ func (i *Installation) Install() error {
 	if err := i.BackupFiles(); err != nil {
 		return errs.Wrap(err, "Failed to backup original files.")
 	}
-	if err := fileutils.CopyAndRenameFiles(i.fromDir, i.toDir); err != nil {
-		return errs.Wrap(err, "Failed to copy installation files to dir %s", i.toDir)
+	if err := fileutils.MkdirUnlessExists(i.binaryDir); err != nil {
+		return errs.Wrap(err, "Could not create target directory: %s", i.binaryDir)
 	}
-	if err := InstallSystemFiles(i.toDir); err != nil {
+	if err := fileutils.CopyAndRenameFiles(filepath.Join(i.fromDir, "bin"), i.binaryDir); err != nil {
+		return errs.Wrap(err, "Failed to copy installation files to dir %s", i.binaryDir)
+	}
+	if err := InstallSystemFiles(filepath.Join(i.fromDir, "system"), i.binaryDir, i.appDir); err != nil {
 		return errs.Wrap(err, "Installation of system files failed.")
 	}
 

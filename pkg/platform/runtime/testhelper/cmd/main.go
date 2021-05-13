@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
 	"github.com/go-openapi/strfmt"
@@ -50,7 +51,7 @@ const Perl5_32AlternativeFailedCommit = strfmt.UUID("adeabd0f-cf90-4b65-8f0b-924
 
 func saveResponses(baseName string, commitID strfmt.UUID, projectName string, expectedBuildResult headchef.BuildStatusEnum) error {
 	fmt.Printf("Downloading build for %s\n", baseName)
-	d := model.NewDefault()
+	d := model.NewDefault(authentication.Get())
 
 	r, err := d.ResolveRecipe(commitID, "ActiveState-CLI", projectName)
 	if err != nil {

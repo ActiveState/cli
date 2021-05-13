@@ -2,6 +2,6 @@
 
 package installer
 
-func InstallSystemFiles(_ string) error {
+func InstallSystemFiles(_, _, _ string) error {
 	return nil
 }

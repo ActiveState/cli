@@ -38,20 +38,33 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	targetBranch := "release"
+	if constants.BranchName == "release" {
+		targetBranch = "master"
+	}
 	suite.OnlyRunForTags(tagsuite.Update)
 	tests := []struct {
 		name            string
 		lock            string
+		expectLockError bool
 		expectedChannel string
 	}{
 		{
 			"oldVersion",
 			oldUpdateVersion,
+			false,
 			"beta",
 		},
 		{
 			"channel",
 			targetBranch,
+			false,
+			targetBranch,
+		},
+		{
+			"locked-multi-file-version",
+			fmt.Sprintf("%s@0.29.0-SHA000000", targetBranch),
+			true,
 			targetBranch,
 		},
 	}
@@ -75,7 +88,6 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 				e2e.WithArgs("update", "lock", "--set-channel", tt.lock),
 				e2e.AppendEnv(suite.env(false, false)...),
 			)
-
 			cp.Expect("Version locked at")
 			cp.Expect(tt.expectedChannel + "@")
 			cp.ExpectExitCode(0)
@@ -83,6 +95,14 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			yamlContents, err := fileutils.ReadFile(yamlPath)
 			suite.Require().NoError(err)
 			suite.Contains(string(yamlContents), tt.lock)
+
+			if tt.expectLockError {
+				cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(true, false)...))
+				cp.Expect("This project is locked at State Tool version")
+				cp.ExpectLongString("See https://docs.activestate.com/platform/state/advanced-topics/locking/")
+				cp.ExpectExitCode(1)
+				return
+			}
 
 			suite.branchCompare(ts, false, false, tt.expectedChannel, suite.Equal)
 		})

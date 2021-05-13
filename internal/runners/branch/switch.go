@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -14,6 +15,7 @@ type configurable interface {
 }
 
 type Switch struct {
+	auth    *authentication.Auth
 	out     output.Outputer
 	project *project.Project
 	config  configurable
@@ -25,6 +27,7 @@ type SwitchParams struct {
 
 func NewSwitch(prime primeable) *Switch {
 	return &Switch{
+		auth:    prime.Auth(),
 		out:     prime.Output(),
 		project: prime.Project(),
 		config:  prime.Config(),
@@ -33,6 +36,10 @@ func NewSwitch(prime primeable) *Switch {
 
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
+
+	if s.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
 
 	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
@@ -54,7 +61,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.out, s.project, s.config.CachePath(), *branch.CommitID, false)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.project, s.config.CachePath(), *branch.CommitID, false)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

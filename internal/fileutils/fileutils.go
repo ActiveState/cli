@@ -556,6 +556,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 	for _, fileInfo := range fileInfos {
 		fromPath := filepath.Join(fromPath, fileInfo.Name())
 		toPath := filepath.Join(toPath, fileInfo.Name())
+
 		if TargetExists(toPath) {
 			tmpToPath := fmt.Sprintf("%s.new", toPath)
 			err := CopyFile(fromPath, tmpToPath)
@@ -922,6 +923,9 @@ func SymlinkTarget(symlink string) (string, error) {
 func ListDir(sourcePath string, includeDirs bool) []string {
 	result := []string{}
 	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+		if err != nil {
+			return errs.Wrap(err, "Could not walk path: %s", path)
+		}
 		if includeDirs == false && f.IsDir() {
 			return nil
 		}

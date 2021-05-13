@@ -1,8 +1,11 @@
 package updater
 
 import (
+	"bufio"
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -33,31 +36,85 @@ func NewAvailableUpdate(version, channel, platform, path, sha256 string) *Availa
 
 const InstallerName = "state-installer" + osutils.ExeExt
 
-// InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred(configPath string) (int, error) {
+func (u *AvailableUpdate) prepare() (string, string, error) {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
-		return 0, errs.Wrap(err, "Could not create temp dir")
+		return "", "", errs.Wrap(err, "Could not create temp dir")
 	}
 
 	if err := NewFetcher().Fetch(u, tmpDir); err != nil {
-		return 0, errs.Wrap(err, "Could not download and unpack update")
+		return "", "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
 	installerPath := filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir, InstallerName)
 	if !fileutils.FileExists(installerPath) {
-		return 0, errs.Wrap(err, "Downloaded update does not have installer")
+		return "", "", errs.Wrap(err, "Downloaded update does not have installer")
+	}
+	installTargetPath := filepath.Dir(os.Args[0])
+
+	return installerPath, installTargetPath, nil
+}
+
+// InstallDeferred will fetch the update and run its installer in a deferred process
+func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
+	installerPath, installTargetPath, err := u.prepare()
+	if err != nil {
+		return nil, err
+	}
+	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath})
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not start installer")
 	}
 
-	installTargetPath := filepath.Dir(os.Args[0])
-	proc, err := exeutils.ExecuteAndForget(installerPath, installTargetPath)
+	return proc, nil
+}
+
+func (u *AvailableUpdate) InstallBlocking() error {
+	installerPath, installTargetPath, err := u.prepare()
 	if err != nil {
-		return 0, errs.Wrap(err, "Could not start installer")
+		return err
+	}
+
+	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, []string{installTargetPath}, []string{})
+	if err != nil {
+		return errs.Wrap(err, "Could not run installer")
+	}
+
+	return nil
+}
+
+// InstallWithProgress will fetch the update and run its installer
+func (u *AvailableUpdate) InstallWithProgress(progressCb func(string, bool)) (*os.Process, error) {
+	installerPath, installTargetPath, err := u.prepare()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not download update")
+	}
+
+	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
+		var stdout io.ReadCloser
+		var stderr io.ReadCloser
+		if stderr, err = cmd.StderrPipe(); err != nil {
+			return errs.Wrap(err, "Could not obtain stderr pipe")
+		}
+		if stdout, err = cmd.StdoutPipe(); err != nil {
+			return errs.Wrap(err, "Could not obtain stderr pipe")
+		}
+		go func() {
+			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
+			for scanner.Scan() {
+				progressCb(scanner.Text(), false)
+			}
+			progressCb(scanner.Text(), true)
+		}()
+		return nil
+	})
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not start installer")
 	}
 
 	if proc == nil {
-		return 0, errs.Wrap(err, "Could not obtain process information for installer")
+		return nil, errs.Wrap(err, "Could not obtain process information for installer")
 	}
 
-	return proc.Pid, nil
+	return proc, nil
 }

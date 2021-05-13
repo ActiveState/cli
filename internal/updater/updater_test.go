@@ -35,7 +35,7 @@ func newMock(t *testing.T, channel, version string) *httpGetMock {
 
 func expectedUrl(infix string) string {
 	platform := runtime.GOOS + "-" + runtime.GOARCH
-	return fmt.Sprintf("https://state-tool.s3.amazonaws.com/update/%s/%s/info.json", infix, platform)
+	return fmt.Sprintf("https://state-tool.s3.amazonaws.com/update/state/%s/%s/info.json", infix, platform)
 }
 
 func TestCheckerCheckFor(t *testing.T) {

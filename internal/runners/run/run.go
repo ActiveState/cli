@@ -19,6 +19,7 @@ import (
 
 // Run contains the run execution context.
 type Run struct {
+	auth     *authentication.Auth
 	out      output.Outputer
 	proj     *project.Project
 	subshell subshell.SubShell
@@ -26,6 +27,7 @@ type Run struct {
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
@@ -35,6 +37,7 @@ type primeable interface {
 // New constructs a new instance of Run.
 func New(prime primeable) *Run {
 	return &Run{
+		prime.Auth(),
 		prime.Output(),
 		prime.Project(),
 		prime.Subshell(),
@@ -44,10 +47,10 @@ func New(prime primeable) *Run {
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.out, r.subshell, r.proj, r.cfg, name, args)
+	return run(r.auth, r.out, r.subshell, r.proj, r.cfg, name, args)
 }
 
-func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, name string, args []string) error {
+func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
 	if proj == nil {
@@ -69,7 +72,7 @@ func run(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(out, subs, proj, cfg)
+	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

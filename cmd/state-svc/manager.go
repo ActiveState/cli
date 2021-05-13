@@ -33,7 +33,7 @@ func (s *serviceManager) Start(args ...string) error {
 		return errs.New("Service is already running")
 	}
 
-	proc, err := exeutils.ExecuteAndForget(args[0], args[1:]...)
+	proc, err := exeutils.ExecuteAndForget(args[0], args[1:])
 	if err != nil {
 		return errs.New("Could not start serviceManager")
 	}

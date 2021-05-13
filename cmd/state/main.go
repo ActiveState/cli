@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -34,19 +36,30 @@ import (
 )
 
 func main() {
+	var exitCode int
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
-	defer rollbar.Close()
 
-	// Handle panics gracefully
-	defer handlePanics(os.Exit)
+	defer func() {
+		// Handle panics gracefully, and ensure that we exit with non-zero code
+		if handlePanics() {
+			exitCode = 1
+		}
+
+		// ensure rollbar messages are called
+		events.WaitForEvents(time.Second, rollbar.Close)
+
+		// exit with exitCode
+		os.Exit(exitCode)
+	}()
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
 	out, err := initOutput(outFlags, "")
 	if err != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	if runtime.GOOS == "windows" {
@@ -69,10 +82,9 @@ func main() {
 		!outFlags.NonInteractive &&
 		terminal.IsTerminal(int(os.Stdin.Fd()))
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code := 0
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
-		code, err = unwrapError(err)
+		exitCode, err = unwrapError(err)
 		if !isSilent(err) {
 			out.Error(err)
 		}
@@ -88,8 +100,6 @@ func main() {
 			br.ReadLine()
 		}
 	}
-
-	os.Exit(code)
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) error {
@@ -202,8 +212,8 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	if childCmd == nil || !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
 		// Todo: This is better done in the `state-svc` process  https://www.pivotaltracker.com/story/show/177730748
-		if updated, err := autoUpdate(args, cfg, pjPath); err != nil || updated {
-			return err
+		if _, err := autoUpdate(args, cfg, pjPath); err != nil {
+			logging.Error("Failed to initialize auto update: %v", err)
 		}
 	}
 
