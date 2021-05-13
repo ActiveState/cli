@@ -74,6 +74,7 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
+// InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles() []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()

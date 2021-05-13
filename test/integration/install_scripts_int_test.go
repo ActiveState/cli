@@ -258,7 +258,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			assertBinDirContents(suite.Contains, ts.Dirs.Work)
 			suite.DirExists(ts.Dirs.Config)
 
-			// Only test the un-installation on local update
+			// Only test the un-installation on local update (Review once installed updates become more stable)
 			if !tt.TestInstall {
 				return
 			}
@@ -274,6 +274,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 	}
 }
 
+// assertApplicationDirContents checks if given files are or are not in the application directory
 func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
 	homeDirFiles := listFilesOnly(dir)
 	switch runtime.GOOS {
@@ -289,12 +290,16 @@ func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...inter
 	}
 }
 
+// assertBinDirContents checks if given files are or are not in the bin directory
 func assertBinDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
 	binFiles := listFilesOnly(dir)
 	assertFunc(binFiles, "state"+osutils.ExeExt)
 	assertFunc(binFiles, "state-tray"+osutils.ExeExt)
 	assertFunc(binFiles, "state-svc"+osutils.ExeExt)
 }
+
+// listFilesOnly is a helper function for assertBinDirContents and assertApplicationDirContents filtering a directory recursively for base filenames
+// It allows for simple and coarse checks if a file exists or does not exist in the directory structure
 func listFilesOnly(dir string) []string {
 	files := fileutils.ListDir(dir, true)
 	files = funk.Filter(files, func(f string) bool {
@@ -374,7 +379,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			paths := strings.Split(pathEnv, string(os.PathListSeparator))
 			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 
-			// Only test the un-installation on local update
+			// Only test the un-installation on local update (Review once installed updates become more stable)
 			if !tt.TestInstall {
 				return
 			}

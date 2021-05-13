@@ -115,6 +115,7 @@ func setStateProtocol() error {
 	return nil
 }
 
+// InstalledPreparedFiles returns the files installed by the state _prepare command
 func InstalledPreparedFiles() []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()
