@@ -18,7 +18,7 @@ func main() {
 	}
 }
 
-//go:embed assets
+//go:embed assets/*
 var assets embed.FS
 
 func run() error {
