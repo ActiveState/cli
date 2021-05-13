@@ -34,7 +34,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	cp.Expect("You are about to remove")
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
-		cp.ExpectLongString("Attempting to remove State Tool and related files")
+		cp.ExpectLongString("Deletion of State Tool has been scheduled.")
 	} else {
 		cp.ExpectLongString("Successfully removed State Tool and related files")
 	}
