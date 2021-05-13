@@ -1665,3 +1665,5 @@ headless_notify:
     For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
+err_svcmanager_wait:
+  other: "Timed out waiting for state-svc to start. Are you running software that could prevent State Tool from running local processes / servers?"
