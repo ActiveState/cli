@@ -19,6 +19,12 @@ func InstallSystemFiles(fromDir, binaryDir, systemInstallPath string) error {
 		return errs.Wrap(err, "Could not remove old app directory")
 	}
 
+	// ensure systemInstallPath exists
+	err = fileutils.MkdirUnlessExists(systemInstallPath)
+	if err != nil {
+		return errs.Wrap(err, "Application directory %s did not exist, and failed to create it", systemInstallPath)
+	}
+
 	err = fileutils.MoveAllFilesCrossDisk(fromDir, systemInstallPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not create application directory")
