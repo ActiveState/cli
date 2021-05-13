@@ -11,7 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Removed unwanted output when error is silent
+- Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
   
 ### Changed
