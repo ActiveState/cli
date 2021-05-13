@@ -8,6 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.29.0
 
+
+### Fixed
+
+- Removed unwanted output when error is silent
+  ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
+  
 ### Changed
 
 - The State Tool now comes with the ActiveState Desktop application, which is
