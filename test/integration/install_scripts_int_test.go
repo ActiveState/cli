@@ -381,6 +381,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			cp.SendLine("y")
 			cp.ExpectExitCode(0)
 
+			// wait three seconds until state.exe is removed (in the background)
+			time.Sleep(time.Second * 3)
+
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
 	}
