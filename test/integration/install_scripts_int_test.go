@@ -147,7 +147,6 @@ func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
 	cp.Expect("State Tool successfully installed to")
 }
 
