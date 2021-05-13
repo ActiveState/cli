@@ -256,6 +256,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			assertApplicationDirContents(suite.Contains, dir)
 			assertBinDirContents(suite.Contains, ts.Dirs.Work)
+			suite.DirExists(ts.Dirs.Config)
 
 			// Only test the un-installation on local update
 			if !tt.TestInstall {
@@ -268,6 +269,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
+			suite.NoDirExists(ts.Dirs.Config)
 		})
 	}
 }
@@ -382,7 +384,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			cp.ExpectExitCode(0)
 
 			// wait three seconds until state.exe is removed (in the background)
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 4)
 
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
