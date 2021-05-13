@@ -21,6 +21,8 @@ constants:
   - name: BUILD_UPDLG_TARGET
     if: ne .OS.Name "Windows"
     value: state-update-dialog
+  - name: BUILD_UPDSTORE_TARGET
+    value: state-updstore
   - name: UPDLG_BUILDFLAGS
     value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug} -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: SYSTRAY_BUILDFLAGS
@@ -76,7 +78,7 @@ scripts:
           sudo apt update && sudo apt --yes install ${pkgs[@]}
         fi
       }
-      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev sassc
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
@@ -186,6 +188,14 @@ scripts:
           break
       with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
           file.write("\n".join(lines) + "\n")
+  - name: build-updstore
+    description: Builds "Update Store" helper which fakes the S3 storage used to hold update info.
+    language: bash
+    value: |
+      $constants.SET_ENV
+      rm -rf ./scripts/unsupported/fupdstor/assets/*
+      cp -a ./build/update/* ./scripts/unsupported/fupdstor/assets
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_UPDSTORE_TARGET $constants.CLI_BUILDFLAGS ./scripts/unsupported/fupdstor
   - name: run-updlg
     if: ne .OS.Name "Windows"
     description: Runs the update dialog in debug mode
