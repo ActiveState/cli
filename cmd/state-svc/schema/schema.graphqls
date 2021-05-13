@@ -11,7 +11,6 @@ type StateVersion {
 }
 
 type AvailableUpdate {
-  available: Boolean!
   version: String!
   channel: String!
   path: String!

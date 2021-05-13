@@ -40,7 +40,7 @@ func needsUpdate(mdl *model.SvcModel) bool {
 		return false
 	}
 
-	return availableUpdate.Available
+	return availableUpdate != nil
 }
 
 type updateNotice struct {
