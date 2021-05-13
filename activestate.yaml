@@ -24,8 +24,8 @@ constants:
   - name: BUILD_UPDLG_TARGET
     if: ne .OS.Name "Windows"
     value: state-update-dialog
-  - name: BUILD_UPDSTORE_TARGET
-    value: state-updstore
+  - name: BUILD_TESTING_UPFS_TARGET
+    value: state-testing-update-fs
   - name: UPDLG_BUILDFLAGS
     value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug} -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: SYSTRAY_BUILDFLAGS
@@ -195,14 +195,14 @@ scripts:
           break
       with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
           file.write("\n".join(lines) + "\n")
-  - name: build-updstore
+  - name: build-testing-upfs
     description: Builds "Update Store" helper which fakes the S3 storage used to hold update info.
     language: bash
     value: |
       $constants.SET_ENV
-      rm -rf ./scripts/updstore/assets/*
-      cp -a ./build/update/* ./scripts/updstore/assets
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_UPDSTORE_TARGET $constants.CLI_BUILDFLAGS ./scripts/updstore
+      rm -rf ./scripts/unsupported/testing-update-fs/assets/*
+      cp -a ./build/update/* ./scripts/unsupported/testing-update-fs/assets
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TESTING_UPFS_TARGET $constants.CLI_BUILDFLAGS ./scripts/unsupported/testing-update-fs
   - name: run-updlg
     if: ne .OS.Name "Windows"
     description: Runs the update dialog in debug mode

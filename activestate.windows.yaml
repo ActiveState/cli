@@ -11,8 +11,8 @@ constants:
     value: state-tray.exe
   - name: BUILD_UPDLG_TARGET
     value: ./build/state-update-dialog.exe
-  - name: BUILD_UPDSTORE_TARGET
-    value: state-updstore.exe
+  - name: BUILD_TESTING_UPFS_TARGET
+    value: state-testing-update-fs.exe
   - name: SYSTRAY_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
   - name: UPDLG_BUILDFLAGS
