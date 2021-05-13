@@ -10,6 +10,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Enhanced error reporting when attempting package operations on an out of sync
+  project ([PR #1353](https://github.com/ActiveState/cli/pull/1353))
 - The State Tool now comes with the ActiveState Desktop application, which is
   currently a system tray application.
 - We've replaced the auto updating system with a manual updating system, updates
