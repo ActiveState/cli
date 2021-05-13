@@ -1,8 +1,6 @@
 package integration
 
 import (
-	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -26,8 +24,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 
 	ts.UseDistinctStateExes()
 
-	installEntry := fmt.Sprintf("install_path: %s", ts.Dirs.Bin)
-	err := ioutil.WriteFile(filepath.Join(ts.Dirs.Config, "config.yaml"), []byte(installEntry), 0655)
+	err := fileutils.Touch(filepath.Join(ts.Dirs.Config, "config.yaml"))
 	suite.Require().NoError(err, "Could not write install entry")
 
 	cp := ts.Spawn("clean", "uninstall")
@@ -42,7 +39,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 
 	if runtime.GOOS == "windows" {
 		// Allow time for spawned script to remove directories
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 	}
 
 	if fileutils.DirExists(ts.Dirs.Cache) {
