@@ -193,9 +193,9 @@ scripts:
     language: bash
     value: |
       $constants.SET_ENV
-      rm -rf ./scripts/unsupported/fupdstor/assets/*
-      cp -a ./build/update/* ./scripts/unsupported/fupdstor/assets
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_UPDSTORE_TARGET $constants.CLI_BUILDFLAGS ./scripts/unsupported/fupdstor
+      rm -rf ./scripts/updstore/assets/*
+      cp -a ./build/update/* ./scripts/updstore/assets
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_UPDSTORE_TARGET $constants.CLI_BUILDFLAGS ./scripts/updstore
   - name: run-updlg
     if: ne .OS.Name "Windows"
     description: Runs the update dialog in debug mode
