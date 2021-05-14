@@ -387,6 +387,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			if !tt.TestInstall {
 				return
 			}
+			// give some time for the provided state-tray app to start and write its pid to the config file
+			time.Sleep(time.Second)
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
