@@ -55,3 +55,12 @@ func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.Defer
 	}
 	return &u.DeferredUpdate, nil
 }
+
+func (m *SvcModel) CheckUpdate() (*graph.AvailableUpdate, error) {
+	r := request.NewAvailableUpdate()
+	u := graph.AvailableUpdateResponse{}
+	if err := m.client.Run(r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error checking if update is available.")
+	}
+	return &u.AvailableUpdate, nil
+}
