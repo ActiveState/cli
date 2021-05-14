@@ -37,7 +37,11 @@ for /d %%i in (%paths%) do (
     ) else (
         del /s /q %%i >> %logfile%
     )
-    echo "Successfully removed path %%i" >> %logfile%
+    if %ERRORLEVEL% NEQ 0 (
+        echo "Could not remove directory: %%i" >> %logfile%
+    ) else (
+        echo "Successfully removed path %%i" >> %logfile%
+    )
 )
 
 echo "Successfully removed State Tool installation and related files." >> %logfile%
