@@ -17,7 +17,7 @@ func TerminalAndWait(command string) error {
 	return Terminal(command)
 }
 
-// TerminalAndWait brings up the user's preferred shell within a new terminal.
+// Terminal brings up the user's preferred shell within a new terminal.
 func Terminal(command string) error {
 	shell, err := preferredShell()
 	if err != nil {
