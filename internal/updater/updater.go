@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -50,7 +51,17 @@ func (u *AvailableUpdate) prepare() (string, string, error) {
 	if !fileutils.FileExists(installerPath) {
 		return "", "", errs.Wrap(err, "Downloaded update does not have installer")
 	}
-	installTargetPath := filepath.Dir(os.Args[0])
+
+	exec, err := os.Executable()
+	if err != nil {
+		return "", "", errs.Wrap(err, "Could not determine the path to the current State Tool executable")
+	}
+	resolvedPath, err := filepath.EvalSymlinks(exec)
+	if err != nil {
+		logging.Error("Could not resolved symlink path to calling executable: %s", errs.JoinMessage(err))
+		resolvedPath = exec
+	}
+	installTargetPath := filepath.Dir(resolvedPath)
 
 	return installerPath, installTargetPath, nil
 }
