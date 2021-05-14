@@ -963,18 +963,17 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner             string
-	Project           string
-	CommitID          *strfmt.UUID
-	BranchName        string
-	Directory         string
-	Content           string
-	Language          string
-	LanguageVersion   string
-	SkipLanguageCheck bool
-	Private           bool
-	path              string
-	projectURL        string
+	Owner           string
+	Project         string
+	CommitID        *strfmt.UUID
+	BranchName      string
+	Directory       string
+	Content         string
+	Language        string
+	LanguageVersion string
+	Private         bool
+	path            string
+	projectURL      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -988,7 +987,7 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) error {
 	lang := language.MakeByName(params.Language)
-	err := validateCreateParams(params, lang)
+	err := validateCreateParams(params)
 	if err != nil {
 		return err
 	}
@@ -1084,15 +1083,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams, lang language.Language) error {
-	var langValidErr error
-	if !params.SkipLanguageCheck {
-		langValidErr = lang.Validate()
-	}
-
+func validateCreateParams(params *CreateParams) error {
 	switch {
-	case langValidErr != nil:
-		return errs.Wrap(langValidErr, "Language validation failed")
 	case params.Directory == "":
 		return locale.NewInputError("err_project_require_path")
 	case params.projectURL != "":

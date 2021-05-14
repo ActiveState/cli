@@ -145,6 +145,11 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 			createParams.Content = box.String("activestate.yaml.editor.tpl")
 		}
 
+		err = params.language.Validate()
+		if err != nil {
+			return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
+		}
+
 		err = projectfile.Create(createParams)
 		if err != nil {
 			return "", err
