@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
@@ -17,8 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
@@ -49,18 +48,14 @@ func run() error {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	svcInfo := appinfo.SvcApp()
-	if !fileutils.FileExists(svcInfo.Exec()) {
-		return errs.New("Could not find: %s", svcInfo.Exec())
-	}
-
-	if _, err := exeutils.ExecuteAndForget(svcInfo.Exec(), []string{"start"}); err != nil {
-		return errs.Wrap(err, "Could not start %s", svcInfo.Exec())
-	}
-
 	config, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
+	}
+
+	svcm := svcmanager.New(config)
+	if err := svcm.StartAndWait(); err != nil {
+		return errs.Wrap(err, "Service failed to start")
 	}
 
 	model, err := model.NewSvcModel(context.Background(), config)

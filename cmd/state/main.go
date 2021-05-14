@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
@@ -126,6 +127,11 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	machineid.SetConfiguration(cfg)
 	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
+
+	svcm := svcmanager.New(cfg)
+	if err := svcm.Start(); err != nil {
+		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+	}
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
