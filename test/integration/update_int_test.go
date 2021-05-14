@@ -76,9 +76,7 @@ func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
 // disableUpdates prevents all update code from running
 // testUpdate directs to the locally running update directory and requires that a test update bundles has been generated with `state run generate-test-update`
 func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []string {
-	env := []string{
-		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
-	}
+	env := []string{}
 
 	if disableUpdates {
 		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=true")
@@ -150,43 +148,6 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))
 }
 
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// update should not run because the exe is less than a day old
-	suite.versionCompare(ts, false, true, constants.Version, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
-	defer ts.Close()
-
-	// use unique exe
-	ts.UseDistinctStateExes()
-
-	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.ExpectExitCode(0)
-
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
-
-	// update should run because the exe is more than a day old
-	suite.versionCompare(ts, false, true, constants.Version, suite.NotEqual)
-}
-
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 	ts := e2e.New(suite.T(), true)
@@ -203,39 +164,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// use unique exe
-	ts.UseDistinctStateExes()
-
-	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.ExpectExitCode(0)
-
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
-	cp.Expect("ActiveState CLI")
-	cp.Expect("Revision")
-	cp.ExpectExitCode(0)
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
-
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
-
-	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string) string {

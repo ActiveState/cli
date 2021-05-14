@@ -1342,14 +1342,6 @@ using_cached_env:
 update_attempt:
   other: |
     Updating state tool:  Downloading latest version of the state tool...
-auto_update_to_version:
-  other: |
-    Updated from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
-auto_update_permission_err:
-  other: |
-    Could not update to the latest available version of the state tool due to insufficient permissions.
-    To manually update, run 'state update' as a privileged user.
-    If you want the state tool to auto-update, please re-install it in a user-writable directory.
 forward_version:
   other: "Using locked state tool version: [NOTICE]{{.V0}}[/RESET].\n"
 err_project_env_file_not_exist:

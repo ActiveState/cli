@@ -188,12 +188,6 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	}
 
 	out.Notice(locale.T("update_attempt"))
-	if autoUpdate {
-		out.Notice(locale.Tl(
-			"auto_update_disable_notice",
-			fmt.Sprintf("To avoid auto updating run [ACTIONABLE]state update --lock[/RESET] (only recommended for production environments) or set environment variable [ACTIONABLE]%s=true[/RESET]", constants.DisableUpdates),
-		))
-	}
 	bin, err := u.fetchAndVerifyFullBin()
 	if err != nil {
 		return err
