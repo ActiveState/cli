@@ -55,7 +55,7 @@ func (i *localProjectsMenuItem) eventLoop() {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
-			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", i.namespace, i.location))
+			err := open.Terminal(fmt.Sprintf("state activate %s --path %s", i.namespace, i.location))
 			if err != nil {
 				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 			}
