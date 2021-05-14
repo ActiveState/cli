@@ -42,20 +42,23 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 		cp.ExpectLongString("Successfully removed State Tool and related files")
 	}
 	cp.ExpectExitCode(0)
-	snapshot := cp.Snapshot()
-
-	pos := strings.LastIndex(snapshot, ": ")
-	adjustedPos := pos + len(": ")
-	logfile := strings.TrimSpace(snapshot[adjustedPos:len(snapshot)])
-
-	fmt.Println("Logfile:", logfile)
-	cp = ts.SpawnCmd("more", logfile)
-	cp.ExpectExitCode(0)
-	fmt.Println(cp.Snapshot())
 
 	if runtime.GOOS == "windows" {
 		// Allow time for spawned script to remove directories
 		time.Sleep(500 * time.Millisecond)
+	}
+
+	if runtime.GOOS == "windows" {
+		snapshot := cp.Snapshot()
+
+		pos := strings.LastIndex(snapshot, ": ")
+		adjustedPos := pos + len(": ")
+		logfile := strings.TrimSpace(snapshot[adjustedPos:len(snapshot)])
+
+		fmt.Println("Logfile:", logfile)
+		cp = ts.SpawnCmd("more", logfile)
+		cp.ExpectExitCode(0)
+		fmt.Println(cp.Snapshot())
 	}
 
 	if fileutils.DirExists(ts.Dirs.Cache) {
