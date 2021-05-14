@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -32,6 +33,11 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	cp := ts.SpawnCmd(ts.SvcExe, "stop")
 	cp.ExpectExitCode(0)
 	time.Sleep(1 * time.Second)
+
+	err = os.Remove(ts.SvcExe)
+	suite.Require().NoError(err)
+	err = os.Remove(ts.TrayExe)
+	suite.Require().NoError(err)
 
 	cp = ts.Spawn("clean", "uninstall")
 	cp.Expect("You are about to remove")
