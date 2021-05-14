@@ -187,6 +187,24 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	suite.versionCompare(ts, false, true, constants.Version, suite.NotEqual)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExes()
+
+	// Technically state tool automatically starts the state-svc, but the update notification only happens if the svc
+	// happens to already be running and fails silently if not, so in this case we want to ensure the svc is running
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
+	cp.Expect("Update Available")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	suite.OnlyRunForTags(tagsuite.Update)
 	if runtime.GOOS == "windows" {

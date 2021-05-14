@@ -722,13 +722,12 @@ forward_fail_with_error:
   other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
 forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
+update_available_header:
+  other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
   other: |
-    A new update is available!
-
     Your version: [NOTICE]{{.V0}}[/RESET]
     Available Version: [NOTICE]{{.V1}}[/RESET]
-
     You can update by running [ACTIONABLE]`state update`[/RESET]
 runtime_update_notice_known_count:
   other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."

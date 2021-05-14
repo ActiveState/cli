@@ -46,7 +46,7 @@ func NewChecker(apiURL, currentChannel, currentVersion string, httpget httpGette
 }
 
 func (u *Checker) Check() (*AvailableUpdate, error) {
-	return u.CheckFor("", "")
+	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
 }
 
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {

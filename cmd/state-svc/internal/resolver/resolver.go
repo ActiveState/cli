@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"sort"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
@@ -45,6 +47,12 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	const cacheKey = "AvailableUpdate"
+	c := cache.New(12*time.Hour, time.Hour)
+	if up, exists := c.Get(cacheKey); exists {
+		return up.(*graph.AvailableUpdate), nil
+	}
+
 	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to check for update")
@@ -60,6 +68,8 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 		Platform: update.Platform,
 		Sha256:   update.Sha256,
 	}
+
+	c.Set(cacheKey, &availableUpdate, cache.DefaultExpiration)
 
 	return &availableUpdate, nil
 }
