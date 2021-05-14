@@ -1,8 +1,10 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,10 +42,20 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 		cp.ExpectLongString("Successfully removed State Tool and related files")
 	}
 	cp.ExpectExitCode(0)
+	snapshot := cp.Snapshot()
+
+	pos := strings.LastIndex(snapshot, ": ")
+	adjustedPos := pos + len(": ")
+	logfile := strings.TrimSpace(snapshot[adjustedPos:len(snapshot)])
+
+	fmt.Println("Logfile:", logfile)
+	cp = ts.SpawnCmd("more", logfile)
+	cp.ExpectExitCode(0)
+	fmt.Println(cp.Snapshot())
 
 	if runtime.GOOS == "windows" {
 		// Allow time for spawned script to remove directories
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	if fileutils.DirExists(ts.Dirs.Cache) {
@@ -54,7 +66,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 		suite.Fail("Config dir should not exist after uninstall")
 	}
 
-	if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state", osutils.ExeExt)) {
+	if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state"+osutils.ExeExt)) {
 		suite.Fail("Installation dir should not exist after uninstall")
 	}
 }
