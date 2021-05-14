@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
@@ -24,13 +26,22 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+const (
+	assetsPath = "../../assets"
+	iconFile   = "icon.ico"
+)
+
 func main() {
+	verbose := os.Getenv("VERBOSE") != ""
+
+	logging.CurrentHandler().SetVerbose(verbose)
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+
 	systray.Run(onReady, onExit)
 }
 
 func onReady() {
 	var exitCode int
-	logging.SetupRollbar(constants.StateTrayRollbarToken)
 	defer exit(exitCode)
 
 	err := run()
@@ -43,10 +54,9 @@ func onReady() {
 }
 
 func run() error {
-	if os.Getenv("VERBOSE") == "true" {
-		// Doesn't seem to work, I think the systray lib and its logging solution is interfering
-		logging.CurrentHandler().SetVerbose(true)
-	}
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
+
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
@@ -65,9 +75,20 @@ func run() error {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
-	box := packr.NewBox("../../assets")
-	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
+
+	mUpdate := systray.AddMenuItem(
+		locale.Tl("tray_update_title", "Update Available"),
+		locale.Tl("tray_update_tooltip", "Update your ActiveState Desktop installation"),
+	)
+	mUpdate.Hide()
+
+	updNotice := updateNotice{
+		box:  box,
+		item: mUpdate,
+	}
+	closeUpdateSupervision := superviseUpdate(model, &updNotice)
+	defer closeUpdateSupervision()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
@@ -181,6 +202,12 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
+		case <-mUpdate.ClickedCh:
+			logging.Debug("Update event")
+			updlgInfo := appinfo.UpdateDialogApp()
+			if err := execute(updlgInfo.Exec(), nil); err != nil {
+				return errs.New("Could not execute: %s", updlgInfo.Name())
+			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
@@ -195,4 +222,16 @@ func onExit() {
 func exit(code int) {
 	events.WaitForEvents(1*time.Second, rollbar.Close)
 	os.Exit(code)
+}
+
+func execute(exec string, args []string) error {
+	if !fileutils.FileExists(exec) {
+		return errs.New("Could not find: %s", exec)
+	}
+
+	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
+		return errs.Wrap(err, "Could not start %s", exec)
+	}
+
+	return nil
 }
