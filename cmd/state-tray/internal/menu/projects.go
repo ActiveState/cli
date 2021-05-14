@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/getlantern/systray"
@@ -16,10 +17,11 @@ type LocalProjectsUpdater struct {
 }
 
 type localProjectsMenuItem struct {
-	menuItem  *systray.MenuItem
-	namespace string
-	location  string
-	close     chan struct{}
+	menuItem       *systray.MenuItem
+	namespace      string
+	location       string
+	customCallback func()
+	close          chan struct{}
 }
 
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
@@ -33,8 +35,16 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 	for _, project := range projects {
 		for _, location := range project.Locations {
 			mProject := u.menuItem.AddSubMenuItem(project.Namespace, location)
-			u.items = append(u.items, &localProjectsMenuItem{mProject, project.Namespace, location, make(chan struct{})})
+			u.items = append(u.items, &localProjectsMenuItem{mProject, project.Namespace, location, nil, make(chan struct{})})
 		}
+	}
+
+	if len(projects) == 0 {
+		mitem := u.menuItem.AddSubMenuItem("Get Started", "")
+		cb := func() {
+			open.Browser(constants.DocumentationURLCreateProject)
+		}
+		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}
 
 	u.startEventLoops()
@@ -56,9 +66,13 @@ func (i *localProjectsMenuItem) eventLoop() {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
-			err := open.Prompt(fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location))
-			if err != nil {
-				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
+			if i.customCallback != nil {
+				i.customCallback()
+			} else {
+				err := open.Prompt(fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location))
+				if err != nil {
+					logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
+				}
 			}
 		case <-i.close:
 			return
