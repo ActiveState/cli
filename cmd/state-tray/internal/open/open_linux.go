@@ -13,8 +13,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// Prompt brings up the user's preferred shell within a new terminal.
-func Prompt(command string) error {
+func TerminalAndWait(command string) error {
+	return Terminal(command)
+}
+
+// TerminalAndWait brings up the user's preferred shell within a new terminal.
+func Terminal(command string) error {
 	shell, err := preferredShell()
 	if err != nil {
 		logging.Errorf("Preferred shell failure (falling back to bash): %v", err)
