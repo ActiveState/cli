@@ -25,9 +25,13 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	ts.UseDistinctStateExes()
 
 	err := fileutils.Touch(filepath.Join(ts.Dirs.Config, "config.yaml"))
-	suite.Require().NoError(err, "Could not write install entry")
+	suite.Require().NoError(err, "Could not create config file")
 
-	cp := ts.Spawn("clean", "uninstall")
+	cp := ts.SpawnCmd(ts.SvcExe, "stop")
+	cp.ExpectExitCode(0)
+	time.Sleep(1 * time.Second)
+
+	cp = ts.Spawn("clean", "uninstall")
 	cp.Expect("You are about to remove")
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
@@ -43,14 +47,14 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	}
 
 	if fileutils.DirExists(ts.Dirs.Cache) {
-		suite.Fail("Config dir should not exist after uninstall")
+		suite.Fail("Cache dir should not exist after uninstall")
 	}
 
 	if fileutils.DirExists(ts.Dirs.Config) {
 		suite.Fail("Config dir should not exist after uninstall")
 	}
 
-	if fileutils.DirExists(filepath.Join(ts.Dirs.Bin, "state", osutils.ExeExt)) {
+	if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state", osutils.ExeExt)) {
 		suite.Fail("Installation dir should not exist after uninstall")
 	}
 }
