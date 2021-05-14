@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/getlantern/systray"
@@ -55,7 +56,7 @@ func (i *localProjectsMenuItem) eventLoop() {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
-			err := open.Prompt(fmt.Sprintf("state activate %s --path %s", i.namespace, i.location))
+			err := open.Prompt(fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location))
 			if err != nil {
 				logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 			}
