@@ -179,6 +179,9 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// DocumentationURLCreateProject is the documentation URL for creating projects
+const DocumentationURLCreateProject = DocumentationURL + "create-project/"
+
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/"
 
