@@ -1,20 +1,16 @@
 package pull
 
 import (
-	"os"
-	"path"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/hail"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -22,6 +18,7 @@ import (
 type Pull struct {
 	prompt  prompt.Prompter
 	project *project.Project
+	auth    *authentication.Auth
 	out     output.Outputer
 	cfg     *config.Instance
 }
@@ -34,6 +31,7 @@ type PullParams struct {
 type primeable interface {
 	primer.Prompter
 	primer.Projecter
+	primer.Auther
 	primer.Outputer
 	primer.Configurer
 }
@@ -42,6 +40,7 @@ func New(prime primeable) *Pull {
 	return &Pull{
 		prime.Prompt(),
 		prime.Project(),
+		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 	}
@@ -118,17 +117,14 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	actID := os.Getenv(constants.ActivatedStateIDEnvVarName)
-	if actID == "" {
-		logging.Debug("Not in an activated environment, so no need to reactivate")
-		return nil
+	revertCommit, err := model.GetRevertCommit(p.project.CommitUUID(), *target.CommitID)
+	if err != nil {
+		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
 	}
 
-	fname := path.Join(p.cfg.ConfigPath(), constants.UpdateHailFileName)
-	// must happen last in this function scope (defer if needed)
-	if err := hail.Send(fname, []byte(actID)); err != nil {
-		logging.Error("failed to send hail via %q: %s", fname, err)
-		return locale.WrapError(err, "err_pull_hail", "Could not re-activate your project, please exit and re-activate manually by running 'state activate' again.")
+	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *target.CommitID, len(revertCommit.Changeset) > 0)
+	if err != nil {
+		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
 
 	return nil

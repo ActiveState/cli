@@ -51,7 +51,8 @@ func NewImportRunParams() *ImportRunParams {
 
 // Import manages the importing execution context.
 type Import struct {
-	out output.Outputer
+	auth *authentication.Auth
+	out  output.Outputer
 	prompt.Prompter
 	proj *project.Project
 	cfg  configurable
@@ -68,6 +69,7 @@ type primeable interface {
 // NewImport prepares an importation execution context for use.
 func NewImport(prime primeable) *Import {
 	return &Import{
+		prime.Auth(),
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
@@ -135,7 +137,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.out, i.proj, i.cfg.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {

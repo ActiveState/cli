@@ -254,7 +254,9 @@ type Executable struct {
 
 // Name returns the executables file's name.
 func (e Executable) Name() string {
-	return e.name
+	// We don't want to generate as.yaml code that uses the full filename for the language name
+	// https://www.pivotaltracker.com/story/show/177845386
+	return strings.TrimSuffix(e.name, ".exe")
 }
 
 // Filename returns the executables file's full name.

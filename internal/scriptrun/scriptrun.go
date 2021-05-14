@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -17,12 +18,15 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
+	auth    *authentication.Auth
 	out     output.Outputer
 	sub     subshell.SubShell
 	project *project.Project
@@ -33,8 +37,9 @@ type ScriptRun struct {
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance) *ScriptRun {
 	return &ScriptRun{
+		auth,
 		out,
 		subs,
 		proj,
@@ -61,20 +66,20 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err := rt.Update(runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
+		if err := rt.Update(s.auth, runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
+	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {
 		return err
 	}
 	s.sub.SetEnv(env)
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, "")
+	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}
@@ -109,7 +114,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	var attempted []string
 	for _, l := range script.Languages() {
-		execPath := l.Executable().Name()
+		execPath := l.Executable().Filename()
 		searchPath := s.venvExePath
 		if l.Executable().CanUseThirdParty() {
 			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")
@@ -196,6 +201,12 @@ func applySuffix(suffix string, paths []string) []string {
 }
 
 func isExecutableFile(name string) bool {
+	// TODO: We want a better way to find the executable on Windows.
+	// Follow up filed here: https://www.pivotaltracker.com/n/projects/2203557/stories/177934469
+	if !fileutils.FileExists(name) {
+		name = executor.NameForExe(name)
+	}
+
 	f, err := os.Stat(name)
 	if err != nil { // unlikely unless file does not exist
 		return false

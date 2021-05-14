@@ -1575,16 +1575,10 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
-shim_description:
-  other: Intercept and run a script via the State Tool
-flag_state_shim_language:
-  other: language
-flag_state_shim_language_description:
-  other: The language to run the script with
-args_state_shim_script:
-  other: Script
-args_state_shim_script_description:
-  other: The script to be run
+exec_description:
+  other: Intercept and run a script via a project runtime environment
+flag_state_exec_path_description:
+  other: The path of the project that you want to use the runtime environment of. If no path is given the current working directory is used.
 artifact_started:
   other: "Build Starting Remotely: [NOTICE]{{.V0}}[/RESET]"
 artifact_started_cached:
@@ -1671,3 +1665,5 @@ headless_notify:
     For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
+err_svcmanager_wait:
+  other: "Timed out waiting for state-svc to start. Are you running software that could prevent State Tool from running local processes / servers?"

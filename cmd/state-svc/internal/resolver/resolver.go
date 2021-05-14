@@ -8,18 +8,23 @@ import (
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	cfg *config.Instance
+}
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New() *Resolver {
-	return &Resolver{}
+func New(cfg *config.Instance) *Resolver {
+	return &Resolver{cfg}
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -29,13 +34,61 @@ func (r *Resolver) Query() genserver.QueryResolver { return r }
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	logging.Debug("Version resolver")
 	return &graph.Version{
-		&graph.StateVersion{
+		State: &graph.StateVersion{
 			License:  constants.LibraryLicense,
 			Version:  constants.Version,
 			Branch:   constants.BranchName,
 			Revision: constants.RevisionHash,
 			Date:     constants.Date,
 		},
+	}, nil
+}
+
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to check for update")
+	}
+	if update == nil {
+		return nil, nil
+	}
+
+	availableUpdate := graph.AvailableUpdate{
+		Version:  update.Version,
+		Channel:  update.Channel,
+		Path:     update.Path,
+		Platform: update.Platform,
+		Sha256:   update.Sha256,
+	}
+
+	return &availableUpdate, nil
+}
+
+func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
+	ch := ""
+	ver := ""
+	if channel != nil {
+		ch = *channel
+	}
+	if version != nil {
+		ver = *version
+	}
+	up, err := updater.DefaultChecker.CheckFor(ch, ver)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to check for update")
+	}
+	if up == nil {
+		return &graph.DeferredUpdate{}, nil
+	}
+	proc, err := up.InstallDeferred()
+	if err != nil {
+		return nil, errs.Wrap(err, "Deferring update failed: %s", errs.Join(err, ": "))
+	}
+
+	return &graph.DeferredUpdate{
+		Channel: up.Channel,
+		Version: up.Version,
+		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
 	}, nil
 }
 

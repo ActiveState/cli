@@ -2,62 +2,69 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"syscall"
+	"time"
 
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+const (
+	assetsPath = "../../assets"
+	iconFile   = "icon.ico"
+)
+
 func main() {
+	verbose := os.Getenv("VERBOSE") != ""
+
+	logging.CurrentHandler().SetVerbose(verbose)
+	logging.SetupRollbar(constants.StateTrayRollbarToken)
+
 	systray.Run(onReady, onExit)
 }
 
 func onReady() {
+	var exitCode int
+	defer exit(exitCode)
+
 	err := run()
 	if err != nil {
-		logging.Error("Systray encountered an error: %v", errs.Join(err, ": "))
-		os.Exit(1)
+		errMsg := errs.Join(err, ": ").Error()
+		logging.Error("Systray encountered an error: %v", errMsg)
+		fmt.Fprintln(os.Stderr, errMsg)
+		exitCode = 1
 	}
 }
 
 func run() error {
-	if os.Getenv("VERBOSE") == "true" {
-		// Doesn't seem to work, I think the systray lib and its logging solution is interfering
-		logging.CurrentHandler().SetVerbose(true)
-	}
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
 
-	stateSvcExe := filepath.Join(filepath.Dir(os.Args[0]), "state-svc")
-	if runtime.GOOS == "windows" {
-		stateSvcExe = stateSvcExe + ".exe"
-	}
-	if !fileutils.FileExists(stateSvcExe) {
-		return errs.New("Could not find: %s", stateSvcExe)
-	}
-
-	cmd := exec.Command(stateSvcExe, "start")
-	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000} // CREATE_NO_WINDOW
-	if err := cmd.Start(); err != nil {
-		return errs.Wrap(err, "Could not start %s", stateSvcExe)
-	}
-
-	config, err := config.Get()
+	config, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
+	}
+
+	svcm := svcmanager.New(config)
+	if err := svcm.StartAndWait(); err != nil {
+		return errs.Wrap(err, "Service failed to start")
 	}
 
 	model, err := model.NewSvcModel(context.Background(), config)
@@ -65,9 +72,20 @@ func run() error {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
-	box := packr.NewBox("../../assets")
-	systray.SetIcon(box.Bytes("icon.ico"))
 	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
+
+	mUpdate := systray.AddMenuItem(
+		locale.Tl("tray_update_title", "Update Available"),
+		locale.Tl("tray_update_tooltip", "Update your ActiveState Desktop installation"),
+	)
+	mUpdate.Hide()
+
+	updNotice := updateNotice{
+		box:  box,
+		item: mUpdate,
+	}
+	closeUpdateSupervision := superviseUpdate(model, &updNotice)
+	defer closeUpdateSupervision()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
@@ -95,11 +113,17 @@ func run() error {
 		locale.Tl("tray_account_tooltip", "Open your account page"),
 	)
 
+	trayInfo := appinfo.TrayApp()
+
 	systray.AddSeparator()
-	mAutoStart := systray.AddMenuItem(locale.Tl("tray_autostart", "Start on Login"), "")
-	if autostart.New().IsEnabled() {
-		mAutoStart.Check()
+	as := autostart.New(trayInfo.Name(), trayInfo.Exec())
+	enabled, err := as.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
+	mAutoStart := systray.AddMenuItemCheckbox(
+		locale.Tl("tray_autostart", "Start on Login"), "", enabled,
+	)
 	systray.AddSeparator()
 
 	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
@@ -154,9 +178,12 @@ func run() error {
 			localProjectsUpdater.Update(localProjects)
 		case <-mAutoStart.ClickedCh:
 			logging.Debug("Autostart event")
-			as := autostart.New()
 			var err error
-			if as.IsEnabled() {
+			enabled, err := as.IsEnabled()
+			if err != nil {
+				logging.Error("Could not check if autostart is enabled: %v", err)
+			}
+			if enabled {
 				logging.Debug("Disable")
 				err = as.Disable()
 				if err == nil {
@@ -172,15 +199,36 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
+		case <-mUpdate.ClickedCh:
+			logging.Debug("Update event")
+			updlgInfo := appinfo.UpdateDialogApp()
+			if err := execute(updlgInfo.Exec(), nil); err != nil {
+				return errs.New("Could not execute: %s", updlgInfo.Name())
+			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
 			systray.Quit()
 		}
 	}
-
-	return nil
 }
 
 func onExit() {
 	// Not implemented
+}
+
+func exit(code int) {
+	events.WaitForEvents(1*time.Second, rollbar.Close)
+	os.Exit(code)
+}
+
+func execute(exec string, args []string) error {
+	if !fileutils.FileExists(exec) {
+		return errs.New("Could not find: %s", exec)
+	}
+
+	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
+		return errs.Wrap(err, "Could not start %s", exec)
+	}
+
+	return nil
 }

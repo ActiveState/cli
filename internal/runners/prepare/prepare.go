@@ -20,11 +20,15 @@ type primeable interface {
 	primer.Configurer
 }
 
+type Configurer interface {
+	globaldefault.DefaultConfigurer
+}
+
 // Prepare manages the prepare execution context.
 type Prepare struct {
 	out      output.Outputer
 	subshell subshell.SubShell
-	cfg      globaldefault.DefaultConfigurer
+	cfg      Configurer
 }
 
 // New prepares a prepare execution context for use.
@@ -63,4 +67,3 @@ func (r *Prepare) reportError(message string, err error) {
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
 }
-

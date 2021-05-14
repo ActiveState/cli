@@ -1,19 +1,21 @@
 constants:
   - name: BUILD_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state.exe
-  - name: BUILD_TARGET_32BIT
-    if: eq .OS.Name "Windows"
-    value: ./build/state32.exe
+    value: state.exe
+  - name: BUILD_TRANSITION_TARGET
+    value: state-transition-update.exe
   - name: BUILD_DAEMON_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state-svc.exe
-  - name: SYSTRAY_BUILD_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./build/state-tray.exe
+    value: state-svc.exe
+  - name: BUILD_INSTALLER_TARGET
+    value: state-installer.exe
+  - name: BUILD_SYSTRAY_TARGET
+    value: state-tray.exe
+  - name: BUILD_UPDLG_TARGET
+    value: ./build/state-update-dialog.exe
   - name: SYSTRAY_BUILDFLAGS
-    if: eq .OS.Name "Windows"
     value: -ldflags="-s -w -H=windowsgui"
+  - name: UPDLG_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: -ldflags "-w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
 scripts:
   - name: build-install-scripts
     language: bash
@@ -21,7 +23,14 @@ scripts:
     if: eq .OS.Name "Windows"
     description: Copies install scripts to build dir, this script exists for transparency with CI behavior
     value: |
-      cp installers/install.ps1 build/install.ps1
+
+      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      mkdir -p $INSTALLERS_DIR
+
+      cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
+      cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
@@ -73,3 +82,10 @@ scripts:
       mkdir -p build/msi
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
       rm -Rf build/msi-language
+  - name: run-updlg
+    description: Runs the update dialog in debug mode
+    standalone: true
+    language: bash
+    value: |
+      /c/Windows/System32/F12/IEChooser.exe & // debugger
+      go run $constants.UPDLG_BUILDFLAGS github.com/ActiveState/cli/cmd/state-update-dialog

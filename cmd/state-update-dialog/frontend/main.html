@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Update ActiveState Desktop</title>
+    <base target="_blank"/>
+</head>
+<body>
+    <div class="container" id="initial-screen" style="display: none">
+        <h1 class="logo">ActiveState Desktop</h1>
+        <h4>A New Update is Available!</h4>
+        <div class="row">
+            <div class="column">
+                ActiveState Desktop <strong id="AvailableVersion"></strong> is now available, you are currently using
+                <strong id="CurrentVersion"></strong>. Would you like to install the new version?
+            </div>
+        </div>
+        <h4>Update Notes:</h4>
+        <div class="row fill">
+            <div class="column">
+                <div id="changelog">
+                    <div id="warning-wrapper">
+                        <strong class="red">WARNING:</strong>
+                        The following projects will need to be updated:
+                        <ul id="warning-projects"></ul>
+                        Please refer to <a
+                            href="https://docs.activestate.com/platform/state/changes/deprecation"
+                            id="warning-doc-url">
+                        our documentation</a> on how to update your projects.
+                    </div>
+                    <span id="changelog-content">
+                    <p>
+                        Please refer to the <a href="">documentation</a>.
+                    </p>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column buttons">
+                <button class="button button-outline push-right" id="close-btn">Close</button>
+                <button class="button" id="install-btn">Update</button>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="install-screen" style="display: none">
+        <h1 class="logo">ActiveState Desktop</h1>
+        <div class="row fill">
+            <div class="column">
+                <div id="installlog">Downloading update
+                    <span id="installog-content"></span>
+                    <span id="installerror-content"></span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="column buttons">
+                <button class="button button-outline push-right" id="close-btn2">Close</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -29,24 +29,26 @@ type Store struct {
 type StoredArtifact struct {
 	ArtifactID artifact.ArtifactID           `json:"artifactID"`
 	Files      []string                      `json:"files"`
+	Dirs       []string                      `json:"dirs"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
 
-func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
 	return StoredArtifact{
 		ArtifactID: artifactID,
 		Files:      files,
+		Dirs:       dirs,
 		EnvDef:     envDef,
 	}
 }
 
 type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
 
-func New(installPath string) (*Store, error) {
+func New(installPath string) *Store {
 	return &Store{
 		installPath,
 		filepath.Join(installPath, constants.LocalRuntimeEnvironmentDirectory),
-	}, nil
+	}
 }
 
 func (s *Store) markerFile() string {
@@ -59,6 +61,13 @@ func (s *Store) buildEngineFile() string {
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
+}
+
+func (s *Store) HasMarker() bool {
+	if fileutils.FileExists(s.markerFile()) {
+		return true
+	}
+	return false
 }
 
 // MatchesCommit checks if stored runtime is complete and can be loaded
@@ -206,7 +215,7 @@ func (s *Store) StoreArtifact(artf StoredArtifact) error {
 	return nil
 }
 
-func (s *Store) Environ(inherit bool) (map[string]string, error) {
+func (s *Store) EnvDef() (*envdef.EnvironmentDefinition, error) {
 	mergedRuntimeDefinitionFile := filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename)
 	envDef, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if err != nil {
@@ -215,6 +224,14 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
 			constants.ForumsURL,
 		)
+	}
+	return envDef, nil
+}
+
+func (s *Store) Environ(inherit bool) (map[string]string, error) {
+	envDef, err := s.EnvDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab EnvDef")
 	}
 	return envDef.GetEnv(inherit), nil
 }

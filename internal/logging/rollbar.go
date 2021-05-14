@@ -24,12 +24,12 @@ type delayedLog struct {
 var delayedLogs []delayedLog
 var cfg Configurable
 
-func SetupRollbar() {
+func SetupRollbar(token string) {
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
-	rollbar.SetToken(constants.RollbarToken)
+	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
 
 	dateTime := constants.Date

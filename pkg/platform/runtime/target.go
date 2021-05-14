@@ -32,6 +32,10 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	return p.Project.CommitUUID()
 }
 
+func (p *ProjectTarget) OnlyUseCache() bool {
+	return false
+}
+
 type CustomTarget struct {
 	owner      string
 	name       string
@@ -63,6 +67,10 @@ func (c *CustomTarget) CommitUUID() strfmt.UUID {
 
 func (c *CustomTarget) Dir() string {
 	return c.dir
+}
+
+func (c *CustomTarget) OnlyUseCache() bool {
+	return c.commitUUID == ""
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {

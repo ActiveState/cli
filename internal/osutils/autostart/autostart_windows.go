@@ -3,6 +3,7 @@ package autostart
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gobuffalo/packr"
 
@@ -14,10 +15,16 @@ import (
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func (a *App) Enable() error {
-	if a.IsEnabled() {
+	enabled, err := a.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app is enabled")
+	}
+	if enabled {
 		return nil
 	}
-	s, err := shortcut.New(startupPath, a.Name, a.Exec)
+
+	name := formattedName(a.Name)
+	s, err := shortcut.New(startupPath, name, a.Exec)
 	if err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
@@ -29,16 +36,26 @@ func (a *App) Enable() error {
 }
 
 func (a *App) Disable() error {
-	if !a.IsEnabled() {
+	enabled, err := a.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
+	}
+
+	if !enabled {
 		return nil
 	}
 	return os.Remove(a.shortcutFilename())
 }
 
-func (a *App) IsEnabled() bool {
-	return fileutils.FileExists(a.shortcutFilename())
+func (a *App) IsEnabled() (bool, error) {
+	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
 func (a *App) shortcutFilename() string {
-	return filepath.Join(startupPath, a.Name+".lnk")
+	name := formattedName(a.Name)
+	return filepath.Join(startupPath, name+".lnk")
+}
+
+func formattedName(name string) string {
+	return strings.ToLower(strings.ReplaceAll(name, " ", "-"))
 }

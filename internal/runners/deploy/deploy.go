@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -45,6 +45,7 @@ func RequiresAdministratorRights(step Step, userScope bool) bool {
 }
 
 type Deploy struct {
+	auth     *authentication.Auth
 	output   output.Outputer
 	subshell subshell.SubShell
 	step     Step
@@ -52,6 +53,7 @@ type Deploy struct {
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
@@ -59,6 +61,7 @@ type primeable interface {
 
 func NewDeploy(step Step, prime primeable) *Deploy {
 	return &Deploy{
+		prime.Auth(),
 		prime.Output(),
 		prime.Subshell(),
 		step,
@@ -150,9 +153,14 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	if err := rti.Update(runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
+	if err := rti.Update(d.auth, runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
+
+	// Todo Remove with https://www.pivotaltracker.com/story/show/178161240
+	// call rti.Environ as this completes the runtime activation cycle:
+	// It ensures that the analytics event for failure / success are sent
+	_, _ = rti.Env(false, false)
 
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
@@ -176,15 +184,14 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := rti.Env(false, false)
 	if err != nil {
 		return err
 	}
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.Deploy, userScope)
+	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
@@ -213,12 +220,6 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
-	if err != nil {
-		return err
-	}
-
 	var path string
 	if rt.GOOS != "windows" {
 		// Retrieve path to write symlinks to
@@ -228,10 +229,10 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		}
 	}
 
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
+	// Retrieve artifact binary directories
+	bins, err := rti.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
 
 	exes, err := exeutils.Executables(bins)
@@ -321,12 +322,6 @@ func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, ou
 	return nil
 }
 
-type exeFile struct {
-	fpath string
-	name  string
-	ext   string
-}
-
 type Report struct {
 	BinaryDirectories []string
 	Environment       map[string]string
@@ -341,8 +336,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	venv := virtualenvironment.New(rti)
-	env, err := venv.GetEnv(false, "")
+	env, err := rti.Env(false, false)
 	if err != nil {
 		return err
 	}

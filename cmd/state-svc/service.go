@@ -26,7 +26,7 @@ func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New()
+	s.server, err = server.New(s.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -34,6 +34,8 @@ func (s *service) Start() error {
 	if err := s.cfg.Set(constants.SvcConfigPort, s.server.Port()); err != nil {
 		return errs.Wrap(err, "Could not save config")
 	}
+
+	logging.Debug("Server starting on port: %d", s.server.Port())
 
 	if err := s.server.Start(); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {

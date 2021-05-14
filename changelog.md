@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.29.0
+
+### Changed
+
+- The State Tool now comes with the ActiveState Desktop application, which is
+  currently a system tray application.
+- We've replaced the auto updating system with a manual updating system, updates
+  will from now on be made available through the system tray application and you
+  will have the choice to install it now or later.
+
+## 0.28.1
+
+### Fixed
+
+* Fixed package installs / uninstalls not using the
+  cache ([PR #1331](https://github.com/ActiveState/cli/pull/1331))
+
 ## 0.28.0
 
 ### Changed
@@ -17,6 +34,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `state push` updates project name in activestate.yaml.
   ([PR1297](https://github.com/ActiveState/cli/pull/1297))
+
+## 0.27.1
+
+### Fixed
+
+- Fixed issue where `state uninstall` would not completely remove package files
+  ([PR #1304](https://github.com/ActiveState/cli/pull/1304))
 
 ## 0.27.0
 

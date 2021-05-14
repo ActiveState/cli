@@ -19,6 +19,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -540,25 +541,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	waitForAllEvents(time.Second * 1)
+	events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Wait)
 
 	return err
-}
-
-func waitForAllEvents(t time.Duration) {
-	wg := make(chan struct{})
-	go func() {
-		analytics.Wait()
-		rollbar.Wait()
-		close(wg)
-	}()
-
-	select {
-	case <-time.After(t):
-		return
-	case <-wg:
-		return
-	}
 }
 
 func (c *Command) runFlags(persistOnly bool) {

@@ -2,7 +2,9 @@ package activate
 
 import (
 	"fmt"
+	"os/user"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -12,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
@@ -32,6 +35,7 @@ import (
 type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
+	auth             *authentication.Auth
 	out              output.Outputer
 	config           *config.Instance
 	proj             *project.Project
@@ -49,6 +53,7 @@ type ActivateParams struct {
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
@@ -60,6 +65,7 @@ func NewActivate(prime primeable) *Activate {
 	return &Activate{
 		NewNamespaceSelect(prime.Config(), prime),
 		NewCheckout(git.NewRepo(), prime),
+		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 		prime.Project(),
@@ -185,7 +191,10 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+		if err = rt.Update(r.auth, runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+			if errs.Matches(err, &model.ErrOrderAuth{}) {
+				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+			}
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 		if err != nil {
@@ -214,14 +223,14 @@ func (r *Activate) run(params *ActivateParams) error {
 		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
 		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
-		globaldefault.WarningForAdministrator(r.out)
+		warningForAdministrator(r.out)
 
 		if alreadyActivated {
 			return nil
 		}
 	}
 
-	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
+	updater.DefaultChecker.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
@@ -292,4 +301,29 @@ func (r *Activate) pathToProject(path string) (*project.Project, error) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
 	return projectToUse, nil
+}
+
+// warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
+// The default activation will only be accessible by the underlying unprivileged user.
+func warningForAdministrator(out output.Outputer) {
+	if rt.GOOS != "windows" {
+		return
+	}
+
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		logging.Error("Failed to determine if run as administrator.")
+	}
+	if isAdmin {
+		u, err := user.Current()
+		if err != nil {
+			logging.Error("Failed to determine current user.")
+			return
+		}
+		out.Notice(locale.Tl(
+			"default_admin_activation_warning",
+			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
+			u.Username,
+		))
+	}
 }

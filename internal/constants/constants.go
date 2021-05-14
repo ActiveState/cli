@@ -27,8 +27,8 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
-// ShimEnvVarName is the env var used to find out if we are shimming recursively
-const ShimEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
+// ExecEnvVarName is the env var used to find out if we are shimming recursively
+const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
 // DisableUpdates is the env var used to disable auto update
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
@@ -82,7 +82,7 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
-const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
+const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
@@ -194,8 +194,18 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
-// RollbarToken is the token used to talk to rollbar
-const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+// StateToolRollbarToken is the token used by the State Tool to talk to rollbar
+const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
+// StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
+const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+
+// StateServiceRollbarToken is the token used by the State Service to talk to rollbar
+const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+
+// StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
+// Todo It is currently the same as the State Tool's
+const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
@@ -258,6 +268,12 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
+// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
+
+// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
@@ -274,4 +290,20 @@ const SvcConfigPort = "svc-port"
 const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
-const TrayAppName = "ActiveState Platform"
+const TrayAppName = "ActiveState Desktop"
+
+// SvcAppName is the name we give our state-svc application
+const SvcAppName = "State Service"
+
+// StateAppName is the name we give our state cli executable
+const StateAppName = "State Tool"
+
+// StateUpdateDialogName is the name we give our state-update-dialog executable
+const UpdateDialogName = "State Update Dialog"
+
+// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// Cf., https://www.pivotaltracker.com/story/show/177781411
+const ToplevelInstallArchiveDir = "state-install"
+
+// FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
+const FirstMultiFileStateToolVersion = "0.29.0"

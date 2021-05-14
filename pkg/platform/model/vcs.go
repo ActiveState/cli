@@ -28,6 +28,8 @@ var (
 	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
 )
 
+type ErrOrderAuth struct{ *locale.LocalizedError }
+
 type ProjectInfo interface {
 	Owner() string
 	Name() string
@@ -672,12 +674,19 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	var err error
 	if auth.Get().Authenticated() {
 		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
+		if err != nil {
+			return nil, errors.New(api.ErrorMessageFromPayload(err))
+		}
 	} else {
 		// Allow activation of public projects if user is not authenticated
 		res, err = mono.New().VersionControl.GetOrder(params, nil)
-	}
-	if err != nil {
-		return nil, errors.New(api.ErrorMessageFromPayload(err))
+		if err != nil {
+			code := api.ErrorCode(err)
+			if code == 401 || code == 403 {
+				return nil, &ErrOrderAuth{locale.NewInputError("err_order_auth", "Fetch order failed with authentication error")}
+			}
+			return nil, errors.New(api.ErrorMessageFromPayload(err))
+		}
 	}
 
 	return res.Payload, err

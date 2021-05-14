@@ -468,7 +468,7 @@ func Parse(configFilepath string) (*Project, error) {
 		keyword := l(match[1])
 		if (keyword == l(sysinfo.Linux.String()) || keyword == l(sysinfo.Mac.String()) || keyword == l(sysinfo.Windows.String())) &&
 			keyword != l(sysinfo.OS().String()) {
-			logging.Debug("Not merging %s as we're not on %s", file.Name(), sysinfo.OS().String())
+			logging.Debug("Not merging %s because we are on %s", file.Name(), sysinfo.OS().String())
 			continue
 		}
 
@@ -1218,6 +1218,30 @@ func GetProjectMapping(config ConfigGetter) map[string][]string {
 		return map[string][]string{}
 	}
 	return projects
+}
+
+func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
+	projects := GetProjectMapping(config)
+
+	res := make(map[string][]*Project)
+	for name, paths := range projects {
+		if name == "/" {
+			continue
+		}
+		var pFiles []*Project
+		for _, path := range paths {
+			prj, err := FromExactPath(path)
+			if err != nil {
+				logging.Error("Could not read project file at %s: %v", path, err)
+				continue
+			}
+			pFiles = append(pFiles, prj)
+		}
+		if len(pFiles) > 0 {
+			res[name] = pFiles
+		}
+	}
+	return res
 }
 
 func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
