@@ -271,6 +271,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cp.SendLine("y")
 			cp.ExpectExitCode(0)
 
+			// debug:
+			fmt.Println(cp.TrimmedSnapshot())
+
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 			suite.NoDirExists(ts.Dirs.Config)
@@ -402,6 +405,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			// Todo: Sometimes the state.exe file still remains on disk (always on CI, never on my machine!)
 			// https://www.pivotaltracker.com/story/show/178148949
 			// assertBinDirContents(suite.NotContains, ts.Dirs.Work)
+
+			// debug:
+			fmt.Println(cp.TrimmedSnapshot())
 
 			// Todo: Remove the following lines if the bug above is fixed
 			binFiles := listFilesOnly(ts.Dirs.Work)
