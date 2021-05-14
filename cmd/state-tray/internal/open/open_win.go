@@ -12,7 +12,7 @@ func TerminalAndWait(command string) error {
 	return Terminal(command)
 }
 
-// TerminalAndWait will open the a command prompt and execute the given command string
+// Terminal will open the command prompt and execute the given command string
 func Terminal(command string) error {
 	// start will open an instance of the given executable. The first parameter
 	// of start is the title, the second is the executable to start.
