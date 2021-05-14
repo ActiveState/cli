@@ -157,6 +157,10 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
+	// call rti.Environ as this completes the runtime activation cycle:
+	// It ensures that the analytics event for failure / success are sent
+	_, _ = rti.Env(false, false)
+
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")
 		contents := box.Bytes("setenv.bat")
