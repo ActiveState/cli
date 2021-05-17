@@ -16,8 +16,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// MinimumTimeout is the minimum timeout required for requests that are meant to be near-instant
-const MinimumTimeout = 500 * time.Millisecond
+// MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
+const MinimalTimeout = 500 * time.Millisecond
 
 type Manager struct {
 	ready bool

@@ -50,7 +50,7 @@ func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
 }
 
 func RunUpdateNotifier(cfg *config.Instance, out output.Outputer) {
-	ctx, _ := context.WithTimeout(context.Background(), svcmanager.MinimumTimeout)
+	ctx, _ := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
 	svc, err := model.NewSvcModel(ctx, cfg)
 	if err != nil {
 		logging.Error("Could not init svc model when running update notifier, error: %v", errs.JoinMessage(err))
