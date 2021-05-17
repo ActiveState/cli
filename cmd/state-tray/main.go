@@ -57,17 +57,20 @@ func run() error {
 	box := packr.NewBox(assetsPath)
 	systray.SetIcon(box.Bytes(iconFile))
 
-	config, err := config.New()
+	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
+	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
+		return errs.Wrap(err, "Could not write pid to config file.")
+	}
 
-	svcm := svcmanager.New(config)
+	svcm := svcmanager.New(cfg)
 	if err := svcm.StartAndWait(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), config)
+	model, err := model.NewSvcModel(context.Background(), cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}

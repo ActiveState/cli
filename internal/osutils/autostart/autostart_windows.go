@@ -24,8 +24,8 @@ func (a *App) Enable() error {
 	}
 
 	name := formattedName(a.Name)
-	s, err := shortcut.New(startupPath, name, a.Exec)
-	if err != nil {
+	s := shortcut.New(startupPath, name, a.Exec)
+	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
 	box := packr.NewBox("../../../assets")
@@ -49,6 +49,10 @@ func (a *App) Disable() error {
 
 func (a *App) IsEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
+}
+
+func (a *App) Path() (string, error) {
+	return a.shortcutFilename(), nil
 }
 
 func (a *App) shortcutFilename() string {

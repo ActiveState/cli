@@ -14,6 +14,7 @@ type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
 	CachePath() string
+	GetInt(string) int
 }
 
 type Config struct {
