@@ -10,7 +10,11 @@ func NewAvailableUpdate() *AvailableUpdate {
 func (u *AvailableUpdate) Query() string {
 	return `query() {
 		availableUpdate() {
-			available
+			version
+			channel
+			path
+			platform
+			sha256
 		}
 	}`
 }
