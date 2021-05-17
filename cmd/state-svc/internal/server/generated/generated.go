@@ -42,6 +42,14 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AvailableUpdate struct {
+		Channel  func(childComplexity int) int
+		Path     func(childComplexity int) int
+		Platform func(childComplexity int) int
+		Sha256   func(childComplexity int) int
+		Version  func(childComplexity int) int
+	}
+
 	DeferredUpdate struct {
 		Channel func(childComplexity int) int
 		Logfile func(childComplexity int) int
@@ -54,9 +62,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Projects func(childComplexity int) int
-		Update   func(childComplexity int, channel *string, version *string) int
-		Version  func(childComplexity int) int
+		AvailableUpdate func(childComplexity int) int
+		Projects        func(childComplexity int) int
+		Update          func(childComplexity int, channel *string, version *string) int
+		Version         func(childComplexity int) int
 	}
 
 	StateVersion struct {
@@ -74,6 +83,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
+	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 }
@@ -92,6 +102,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AvailableUpdate.channel":
+		if e.complexity.AvailableUpdate.Channel == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Channel(childComplexity), true
+
+	case "AvailableUpdate.path":
+		if e.complexity.AvailableUpdate.Path == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Path(childComplexity), true
+
+	case "AvailableUpdate.platform":
+		if e.complexity.AvailableUpdate.Platform == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Platform(childComplexity), true
+
+	case "AvailableUpdate.sha256":
+		if e.complexity.AvailableUpdate.Sha256 == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Sha256(childComplexity), true
+
+	case "AvailableUpdate.version":
+		if e.complexity.AvailableUpdate.Version == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Version(childComplexity), true
 
 	case "DeferredUpdate.channel":
 		if e.complexity.DeferredUpdate.Channel == nil {
@@ -127,6 +172,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Project.Namespace(childComplexity), true
+
+	case "Query.availableUpdate":
+		if e.complexity.Query.AvailableUpdate == nil {
+			break
+		}
+
+		return e.complexity.Query.AvailableUpdate(childComplexity), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -258,6 +310,14 @@ type StateVersion {
   date: String!
 }
 
+type AvailableUpdate {
+  version: String!
+  channel: String!
+  path: String!
+  platform: String!
+  sha256: String!
+}
+
 type DeferredUpdate {
   channel: String!
   version: String!
@@ -271,6 +331,7 @@ type Project {
 
 type Query {
   version: Version
+  availableUpdate: AvailableUpdate
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }
@@ -358,6 +419,181 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _AvailableUpdate_version(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_channel(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_path(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Path, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_platform(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Platform, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_sha256(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sha256, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _DeferredUpdate_channel(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
 	defer func() {
@@ -564,6 +800,38 @@ func (ec *executionContext) _Query_version(ctx context.Context, field graphql.Co
 	res := resTmp.(*graph.Version)
 	fc.Result = res
 	return ec.marshalOVersion2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐVersion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_availableUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AvailableUpdate(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.AvailableUpdate)
+	fc.Result = res
+	return ec.marshalOAvailableUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAvailableUpdate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_update(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2016,6 +2284,53 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
+var availableUpdateImplementors = []string{"AvailableUpdate"}
+
+func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.SelectionSet, obj *graph.AvailableUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, availableUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AvailableUpdate")
+		case "version":
+			out.Values[i] = ec._AvailableUpdate_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "channel":
+			out.Values[i] = ec._AvailableUpdate_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "path":
+			out.Values[i] = ec._AvailableUpdate_path(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "platform":
+			out.Values[i] = ec._AvailableUpdate_platform(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sha256":
+			out.Values[i] = ec._AvailableUpdate_sha256(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var deferredUpdateImplementors = []string{"DeferredUpdate"}
 
 func (ec *executionContext) _DeferredUpdate(ctx context.Context, sel ast.SelectionSet, obj *graph.DeferredUpdate) graphql.Marshaler {
@@ -2109,6 +2424,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_version(ctx, field)
+				return res
+			})
+		case "availableUpdate":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_availableUpdate(ctx, field)
 				return res
 			})
 		case "update":
@@ -2804,6 +3130,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalOAvailableUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAvailableUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.AvailableUpdate) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AvailableUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
