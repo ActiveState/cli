@@ -25,19 +25,37 @@ import (
 )
 
 func (u *Uninstall) runUninstall() error {
-	err := removeCache(u.cfg.CachePath())
-	if err != nil {
-		return err
-	}
-
 	logFile, err := ioutil.TempFile("", "state-clean-uninstall")
 	if err != nil {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
+	// we aggregate installation errors, such that we can display all installation problems in the end
+	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
+	var aggErr error
+	err = removeCache(u.cfg.CachePath())
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
+	}
+
 	err = removeInstall(u.cfg, logFile.Name(), u.installDir, u.cfg.ConfigPath())
 	if err != nil {
-		return err
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
+	}
+
+	err = removeConfig(u.cfg.ConfigPath(), u.out)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+
+	}
+
+	err = undoPrepare()
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+	}
+
+	if aggErr != nil {
+		return aggErr
 	}
 
 	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
