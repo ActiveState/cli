@@ -144,7 +144,7 @@ func run() error {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			err = open.Prompt(appinfo.StateApp().Exec() + " --version")
+			err = open.TerminalAndWait(appinfo.StateApp().Exec() + " --version")
 			if err != nil {
 				logging.Error("Could not open command prompt: %v", err)
 			}
