@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -28,15 +27,8 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	err := fileutils.Touch(filepath.Join(ts.Dirs.Config, "config.yaml"))
 	suite.Require().NoError(err, "Could not create config file")
 
-	// TODO: Remove this once state clean uninstall is updated to
-	// kill these processes and remove these binaries
-	cp := ts.SpawnCmd(ts.SvcExe, "stop")
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.ExpectExitCode(0)
-	time.Sleep(1 * time.Second)
-	err = os.Remove(ts.SvcExe)
-	suite.Require().NoError(err)
-	err = os.Remove(ts.TrayExe)
-	suite.Require().NoError(err)
 
 	cp = ts.Spawn("clean", "uninstall")
 	cp.Expect("You are about to remove")
@@ -62,7 +54,15 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	}
 
 	if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state"+osutils.ExeExt)) {
-		suite.Fail("Installation dir should not exist after uninstall")
+		suite.Fail("State tool executable should not exist after uninstall")
+	}
+
+	if fileutils.FileExists(ts.SvcExe) {
+		suite.Fail("State service executable should not exist after uninstall")
+	}
+
+	if fileutils.FileExists(ts.TrayExe) {
+		suite.Fail("State tray executable should not exist after uninstall")
 	}
 }
 

@@ -33,20 +33,14 @@ func (u *Uninstall) runUninstall() error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	err = removeCache(u.cfg.CachePath())
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
-	}
-
 	err = removeInstall(u.cfg, logFile.Name(), u.installDir, u.cfg.ConfigPath())
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
 	}
 
-	err = removeConfig(u.cfg.ConfigPath(), u.out)
+	err = removeCache(u.cfg.CachePath())
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
-
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
 	}
 
 	err = undoPrepare()
@@ -105,11 +99,15 @@ func removeInstall(cfg configurable, logFile, installPath, configPath string) er
 		}
 	}
 
+	if aggErr != nil {
+		return aggErr
+	}
+
 	return removePaths(logFile, filepath.Join(installPath, "state"+osutils.ExeExt), configPath)
 }
 
-func removePaths(logFile string, dirs ...string) error {
-	logging.Debug("Removing paths: %v", dirs)
+func removePaths(logFile string, paths ...string) error {
+	logging.Debug("Removing paths: %v", paths)
 	scriptName := "removePaths"
 	box := packr.NewBox("../../../assets/scripts/")
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
@@ -124,26 +122,10 @@ func removePaths(logFile string, dirs ...string) error {
 	}
 
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
-	args = append(args, dirs...)
+	args = append(args, paths...)
 	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
-	}
-
-	return nil
-}
-
-func runScript(scriptName, path string) error {
-	box := packr.NewBox("../../../assets/scripts/")
-	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
-	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
-	if err != nil {
-		return err
-	}
-
-	_, err = exeutils.ExecuteAndForget("cmd.exe", []string{"/C", sf.Filename(), path})
-	if err != nil {
-		return err
 	}
 
 	return nil
