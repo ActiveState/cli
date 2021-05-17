@@ -56,14 +56,6 @@ func (a *App) Enable() error {
 }
 
 func (a *App) Path() (string, error) {
-	enabled, err := a.IsEnabled()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-	if !enabled {
-		return "", nil
-	}
-
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find autostart directory")
@@ -74,6 +66,14 @@ func (a *App) Path() (string, error) {
 }
 
 func (a *App) Disable() error {
+	enabled, err := a.IsEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
+	}
+	if !enabled {
+		return nil
+	}
+
 	path, err := a.Path()
 	if err != nil {
 		return err
