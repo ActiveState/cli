@@ -58,7 +58,12 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return errs.Wrap(err, "Cmd failure")
+		err = errs.Wrap(err, "Cmd failure")
+		tipMsg := locale.Tl(
+			"err_tip_git_ssh-add",
+			"SSH might be unable to authenticate. Running `ssh-add` before trying again may help.",
+		)
+		return errs.AddTips(err, tipMsg)
 	}
 
 	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
