@@ -23,7 +23,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
 	}
 
-	err = removeInstall(u.cfg, "", u.installDir, "")
+	err = removeInstall(u.cfg, u.installDir)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
 	}
@@ -70,7 +70,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return nil
 }
 
-func removeInstall(_ configurable, logFile, installDir, _ string) error {
+func removeInstall(_ configurable, installDir string) error {
 	stateInfo := appinfo.StateApp(installDir)
 	stateSvcInfo := appinfo.SvcApp(installDir)
 	stateTrayInfo := appinfo.TrayApp(installDir)
