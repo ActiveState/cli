@@ -55,5 +55,5 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	logging.Debug("Removing config directory: %s", c.cfg.ConfigPath())
-	return removeConfig(c.cfg)
+	return removeConfig(c.cfg.ConfigPath(), c.output)
 }

@@ -330,6 +330,13 @@ jobs:
     - name: Build Service
       shell: bash
       run: state run build-svc
+    - name: Build Tray App
+      shell: bash
+      run: |
+        state run build-tray
+    - name: Build Installer
+      shell: bash
+      run: state run build-installer
     - name: Build Systray App
       shell: bash
       if: runner.os == 'macOS'
@@ -340,6 +347,9 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Generate Test Update
+      shell: bash
+      run: state run generate-test-update
     - name: Build Languages MSI
       if: runner.os == 'Windows'
       shell: bash

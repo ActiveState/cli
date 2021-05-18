@@ -8,6 +8,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.29.0
 
+### Fixed
+
+- Fixed issue where `state clean uninstall` would not remove expected files
+  on Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+
 ### Changed
 
 - The State Tool now comes with the ActiveState Desktop application, which is

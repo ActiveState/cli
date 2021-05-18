@@ -5,6 +5,7 @@ package clean
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -16,15 +17,56 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func removeConfig(cfg configurable) error {
-	return runScript("removeConfig", cfg.ConfigPath())
+func (u *Uninstall) runUninstall() error {
+	logFile, err := ioutil.TempFile("", "state-clean-uninstall")
+	if err != nil {
+		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
+	}
+
+	// we aggregate installation errors, such that we can display all installation problems in the end
+	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
+	var aggErr error
+	err = removeInstall(u.cfg, logFile.Name(), u.installDir, u.cfg.ConfigPath())
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
+	}
+
+	err = removeCache(u.cfg.CachePath())
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
+	}
+
+	err = undoPrepare()
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+	}
+
+	if aggErr != nil {
+		return aggErr
+	}
+
+	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
+	return nil
 }
 
-func removeInstall(cfg configurable, installPath string) error {
+func removeConfig(configPath string, out output.Outputer) error {
+	logFile, err := ioutil.TempFile("", "state-clean-config")
+	if err != nil {
+		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
+	}
+
+	out.Print(locale.Tr("clean_config_message_windows", logFile.Name()))
+	return removePaths(logFile.Name(), configPath)
+}
+
+func removeInstall(cfg configurable, logFile, installPath, configPath string) error {
 	// On Windows we need to halt the state tray and the state service before we can remove them
 	svcInfo := appinfo.SvcApp(installPath)
 	trayInfo := appinfo.TrayApp(installPath)
@@ -57,20 +99,33 @@ func removeInstall(cfg configurable, installPath string) error {
 		}
 	}
 
-	return runScript("removeInstall", filepath.Join(installPath, "state"+osutils.ExeExt))
+	if aggErr != nil {
+		return aggErr
+	}
+
+	return removePaths(logFile, filepath.Join(installPath, "state"+osutils.ExeExt), configPath)
 }
 
-func runScript(scriptName, path string) error {
+func removePaths(logFile string, paths ...string) error {
+	logging.Debug("Removing paths: %v", paths)
+	scriptName := "removePaths"
 	box := packr.NewBox("../../../assets/scripts/")
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
 	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_clean_script", "Could not create new scriptfile")
 	}
 
-	_, err = exeutils.ExecuteAndForget("cmd.exe", []string{"/C", sf.Filename(), path})
+	exe, err := os.Executable()
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_clean_executable", "Could not get executable name")
+	}
+
+	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
+	args = append(args, paths...)
+	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
+	if err != nil {
+		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
 
 	return nil
