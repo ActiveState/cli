@@ -2,6 +2,7 @@ package clean
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,10 +15,10 @@ type confirmAble interface {
 }
 
 type Uninstall struct {
-	out         output.Outputer
-	confirm     confirmAble
-	cfg         configurable
-	installPath string
+	out        output.Outputer
+	confirm    confirmAble
+	cfg        configurable
+	installDir string
 }
 
 type UninstallParams struct {
@@ -35,16 +36,20 @@ func NewUninstall(prime primeable) (*Uninstall, error) {
 }
 
 func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable) (*Uninstall, error) {
-	installPath, err := os.Executable()
+	execPath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	absPath, err := filepath.Abs(execPath)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Uninstall{
-		out:         out,
-		confirm:     confirm,
-		installPath: installPath,
-		cfg:         cfg,
+		out:        out,
+		confirm:    confirm,
+		installDir: filepath.Dir(absPath),
+		cfg:        cfg,
 	}, nil
 }
 

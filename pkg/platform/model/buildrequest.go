@@ -6,10 +6,11 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
 )
 
-func RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
 	var platProj *mono_models.Project
 	if owner != "" && project != "" {
 		var err error
@@ -32,13 +33,13 @@ func RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headch
 		projectID = platProj.ProjectID
 	}
 
-	return requestBuild(recipeID, orgID, projectID, buildAnnotations)
+	return requestBuild(auth, recipeID, orgID, projectID, buildAnnotations)
 }
 
-func requestBuild(recipeID, orgID, projID strfmt.UUID, annotations headchef.BuildAnnotations) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func requestBuild(auth *authentication.Auth, recipeID, orgID, projID strfmt.UUID, annotations headchef.BuildAnnotations) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
 	buildRequest, err := headchef.NewBuildRequest(recipeID, orgID, projID, annotations)
 	if err != nil {
 		return headchef.Error, nil, err
 	}
-	return headchef.InitClient().RequestBuildSync(buildRequest)
+	return headchef.InitClient(auth).RequestBuildSync(buildRequest)
 }

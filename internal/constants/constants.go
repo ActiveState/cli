@@ -30,20 +30,11 @@ const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 // ExecEnvVarName is the env var used to find out if we are shimming recursively
 const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
-// DisableUpdates is the env var used to disable auto update
-const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
-
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
-
-// UpdateHailFileName is the file name used to pass messages from sub-processes to the parent.
-const UpdateHailFileName = "hail-update"
-
-// AutoUpdateTimeoutEnvVarName is the env var that is used to override the timeout for auto update checks
-const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"
 
 // InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileName = "config.yaml"
@@ -82,7 +73,7 @@ const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateURL is the URL for our update server
-const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
+const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
@@ -179,11 +170,17 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// DocumentationURLCreateProject is the documentation URL for creating projects
+const DocumentationURLCreateProject = DocumentationURL + "create-project/"
+
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/"
 
 // ActiveStateSupportURL is the URL for the AciveState support page
 const ActiveStateSupportURL = "https://www.activestate.com/support/"
+
+// ActiveStateAccountURL is the URL for the ActiveState account preferences page
+const ActiveStateAccountURL = "https://platform.activestate.com/preferences"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -194,8 +191,18 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
-// RollbarToken is the token used to talk to rollbar
-const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+// StateToolRollbarToken is the token used by the State Tool to talk to rollbar
+const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
+// StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
+const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+
+// StateServiceRollbarToken is the token used by the State Service to talk to rollbar
+const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+
+// StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
+// Todo It is currently the same as the State Tool's
+const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
@@ -258,6 +265,12 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
+// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
+
+// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
@@ -274,7 +287,20 @@ const SvcConfigPort = "svc-port"
 const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
-const TrayAppName = "ActiveState Platform"
+const TrayAppName = "ActiveState Desktop"
+
+// SvcAppName is the name we give our state-svc application
+const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// StateUpdateDialogName is the name we give our state-update-dialog executable
+const UpdateDialogName = "State Update Dialog"
+
+// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// Cf., https://www.pivotaltracker.com/story/show/177781411
+const ToplevelInstallArchiveDir = "state-install"
+
+// FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
+const FirstMultiFileStateToolVersion = "0.29.0"

@@ -17,11 +17,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -36,9 +38,11 @@ type Session struct {
 	env        []string
 	retainDirs bool
 	// users created during session
-	users []string
-	t     *testing.T
-	exe   string
+	users   []string
+	t       *testing.T
+	exe     string
+	SvcExe  string
+	TrayExe string
 }
 
 // Options for spawning a testable terminal process
@@ -46,6 +50,8 @@ type Options struct {
 	termtest.Options
 	// removes write-permissions in the bin directory from which executables are spawned.
 	NonWriteableBinDir bool
+	// expect the process to run in background (will not be stopped by subsequent processes)
+	BackgroundProcess bool
 }
 
 var (
@@ -87,45 +93,48 @@ func (s *Session) ExecutablePath() string {
 	return s.exe
 }
 
-// UniqueExe ensures the executable is unique to this instance
-func (s *Session) UseDistinctStateExe() {
-	execu := filepath.Join(s.Dirs.Bin, filepath.Base(s.exe))
-	if fileutils.TargetExists(execu) {
-		return
+func (s *Session) copyExeToBinDir(executable string) string {
+	binExe := filepath.Join(s.Dirs.Bin, filepath.Base(executable))
+	if fileutils.TargetExists(binExe) {
+		return binExe
 	}
 
-	err := fileutils.CopyFile(s.exe, execu)
+	err := fileutils.CopyFile(executable, binExe)
 	require.NoError(s.t, err)
 
 	// Ensure modTime is the same as source exe
-	stat, err := os.Stat(s.exe)
+	stat, err := os.Stat(executable)
 	require.NoError(s.t, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(execu, t, t))
+	require.NoError(s.t, os.Chtimes(binExe, t, t))
 
-	permissions, _ := permbits.Stat(execu)
+	permissions, _ := permbits.Stat(binExe)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(execu, permissions))
+	require.NoError(s.t, permbits.Chmod(binExe, permissions))
+	return binExe
+}
 
-	s.exe = execu
+// UniqueExe ensures the executable is unique to this instance
+func (s *Session) UseDistinctStateExes() {
+	s.exe = s.copyExeToBinDir(s.exe)
+	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
+	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
-func executablePath(t *testing.T) string {
-	ext := ""
-	if runtime.GOOS == "windows" {
-		ext = ".exe"
-	}
-	name := constants.CommandName + ext
+func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
-	subdir := "build"
+	buildDir := fileutils.Join(root, "build")
 
-	exec := filepath.Join(root, subdir, name)
-	if !fileutils.FileExists(exec) {
+	stateInfo := appinfo.StateApp(buildDir)
+	svcInfo := appinfo.SvcApp(buildDir)
+	trayInfo := appinfo.TrayApp(buildDir)
+
+	if !fileutils.FileExists(stateInfo.Exec()) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
 
-	return exec
+	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec()
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -140,7 +149,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
 		constants.CacheEnvVarName + "=" + dirs.Cache,
-		constants.DisableUpdates + "=true",
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
 	}...)
@@ -157,8 +165,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	// add session environment variables
 	env = append(env, extraEnv...)
+	exe, svcExe, trayExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, exe: executablePath(t)}
+	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, exe: exe, SvcExe: svcExe, TrayExe: trayExe}
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -232,7 +241,9 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	console, err := termtest.New(pOpts.Options)
 	require.NoError(s.t, err)
-	s.cp = console
+	if !pOpts.BackgroundProcess {
+		s.cp = console
+	}
 
 	return console
 }
@@ -344,6 +355,17 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
+	// stop service and tray if they exist
+	if fileutils.TargetExists(s.SvcExe) {
+		cp := s.SpawnCmd(s.SvcExe, "stop")
+		cp.ExpectExitCode(0)
+	}
+
+	cfg, err := config.NewWithDir(s.Dirs.Config)
+	require.NoError(s.t, err, "Could not read e2e session configuration")
+	err = installation.StopTrayApp(cfg)
+	require.NoError(s.t, err, "Could not stop tray app")
+
 	if !s.retainDirs {
 		defer s.Dirs.Close()
 	}

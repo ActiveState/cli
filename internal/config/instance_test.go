@@ -125,6 +125,16 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	suite.DirExists(filepath.Join(suite.config.CachePath()))
 }
 
+func (suite *ConfigTestSuite) TestReload() {
+	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+	suite.config.Set("key_name", "initial_value")
+	suite.Equal("initial_value", suite.config.GetString("key_name"))
+	fileutils.WriteFile(path, []byte("key_name: new_value"))
+	suite.Equal("initial_value", suite.config.GetString("key_name"))
+	suite.config.Reload()
+	suite.Equal("new_value", suite.config.GetString("key_name"))
+}
+
 func (suite *ConfigTestSuite) TestSave() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 

@@ -1,9 +1,9 @@
-#@ load("steps.lib.yml", "steps_genversion", "steps_preprocess", "steps_build", "steps_build_32bit", "steps_genupdate", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_uploadsharedartifacts", "steps_downloadsharedartifacts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts")
+#@ load("steps.lib.yml", "steps_preprocess", "steps_build", "steps_build_svc", "steps_build_tray", "steps_build_installer", "steps_build_systrayapp", "steps_build_32bit", "steps_build_svc_32bit", "steps_build_tray_32bit", "steps_build_installer_32bit", "steps_genupdate", "steps_gentest_update", "steps_genupdate_32bit", "steps_installgo", "steps_setup", "steps_test", "steps_test_linux", "steps_inttestcrit", "steps_inttest", "steps_uploadartifacts", "steps_uploadsessartifacts", "steps_downloadsessartifacts", "steps_deletesessartifacts", "steps_deploy", "steps_build_state_msi", "steps_build_languages_msi", "steps_cleanbuild", "steps_sign", "steps_sign_installscript", "steps_build_installscripts", "steps_downloadallsessartifacts", "steps_sanitizeallsessartifacts", "steps_build_transition_update", "steps_build_transition_update_32bit")
 
 #@ def strategy(fail_fast=True):
 matrix:
-  go-version: [1.15.x]
-  platform: [ ubuntu-latest, macos-latest, windows-latest ]
+  go-version: [1.16.x]
+  platform: [ ubuntu-20.04, macos-latest, windows-latest ]
 fail-fast: #@ fail_fast
 #@ end
 
@@ -14,23 +14,8 @@ env: &env
   SHELL: bash
   GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#@ def jobs_prepare():
-name: "Prepare"
-runs-on: ubuntu-latest
-env: *env
-timeout-minutes: 10
-steps:
-  - name: "Checkout code"
-    uses: actions/checkout@v2
-  - #@ steps_installgo()
-  - #@ steps_setup()
-  - #@ steps_genversion()
-  - #@ steps_uploadsharedartifacts()
-#@ end
-
 #@ def jobs_build():
 name: Build
-needs: [ prepare ]
 strategy: #@ strategy(False)
 runs-on: *runs-on
 env: *env
@@ -38,13 +23,21 @@ timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
+  - #@ steps_build_svc()
+  - #@ steps_build_tray()
+  - #@ steps_build_installer()
+  - #@ steps_build_transition_update()
   - #@ steps_build_32bit()
+  - #@ steps_build_svc_32bit()
+  - #@ steps_build_tray_32bit()
+  - #@ steps_build_installer_32bit()
+  - #@ steps_build_transition_update_32bit()
   - #@ steps_build_installscripts()
+  - #@ steps_build_systrayapp()
   - #@ steps_sign()
   - #@ steps_sign_installscript()
   - #@ steps_genupdate()
@@ -58,17 +51,16 @@ steps:
 name: "Unit Test"
 strategy: #@ strategy(False)
 runs-on: *runs-on
-needs: [ prepare ]
 env: *env
 timeout-minutes: 10
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_test()
+  - #@ steps_test_linux()
 #@ end
 
 #@ def jobs_inttestcrit():
@@ -84,7 +76,13 @@ steps:
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
+  - #@ steps_build_svc()
+  - #@ steps_build_tray()
+  - #@ steps_build_installer()
+  - #@ steps_build_systrayapp()
+  - #@ steps_build_transition_update()
   - #@ steps_genupdate()
+  - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttestcrit()
 #@ end
@@ -93,18 +91,22 @@ steps:
 name: "Integration Test"
 strategy: #@ strategy(False)
 runs-on: *runs-on
-needs: [ prepare ]
 env: *env
 timeout-minutes: 25
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2
-  - #@ steps_downloadsharedartifacts()
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_build()
+  - #@ steps_build_svc()
+  - #@ steps_build_tray()
+  - #@ steps_build_installer()
+  - #@ steps_build_systrayapp()
+  - #@ steps_build_transition_update()
   - #@ steps_genupdate()
+  - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttest()
 #@ end
@@ -112,7 +114,7 @@ steps:
 #@ def jobs_deploy():
 name: Deploy
 needs: [ build, unittest ]
-runs-on: ubuntu-latest
+runs-on: ubuntu-20.04
 env: *env
 timeout-minutes: 10
 steps:

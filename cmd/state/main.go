@@ -7,7 +7,9 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
@@ -18,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -36,7 +39,7 @@ import (
 func main() {
 	var exitCode int
 	// Set up logging
-	logging.SetupRollbar()
+	logging.SetupRollbar(constants.StateToolRollbarToken)
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -44,7 +47,8 @@ func main() {
 			exitCode = 1
 		}
 
-		rollbar.Close()
+		// ensure rollbar messages are called
+		events.WaitForEvents(time.Second, rollbar.Close)
 
 		// exit with exitCode
 		os.Exit(exitCode)
@@ -124,6 +128,11 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
 
+	svcm := svcmanager.New(cfg)
+	if err := svcm.Start(); err != nil {
+		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+	}
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -165,7 +174,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 		pjName = pj.Name()
 	}
 	// Set up conditional, which accesses a lot of primer data
-	sshell := subshell.New()
+	sshell := subshell.New(cfg)
 	auth := authentication.Get()
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
@@ -181,11 +190,6 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 
 	if childCmd != nil && !childCmd.SkipChecks() {
-		// Auto update to latest state tool version, only runs once per day
-		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
-			return err
-		}
-
 		// Check for deprecation
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {

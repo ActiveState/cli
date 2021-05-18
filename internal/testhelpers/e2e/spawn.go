@@ -38,3 +38,10 @@ func NonWriteableBinDir() SpawnOptions {
 		return nil
 	}
 }
+
+func BackgroundProcess() SpawnOptions {
+	return func(opts *Options) error {
+		opts.BackgroundProcess = true
+		return nil
+	}
+}

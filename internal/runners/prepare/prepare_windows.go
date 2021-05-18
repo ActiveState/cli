@@ -8,14 +8,13 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -24,27 +23,29 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
 
-	if !rtutils.BuiltViaCI { // disabled while we're still testing this functionality
-		if err := autostart.New().Enable(); err != nil {
-			r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
-		}
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-		if err := prepareStartShortcut(); err != nil {
-			r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
-		}
+	if err := autostart.New(name, exec).Enable(); err != nil {
+		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
+	}
+
+	if err := r.prepareStartShortcut(); err != nil {
+		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
 
 	return nil
 }
 
-func prepareStartShortcut() error {
+func (r *Prepare) prepareStartShortcut() error {
 	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 	if err := fileutils.MkdirUnlessExists(dir); err != nil {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", dir)
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc, err := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
 	}
@@ -112,4 +113,20 @@ func setStateProtocol() error {
 	}
 
 	return nil
+}
+
+// InstalledPreparedFiles returns the files installed by the state _prepare command
+func InstalledPreparedFiles() []string {
+	var files []string
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
+
+	sc, err := autostart.New(name, exec).Path()
+	if err != nil {
+		logging.Error("Failed to determine shortcut path for removal: %v", err)
+	} else if sc != "" {
+		files = append(files, sc)
+	}
+
+	return files
 }

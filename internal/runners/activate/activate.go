@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -35,6 +36,7 @@ import (
 type Activate struct {
 	namespaceSelect  *NamespaceSelect
 	activateCheckout *Checkout
+	auth             *authentication.Auth
 	out              output.Outputer
 	config           *config.Instance
 	proj             *project.Project
@@ -52,6 +54,7 @@ type ActivateParams struct {
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Projecter
 	primer.Subsheller
@@ -63,6 +66,7 @@ func NewActivate(prime primeable) *Activate {
 	return &Activate{
 		NewNamespaceSelect(prime.Config(), prime),
 		NewCheckout(git.NewRepo(), prime),
+		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
 		prime.Project(),
@@ -77,6 +81,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
+
+	checker.RunUpdateNotifier(r.config, r.out)
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 
@@ -188,7 +194,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err = rt.Update(runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
+		if err = rt.Update(r.auth, runbits.DefaultRuntimeEventHandler(r.out)); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}
@@ -227,7 +233,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
+	updater.DefaultChecker.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -92,9 +93,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
@@ -161,9 +166,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			"cmd.exe",
 			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
-		cp = ts.SpawnCmdWithOpts("/bin/bash", e2e.AppendEnv("PROMPT_COMMAND="))
+		cp = ts.SpawnCmdWithOpts(
+			"/bin/bash",
+			e2e.AppendEnv("PROMPT_COMMAND="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
 	}
 
@@ -171,6 +180,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	if runtime.GOOS == "windows" {
 		errorLevel = `echo %ERRORLEVEL%`
 	}
+
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3")
 	cp.SendLine(errorLevel)
@@ -297,7 +307,20 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows system PATH should contain our target dir")
+
+		targetDir := filepath.Join(ts.Dirs.Work, "target")
+		suite.containsWindowsDirectory(string(out), targetDir, "Windows system PATH should contain our target dir")
+	}
+}
+
+func (suite *DeployIntegrationTestSuite) containsWindowsDirectory(out, dir, message string) {
+	// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
+	shortPath, err := fileutils.GetShortPathName(dir)
+	suite.Require().NoError(err)
+	longPath, err := fileutils.GetLongPathName(dir)
+	suite.Require().NoError(err)
+	if !strings.Contains(out, shortPath) && !strings.Contains(out, longPath) && !strings.Contains(out, dir) {
+		suite.T().Errorf("%s: %s does not contain \"%s\", \"%s\" or \"%s\"", message, out, dir, shortPath, longPath)
 	}
 }
 

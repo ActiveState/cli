@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -33,22 +33,24 @@ func (s *serviceManager) Start(args ...string) error {
 		return errs.New("Service is already running")
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Start()
+	proc, err := exeutils.ExecuteAndForget(args[0], args[1:])
+	if err != nil {
+		return errs.New("Could not start serviceManager")
+	}
 
-	if cmd.Process == nil {
+	if proc == nil {
 		return errs.New("Could not obtain process information after starting serviceManager")
 	}
 
-	if err := s.cfg.Set(constants.SvcConfigPid, cmd.Process.Pid); err != nil {
-		if err := cmd.Process.Signal(os.Interrupt); err != nil {
+	if err := s.cfg.Set(constants.SvcConfigPid, proc.Pid); err != nil {
+		if err := proc.Signal(os.Interrupt); err != nil {
 			logging.Errorf("Could not cleanup process: %v", err)
-			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", cmd.Process.Pid)
+			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 		}
 		return errs.Wrap(err, "Could not store pid")
 	}
 
-	logging.Debug("Process started using pid %d", cmd.Process.Pid)
+	logging.Debug("Process started using pid %d", proc.Pid)
 
 	return nil
 }

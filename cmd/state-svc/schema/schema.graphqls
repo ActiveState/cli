@@ -10,6 +10,20 @@ type StateVersion {
   date: String!
 }
 
+type AvailableUpdate {
+  version: String!
+  channel: String!
+  path: String!
+  platform: String!
+  sha256: String!
+}
+
+type DeferredUpdate {
+  channel: String!
+  version: String!
+  logfile: String!
+}
+
 type Project {
   namespace: String!
   locations: [String!]!
@@ -17,5 +31,7 @@ type Project {
 
 type Query {
   version: Version
+  availableUpdate: AvailableUpdate
+  update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }

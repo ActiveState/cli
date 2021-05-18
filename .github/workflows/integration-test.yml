@@ -3,51 +3,18 @@ name: Integration Test
   schedule:
   - cron: 0 0 * * *
 jobs:
-  prepare:
-    name: Prepare
-    runs-on: ubuntu-latest
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Generate Version
-      shell: bash
-      run: state run generate-version
-    - name: Upload Shared Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
   inttest:
     name: Integration Test
     strategy:
       matrix:
         go-version:
-        - 1.15.x
+        - 1.16.x
         platform:
-        - ubuntu-latest
+        - ubuntu-20.04
         - macos-latest
         - windows-latest
       fail-fast: false
     runs-on: ${{ matrix.platform }}
-    needs:
-    - prepare
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
@@ -57,11 +24,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Download Shared Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -77,12 +39,32 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build
+    - name: Build CLI
       shell: bash
       run: state run build
+    - name: Build Service
+      shell: bash
+      run: state run build-svc
+    - name: Build Tray App
+      shell: bash
+      run: |
+        state run build-tray
+    - name: Build Installer
+      shell: bash
+      run: state run build-installer
+    - name: Build Systray App
+      shell: bash
+      if: runner.os == 'macOS'
+      run: state run build-systray-app
+    - name: Build transitional State Tool
+      shell: bash
+      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Generate Test Update
+      shell: bash
+      run: state run generate-test-update
     - name: Build Languages MSI
       if: runner.os == 'Windows'
       shell: bash

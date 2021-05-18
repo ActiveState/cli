@@ -2,16 +2,17 @@ package runtime
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -20,11 +21,8 @@ import (
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
-	model       *model.Model
 	envAccessed bool
 }
-
-type Executables []string
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
 var DisabledRuntime = &Runtime{}
@@ -39,15 +37,14 @@ func IsNeedsUpdateError(err error) bool {
 
 func newRuntime(target setup.Targeter) (*Runtime, error) {
 	rt := &Runtime{target: target}
-	rt.model = model.NewDefault()
 
-	var err error
-	if rt.store, err = store.New(target.Dir()); err != nil {
-		return nil, errs.Wrap(err, "Could not create runtime store")
-	}
-
+	rt.store = store.New(target.Dir())
 	if !rt.store.MatchesCommit(target.CommitUUID()) {
-		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		if target.OnlyUseCache() {
+			logging.Debug("Using forced cache")
+		} else {
+			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
 	}
 
 	return rt, nil
@@ -69,7 +66,7 @@ func New(target setup.Targeter) (*Runtime, error) {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
+func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...
@@ -78,7 +75,7 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	go func() {
 		defer prod.Close()
 
-		if err := setup.New(r.target, prod).Update(); err != nil {
+		if err := setup.New(r.target, prod, auth).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
@@ -101,14 +98,13 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	return setupErr
 }
 
-// Environ returns a key-value map of the environment variables that need to be set for this runtime
-// inherit includes environment variables set on the system
-// projectDir is only used for legacy camel builds
-func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
-	if r == DisabledRuntime {
-		return nil, errs.New("Called Environ() on a disabled runtime.")
-	}
-	env, err := r.store.Environ(inherit)
+// Env returns a key-value map of the environment variables that need to be set for this runtime
+// It's different from envDef in that it merges in the current active environment and points the PATH variable to the
+// Executors directory if requested
+func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
+	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
+
+	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
 			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
@@ -117,33 +113,41 @@ func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, e
 		}
 		r.envAccessed = true
 	}
-	return injectProjectDir(env, projectDir), err
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab environment definitions")
+	}
+
+	env := envDef.GetEnv(inherit)
+
+	if useExecutors {
+		// Override PATH entry with exec path
+		pathEntries := []string{filepath.Join(r.target.Dir(), "exec")}
+		if inherit {
+			pathEntries = append(pathEntries, os.Getenv("PATH"))
+		}
+		env["PATH"] = strings.Join(pathEntries, string(os.PathListSeparator))
+	}
+
+	return env, nil
 }
 
-func (r *Runtime) Executables() (Executables, error) {
-	env, err := r.Environ(false, "")
+func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
+	if r == DisabledRuntime {
+		return nil, errs.New("Called envDef() on a disabled runtime.")
+	}
+	env, err := r.store.EnvDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "store.EnvDef failed")
+	}
+	return env, nil
+}
+
+func (r *Runtime) ExecutablePaths() (envdef.ExecutablePaths, error) {
+	env, err := r.envDef()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
-
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
-	}
-
-	exes, err := exeutils.Executables(bins)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect executables")
-	}
-
-	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
-	}
-
-	return exes, nil
+	return env.ExecutablePaths()
 }
 
 // Artifacts returns a map of artifact information extracted from the recipe
@@ -154,4 +158,8 @@ func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, 
 	}
 	artifacts := artifact.NewMapFromRecipe(recipe)
 	return artifacts, nil
+}
+
+func IsRuntimeDir(dir string) bool {
+	return store.New(dir).HasMarker()
 }

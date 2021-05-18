@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
@@ -91,6 +93,9 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
+
+	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)
+	OnlyUseCache() bool
 }
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
@@ -126,8 +131,8 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault())
+func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
+	return NewWithModel(target, msgHandler, model.NewDefault(auth))
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
@@ -168,10 +173,7 @@ func (s *Setup) update() error {
 	// Compute and handle the change summary
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 
-	s.store, err = store.New(s.target.Dir())
-	if err != nil {
-		return errs.Wrap(err, "Could not create runtime store")
-	}
+	s.store = store.New(s.target.Dir())
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
@@ -215,6 +217,22 @@ func (s *Setup) update() error {
 	edGlobal, err := s.store.UpdateEnviron(buildResult.OrderedArtifacts())
 	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
+	// Create executors
+	execPath := filepath.Join(s.target.Dir(), "exec")
+	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
+		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
+	}
+
+	exePaths, err := edGlobal.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
+	}
+
+	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
+	if err := exec.Update(exePaths); err != nil {
+		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
 	// Install PPM Shim if any of the installed artifacts provide the Perl executable

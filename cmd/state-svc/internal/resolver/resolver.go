@@ -1,25 +1,32 @@
 package resolver
 
 import (
+	"fmt"
 	"sort"
+	"time"
 
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/patrickmn/go-cache"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	cfg *config.Instance
+}
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New() *Resolver {
-	return &Resolver{}
+func New(cfg *config.Instance) *Resolver {
+	return &Resolver{cfg}
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -29,7 +36,7 @@ func (r *Resolver) Query() genserver.QueryResolver { return r }
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	logging.Debug("Version resolver")
 	return &graph.Version{
-		&graph.StateVersion{
+		State: &graph.StateVersion{
 			License:  constants.LibraryLicense,
 			Version:  constants.Version,
 			Branch:   constants.BranchName,
@@ -39,11 +46,67 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	const cacheKey = "AvailableUpdate"
+	c := cache.New(12*time.Hour, time.Hour)
+	if up, exists := c.Get(cacheKey); exists {
+		return up.(*graph.AvailableUpdate), nil
+	}
+
+	update, err := updater.DefaultChecker.Check()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
+	}
+	if update == nil {
+		return nil, nil
+	}
+
+	availableUpdate := graph.AvailableUpdate{
+		Version:  update.Version,
+		Channel:  update.Channel,
+		Path:     update.Path,
+		Platform: update.Platform,
+		Sha256:   update.Sha256,
+	}
+
+	c.Set(cacheKey, &availableUpdate, cache.DefaultExpiration)
+
+	return &availableUpdate, nil
+}
+
+func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
+	ch := ""
+	ver := ""
+	if channel != nil {
+		ch = *channel
+	}
+	if version != nil {
+		ver = *version
+	}
+	up, err := updater.DefaultChecker.CheckFor(ch, ver)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
+	}
+	if up == nil {
+		return &graph.DeferredUpdate{}, nil
+	}
+	proc, err := up.InstallDeferred()
+	if err != nil {
+		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
+	}
+
+	return &graph.DeferredUpdate{
+		Channel: up.Channel,
+		Version: up.Version,
+		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
+	}, nil
+}
+
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
 	config, err := config.New()
 	if err != nil {
-		return nil, locale.WrapError(err, "err_resolver_get_config", "Could not get new config instance")
+		return nil, fmt.Errorf("Could not get new config instance: %w")
 	}
 
 	var projects []*graph.Project

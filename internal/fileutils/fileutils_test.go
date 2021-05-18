@@ -256,6 +256,42 @@ func TestCreateTempExecutable(t *testing.T) {
 	assert.NotZero(t, res, "file should be readable/executable")
 }
 
+func TestCopyFilesAndRename(t *testing.T) {
+	var (
+		src          = getTempDir(t, t.Name())
+		sourceDir    = filepath.Join(src, "source-dir")
+		sourceFile1  = filepath.Join(sourceDir, "file1")
+		sourceFile2  = filepath.Join(sourceDir, "file2")
+		destDir      = filepath.Join(src, "dest-dir")
+		existingFile = filepath.Join(destDir, "file1")
+		destFile2    = filepath.Join(destDir, "file2")
+	)
+	defer os.RemoveAll(src)
+
+	err := Mkdir(sourceDir)
+	require.NoError(t, err)
+	err = Mkdir(destDir)
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile(sourceFile1, []byte("overwritten"), 0660)
+	require.NoError(t, err)
+	err = ioutil.WriteFile(sourceFile2, []byte("new"), 0660)
+	require.NoError(t, err)
+	err = ioutil.WriteFile(existingFile, []byte("original"), 0660)
+
+	err = CopyAndRenameFiles(sourceDir, destDir)
+	require.NoError(t, err)
+	require.DirExists(t, destDir)
+	assert.FileExists(t, destFile2)
+	b, err := ioutil.ReadFile(destFile2)
+	require.NoError(t, err)
+	assert.Equal(t, "new", string(b))
+	assert.FileExists(t, existingFile)
+	b, err = ioutil.ReadFile(existingFile)
+	require.NoError(t, err)
+	assert.Equal(t, "overwritten", string(b))
+}
+
 func TestCopyFiles(t *testing.T) {
 	var (
 		src        = getTempDir(t, t.Name())

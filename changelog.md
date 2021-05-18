@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.29.0
+
+### Fixed
+
+- Fixed issue where `state clean uninstall` would not remove expected files
+  on Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+
+### Changed
+
+- Enhanced error reporting for errors that occur when cloning a project's
+  associated git repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
+- The State Tool now comes with the ActiveState Desktop application, which is
+  currently a system tray application.
+- We've replaced the auto updating system with a manual updating system, updates
+  will from now on be made available through the system tray application and you
+  will have the choice to install it now or later.
+
 ## 0.28.2
 
 ### Fixed
