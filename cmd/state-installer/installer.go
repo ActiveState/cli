@@ -6,9 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rollbar/rollbar-go"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
@@ -23,6 +20,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 )
 
 func main() {
@@ -34,7 +33,7 @@ func main() {
 	out, err := output.New("plain", &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
-		Colored:     true,
+		Colored:     false,
 		Interactive: false,
 	})
 	if err != nil {
@@ -55,6 +54,8 @@ func main() {
 }
 
 func run(out output.Outputer) error {
+	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
+
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config.")
@@ -65,9 +66,11 @@ func run(out output.Outputer) error {
 
 	var installPath string
 	if len(os.Args) > 1 {
-		installPath = os.Args[1]
+		installPath, err = filepath.Abs(os.Args[1])
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve absolute installPath")
+		}
 	} else {
-		var err error
 		installPath, err = installation.InstallPath()
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve default installPath")
@@ -84,6 +87,7 @@ func run(out output.Outputer) error {
 }
 
 func install(installPath string, cfg *config.Instance, out output.Outputer) error {
+	out.Print(fmt.Sprintf("Install Location: %s", installPath))
 	exe, err := osutils.Executable()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect executable path")
@@ -92,6 +96,8 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	svcInfo := appinfo.SvcApp(installPath)
 	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
+
+	out.Print("Stopping services")
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
@@ -111,8 +117,6 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	tmpDir := filepath.Dir(exe)
-	// clean-up temp directory when we are done.
-	defer os.RemoveAll(tmpDir)
 
 	appDir, err := installation.LauncherInstallPath()
 	if err != nil {
@@ -121,6 +125,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 
 	inst := installer.New(tmpDir, installPath, appDir)
 	defer func() {
+		os.RemoveAll(tmpDir)
 		err := inst.RemoveBackupFiles()
 		if err != nil {
 			logging.Debug("Failed to remove backup files: %v", err)
@@ -130,6 +135,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}()
 
 	if err := inst.Install(); err != nil {
+		out.Error("Installation failed, rolling back")
 		rbErr := inst.Rollback()
 		if rbErr != nil {
 			logging.Debug("Failed to restore files: %v", rbErr)
@@ -139,6 +145,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Installation failed")
 	}
 
+	out.Print("Updating environment")
 	isAdmin, err := osutils.IsWindowsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
@@ -149,18 +156,21 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
-	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
-		out.Notice("Please start a new shell in order to start using the State Tool executable.")
-	}
-
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
-	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec()); err != nil {
+	out.Print("Starting ActiveState Desktop")
+	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
 		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+	}
+
+	out.Print("Installation Complete")
+
+	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
+		out.Print("Please start a new shell in order to start using the ActiveState Desktop tools.")
 	}
 
 	return nil

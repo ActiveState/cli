@@ -1314,6 +1314,14 @@ clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
   other: "Successfully removed State Tool and related files\n"
+clean_message_windows:
+  other: |
+    Deletion of State Tool has been scheduled.
+    To access the uninstall log please see: [NOTICE]{{.V0}}[/RESET]
+clean_config_message_windows:
+  other: |
+    Deletion of State Tool config directory has been scheduled.
+    To access a log of the process please see: [NOTICE]{{.V0}}[/RESET]
 languages_cmd_description:
   other: View the languages of a project
 languages_install_cmd_description:
@@ -1665,3 +1673,5 @@ headless_notify:
     For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
+err_svcmanager_wait:
+  other: "Timed out waiting for state-svc to start. Are you running software that could prevent State Tool from running local processes / servers?"

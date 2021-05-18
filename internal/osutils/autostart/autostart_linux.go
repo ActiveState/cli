@@ -55,6 +55,16 @@ func (a *App) Enable() error {
 	return nil
 }
 
+func (a *App) Path() (string, error) {
+	dir, err := prependHomeDir(autostartDir)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not find autostart directory")
+	}
+	path := filepath.Join(dir, constants.TrayLaunchFileName)
+
+	return path, nil
+}
+
 func (a *App) Disable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
@@ -64,11 +74,10 @@ func (a *App) Disable() error {
 		return nil
 	}
 
-	dir, err := prependHomeDir(autostartDir)
+	path, err := a.Path()
 	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
+		return err
 	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
 
 	return os.Remove(path)
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -44,6 +45,7 @@ func RequiresAdministratorRights(step Step, userScope bool) bool {
 }
 
 type Deploy struct {
+	auth     *authentication.Auth
 	output   output.Outputer
 	subshell subshell.SubShell
 	step     Step
@@ -51,6 +53,7 @@ type Deploy struct {
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
@@ -58,6 +61,7 @@ type primeable interface {
 
 func NewDeploy(step Step, prime primeable) *Deploy {
 	return &Deploy{
+		prime.Auth(),
 		prime.Output(),
 		prime.Subshell(),
 		step,
@@ -149,9 +153,14 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	if err := rti.Update(runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
+	if err := rti.Update(d.auth, runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
+
+	// Todo Remove with https://www.pivotaltracker.com/story/show/178161240
+	// call rti.Environ as this completes the runtime activation cycle:
+	// It ensures that the analytics event for failure / success are sent
+	_, _ = rti.Env(false, false)
 
 	if rt.GOOS == "windows" {
 		box := packr.NewBox("../../../assets/scripts")

@@ -44,6 +44,26 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to check for update")
+	}
+	if update == nil {
+		return nil, nil
+	}
+
+	availableUpdate := graph.AvailableUpdate{
+		Version:  update.Version,
+		Channel:  update.Channel,
+		Path:     update.Path,
+		Platform: update.Platform,
+		Sha256:   update.Sha256,
+	}
+
+	return &availableUpdate, nil
+}
+
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
 	ch := ""
 	ver := ""
@@ -60,7 +80,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
-	pid, err := up.InstallDeferred()
+	proc, err := up.InstallDeferred()
 	if err != nil {
 		return nil, errs.Wrap(err, "Deferring update failed: %s", errs.Join(err, ": "))
 	}
@@ -68,7 +88,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), pid),
+		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
 	}, nil
 }
 

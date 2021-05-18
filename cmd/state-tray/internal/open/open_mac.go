@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func Prompt(command string) error {
+func Terminal(command string) error {
 	sf, err := scriptfile.New(language.Bash, "open-terminal", command)
 	if err != nil {
 		return locale.WrapError(err, "err_open_create_scriptfile", "Could not create temporary script file")
@@ -24,6 +24,10 @@ func Prompt(command string) error {
 	}
 
 	return nil
+}
+
+func TerminalAndWait(command string) error {
+	return Terminal(command + "\nread -p \"Press enter to continue\"")
 }
 
 func getPrompt() string {

@@ -67,7 +67,7 @@ func ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, error) {
-	_, transport := inventory.Init()
+	_, transport := inventory.Init(authentication.Get())
 
 	var err error
 	params := iop.NewResolveRecipesParams()
@@ -149,7 +149,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, errs.Wrap(err, "commitToOrder failed")
 	}
 
-	client, _ := inventory.Init()
+	client, _ := inventory.Init(authentication.Get())
 
 	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {

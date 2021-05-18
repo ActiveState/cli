@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -21,7 +22,11 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
-	return &SvcModel{ctx, client}, nil
+	return NewSvcModelWithClient(ctx, client), nil
+}
+
+func NewSvcModelWithClient(ctx context.Context, client *gqlclient.Client) *SvcModel {
+	return &SvcModel{ctx, client}
 }
 
 func (m *SvcModel) StateVersion() (*graph.Version, error) {
@@ -46,7 +51,16 @@ func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.Defer
 	r := request.NewUpdateRequest(channel, version)
 	u := graph.UpdateResponse{}
 	if err := m.client.Run(r, &u); err != nil {
-		return nil, errs.Wrap(err, "Error updating to version %s at channel %s", version, channel)
+		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version {{.V0}} at channel {{.V1}}: {{.V2}}", version, channel, errs.Join(err, ": ").Error())
 	}
 	return &u.DeferredUpdate, nil
+}
+
+func (m *SvcModel) CheckUpdate() (*graph.AvailableUpdate, error) {
+	r := request.NewAvailableUpdate()
+	u := graph.AvailableUpdateResponse{}
+	if err := m.client.Run(r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error checking if update is available.")
+	}
+	return &u.AvailableUpdate, nil
 }

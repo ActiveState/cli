@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -130,8 +131,8 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault())
+func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
+	return NewWithModel(target, msgHandler, model.NewDefault(auth))
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes

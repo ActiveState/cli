@@ -8,7 +8,11 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
-func StopTrayApp(cfg *config.Instance) error {
+type Configurable interface {
+	GetInt(string) int
+}
+
+func StopTrayApp(cfg Configurable) error {
 	trayPid := cfg.GetInt(config.ConfigKeyTrayPid)
 	if trayPid <= 0 {
 		return nil
