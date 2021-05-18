@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -53,9 +53,9 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 		return up.(*graph.AvailableUpdate), nil
 	}
 
-	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
+	update, err := updater.DefaultChecker.Check()
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to check for update")
+		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
 	}
 	if update == nil {
 		return nil, nil
@@ -85,14 +85,14 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	}
 	up, err := updater.DefaultChecker.CheckFor(ch, ver)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to check for update")
+		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
 	}
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
 	proc, err := up.InstallDeferred()
 	if err != nil {
-		return nil, errs.Wrap(err, "Deferring update failed: %s", errs.Join(err, ": "))
+		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}
 
 	return &graph.DeferredUpdate{
@@ -106,7 +106,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
 	config, err := config.New()
 	if err != nil {
-		return nil, locale.WrapError(err, "err_resolver_get_config", "Could not get new config instance")
+		return nil, fmt.Errorf("Could not get new config instance: %w")
 	}
 
 	var projects []*graph.Project
