@@ -56,7 +56,8 @@ func (u *Update) Run(params *Params) error {
 		if channel == constants.BetaBranch || channel == constants.ReleaseBranch {
 			return locale.NewInputError("err_unsupported_update", "The current version of the State Tool cannot update to the target channel {{.V0}}.  You can still run the installation one-liners to update the State Tool. See {{.V1}} for details.", channel, "https://www.activestate.com/products/platform/state-tool/")
 		}
-		return locale.WrapError(err, "err_update_initiate", "Failed to initiate update.")
+		u.out.Print(locale.Tl("update_unknown", "An update is not available at this time."))
+		return nil
 	}
 	if up.Channel == "" && up.Version == "" {
 		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))
