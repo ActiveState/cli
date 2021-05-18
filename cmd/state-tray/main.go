@@ -171,7 +171,10 @@ func run() error {
 			}
 		case <-mAccount.ClickedCh:
 			logging.Debug("Account event")
-			// Not implemented
+			err = open.Browser(constants.ActiveStateAccountURL)
+			if err != nil {
+				logging.Error("Could not open account url: %v", err)
+			}
 		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
 			localProjects, err = model.LocalProjects()
