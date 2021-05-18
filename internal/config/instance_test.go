@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 )
 
 type InstanceMock struct {
@@ -65,7 +66,13 @@ func (suite *ConfigTestSuite) TestCorruption() {
 	err := fileutils.WriteFile(path, []byte("&"))
 	suite.Require().NoError(err)
 
-	err = suite.config.ReadInConfig()
+	td, err := ioutil.TempDir("", "")
+	suite.Require().NoError(err)
+	defer os.RemoveAll(td)
+
+	pl, err := lockfile.NewPidLock(filepath.Join(td, "lockfile"))
+	suite.Require().NoError(err)
+	err = suite.config.ReadInConfig(pl)
 	suite.Require().Error(err)
 }
 

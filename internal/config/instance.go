@@ -27,6 +27,8 @@ var defaultConfig *Instance
 const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
 
+type ErrorCouldNotAcquireLock struct{ *errs.WrapperError }
+
 // Instance holds our main config logic
 type Instance struct {
 	configDir     *configdir.Config
@@ -65,10 +67,23 @@ func (i *Instance) Reload() error {
 	if err != nil {
 		return err
 	}
-	err = i.ReadInConfig()
+
+	pl, err := lockfile.NewPidLock(i.getLockFile())
+	if err != nil {
+		return errs.Wrap(err, "Could not create lock file for updating config")
+	}
+	defer pl.Close()
+
+	err = pl.WaitForLock(5 * time.Second)
+	if err != nil {
+		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock")}
+	}
+
+	err = i.ReadInConfig(pl)
 	if err != nil {
 		return err
 	}
+
 	i.readInstallSource()
 
 	return nil
@@ -124,14 +139,25 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	err := i.ReadInConfig()
+	pl, err := lockfile.NewPidLock(i.getLockFile())
+	if err != nil {
+		return errs.Wrap(err, "Could not create lock file for updating config")
+	}
+	defer pl.Close()
+
+	err = pl.WaitForLock(5 * time.Second)
+	if err != nil {
+		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock.")}
+	}
+
+	err = i.ReadInConfig(pl)
 	if err != nil {
 		return err
 	}
 
 	i.data[strings.ToLower(key)] = value
 
-	err = i.save()
+	err = i.save(pl)
 	if err != nil {
 		return err
 	}
@@ -230,18 +256,7 @@ func (i *Instance) InstallSource() string {
 }
 
 // ReadInConfig reads in config from the config file
-func (i *Instance) ReadInConfig() error {
-	pl, err := lockfile.NewPidLock(i.getLockFile())
-	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
-	}
-	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return errs.Wrap(err, "Unable to acquire lock")
-	}
-
+func (i *Instance) ReadInConfig(pl *lockfile.PidLock) error {
 	configFile, err := i.getConfigFile()
 	if err != nil {
 		return errs.Wrap(err, "Could not find config file")
@@ -262,18 +277,7 @@ func (i *Instance) ReadInConfig() error {
 	return nil
 }
 
-func (i *Instance) save() error {
-	pl, err := lockfile.NewPidLock(i.getLockFile())
-	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
-	}
-	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return err
-	}
-
+func (i *Instance) save(pl *lockfile.PidLock) error {
 	f, err := os.Create(i.configFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not create/open config file")
