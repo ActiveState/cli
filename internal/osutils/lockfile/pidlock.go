@@ -40,7 +40,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	}, nil
 }
 
-// TryLock attempts to lock the created lock file. If the lock cannot be acquired, it returns false and an error.
+// TryLock attempts to lock the created lock file.
 func (pl *PidLock) TryLock() (err error) {
 	err = LockFile(pl.file)
 	if err != nil {
