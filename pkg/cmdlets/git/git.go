@@ -61,7 +61,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		err = locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}, error received: {{.V1}}.", *project.RepoURL, err.Error())
 		tipMsg := locale.Tl(
 			"err_tip_git_ssh-add",
-			"If you are using an SSH key please ensure it's configured by running `ssh-add <path-to-key>`.",
+			"If you are using an SSH key please ensure it's configured by running `[ACTIONABLE]ssh-add <path-to-key>[/RESET]`.",
 		)
 		return errs.AddTips(err, tipMsg)
 	}
