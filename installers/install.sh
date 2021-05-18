@@ -194,22 +194,22 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
   exit 1
 fi
 
-INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+CURRENT_INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 
 # stop if previous installation is detected unless
 # - FORCEOVERWRITE is specified OR
-# - a TARGET directory is specified that differs from INSTALLDIR
-if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
+# - a TARGET directory is specified that differs from CURRENT_INSTALLDIR
+if [ ! -z "$CURRENT_INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ $TARGET -ef $CURRENT_INSTALLDIR ] \
    ); then
 
   if [ -n "${ACTIVATE}" ]; then
-    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
+    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE}
   elif [ -n "${ACTIVATE_DEFAULT}" ]; then
-    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
+    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
   fi
 
-  warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
+  warn "State Tool is already installed at $CURRENT_INSTALLDIR, to reinstall run this command again with -f"
   echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
@@ -217,7 +217,7 @@ fi
 
 # If '-f' is passed and a previous installation exists we set NOPROMPT
 # as we will overwrite the existing State Tool installation
-if $FORCEOVERWRITE && [ ! -z "$INSTALLDIR" ]; then
+if $FORCEOVERWRITE && [ ! -z "$CURRENT_INSTALLDIR" ]; then
   NOPROMPT=true
 fi
 
@@ -308,72 +308,22 @@ fetchArtifact () {
   chmod +x $TMPDIR/$TMPEXE
 }
 
-# Use target directory provided by user with no verification or default to
-# one of two commonly used directories. 
-# Ensure they are in PATH and if not use the first writable directory in PATH
-if [ ! -z "$TARGET" ]; then
-  INSTALLDIR=$TARGET
-else
-  if [ -w "/usr/local/bin" ]; then
-    INSTALLDIR="/usr/local/bin"
-  else
-    INSTALLDIR="$HOME/.local/bin"
-  fi
-  # Verify the install directory is in PATH.
-  INPATH=false
-  OLDIFS=$IFS
-  IFS=':'
-  for PATHELEM in $PATH; do 
-    if [ $INSTALLDIR = $PATHELEM ]; then
-      INPATH=true
-      break
-    fi
-  done
-
-  # If the install directory is not in PATH we default to the first
-  # directory in PATH that we have write access to as a last resort.
-  if ! $INPATH; then
-    for PATHELEM in $PATH; do
-      if [ -w $PATHELEM ]; then
-        INSTALLDIR=$PATHELEM
-        break
-      else
-        INSTALLDIR=""
-      fi
-    done
-  fi
-  IFS=$OLDIFS
-fi
-
-if [ -z "$INSTALLDIR" ]; then
-  error "Could not install State Tool to PATH."
-  error "You do not have write access to any directories currently on PATH."
-  error "You can use the '-t' flag to denote an install target, "
-  error "otherwise please ensure you have write permissions to a directory that's on your PATH."
-  exit 1
-fi
-
-# Install to the determined directory.
-info "Installing to $INSTALLDIR"
-if [ ! -e "$INSTALLDIR" ]; then
-  info "NOTE: $INSTALLDIR will be created"
-elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
-  warn "WARNING: overwriting previous installation"
-fi
-if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
+if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$CURRENT_INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
 userprompt "Continue? [y/N] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
   [Yy])
-    # Install.
-    if [ ! -e "$INSTALLDIR" ]; then
-      mkdir -p "$INSTALLDIR" || continue
-    fi
     fetchArtifact
-    info "Installing to $INSTALLDIR..."
-    $TMPDIR/$TMPEXE "$INSTALLDIR"
+    if [ ! -z "$TARGET" ]; then
+      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE "$TARGET")
+    else
+      echo "Installing without target"
+      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE)
+    fi
+    INSTALLDIR=$(echo $INSTALL_OUTPUT | cut -d' ' -f 6)
+    echo "$INSTALLDIR"
     ;;
   [Nn]|*)
     error "Aborting installation"
