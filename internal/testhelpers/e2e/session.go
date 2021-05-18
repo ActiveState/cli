@@ -149,7 +149,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
 		constants.CacheEnvVarName + "=" + dirs.Cache,
-		constants.DisableUpdates + "=true",
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
 	}...)

@@ -25,6 +25,9 @@ constants:
     if: ne .OS.Name "Windows"
     value: state-update-dialog
   - name: UPDLG_BUILDFLAGS
+    value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
+  - name: UPDLG_BUILDFLAGS
+    if: eq .OS.Name "Linux"
     value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug} -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: SYSTRAY_BUILDFLAGS
     if: ne .OS.Name "Windows"

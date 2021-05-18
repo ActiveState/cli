@@ -1,11 +1,13 @@
 package state
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 )
 
 type Options struct {
@@ -20,23 +22,26 @@ func NewOptions() *Options {
 
 type State struct {
 	opts *Options
-	output.Outputer
+	out  output.Outputer
+	cfg  *config.Instance
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Configurer
 }
 
 func New(opts *Options, prime primeable) *State {
 	return &State{
-		opts:     opts,
-		Outputer: prime.Output(),
+		opts: opts,
+		out:  prime.Output(),
+		cfg:  prime.Config(),
 	}
 }
 
 // Run state logic
 func (s *State) Run(usageFunc func() error) error {
-	return execute(s.opts, usageFunc, s.Outputer)
+	return execute(s.opts, usageFunc, s.cfg, s.out)
 }
 
 type versionData struct {
@@ -47,10 +52,11 @@ type versionData struct {
 	Date     string `json:"date"`
 }
 
-func execute(opts *Options, usageFunc func() error, out output.Outputer) error {
+func execute(opts *Options, usageFunc func() error, cfg *config.Instance, out output.Outputer) error {
 	logging.Debug("Execute")
 
 	if opts.Version {
+		checker.RunUpdateNotifier(cfg, out)
 		vd := versionData{
 			constants.LibraryLicense,
 			constants.Version,
