@@ -292,6 +292,7 @@ jobs:
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
     - name: Upload access logs
       uses: actions/upload-artifact@v2
+      if: always()
       with:
         name: access_logs-${{ matrix.platform }}
         path: access_logs/
