@@ -12,6 +12,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Fixed issue where `state clean uninstall` would not remove expected files
   on Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+- In the Tray App menu, we only display local projects that still exist on the
+  machine. ([PR #1372](https://github.com/ActiveState/cli/pull/1372))
 
 ### Changed
 
