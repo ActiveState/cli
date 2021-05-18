@@ -56,6 +56,10 @@ func SvcApp(baseDir ...string) *AppInfo {
 	return newAppInfo(constants.SvcAppName, "state-svc", baseDir...)
 }
 
+func UpdateDialogApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.UpdateDialogName, "state-update-dialog", baseDir...)
+}
+
 func (a *AppInfo) Name() string {
 	return a.name
 }

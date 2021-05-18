@@ -8,12 +8,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.29.0
 
-
 ### Fixed
 
 - Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
-  
+- Fixed issue where `state clean uninstall` would not remove expected files
+  on Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+
 ### Changed
 
 - The State Tool now comes with the ActiveState Desktop application, which is
