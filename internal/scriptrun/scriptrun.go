@@ -135,12 +135,14 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	if lang == language.Unknown {
 		if len(attempted) > 0 {
-			return locale.NewInputError(
-				"err_run_unknown_language_fallback",
-				"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
-				strings.Join(attempted, ", "),
-				strings.Join(language.RecognizedNames(), ", "),
-			)
+			return errs.AddTips(
+				locale.NewInputError(
+					"err_run_unknown_language_fallback",
+					"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
+					strings.Join(attempted, ", "),
+					strings.Join(language.RecognizedNames(), ", "),
+				),
+				locale.Tl("unknown_language_check_path", "If the language is not provided by the project runtime, please ensure that the required executable is discoverable via your PATH environment variable"))
 		}
 		return locale.NewInputError(
 			"err_run_unknown_language",
