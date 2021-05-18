@@ -109,6 +109,7 @@ func (pl *PidLock) WaitForLock(timeout time.Duration) error {
 				return err
 			}
 			time.Sleep(100 * time.Millisecond)
+			continue
 		}
 		return nil
 	}
