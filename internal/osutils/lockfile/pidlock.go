@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -41,7 +42,7 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 }
 
 func logAccessMessage(msg string) error {
-	f, err := os.OpenFile(fmt.Sprintf("access_log.%d", os.Getpid()), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filepath.Join(os.TempDir(), fmt.Sprintf("access_log.%d", os.Getpid())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
