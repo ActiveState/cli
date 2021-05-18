@@ -284,7 +284,7 @@ jobs:
         head -n-0 build/*log 2>/dev/null
         mkdir -p access_logs
         TMPDIR=$(dirname $(mktemp -u))
-        mv $TMPDIR/access_logs.* access_logs
+        mv $TMPDIR/access_log.* access_logs
         exit ${testCode}
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
