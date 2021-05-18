@@ -34,6 +34,10 @@ func (c *configMock) AllKeys() []string {
 	return []string{}
 }
 
+func (c *configMock) GetInt(_ string) int {
+	return 0
+}
+
 func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }
