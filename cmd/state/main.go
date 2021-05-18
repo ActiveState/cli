@@ -86,7 +86,7 @@ func main() {
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
 		exitCode, err = unwrapError(err)
-		if !isSilent(err) {
+		if err != nil {
 			out.Error(err)
 		}
 
