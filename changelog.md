@@ -18,7 +18,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fixed logic checking for deprecations.
+- Fixed a rare case where deprecation information was not downloaded, when
+  requested by several State Tool instances in parallel.
   ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
 
 ## 0.28.1
