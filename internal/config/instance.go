@@ -79,7 +79,7 @@ func (i *Instance) Reload() error {
 		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock")}
 	}
 
-	err = i.ReadInConfig(pl)
+	err = i.ReadInConfig()
 	if err != nil {
 		return err
 	}
@@ -150,14 +150,14 @@ func (i *Instance) Set(key string, value interface{}) error {
 		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock.")}
 	}
 
-	err = i.ReadInConfig(pl)
+	err = i.ReadInConfig()
 	if err != nil {
 		return err
 	}
 
 	i.data[strings.ToLower(key)] = value
 
-	err = i.save(pl)
+	err = i.save()
 	if err != nil {
 		return err
 	}
@@ -255,8 +255,7 @@ func (i *Instance) InstallSource() string {
 	return i.installSource
 }
 
-// ReadInConfig reads in config from the config file
-func (i *Instance) ReadInConfig(pl *lockfile.PidLock) error {
+func (i *Instance) ReadInConfig() error {
 	configFile, err := i.getConfigFile()
 	if err != nil {
 		return errs.Wrap(err, "Could not find config file")
@@ -277,7 +276,7 @@ func (i *Instance) ReadInConfig(pl *lockfile.PidLock) error {
 	return nil
 }
 
-func (i *Instance) save(pl *lockfile.PidLock) error {
+func (i *Instance) save() error {
 	f, err := os.Create(i.configFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not create/open config file")
