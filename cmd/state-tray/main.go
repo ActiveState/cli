@@ -75,7 +75,7 @@ func run() error {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
-	systray.SetTooltip(locale.Tl("tray_tooltip", "ActiveState State Tool"))
+	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 
 	mUpdate := systray.AddMenuItem(
 		locale.Tl("tray_update_title", "Update Available"),
