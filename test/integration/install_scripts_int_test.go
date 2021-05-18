@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -25,6 +26,7 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
 )
 
 type openKeyFn func(path string) (osutils.RegistryKey, error)
@@ -147,7 +149,6 @@ func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
 	cp.Expect("State Tool successfully installed to")
 }
 
@@ -156,7 +157,6 @@ func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, ve
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
-	cp.ExpectLongString("Please start a new shell in order to start using the State Tool")
 	cp.Expect("State Tool successfully installed to")
 }
 
@@ -207,13 +207,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
 
-	dir, err := ioutil.TempDir("", "system*")
-	suite.NoError(err)
-
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
+		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort)))
 
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
@@ -242,20 +239,76 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
-			ts := e2e.New(suite.T(), false)
+			dir, err := installation.LauncherInstallPath()
+			suite.Require().NoError(err)
+			var extraEnv []string
+			if runtime.GOOS == "linux" {
+				dir, err = ioutil.TempDir("", "temp_home*")
+				suite.Require().NoError(err)
+				extraEnv = append(extraEnv, fmt.Sprintf("HOME=%s", dir), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
+			}
+
+			ts := e2e.New(suite.T(), false, extraEnv...)
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
-			dir, err := ioutil.TempDir("", "system*")
-			suite.NoError(err)
-
-			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel), e2e.AppendEnv(fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir)))
+			cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel))
 			expectStateToolInstallation(cp)
 			cp.Expect("State Tool Installed")
 			cp.ExpectExitCode(0)
+
+			assertApplicationDirContents(suite.Contains, dir)
+			assertBinDirContents(suite.Contains, ts.Dirs.Work)
+			suite.DirExists(ts.Dirs.Config)
+
+			// Only test the un-installation on local update (Review once installed updates become more stable)
+			if !tt.TestInstall {
+				return
+			}
+			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
+			cp.Expect("Please Confirm")
+			cp.SendLine("y")
+			cp.ExpectExitCode(0)
+
+			assertApplicationDirContents(suite.NotContains, dir)
+			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 		})
 	}
+}
+
+// assertApplicationDirContents checks if given files are or are not in the application directory
+func assertApplicationDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
+	homeDirFiles := listFilesOnly(dir)
+	switch runtime.GOOS {
+	case "linux":
+		assertFunc(homeDirFiles, "state-tray.desktop")
+		assertFunc(homeDirFiles, "state-tray.svg")
+	case "darwin":
+		assertFunc(homeDirFiles, "Info.plist")
+		assertFunc(homeDirFiles, "state-tray.icns")
+	case "windows":
+		assertFunc(homeDirFiles, "state-tray.lnk")
+		assertFunc(homeDirFiles, "state-tray.icns")
+	}
+}
+
+// assertBinDirContents checks if given files are or are not in the bin directory
+func assertBinDirContents(assertFunc func(s, c interface{}, msg ...interface{}) bool, dir string) {
+	binFiles := listFilesOnly(dir)
+	assertFunc(binFiles, "state"+osutils.ExeExt)
+	assertFunc(binFiles, "state-tray"+osutils.ExeExt)
+	assertFunc(binFiles, "state-svc"+osutils.ExeExt)
+}
+
+// listFilesOnly is a helper function for assertBinDirContents and assertApplicationDirContents filtering a directory recursively for base filenames
+// It allows for simple and coarse checks if a file exists or does not exist in the directory structure
+func listFilesOnly(dir string) []string {
+	files := fileutils.ListDir(dir, true)
+	files = funk.Filter(files, func(f string) bool {
+		return !fileutils.IsDir(f)
+	}).([]string)
+	return funk.Map(files, filepath.Base).([]string)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallShVersion() {
@@ -322,10 +375,35 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			expectStateToolInstallationWindows(cp)
 			cp.ExpectExitCode(0)
 
+			assertBinDirContents(suite.Contains, ts.Dirs.Work)
+
 			pathEnv, err := cmdEnv.get("PATH")
 			suite.Require().NoError(err, "could not get PATH")
 			paths := strings.Split(pathEnv, string(os.PathListSeparator))
 			suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
+
+			// Only test the un-installation on local update (Review once installed updates become more stable)
+			if !tt.TestInstall {
+				return
+			}
+			// give some time for the provided state-tray app to start and write its pid to the config file
+			time.Sleep(time.Second)
+			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
+			cp.Expect("Please Confirm")
+			cp.SendLine("y")
+			cp.ExpectExitCode(0)
+
+			// wait three seconds until state.exe is removed (in the background)
+			time.Sleep(time.Second * 4)
+
+			// Todo: Sometimes the state.exe file still remains on disk (always on CI, never on my machine!)
+			// https://www.pivotaltracker.com/story/show/178148949
+			// assertBinDirContents(suite.NotContains, ts.Dirs.Work)
+
+			// Todo: Remove the following lines if the bug above is fixed
+			binFiles := listFilesOnly(ts.Dirs.Work)
+			suite.NotContains(binFiles, "state-tray"+osutils.ExeExt)
+			suite.NotContains(binFiles, "state-svc"+osutils.ExeExt)
 		})
 	}
 }

@@ -34,19 +34,21 @@ type Client struct {
 	timeout       time.Duration
 }
 
-func New(url string, timeout time.Duration) *Client {
+func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption) *Client {
 	if timeout == 0 {
 		timeout = time.Second * 60
 	}
 
-	retryOpt := graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient())
-
 	client := &Client{
-		graphqlClient: graphql.NewClient(url, retryOpt),
+		graphqlClient: graphql.NewClient(url, opts...),
 		timeout:       timeout,
 	}
-	client.graphqlClient.Log = func(s string) { logging.Debug("Third party log message: %s", s) }
+	client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 	return client
+}
+
+func New(url string, timeout time.Duration) *Client {
+	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
 }
 
 func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {

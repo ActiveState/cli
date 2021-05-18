@@ -98,6 +98,18 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	orderChanged := len(revertCommit.Changeset) > 0
 
 	logging.Debug("Order changed: %v", orderChanged)
+	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
+	if orderChanged {
+		if !isHeadless {
+			err := model.UpdateProjectBranchCommit(pj, commitID)
+			if err != nil {
+				return locale.WrapError(err, "err_package_"+string(operation))
+			}
+		}
+		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+			return locale.WrapError(err, "err_package_update_pjfile")
+		}
+	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
@@ -111,21 +123,6 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
 		}
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
-	}
-
-	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
-	if orderChanged {
-		if !isHeadless {
-			err := model.UpdateProjectBranchCommit(pj, commitID)
-			if err != nil {
-				return locale.WrapError(err, "err_package_"+string(operation))
-			}
-		}
-		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
-	} else {
-		commitID = parentCommitID
 	}
 
 	// refresh runtime

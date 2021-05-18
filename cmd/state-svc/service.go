@@ -35,6 +35,8 @@ func (s *service) Start() error {
 		return errs.Wrap(err, "Could not save config")
 	}
 
+	logging.Debug("Server starting on port: %d", s.server.Port())
+
 	if err := s.server.Start(); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil

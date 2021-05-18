@@ -1,5 +1,0 @@
-package compatwrap
-
-import (
-	"C"
-)

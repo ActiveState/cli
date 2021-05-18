@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -50,7 +51,8 @@ func (u *AvailableUpdate) prepare() (string, string, error) {
 	if !fileutils.FileExists(installerPath) {
 		return "", "", errs.Wrap(err, "Downloaded update does not have installer")
 	}
-	installTargetPath := filepath.Dir(os.Args[0])
+
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
 
 	return installerPath, installTargetPath, nil
 }

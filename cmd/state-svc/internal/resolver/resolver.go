@@ -44,6 +44,26 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	update, err := updater.DefaultChecker.CheckFor(constants.BranchName, constants.Version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to check for update")
+	}
+	if update == nil {
+		return nil, nil
+	}
+
+	availableUpdate := graph.AvailableUpdate{
+		Version:  update.Version,
+		Channel:  update.Channel,
+		Path:     update.Path,
+		Platform: update.Platform,
+		Sha256:   update.Sha256,
+	}
+
+	return &availableUpdate, nil
+}
+
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
 	ch := ""
 	ver := ""
