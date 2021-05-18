@@ -93,13 +93,9 @@ func NewActivation(cfg Configurable, pid int) (*Activation, error) {
 		return nil, errs.Wrap(err, "cannot create new pid lock file")
 	}
 
-	locked, err := pidLock.TryLock()
+	err = pidLock.TryLock()
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot obtain activation pid lock")
-	}
-
-	if !locked {
-		return nil, errs.New("activation pid lock is unlocked")
 	}
 
 	a := Activation{

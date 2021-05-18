@@ -162,7 +162,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	// This will succeed for only one of several concurrently state tool
 	// instances. By returning otherwise, we are preventing that we download the
 	// same new state tool version several times.
-	_, err = pl.TryLock()
+	err = pl.TryLock()
 	if err != nil {
 		if inProgErr := new(*lockfile.AlreadyLockedError); errors.As(err, inProgErr) {
 			logging.Debug("Already updating: %s", errs.Join(*inProgErr, ": "))
