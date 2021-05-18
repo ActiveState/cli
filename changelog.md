@@ -16,6 +16,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   will from now on be made available through the system tray application and you
   will have the choice to install it now or later.
 
+### Fixed
+
+- Fixed logic checking for deprecations.
+  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
+
 ## 0.28.1
 
 ### Fixed
