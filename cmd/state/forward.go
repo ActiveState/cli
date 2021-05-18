@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/phayes/permbits"
 	"github.com/thoas/go-funk"
@@ -123,6 +125,16 @@ func forwardBin(bindir string, versionInfo *projectfile.VersionInfo) string {
 		filename += ".exe"
 	}
 	return filepath.Join(bindir, "version-cache", filename)
+}
+
+func exeOverDayOld(exe string) bool {
+	stat, err := os.Stat(exe)
+	if err != nil {
+		logging.Error("Could not stat file: %s, error: %v", exe)
+		return false
+	}
+	diff := time.Now().Sub(stat.ModTime())
+	return diff > 24*time.Hour
 }
 
 func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {

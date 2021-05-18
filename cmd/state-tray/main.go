@@ -104,8 +104,8 @@ func run() error {
 
 	mPlatform := systray.AddMenuItem(locale.Tl("tray_platform_title", "ActiveState Platform"), "")
 	mLearn := mPlatform.AddSubMenuItem(
-		locale.Tl("tray_learn_title", "Learn"),
-		locale.Tl("tray_learn_tooltip", "Open ActiveState blog"),
+		locale.Tl("tray_blog_title", "Blog"),
+		locale.Tl("tray_blog_tooltip", "Open ActiveState blog"),
 	)
 	mSupport := mPlatform.AddSubMenuItem(
 		locale.Tl("tray_support_title", "Support"),
