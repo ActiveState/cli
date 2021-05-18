@@ -72,12 +72,7 @@ func (i *Instance) Reload() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not create lock file for updating config")
 	}
-	defer func() {
-		err := pl.Close()
-		if err != nil {
-			fmt.Printf("Failed to release lock in Set(): %s", errs.JoinMessage(err))
-		}
-	}()
+	defer pl.Close()
 
 	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {
@@ -148,12 +143,7 @@ func (i *Instance) Set(key string, value interface{}) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not create lock file for updating config")
 	}
-	defer func() {
-		err := pl.Close()
-		if err != nil {
-			fmt.Printf("Failed to release lock in Set(): %s", errs.JoinMessage(err))
-		}
-	}()
+	defer pl.Close()
 
 	err = pl.WaitForLock(5 * time.Second)
 	if err != nil {

@@ -40,10 +40,23 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	}, nil
 }
 
+func logAccessMessage(msg string) error {
+	f, err := os.OpenFile(fmt.Sprintf("access_log.%d", os.Getpid()), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(fmt.Sprintf("%s: %s", time.Now(), msg)); err != nil {
+		return err
+	}
+	return nil
+}
+
 // TryLock attempts to lock the created lock file.
 func (pl *PidLock) TryLock() (err error) {
-	fmt.Printf("Trying to lock file %s from process %d\n", pl.path, os.Getpid())
 	err = LockFile(pl.file)
+	logAccessMessage(fmt.Sprintf("Trying to lock file %s from process %d\n with err=%v", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
 		// if lock cannot be acquired it usually means that another process is holding the lock
 		return NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
@@ -73,27 +86,27 @@ func (pl *PidLock) TryLock() (err error) {
 	}
 
 	pl.locked = true
-	fmt.Printf("Process %d locked file %s\n", os.Getpid(), pl.path)
+	logAccessMessage(fmt.Sprintf("Process %d locked file %s\n", os.Getpid(), pl.path))
 	return nil
 }
 
 // Close removes the lock file and releases the lock
 func (pl *PidLock) Close(keepFile ...bool) error {
 	keep := false
-	fmt.Printf("releasing lock on file %s from process %d\n", pl.path, os.Getpid())
+	logAccessMessage(fmt.Sprintf("releasing lock on file %s from process %d\n", pl.path, os.Getpid()))
 	if len(keepFile) == 1 {
 		keep = keepFile[0]
 	}
 	if !pl.locked {
 		err := pl.file.Close()
-		fmt.Printf("released lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err))
+		logAccessMessage(fmt.Sprintf("released lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 		if err != nil {
 			return errs.Wrap(err, "failed to close unlocked lock file %s", pl.path)
 		}
 		return nil
 	}
 	err := pl.cleanLockFile(keep)
-	fmt.Printf("released and cleaned lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err))
+	logAccessMessage(fmt.Sprintf("released and cleaned lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
 		return errs.Wrap(err, "failed to remove lock file")
 	}
