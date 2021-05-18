@@ -1,7 +1,9 @@
 package resolver
 
 import (
+	"fmt"
 	"sort"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -11,10 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
@@ -44,6 +46,34 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
+func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	const cacheKey = "AvailableUpdate"
+	c := cache.New(12*time.Hour, time.Hour)
+	if up, exists := c.Get(cacheKey); exists {
+		return up.(*graph.AvailableUpdate), nil
+	}
+
+	update, err := updater.DefaultChecker.Check()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
+	}
+	if update == nil {
+		return nil, nil
+	}
+
+	availableUpdate := graph.AvailableUpdate{
+		Version:  update.Version,
+		Channel:  update.Channel,
+		Path:     update.Path,
+		Platform: update.Platform,
+		Sha256:   update.Sha256,
+	}
+
+	c.Set(cacheKey, &availableUpdate, cache.DefaultExpiration)
+
+	return &availableUpdate, nil
+}
+
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
 	ch := ""
 	ver := ""
@@ -55,14 +85,14 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	}
 	up, err := updater.DefaultChecker.CheckFor(ch, ver)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to check for update")
+		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
 	}
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
 	proc, err := up.InstallDeferred()
 	if err != nil {
-		return nil, errs.Wrap(err, "Deferring update failed: %s", errs.Join(err, ": "))
+		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}
 
 	return &graph.DeferredUpdate{
@@ -76,7 +106,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
 	config, err := config.New()
 	if err != nil {
-		return nil, locale.WrapError(err, "err_resolver_get_config", "Could not get new config instance")
+		return nil, fmt.Errorf("Could not get new config instance: %w")
 	}
 
 	var projects []*graph.Project

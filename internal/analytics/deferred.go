@@ -2,13 +2,11 @@ package analytics
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -54,7 +52,7 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 	}
 	cmd := exec.Command(exe, "--version")
 	cmd.SysProcAttr = osutils.SysProcAttrForNewProcessGroup()
-	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=true", constants.DisableUpdates))
+	cmd.Env = os.Environ()
 	cmd.Stdin = nil
 	cmd.Stdout = nil
 	cmd.Stderr = nil

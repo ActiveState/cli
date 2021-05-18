@@ -57,7 +57,9 @@ func init() {
 		}
 	})
 
-	Set(locale)
+	if err := Set(locale); err != nil {
+		logging.Error("Could not set locale: %v", err)
+	}
 }
 
 // getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being ran
@@ -116,6 +118,9 @@ func Set(localeName string) error {
 
 // T aliases to i18n.Tfunc()
 func T(translationID string, args ...interface{}) string {
+	if translateFunction == nil {
+		return translationID
+	}
 	return translateFunction(translationID, args...)
 }
 
@@ -163,6 +168,9 @@ func parseInput(values ...string) map[string]interface{} {
 // Tt aliases to T, but before returning the string it replaces `[[` and `]]` with `{{` and `}}`,
 // allowing for the localized strings to use these template tags without triggering i18n
 func Tt(translationID string, args ...interface{}) string {
+	if translateFunction == nil {
+		return translationID
+	}
 	translation := translateFunction(translationID, args...)
 	translation = strings.Replace(translation, "[[", "{{", -1)
 	translation = strings.Replace(translation, "]]", "}}", -1)

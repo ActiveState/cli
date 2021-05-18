@@ -38,12 +38,12 @@ type Repo struct {
 func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
 	project, err := model.FetchProjectByName(owner, name)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
 	}
 
 	tempDir, err := ioutil.TempDir("", fmt.Sprintf("state-activate-repo-%s-%s", owner, name))
 	if err != nil {
-		return errs.Wrap(err, "OS failure")
+		return locale.WrapError(err, "err_git_tempdir", "Could not create temporary directory for git clone operation")
 	}
 	defer os.RemoveAll(tempDir)
 
@@ -58,7 +58,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		err = errs.Wrap(err, "Cmd failure")
+		err = locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}, error received: {{.V1}}.", *project.RepoURL, err.Error())
 		tipMsg := locale.Tl(
 			"err_tip_git_ssh-add",
 			"If you are using an SSH key please ensure it's configured by running `ssh-add <path-to-key>`.",
@@ -68,37 +68,34 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 
 	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_ensure_repo", "The activestate.yaml in the cloned repository does not match the project you are activating.")
 	}
 
 	err = moveFiles(tempDir, path)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_move_files", "Could not move cloned files")
 	}
+
 	return nil
 }
 
 func ensureCorrectRepo(owner, name, projectFilePath string) error {
-	_, err := os.Stat(projectFilePath)
-	if os.IsNotExist(err) {
+	if !fileutils.FileExists(projectFilePath) {
 		return nil
-	}
-	if err != nil {
-		return errs.Wrap(err, "OS failure")
 	}
 
 	projectFile, err := projectfile.Parse(projectFilePath)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_parse_projectfile", "Could not parse projectfile")
 	}
 
 	proj, err := project.NewLegacy(projectFile)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_project", "Could not create new project from project file at: {{.V0}}", projectFile.Path())
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		return locale.NewError("ProjectURLMismatch")
+		return locale.NewError("err_git_project_url_mismatch", "Cloned project file does not match expected")
 	}
 
 	return nil
@@ -107,10 +104,15 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 func moveFiles(src, dest string) error {
 	err := verifyDestinationDirectory(dest)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_verify_dir", "Could not verify destination directory")
 	}
 
-	return fileutils.MoveAllFilesCrossDisk(src, dest)
+	err = fileutils.MoveAllFilesCrossDisk(src, dest)
+	if err != nil {
+		return locale.WrapError(err, "err_git_move_file", "Could not move files from {{.V0}} to {{.V1}}", src, dest)
+	}
+
+	return nil
 }
 
 func verifyDestinationDirectory(dest string) error {
@@ -120,10 +122,10 @@ func verifyDestinationDirectory(dest string) error {
 
 	empty, err := fileutils.IsEmptyDir(dest)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_empty_dir", "Could not verify if destination directory is empty")
 	}
 	if !empty {
-		return locale.NewError("TargetDirInUse")
+		return locale.NewError("err_git_in_use", "Destination directory is not empty")
 	}
 
 	return nil

@@ -65,16 +65,21 @@ func (c *Client) SetDebug(b bool) {
 }
 
 func (c *Client) Run(request Request, response interface{}) error {
+	ctx := context.Background()
+	if c.timeout != 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, c.timeout)
+		defer cancel()
+	}
+	err := c.RunWithContext(ctx, request, response)
+	return err // Needs var so the cancel defer triggers at the right time
+}
+
+func (c *Client) RunWithContext(ctx context.Context, request Request, response interface{}) error {
 	graphRequest := graphql.NewRequest(request.Query())
 	for key, value := range request.Vars() {
 		graphRequest.Var(key, value)
 	}
-
-	ctx := context.Background()
-	var cancel context.CancelFunc
-
-	ctx, cancel = context.WithTimeout(ctx, c.timeout)
-	defer cancel()
 
 	var bearerToken string
 	if c.tokenProvider != nil {

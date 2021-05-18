@@ -11,3 +11,7 @@ type ProjectsResponse struct {
 type UpdateResponse struct {
 	DeferredUpdate DeferredUpdate `json:"update"`
 }
+
+type AvailableUpdateResponse struct {
+	AvailableUpdate AvailableUpdate `json:"availableUpdate"`
+}

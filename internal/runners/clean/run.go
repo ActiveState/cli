@@ -3,28 +3,10 @@ package clean
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runners/prepare"
 )
-
-func (u *Uninstall) runUninstall() error {
-	err := removeCache(u.cfg.CachePath())
-	if err != nil {
-		return err
-	}
-
-	err = removeInstall(u.installPath)
-	if err != nil {
-		return err
-	}
-
-	err = removeConfig(u.cfg)
-	if err != nil {
-		return err
-	}
-
-	u.out.Print(locale.T("clean_success_message"))
-	return nil
-}
 
 func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)
@@ -32,4 +14,20 @@ func removeCache(cachePath string) error {
 		return locale.WrapError(err, "err_remove_cache", "Could not remove State Tool cache directory")
 	}
 	return nil
+}
+
+func undoPrepare() error {
+	toRemove := prepare.InstalledPreparedFiles()
+
+	var aggErr error
+	for _, f := range toRemove {
+		if fileutils.TargetExists(f) {
+			err := os.Remove(f)
+			if err != nil {
+				aggErr = locale.WrapError(aggErr, "err_undo_prepare_remove_file", "Failed to remove file %s", f)
+			}
+		}
+	}
+
+	return aggErr
 }

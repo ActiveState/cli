@@ -32,7 +32,7 @@ func NewSvcModelWithClient(ctx context.Context, client *gqlclient.Client) *SvcMo
 func (m *SvcModel) StateVersion() (*graph.Version, error) {
 	r := request.NewVersionRequest()
 	resp := graph.VersionResponse{}
-	if err := m.client.Run(r, &resp); err != nil {
+	if err := m.client.RunWithContext(m.ctx, r, &resp); err != nil {
 		return nil, err
 	}
 	return &resp.Version, nil
@@ -41,7 +41,7 @@ func (m *SvcModel) StateVersion() (*graph.Version, error) {
 func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 	r := request.NewLocalProjectsRequest()
 	response := graph.ProjectsResponse{[]*graph.Project{}}
-	if err := m.client.Run(r, &response); err != nil {
+	if err := m.client.RunWithContext(m.ctx, r, &response); err != nil {
 		return nil, err
 	}
 	return response.Projects, nil
@@ -50,8 +50,17 @@ func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 func (m *SvcModel) InitiateDeferredUpdate(channel, version string) (*graph.DeferredUpdate, error) {
 	r := request.NewUpdateRequest(channel, version)
 	u := graph.UpdateResponse{}
-	if err := m.client.Run(r, &u); err != nil {
+	if err := m.client.RunWithContext(m.ctx, r, &u); err != nil {
 		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version {{.V0}} at channel {{.V1}}: {{.V2}}", version, channel, errs.Join(err, ": ").Error())
 	}
 	return &u.DeferredUpdate, nil
+}
+
+func (m *SvcModel) CheckUpdate() (*graph.AvailableUpdate, error) {
+	r := request.NewAvailableUpdate()
+	u := graph.AvailableUpdateResponse{}
+	if err := m.client.RunWithContext(m.ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error checking if update is available.")
+	}
+	return &u.AvailableUpdate, nil
 }

@@ -30,20 +30,11 @@ const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 // ExecEnvVarName is the env var used to find out if we are shimming recursively
 const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
-// DisableUpdates is the env var used to disable auto update
-const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
-
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
-
-// UpdateHailFileName is the file name used to pass messages from sub-processes to the parent.
-const UpdateHailFileName = "hail-update"
-
-// AutoUpdateTimeoutEnvVarName is the env var that is used to override the timeout for auto update checks
-const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"
 
 // InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileName = "config.yaml"
@@ -179,11 +170,17 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// DocumentationURLCreateProject is the documentation URL for creating projects
+const DocumentationURLCreateProject = DocumentationURL + "create-project/"
+
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/"
 
 // ActiveStateSupportURL is the URL for the AciveState support page
 const ActiveStateSupportURL = "https://www.activestate.com/support/"
+
+// ActiveStateAccountURL is the URL for the ActiveState account preferences page
+const ActiveStateAccountURL = "https://platform.activestate.com/preferences"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -297,6 +294,9 @@ const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// StateUpdateDialogName is the name we give our state-update-dialog executable
+const UpdateDialogName = "State Update Dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411

@@ -987,7 +987,7 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) error {
 	lang := language.MakeByName(params.Language)
-	err := validateCreateParams(params, lang)
+	err := validateCreateParams(params)
 	if err != nil {
 		return err
 	}
@@ -1083,11 +1083,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams, lang language.Language) error {
-	langValidErr := lang.Validate()
+func validateCreateParams(params *CreateParams) error {
 	switch {
-	case langValidErr != nil:
-		return errs.Wrap(langValidErr, "Language validation failed")
 	case params.Directory == "":
 		return locale.NewInputError("err_project_require_path")
 	case params.projectURL != "":

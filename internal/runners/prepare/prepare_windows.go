@@ -44,7 +44,8 @@ func (r *Prepare) prepareStartShortcut() error {
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc, err := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
 	}
@@ -112,4 +113,20 @@ func setStateProtocol() error {
 	}
 
 	return nil
+}
+
+// InstalledPreparedFiles returns the files installed by the state _prepare command
+func InstalledPreparedFiles() []string {
+	var files []string
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
+
+	sc, err := autostart.New(name, exec).Path()
+	if err != nil {
+		logging.Error("Failed to determine shortcut path for removal: %v", err)
+	} else if sc != "" {
+		files = append(files, sc)
+	}
+
+	return files
 }
