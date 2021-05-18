@@ -125,7 +125,7 @@ func (suite *GitTestSuite) TestEnsureCorrectRepo() {
 
 func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
 	err := ensureCorrectRepo("not-owner", "bad-project", filepath.Join(suite.dir, constants.ConfigFileName))
-	expected := locale.NewError("ProjectURLMismatch")
+	expected := locale.NewError("err_git_project_url_mismatch", "Cloned project file does not match expected")
 	suite.EqualError(err, expected.Error(), "expected errors to match")
 }
 
@@ -150,7 +150,7 @@ func (suite *GitTestSuite) TestMoveFilesDirNoEmpty() {
 	suite.Require().NoError(err)
 
 	err = moveFiles(suite.dir, anotherDir)
-	expected := locale.NewError("TargetDirInUse")
+	expected := locale.WrapError(err, "err_git_verify_dir", "Could not verify destination directory")
 	suite.EqualError(err, expected.Error())
 }
 
