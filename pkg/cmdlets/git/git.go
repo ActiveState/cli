@@ -61,7 +61,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		err = errs.Wrap(err, "Cmd failure")
 		tipMsg := locale.Tl(
 			"err_tip_git_ssh-add",
-			"SSH might be unable to authenticate. Running `ssh-add` before trying again may help.",
+			"If you are using an SSH key please ensure it's configured by running `ssh-add <path-to-key>`.",
 		)
 		return errs.AddTips(err, tipMsg)
 	}
