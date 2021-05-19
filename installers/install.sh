@@ -194,22 +194,22 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
   exit 1
 fi
 
-CURRENT_INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 
 # stop if previous installation is detected unless
 # - FORCEOVERWRITE is specified OR
-# - a TARGET directory is specified that differs from CURRENT_INSTALLDIR
-if [ ! -z "$CURRENT_INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ "$TARGET" = "$CURRENT_INSTALLDIR" ] \
+# - a TARGET directory is specified that differs from INSTALLDIR
+if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
    ); then
 
   if [ -n "${ACTIVATE}" ]; then
-    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE}
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
   elif [ -n "${ACTIVATE_DEFAULT}" ]; then
-    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
+    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
   fi
 
-  warn "State Tool is already installed at $CURRENT_INSTALLDIR, to reinstall run this command again with -f"
+  warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
   echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
@@ -217,7 +217,7 @@ fi
 
 # If '-f' is passed and a previous installation exists we set NOPROMPT
 # as we will overwrite the existing State Tool installation
-if $FORCEOVERWRITE && [ ! -z "$CURRENT_INSTALLDIR" ]; then
+if $FORCEOVERWRITE && [ ! -z "$INSTALLDIR" ]; then
   NOPROMPT=true
 fi
 
