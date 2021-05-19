@@ -37,7 +37,6 @@ type Instance struct {
 	lockFile      string
 	localPath     string
 	installSource string
-	noSave        bool
 	rwLock        *sync.RWMutex
 	data          map[string]interface{}
 }
@@ -57,6 +56,21 @@ func new(localPath string) (*Instance, error) {
 	return instance, nil
 }
 
+func (i *Instance) GetLock() (*lockfile.PidLock, error) {
+	pl, err := lockfile.NewPidLock(i.getLockFile())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create lock file for updating config")
+	}
+
+	err = pl.WaitForLock(5 * time.Second)
+	if err != nil {
+		pl.Close()
+		return nil, &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock")}
+	}
+
+	return pl, nil
+}
+
 // Reload reloads the configuration data from the config file
 func (i *Instance) Reload() error {
 	err := i.ensureConfigExists()
@@ -68,16 +82,11 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	pl, err := lockfile.NewPidLock(i.getLockFile())
+	pl, err := i.GetLock()
 	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
+		return errs.Wrap(err, "Could not acquire config file lock")
 	}
 	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock")}
-	}
 
 	err = i.ReadInConfig()
 	if err != nil {
@@ -139,16 +148,11 @@ func (i *Instance) Set(key string, value interface{}) error {
 	i.rwLock.Lock()
 	defer i.rwLock.Unlock()
 
-	pl, err := lockfile.NewPidLock(i.getLockFile())
+	pl, err := i.GetLock()
 	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
+		return errs.Wrap(err, "Could not acquire config file lock")
 	}
 	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock.")}
-	}
 
 	err = i.ReadInConfig()
 	if err != nil {
