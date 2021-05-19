@@ -134,6 +134,33 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	)
 }
 
+// tests that convenience commands for activestate.yaml scripts are available
+// in bash subshells from the activated state
+func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
+	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
+	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
+		suite.T().Skip("Not testing bash on Windows")
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts, 3)
+
+	cp := ts.Spawn("activate")
+	cp.Expect("Default Project")
+	cp.Expect("y/N")
+	cp.Send("n")
+	cp.Expect("You're Activated")
+	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine("helloWorld")
+	cp.Expect("Hello World!")
+	cp.SendLine("bash -c helloWorld")
+	cp.Expect("Hello World!")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt, tagsuite.Critical)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
