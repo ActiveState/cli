@@ -29,8 +29,6 @@ const ConfigKeyTrayPid = "tray-pid"
 
 const lockRetryDelay = 50 * time.Millisecond
 
-type ErrorCouldNotAcquireLock struct{ *errs.WrapperError }
-
 // Instance holds our main config logic
 type Instance struct {
 	configDir     *configdir.Config
