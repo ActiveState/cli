@@ -50,9 +50,9 @@ func (pl *PidLock) cleanLockFile(keep bool) error {
 	if err != nil {
 		return errs.Wrap(err, "failed to close lock file %s", pl.path)
 	}
-	// On Windows, we have to remove the file after it is closed.
+	// On Windows, we have to remove the file AFTER it is closed.
 	// It is not an error if it fails, because that could mean that another
-	// process has acquired the lock for the file already.
+	// process has opened a new file handle for the file already.
 	if !keep {
 		_ = os.Remove(pl.path)
 	}
