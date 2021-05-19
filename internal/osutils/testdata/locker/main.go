@@ -42,12 +42,9 @@ func main() {
 	}
 
 	fmt.Println("LOCKED")
-	if keep {
-		pl.Close(keep)
-	}
 
 	<-ctx.Done()
 	fmt.Println("done")
 
-	pl.Close()
+	pl.Close(keep)
 }

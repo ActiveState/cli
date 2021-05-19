@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,13 +19,15 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils/lockfile"
+	"github.com/gofrs/flock"
 )
 
 var defaultConfig *Instance
 
 const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
+
+const lockRetryDelay = 50 * time.Millisecond
 
 type ErrorCouldNotAcquireLock struct{ *errs.WrapperError }
 
@@ -37,38 +39,61 @@ type Instance struct {
 	lockFile      string
 	localPath     string
 	installSource string
-	rwLock        *sync.RWMutex
+	lock          *flock.Flock
 	data          map[string]interface{}
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
-		rwLock:    &sync.RWMutex{},
 		data:      make(map[string]interface{}),
 	}
+	instance.lock = flock.New(instance.getLockFile())
 
-	err := instance.Reload()
-	if err != nil {
+	if err := instance.Reload(); err != nil {
 		return instance, errs.Wrap(err, "Failed to load configuration.")
 	}
 
 	return instance, nil
 }
 
-func (i *Instance) GetLock() (*lockfile.PidLock, error) {
-	pl, err := lockfile.NewPidLock(i.getLockFile())
+func (i *Instance) GetLock() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not create lock file for updating config")
+		return errs.Wrap(err, "Timed out waiting for exclusive lock")
 	}
 
-	err = pl.WaitForLock(5 * time.Second)
+	if !locked {
+		return errs.New("Timeout out waiting for exclusive lock")
+
+	}
+	return nil
+}
+
+func (i *Instance) GetRLock() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	locked, err := i.lock.TryRLockContext(ctx, lockRetryDelay)
 	if err != nil {
-		pl.Close()
-		return nil, &ErrorCouldNotAcquireLock{errs.Wrap(err, "Timed out waiting for lock")}
+		return errs.Wrap(err, "Timed out waiting for shared lock")
 	}
 
-	return pl, nil
+	if !locked {
+		return errs.New("Timeout out waiting for shared lock")
+
+	}
+	return nil
+}
+
+func (i *Instance) ReleaseLock() error {
+	if err := i.lock.Unlock(); err != nil {
+		return errs.Wrap(err, "Failed to release lock")
+	}
+	return nil
 }
 
 // Reload reloads the configuration data from the config file
@@ -82,11 +107,10 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	pl, err := i.GetLock()
-	if err != nil {
+	if err = i.GetRLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
-	defer pl.Close()
+	defer i.ReleaseLock()
 
 	err = i.ReadInConfig()
 	if err != nil {
@@ -145,24 +169,18 @@ func Get() (*Instance, error) {
 
 // Set sets a value at the given key
 func (i *Instance) Set(key string, value interface{}) error {
-	i.rwLock.Lock()
-	defer i.rwLock.Unlock()
-
-	pl, err := i.GetLock()
-	if err != nil {
+	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
-	defer pl.Close()
+	defer i.ReleaseLock()
 
-	err = i.ReadInConfig()
-	if err != nil {
+	if err := i.ReadInConfig(); err != nil {
 		return err
 	}
 
 	i.data[strings.ToLower(key)] = value
 
-	err = i.save()
-	if err != nil {
+	if err := i.save(); err != nil {
 		return err
 	}
 
@@ -170,8 +188,6 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) get(key string) interface{} {
-	i.rwLock.RLock()
-	defer i.rwLock.RUnlock()
 	return i.data[strings.ToLower(key)]
 }
 
