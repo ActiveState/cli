@@ -3,6 +3,7 @@ package packages
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -71,6 +73,16 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 		if req != nil {
 			operation = model.OperationUpdated
+		}
+	}
+
+	if !isHeadless {
+		behind, err := checker.CommitsBehind(pj)
+		if err != nil {
+			return locale.WrapError(err, "err_could_not_get_commit_behind_count")
+		}
+		if behind > 0 {
+			return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
 		}
 	}
 
