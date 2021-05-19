@@ -2,8 +2,9 @@ package lockfile
 
 import (
 	"fmt"
+	"io"
 	"os"
-	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -39,50 +40,59 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	}, nil
 }
 
-func logAccessMessage(msg string) error {
-	f, err := os.OpenFile(filepath.Join(os.TempDir(), fmt.Sprintf("access_log.%d", os.Getpid())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if _, err := f.WriteString(fmt.Sprintf("%s: %s", time.Now(), msg)); err != nil {
-		return err
-	}
-	return nil
-}
-
 // TryLock attempts to lock the created lock file.
 func (pl *PidLock) TryLock() (err error) {
 	err = LockFile(pl.file)
-	logAccessMessage(fmt.Sprintf("Trying to lock file %s from process %d with err=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
 		// if lock cannot be acquired it means that another process is holding the lock
 		return NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
 	}
 
+	// check if PID can be read and if so, if the process is running
+	b := make([]byte, 100)
+	n, err := pl.file.Read(b)
+	if err != nil && err != io.EOF {
+		LockRelease(pl.file)
+		return errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
+	}
+	if n > 0 {
+		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
+		if err != nil {
+			LockRelease(pl.file)
+			return errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
+		}
+		if PidExists(int(pid)) {
+			LockRelease(pl.file)
+			err := fmt.Errorf("pid %d exists", pid)
+			return NewAlreadyLockedError(err, pl.path, "pid parsed")
+		}
+	}
+
+	// write PID into lock file
+	_, err = pl.file.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
+	if err != nil {
+		LockRelease(pl.file)
+		return errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
+	}
+
 	pl.locked = true
-	logAccessMessage(fmt.Sprintf("Process %d locked file %s\n", os.Getpid(), pl.path))
 	return nil
 }
 
 // Close removes the lock file and releases the lock
 func (pl *PidLock) Close(keepFile ...bool) error {
 	keep := false
-	logAccessMessage(fmt.Sprintf("releasing lock on file %s from process %d\n", pl.path, os.Getpid()))
 	if len(keepFile) == 1 {
 		keep = keepFile[0]
 	}
 	if !pl.locked {
 		err := pl.file.Close()
-		logAccessMessage(fmt.Sprintf("released lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 		if err != nil {
 			return errs.Wrap(err, "failed to close unlocked lock file %s", pl.path)
 		}
 		return nil
 	}
 	err := pl.cleanLockFile(keep)
-	logAccessMessage(fmt.Sprintf("released and cleaned lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
 		return errs.Wrap(err, "failed to remove lock file")
 	}

@@ -282,20 +282,11 @@ jobs:
         go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite$"
         testCode=$?
         head -n-0 build/*log 2>/dev/null
-        mkdir -p access_logs
-        TMPDIR=$(dirname $(mktemp -u))
-        mv $TMPDIR/access_log.* access_logs
         exit ${testCode}
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-    - name: Upload access logs
-      uses: actions/upload-artifact@v2
-      if: always()
-      with:
-        name: access_logs-${{ matrix.platform }}
-        path: access_logs/
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
@@ -339,6 +330,13 @@ jobs:
     - name: Build Service
       shell: bash
       run: state run build-svc
+    - name: Build Tray App
+      shell: bash
+      run: |
+        state run build-tray
+    - name: Build Installer
+      shell: bash
+      run: state run build-installer
     - name: Build Systray App
       shell: bash
       if: runner.os == 'macOS'
@@ -349,6 +347,9 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
+    - name: Generate Test Update
+      shell: bash
+      run: state run generate-test-update
     - name: Build Languages MSI
       if: runner.os == 'Windows'
       shell: bash
