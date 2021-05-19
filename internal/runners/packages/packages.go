@@ -76,12 +76,14 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 	}
 
-	behind, err := checker.CommitsBehind(pj)
-	if err != nil {
-		return locale.WrapError(err, "err_could_not_get_commit_behind_count")
-	}
-	if behind > 0 {
-		return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
+	if !isHeadless {
+		behind, err := checker.CommitsBehind(pj)
+		if err != nil {
+			return locale.WrapError(err, "err_could_not_get_commit_behind_count")
+		}
+		if behind > 0 {
+			return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
+		}
 	}
 
 	parentCommitID := pj.CommitUUID()
