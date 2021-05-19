@@ -33,6 +33,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Fixed issue where `state clean uninstall` would not remove expected files on
   Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
 
+### Fixed
+
+- Fixed a rare case where the configuration file can get corrupted when two processes access it
+  simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
+
 ## 0.28.1
 
 ### Fixed

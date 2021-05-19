@@ -214,6 +214,9 @@ github.com/go-stack/stack
 # github.com/gobuffalo/packr v1.10.7
 ## explicit
 github.com/gobuffalo/packr
+# github.com/gofrs/flock v0.8.0
+## explicit
+github.com/gofrs/flock
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.4.3
@@ -557,7 +560,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20210420205809-ac73e9fd8988
+# golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
