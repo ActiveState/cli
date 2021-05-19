@@ -18,10 +18,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fixed a rare case where deprecation information was not downloaded, when
-  requested by several State Tool instances in parallel. This also prevents the
-  configuration file from getting corrupted when two processes access it
-  simulataneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
+- Fixed a rare case where the configuration file can get corrupted when two processes access it
+  simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
 
 ## 0.28.1
 
