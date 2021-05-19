@@ -5,13 +5,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
@@ -25,32 +28,33 @@ import (
 )
 
 func main() {
-	// init logging and rollbar
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateInstallerRollbarToken)
 
-	out, err := output.New("plain", &output.Config{
+	var out output.Outputer
+	out, err = output.New("plain", &output.Config{
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     false,
 		Interactive: false,
 	})
 	if err != nil {
-		logging.Error("Could not initialize outputer: %v", err)
-		rollbar.Close()
-		os.Exit(1)
+		return
 	}
-	if err := run(out); err != nil {
-		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
-		logging.Error(errMsg)
-		out.Error(errMsg)
-		out.Error(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
-
-		rollbar.Close()
-		os.Exit(1)
-	}
-	rollbar.Close()
+	err = run(out)
 }
 
 func run(out output.Outputer) error {

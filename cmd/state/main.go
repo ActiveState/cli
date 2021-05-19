@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -38,34 +39,34 @@ import (
 
 func main() {
 	var exitCode int
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		// State tool has special output handling that's difficult to centralize here, so for this exithandler we're
+		// just going to focus on closing rollbar and producing an exit code, output handling is done in-line below
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err != nil {
+			if exitCode == 0 {
+				exitCode = 1
+			}
+			os.Exit(exitCode)
+		}
+	})
+	
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
-	defer func() {
-		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if handlePanics() {
-			exitCode = 1
-		}
-
-		// ensure rollbar messages are called
-		events.WaitForEvents(time.Second, rollbar.Close)
-
-		// exit with exitCode
-		os.Exit(exitCode)
-	}()
-
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
-	out, err := initOutput(outFlags, "")
+	var out output.Outputer
+	out, err = initOutput(outFlags, "")
 	if err != nil {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
-		exitCode = 1
 		return
 	}
 
 	if runtime.GOOS == "windows" {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
+		osv, err2 := sysinfo.OSVersion()
+		if err2 != nil {
 			logging.Debug("Could not retrieve os version info: %v", err)
 		} else if osv.Major < 10 {
 			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))

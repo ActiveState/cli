@@ -3,30 +3,35 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
-	if err := run(); err != nil {
-		logging.Error(fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": ")))
-		fmt.Println(errs.Join(err, ": ").Error())
-
-		rollbar.Close()
-		os.Exit(1)
-	}
-
-	rollbar.Close()
+	err = run()
 }
 
 func run() error {

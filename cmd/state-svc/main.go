@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/rollbar/rollbar-go"
 )
@@ -32,21 +33,24 @@ var commands = []command{
 }
 
 func main() {
-	var exitCode int
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
-	defer exit(exitCode)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
-	if err != nil {
-		errMsg := errs.Join(err, ": ").Error()
-		logging.Errorf("state-svc errored out: %s", errMsg)
-		fmt.Fprintln(os.Stderr, errMsg)
-		exitCode = 1
-	}
+	err = run()
 }
 
 func run() error {

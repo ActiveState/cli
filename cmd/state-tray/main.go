@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/getlantern/systray"
@@ -32,25 +33,25 @@ const (
 )
 
 func main() {
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
 	verbose := os.Getenv("VERBOSE") != ""
 
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
 
-	systray.Run(onReady, onExit)
-}
-
-func onReady() {
-	var exitCode int
-	defer exit(exitCode)
-
-	err := run()
-	if err != nil {
-		errMsg := errs.Join(err, ": ").Error()
-		logging.Error("Systray encountered an error: %v", errMsg)
-		fmt.Fprintln(os.Stderr, errMsg)
-		exitCode = 1
-	}
+	systray.Run(func() {
+		err = run()
+	}, onExit)
 }
 
 func run() error {

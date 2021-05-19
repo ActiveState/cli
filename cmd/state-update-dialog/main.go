@@ -10,28 +10,30 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exithandler"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
-	var exit int
-	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
-	defer func() {
+	var err error
+	defer exithandler.Handle(err, func(err error) {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
-		os.Exit(exit)
-	}()
+		if err != nil {
+			os.Exit(1)
+		}
+	})
+
+	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
-	if err != nil {
-		exit = 1
-		logging.Error("Update Dialog Failure: " + errs.Join(err, ": ").Error())
-		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
-	}
+	err = run()
 }
 
 func run() error {
