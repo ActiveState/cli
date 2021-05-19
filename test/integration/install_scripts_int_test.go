@@ -119,9 +119,12 @@ type InstallScriptsIntegrationTestSuite struct {
 }
 
 func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
+	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
+	cp.Expect("Allow $PATH to be appended in your")
+	cp.SendLine(addToPathAnswer)
 	cp.Expect("State Tool installation complete")
 }
 
@@ -154,6 +157,7 @@ func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, ve
 }
 
 func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
+	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
