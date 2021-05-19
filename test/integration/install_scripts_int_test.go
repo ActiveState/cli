@@ -119,17 +119,13 @@ type InstallScriptsIntegrationTestSuite struct {
 }
 
 func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("Allow $PATH to be appended in your")
-	cp.SendLine(addToPathAnswer)
 	cp.Expect("State Tool installation complete")
 }
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
@@ -137,7 +133,6 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
@@ -145,7 +140,6 @@ func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version s
 }
 
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
@@ -153,7 +147,6 @@ func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 }
 
 func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, version string) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
@@ -161,7 +154,6 @@ func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, ve
 }
 
 func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
-	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
