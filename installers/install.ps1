@@ -332,6 +332,13 @@ function install() {
         }
     }
 
+    Write-Host "`nInstalling to ActiveState State Tool...`n" -ForegroundColor Yellow
+    if ( -Not $script:NOPROMPT ) {
+        if( -Not (promptYN "Continue?") ) {
+            return 2
+        }
+    }
+
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
     $err = fetchArtifacts $tmpParentPath $statejson $statepkg
     if ($err -eq 1){
