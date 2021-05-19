@@ -55,9 +55,6 @@ func onReady() {
 }
 
 func run() error {
-	box := packr.NewBox(assetsPath)
-	systray.SetIcon(box.Bytes(iconFile))
-
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
@@ -71,6 +68,9 @@ func run() error {
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
+
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.StartAndWait(); err != nil {
