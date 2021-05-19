@@ -322,7 +322,7 @@ case "$RESPONSE" in
       echo "Installing without target"
       INSTALL_OUTPUT=$($TMPDIR/$TMPEXE)
     fi
-    INSTALLDIR=$(echo $INSTALL_OUTPUT | cut -d' ' -f 6)
+    INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     echo "$INSTALLDIR"
     ;;
   [Nn]|*)
