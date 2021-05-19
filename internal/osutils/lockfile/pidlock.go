@@ -2,10 +2,8 @@ package lockfile
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -57,37 +55,10 @@ func logAccessMessage(msg string) error {
 // TryLock attempts to lock the created lock file.
 func (pl *PidLock) TryLock() (err error) {
 	err = LockFile(pl.file)
-	logAccessMessage(fmt.Sprintf("Trying to lock file %s from process %d\n with err=%v", pl.path, os.Getpid(), errs.JoinMessage(err)))
+	logAccessMessage(fmt.Sprintf("Trying to lock file %s from process %d with err=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
-		// if lock cannot be acquired it usually means that another process is holding the lock
+		// if lock cannot be acquired it means that another process is holding the lock
 		return NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
-	}
-
-	// check if PID can be read and if so, if the process is running
-	b := make([]byte, 100)
-	n, err := pl.file.Read(b)
-	if err != nil && err != io.EOF {
-		LockRelease(pl.file)
-		return errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
-	}
-	if n > 0 {
-		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
-		if err != nil {
-			LockRelease(pl.file)
-			return errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
-		}
-		if PidExists(int(pid)) {
-			LockRelease(pl.file)
-			err := fmt.Errorf("pid %d exists", pid)
-			return NewAlreadyLockedError(err, pl.path, "pid parsed")
-		}
-	}
-
-	// write PID into lock file
-	_, err = pl.file.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
-	if err != nil {
-		LockRelease(pl.file)
-		return errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
 	}
 
 	pl.locked = true

@@ -189,37 +189,18 @@ func Test_acquirePidLock(t *testing.T) {
 	err = pl.TryLock()
 	require.NoError(t, err)
 
+	// This demonstrates that two locks in the same process are allowed.  You'll need to use other mechanisms to achieve synchronization inside the process.
 	pl2, err := NewPidLock(lockFile)
-	require.NoError(t, err)
+	require.NoError(t, err, "should pidlock on existing file with existing lock")
 	err = pl2.TryLock()
-	assert.Error(t, err)
+	assert.NoError(t, err, "same process should be able to lock file again")
 
 	err = pl2.Close()
-	require.NoError(t, err)
-
-	err = pl.Close()
-	require.NoError(t, err)
-	f, err := os.Stat(lockFile)
-	assert.True(t, err != nil && f == nil)
-
-	pl, err = NewPidLock(lockFile)
-	require.NoError(t, err)
-	err = pl.TryLock()
-	require.NoError(t, err)
+	require.NoError(t, err, "should close the second lock successfully")
 
 	err = pl.Close(true)
-	require.NoError(t, err)
-	f, err = os.Stat(lockFile)
-	assert.True(t, err == nil && !f.IsDir())
-
-	pl, err = NewPidLock(lockFile)
-	require.NoError(t, err)
-
-	err = pl.TryLock()
-	assert.Error(t, err)
-
-	err = pl.Close()
-	require.NoError(t, err)
+	require.NoError(t, err, "should be able to close (if we don't try to remove the file)")
+	assert.NoFileExists(t, lockFile)
 }
 
 func TestPidExists(t *testing.T) {
