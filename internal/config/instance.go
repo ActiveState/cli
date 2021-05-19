@@ -48,6 +48,10 @@ func new(localPath string) (*Instance, error) {
 		localPath: localPath,
 		data:      make(map[string]interface{}),
 	}
+	err := instance.ensureConfigExists()
+	if err != nil {
+		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
+	}
 	instance.lock = flock.New(instance.getLockFile())
 
 	if err := instance.Reload(); err != nil {
