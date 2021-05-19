@@ -12,6 +12,7 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
+	"github.com/shirou/gopsutil/process"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
@@ -61,6 +62,12 @@ func run() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
+
+	currentPID, err := trayPID(cfg)
+	if err == nil && currentPID != nil {
+		return errs.New("ActiveState Desktop is already running")
+	}
+
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
@@ -237,4 +244,21 @@ func execute(exec string, args []string) error {
 	}
 
 	return nil
+}
+
+func trayPID(cfg *config.Instance) (*int, error) {
+	pid := cfg.GetInt(config.ConfigKeyTrayPid)
+	if pid <= 0 {
+		return nil, nil
+	}
+
+	pidExists, err := process.PidExists(int32(pid))
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not verify if pid exists")
+	}
+	if !pidExists {
+		return nil, nil
+	}
+
+	return &pid, nil
 }
