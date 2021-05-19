@@ -323,7 +323,6 @@ case "$RESPONSE" in
       INSTALL_OUTPUT=$($TMPDIR/$TMPEXE)
     fi
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
-    echo "$INSTALLDIR"
     ;;
   [Nn]|*)
     error "Aborting installation"
