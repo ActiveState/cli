@@ -313,19 +313,6 @@ function install() {
         $statejson="windows-386/info.json"
     }
 
-    # Get the install directory and ensure we have permissions on it.
-    # If the user provided an install dir we do no verification.
-    if ($script:TARGET) {
-        $installDir = $script:TARGET
-    } else {
-        $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
-        if (-Not (hasWritePermission $Env:APPDATA)){
-            Write-Warning "Do not have write permissions to: '$Env:APPDATA'"
-            Write-Warning "Aborting installation"
-            return 1
-        }
-    }
-
     $existing = getExistingOnPath
 
     # Check if previous installation is detected
@@ -345,30 +332,27 @@ function install() {
         }
     }
 
-    # Install binary
-    Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
-    if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYN "Continue?") ) {
-            return 2
-        }
-    }
-
-    #  If the install dir doesn't exist, create it
-    $installPath = Join-Path $installDir $script:STATEEXE
-    if( -Not (Test-Path -LiteralPath $installDir)) {
-        Write-host "NOTE: $installDir will be created`n"
-        New-Item -Path $installDir -ItemType Directory | Out-Null
-    }
-
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
     $err = fetchArtifacts $tmpParentPath $statejson $statepkg
     if ($err -eq 1){
         return 1
     }
 
-    # Installing to installDir
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
-    & "$InstallerPath" "$installDir"
+    if ($script:TARGET) {
+        $output = & "$InstallerPath" "$script:TARGET" 2>&1 | Out-String
+    } else {
+        $output = & "$InstallerPath" 2>&1 | Out-String
+    }
+    Write-Host "$output"
+
+    $match = $output -match "Install Location: (?<content>[^\s]+)"
+    if ($match) {
+        $installDir = $Matches['content']
+    } else {
+        Write-Error "Unexpected installer output"
+        return 1
+    }
 
     # Write install file
     $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
