@@ -61,7 +61,10 @@ func run() error {
 	}
 
 	currentPID, err := trayPID(cfg)
-	if err == nil && currentPID != nil {
+	if err != nil {
+		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")
+	}
+	if currentPID != nil {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
