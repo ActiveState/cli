@@ -103,6 +103,9 @@ func (s *serviceManager) Stop() error {
 }
 
 func (s *serviceManager) Pid(pid int) (*int, error) {
+	if pid == 0 {
+		return nil, nil
+	}
 	pidExists, err := process.PidExists(int32(pid))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
