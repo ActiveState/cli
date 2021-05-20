@@ -98,10 +98,10 @@ func (i *Instance) ReleaseLock() error {
 	return nil
 }
 
-// ReloadUnsafe reloads the configuration data from the config file. The caller
+// reloadUnsafe reloads the configuration data from the config file. The caller
 // needs to ensure that the call is guarded by GetRLock()/ReleaseLock() or GetLock()/ReleaseLock().
-// See SetUnsafe() for more details on when and how to use this function.
-func (i *Instance) ReloadUnsafe() error {
+// See setUnsafe() for more details on when and how to use this function.
+func (i *Instance) reloadUnsafe() error {
 	err := i.ReadInConfig()
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (i *Instance) Reload() error {
 	}
 	defer i.ReleaseLock()
 
-	return i.ReloadUnsafe()
+	return i.reloadUnsafe()
 }
 
 func configPathInTest() (string, error) {
@@ -176,7 +176,21 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
-// SetUnsafe updates a configuration key and writes the update configuration file to disk.
+func (i *Instance) SetSafe(key string, valueF func(oldvalue interface{}) interface{}) error {
+	if err := i.GetLock(); err != nil {
+		return errs.Wrap(err, "Could not acquire configuration lock.")
+	}
+	defer i.ReleaseLock()
+
+	if err := i.reloadUnsafe(); err != nil {
+		return errs.Wrap(err, "Could not load the configuration data.")
+	}
+
+	value := valueF(i.data[key])
+	return i.setUnsafe(key, value)
+}
+
+// setUnsafe updates a configuration key and writes the update configuration file to disk.
 // IMPORTANT: This function does not ensure any inter process synchronization!
 // The caller needs to explicitly guard this function by calling
 // GetLock()/ReleaseLock().
@@ -187,12 +201,12 @@ func Get() (*Instance, error) {
 // Example usage:
 //    cfg.GetLock()
 //    defer cfg.ReleaseLock()
-//    cfg.ReloadUnsafe()
+//    cfg.reloadUnsafe()
 //    slice, _ := cfg.GetStringSlice("key")
 //    slice = append(slice, "value")
-//    cfg.SetUnsafe("key", slice)
+//    cfg.setUnsafe("key", slice)
 // Note, how in this example it is crucial to synchronize the appending to the slice variable.
-func (i *Instance) SetUnsafe(key string, value interface{}) error {
+func (i *Instance) setUnsafe(key string, value interface{}) error {
 	i.data[strings.ToLower(key)] = value
 
 	if err := i.save(); err != nil {
@@ -203,8 +217,8 @@ func (i *Instance) SetUnsafe(key string, value interface{}) error {
 }
 
 // Set sets a value at the given key. This function is guarded by a RW-lock. Use
-// GetLock()/ReleaseLock() and SetUnsafe() if you have to synchronize the value
-// modification too.  See SetUnsafe for more details.
+// GetLock()/ReleaseLock() and setUnsafe() if you have to synchronize the value
+// modification too.  See setUnsafe for more details.
 func (i *Instance) Set(key string, value interface{}) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
@@ -215,7 +229,7 @@ func (i *Instance) Set(key string, value interface{}) error {
 		return err
 	}
 
-	return i.SetUnsafe(key, value)
+	return i.setUnsafe(key, value)
 }
 
 func (i *Instance) get(key string) interface{} {

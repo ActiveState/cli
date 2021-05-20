@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/process"
+	"github.com/spf13/cast"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
@@ -26,46 +27,45 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 }
 
 func (s *serviceManager) Start(args ...string) error {
-	err := s.cfg.GetLock()
+	var proc *os.Process
+	err := s.cfg.SetSafe(constants.SvcConfigPid, func(oldPidI interface{}) interface{} {
+		oldPid := cast.ToInt(oldPidI)
+		curPid, err := s.Pid(oldPid)
+		if err == nil && curPid != nil {
+			return errs.New("Service is already running")
+		}
+
+		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
+		if err != nil {
+			return errs.New("Could not start serviceManager")
+		}
+
+		if proc == nil {
+			return errs.New("Could not obtain process information after starting serviceManager")
+		}
+
+		return proc.Pid
+	})
 	if err != nil {
-		return errs.Wrap(err, "Failed to get configuration lock")
-	}
-	defer s.cfg.ReleaseLock()
-
-	// Reload the configuration to ensure that we have the latest pid information
-	err = s.cfg.ReloadUnsafe()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload configuration")
-	}
-	curPid, err := s.Pid()
-	if err == nil && curPid != nil {
-		return errs.New("Service is already running")
-	}
-
-	proc, err := exeutils.ExecuteAndForget(args[0], args[1:])
-	if err != nil {
-		return errs.New("Could not start serviceManager")
-	}
-
-	if proc == nil {
-		return errs.New("Could not obtain process information after starting serviceManager")
-	}
-
-	if err := s.cfg.SetUnsafe(constants.SvcConfigPid, proc.Pid); err != nil {
-		if err := proc.Signal(os.Interrupt); err != nil {
-			logging.Errorf("Could not cleanup process: %v", err)
-			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
+		if proc != nil {
+			if err := proc.Signal(os.Interrupt); err != nil {
+				logging.Errorf("Could not cleanup process: %v", err)
+				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
+			}
 		}
 		return errs.Wrap(err, "Could not store pid")
 	}
 
 	logging.Debug("Process started using pid %d", proc.Pid)
-
 	return nil
 }
 
 func (s *serviceManager) Stop() error {
-	pid, err := s.Pid()
+	err := s.cfg.Reload()
+	if err != nil {
+		return errs.Wrap(err, "Failed to reload configuration")
+	}
+	pid, err := s.Pid(s.cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
 	}
@@ -102,12 +102,7 @@ func (s *serviceManager) Stop() error {
 	return nil
 }
 
-func (s *serviceManager) Pid() (*int, error) {
-	pid := s.cfg.GetInt(constants.SvcConfigPid)
-	if pid <= 0 {
-		return nil, nil
-	}
-
+func (s *serviceManager) Pid(pid int) (*int, error) {
 	pidExists, err := process.PidExists(int32(pid))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
