@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -110,7 +109,7 @@ func setStateProtocol() error {
 }
 
 // InstalledPreparedFiles returns the files installed by the state _prepare command
-func InstalledPreparedFiles(cfg *config.Instance) []string {
+func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()

@@ -3,7 +3,6 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runners/prepare"
@@ -17,7 +16,7 @@ func removeCache(cachePath string) error {
 	return nil
 }
 
-func undoPrepare(cfg *config.Instance) error {
+func undoPrepare(cfg configurable) error {
 	toRemove := prepare.InstalledPreparedFiles(cfg)
 
 	var aggErr error

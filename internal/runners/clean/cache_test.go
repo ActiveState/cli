@@ -38,6 +38,10 @@ func (c *configMock) GetInt(_ string) int {
 	return 0
 }
 
+func (c *configMock) IsSet(string) bool {
+	return false
+}
+
 func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }

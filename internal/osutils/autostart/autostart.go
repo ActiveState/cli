@@ -1,7 +1,6 @@
 package autostart
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
@@ -10,10 +9,15 @@ const ConfigKeyDisabled = "SystrayAutoStartDisabled"
 type App struct {
 	Name string
 	Exec string
-	cfg  *config.Instance
+	cfg  Configurable
 }
 
-func New(name, exec string, cfg *config.Instance) *App {
+type Configurable interface {
+	Set(string, interface{}) error
+	IsSet(string) bool
+}
+
+func New(name, exec string, cfg Configurable) *App {
 	return &App{
 		Name: name,
 		Exec: exec,

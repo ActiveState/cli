@@ -2,7 +2,6 @@ package prepare
 
 import (
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
@@ -11,7 +10,7 @@ func (r *Prepare) prepareOS() {
 }
 
 // InstalledPreparedFiles returns the files installed by the prepare command
-func InstalledPreparedFiles(cfg *config.Instance) []string {
+func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
