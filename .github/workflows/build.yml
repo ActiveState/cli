@@ -81,6 +81,7 @@ jobs:
       run: GOARCH=386 state run build-tray
     - name: Build Update Dialog (32bit)
       shell: bash
+      if: runner.os == 'Windows'
       run: GOARCH=386 state run build-updlg-all
     - name: Build Installer (32bit)
       shell: bash

@@ -66,6 +66,7 @@ run: GOARCH=386 state run build-installer
 #@ def steps_build_updlg_32bit():
 name: Build Update Dialog (32bit)
 shell: bash
+if: runner.os == 'Windows'
 run: GOARCH=386 state run build-updlg-all
 #@ end
 ---
