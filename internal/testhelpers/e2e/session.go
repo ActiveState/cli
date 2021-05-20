@@ -287,7 +287,7 @@ func (s *Session) PrepareFile(path, contents string) {
 func (s *Session) LoginUser(userName string) {
 	p := s.Spawn("auth", "--username", userName, "--password", userName)
 
-	p.Expect("successfully authenticated", authnTimeout)
+	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
 }
 
@@ -299,7 +299,7 @@ func (s *Session) LoginAsPersistentUser() {
 		HideCmdLine(),
 	)
 
-	p.Expect("successfully authenticated", authnTimeout)
+	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
 }
 
