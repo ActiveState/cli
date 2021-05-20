@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,6 +40,8 @@ type Instance struct {
 	installSource string
 	lock          *flock.Flock
 	data          map[string]interface{}
+	// dataMutex is used to synchronize manipulations of the data map between threads, as most of these are not guarded by the file lock.
+	dataMutex *sync.RWMutex
 }
 
 func new(localPath string) (*Instance, error) {
@@ -186,6 +189,9 @@ func (i *Instance) SetSafe(key string, valueF func(oldvalue interface{}) interfa
 		return errs.Wrap(err, "Could not load the configuration data.")
 	}
 
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+
 	value := valueF(i.data[key])
 	return i.setUnsafe(key, value)
 }
@@ -229,10 +235,15 @@ func (i *Instance) Set(key string, value interface{}) error {
 		return err
 	}
 
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
 	return i.setUnsafe(key, value)
 }
 
 func (i *Instance) get(key string) interface{} {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	return i.data[strings.ToLower(key)]
 }
 
@@ -248,6 +259,9 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	var keys []string
 	for k := range i.data {
 		keys = append(keys, k)
@@ -336,6 +350,9 @@ func (i *Instance) ReadInConfig() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not unmarshall config data")
 	}
+
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
 
 	i.data = data
 	return nil
