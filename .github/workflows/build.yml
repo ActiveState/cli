@@ -43,6 +43,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Preprocess
       shell: bash
@@ -60,7 +61,9 @@ jobs:
         state run build-tray
     - name: Build Update Dialog
       shell: bash
-      run: state run build-updlg-all
+      run: |
+        alias sassc=sass
+        state run build-updlg-all
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -81,7 +84,9 @@ jobs:
       run: GOARCH=386 state run build-tray
     - name: Build Update Dialog (32bit)
       shell: bash
-      run: GOARCH=386 state run build-updlg-all
+      run: |
+        alias sassc=sass
+        GOARCH=386 state run build-updlg-all
     - name: Build Installer (32bit)
       shell: bash
       if: runner.os == 'Windows'
@@ -204,6 +209,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Preprocess
       shell: bash
@@ -254,6 +260,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Preprocess
       shell: bash
@@ -345,6 +352,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Preprocess
       shell: bash
@@ -440,6 +448,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Download All Session Artifacts
       uses: actions/download-artifact@v2

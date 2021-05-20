@@ -26,7 +26,9 @@ run: state run build-installer
 #@ def steps_build_updlg():
 name: Build Update Dialog
 shell: bash
-run: state run build-updlg-all
+run: |
+  alias sassc=sass
+  state run build-updlg-all
 #@ end
 ---
 #@ def steps_build_transition_update():
@@ -66,7 +68,9 @@ run: GOARCH=386 state run build-installer
 #@ def steps_build_updlg_32bit():
 name: Build Update Dialog (32bit)
 shell: bash
-run: GOARCH=386 state run build-updlg-all
+run: |
+  alias sassc=sass
+  GOARCH=386 state run build-updlg-all
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():
@@ -159,6 +163,7 @@ run: |
   bin=$(pwd)/.github/deps/${{ runner.os }}/bin
   echo "Adding $bin to PATH"
   echo "$bin" >> $GITHUB_PATH
+  npm install -g sass
   printenv
 #@ end
 ---

@@ -34,6 +34,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        npm install -g sass
         printenv
     - name: Preprocess
       shell: bash
