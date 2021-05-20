@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gofrs/flock"
 	"github.com/shirou/gopsutil/process"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
@@ -28,6 +30,16 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 }
 
 func (s *serviceManager) Start(args ...string) error {
+	fl := flock.New(s.lockFp)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	locked, err := fl.TryLockContext(ctx, 100*time.Millisecond)
+	if err != nil || !locked {
+		return errs.Wrap(err, "Failed to acquire state-svc lock")
+	}
+
+	defer fl.Unlock()
+
 	curPid, err := s.Pid()
 	if err == nil && curPid != nil {
 		return errs.New("Service is already running")
