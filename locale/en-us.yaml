@@ -1669,4 +1669,4 @@ err_svcmanager_wait:
 err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
-	If your issue persists consider reporting it on our forums at {{.V0}}.
+    If your issue persists consider reporting it on our forums at {{.V0}}.
