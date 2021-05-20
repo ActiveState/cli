@@ -48,6 +48,7 @@ func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
+		dataMutex: &sync.RWMutex{},
 	}
 	err := instance.ensureConfigExists()
 	if err != nil {
