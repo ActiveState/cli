@@ -180,6 +180,10 @@ func Get() (*Instance, error) {
 // IMPORTANT: This function does not ensure any inter process synchronization!
 // The caller needs to explicitly guard this function by calling
 // GetLock()/ReleaseLock().
+// Use this function instead of Set() whenever the value is dependent on other
+// configuration values. In this case the reading of the configuration, the
+// value computation and the set step should all be guarded by the SAME file
+// lock:
 // Example usage:
 //    cfg.GetLock()
 //    defer cfg.ReleaseLock()
