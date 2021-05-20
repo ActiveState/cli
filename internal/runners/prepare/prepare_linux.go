@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -68,12 +69,12 @@ func prependHomeDir(path string) (string, error) {
 }
 
 // InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles() []string {
+func InstalledPreparedFiles(cfg *config.Instance) []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-	shortcut, err := autostart.New(name, exec).Path()
+	shortcut, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
 		logging.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if shortcut != "" {

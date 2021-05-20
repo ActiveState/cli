@@ -24,7 +24,7 @@ func (a *App) enable() error {
 		return nil
 	}
 
-	path, err := launchFilePath()
+	path, err := a.Path()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -46,7 +46,7 @@ func (a *App) disable() error {
 	if !enabled {
 		return nil
 	}
-	path, err := launchFilePath()
+	path, err := a.Path()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -54,14 +54,14 @@ func (a *App) disable() error {
 }
 
 func (a *App) IsEnabled() (bool, error) {
-	path, err := launchFilePath()
+	path, err := a.Path()
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
 	return fileutils.FileExists(path), nil
 }
 
-func launchFilePath() (string, error) {
+func (a *App) Path() (string, error) {
 	dir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")

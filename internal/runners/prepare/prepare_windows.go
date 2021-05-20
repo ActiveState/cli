@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -22,7 +23,7 @@ func (r *Prepare) prepareOS() {
 	if err != nil {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
-	
+
 	if err := r.prepareStartShortcut(); err != nil {
 		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
@@ -109,12 +110,12 @@ func setStateProtocol() error {
 }
 
 // InstalledPreparedFiles returns the files installed by the state _prepare command
-func InstalledPreparedFiles() []string {
+func InstalledPreparedFiles(cfg *config.Instance) []string {
 	var files []string
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-	sc, err := autostart.New(name, exec).Path()
+	sc, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
 		logging.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if sc != "" {
