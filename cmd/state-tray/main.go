@@ -125,7 +125,7 @@ func run() error {
 	trayInfo := appinfo.TrayApp()
 
 	systray.AddSeparator()
-	as := autostart.New(trayInfo.Name(), trayInfo.Exec())
+	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
 	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")

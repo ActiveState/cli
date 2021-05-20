@@ -17,24 +17,17 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
-func (r *Prepare) prepareOS() error {
+func (r *Prepare) prepareOS() {
 	err := setStateProtocol()
 	if err != nil {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
-
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
-
-	if err := autostart.New(name, exec).Enable(); err != nil {
-		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
-	}
-
+	
 	if err := r.prepareStartShortcut(); err != nil {
 		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
 
-	return nil
+	return
 }
 
 func (r *Prepare) prepareStartShortcut() error {

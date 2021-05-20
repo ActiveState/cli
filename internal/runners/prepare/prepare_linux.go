@@ -14,16 +14,9 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func (r *Prepare) prepareOS() error {
+func (r *Prepare) prepareOS() {
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
-
-	if err := autostart.New(name, exec).Enable(); err != nil {
-		r.reportError(locale.Tr(
-			"err_prepare_autostart",
-			"Could not enable auto-start, error received: {{.V0}}.", err.Error(),
-		), err)
-	}
 
 	if err := r.setupDesktopApplicationFile(name, exec); err != nil {
 		r.reportError(locale.Tr(
@@ -32,7 +25,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	return nil
+	return
 }
 
 func (r *Prepare) setupDesktopApplicationFile(name, exec string) error {

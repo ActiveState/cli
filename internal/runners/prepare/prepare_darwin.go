@@ -1,7 +1,6 @@
 package prepare
 
-func (r *Prepare) prepareOS() error {
-	return nil
+func (r *Prepare) prepareOS() {
 }
 
 // InstalledPreparedFiles returns the files installed by the prepare command
