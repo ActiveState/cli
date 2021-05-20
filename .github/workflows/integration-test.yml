@@ -49,6 +49,9 @@ jobs:
       shell: bash
       run: |
         state run build-tray
+    - name: Build Update Dialog
+      shell: bash
+      run: state run build-updlg-all
     - name: Build Installer
       shell: bash
       run: state run build-installer
