@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"runtime/debug"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -107,24 +105,6 @@ func unwrapError(err error) (int, error) {
 	}
 
 	return code, &OutputError{err}
-}
-
-// handlePanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled
-func handlePanics() bool {
-	if r := recover(); r != nil {
-		if msg, ok := r.(string); ok && msg == "exiter" {
-			panic(r) // don't capture exiter panics
-		}
-
-		logging.Error("%v - caught panic", r)
-		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
-
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
-Check the error log for more information.
-Your error log is located at: %s`, logging.FilePath()))
-		return true
-	}
-	return false
 }
 
 type SilencedError struct{ error }
