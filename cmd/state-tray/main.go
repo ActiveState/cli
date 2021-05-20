@@ -60,11 +60,11 @@ func run() error {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
 
-	currentPID, err := trayPID(cfg)
+	running, err := isTrayRunning(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")
 	}
-	if currentPID != nil {
+	if running {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
@@ -249,19 +249,19 @@ func execute(exec string, args []string) error {
 	return nil
 }
 
-func trayPID(cfg *config.Instance) (*int, error) {
+func isTrayRunning(cfg *config.Instance) (bool, error) {
 	pid := cfg.GetInt(config.ConfigKeyTrayPid)
 	if pid <= 0 {
-		return nil, nil
+		return false, nil
 	}
 
 	pidExists, err := process.PidExists(int32(pid))
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not verify if pid exists")
+		return false, errs.Wrap(err, "Could not verify if pid exists")
 	}
 	if !pidExists {
-		return nil, nil
+		return false, nil
 	}
 
-	return &pid, nil
+	return true, nil
 }
