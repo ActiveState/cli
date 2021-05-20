@@ -14,3 +14,4 @@ __PYCACHE__
 obj/
 bin/
 installers/msi-language/Product.wxs
+node_modules
