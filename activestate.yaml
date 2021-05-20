@@ -162,9 +162,9 @@ scripts:
     standalone: true
     language: bash
     value: |
-      $scripts.build-updlg.Path()
-      $scripts.build-updlg-assets.Path()
-      $scripts.build-updlg-front.Path()
+      $scripts.build-updlg.path()
+      $scripts.build-updlg-assets.path()
+      $scripts.build-updlg-front.path()
   - name: build-updlg
     description: Builds the State Tool update dialog app. Run with `prod` argument to build non-dev version.
     standalone: true
