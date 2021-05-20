@@ -1666,3 +1666,7 @@ browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
 err_svcmanager_wait:
   other: "Timed out waiting for state-svc to start. Are you running software that could prevent State Tool from running local processes / servers?"
+err_user_network_solution:
+  other: |
+    Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
+	If your issue persists consider reporting it on our forums at {{.V0}}.
