@@ -317,10 +317,9 @@ case "$RESPONSE" in
   [Yy])
     fetchArtifact
     if [ ! -z "$TARGET" ]; then
-      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE "$TARGET")
+      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE "$TARGET" 2>&1 | tee /dev/tty)
     else
-      echo "Installing without target"
-      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE)
+      INSTALL_OUTPUT=$($TMPDIR/$TMPEXE 2>&1 | tee /dev/tty)
     fi
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     ;;
