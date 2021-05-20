@@ -49,13 +49,10 @@ jobs:
       shell: bash
       run: |
         state run build-tray
-    - name: Build Update Dialog
+    - name: Build Update Dialog (Linux & Mac)
+      if: runner.os != 'Windows'
       shell: bash
-      run: |
-        pushd cmd/state-update-dialog/frontend
-        npm install
-        popd
-        state run build-updlg
+      run: state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer

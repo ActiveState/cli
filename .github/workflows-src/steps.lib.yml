@@ -24,13 +24,17 @@ run: state run build-installer
 #@ end
 ---
 #@ def steps_build_updlg():
-name: Build Update Dialog
+name: Build Update Dialog (Linux & Mac)
+if: runner.os != 'Windows'
 shell: bash
-run: |
-  pushd cmd/state-update-dialog/frontend
-  npm install
-  popd
-  state run build-updlg
+run: state run build-updlg
+#@ end
+---
+#@ def steps_build_updlg_windows():
+name: Build Update Dialog (Windows)
+if: runner.os == 'Windows'
+shell: msys2bash.cmd
+run: state run build-updlg
 #@ end
 ---
 #@ def steps_build_transition_update():
@@ -169,6 +173,12 @@ run: |
   echo "Adding $bin to PATH"
   echo "$bin" >> $GITHUB_PATH
   printenv
+#@ end
+---
+#@ def steps_setup_windows():
+name: "Setup Windows"
+if: runner.os == 'Windows'
+uses: msys2/setup-msys2@v2
 #@ end
 ---
 #@ def steps_preprocess():
