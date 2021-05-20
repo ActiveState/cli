@@ -55,7 +55,7 @@ func run() error {
 		cmd = command(os.Args[1])
 	}
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}

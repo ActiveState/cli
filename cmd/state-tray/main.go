@@ -57,7 +57,7 @@ func run() error {
 	box := packr.NewBox(assetsPath)
 	systray.SetIcon(box.Bytes(iconFile))
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
