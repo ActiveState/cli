@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/gofrs/flock"
 	"github.com/shirou/gopsutil/process"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
@@ -21,25 +18,25 @@ import (
 )
 
 type serviceManager struct {
-	cfg    *config.Instance
-	lockFp string
+	cfg *config.Instance
 }
 
 func NewServiceManager(cfg *config.Instance) *serviceManager {
-	return &serviceManager{cfg, filepath.Join(cfg.ConfigPath(), "state-svc.lock")}
+	return &serviceManager{cfg}
 }
 
 func (s *serviceManager) Start(args ...string) error {
-	fl := flock.New(s.lockFp)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	locked, err := fl.TryLockContext(ctx, 100*time.Millisecond)
-	if err != nil || !locked {
-		return errs.Wrap(err, "Failed to acquire state-svc lock")
+	err := s.cfg.GetLock()
+	if err != nil {
+		return errs.Wrap(err, "Failed to get configuration lock")
 	}
+	defer s.cfg.ReleaseLock()
 
-	defer fl.Unlock()
-
+	// Reload the configuration to ensure that we have the latest pid information
+	err = s.cfg.ReloadUnsafe()
+	if err != nil {
+		return errs.Wrap(err, "Failed to reload configuration")
+	}
 	curPid, err := s.Pid()
 	if err == nil && curPid != nil {
 		return errs.New("Service is already running")
@@ -54,7 +51,7 @@ func (s *serviceManager) Start(args ...string) error {
 		return errs.New("Could not obtain process information after starting serviceManager")
 	}
 
-	if err := s.cfg.Set(constants.SvcConfigPid, proc.Pid); err != nil {
+	if err := s.cfg.SetUnsafe(constants.SvcConfigPid, proc.Pid); err != nil {
 		if err := proc.Signal(os.Interrupt); err != nil {
 			logging.Errorf("Could not cleanup process: %v", err)
 			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
