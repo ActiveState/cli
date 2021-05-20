@@ -53,6 +53,10 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       run: state run build-updlg
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2bash.cmd
+      run: state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer

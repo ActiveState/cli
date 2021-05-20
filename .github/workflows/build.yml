@@ -62,6 +62,10 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       run: state run build-updlg
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2bash.cmd
+      run: state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -81,13 +85,9 @@ jobs:
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-tray
     - name: Build Update Dialog (32bit)
-      shell: bash
+      shell: msys2bash.cmd
       if: runner.os == 'Windows'
-      run: |
-        pushd cmd/state-update-dialog/frontend
-        npm install
-        popd
-        GOARCH=386 state run build-updlg
+      run: GOARCH=386 state run build-updlg
     - name: Build Installer (32bit)
       shell: bash
       if: runner.os == 'Windows'
@@ -279,6 +279,10 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       run: state run build-updlg
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2bash.cmd
+      run: state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -373,6 +377,10 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
+      run: state run build-updlg
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: msys2bash.cmd
       run: state run build-updlg
     - name: Build Installer
       shell: bash

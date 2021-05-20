@@ -73,13 +73,9 @@ run: GOARCH=386 state run build-installer
 ---
 #@ def steps_build_updlg_32bit():
 name: Build Update Dialog (32bit)
-shell: bash
+shell: msys2bash.cmd
 if: runner.os == 'Windows'
-run: |
-  pushd cmd/state-update-dialog/frontend
-  npm install
-  popd
-  GOARCH=386 state run build-updlg
+run: GOARCH=386 state run build-updlg
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():
