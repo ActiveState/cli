@@ -113,6 +113,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	}
 
 	var attempted []string
+	var attempted3rdParty []string
 	for _, l := range script.Languages() {
 		execPath := l.Executable().Filename()
 		searchPath := s.venvExePath
@@ -127,6 +128,9 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 			break
 		}
 		attempted = append(attempted, l.String())
+		if l.Executable().CanUseThirdParty() {
+			attempted3rdParty = append(attempted3rdParty, l.Executable().Filename())
+		}
 	}
 
 	if script.Standalone() && !lang.Executable().CanUseThirdParty() {
@@ -135,12 +139,16 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	if lang == language.Unknown {
 		if len(attempted) > 0 {
-			return locale.NewInputError(
+			err := locale.NewInputError(
 				"err_run_unknown_language_fallback",
 				"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
 				strings.Join(attempted, ", "),
 				strings.Join(language.RecognizedNames(), ", "),
 			)
+			if len(attempted3rdParty) == 0 {
+				return err
+			}
+			return errs.AddTips(err, locale.Tl("unknown_language_check_path", "Please ensure that one of these executables is on your PATH: [ACTIONABLE]{{.V0}}[/RESET]", strings.Join(attempted3rdParty, ", ")))
 		}
 		return locale.NewInputError(
 			"err_run_unknown_language",

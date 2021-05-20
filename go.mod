@@ -44,6 +44,7 @@ require (
 	github.com/go-openapi/swag v0.0.0-20180405201759-811b1089cde9
 	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
 	github.com/gobuffalo/packr v1.10.7
+	github.com/gofrs/flock v0.8.0
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.2
@@ -97,7 +98,7 @@ require (
 	github.com/yuin/goldmark v1.1.32
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210420210106-798c2154c571
-	golang.org/x/sys v0.0.0-20210420205809-ac73e9fd8988
+	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
 	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.36.0 // indirect

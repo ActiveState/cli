@@ -10,6 +10,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Enhanced error reporting when attempting package operations on an out of sync
+  project ([PR #1353](https://github.com/ActiveState/cli/pull/1353))
+- Enhanced error reporting for errors that occur when cloning a project's
+  associated git repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
 - The State Tool now comes with the ActiveState Desktop application, which is
   currently a system tray application.
 - We've replaced the auto updating system with a manual updating system, updates
@@ -28,6 +32,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
 - Fixed issue where `state clean uninstall` would not remove expected files on
   Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+
+### Fixed
+
+- Fixed a rare case where the configuration file can get corrupted when two processes access it
+  simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
 
 ## 0.28.1
 

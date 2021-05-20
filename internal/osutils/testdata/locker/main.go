@@ -35,19 +35,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not open lock file: %s", os.Args[1])
 	}
-	ok, _ := pl.TryLock()
-	if !ok {
+	err = pl.TryLock()
+	if err != nil {
 		fmt.Println("DENIED")
 		return
 	}
 
 	fmt.Println("LOCKED")
-	if keep {
-		pl.Close(keep)
-	}
 
 	<-ctx.Done()
 	fmt.Println("done")
 
-	pl.Close()
+	pl.Close(keep)
 }
