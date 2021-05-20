@@ -332,7 +332,7 @@ function install() {
         }
     }
 
-    Write-Host "`nInstalling to ActiveState State Tool...`n" -ForegroundColor Yellow
+    Write-Host "`nInstalling ActiveState State Tool...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Continue?") ) {
             return 2
