@@ -60,7 +60,11 @@ jobs:
         state run build-tray
     - name: Build Update Dialog
       shell: bash
-      run: state run build-updlg-all
+      run: |
+        pushd cmd/state-update-dialog/frontend
+        npm install
+        popd
+        state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -82,7 +86,11 @@ jobs:
     - name: Build Update Dialog (32bit)
       shell: bash
       if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-updlg-all
+      run: |
+        pushd cmd/state-update-dialog/frontend
+        npm install
+        popd
+        GOARCH=386 state run build-updlg-all
     - name: Build Installer (32bit)
       shell: bash
       if: runner.os == 'Windows'
@@ -272,7 +280,11 @@ jobs:
         state run build-tray
     - name: Build Update Dialog
       shell: bash
-      run: state run build-updlg-all
+      run: |
+        pushd cmd/state-update-dialog/frontend
+        npm install
+        popd
+        state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -366,7 +378,11 @@ jobs:
         state run build-tray
     - name: Build Update Dialog
       shell: bash
-      run: state run build-updlg-all
+      run: |
+        pushd cmd/state-update-dialog/frontend
+        npm install
+        popd
+        state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer

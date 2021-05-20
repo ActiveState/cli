@@ -26,7 +26,11 @@ run: state run build-installer
 #@ def steps_build_updlg():
 name: Build Update Dialog
 shell: bash
-run: state run build-updlg-all
+run: |
+  pushd cmd/state-update-dialog/frontend
+  npm install
+  popd
+  state run build-updlg
 #@ end
 ---
 #@ def steps_build_transition_update():
@@ -67,7 +71,11 @@ run: GOARCH=386 state run build-installer
 name: Build Update Dialog (32bit)
 shell: bash
 if: runner.os == 'Windows'
-run: GOARCH=386 state run build-updlg-all
+run: |
+  pushd cmd/state-update-dialog/frontend
+  npm install
+  popd
+  GOARCH=386 state run build-updlg-all
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():

@@ -162,6 +162,7 @@ scripts:
     standalone: true
     language: bash
     value: |
+      set -e
       state run build-updlg-assets
       state run build-updlg-front
       state run build-updlg

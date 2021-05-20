@@ -51,7 +51,11 @@ jobs:
         state run build-tray
     - name: Build Update Dialog
       shell: bash
-      run: state run build-updlg-all
+      run: |
+        pushd cmd/state-update-dialog/frontend
+        npm install
+        popd
+        state run build-updlg
     - name: Build Installer
       shell: bash
       run: state run build-installer
