@@ -347,13 +347,13 @@ function install() {
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
     if ($script:TARGET) {
-        $output = & "$InstallerPath" "$script:TARGET" 2>&1 | Out-String
+        & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
     } else {
-        $output = & "$InstallerPath" 2>&1 | Out-String
+        & "$InstallerPath" 2>&1 | Tee-Object -Variable output | Write-Host
     }
-    Write-Host "$output"
 
-    $match = $output -match "Install Location: (?<content>[^\s]+)"
+    $outputString = $output | Out-String
+    $match = $outputString -match "Install Location: (?<content>[^\s]+)"
     if ($match) {
         $installDir = $Matches['content']
     } else {
