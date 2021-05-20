@@ -90,7 +90,7 @@ jobs:
         pushd cmd/state-update-dialog/frontend
         npm install
         popd
-        GOARCH=386 state run build-updlg-all
+        GOARCH=386 state run build-updlg
     - name: Build Installer (32bit)
       shell: bash
       if: runner.os == 'Windows'

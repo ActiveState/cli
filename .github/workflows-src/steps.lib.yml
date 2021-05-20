@@ -75,7 +75,7 @@ run: |
   pushd cmd/state-update-dialog/frontend
   npm install
   popd
-  GOARCH=386 state run build-updlg-all
+  GOARCH=386 state run build-updlg
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():
