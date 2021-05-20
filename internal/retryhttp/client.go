@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 )
@@ -27,14 +27,6 @@ func (e *UserNetworkError) Error() string {
 
 func (e *UserNetworkError) ExitCode() int {
 	return 11
-}
-
-var solutionLocale = "Internet access required"
-
-func init() {
-	solutionLocale = locale.Tl("err_user_network_solution",
-		`Please ensure your device has access to internet during installation. Make sure software like Firewalls or Anti-Virus are not blocking your connectivity.`+
-			`If your issue persists consider reporting it on our forums at {{.V0}}.`, constants.ForumsURL)
 }
 
 type Logger interface {
@@ -81,17 +73,17 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	if res != nil {
 		switch res.StatusCode {
 		case 408:
-			return res, locale.WrapInputError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server. {{.V0}}", solutionLocale)
+			return res, locale.WrapInputError(&UserNetworkError{408}, "err_user_network_server_timeout", "Request failed due to timeout during communication with server. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		case 425:
-			return res, locale.WrapInputError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast. {{.V0}}", solutionLocale)
+			return res, locale.WrapInputError(&UserNetworkError{425}, "err_user_network_tooearly", "Request failed due to retrying connection too fast. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		case 429:
-			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", solutionLocale)
+			return res, locale.WrapInputError(&UserNetworkError{429}, "err_user_network_toomany", "Request failed due to too many requests. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 		}
 	}
 
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) {
-		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), solutionLocale)
+		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 
 	// Due to Go's handling of these types of errors and due to Windows localizing the errors in question we have to rely on the `wsarecv:` keyword to capture a series
@@ -99,7 +91,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	// where `wsarecv:` was being reported as anything other than a network issue caused by the user or their network
 	if err != nil && strings.Contains(err.Error(), "wsarecv:") {
 		logging.Error("Non-Critical User Network Issue, please vet for false-positive: %v", err) // Logging so we can vet for false positives
-		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_wsarecv", "Request failed due to user network error: {{.V0}}. {{.V1}}", err.Error(), solutionLocale)
+		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_wsarecv", "Request failed due to user network error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 
 	return res, err
@@ -107,7 +99,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 
 func normalizeRetryResponse(res *http.Response, err error, numTries int) (*http.Response, error) {
 	if err2, ok := err.(net.Error); ok && err2.Timeout() {
-		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "Request failed due to timeout. {{.V0}}", solutionLocale)
+		return res, locale.WrapInputError(&UserNetworkError{-1}, "err_user_network_timeout", "Request failed due to timeout. {{.V0}}", locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 	return res, err
 }
