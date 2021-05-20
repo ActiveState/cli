@@ -190,14 +190,23 @@ func getContext(level string, skipDepth int) *MessageContext {
 	}
 }
 
-//Output debug logging messages
+// Output debug logging messages
 func Debug(msg string, args ...interface{}) {
 	if level&DEBUG != 0 {
 		writeMessage("DEBUG", msg, args...)
 	}
 }
 
-//format the message
+type writer struct{}
+
+func (w *writer) Write(p []byte) (n int, err error) {
+	if level&DEBUG != 0 {
+		writeMessage("DEBUG", string(p))
+	}
+	return len(p), nil
+}
+
+// format the message
 func writeMessage(level string, msg string, args ...interface{}) {
 	writeMessageDepth(4, level, msg, args...)
 }
