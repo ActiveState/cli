@@ -6,14 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
-	"github.com/rollbar/rollbar-go"
-	"github.com/shirou/gopsutil/process"
-
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -21,10 +13,18 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/getlantern/systray"
+	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
+	"github.com/shirou/gopsutil/process"
 )
 
 const (
@@ -43,7 +43,13 @@ func main() {
 
 func onReady() {
 	var exitCode int
-	defer exit(exitCode)
+	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		os.Exit(exitCode)
+	}()
 
 	err := run()
 	if err != nil {
@@ -230,11 +236,6 @@ func run() error {
 
 func onExit() {
 	// Not implemented
-}
-
-func exit(code int) {
-	events.WaitForEvents(1*time.Second, rollbar.Close)
-	os.Exit(code)
 }
 
 func execute(exec string, args []string) error {
