@@ -183,8 +183,8 @@ scripts:
       echo "Running NPM install"
       npm install
       echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
-      sassc scss/main.scss generated/main.css
       npm run build
+      npm run build-scss
       popd
   - name: build-updlg-assets
     description: Builds the State Tool update dialog app's assets.
