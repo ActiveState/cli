@@ -2,7 +2,6 @@ package logging
 
 import (
 	"fmt"
-	"log"
 	"runtime"
 	"time"
 
@@ -50,8 +49,6 @@ func SetupRollbar(token string) {
 		data["server"] = map[string]interface{}{}
 		data["platform_os"] = runtime.GOOS
 	})
-
-	log.SetOutput(CurrentHandler().Output())
 
 	for _, l := range delayedLogs {
 		rollbar.Log(l.level, l.msg)
