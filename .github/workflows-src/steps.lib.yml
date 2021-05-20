@@ -23,6 +23,12 @@ shell: bash
 run: state run build-installer
 #@ end
 ---
+#@ def steps_build_updlg():
+name: Build Update Dialog
+shell: bash
+run: state run build-updlg-all
+#@ end
+---
 #@ def steps_build_transition_update():
 name: Build transitional State Tool
 shell: bash
@@ -55,6 +61,12 @@ name: Build Installer (32bit)
 shell: bash
 if: runner.os == 'Windows'
 run: GOARCH=386 state run build-installer
+#@ end
+---
+#@ def steps_build_updlg_32bit():
+name: Build Update Dialog (32bit)
+shell: bash
+run: GOARCH=386 state run build-updlg-all
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():

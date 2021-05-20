@@ -157,6 +157,14 @@ scripts:
       $constants.SET_ENV
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+  - name: build-updlg-all
+    description: Invokes all build steps for the update dialog
+    standalone: true
+    language: bash
+    value: |
+      $scripts.build-updlg.Path()
+      $scripts.build-updlg-assets.Path()
+      $scripts.build-updlg-front.Path()
   - name: build-updlg
     description: Builds the State Tool update dialog app. Run with `prod` argument to build non-dev version.
     standalone: true
@@ -171,8 +179,10 @@ scripts:
     language: bash
     value: |
       set -e
-      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
       pushd cmd/state-update-dialog/frontend
+      echo "Running NPM install"
+      npm install
+      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
       sassc scss/main.scss generated/main.css
       npm run build
       popd
