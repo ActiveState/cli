@@ -61,43 +61,17 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg
+      run: state run build-updlg prod
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
     - name: Build transitional State Tool
       shell: bash
       run: state run build-transitional-update
-    - name: Build CLI (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build
-    - name: Build Service (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-svc
-    - name: Build Tray App (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-tray
-    - name: Build Update Dialog (32bit)
-      shell: cmd
-      if: runner.os == 'Windows'
-      run: |
-        set GOARCH=386
-        C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
-    - name: Build Installer (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-installer
-    - name: Build transitional State Tool (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -116,17 +90,8 @@ jobs:
         ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f
         \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe \nsigntool.exe
         sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState State Tool
-        (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe
-        \nsigntool.exe sign -d \"ActiveState State Service (32bit)\" -f \"Cert.p12\"
-        -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe \nsigntool.exe sign -d
-        \"ActiveState State Tray (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/386/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer
-        (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe
-        \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\"
-        -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe \nsigntool.exe
-        sign -d \"ActiveState Transitional State Tool (32bit)\" -f \"Cert.p12\" -p
-        ${CODE_SIGNING_PASSWD} ./build/386/state-transition-update.exe \n"
+        ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState Transitional
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -145,10 +110,6 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Generate Update (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run generate-update
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
@@ -280,11 +241,11 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg
+      run: state run build-updlg prod
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -379,11 +340,11 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg
+      run: state run build-updlg prod
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
