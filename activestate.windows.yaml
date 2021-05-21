@@ -14,8 +14,7 @@ constants:
   - name: SYSTRAY_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
   - name: UPDLG_BUILDFLAGS
-    if: ne .OS.Name "Windows"
-    value: -ldflags "-w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
+    value: -ldflags "-extldflags=-static -w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
 scripts:
   - name: build-install-scripts
     language: bash

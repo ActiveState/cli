@@ -27,64 +27,20 @@ run: state run build-installer
 name: Build Update Dialog (Linux & Mac)
 if: runner.os != 'Windows'
 shell: bash
-run: state run build-updlg
+run: state run build-updlg prod
 #@ end
 ---
 #@ def steps_build_updlg_windows():
 name: Build Update Dialog (Windows)
 if: runner.os == 'Windows'
 shell: cmd
-run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
+run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
 #@ end
 ---
 #@ def steps_build_transition_update():
 name: Build transitional State Tool
 shell: bash
 run: state run build-transitional-update
-#@ end
----
-#@ def steps_build_32bit():
-name: Build CLI (32bit)
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run build
-#@ end
----
-#@ def steps_build_svc_32bit():
-name: Build Service (32bit)
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run build-svc
-#@ end
----
-#@ def steps_build_tray_32bit():
-name: Build Tray App (32bit)
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run build-tray
-#@ end
----
-#@ def steps_build_installer_32bit():
-name: Build Installer (32bit)
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run build-installer
-#@ end
----
-#@ def steps_build_updlg_32bit():
-name: Build Update Dialog (32bit)
-shell: cmd
-if: runner.os == 'Windows'
-run: |
-  set GOARCH=386
-  C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
-#@ end
----
-#@ def steps_build_transition_update_32bit():
-name: Build transitional State Tool (32bit)
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run build-transitional-update
 #@ end
 ---
 #@ def steps_build_installscripts():
@@ -112,12 +68,7 @@ run: |
   signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe 
   signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe 
   signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe 
-  signtool.exe sign -d "ActiveState State Tool (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe 
-  signtool.exe sign -d "ActiveState State Service (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe 
-  signtool.exe sign -d "ActiveState State Tray (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-tray.exe 
-  signtool.exe sign -d "ActiveState State Installer (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe 
-  signtool.exe sign -d "ActiveState Transitional State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe 
-  signtool.exe sign -d "ActiveState Transitional State Tool (32bit)" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/386/state-transition-update.exe 
+  signtool.exe sign -d "ActiveState Transitional State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -141,13 +92,6 @@ env:
 name: "Generate Update"
 shell: bash
 run: state run generate-update
-#@ end
----
-#@ def steps_genupdate_32bit():
-name: "Generate Update (32bit)"
-shell: bash
-if: runner.os == 'Windows'
-run: GOARCH=386 state run generate-update
 #@ end
 ---
 #@ def steps_gentest_update():

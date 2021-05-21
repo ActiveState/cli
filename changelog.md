@@ -26,6 +26,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   associated git
   repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
 
+### Removed
+
+- We no longer produce 32bit Windows builds of the State Tool
+
 ### Fixed
 
 - Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
