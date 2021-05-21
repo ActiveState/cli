@@ -316,7 +316,6 @@ RESPONSE=$(userinput y)
 case "$RESPONSE" in
   [Yy])
     fetchArtifact
-    exec 5>&1
     OUTPUT_FILE=$TMPDIR/install_output.txt
     if [ ! -z "$TARGET" ]; then
       "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
@@ -324,6 +323,7 @@ case "$RESPONSE" in
       "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
     fi
     INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
+    rm -f $OUTPUT_FILE
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     ;;
   [Nn]|*)
