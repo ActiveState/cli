@@ -173,6 +173,10 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
+// SetWithLock updates a value at the given key. The valueF argument returns the
+// new value based on the previous one.  If the function returns with an error, the
+// update is cancelled.  The function ensures that no-other process or thread can modify
+// the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
@@ -192,26 +196,6 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 		return err
 	}
 
-	return i.setUnsafe(key, value)
-}
-
-// setUnsafe updates a configuration key and writes the update configuration file to disk.
-// IMPORTANT: This function does not ensure any inter process synchronization!
-// The caller needs to explicitly guard this function by calling
-// GetLock()/ReleaseLock().
-// Use this function instead of Set() whenever the value is dependent on other
-// configuration values. In this case the reading of the configuration, the
-// value computation and the set step should all be guarded by the SAME file
-// lock:
-// Example usage:
-//    cfg.GetLock()
-//    defer cfg.ReleaseLock()
-//    cfg.reloadUnsafe()
-//    slice, _ := cfg.GetStringSlice("key")
-//    slice = append(slice, "value")
-//    cfg.setUnsafe("key", slice)
-// Note, how in this example it is crucial to synchronize the appending to the slice variable.
-func (i *Instance) setUnsafe(key string, value interface{}) error {
 	i.data[strings.ToLower(key)] = value
 
 	if err := i.save(); err != nil {
@@ -221,9 +205,7 @@ func (i *Instance) setUnsafe(key string, value interface{}) error {
 	return nil
 }
 
-// Set sets a value at the given key. This function is guarded by a RW-lock. Use
-// GetLock()/ReleaseLock() and setUnsafe() if you have to synchronize the value
-// modification too.  See setUnsafe for more details.
+// Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
@@ -243,14 +225,6 @@ func (i *Instance) Set(key string, value interface{}) error {
 	}
 
 	return nil
-}
-
-func (i *Instance) HasKey(key string) bool {
-	i.dataMutex.RLock()
-	defer i.dataMutex.RUnlock()
-
-	_, ok := i.data[strings.ToLower(key)]
-	return ok
 }
 
 func (i *Instance) get(key string) interface{} {
