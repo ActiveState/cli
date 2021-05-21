@@ -141,6 +141,7 @@ func configPathInTest() (string, error) {
 }
 
 // New creates a new config instance
+// This should probably only be used in tests or you have to ensure that you have only one invocation of this function per process.
 func New() (*Instance, error) {
 	localPath, envSet := os.LookupEnv(C.ConfigEnvVarName)
 
