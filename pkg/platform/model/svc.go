@@ -62,5 +62,10 @@ func (m *SvcModel) CheckUpdate() (*graph.AvailableUpdate, error) {
 	if err := m.client.RunWithContext(m.ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
+
+	// Todo: https://www.pivotaltracker.com/story/show/178205825
+	if u.AvailableUpdate.Version == "" {
+		return nil, nil
+	}
 	return &u.AvailableUpdate, nil
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -286,7 +287,7 @@ func (s *Session) PrepareFile(path, contents string) {
 func (s *Session) LoginUser(userName string) {
 	p := s.Spawn("auth", "--username", userName, "--password", userName)
 
-	p.Expect("successfully authenticated", authnTimeout)
+	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
 }
 
@@ -298,7 +299,7 @@ func (s *Session) LoginAsPersistentUser() {
 		HideCmdLine(),
 	)
 
-	p.Expect("successfully authenticated", authnTimeout)
+	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
 }
 
@@ -362,7 +363,7 @@ func (s *Session) Close() error {
 	}
 
 	cfg, err := config.NewWithDir(s.Dirs.Config)
-	require.NoError(s.t, err, "Could not read e2e session configuration")
+	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
 	err = installation.StopTrayApp(cfg)
 	require.NoError(s.t, err, "Could not stop tray app")
 

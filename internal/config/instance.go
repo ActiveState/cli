@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,13 +20,15 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils/lockfile"
+	"github.com/gofrs/flock"
 )
 
 var defaultConfig *Instance
 
 const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
+
+const lockRetryDelay = 50 * time.Millisecond
 
 // Instance holds our main config logic
 type Instance struct {
@@ -35,24 +38,68 @@ type Instance struct {
 	lockFile      string
 	localPath     string
 	installSource string
-	noSave        bool
-	rwLock        *sync.RWMutex
+	lock          *flock.Flock
 	data          map[string]interface{}
+	// dataMutex is used to synchronize manipulations of the data map between threads, as most of these are not guarded by the file lock.
+	dataMutex *sync.RWMutex
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
-		rwLock:    &sync.RWMutex{},
 		data:      make(map[string]interface{}),
+		dataMutex: &sync.RWMutex{},
 	}
-
-	err := instance.Reload()
+	err := instance.ensureConfigExists()
 	if err != nil {
+		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
+	}
+	instance.lock = flock.New(instance.getLockFile())
+
+	if err := instance.Reload(); err != nil {
 		return instance, errs.Wrap(err, "Failed to load configuration.")
 	}
 
 	return instance, nil
+}
+
+func (i *Instance) GetLock() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
+	if err != nil {
+		return errs.Wrap(err, "Timed out waiting for exclusive lock")
+	}
+
+	if !locked {
+		return errs.New("Timeout out waiting for exclusive lock")
+
+	}
+	return nil
+}
+
+func (i *Instance) GetRLock() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	locked, err := i.lock.TryRLockContext(ctx, lockRetryDelay)
+	if err != nil {
+		return errs.Wrap(err, "Timed out waiting for shared lock")
+	}
+
+	if !locked {
+		return errs.New("Timeout out waiting for shared lock")
+
+	}
+	return nil
+}
+
+func (i *Instance) ReleaseLock() error {
+	if err := i.lock.Unlock(); err != nil {
+		return errs.Wrap(err, "Failed to release lock")
+	}
+	return nil
 }
 
 // Reload reloads the configuration data from the config file
@@ -65,10 +112,17 @@ func (i *Instance) Reload() error {
 	if err != nil {
 		return err
 	}
+
+	if err = i.GetRLock(); err != nil {
+		return errs.Wrap(err, "Could not acquire config file lock")
+	}
+	defer i.ReleaseLock()
+
 	err = i.ReadInConfig()
 	if err != nil {
 		return err
 	}
+
 	i.readInstallSource()
 
 	return nil
@@ -87,6 +141,7 @@ func configPathInTest() (string, error) {
 }
 
 // New creates a new config instance
+// This should probably only be used in tests or you have to ensure that you have only one invocation of this function per process.
 func New() (*Instance, error) {
 	localPath, envSet := os.LookupEnv(C.ConfigEnvVarName)
 
@@ -119,20 +174,54 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
-// Set sets a value at the given key
-func (i *Instance) Set(key string, value interface{}) error {
-	i.rwLock.Lock()
-	defer i.rwLock.Unlock()
+// SetWithLock updates a value at the given key. The valueF argument returns the
+// new value based on the previous one.  If the function returns with an error, the
+// update is cancelled.  The function ensures that no-other process or thread can modify
+// the key between reading of the old value and setting the new value.
+func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+	if err := i.GetLock(); err != nil {
+		return errs.Wrap(err, "Could not acquire configuration lock.")
+	}
+	defer i.ReleaseLock()
 
 	err := i.ReadInConfig()
 	if err != nil {
 		return err
 	}
 
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+
+	value, err := valueF(i.data[key])
+	if err != nil {
+		return err
+	}
+
 	i.data[strings.ToLower(key)] = value
 
-	err = i.save()
-	if err != nil {
+	if err := i.save(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Set sets a value at the given key.
+func (i *Instance) Set(key string, value interface{}) error {
+	if err := i.GetLock(); err != nil {
+		return errs.Wrap(err, "Could not acquire config file lock")
+	}
+	defer i.ReleaseLock()
+
+	if err := i.ReadInConfig(); err != nil {
+		return err
+	}
+
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+	i.data[strings.ToLower(key)] = value
+
+	if err := i.save(); err != nil {
 		return err
 	}
 
@@ -140,8 +229,9 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) get(key string) interface{} {
-	i.rwLock.RLock()
-	defer i.rwLock.RUnlock()
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	return i.data[strings.ToLower(key)]
 }
 
@@ -157,6 +247,9 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	var keys []string
 	for k := range i.data {
 		keys = append(keys, k)
@@ -229,19 +322,7 @@ func (i *Instance) InstallSource() string {
 	return i.installSource
 }
 
-// ReadInConfig reads in config from the config file
 func (i *Instance) ReadInConfig() error {
-	pl, err := lockfile.NewPidLock(i.getLockFile())
-	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
-	}
-	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return errs.Wrap(err, "Unable to acquire lock")
-	}
-
 	configFile, err := i.getConfigFile()
 	if err != nil {
 		return errs.Wrap(err, "Could not find config file")
@@ -258,22 +339,14 @@ func (i *Instance) ReadInConfig() error {
 		return errs.Wrap(err, "Could not unmarshall config data")
 	}
 
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+
 	i.data = data
 	return nil
 }
 
 func (i *Instance) save() error {
-	pl, err := lockfile.NewPidLock(i.getLockFile())
-	if err != nil {
-		return errs.Wrap(err, "Could not create lock file for updating config")
-	}
-	defer pl.Close()
-
-	err = pl.WaitForLock(5 * time.Second)
-	if err != nil {
-		return err
-	}
-
 	f, err := os.Create(i.configFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not create/open config file")

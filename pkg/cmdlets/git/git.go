@@ -10,6 +10,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -57,7 +58,12 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		Progress: os.Stdout,
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}, error received: {{.V1}}.", *project.RepoURL, err.Error())
+		err = locale.WrapError(err, "err_clone_repo", "Could not clone repository with URL: {{.V0}}, error received: {{.V1}}.", *project.RepoURL, err.Error())
+		tipMsg := locale.Tl(
+			"err_tip_git_ssh-add",
+			"If you are using an SSH key please ensure it's configured by running `[ACTIONABLE]ssh-add <path-to-key>[/RESET]`.",
+		)
+		return errs.AddTips(err, tipMsg)
 	}
 
 	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))

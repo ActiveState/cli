@@ -4,16 +4,28 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
+	var exitCode int
+	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		os.Exit(exitCode)
+	}()
+
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateToolRollbarToken)
@@ -22,17 +34,15 @@ func main() {
 		logging.Error(fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": ")))
 		fmt.Println(errs.Join(err, ": ").Error())
 
-		rollbar.Close()
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
-
-	rollbar.Close()
 }
 
 func run() error {
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
-		cfg, err := config.New()
+		cfg, err := config.Get()
 		if err != nil {
 			return errs.Wrap(err, "Failed to read configuration.")
 		}

@@ -75,8 +75,8 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			require.NoError(tt, err)
 
 			// trying to acquire the lock in this process should fail
-			ok, err := pl.TryLock()
-			assert.False(tt, ok)
+			err = pl.TryLock()
+			require.Error(tt, err)
 			alreadyErr := &AlreadyLockedError{}
 			assert.True(tt, errors.As(err, &alreadyErr))
 
@@ -186,14 +186,12 @@ func Test_acquirePidLock(t *testing.T) {
 
 	pl, err := NewPidLock(lockFile)
 	require.NoError(t, err)
-	ok, err := pl.TryLock()
-	assert.True(t, ok)
+	err = pl.TryLock()
 	require.NoError(t, err)
 
 	pl2, err := NewPidLock(lockFile)
 	require.NoError(t, err)
-	ok2, err := pl2.TryLock()
-	assert.False(t, ok2)
+	err = pl2.TryLock()
 	assert.Error(t, err)
 
 	err = pl2.Close()
@@ -206,9 +204,8 @@ func Test_acquirePidLock(t *testing.T) {
 
 	pl, err = NewPidLock(lockFile)
 	require.NoError(t, err)
-	ok, err = pl.TryLock()
+	err = pl.TryLock()
 	require.NoError(t, err)
-	assert.True(t, ok)
 
 	err = pl.Close(true)
 	require.NoError(t, err)
@@ -218,8 +215,7 @@ func Test_acquirePidLock(t *testing.T) {
 	pl, err = NewPidLock(lockFile)
 	require.NoError(t, err)
 
-	ok, err = pl.TryLock()
-	assert.False(t, ok)
+	err = pl.TryLock()
 	assert.Error(t, err)
 
 	err = pl.Close()

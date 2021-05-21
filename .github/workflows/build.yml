@@ -58,32 +58,20 @@ jobs:
       shell: bash
       run: |
         state run build-tray
+    - name: Build Update Dialog (Linux & Mac)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: state run build-updlg prod
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
     - name: Build transitional State Tool
       shell: bash
       run: state run build-transitional-update
-    - name: Build CLI (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build
-    - name: Build Service (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-svc
-    - name: Build Tray App (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-tray
-    - name: Build Installer (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-installer
-    - name: Build transitional State Tool (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -94,12 +82,24 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state.exe \nsigntool.exe sign -d \"ActiveState State Service (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-tray.exe \nsigntool.exe sign -d \"ActiveState State Installer (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-installer.exe \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe \nsigntool.exe sign -d \"ActiveState Transitional State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/386/state-transition-update.exe \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
+        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
+        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
+        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
+        sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f
+        \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe\nsigntool.exe
+        sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State
+        Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+        \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\"
+        -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Sign install.PS1
-      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta",
+        "refs/heads/release"]'), github.ref)
       shell: powershell
       run: |
         $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
@@ -112,10 +112,6 @@ jobs:
     - name: Generate Update
       shell: bash
       run: state run generate-update
-    - name: Generate Update (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: GOARCH=386 state run generate-update
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
@@ -197,7 +193,8 @@ jobs:
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
   inttest_critical:
-    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
+    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
+      != 'refs/heads/release'
     name: Critical Integration Test
     strategy:
       matrix:
@@ -243,6 +240,14 @@ jobs:
       shell: bash
       run: |
         state run build-tray
+    - name: Build Update Dialog (Linux & Mac)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: state run build-updlg prod
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -281,7 +286,6 @@ jobs:
         set +e
         go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite$"
         testCode=$?
-        head -n-0 build/*log 2>/dev/null
         exit ${testCode}
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
@@ -334,6 +338,14 @@ jobs:
       shell: bash
       run: |
         state run build-tray
+    - name: Build Update Dialog (Linux & Mac)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: state run build-updlg prod
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -435,7 +447,8 @@ jobs:
       run: rm build/state* || true
     - name: Deploy
       shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
+        github.ref)
       run: |
         state run deploy-updates
         state run deploy-installers

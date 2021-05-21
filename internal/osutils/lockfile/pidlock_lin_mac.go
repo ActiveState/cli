@@ -3,6 +3,7 @@
 package lockfile
 
 import (
+	"io"
 	"os"
 	"syscall"
 
@@ -40,9 +41,8 @@ func PidExists(pid int) bool {
 
 // LockFile tries to acquire a read lock on the file f
 func LockFile(f *os.File) error {
-	// attempting to obtain read lock on update file
 	ft := &syscall.Flock_t{
-		Whence: int16(os.SEEK_SET),
+		Whence: io.SeekStart,
 		Start:  0,
 		Len:    0,
 		Pid:    int32(os.Getpid()),
@@ -58,7 +58,7 @@ func LockFile(f *os.File) error {
 
 func LockRelease(f *os.File) error {
 	ft := &syscall.Flock_t{
-		Whence: int16(os.SEEK_SET),
+		Whence: io.SeekStart,
 		Start:  0,
 		Len:    0,
 		Pid:    int32(os.Getpid()),

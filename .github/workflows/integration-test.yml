@@ -49,6 +49,14 @@ jobs:
       shell: bash
       run: |
         state run build-tray
+    - name: Build Update Dialog (Linux & Mac)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: state run build-updlg prod
+    - name: Build Update Dialog (Windows)
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
     - name: Build Installer
       shell: bash
       run: state run build-installer
