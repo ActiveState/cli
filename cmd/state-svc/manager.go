@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/svcmanager"
 )
 
 type serviceManager struct {
@@ -71,6 +72,16 @@ func (s *serviceManager) Stop() error {
 	}
 	if pid == nil {
 		return nil
+	}
+
+	// Ensure that port number has been written to configuration file ie., that the server is ready to talk
+	waitMgr := svcmanager.New(s.cfg)
+	err = waitMgr.Wait()
+	if err != nil {
+		if proc, perr := process.NewProcess(int32(*pid)); perr == nil {
+			proc.Kill()
+		}
+		return errs.Wrap(err, "Failed to wait for background service to become responsive for clean shutdown, sent KILL signal")
 	}
 
 	port := s.cfg.GetInt(constants.SvcConfigPort)
