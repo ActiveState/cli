@@ -228,6 +228,11 @@ func (i *Instance) Set(key string, value interface{}) error {
 	return nil
 }
 
+func (i *Instance) IsSet(key string) bool {
+	_, ok := i.data[strings.ToLower(key)]
+	return ok
+}
+
 func (i *Instance) get(key string) interface{} {
 	i.dataMutex.RLock()
 	defer i.dataMutex.RUnlock()

@@ -34,7 +34,7 @@ func (u *Uninstall) runUninstall() error {
 
 	}
 
-	err = undoPrepare()
+	err = undoPrepare(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
