@@ -284,7 +284,6 @@ jobs:
         set +e
         go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite$"
         testCode=$?
-        head -n-0 build/*log 2>/dev/null
         exit ${testCode}
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
