@@ -31,7 +31,7 @@ func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
 		oldPid := cast.ToInt(oldPidI)
-		curPid, err := s.Pid(oldPid)
+		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
 			return nil, errs.New("Service is already running")
 		}
@@ -66,7 +66,7 @@ func (s *serviceManager) Stop() error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to reload configuration")
 	}
-	pid, err := s.Pid(s.cfg.GetInt(constants.SvcConfigPid))
+	pid, err := s.CheckPid(s.cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
 	}
@@ -112,7 +112,8 @@ func (s *serviceManager) Stop() error {
 	return nil
 }
 
-func (s *serviceManager) Pid(pid int) (*int, error) {
+// CheckPid checks if the given pid revers to an existing process
+func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if pid == 0 {
 		return nil, nil
 	}

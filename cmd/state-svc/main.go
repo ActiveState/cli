@@ -125,7 +125,7 @@ func runStatus(cfg *config.Instance) error {
 	if err := cfg.Reload(); err != nil {
 		return errs.Wrap(err, "Could not reload configuration.")
 	}
-	pid, err := NewServiceManager(cfg).Pid(cfg.GetInt(constants.SvcConfigPid))
+	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
 	}
