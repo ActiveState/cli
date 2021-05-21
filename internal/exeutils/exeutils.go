@@ -97,6 +97,7 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	if dir != "" {
 		c.Dir = dir
 	}
+	c.Env = os.Environ()
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	c.Stdout = &stdout

@@ -179,6 +179,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
 
+	cp.SendLine("which " + pythonExe)
+	cp.Expect("/exec/" + pythonExe)
+
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
