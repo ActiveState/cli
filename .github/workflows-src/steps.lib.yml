@@ -66,7 +66,8 @@ run: |
 
   signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe 
   signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe 
-  signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe 
+  signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
+  signtool.exe sign -d "ActiveState Update Dialog" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-update-dialog.exe
   signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe 
   signtool.exe sign -d "ActiveState Transitional State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe
 env:

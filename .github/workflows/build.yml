@@ -88,10 +88,12 @@ jobs:
         State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
         sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
         ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f
-        \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe \nsigntool.exe
-        sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/state-installer.exe \nsigntool.exe sign -d \"ActiveState Transitional
-        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
+        \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe\nsigntool.exe
+        sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
+        ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State
+        Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+        \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\"
+        -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
