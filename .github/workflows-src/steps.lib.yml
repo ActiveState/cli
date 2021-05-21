@@ -33,8 +33,8 @@ run: state run build-updlg
 #@ def steps_build_updlg_windows():
 name: Build Update Dialog (Windows)
 if: runner.os == 'Windows'
-shell: C:\msys64\usr\bin\bash.exe
-run: state run build-updlg
+shell: cmd
+run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
 #@ end
 ---
 #@ def steps_build_transition_update():
