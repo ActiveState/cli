@@ -56,7 +56,7 @@ jobs:
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
     - name: Build Installer
       shell: bash
       run: state run build-installer

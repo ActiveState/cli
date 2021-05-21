@@ -65,7 +65,7 @@ jobs:
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -85,9 +85,11 @@ jobs:
       if: runner.os == 'Windows'
       run: GOARCH=386 state run build-tray
     - name: Build Update Dialog (32bit)
-      shell: msys2bash.cmd
+      shell: cmd
       if: runner.os == 'Windows'
-      run: GOARCH=386 state run build-updlg
+      run: |
+        set GOARCH=386
+        C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
     - name: Build Installer (32bit)
       shell: bash
       if: runner.os == 'Windows'
@@ -282,7 +284,7 @@ jobs:
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -381,7 +383,7 @@ jobs:
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
     - name: Build Installer
       shell: bash
       run: state run build-installer

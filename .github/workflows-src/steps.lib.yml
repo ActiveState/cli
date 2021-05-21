@@ -34,7 +34,7 @@ run: state run build-updlg
 name: Build Update Dialog (Windows)
 if: runner.os == 'Windows'
 shell: cmd
-run: C:\msys64\usr\bin\bash.exe -c state run build-updlg
+run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
 #@ end
 ---
 #@ def steps_build_transition_update():
@@ -73,9 +73,11 @@ run: GOARCH=386 state run build-installer
 ---
 #@ def steps_build_updlg_32bit():
 name: Build Update Dialog (32bit)
-shell: msys2bash.cmd
+shell: cmd
 if: runner.os == 'Windows'
-run: GOARCH=386 state run build-updlg
+run: |
+  set GOARCH=386
+  C:\msys64\usr\bin\bash.exe -c "state run build-updlg"
 #@ end
 ---
 #@ def steps_build_transition_update_32bit():
