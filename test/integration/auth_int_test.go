@@ -46,7 +46,7 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 	cp.Send(username)
 	cp.Expect("password:")
 	cp.Send(username)
-	cp.Expect("successfully authenticated", 20*time.Second)
+	cp.Expect("logged in", 20*time.Second)
 	cp.ExpectExitCode(0)
 
 	// still logged in?
