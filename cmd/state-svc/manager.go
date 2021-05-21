@@ -74,10 +74,6 @@ func (s *serviceManager) Stop() error {
 		return nil
 	}
 
-	if !s.cfg.HasKey(constants.SvcConfigPort) {
-		fmt.Println("svc port was never set")
-	}
-
 	waitMgr := svcmanager.New(s.cfg)
 	err = waitMgr.Wait()
 	if err != nil {
