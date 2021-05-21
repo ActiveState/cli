@@ -41,7 +41,7 @@ func main() {
 }
 
 func run() error {
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}

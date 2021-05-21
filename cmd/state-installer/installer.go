@@ -67,7 +67,7 @@ func main() {
 func run(out output.Outputer) error {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config.")
 	}

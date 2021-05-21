@@ -63,7 +63,7 @@ func run() error {
 		cmd = command(os.Args[1])
 	}
 
-	cfg, err := config.New()
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}
@@ -130,7 +130,10 @@ func runStop(cfg *config.Instance) error {
 }
 
 func runStatus(cfg *config.Instance) error {
-	pid, err := NewServiceManager(cfg).Pid()
+	if err := cfg.Reload(); err != nil {
+		return errs.Wrap(err, "Could not reload configuration.")
+	}
+	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
 	}

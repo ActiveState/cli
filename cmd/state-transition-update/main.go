@@ -42,7 +42,7 @@ func main() {
 func run() error {
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
-		cfg, err := config.New()
+		cfg, err := config.Get()
 		if err != nil {
 			return errs.Wrap(err, "Failed to read configuration.")
 		}

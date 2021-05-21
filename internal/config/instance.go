@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,12 +40,15 @@ type Instance struct {
 	installSource string
 	lock          *flock.Flock
 	data          map[string]interface{}
+	// dataMutex is used to synchronize manipulations of the data map between threads, as most of these are not guarded by the file lock.
+	dataMutex *sync.RWMutex
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
+		dataMutex: &sync.RWMutex{},
 	}
 	err := instance.ensureConfigExists()
 	if err != nil {
@@ -137,6 +141,7 @@ func configPathInTest() (string, error) {
 }
 
 // New creates a new config instance
+// This should probably only be used in tests or you have to ensure that you have only one invocation of this function per process.
 func New() (*Instance, error) {
 	localPath, envSet := os.LookupEnv(C.ConfigEnvVarName)
 
@@ -169,14 +174,26 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
-// Set sets a value at the given key
-func (i *Instance) Set(key string, value interface{}) error {
+// SetWithLock updates a value at the given key. The valueF argument returns the
+// new value based on the previous one.  If the function returns with an error, the
+// update is cancelled.  The function ensures that no-other process or thread can modify
+// the key between reading of the old value and setting the new value.
+func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	if err := i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire config file lock")
+		return errs.Wrap(err, "Could not acquire configuration lock.")
 	}
 	defer i.ReleaseLock()
 
-	if err := i.ReadInConfig(); err != nil {
+	err := i.ReadInConfig()
+	if err != nil {
+		return err
+	}
+
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+
+	value, err := valueF(i.data[key])
+	if err != nil {
 		return err
 	}
 
@@ -189,7 +206,32 @@ func (i *Instance) Set(key string, value interface{}) error {
 	return nil
 }
 
+// Set sets a value at the given key.
+func (i *Instance) Set(key string, value interface{}) error {
+	if err := i.GetLock(); err != nil {
+		return errs.Wrap(err, "Could not acquire config file lock")
+	}
+	defer i.ReleaseLock()
+
+	if err := i.ReadInConfig(); err != nil {
+		return err
+	}
+
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
+	i.data[strings.ToLower(key)] = value
+
+	if err := i.save(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (i *Instance) get(key string) interface{} {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	return i.data[strings.ToLower(key)]
 }
 
@@ -205,6 +247,9 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
 	var keys []string
 	for k := range i.data {
 		keys = append(keys, k)
@@ -293,6 +338,9 @@ func (i *Instance) ReadInConfig() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not unmarshall config data")
 	}
+
+	i.dataMutex.Lock()
+	defer i.dataMutex.Unlock()
 
 	i.data = data
 	return nil

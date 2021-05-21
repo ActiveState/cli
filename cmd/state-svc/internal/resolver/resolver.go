@@ -104,7 +104,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	config, err := config.New()
+	config, err := config.Get()
 	if err != nil {
 		return nil, fmt.Errorf("Could not get new config instance: %w", errs.Join(err, ": "))
 	}
