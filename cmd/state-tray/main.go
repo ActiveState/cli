@@ -24,6 +24,7 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
+	"github.com/shirou/gopsutil/process"
 )
 
 const (
@@ -60,16 +61,25 @@ func onReady() {
 }
 
 func run() error {
-	box := packr.NewBox(assetsPath)
-	systray.SetIcon(box.Bytes(iconFile))
-
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
+
+	running, err := isTrayRunning(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")
+	}
+	if running {
+		return errs.New("ActiveState Desktop is already running")
+	}
+
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
+
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.StartAndWait(); err != nil {
@@ -238,4 +248,21 @@ func execute(exec string, args []string) error {
 	}
 
 	return nil
+}
+
+func isTrayRunning(cfg *config.Instance) (bool, error) {
+	pid := cfg.GetInt(config.ConfigKeyTrayPid)
+	if pid <= 0 {
+		return false, nil
+	}
+
+	pidExists, err := process.PidExists(int32(pid))
+	if err != nil {
+		return false, errs.Wrap(err, "Could not verify if pid exists")
+	}
+	if !pidExists {
+		return false, nil
+	}
+
+	return true, nil
 }
