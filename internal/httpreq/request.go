@@ -33,7 +33,7 @@ func (c *Client) GetWithContext(ctx context.Context, url string) ([]byte, error)
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, NewHTTPError(err, resp.StatusCode, response)
+		return nil, NewHTTPError(err, resp.StatusCode)
 	}
 
 	return response, nil
@@ -42,14 +42,12 @@ func (c *Client) GetWithContext(ctx context.Context, url string) ([]byte, error)
 type HTTPError struct {
 	err    error
 	status int
-	body   []byte
 }
 
-func NewHTTPError(err error, status int, body []byte) *HTTPError {
+func NewHTTPError(err error, status int) *HTTPError {
 	return &HTTPError{
 		err:    err,
 		status: status,
-		body:   body,
 	}
 }
 
