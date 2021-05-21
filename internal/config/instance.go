@@ -102,20 +102,6 @@ func (i *Instance) ReleaseLock() error {
 	return nil
 }
 
-// reloadUnsafe reloads the configuration data from the config file. The caller
-// needs to ensure that the call is guarded by GetRLock()/ReleaseLock() or GetLock()/ReleaseLock().
-// See setUnsafe() for more details on when and how to use this function.
-func (i *Instance) reloadUnsafe() error {
-	err := i.ReadInConfig()
-	if err != nil {
-		return err
-	}
-
-	i.readInstallSource()
-
-	return nil
-}
-
 // Reload reloads the configuration data from the config file
 func (i *Instance) Reload() error {
 	err := i.ensureConfigExists()
@@ -132,7 +118,14 @@ func (i *Instance) Reload() error {
 	}
 	defer i.ReleaseLock()
 
-	return i.reloadUnsafe()
+	err = i.ReadInConfig()
+	if err != nil {
+		return err
+	}
+
+	i.readInstallSource()
+
+	return nil
 }
 
 func configPathInTest() (string, error) {
@@ -180,20 +173,25 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
-func (i *Instance) SetSafe(key string, valueF func(oldvalue interface{}) interface{}) error {
+func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
 	}
 	defer i.ReleaseLock()
 
-	if err := i.reloadUnsafe(); err != nil {
-		return errs.Wrap(err, "Could not load the configuration data.")
+	err := i.ReadInConfig()
+	if err != nil {
+		return err
 	}
 
 	i.dataMutex.Lock()
 	defer i.dataMutex.Unlock()
 
-	value := valueF(i.data[key])
+	value, err := valueF(i.data[key])
+	if err != nil {
+		return err
+	}
+
 	return i.setUnsafe(key, value)
 }
 
@@ -238,7 +236,13 @@ func (i *Instance) Set(key string, value interface{}) error {
 
 	i.dataMutex.Lock()
 	defer i.dataMutex.Unlock()
-	return i.setUnsafe(key, value)
+	i.data[strings.ToLower(key)] = value
+
+	if err := i.save(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i *Instance) HasKey(key string) bool {

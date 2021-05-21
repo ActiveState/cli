@@ -29,23 +29,23 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 
 func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
-	err := s.cfg.SetSafe(constants.SvcConfigPid, func(oldPidI interface{}) interface{} {
+	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
 		oldPid := cast.ToInt(oldPidI)
 		curPid, err := s.Pid(oldPid)
 		if err == nil && curPid != nil {
-			return errs.New("Service is already running")
+			return nil, errs.New("Service is already running")
 		}
 
 		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
 		if err != nil {
-			return errs.New("Could not start serviceManager")
+			return nil, errs.New("Could not start serviceManager")
 		}
 
 		if proc == nil {
-			return errs.New("Could not obtain process information after starting serviceManager")
+			return nil, errs.New("Could not obtain process information after starting serviceManager")
 		}
 
-		return proc.Pid
+		return proc.Pid, nil
 	})
 	if err != nil {
 		if proc != nil {
