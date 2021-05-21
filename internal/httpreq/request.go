@@ -33,8 +33,34 @@ func (c *Client) GetWithContext(ctx context.Context, url string) ([]byte, error)
 	}
 
 	if resp.StatusCode != 200 {
-		return []byte{}, errs.New("bad http status from %s: %v, body: %s", url, resp.Status, response)
+		return nil, NewHTTPError(err, resp.StatusCode, response)
 	}
 
 	return response, nil
+}
+
+type HTTPError struct {
+	err    error
+	status int
+	body   []byte
+}
+
+func NewHTTPError(err error, status int, body []byte) *HTTPError {
+	return &HTTPError{
+		err:    err,
+		status: status,
+		body:   body,
+	}
+}
+
+func (e *HTTPError) Error() string {
+	return e.err.Error()
+}
+
+func (e *HTTPError) Unwrap() error {
+	return e.err
+}
+
+func (e *HTTPError) HTTPStatusCode() int {
+	return e.status
 }
