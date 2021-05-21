@@ -361,6 +361,9 @@ func (s *Session) Close() error {
 		cfgFiles, err := ioutil.ReadDir(s.Dirs.Config)
 		require.NoError(s.t, err)
 		for _, f := range cfgFiles {
+			if !strings.HasPrefix(f.Name(), "state-svc") {
+				continue
+			}
 			d, err := ioutil.ReadFile(filepath.Join(s.Dirs.Config, f.Name()))
 			require.NoError(s.t, err)
 			fmt.Printf("contents of %s:\n%s\n", f.Name(), string(d))
