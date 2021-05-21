@@ -6,13 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
-	"github.com/rollbar/rollbar-go"
-
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -20,10 +13,18 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/getlantern/systray"
+	"github.com/gobuffalo/packr"
+	"github.com/rollbar/rollbar-go"
+	"github.com/shirou/gopsutil/process"
 )
 
 const (
@@ -42,7 +43,13 @@ func main() {
 
 func onReady() {
 	var exitCode int
-	defer exit(exitCode)
+	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		os.Exit(exitCode)
+	}()
 
 	err := run()
 	if err != nil {
@@ -54,16 +61,25 @@ func onReady() {
 }
 
 func run() error {
-	box := packr.NewBox(assetsPath)
-	systray.SetIcon(box.Bytes(iconFile))
-
 	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
+
+	running, err := isTrayRunning(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")
+	}
+	if running {
+		return errs.New("ActiveState Desktop is already running")
+	}
+
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
+
+	box := packr.NewBox(assetsPath)
+	systray.SetIcon(box.Bytes(iconFile))
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.StartAndWait(); err != nil {
@@ -222,11 +238,6 @@ func onExit() {
 	// Not implemented
 }
 
-func exit(code int) {
-	events.WaitForEvents(1*time.Second, rollbar.Close)
-	os.Exit(code)
-}
-
 func execute(exec string, args []string) error {
 	if !fileutils.FileExists(exec) {
 		return errs.New("Could not find: %s", exec)
@@ -237,4 +248,21 @@ func execute(exec string, args []string) error {
 	}
 
 	return nil
+}
+
+func isTrayRunning(cfg *config.Instance) (bool, error) {
+	pid := cfg.GetInt(config.ConfigKeyTrayPid)
+	if pid <= 0 {
+		return false, nil
+	}
+
+	pidExists, err := process.PidExists(int32(pid))
+	if err != nil {
+		return false, errs.Wrap(err, "Could not verify if pid exists")
+	}
+	if !pidExists {
+		return false, nil
+	}
+
+	return true, nil
 }

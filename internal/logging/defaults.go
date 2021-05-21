@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -143,6 +144,8 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 func init() {
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
+
+	log.SetOutput(&writer{})
 
 	cfg, err := config.Get()
 	if err != nil {

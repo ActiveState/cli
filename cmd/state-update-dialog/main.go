@@ -11,16 +11,21 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
-	var exit int
-	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
+	var exitCode int
 	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
-		os.Exit(exit)
+		os.Exit(exitCode)
 	}()
+
+	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -28,9 +33,10 @@ func main() {
 
 	err := run()
 	if err != nil {
-		exit = 1
+		exitCode = 1
 		logging.Error("Update Dialog Failure: " + errs.Join(err, ": ").Error())
 		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
+		return
 	}
 }
 

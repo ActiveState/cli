@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -33,8 +34,15 @@ var commands = []command{
 
 func main() {
 	var exitCode int
+	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		os.Exit(exitCode)
+	}()
+
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
-	defer exit(exitCode)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -144,9 +152,4 @@ func runStatus(cfg *config.Instance) error {
 	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
-}
-
-func exit(code int) {
-	events.WaitForEvents(1*time.Second, rollbar.Close)
-	os.Exit(code)
 }

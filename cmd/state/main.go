@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
@@ -43,7 +44,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if handlePanics() {
+		if runbits.HandlePanics() {
 			exitCode = 1
 		}
 

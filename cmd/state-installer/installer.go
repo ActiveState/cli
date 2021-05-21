@@ -5,12 +5,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -18,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/rollbar/rollbar-go"
@@ -25,6 +28,15 @@ import (
 )
 
 func main() {
+	var exitCode int
+	defer func() {
+		if runbits.HandlePanics() {
+			exitCode = 1
+		}
+		events.WaitForEvents(1*time.Second, rollbar.Close)
+		os.Exit(exitCode)
+	}()
+
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
 	logging.CurrentHandler().SetVerbose(verbose)
@@ -38,8 +50,8 @@ func main() {
 	})
 	if err != nil {
 		logging.Error("Could not initialize outputer: %v", err)
-		rollbar.Close()
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 	if err := run(out); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
@@ -47,10 +59,9 @@ func main() {
 		out.Error(errMsg)
 		out.Error(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
 
-		rollbar.Close()
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
-	rollbar.Close()
 }
 
 func run(out output.Outputer) error {
