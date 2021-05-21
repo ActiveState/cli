@@ -241,6 +241,14 @@ func (i *Instance) Set(key string, value interface{}) error {
 	return i.setUnsafe(key, value)
 }
 
+func (i *Instance) HasKey(key string) bool {
+	i.dataMutex.RLock()
+	defer i.dataMutex.RUnlock()
+
+	_, ok := i.data[strings.ToLower(key)]
+	return ok
+}
+
 func (i *Instance) get(key string) interface{} {
 	i.dataMutex.RLock()
 	defer i.dataMutex.RUnlock()

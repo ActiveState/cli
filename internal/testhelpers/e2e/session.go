@@ -358,6 +358,13 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 func (s *Session) Close() error {
 	// stop service and tray if they exist
 	if fileutils.TargetExists(s.SvcExe) {
+		cfgFiles, err := ioutil.ReadDir(s.Dirs.Config)
+		require.NoError(s.t, err)
+		for _, f := range cfgFiles {
+			d, err := ioutil.ReadFile(filepath.Join(s.Dirs.Config, f.Name()))
+			require.NoError(s.t, err)
+			fmt.Printf("contents of %s:\n%s\n", f.Name(), string(d))
+		}
 		cp := s.SpawnCmd(s.SvcExe, "stop")
 		cp.ExpectExitCode(0)
 	}
