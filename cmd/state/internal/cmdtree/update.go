@@ -24,6 +24,11 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("update_channel", "Switches to the given update channel, eg. 'release'."),
 				Value:       &params.Channel,
 			},
+			{
+				Name:        "set-version",
+				Description: locale.Tl("update_version", "Switches to the given State Tool version."),
+				Value:       &params.Version,
+			},
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {

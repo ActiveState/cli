@@ -38,9 +38,10 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
-var targetBranch = "master"
+var targetBranch = "beta"
 var testBranch = "test-channel"
 var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
+var specificVersion = "0.29.0-SHA9f570a0"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -294,9 +295,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		Name       string
 		TestUpdate bool
 		Channel    string
+		Version    string
 	}{
-		{"test-update", true, testBranch},
-		{"release-channel", false, targetBranch},
+		{"test-update", true, testBranch, ""},
+		{"release-channel", false, targetBranch, ""},
+		{"specific-update", false, targetBranch, specificVersion},
 	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
@@ -312,7 +315,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
-			cp = ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", tt.Channel), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			updateArgs := []string{"update", "--set-channel", tt.Channel}
+			if tt.Version != "" {
+				updateArgs = append(updateArgs, "--set-version", tt.Version)
+			}
+			cp = ts.SpawnWithOpts(e2e.WithArgs(updateArgs...), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.Expect("Updating State Tool to latest version available")
 			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
 			cp.ExpectExitCode(0)
@@ -321,6 +328,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			suite.Assert().Contains(logs, "was successful")
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
+
+			if tt.Version != "" {
+				suite.versionCompare(ts, true, false, tt.Version, suite.Equal)
+			}
 		})
 	}
 }
