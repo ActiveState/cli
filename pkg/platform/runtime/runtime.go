@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -127,7 +126,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 	if useExecutors {
 		// Override PATH entry with exec path
-		pathEntries := []string{filepath.Join(r.target.Dir(), setup.ExecDirName)}
+		pathEntries := []string{setup.ExecDir(r.target.Dir())}
 		if inherit {
 			pathEntries = append(pathEntries, os.Getenv("PATH"))
 		}

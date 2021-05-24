@@ -42,8 +42,8 @@ import (
 const (
 	// MaxConcurrency is maximum number of parallel artifact installations
 	MaxConcurrency = 10
-	// ExecDirName is the name of the directory that should store the executors
-	ExecDirName = "exec"
+
+	execDirName = "exec"
 )
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
@@ -224,7 +224,7 @@ func (s *Setup) update() error {
 	}
 
 	// Create executors
-	execPath := filepath.Join(s.target.Dir(), ExecDirName)
+	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
 	}
@@ -535,6 +535,10 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 	}
 }
 
+func ExecDir(targetDir string) string {
+	return filepath.Join(targetDir, execDirName)
+}
+
 func Required(targetDir string) bool {
-	return !fileutils.DirExists(filepath.Join(targetDir, ExecDirName))
+	return !fileutils.DirExists(ExecDir(targetDir))
 }
