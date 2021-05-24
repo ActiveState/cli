@@ -36,9 +36,15 @@ func IsNeedsUpdateError(err error) bool {
 }
 
 func newRuntime(target setup.Targeter) (*Runtime, error) {
-	rt := &Runtime{target: target}
+	rt := &Runtime{
+		target: target,
+		store:  store.New(target.Dir()),
+	}
 
-	rt.store = store.New(target.Dir())
+	if setup.Required(target.Dir()) {
+		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+	}
+
 	if !rt.store.MatchesCommit(target.CommitUUID()) {
 		if target.OnlyUseCache() {
 			logging.Debug("Using forced cache")
@@ -121,7 +127,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 	if useExecutors {
 		// Override PATH entry with exec path
-		pathEntries := []string{filepath.Join(r.target.Dir(), "exec")}
+		pathEntries := []string{filepath.Join(r.target.Dir(), setup.ExecDirName)}
 		if inherit {
 			pathEntries = append(pathEntries, os.Getenv("PATH"))
 		}

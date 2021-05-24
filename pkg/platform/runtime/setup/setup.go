@@ -39,8 +39,12 @@ import (
 	"github.com/faiface/mainthread"
 )
 
-// MaxConcurrency is maximum number of parallel artifact installations
-const MaxConcurrency = 10
+const (
+	// MaxConcurrency is maximum number of parallel artifact installations
+	MaxConcurrency = 10
+	// ExecDirName is the name of the directory that should store the executors
+	ExecDirName = "exec"
+)
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
 var NotInstalledError = errs.New("Runtime is not completely installed.")
@@ -220,7 +224,7 @@ func (s *Setup) update() error {
 	}
 
 	// Create executors
-	execPath := filepath.Join(s.target.Dir(), "exec")
+	execPath := filepath.Join(s.target.Dir(), ExecDirName)
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
 	}
@@ -519,6 +523,7 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifac
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
 }
+
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
 	switch buildEngine {
 	case model.Alternative:
@@ -528,4 +533,8 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 	default:
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
+}
+
+func Required(targetDir string) bool {
+	return !fileutils.DirExists(filepath.Join(targetDir, ExecDirName))
 }
