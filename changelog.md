@@ -19,8 +19,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - We've replaced the auto updating system with a manual updating system, updates
   will from now on be made available through the system tray application and you
   will have the choice to install it at your own convenience.
-- Added a flag `--set-version` to the `state update` command to update to a
-  specific State Tool version.  ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
+- You can now switch to specific State Tool versions by running `state update --set-version <version>` ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
 
 ### Changed
 
