@@ -41,8 +41,7 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 		store:  store.New(target.Dir()),
 	}
 
-	// added in 202105 for transition (invalidates setups produced by older
-	// tool versions): https://www.pivotaltracker.com/story/show/178152827
+	// invalidates setups produced by older tool versions: https://www.pivotaltracker.com/story/show/178292912
 	if !fileutils.DirExists(setup.ExecDir(target.Dir())) {
 		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
