@@ -3,10 +3,13 @@ package update
 import (
 	"context"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -61,6 +64,13 @@ func (u *Update) Run(params *Params) error {
 	if up.Channel == "" && up.Version == "" {
 		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))
 		return nil
+	}
+
+	if up.Channel != constants.BranchName {
+		err = installation.StopRunning(filepath.Dir(appinfo.StateApp().Exec()))
+		if err != nil {
+			return errs.Wrap(err, "Could not stop running services")
+		}
 	}
 
 	u.out.Print(locale.Tl("version_updating_deferred", "Version update to {{.V0}}@{{.V1}} has started and should complete in seconds.\nRefer to log file [ACTIONABLE]{{.V2}}[/RESET] for progress.", up.Channel, up.Version, up.Logfile))
