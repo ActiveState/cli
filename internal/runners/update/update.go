@@ -66,6 +66,9 @@ func (u *Update) Run(params *Params) error {
 		return nil
 	}
 
+	// Stop currently running applications (state-tray and state-svc) if we are switching channels.
+	// When we switch channels the config directory changes and the deferred update cannot stop the
+	// running applications.
 	if up.Channel != constants.BranchName {
 		err = installation.StopRunning(filepath.Dir(appinfo.StateApp().Exec()))
 		if err != nil {
