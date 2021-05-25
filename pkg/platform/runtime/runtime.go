@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -40,7 +41,9 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 		store:  store.New(target.Dir()),
 	}
 
-	if setup.Required(target.Dir()) {
+	// added in 202105 for transition (invalidates setups produced by older
+	// tool versions): https://www.pivotaltracker.com/story/show/178152827
+	if !fileutils.DirExists(setup.ExecDir(target.Dir())) {
 		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
 	}
 

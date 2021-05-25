@@ -39,12 +39,8 @@ import (
 	"github.com/faiface/mainthread"
 )
 
-const (
-	// MaxConcurrency is maximum number of parallel artifact installations
-	MaxConcurrency = 10
-
-	execDirName = "exec"
-)
+// MaxConcurrency is maximum number of parallel artifact installations
+const MaxConcurrency = 10
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
 var NotInstalledError = errs.New("Runtime is not completely installed.")
@@ -536,9 +532,5 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 }
 
 func ExecDir(targetDir string) string {
-	return filepath.Join(targetDir, execDirName)
-}
-
-func Required(targetDir string) bool {
-	return !fileutils.DirExists(ExecDir(targetDir))
+	return filepath.Join(targetDir, "exec")
 }
