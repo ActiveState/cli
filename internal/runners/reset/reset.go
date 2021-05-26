@@ -46,7 +46,7 @@ func (r *Reset) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "You are about to reset your local project to the latest commit, losing your local changes. Continue?"), new(bool))
+	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "You are about to reset your project to the latest commit, losing your local changes. Continue?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
 	}
@@ -71,6 +71,8 @@ func (r *Reset) Run() error {
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
+
+	r.out.Print(locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", latestCommit.String()))
 
 	return nil
 }
