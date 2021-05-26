@@ -12,8 +12,8 @@ func newResetCommand(prime *primer.Values) *captain.Command {
 
 	return captain.NewCommand(
 		"reset",
-		locale.Tl("reset_title", "Restting commit"),
-		locale.Tl("reset_description", "Reset to the most recent remote commit"),
+		locale.Tl("reset_title", "Reset to Same Commit as Platform Project"),
+		locale.Tl("reset_description", "Reset local checkout to be equal to the project on the platform."),
 		prime.Output(),
 		prime.Config(),
 		[]*captain.Flag{},

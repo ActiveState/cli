@@ -56,7 +56,7 @@ func (r *Reset) Run() error {
 		return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
 	}
 
-	r.out.Print(locale.Tl("reset_commit", "Your project will be reset at [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
+	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
 
 	originalCommitID := r.project.CommitID()
 	revertCommit, err := model.GetRevertCommit(strfmt.UUID(originalCommitID), *latestCommit)
