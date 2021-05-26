@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
 	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
@@ -86,7 +85,7 @@ func run() error {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), cfg)
+	model, err := svcm.Model(context.Background())
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}

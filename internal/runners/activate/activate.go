@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -38,6 +39,7 @@ type Activate struct {
 	activateCheckout *Checkout
 	auth             *authentication.Auth
 	out              output.Outputer
+	svcMgr           *svcmanager.Manager
 	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
@@ -60,6 +62,7 @@ type primeable interface {
 	primer.Subsheller
 	primer.Prompter
 	primer.Configurer
+	primer.Svcer
 }
 
 func NewActivate(prime primeable) *Activate {
@@ -68,6 +71,7 @@ func NewActivate(prime primeable) *Activate {
 		NewCheckout(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
+		prime.SvcManager(),
 		prime.Config(),
 		prime.Project(),
 		prime.Subshell(),
@@ -82,7 +86,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.config, r.out)
+	checker.RunUpdateNotifier(r.svcMgr, r.out)
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 

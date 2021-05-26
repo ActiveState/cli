@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -23,6 +23,7 @@ type Params struct {
 type Update struct {
 	project *project.Project
 	cfg     *config.Instance
+	svcmgr  *svcmanager.Manager
 	out     output.Outputer
 	prompt  prompt.Prompter
 }
@@ -30,6 +31,7 @@ type Update struct {
 type primeable interface {
 	primer.Projecter
 	primer.Configurer
+	primer.Svcer
 	primer.Outputer
 	primer.Prompter
 }
@@ -38,6 +40,7 @@ func New(prime primeable) *Update {
 	return &Update{
 		prime.Project(),
 		prime.Config(),
+		prime.SvcManager(),
 		prime.Output(),
 		prime.Prompt(),
 	}
@@ -48,7 +51,7 @@ func (u *Update) Run(params *Params) error {
 
 	channel := fetchChannel(params.Channel, true)
 
-	m, err := model.NewSvcModel(context.Background(), u.cfg)
+	m, err := u.svcmgr.Model(context.Background())
 	if err != nil {
 		return errs.Wrap(err, "failed to create svc model")
 	}

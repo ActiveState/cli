@@ -183,7 +183,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {
