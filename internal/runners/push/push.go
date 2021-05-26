@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -14,16 +15,20 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
+
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 )
 
 type configGetter interface {
 	projectfile.ConfigGetter
+	ConfigPath() string
 }
 
 type Push struct {
 	config configGetter
 	output.Outputer
 	project *project.Project
+	prompt  prompt.Prompter
 }
 
 type PushParams struct {
@@ -34,15 +39,19 @@ type primeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Configurer
+	primer.Prompter
 }
 
 func NewPush(prime primeable) *Push {
-	return &Push{prime.Config(), prime.Output(), prime.Project()}
+	return &Push{prime.Config(), prime.Output(), prime.Project(), prime.Prompt()}
 }
 
 func (r *Push) Run(params PushParams) error {
 	if !authentication.Get().Authenticated() {
-		return locale.NewInputError("err_api_not_authenticated")
+		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.Outputer, r.prompt)
+		if err != nil {
+			return locale.WrapError(err, "err_push_auth", "Failed to authenticate")
+		}
 	}
 
 	if r.project == nil {
