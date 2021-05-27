@@ -40,7 +40,7 @@ func (m *SvcModel) StateVersion() (*graph.Version, error) {
 
 func (m *SvcModel) LocalProjects() ([]*graph.Project, error) {
 	r := request.NewLocalProjectsRequest()
-	response := graph.ProjectsResponse{[]*graph.Project{}}
+	response := graph.ProjectsResponse{Projects: []*graph.Project{}}
 	if err := m.client.RunWithContext(m.ctx, r, &response); err != nil {
 		return nil, err
 	}

@@ -11,7 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/rollbar/rollbar-go"
 )
@@ -39,6 +42,26 @@ func main() {
 	}
 }
 
+func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+
+	// remove shell file additions
+	s := subshell.New(cfg)
+	if err := s.CleanUserEnv(cfg, sscommon.InstallID, isAdmin); err != nil {
+		return errs.Wrap(err, "Failed to remove environment variable changes")
+
+	}
+
+	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
+		return errs.Wrap(err, "Failed to remove legacy install path")
+	}
+
+	return nil
+}
+
 func run() error {
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
@@ -57,6 +80,14 @@ func run() error {
 	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
 	if err != nil {
 		return errs.Wrap(err, "Failed to check for latest update.")
+	}
+
+	cfg, err := config.Get()
+	if err != nil {
+		return errs.Wrap(err, "Failed to read configuration.")
+	}
+	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
+		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
 
 	err = up.InstallBlocking()

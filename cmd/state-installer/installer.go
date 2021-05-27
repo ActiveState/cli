@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/internal/version"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 )
@@ -66,60 +64,6 @@ func main() {
 	}
 }
 
-func parseStateToolVersionOutput(stdout string) (string, error) {
-	type versionData struct {
-		Version string `json:"version"`
-	}
-	var v versionData
-	if err := json.Unmarshal([]byte(stdout), &v); err != nil {
-		return "", errs.Wrap(err, "Failed to unmarshal version data")
-	}
-	return v.Version, nil
-}
-
-// isUpdateFromOldStateTool checks if the installPath contains a "single-file" State Tool executable
-func isUpdateFromOldStateTool(installPath string) (bool, error) {
-	// check if we are upgrading from old state tool
-	oldStateApp := appinfo.StateApp(installPath)
-	if !fileutils.TargetExists(oldStateApp.Exec()) {
-		return false, nil
-	}
-	stdout, stderr, err := exeutils.ExecSimple(oldStateApp.Exec(), "--version", "--output=json")
-	if err != nil {
-		return false, errs.Wrap(err, "Failed to run state --version command\nstdout=%s\nstderr=%s\n", stdout, stderr)
-	}
-	vs, err := parseStateToolVersionOutput(stdout)
-	if err != nil {
-		return false, errs.Wrap(err, "Failed to parse version output from old State Tool:\nstdout=%s\nstderr=%s", stdout, stderr)
-	}
-	v, err := version.ParseStateToolVersion(vs)
-	if err != nil {
-		return false, errs.Wrap(err, "Failed to parse State Tool version %s", vs)
-	}
-
-	return !version.IsMultiFileUpdate(v), nil
-}
-
-func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
-	isAdmin, err := osutils.IsWindowsAdmin()
-	if err != nil {
-		return errs.Wrap(err, "Could not determine if running as Windows administrator")
-	}
-
-	// remove shell file additions
-	s := subshell.New(cfg)
-	if err := s.CleanUserEnv(cfg, sscommon.InstallID, isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to remove environment variable changes")
-
-	}
-
-	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
-		return errs.Wrap(err, "Failed to remove legacy install path")
-	}
-
-	return nil
-}
-
 func run(out output.Outputer) error {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
@@ -137,25 +81,6 @@ func run(out output.Outputer) error {
 		installPath, err = filepath.Abs(os.Args[1])
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve absolute installPath")
-		}
-
-		upgradingFromOldStateTool, err := isUpdateFromOldStateTool(installPath)
-		if err != nil {
-			logging.Error("Failed to check if we are upgrading from a legacy State Tool version.")
-		}
-		if upgradingFromOldStateTool {
-			if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
-				return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
-			}
-
-			// use default installation path instead
-			installPath, err = installation.InstallPath()
-			if err != nil {
-				return errs.Wrap(err, "Failed to retrieve default installPath")
-			}
-
-			// remove old State Tool executable on successful installation
-			extraRemoves = append(extraRemoves, appinfo.StateApp(installPath).Exec())
 		}
 	} else {
 		installPath, err = installation.InstallPath()
