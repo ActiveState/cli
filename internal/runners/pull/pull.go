@@ -119,7 +119,7 @@ func (p *Pull) Run(params *PullParams) error {
 
 	revertCommit, err := model.GetRevertCommit(p.project.CommitUUID(), *target.CommitID)
 	if err != nil {
-		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
+		return locale.WrapError(err, "err_revert_refresh")
 	}
 
 	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *target.CommitID, len(revertCommit.Changeset) > 0)
