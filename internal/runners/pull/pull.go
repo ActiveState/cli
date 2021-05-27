@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -81,9 +82,18 @@ func (p *Pull) Run(params *PullParams) error {
 		return errs.Wrap(err, "Unable to determine target project")
 	}
 
+	var projectCommit *strfmt.UUID
+	if p.project.CommitUUID() != "" {
+		v := p.project.CommitUUID()
+		projectCommit = &v
+	}
+	parentCommit, err := model.CommonParent(target.CommitID, projectCommit)
+	if err != nil {
+		return locale.WrapError(err, "err_pull_commonparent", "Could not check if target commit is compatible with local commit history.")
+	}
+
 	if params.SetProject != "" {
-		related, err := areCommitsRelated(*target.CommitID, p.project.CommitUUID())
-		if !related && !params.Force {
+		if parentCommit != nil && !params.Force {
 			confirmed, err := p.prompt.Confirm(locale.T("confirm"), locale.Tl("confirm_unrelated_pull_set_project", "If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", target.String()), new(bool))
 			if err != nil {
 				return locale.WrapError(err, "err_pull_confirm", "Failed to get user confirmation to update project")
@@ -99,15 +109,42 @@ func (p *Pull) Run(params *PullParams) error {
 		}
 	}
 
+	targetCommit := target.CommitID
+
+	noCommonParent := parentCommit == nil
+	divergedHistory := targetCommit != nil && parentCommit != nil && *parentCommit != *targetCommit
+
+	if noCommonParent {
+		return locale.WrapError(err, "err_pull_incompatible")
+	}
+
+	if targetCommit != nil && (noCommonParent || divergedHistory) {
+		p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
+		p.out.Notice(locale.T("pull_diverged_message"))
+
+		changeset, err := model.DiffCommits(*targetCommit, p.project.CommitUUID())
+		if err != nil {
+			return locale.WrapError(
+				err, "err_pull_diff",
+				"Could not generate diff between commits {{.V0}}, and {{.V1}}", targetCommit.String(), p.project.CommitID())
+		}
+
+		resultCommit, err := model.CommitChangeset(*targetCommit, locale.T("pull_merge_commit"), machineid.UniqID(), changeset)
+		if err != nil {
+			return locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
+		}
+		targetCommit = &resultCommit
+	}
+
 	// Update the commit ID in the activestate.yaml
-	if p.project.CommitID() != target.CommitID.String() {
-		err := p.project.Source().SetCommit(target.CommitID.String(), false)
+	if p.project.CommitID() != targetCommit.String() {
+		err := p.project.Source().SetCommit(targetCommit.String(), false)
 		if err != nil {
 			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
 		}
 
 		p.out.Print(&outputFormat{
-			locale.Tr("pull_updated", target.String(), target.CommitID.String()),
+			locale.Tr("pull_updated", target.String(), targetCommit.String()),
 			true,
 		})
 	} else {
@@ -117,12 +154,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	revertCommit, err := model.GetRevertCommit(p.project.CommitUUID(), *target.CommitID)
-	if err != nil {
-		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
-	}
-
-	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *target.CommitID, len(revertCommit.Changeset) > 0)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *targetCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

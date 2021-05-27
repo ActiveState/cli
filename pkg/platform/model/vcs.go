@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -241,6 +242,117 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	}
 
 	return res.Payload, nil
+}
+
+func DiffCommits(commit1, commit2 strfmt.UUID) ([]*mono_models.CommitChangeEditable, error) {
+	cp1, _, err := FetchCheckpointForCommit(commit1)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit1))
+	}
+
+	cp2, _, err := FetchCheckpointForCommit(commit2)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit2))
+	}
+
+	return DiffCheckpoints(cp1.ToMonoCheckpoint(), cp2.ToMonoCheckpoint()), nil
+}
+
+func DiffCheckpoints(cp1, cp2 []*mono_models.Checkpoint) []*mono_models.CommitChangeEditable {
+	var computedChanges []*mono_models.CommitChangeEditable
+	for _, change2 := range cp2 {
+		change1 := checkpointFind(cp1, change2.Namespace, change2.Requirement)
+		if change1 != nil && change1.VersionConstraints == nil && change2.VersionConstraints == nil {
+			continue // addresses nil case
+		}
+		if change1 != nil && change1.VersionConstraints != nil && change2.VersionConstraints != nil &&
+			sliceutils.ElementsMatchImplicit(change1.VersionConstraints, change2.VersionConstraints) {
+			continue // no change required
+		}
+		computedChange := &mono_models.CommitChangeEditable{
+			Namespace:          change2.Namespace,
+			Requirement:        change2.Requirement,
+			VersionConstraints: change2.VersionConstraints,
+		}
+		if change1 == nil {
+			computedChange.Operation = mono_models.CommitChangeOperationAdded
+		} else {
+			computedChange.Operation = mono_models.CommitChangeOperationUpdated
+		}
+		computedChanges = append(computedChanges, computedChange)
+	}
+	for _, change1 := range cp1 {
+		if checkpointFind(cp2, change1.Namespace, change1.Requirement) != nil {
+			continue
+		}
+		computedChanges = append(computedChanges, &mono_models.CommitChangeEditable{
+			Namespace:          change1.Namespace,
+			Requirement:        change1.Requirement,
+			VersionConstraints: change1.VersionConstraints,
+			Operation:          mono_models.CommitChangeOperationRemoved,
+		})
+	}
+	return computedChanges
+}
+
+func checkpointFind(cp []*mono_models.Checkpoint, namespace, requirement string) *mono_models.Checkpoint {
+	for _, c := range cp {
+		if c.Namespace == namespace && c.Requirement == requirement {
+			return c
+		}
+	}
+	return nil
+}
+
+func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
+	if commit1 == nil || commit2 == nil {
+		return nil, nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1, nil
+	}
+
+	history1, err := CommitHistoryFromID(*commit1)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit1.String())
+	}
+
+	history2, err := CommitHistoryFromID(*commit2)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit2.String())
+	}
+
+	return commonParentWithHistory(commit1, commit2, history1, history2), nil
+}
+
+func commonParentWithHistory(commit1, commit2 *strfmt.UUID, history1, history2 []*mono_models.Commit) *strfmt.UUID {
+	if commit1 == nil || commit2 == nil {
+		return nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1
+	}
+
+	for _, c := range history1 {
+		if c.CommitID == *commit2 {
+			return commit2 // commit1 history contains commit2
+		}
+		for _, c2 := range history2 {
+			if c.CommitID == c2.CommitID {
+				return &c.CommitID // commit1 and commit2 have a common parent
+			}
+		}
+	}
+
+	for _, c2 := range history2 {
+		if c2.CommitID == *commit1 {
+			return commit1 // commit2 history contains commit1
+		}
+	}
+
+	return nil
 }
 
 // CommitsBehind compares the provided commit id with the latest commit

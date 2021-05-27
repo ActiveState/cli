@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -23,15 +24,17 @@ type PushIntegrationTestSuite struct {
 	username string
 
 	// some variables re-used between tests
-	baseProject  string
-	language     string
-	extraPackage string
+	baseProject   string
+	language      string
+	extraPackage  string
+	extraPackage2 string
 }
 
 func (suite *PushIntegrationTestSuite) SetupSuite() {
 	suite.language = "perl@5.32.0"
 	suite.baseProject = "ActiveState/Perl-5.32"
 	suite.extraPackage = "JSON"
+	suite.extraPackage2 = "DateTime"
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
 		suite.baseProject = "ActiveState-CLI/small-python"
@@ -173,6 +176,25 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
+	suite.OnlyRunForTags(tagsuite.Push)
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
+	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	wd := filepath.Join(ts.Dirs.Work, namespace)
+	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
+	suite.Require().NoError(err)
+
+	ts.LoginAsPersistentUser()
+	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString("Your project has new commits available")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {

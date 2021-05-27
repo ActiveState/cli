@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -23,6 +24,14 @@ var (
 
 // Checkpoint represents a collection of requirements
 type Checkpoint []*model.Requirement
+
+func (c Checkpoint) ToMonoCheckpoint() []*mono_models.Checkpoint {
+	var result = make([]*mono_models.Checkpoint, 0)
+	for _, r := range c {
+		result = append(result, &r.Checkpoint)
+	}
+	return result
+}
 
 // Language represents a langauge requirement
 type Language struct {

@@ -1,8 +1,11 @@
 package model_test
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -116,4 +119,140 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 
 func TestVCSTestSuite(t *testing.T) {
 	suite.Run(t, new(VCSTestSuite))
+}
+
+type requirement struct {
+	name      string
+	version   string
+	operation string
+}
+
+func checkpoint(req ...requirement) []*mono_models.Checkpoint {
+	result := make([]*mono_models.Checkpoint, 0)
+	for _, r := range req {
+		result = append(result, &mono_models.Checkpoint{
+			Namespace:   "namespaceValue",
+			Requirement: r.name,
+			VersionConstraints: []*mono_models.Constraint{
+				{
+					Comparator: "==",
+					Version:    r.version,
+				},
+			},
+		})
+	}
+	return result
+}
+
+func change(r requirement) *mono_models.CommitChange {
+	return &mono_models.CommitChange{
+		Namespace:   "namespaceValue",
+		Requirement: r.name,
+		Operation:   r.operation,
+		VersionConstraints: []*mono_models.Constraint{
+			{
+				Comparator: "==",
+				Version:    r.version,
+			},
+		},
+	}
+}
+
+func changes(reqs ...requirement) []*mono_models.CommitChange {
+	result := []*mono_models.CommitChange{}
+	for _, r := range reqs {
+		result = append(result, change(r))
+	}
+	return result
+}
+
+var added = mono_models.CommitChangeOperationAdded
+var removed = mono_models.CommitChangeOperationRemoved
+var updated = mono_models.CommitChangeOperationUpdated
+
+func TestDiffCheckpoints(t *testing.T) {
+	type args struct {
+		cp1 []*mono_models.Checkpoint
+		cp2 []*mono_models.Checkpoint
+	}
+	tests := []struct {
+		name string
+		args args
+		want []*mono_models.CommitChange
+	}{
+		{
+			"cp1 is empty",
+			args{
+				checkpoint(), checkpoint(requirement{"req1", "", ""}),
+			},
+			changes(requirement{"req1", "", added}),
+		},
+		{
+			"cp2 is empty",
+			args{
+				checkpoint(requirement{"req1", "", ""}), checkpoint(),
+			},
+			changes(requirement{"req1", "", removed}),
+		},
+		{
+			"cp2 has 1 addition",
+			args{
+				checkpoint(requirement{"req1", "", ""}),
+				checkpoint(requirement{"req1", "", ""}, requirement{"req2", "", ""}),
+			},
+			changes(requirement{"req2", "", added}),
+		},
+		{
+			"cp2 has 1 deletion",
+			args{
+				checkpoint(requirement{"req1", "", ""}, requirement{"req2", "", ""}),
+				checkpoint(requirement{"req1", "", ""}),
+			},
+			changes(requirement{"req2", "", removed}),
+		},
+		{
+			"cp2 updated version",
+			args{
+				checkpoint(requirement{"req1", "1.0", ""}),
+				checkpoint(requirement{"req1", "2.0", ""}),
+			},
+			changes(requirement{"req1", "2.0", updated}),
+		},
+		{
+			"complex change",
+			args{
+				checkpoint(
+					requirement{"req1", "1.0", ""},
+					requirement{"req2", "1.0", ""},
+					requirement{"req3", "1.0", ""},
+					requirement{"req4", "1.0", ""},
+				),
+				checkpoint(
+					requirement{"req10", "1.0", ""},
+					requirement{"req20", "1.0", ""},
+					requirement{"req1", "2.0", ""},
+					requirement{"req2", "1.0", ""},
+					requirement{"req3", "2.0", ""},
+					requirement{"req30", "1.0", ""},
+				),
+			},
+			changes(
+				requirement{"req10", "1.0", added},
+				requirement{"req20", "1.0", added},
+				requirement{"req1", "2.0", updated},
+				requirement{"req3", "2.0", updated},
+				requirement{"req4", "1.0", removed},
+				requirement{"req30", "1.0", added},
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := model.DiffCheckpoints(tt.args.cp1, tt.args.cp2); !assert.ElementsMatch(t, got, tt.want) {
+				jgot, _ := json.MarshalIndent(got, "", "  ")
+				jwant, _ := json.MarshalIndent(tt.want, "", "  ")
+				t.Errorf("DiffCheckpoints() = %v, want %v", string(jgot), string(jwant))
+			}
+		})
+	}
 }

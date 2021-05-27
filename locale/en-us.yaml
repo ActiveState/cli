@@ -1209,8 +1209,8 @@ err_push_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]', please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
-push_project_created:
-  other: "Project created at [NOTICE]{{.V0}}[/RESET] with language [NOTICE]{{.V1}} {{.V2}}[/RESET]"
+push_project_updated:
+  other: "The remote Project has been updated"
 push_up_to_date:
   other: "Your project is up to date"
 init_description:
@@ -1670,3 +1670,14 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_push_outdated:
+  other: |
+    Your project has new commits available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
+err_pull_incompatible:
+  other: |
+    The remote project has an incompatible commit history. Target a different project with `[ACTIONABLE--set-project[/RESET]` or reset your local checkout with `[ACTIONABLE]state reset[/RESET]`.
+pull_diverged_message:
+  other: |
+    Your commit history has diverged with the remote project history. A merge commit with your local changes will be generated.
+pull_merge_commit:
+  other: Merged conflicting local commits
