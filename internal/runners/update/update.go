@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -51,7 +52,7 @@ func (u *Update) Run(params *Params) error {
 
 	channel := fetchChannel(params.Channel, true)
 
-	m, err := u.svcmgr.Model(context.Background())
+	m, err := model.NewSvcModel(context.Background(), u.cfg, u.svcmgr)
 	if err != nil {
 		return errs.Wrap(err, "failed to create svc model")
 	}

@@ -86,7 +86,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.svcMgr, r.out)
+	checker.RunUpdateNotifier(r.svcMgr, r.config, r.out)
 
 	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
 

@@ -17,11 +17,20 @@ type SvcModel struct {
 	client *gqlclient.Client
 }
 
-func NewSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
+type ConnectionWaiter interface {
+	Wait() error
+}
+
+func NewSvcModel(ctx context.Context, cfg *config.Instance, svcWait ConnectionWaiter) (*SvcModel, error) {
 	client, err := svc.New(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
+
+	if err := svcWait.Wait(); err != nil {
+		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
+	}
+
 	return NewSvcModelWithClient(ctx, client), nil
 }
 

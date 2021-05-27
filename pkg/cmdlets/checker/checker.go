@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -54,10 +55,10 @@ func CommitsBehind(p *project.Project) (int, error) {
 	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
 }
 
-func RunUpdateNotifier(svcManager *svcmanager.Manager, out output.Outputer) {
+func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out output.Outputer) {
 	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
 	defer cancel()
-	svc, err := svcManager.Model(ctx)
+	svc, err := model.NewSvcModel(ctx, cfg, svcManager)
 	if err != nil {
 		logging.Error("Could not init svc model when running update notifier, error: %v", errs.JoinMessage(err))
 		return

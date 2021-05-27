@@ -97,16 +97,3 @@ func (m *Manager) Ready() bool {
 
 	return true
 }
-
-func (m *Manager) Model(ctx context.Context) (*model.SvcModel, error) {
-	if err := m.Wait(); err != nil {
-		return nil, errs.Wrap(err, "Wait failed before initializing svc model.")
-	}
-
-	svc, err := model.NewSvcModel(ctx, m.cfg)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to initialize svc model.")
-
-	}
-	return svc, nil
-}

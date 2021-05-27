@@ -60,7 +60,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr
 	logging.Debug("Execute")
 
 	if opts.Version {
-		checker.RunUpdateNotifier(svcMgr, out)
+		checker.RunUpdateNotifier(svcMgr, cfg, out)
 		vd := versionData{
 			constants.LibraryLicense,
 			constants.Version,

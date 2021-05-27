@@ -57,7 +57,7 @@ func (r *Run) Run(name string, args []string) error {
 func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
-	checker.RunUpdateNotifier(svcMgr, out)
+	checker.RunUpdateNotifier(svcMgr, cfg, out)
 
 	if proj == nil {
 		return locale.NewInputError("err_no_project")
