@@ -16,8 +16,8 @@ func removeCache(cachePath string) error {
 	return nil
 }
 
-func undoPrepare() error {
-	toRemove := prepare.InstalledPreparedFiles()
+func undoPrepare(cfg configurable) error {
+	toRemove := prepare.InstalledPreparedFiles(cfg)
 
 	var aggErr error
 	for _, f := range toRemove {

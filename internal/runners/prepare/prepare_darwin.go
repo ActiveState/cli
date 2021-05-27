@@ -1,10 +1,26 @@
 package prepare
 
-func (r *Prepare) prepareOS() error {
-	return nil
+import (
+	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
+)
+
+func (r *Prepare) prepareOS() {
 }
 
 // InstalledPreparedFiles returns the files installed by the prepare command
-func InstalledPreparedFiles() []string {
-	return []string{}
+func InstalledPreparedFiles(cfg autostart.Configurable) []string {
+	var files []string
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
+
+	sc, err := autostart.New(name, exec, cfg).Path()
+	if err != nil {
+		logging.Error("Failed to determine shortcut path for removal: %v", err)
+	} else if sc != "" {
+		files = append(files, sc)
+	}
+
+	return files
 }

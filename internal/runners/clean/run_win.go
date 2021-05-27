@@ -43,7 +43,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
 	}
 
-	err = undoPrepare()
+	err = undoPrepare(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}

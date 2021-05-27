@@ -17,6 +17,7 @@ import (
 
 type Params struct {
 	Channel string
+	Version string
 }
 
 type Update struct {
@@ -51,7 +52,7 @@ func (u *Update) Run(params *Params) error {
 	if err != nil {
 		return errs.Wrap(err, "failed to create svc model")
 	}
-	up, err := m.InitiateDeferredUpdate(channel, "")
+	up, err := m.InitiateDeferredUpdate(channel, params.Version)
 	if err != nil {
 		if channel == constants.BetaBranch || channel == constants.ReleaseBranch {
 			return locale.NewInputError("err_unsupported_update", "The current version of the State Tool cannot update to the target channel {{.V0}}.  You can still run the installation one-liners to update the State Tool. See {{.V1}} for details.", channel, "https://www.activestate.com/products/platform/state-tool/")

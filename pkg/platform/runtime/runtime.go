@@ -2,12 +2,12 @@ package runtime
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -36,9 +36,16 @@ func IsNeedsUpdateError(err error) bool {
 }
 
 func newRuntime(target setup.Targeter) (*Runtime, error) {
-	rt := &Runtime{target: target}
+	rt := &Runtime{
+		target: target,
+		store:  store.New(target.Dir()),
+	}
 
-	rt.store = store.New(target.Dir())
+	// invalidates setups produced by older tool versions: https://www.pivotaltracker.com/story/show/178292912
+	if !fileutils.DirExists(setup.ExecDir(target.Dir())) {
+		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+	}
+
 	if !rt.store.MatchesCommit(target.CommitUUID()) {
 		if target.OnlyUseCache() {
 			logging.Debug("Using forced cache")
@@ -121,7 +128,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 	if useExecutors {
 		// Override PATH entry with exec path
-		pathEntries := []string{filepath.Join(r.target.Dir(), "exec")}
+		pathEntries := []string{setup.ExecDir(r.target.Dir())}
 		if inherit {
 			pathEntries = append(pathEntries, os.Getenv("PATH"))
 		}

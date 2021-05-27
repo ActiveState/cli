@@ -14,7 +14,7 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
-func (a *App) Enable() error {
+func (a *App) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
@@ -35,7 +35,7 @@ func (a *App) Enable() error {
 	return nil
 }
 
-func (a *App) Disable() error {
+func (a *App) disable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
