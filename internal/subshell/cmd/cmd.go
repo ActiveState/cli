@@ -90,6 +90,25 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return nil
 }
 
+func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, userScope bool) error {
+	cmdEnv := NewCmdEnv(userScope)
+
+	// Clean up old entries
+	oldEnv := cfg.GetStringMap(envType.Key)
+	for k, v := range oldEnv {
+		if err := cmdEnv.unset(k, v.(string)); err != nil {
+			return err
+		}
+	}
+
+	osutils.PropagateEnv()
+	return nil
+}
+
+func (v *SubShell) RemoveLegacyInstallPath(_ sscommon.Configurable) error {
+	return nil
+}
+
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }

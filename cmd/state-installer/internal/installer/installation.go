@@ -58,9 +58,9 @@ func restoreFiles(backupFiles []string) error {
 	return nil
 }
 
-func New(fromDir, binaryDir, appDir string) *Installation {
+func New(fromDir, binaryDir, appDir string, extraRemoves []string) *Installation {
 	return &Installation{
-		fromDir, binaryDir, appDir, nil,
+		fromDir, binaryDir, appDir, extraRemoves,
 	}
 }
 
@@ -99,7 +99,7 @@ func (i *Installation) BackupFiles() error {
 	if err != nil {
 		return errs.Wrap(err, "Backup of existing files failed.")
 	}
-	i.backups = backups
+	i.backups = append(i.backups, backups...)
 	return nil
 }
 

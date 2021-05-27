@@ -52,6 +52,12 @@ type SubShell interface {
 	// WriteUserEnv writes the given env map to the users environment
 	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
 
+	// CleanUserEnv removes the environment setting identified
+	CleanUserEnv(sscommon.Configurable, sscommon.RcIdentification, bool) error
+
+	// RemoveLegacyInstallPath removes the install path added to shell configuration by the legacy install scripts
+	RemoveLegacyInstallPath(sscommon.Configurable) error
+
 	// WriteCompletionScript writes the completions script for the current shell
 	WriteCompletionScript(string) error
 
