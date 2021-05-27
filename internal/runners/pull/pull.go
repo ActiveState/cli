@@ -120,7 +120,7 @@ func (p *Pull) Run(params *PullParams) error {
 
 	if targetCommit != nil && (noCommonParent || divergedHistory) {
 		p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
-		p.out.Notice(locale.T("pull_diverged_message"))
+		p.out.Notice(locale.Tr("pull_diverged_message", p.project.Namespace().String(), p.project.BranchName(), p.project.URL()))
 
 		changeset, err := model.DiffCommits(*targetCommit, p.project.CommitUUID())
 		if err != nil {
