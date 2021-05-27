@@ -131,7 +131,7 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			inst := installer.New(from, to, systemPath)
+			inst := installer.New(from, to, systemPath, []string{})
 			err := inst.Install()
 
 			if tt.ExpectSuccess {
