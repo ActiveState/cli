@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Reset struct {
@@ -65,18 +64,12 @@ func (r *Reset) Run() error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	originalCommitID := r.project.CommitID()
 	err = r.project.Source().SetCommit(latestCommit.String(), r.project.IsHeadless())
 	if err != nil {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	revertCommit, err := model.GetRevertCommit(strfmt.UUID(originalCommitID), *latestCommit)
-	if err != nil {
-		return locale.WrapError(err, "err_revert_refresh")
-	}
-
-	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, len(revertCommit.Changeset) > 0)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
