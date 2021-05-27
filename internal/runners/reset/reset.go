@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -58,20 +57,6 @@ func (r *Reset) Run() error {
 
 	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
 
-	originalCommitID := r.project.CommitID()
-	revertCommit, err := model.GetRevertCommit(strfmt.UUID(originalCommitID), *latestCommit)
-	if err != nil {
-		return locale.WrapError(err, "err_revert_refresh")
-	}
-
-	changesMade := len(revertCommit.Changeset) > 0
-	if changesMade {
-		changes := commit.FormatChanges(revertCommit)
-		r.out.Print(locale.Tl("reset_changes", "Changes to local instance:"))
-		r.out.Print(changes)
-		r.out.Print("")
-	}
-
 	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will loose any changes that were not pushed. Are you sure you want to do this?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
@@ -80,12 +65,18 @@ func (r *Reset) Run() error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
+	originalCommitID := r.project.CommitID()
 	err = r.project.Source().SetCommit(latestCommit.String(), r.project.IsHeadless())
 	if err != nil {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, changesMade)
+	revertCommit, err := model.GetRevertCommit(strfmt.UUID(originalCommitID), *latestCommit)
+	if err != nil {
+		return locale.WrapError(err, "err_revert_refresh")
+	}
+
+	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, len(revertCommit.Changeset) > 0)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
