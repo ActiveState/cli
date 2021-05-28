@@ -153,6 +153,10 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
+func NewBlankNamespace() Namespace {
+	return Namespace{NamespacePackage, ""}
+}
+
 // NewNamespaceBundle creates a new bundles namespace
 func NewNamespaceBundle(language string) Namespace {
 	return Namespace{NamespaceBundle, fmt.Sprintf("bundles/%s", language)}
@@ -459,6 +463,44 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 		return commitID, err
 	}
 	return commit.CommitID, nil
+}
+
+func CommitNoProject(hostPlatform, requirement, version, anonymousID string, ns Namespace) (strfmt.UUID, error) {
+	platformID, err := hostPlatformToPlatformID(hostPlatform)
+	if err != nil {
+		return "", err
+	}
+	var changes []*mono_models.CommitChangeEditable
+	c := &mono_models.CommitChangeEditable{
+		Operation:         string(OperationAdded),
+		Namespace:         NewNamespacePlatform().String(),
+		Requirement:       platformID,
+		VersionConstraint: "",
+	}
+	changes = append(changes, c)
+
+	c = &mono_models.CommitChangeEditable{
+		Operation:         string(OperationAdded),
+		Namespace:         ns.String(),
+		Requirement:       requirement,
+		VersionConstraint: version,
+	}
+	changes = append(changes, c)
+
+	commit := &mono_models.CommitEditable{
+		Changeset: changes,
+		Message:   locale.Tl("commit_message_no_project", "Initial commit"),
+	}
+	params := vcsClient.NewAddCommitParams()
+	params.SetCommit(commit)
+
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
+	if err != nil {
+		logging.Error("AddCommit Error: %s", err.Error())
+		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+	}
+
+	return res.Payload.CommitID, nil
 }
 
 // CommitInitial creates a root commit for a new branch
