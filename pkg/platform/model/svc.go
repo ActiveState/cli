@@ -24,13 +24,13 @@ type SvcModel struct {
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
 func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Manager) (*SvcModel, error) {
+	if err := svcm.Wait(); err != nil {
+		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
+	}
+
 	client, err := svc.New(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
-	}
-
-	if err := svcm.Wait(); err != nil {
-		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
 	}
 
 	return newSvcModelWithClient(ctx, client), nil
