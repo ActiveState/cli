@@ -61,8 +61,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
-	cp.ExpectLongString(fmt.Sprintf("with language %s", strings.Split(suite.language, "@")[0]))
+	cp.ExpectLongString("Creating project")
+	cp.ExpectLongString("Project has been updated")
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
@@ -174,7 +174,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.Expect("Project created")
+	cp.Expect("Creating project")
+	cp.Expect("Project has been updated")
 	cp.ExpectExitCode(0)
 }
 
