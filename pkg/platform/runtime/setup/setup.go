@@ -220,7 +220,7 @@ func (s *Setup) update() error {
 	}
 
 	// Create executors
-	execPath := filepath.Join(s.target.Dir(), "exec")
+	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
 	}
@@ -519,6 +519,7 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifac
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
 }
+
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
 	switch buildEngine {
 	case model.Alternative:
@@ -528,4 +529,8 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 	default:
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
+}
+
+func ExecDir(targetDir string) string {
+	return filepath.Join(targetDir, "exec")
 }

@@ -47,6 +47,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	logging.Debug("AvailableUpdate resolver")
 	const cacheKey = "AvailableUpdate"
 	c := cache.New(12*time.Hour, time.Hour)
 	if up, exists := c.Get(cacheKey); exists {
@@ -75,6 +76,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
+	logging.Debug("Update resolver")
 	ch := ""
 	ver := ""
 	if channel != nil {

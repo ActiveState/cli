@@ -19,6 +19,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - We've replaced the auto updating system with a manual updating system, updates
   will from now on be made available through the system tray application and you
   will have the choice to install it at your own convenience.
+- You can now switch to specific State Tool versions by running `state update --set-version <version>` ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
 
 ### Changed
 
@@ -32,13 +33,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Fixed duplicate ActiveState Desktop and state services started
+  during update when switching channels ([PR #1387](https://github.com/ActiveState/cli/pull/1387))
 - Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
 - Fixed issue where `state clean uninstall` would not remove expected files on
   Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
-
-### Fixed
-
 - Fixed a rare case where the configuration file can get corrupted when two processes access it
   simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
 
