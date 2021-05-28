@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -90,9 +91,10 @@ func run() error {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
 
-	err = up.InstallBlocking()
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
+	err = up.InstallBlocking(installTargetPath)
 	if err != nil {
-		return errs.Wrap(err, "Failed to install mult-file update.")
+		return errs.Wrap(err, "Failed to install multi-file update.")
 	}
 
 	return nil

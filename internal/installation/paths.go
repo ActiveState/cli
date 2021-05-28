@@ -15,6 +15,9 @@ func InstallPath() (string, error) {
 	if !rtutils.BuiltViaCI && strings.Contains(appinfo.StateApp().Exec(), "/build/") {
 		return filepath.Dir(appinfo.StateApp().Exec()), nil
 	}
+	if path, ok := os.LookupEnv("_TEST_INSTALL_PATH"); ok {
+		return path, nil
+	}
 	return defaultInstallPath()
 }
 
