@@ -49,16 +49,6 @@ func pingFunction(cfg *config.Instance) func(context.Context) error {
 	}
 }
 
-// newUnmanagedSvcModel returns a model for client connections, but does not guarantee that the State service runs.  It also does not retry HTTP requests.  This model should be used to "ping" the service.
-func newUnmanagedModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
-	client, err := svc.NewWithoutRetry(cfg)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not initialize non-retrying svc client")
-	}
-
-	return newSvcModelWithClient(ctx, client), nil
-}
-
 func newSvcModelWithClient(ctx context.Context, client *svc.Client) *SvcModel {
 	return &SvcModel{ctx, client}
 }
