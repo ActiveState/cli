@@ -96,7 +96,7 @@ func (r *Push) Run(params PushParams) error {
 		return errs.Wrap(err, "Failed to retrieve project language.")
 	}
 
-	if pjm != nil { // Remote project exists
+	if pjm != nil { // Remote project exists 
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
 			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
