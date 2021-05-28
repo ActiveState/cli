@@ -16,6 +16,7 @@ param (
     ,[Parameter(Mandatory=$False)][switch]$n
     ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][string]$c
+    ,[Parameter(Mandatory=$True)][string]$v
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
@@ -36,6 +37,7 @@ $script:TARGET = ($t).Trim()
 $script:STATEEXE = ($e).Trim()
 $script:STATE = $e.Substring(0, $e.IndexOf("."))
 $script:BRANCH = ($b).Trim()
+$script:VERSION = ($v).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
@@ -196,14 +198,12 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     Write-Host "Preparing for installation...`n"
 
     # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
-    Write-Host "Determining latest version...`n"
+    $jsonurl = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
+    Write-Host "Fetching version info...`n"
     try{
-        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
-        $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject (download $jsonurl)
     } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number from $STATEURL/$script:BRANCH/$latestVersion/$statejson"
+        Write-Warning "Unable to retrieve version info from $jsonurl"
         Write-Error $_.Exception.Message
         return 1
     }
@@ -216,8 +216,8 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
-    Write-Host "Fetching the latest version: $latestVersion...`n"
+    $zipURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statepkg"
+    Write-Host "Fetching archive for version: $script:VERSION...`n"
     try{
         download $zipURL $zipPath
     } catch [System.Exception] {
