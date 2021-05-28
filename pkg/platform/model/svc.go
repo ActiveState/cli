@@ -29,15 +29,28 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Man
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
 
-	if err := svcm.Wait(); err != nil {
+	if err := svcm.Wait(pingFunction(cfg)); err != nil {
 		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
 	}
 
 	return newSvcModelWithClient(ctx, client), nil
 }
 
-// NewUnmanagedSvcModel returns a model for client connections, but does not guarantee that the State service runs.  It also does not retry HTTP requests.  This model should be used to "ping" the service.
-func NewUnmanagedSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
+// pingFunction returns a function that pings the server without guarantee of succeeding or retying on failure
+func pingFunction(cfg *config.Instance) func(context.Context) error {
+	return func(ctx context.Context) error {
+		client, err := svc.NewWithoutRetry(cfg)
+		if err != nil {
+			return errs.Wrap(err, "Could not initialize non-retrying svc client")
+		}
+
+		m := newSvcModelWithClient(ctx, client)
+		return m.Ping()
+	}
+}
+
+// newUnmanagedSvcModel returns a model for client connections, but does not guarantee that the State service runs.  It also does not retry HTTP requests.  This model should be used to "ping" the service.
+func newUnmanagedModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	client, err := svc.NewWithoutRetry(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize non-retrying svc client")
@@ -117,4 +130,9 @@ func (m *SvcModel) StopServer() error {
 	}
 
 	return nil
+}
+
+func (m *SvcModel) Ping() error {
+	_, err := m.StateVersion()
+	return err
 }

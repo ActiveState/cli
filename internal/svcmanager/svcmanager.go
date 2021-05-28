@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/svcmanager/ping"
 )
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
@@ -22,6 +21,8 @@ type Manager struct {
 	ready bool
 	cfg   *config.Instance
 }
+
+type Pinger func(context.Context) error
 
 func New(cfg *config.Instance) *Manager {
 	mgr := &Manager{false, cfg}
@@ -41,12 +42,12 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) Wait() error {
+func (m *Manager) Wait(ping Pinger) error {
 	logging.Debug("Waiting for state-svc")
 	try := 1
 	for {
 		logging.Debug("Attempt %d", try)
-		if m.Ready() {
+		if m.Ready(ping) {
 			return nil
 		}
 		if try == 10 {
@@ -57,7 +58,7 @@ func (m *Manager) Wait() error {
 	}
 }
 
-func (m *Manager) Ready() bool {
+func (m *Manager) Ready(ping Pinger) bool {
 	if m.ready {
 		return true
 	}
@@ -73,13 +74,7 @@ func (m *Manager) Ready() bool {
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
-	ping, err := ping.New(ctx, m.cfg)
-	if err != nil {
-		logging.Error("Failed to initialize ping instance: %s", errs.JoinMessage(err))
-		return false
-	}
-
-	if err := ping.Ping(); err != nil {
+	if err := ping(ctx); err != nil {
 		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		return false
 	}
