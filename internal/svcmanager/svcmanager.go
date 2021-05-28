@@ -10,8 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/svc"
+	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
@@ -21,8 +24,6 @@ type Manager struct {
 	ready bool
 	cfg   *config.Instance
 }
-
-type Pinger func(context.Context) error
 
 func New(cfg *config.Instance) *Manager {
 	mgr := &Manager{false, cfg}
@@ -42,12 +43,12 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) Wait(ping Pinger) error {
+func (m *Manager) Wait() error {
 	logging.Debug("Waiting for state-svc")
 	try := 1
 	for {
 		logging.Debug("Attempt %d", try)
-		if m.Ready(ping) {
+		if m.Ready() {
 			return nil
 		}
 		if try == 10 {
@@ -58,7 +59,7 @@ func (m *Manager) Wait(ping Pinger) error {
 	}
 }
 
-func (m *Manager) Ready(ping Pinger) bool {
+func (m *Manager) Ready() bool {
 	if m.ready {
 		return true
 	}
@@ -74,10 +75,23 @@ func (m *Manager) Ready(ping Pinger) bool {
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
-	if err := ping(ctx); err != nil {
+	if err := m.ping(ctx); err != nil {
 		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		return false
 	}
 
 	return true
+}
+
+func (m *Manager) ping(ctx context.Context) error {
+	client, err := svc.NewWithoutRetry(m.cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize non-retrying svc client")
+	}
+	r := request.NewVersionRequest()
+	resp := graph.VersionResponse{}
+	if err := client.RunWithContext(ctx, r, &resp); err != nil {
+		return err
+	}
+	return nil
 }
