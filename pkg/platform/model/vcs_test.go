@@ -138,12 +138,14 @@ type requirement struct {
 	operation string
 }
 
-func checkpoint(req ...requirement) []*mono_models.Checkpoint {
-	result := make([]*mono_models.Checkpoint, 0)
+func checkpoint(req ...requirement) []*gqlModel.Requirement {
+	result := make([]*gqlModel.Requirement, 0)
 	for _, r := range req {
-		result = append(result, &mono_models.Checkpoint{
-			Namespace:   "namespaceValue",
-			Requirement: r.name,
+		result = append(result, &gqlModel.Requirement{
+			Checkpoint: mono_models.Checkpoint{
+				Namespace:   "namespaceValue",
+				Requirement: r.name,
+			},
 			VersionConstraints: []*mono_models.Constraint{
 				{
 					Comparator: "==",
@@ -155,8 +157,8 @@ func checkpoint(req ...requirement) []*mono_models.Checkpoint {
 	return result
 }
 
-func change(r requirement) *mono_models.CommitChange {
-	return &mono_models.CommitChange{
+func change(r requirement) *mono_models.CommitChangeEditable {
+	return &mono_models.CommitChangeEditable{
 		Namespace:   "namespaceValue",
 		Requirement: r.name,
 		Operation:   r.operation,
@@ -169,8 +171,8 @@ func change(r requirement) *mono_models.CommitChange {
 	}
 }
 
-func changes(reqs ...requirement) []*mono_models.CommitChange {
-	result := []*mono_models.CommitChange{}
+func changes(reqs ...requirement) []*mono_models.CommitChangeEditable {
+	result := []*mono_models.CommitChangeEditable{}
 	for _, r := range reqs {
 		result = append(result, change(r))
 	}
@@ -183,13 +185,13 @@ var updated = mono_models.CommitChangeOperationUpdated
 
 func TestDiffCheckpoints(t *testing.T) {
 	type args struct {
-		cp1 []*mono_models.Checkpoint
-		cp2 []*mono_models.Checkpoint
+		cp1 []*gqlModel.Requirement
+		cp2 []*gqlModel.Requirement
 	}
 	tests := []struct {
 		name string
 		args args
-		want []*mono_models.CommitChange
+		want []*mono_models.CommitChangeEditable
 	}{
 		{
 			"cp1 is empty",

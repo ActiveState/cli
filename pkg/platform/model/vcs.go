@@ -256,10 +256,10 @@ func DiffCommits(commit1, commit2 strfmt.UUID) ([]*mono_models.CommitChangeEdita
 		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit2))
 	}
 
-	return DiffCheckpoints(GqlReqsToMonoCheckpoint(cp1), GqlReqsToMonoCheckpoint(cp2)), nil
+	return DiffCheckpoints(cp1, cp2), nil
 }
 
-func DiffCheckpoints(cp1, cp2 []*mono_models.Checkpoint) []*mono_models.CommitChangeEditable {
+func DiffCheckpoints(cp1, cp2 []*gqlModel.Requirement) []*mono_models.CommitChangeEditable {
 	var computedChanges []*mono_models.CommitChangeEditable
 	for _, change2 := range cp2 {
 		change1 := checkpointFind(cp1, change2.Namespace, change2.Requirement)
@@ -296,7 +296,7 @@ func DiffCheckpoints(cp1, cp2 []*mono_models.Checkpoint) []*mono_models.CommitCh
 	return computedChanges
 }
 
-func checkpointFind(cp []*mono_models.Checkpoint, namespace, requirement string) *mono_models.Checkpoint {
+func checkpointFind(cp []*gqlModel.Requirement, namespace, requirement string) *gqlModel.Requirement {
 	for _, c := range cp {
 		if c.Namespace == namespace && c.Requirement == requirement {
 			return c
