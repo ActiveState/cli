@@ -29,18 +29,14 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Man
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
 
-	unmanaged, err := newUnmanagedModel(ctx, cfg)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to create unmanaged model")
-	}
-	if err := svcm.Wait(unmanaged); err != nil {
+	if err := svcm.Wait(); err != nil {
 		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
 	}
 
 	return newSvcModelWithClient(ctx, client), nil
 }
 
-func newUnmanagedModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
+func NewUnmanagedSvcModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
 	client, err := svc.NewWithoutRetry(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize non-retrying svc client")
@@ -120,9 +116,4 @@ func (m *SvcModel) StopServer() error {
 	}
 
 	return nil
-}
-
-func (m *SvcModel) Ping() error {
-	_, err := m.StateVersion()
-	return err
 }

@@ -1,6 +1,7 @@
 package svcmanager
 
 import (
+	"context"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/svcmanager/ping"
 )
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
@@ -19,10 +21,6 @@ const MinimalTimeout = 500 * time.Millisecond
 type Manager struct {
 	ready bool
 	cfg   *config.Instance
-}
-
-type Pinger interface {
-	Ping() error
 }
 
 func New(cfg *config.Instance) *Manager {
@@ -43,12 +41,12 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) Wait(ping Pinger) error {
+func (m *Manager) Wait() error {
 	logging.Debug("Waiting for state-svc")
 	try := 1
 	for {
 		logging.Debug("Attempt %d", try)
-		if m.Ready(ping) {
+		if m.Ready() {
 			return nil
 		}
 		if try == 10 {
@@ -59,7 +57,7 @@ func (m *Manager) Wait(ping Pinger) error {
 	}
 }
 
-func (m *Manager) Ready(ping Pinger) bool {
+func (m *Manager) Ready() bool {
 	if m.ready {
 		return true
 	}
@@ -70,6 +68,14 @@ func (m *Manager) Ready(ping Pinger) bool {
 	}
 
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
+		return false
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
+	defer cancel()
+	ping, err := ping.New(ctx, m.cfg)
+	if err != nil {
+		logging.Error("Failed to initialize ping instance: %s", errs.JoinMessage(err))
 		return false
 	}
 
