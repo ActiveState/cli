@@ -20,4 +20,3 @@ type Checkpoint struct {
 	Commit       *Commit        `json:"vcs_commits_by_pk"`
 }
 
-

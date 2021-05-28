@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/sliceutils"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -255,7 +256,7 @@ func DiffCommits(commit1, commit2 strfmt.UUID) ([]*mono_models.CommitChangeEdita
 		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit2))
 	}
 
-	return DiffCheckpoints(cp1.ToMonoCheckpoint(), cp2.ToMonoCheckpoint()), nil
+	return DiffCheckpoints(GqlReqsToMonoCheckpoint(cp1), GqlReqsToMonoCheckpoint(cp2)), nil
 }
 
 func DiffCheckpoints(cp1, cp2 []*mono_models.Checkpoint) []*mono_models.CommitChangeEditable {
@@ -759,7 +760,7 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
-func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
+func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
 	var changeset Changeset
 
 	for _, req := range reqs {
