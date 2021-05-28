@@ -82,7 +82,7 @@ func run() error {
 	systray.SetIcon(box.Bytes(iconFile))
 
 	svcm := svcmanager.New(cfg)
-	if err := svcm.StartAndWait(); err != nil {
+	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 

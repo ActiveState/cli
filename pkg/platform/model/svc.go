@@ -2,39 +2,54 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
 
 type SvcModel struct {
 	ctx    context.Context
-	client *gqlclient.Client
+	client *svc.Client
 }
 
-type ConnectionWaiter interface {
-	Wait() error
-}
-
-func NewSvcModel(ctx context.Context, cfg *config.Instance, svcWait ConnectionWaiter) (*SvcModel, error) {
+// NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
+func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Manager) (*SvcModel, error) {
 	client, err := svc.New(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
 
-	if err := svcWait.Wait(); err != nil {
+	unmanaged, err := newUnmanagedModel(ctx, cfg)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to create unmanaged model")
+	}
+	if err := svcm.Wait(unmanaged); err != nil {
 		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
 	}
 
-	return NewSvcModelWithClient(ctx, client), nil
+	return newSvcModelWithClient(ctx, client), nil
 }
 
-func NewSvcModelWithClient(ctx context.Context, client *gqlclient.Client) *SvcModel {
+func newUnmanagedModel(ctx context.Context, cfg *config.Instance) (*SvcModel, error) {
+	client, err := svc.NewWithoutRetry(cfg)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not initialize non-retrying svc client")
+	}
+
+	return newSvcModelWithClient(ctx, client), nil
+}
+
+func newSvcModelWithClient(ctx context.Context, client *svc.Client) *SvcModel {
 	return &SvcModel{ctx, client}
 }
 
@@ -77,4 +92,37 @@ func (m *SvcModel) CheckUpdate() (*graph.AvailableUpdate, error) {
 		return nil, nil
 	}
 	return &u.AvailableUpdate, nil
+}
+
+func (m *SvcModel) StopServer() error {
+	htClient := retryhttp.DefaultClient.StandardClient()
+
+	quitAddress := fmt.Sprintf("%s/__quit", m.client.BaseUrl())
+	logging.Debug("Sending quit request to %s", quitAddress)
+	req, err := http.NewRequest("GET", quitAddress, nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not create request to quit svc")
+	}
+
+	res, err := htClient.Do(req)
+	if err != nil {
+		return errs.Wrap(err, "Request to quit svc failed")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
+		}
+		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
+	}
+
+	return nil
+}
+
+func (m *SvcModel) Ping() error {
+	_, err := m.StateVersion()
+	return err
 }

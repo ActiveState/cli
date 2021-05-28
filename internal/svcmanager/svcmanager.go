@@ -11,9 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/svc"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"golang.org/x/net/context"
 )
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
@@ -22,6 +19,10 @@ const MinimalTimeout = 500 * time.Millisecond
 type Manager struct {
 	ready bool
 	cfg   *config.Instance
+}
+
+type Pinger interface {
+	Ping() error
 }
 
 func New(cfg *config.Instance) *Manager {
@@ -42,12 +43,12 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) Wait() error {
+func (m *Manager) Wait(ping Pinger) error {
 	logging.Debug("Waiting for state-svc")
 	try := 1
 	for {
 		logging.Debug("Attempt %d", try)
-		if m.Ready() {
+		if m.Ready(ping) {
 			return nil
 		}
 		if try == 10 {
@@ -58,17 +59,7 @@ func (m *Manager) Wait() error {
 	}
 }
 
-func (m *Manager) StartAndWait() error {
-	if err := m.Start(); err != nil {
-		return errs.Wrap(err, "Start failed during StartAndWait")
-	}
-	if err := m.Wait(); err != nil {
-		return errs.Wrap(err, "Wait failed during StartAndWait")
-	}
-	return nil
-}
-
-func (m *Manager) Ready() bool {
+func (m *Manager) Ready(ping Pinger) bool {
 	if m.ready {
 		return true
 	}
@@ -82,16 +73,8 @@ func (m *Manager) Ready() bool {
 		return false
 	}
 
-	client, err := svc.NewWithoutRetry(m.cfg)
-	if err != nil {
-		logging.Error("Could not initialize svc client: %s", errs.JoinMessage(err))
-		return false
-	}
-
-	model := model.NewSvcModelWithClient(context.Background(), client)
-	_, err = model.StateVersion()
-	if err != nil {
-		logging.Debug("StateVersion failed, assuming we're not ready: %v", errs.JoinMessage(err))
+	if err := ping.Ping(); err != nil {
+		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		return false
 	}
 
