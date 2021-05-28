@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -37,21 +38,25 @@ func (suite *VCSTestSuite) TestNamespaceMatch() {
 func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 	tests := []struct {
 		op   model.Operation
-		reqs model.Checkpoint
+		reqs []*gqlModel.Requirement
 		want model.Changeset
 	}{
 		{
 			model.OperationAdded,
-			model.Checkpoint{
+			[]*gqlModel.Requirement{
 				{
-					Namespace:         "a-name",
-					Requirement:       "a-req",
-					VersionConstraint: "a-vercon",
+					Checkpoint: mono_models.Checkpoint{
+						Namespace:         "a-name",
+						Requirement:       "a-req",
+						VersionConstraint: "a-vercon",
+					},
 				},
 				{
-					Namespace:         "b-name",
-					Requirement:       "b-req",
-					VersionConstraint: "b-vercon",
+					Checkpoint: mono_models.Checkpoint{
+						Namespace:         "b-name",
+						Requirement:       "b-req",
+						VersionConstraint: "b-vercon",
+					},
 				},
 			},
 			model.Changeset{
@@ -71,21 +76,27 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 		},
 		{
 			model.OperationRemoved,
-			model.Checkpoint{
+			[]*gqlModel.Requirement{
 				{
-					Namespace:         "x-name",
-					Requirement:       "x-req",
-					VersionConstraint: "x-vercon",
+					Checkpoint: mono_models.Checkpoint{
+						Namespace:         "x-name",
+						Requirement:       "x-req",
+						VersionConstraint: "x-vercon",
+					},
 				},
 				{
-					Namespace:         "y-name",
-					Requirement:       "y-req",
-					VersionConstraint: "y-vercon",
+					Checkpoint: mono_models.Checkpoint{
+						Namespace:         "y-name",
+						Requirement:       "y-req",
+						VersionConstraint: "y-vercon",
+					},
 				},
 				{
-					Namespace:         "z-name",
-					Requirement:       "z-req",
-					VersionConstraint: "z-vercon",
+					Checkpoint: mono_models.Checkpoint{
+						Namespace:         "z-name",
+						Requirement:       "z-req",
+						VersionConstraint: "z-vercon",
+					},
 				},
 			},
 			model.Changeset{
