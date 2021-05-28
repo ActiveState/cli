@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -64,6 +66,10 @@ func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
 }
 
 func run() error {
+	if len(os.Args) == 2 && os.Args[1] == "__is_transitional" {
+		fmt.Println("true")
+		return nil
+	}
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
 		cfg, err := config.Get()
@@ -91,10 +97,20 @@ func run() error {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
 
-	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	err = up.InstallBlocking(installTargetPath)
+	err = up.InstallBlocking("")
 	if err != nil {
 		return errs.Wrap(err, "Failed to install multi-file update.")
+	}
+
+	// if the transitional state tool has been replaced by the installer, we are done
+	stdout, _, err := exeutils.ExecSimple(appinfo.StateApp().Exec(), "__is_transitional")
+	if err == nil && strings.TrimSpace(stdout) == "true" {
+		return nil
+	}
+
+	// otherwise: remove the transitional State Tool
+	if err := removeSelf(); err != nil {
+		logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
 	}
 
 	return nil
