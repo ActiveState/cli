@@ -100,14 +100,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	orderChanged := len(revertCommit.Changeset) > 0
 
 	logging.Debug("Order changed: %v", orderChanged)
-	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
-		if !isHeadless {
-			err := model.UpdateProjectBranchCommit(pj, commitID)
-			if err != nil {
-				return locale.WrapError(err, "err_package_"+string(operation))
-			}
-		}
 		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
@@ -139,6 +132,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	} else {
 		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
 	}
+	out.Print(locale.Tl("operation_success_local", "Your local project has been updated. Run [ACTIONABLE]state push[/RESET] to save changes to the platform."))
 
 	return nil
 }

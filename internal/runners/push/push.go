@@ -182,7 +182,11 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
-	r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
+	if pjm == nil {
+		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
+	} else {
+		r.Outputer.Notice(locale.Tl("push_project_existing", "Project at [NOTICE]{{.V0}}[/RESET] has been updated with local changes", r.project.URL()))
+	}
 
 	return nil
 }
