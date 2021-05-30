@@ -47,7 +47,11 @@ func New(prime primeable) *Update {
 }
 
 func (u *Update) Run(params *Params) error {
-	u.out.Notice(locale.Tl("updating_version", "Updating State Tool to latest version available."))
+	if params.Version == "" {
+		u.out.Notice(locale.Tl("updating_latest", "Updating State Tool to latest version available."))
+	} else {
+		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", params.Version))
+	}
 
 	channel := fetchChannel(params.Channel, true)
 
