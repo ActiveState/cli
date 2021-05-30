@@ -98,13 +98,14 @@ func (r *Push) Run(params PushParams) error {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
 	}
+	remoteExists := pjm != nil
 
 	var branchName string
 	lang, langVersion, err := r.languageForProject(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve project language.")
 	}
-	if pjm != nil {
+	if remoteExists {
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
 			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
@@ -182,7 +183,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
-	if pjm == nil {
+	if remoteExists {
 		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 	} else {
 		r.Outputer.Notice(locale.Tl("push_project_existing", "Project at [NOTICE]{{.V0}}[/RESET] has been updated with local changes", r.project.URL()))
