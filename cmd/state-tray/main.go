@@ -119,6 +119,10 @@ func run() error {
 	)
 
 	mPlatform := systray.AddMenuItem(locale.Tl("tray_platform_title", "ActiveState Platform"), "")
+	mDashboard := mPlatform.AddSubMenuItem(
+		locale.Tl("tray_dashboard_title", "Dashboard"),
+		locale.Tl("tray_dashboard_tooltip", "Open ActiveState Platform dashboard"),
+	)
 	mLearn := mPlatform.AddSubMenuItem(
 		locale.Tl("tray_blog_title", "Blog"),
 		locale.Tl("tray_blog_tooltip", "Open ActiveState blog"),
@@ -126,10 +130,6 @@ func run() error {
 	mSupport := mPlatform.AddSubMenuItem(
 		locale.Tl("tray_support_title", "Support"),
 		locale.Tl("tray_support_tooltip", "Open support page"),
-	)
-	mAccount := mPlatform.AddSubMenuItem(
-		locale.Tl("tray_account_title", "Account"),
-		locale.Tl("tray_account_tooltip", "Open your account page"),
 	)
 
 	trayInfo := appinfo.TrayApp()
@@ -185,9 +185,9 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not open support url: %v", err)
 			}
-		case <-mAccount.ClickedCh:
+		case <-mDashboard.ClickedCh:
 			logging.Debug("Account event")
-			err = open.Browser(constants.ActiveStateAccountURL)
+			err = open.Browser(constants.ActiveStateDashboardURL)
 			if err != nil {
 				logging.Error("Could not open account url: %v", err)
 			}
