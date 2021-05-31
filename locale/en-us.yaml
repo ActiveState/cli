@@ -791,7 +791,7 @@ installer_err_engine_unknown:
 build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
-  other: "The project is currently building. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
+  other: "The local project checkout is currently building. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:

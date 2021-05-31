@@ -282,7 +282,11 @@ func aggregateErrors() (chan<- error, <-chan error) {
 
 func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
-		return locale.NewInputError("build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
+		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
+		if s.target.Owner() == "" && s.target.Name() == "" {
+			messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
+		}
+		return locale.NewInputError("build_status_in_progress", "", messageURL)
 	}
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
