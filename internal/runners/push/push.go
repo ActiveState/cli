@@ -1,7 +1,7 @@
 package push
 
 import (
-	"path/filepath"
+	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -67,17 +68,10 @@ func (r *Push) Run(params PushParams) error {
 	if r.project.IsHeadless() {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
-			names := projectfile.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
-			if names == "" {
-				return errs.AddTips(
-					locale.NewInputError("push_needs_namespace", "Could not find out what project to push to."),
-					locale.Tl("push_add_namespace_tip", "You can specify a project by running [ACTIONABLE]state push <project>[/RESET]."),
-				)
-			}
 			var err error
-			namespace, err = project.ParseNamespace(names)
+			namespace, err = r.getValidNamespace()
 			if err != nil {
-				return errs.Wrap(err, "Could not parse namespace %s to push headless commit to", name)
+				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 			}
 		}
 		owner = namespace.Owner
@@ -187,23 +181,41 @@ func (r *Push) Run(params PushParams) error {
 	return nil
 }
 
-func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
-	if pj.CommitID() != "" {
-		lang, err := model.FetchLanguageForCommit(pj.CommitUUID())
+func (r *Push) getValidNamespace() (*project.Namespaced, error) {
+	names := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
+	if names == "" {
+		owner := authentication.Get().WhoAmI()
+		owner, err := r.prompt.Input("", locale.Tl("push_prompt_owner", "Who will be the owner of this project?"), &owner)
 		if err != nil {
-			return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit.")
+			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
 		}
 
-		l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
+		lang, _, err := fetchLanguage(r.project.CommitUUID())
 		if err != nil {
-			return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+			return nil, locale.WrapError(err, "err_push_fetch_language", "Could not fetch project language")
 		}
-		ls := language.Supported{Language: l}
-		if !ls.Recognized() {
-			return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
+
+		name := lang.String()
+		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "Project name?"), &name)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 		}
-		return &ls, lang.Version, nil
+		names = fmt.Sprintf("%s/%s", owner, name)
 	}
+
+	namespace, err := project.ParseNamespace(names)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse namespace %s to push headless commit to", names)
+	}
+
+	return namespace, nil
+}
+
+func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
+	if pj.CommitID() != "" {
+		return fetchLanguage(pj.CommitUUID())
+	}
+
 	langs := pj.Languages()
 	if len(langs) == 0 {
 		return nil, "", locale.NewError("err_push_nolang",
@@ -222,4 +234,23 @@ func (r *Push) languageForProject(pj *project.Project) (*language.Supported, str
 	}
 
 	return &lang, langs[0].Version(), nil
+}
+
+func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
+	lang, err := model.FetchLanguageForCommit(commitID)
+	if err != nil {
+		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit.")
+	}
+
+	l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
+	if err != nil {
+		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+	}
+
+	ls := language.Supported{Language: l}
+	if !ls.Recognized() {
+		return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
+	}
+
+	return &ls, lang.Version, nil
 }
