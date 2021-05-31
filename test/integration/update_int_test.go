@@ -320,7 +320,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
 			}
 			cp = ts.SpawnWithOpts(e2e.WithArgs(updateArgs...), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
-			cp.Expect("Updating State Tool to latest version available")
+			if tt.Version == "" {
+				cp.Expect("Updating State Tool to latest version available")
+			} else {
+				cp.Expect("Updating State Tool to version")
+			}
 			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
 			cp.ExpectExitCode(0)
 
