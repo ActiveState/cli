@@ -82,11 +82,11 @@ func run() error {
 	systray.SetIcon(box.Bytes(iconFile))
 
 	svcm := svcmanager.New(cfg)
-	if err := svcm.StartAndWait(); err != nil {
+	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), cfg)
+	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}

@@ -1,6 +1,7 @@
 package svcmanager
 
 import (
+	"context"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -9,11 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"golang.org/x/net/context"
+	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
@@ -58,16 +59,6 @@ func (m *Manager) Wait() error {
 	}
 }
 
-func (m *Manager) StartAndWait() error {
-	if err := m.Start(); err != nil {
-		return errs.Wrap(err, "Start failed during StartAndWait")
-	}
-	if err := m.Wait(); err != nil {
-		return errs.Wrap(err, "Wait failed during StartAndWait")
-	}
-	return nil
-}
-
 func (m *Manager) Ready() bool {
 	if m.ready {
 		return true
@@ -82,18 +73,25 @@ func (m *Manager) Ready() bool {
 		return false
 	}
 
-	client, err := svc.NewWithoutRetry(m.cfg)
-	if err != nil {
-		logging.Error("Could not initialize svc client: %s", errs.JoinMessage(err))
-		return false
-	}
-
-	model := model.NewSvcModelWithClient(context.Background(), client)
-	_, err = model.StateVersion()
-	if err != nil {
-		logging.Debug("StateVersion failed, assuming we're not ready: %v", errs.JoinMessage(err))
+	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
+	defer cancel()
+	if err := m.ping(ctx); err != nil {
+		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		return false
 	}
 
 	return true
+}
+
+func (m *Manager) ping(ctx context.Context) error {
+	client, err := svc.NewWithoutRetry(m.cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize non-retrying svc client")
+	}
+	r := request.NewVersionRequest()
+	resp := graph.VersionResponse{}
+	if err := client.RunWithContext(ctx, r, &resp); err != nil {
+		return err
+	}
+	return nil
 }

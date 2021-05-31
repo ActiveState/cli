@@ -1,22 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type serviceManager struct {
@@ -75,41 +73,18 @@ func (s *serviceManager) Stop() error {
 	}
 
 	// Ensure that port number has been written to configuration file ie., that the server is ready to talk
-	waitMgr := svcmanager.New(s.cfg)
-	err = waitMgr.Wait()
+	svcmgr := svcmanager.New(s.cfg)
+
+	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
+	defer cancel()
+	svcm, err := model.NewSvcModel(ctx, s.cfg, svcmgr)
 	if err != nil {
-		if proc, perr := process.NewProcess(int32(*pid)); perr == nil {
-			proc.Kill()
-		}
-		return errs.Wrap(err, "Failed to wait for background service to become responsive for clean shutdown, sent KILL signal")
+		return errs.Wrap(err, "Could not initialize svc model")
 	}
 
-	port := s.cfg.GetInt(constants.SvcConfigPort)
-	quitAddress := fmt.Sprintf("http://127.0.0.1:%d%s", port, server.QuitRoute)
-	logging.Debug("Sending quit request to %s", quitAddress)
-	req, err := http.NewRequest("GET", quitAddress, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not create request to quit svc")
+	if err := svcm.StopServer(); err != nil {
+		return errs.Wrap(err, "Failed to stop server")
 	}
-
-	client := &http.Client{
-		Timeout: time.Second * 120,
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return errs.Wrap(err, "Request to quit svc failed")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
-		}
-		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
-	}
-
 	return nil
 }
 
