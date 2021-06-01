@@ -203,7 +203,7 @@ func (r *Push) getValidNamespace() (*project.Namespaced, error) {
 
 	namespace, err := project.ParseNamespace(names)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse namespace %s to push headless commit to", names)
+		return nil, locale.WrapError(err, locale.Tl("err_push_parse_namespace", "Could not parse namespace"))
 	}
 
 	return namespace, nil
