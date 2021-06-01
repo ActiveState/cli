@@ -130,7 +130,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 # Process command line arguments.
-while getopts "nb:t:e:c:f?h-:" opt; do
+while getopts "nb:t:e:c:v:f?h-:" opt; do
   case $opt in
   -)  # parse long options
     case ${OPTARG} in
@@ -186,7 +186,7 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
 fi
 
 if [ -z "$VERSION" ]; then
-  error "A specific State Tool version needs to be specified with this installation script."
+  error "A State Tool version needs to be specified with this installation script."
   info "Use 'https://platform.activestate.com/dl/cli/install.sh' to install the latest version of the State Tool."
   exit 1
 fi
@@ -258,11 +258,12 @@ if [ -f $TMPDIR/$TMPEXE ]; then
 fi
 
 fetchArtifact () {
-  info "Determining version info..."
+  info "Fetching version info..."
   # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON $STATEURL$VERSION$STATEJSON
+  $FETCH $TMPDIR/$STATEJSON $STATEURL$VERSION/$STATEJSON
   if [ $? -ne 0 ]; then
     error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
+    exit 1
   fi
   SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
   rm $TMPDIR/$STATEJSON
@@ -272,6 +273,7 @@ fetchArtifact () {
   $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG}
   if [ $? -ne 0 ]; then
     error "Failed to download the State Tool archive.  Please try again later."
+    exit 1
   fi
 
   # Extract the State binary after verifying its checksum.
