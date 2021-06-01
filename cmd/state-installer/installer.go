@@ -76,7 +76,6 @@ func run(out output.Outputer) error {
 	logging.UpdateConfig(cfg)
 
 	var installPath string
-	var extraRemoves []string
 	if len(os.Args) > 1 {
 		installPath, err = filepath.Abs(os.Args[1])
 		if err != nil {
@@ -90,7 +89,7 @@ func run(out output.Outputer) error {
 	}
 
 	logging.Debug("Installing to %s", installPath)
-	if err := install(installPath, cfg, out, extraRemoves); err != nil {
+	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
 		return errs.Wrap(err, "Installing to %s failed", installPath)
@@ -99,7 +98,7 @@ func run(out output.Outputer) error {
 	return nil
 }
 
-func install(installPath string, cfg *config.Instance, out output.Outputer, extraRemoves []string) error {
+func install(installPath string, cfg *config.Instance, out output.Outputer) error {
 	out.Print(fmt.Sprintf("Install Location: %s", installPath))
 	exe, err := osutils.Executable()
 	if err != nil {
@@ -136,7 +135,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer, extr
 		return errs.Wrap(err, "Could not get system install path")
 	}
 
-	inst := installer.New(tmpDir, installPath, appDir, extraRemoves)
+	inst := installer.New(tmpDir, installPath, appDir)
 	defer func() {
 		os.RemoveAll(tmpDir)
 		err := inst.RemoveBackupFiles()
