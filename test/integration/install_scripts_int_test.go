@@ -122,8 +122,8 @@ func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAns
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
-	cp.Expect("Allow $PATH to be appended in your")
+	cp.Expect("Fetching version info")
+	cp.Expect("Allow $PATH to be appended in your", 20*time.Second)
 	cp.SendLine(addToPathAnswer)
 	cp.Expect("State Tool installation complete")
 }
@@ -187,6 +187,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
 	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
+	cp.Expect("A State Tool version needs to be specified")
+	cp.ExpectExitCode(1)
+	cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion))
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)

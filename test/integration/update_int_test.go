@@ -41,6 +41,7 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 var targetBranch = "beta"
 var testBranch = "test-channel"
 var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
+var oldReleaseUpdateVersion = "0.28.2-SHAbdac00e"
 var specificVersion = "0.29.0-SHA9f570a0"
 
 func init() {
