@@ -104,7 +104,7 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
 }
 
-// RemoveLegacyInstallPath removes the PATH modification statement from the s
+// RemoveLegacyInstallPath removes the PATH modification statement added to the shell-rc file by the legacy install script
 func RemoveLegacyInstallPath(path string) error {
 	readFile, err := os.Open(path)
 	if err != nil {
@@ -118,6 +118,7 @@ func RemoveLegacyInstallPath(path string) error {
 	for scanner.Scan() {
 		text := scanner.Text()
 
+		// remove lines with marker added by legacy install script
 		if strings.Contains(text, "# ActiveState State Tool") {
 			continue
 		}
