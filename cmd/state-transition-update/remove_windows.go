@@ -19,7 +19,7 @@ import (
 
 func removeSelf() error {
 	scriptName := "removePaths"
-	box := packr.NewBox("../../../assets/scripts/")
+	box := packr.NewBox("../../assets/scripts/")
 	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
 	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
 	if err != nil {
