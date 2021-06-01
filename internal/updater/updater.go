@@ -83,17 +83,17 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
+	stdout, stderr, err := exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
 	if err != nil {
-		return errs.Wrap(err, "Could not run installer")
+		return errs.Wrap(err, "Could not run installer, stdout=%s\nstderr=%s\n", stdout, stderr)
 	}
 
 	return nil
 }
 
 // InstallWithProgress will fetch the update and run its installer
-func (u *AvailableUpdate) InstallWithProgress(progressCb func(string, bool)) (*os.Process, error) {
-	installerPath, installTargetPath, err := u.prepare()
+func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
+	installerPath, err := u.prepare()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not download update")
 	}
