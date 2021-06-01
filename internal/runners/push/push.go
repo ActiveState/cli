@@ -76,6 +76,10 @@ func (r *Push) Run(params PushParams) error {
 		}
 		owner = namespace.Owner
 		name = namespace.Project
+
+		if err := r.project.Source().SetNamespace(owner, name); err != nil {
+			return errs.Wrap(err, "Could not set project namespace in project file")
+		}
 	} else {
 		if params.Namespace.IsValid() {
 			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
@@ -158,12 +162,6 @@ func (r *Push) Run(params PushParams) error {
 	err = pjf.RemoveTemporaryLanguage()
 	if err != nil {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
-	}
-
-	if r.project.IsHeadless() {
-		if err := r.project.Source().SetNamespace(owner, name); err != nil {
-			return errs.Wrap(err, "Could not set project namespace in project file")
-		}
 	}
 
 	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
