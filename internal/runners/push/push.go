@@ -69,7 +69,7 @@ func (r *Push) Run(params PushParams) error {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
 			var err error
-			namespace, err = r.getValidNamespace()
+			namespace, err = r.getNamespace()
 			if err != nil {
 				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 			}
@@ -179,9 +179,9 @@ func (r *Push) Run(params PushParams) error {
 	return nil
 }
 
-func (r *Push) getValidNamespace() (*project.Namespaced, error) {
-	names := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
-	if names == "" {
+func (r *Push) getNamespace() (*project.Namespaced, error) {
+	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
+	if namespace == "" {
 		owner := authentication.Get().WhoAmI()
 		owner, err := r.prompt.Input("", locale.Tl("push_prompt_owner", "Who will be the owner of this project?"), &owner)
 		if err != nil {
@@ -198,15 +198,15 @@ func (r *Push) getValidNamespace() (*project.Namespaced, error) {
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 		}
-		names = fmt.Sprintf("%s/%s", owner, name)
+		namespace = fmt.Sprintf("%s/%s", owner, name)
 	}
 
-	namespace, err := project.ParseNamespace(names)
+	ns, err := project.ParseNamespace(namespace)
 	if err != nil {
 		return nil, locale.WrapError(err, locale.Tl("err_push_parse_namespace", "Could not parse namespace"))
 	}
 
-	return namespace, nil
+	return ns, nil
 }
 
 func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
