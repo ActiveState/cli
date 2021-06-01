@@ -1260,7 +1260,7 @@ field_changes:
 change_added:
   other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
 change_removed:
-  other: "[ERROR]+[/RESET] {{.V0}}"
+  other: "[ERROR]-[/RESET] {{.V0}}"
 change_updated:
   other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
 namespace_label_platform:
@@ -1670,3 +1670,5 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_revert_refresh:
+  other: Could not get revert commit to check if changes were indeed made

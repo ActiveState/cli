@@ -179,8 +179,8 @@ const ActiveStateBlogURL = "https://www.activestate.com/blog/"
 // ActiveStateSupportURL is the URL for the AciveState support page
 const ActiveStateSupportURL = "https://www.activestate.com/support/"
 
-// ActiveStateAccountURL is the URL for the ActiveState account preferences page
-const ActiveStateAccountURL = "https://platform.activestate.com/preferences"
+// ActiveStateDashboardURL is the URL for the ActiveState account preferences page
+const ActiveStateDashboardURL = "https://platform.activestate.com/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
