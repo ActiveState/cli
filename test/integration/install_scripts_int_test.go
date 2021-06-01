@@ -160,7 +160,7 @@ func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
+	cp.Expect("Fetching version info")
 	cp.Expect("State Tool successfully installed to")
 }
 
@@ -502,7 +502,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 	}()
 
 	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work), e2e.AppendEnv("SHELL="))
-	cp.Expect("Please provide an argument for parameter '-v'")
+	cp.ExpectLongString("Please provide an argument for parameter '-v'")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion), e2e.AppendEnv("SHELL="))
@@ -558,6 +558,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	// Note: When updating from an old update, we always installing to the default installation path.
 	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
 	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state.exe"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray.exe"))
 }
