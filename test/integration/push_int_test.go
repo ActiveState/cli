@@ -101,8 +101,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	// https://www.pivotaltracker.com/n/projects/2203557/stories/175651094
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 	pjfile, err = projectfile.Parse(pjfilepath)
