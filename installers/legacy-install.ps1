@@ -42,7 +42,7 @@ $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
-if ($script:VERSION == "") {
+if ($script:VERSION -eq "") {
   Write-Error "Please provide an argument for parameter '-v'. This installation script only installs specific State Tool versions."
   Write-Host "Use 'https://platform.activestate.com/dl/cli/install.ps1' to install the latest version of the State Tool."
   exit 1
