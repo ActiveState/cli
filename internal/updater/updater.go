@@ -83,9 +83,9 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	stdout, stderr, err := exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
+	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
 	if err != nil {
-		return errs.Wrap(err, "Could not run installer, stdout=%s\nstderr=%s\n", stdout, stderr)
+		return errs.Wrap(err, "Could not run installer")
 	}
 
 	return nil
