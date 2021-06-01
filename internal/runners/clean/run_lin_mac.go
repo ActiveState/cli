@@ -28,6 +28,10 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
 	}
 
+	if err = installation.StopTrayApp(u.cfg); err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_stop_tray_err", "Failed to stop the tray process.")
+	}
+
 	err = removeConfig(u.cfg.ConfigPath(), u.out)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
