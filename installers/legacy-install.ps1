@@ -16,7 +16,7 @@ param (
     ,[Parameter(Mandatory=$False)][switch]$n
     ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][string]$c
-    ,[Parameter(Mandatory=$True)][string]$v
+    ,[Parameter(Mandatory=$False)][string]$v
     ,[Parameter(Mandatory=$False)][switch]$h
     ,[Parameter(Mandatory=$False)]
         [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
@@ -41,6 +41,12 @@ $script:VERSION = ($v).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
+
+if ($script:VERSION == "") {
+  Write-Error "Please provide an argument for parameter '-v'. This installation script only installs specific State Tool versions."
+  Write-Host "Use 'https://platform.activestate.com/dl/cli/install.ps1' to install the latest version of the State Tool."
+  exit 1
+}
 
 # For recipe installation without prompts we need to be able to disable
 # prompots through an environment variable.

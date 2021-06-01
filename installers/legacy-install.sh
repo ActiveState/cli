@@ -186,7 +186,7 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
 fi
 
 if [ -z "$VERSION" ]; then
-  error "A State Tool version needs to be specified with this installation script."
+  error "Please provide an argument for parameter '-v'. This installation script only installs specific State Tool versions."
   info "Use 'https://platform.activestate.com/dl/cli/install.sh' to install the latest version of the State Tool."
   exit 1
 fi

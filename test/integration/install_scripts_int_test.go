@@ -187,7 +187,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
 	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
-	cp.Expect("A State Tool version needs to be specified")
+	cp.Expect("Please provide an argument for parameter '-v'")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion))
@@ -502,7 +502,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 	}()
 
 	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work), e2e.AppendEnv("SHELL="))
-	cp.Expect("Supply values for the following parameters")
+	cp.Expect("Please provide an argument for parameter '-v'")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion), e2e.AppendEnv("SHELL="))
