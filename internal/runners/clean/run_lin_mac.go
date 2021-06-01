@@ -28,10 +28,6 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
 	}
 
-	if err = installation.StopTrayApp(u.cfg); err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_stop_tray_err", "Failed to stop the tray process.")
-	}
-
 	err = removeConfig(u.cfg.ConfigPath(), u.out)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
@@ -78,6 +74,12 @@ func removeInstall(_ configurable, installDir string) error {
 	stateInfo := appinfo.StateApp(installDir)
 	stateSvcInfo := appinfo.SvcApp(installDir)
 	stateTrayInfo := appinfo.TrayApp(installDir)
+
+	// Todo: https://www.pivotaltracker.com/story/show/177585085
+	// Yes this is awkward right now
+	if err := installation.StopTrayApp(cfg); err != nil {
+		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
+	}
 
 	var aggErr error
 
