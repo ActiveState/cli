@@ -194,7 +194,7 @@ func (r *Push) getValidNamespace() (*project.Namespaced, error) {
 		}
 
 		name := lang.String()
-		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "Project name?"), &name)
+		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 		}

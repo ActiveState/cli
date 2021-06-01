@@ -111,6 +111,87 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	}
 }
 
+func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
+	suite.OnlyRunForTags(tagsuite.Push)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+	username := "cli-integration-tests"
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", username, pname)
+	cp := ts.Spawn(
+		"init",
+		namespace,
+		suite.language,
+		"--path", filepath.Join(ts.Dirs.Work, namespace),
+		"--skeleton", "editor",
+	)
+	cp.ExpectExitCode(0)
+
+	wd := filepath.Join(cp.WorkDirectory(), namespace)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
+	cp.ExpectLongString(fmt.Sprintf("with language %s", strings.Split(suite.language, "@")[0]))
+	cp.ExpectExitCode(0)
+
+	// Check that languages were reset
+	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	pjfile, err := projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	if pjfile.Languages != nil {
+		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
+	}
+	if pjfile.CommitID() == "" {
+		suite.FailNow("commitID was not set after running push for project creation")
+	}
+	if pjfile.BranchName() == "" {
+		suite.FailNow("branch was not set after running push for project creation")
+	}
+
+	// ensure that we are logged out
+	cp = ts.Spawn("auth", "logout")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
+	cp.Expect("You're about to add packages as an anonymous user")
+	cp.Expect("(Y/n)")
+	cp.Send("y")
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
+
+	pjfile, err = projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	if !strings.Contains(pjfile.Project, "/commit/") {
+		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
+	}
+
+	ts.LoginAsPersistentUser()
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString("Who will be the owner of this project?")
+	cp.Send("")
+	cp.ExpectLongString("What would you like the name of this project to be?")
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.Expect("> Other")
+	cp.Send("")
+	cp.Expect(">")
+	cp.Send(pname.String())
+	cp.Expect("Project created")
+	cp.ExpectExitCode(0)
+
+	pjfile, err = projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
+		suite.FailNow("project field should include project again: " + pjfile.Project)
+	}
+}
+
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
 	ts := e2e.New(suite.T(), false)
