@@ -502,6 +502,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 	}()
 
 	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work), e2e.AppendEnv("SHELL="))
+	cp.Expect("Supply values for the following parameters")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion), e2e.AppendEnv("SHELL="))
