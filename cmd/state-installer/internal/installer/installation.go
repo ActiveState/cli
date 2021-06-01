@@ -58,9 +58,9 @@ func restoreFiles(backupFiles []string) error {
 	return nil
 }
 
-func New(fromDir, binaryDir, appDir string, extraRemoves []string) *Installation {
+func New(fromDir, binaryDir, appDir string) *Installation {
 	return &Installation{
-		fromDir, binaryDir, appDir, extraRemoves,
+		fromDir, binaryDir, appDir, nil,
 	}
 }
 
