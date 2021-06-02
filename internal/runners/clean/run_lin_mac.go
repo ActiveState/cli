@@ -70,7 +70,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return nil
 }
 
-func removeInstall(_ configurable, installDir string) error {
+func removeInstall(cfg configurable, installDir string) error {
 	stateInfo := appinfo.StateApp(installDir)
 	stateSvcInfo := appinfo.SvcApp(installDir)
 	stateTrayInfo := appinfo.TrayApp(installDir)
@@ -78,7 +78,7 @@ func removeInstall(_ configurable, installDir string) error {
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := installation.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
+		return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
 	}
 
 	var aggErr error
