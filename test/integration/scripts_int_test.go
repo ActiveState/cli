@@ -28,9 +28,23 @@ scripts:
   - name: second-script
     value: print("second script")
     language: python3
+  - name: super-script
+    language: bash
+    value: |
+      $scripts.first-script.bash-path()
 `)
 
 	ts.PrepareActiveStateYAML(configFileContent)
+}
+
+func (suite *ScriptsIntegrationTestSuite) TestRunSubscripts() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	ts := e2e.New(suite.T(), false)
+	suite.setupConfigFile(ts)
+
+	cp := ts.Spawn("run", "super-script")
+	cp.Expect("first script")
+	cp.ExpectExitCode(0)
 }
 
 func TestScriptsIntegrationTestSuite(t *testing.T) {

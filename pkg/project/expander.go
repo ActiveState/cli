@@ -1,7 +1,10 @@
 package project
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -134,8 +137,27 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 		return "", nil
 	}
 
-	if meta == "path" && isFunction {
-		return expandPath(name, script)
+	if isFunction {
+		switch meta {
+		case "path":
+			return expandPath(name, script)
+		case "slash-path":
+			path, err := expandPath(name, script)
+			if err != nil {
+				return "", err
+			}
+			return filepath.ToSlash(path), nil
+		case "bash-path":
+			path, err := expandPath(name, script)
+			if err != nil {
+				return "", err
+			}
+			if runtime.GOOS == "windows" {
+				return fmt.Sprintf("$((type cygpath &> /dev/null && cygpath '%s') || (type wsl-path &> /dev/null && wsl-path '%s') || echo '%s')", path, path, path), nil
+			} else {
+				return path, nil
+			}
+		}
 	}
 	return script.Raw(), nil
 }
