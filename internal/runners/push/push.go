@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -183,17 +184,19 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
 		owner := authentication.Get().WhoAmI()
-		owner, err := r.prompt.Input("", locale.Tl("push_prompt_owner", "Who will be the owner of this project?"), &owner)
+		owner, err := r.prompt.Input("", locale.Tl("push_prompt_owner", "With this push you will be creating a new project on the ActiveState Platform. Who would you like the owner of this project to be?"), &owner)
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
 		}
 
+		var name string
 		lang, _, err := fetchLanguage(r.project.CommitUUID())
-		if err != nil {
-			return nil, locale.WrapError(err, "err_push_fetch_language", "Could not fetch project language")
+		if err == nil {
+			name = lang.String()
+		} else {
+			logging.Error("Could not fetch language, got error: %v. Falling back to empty project name", err)
 		}
 
-		name := lang.String()
 		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
