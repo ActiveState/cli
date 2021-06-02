@@ -174,7 +174,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Who will be the owner of this project?")
+	cp.ExpectLongString("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
