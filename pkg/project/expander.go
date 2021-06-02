@@ -153,7 +153,7 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 				return "", err
 			}
 			if runtime.GOOS == "windows" {
-				return fmt.Sprintf("$((type cygpath &> /dev/null && cygpath '%s') || (type wsl-path &> /dev/null && wsl-path '%s') || echo '%s')", path, path, path), nil
+				return fmt.Sprintf("$((type cygpath &> /dev/null && cygpath '%s') || (type wslpath &> /dev/null && wslpath -u '%s') || echo '%s')", path, path, path), nil
 			} else {
 				return path, nil
 			}
