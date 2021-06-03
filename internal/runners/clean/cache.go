@@ -3,22 +3,19 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
 	output  output.Outputer
-	config  project.ConfigAble
+	config  configurable
 	confirm confirmAble
 	path    string
-	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -53,6 +50,7 @@ func (c *Cache) Run(params *CacheParams) error {
 				return err
 			}
 		}
+		return nil
 	}
 
 	return c.removeCache(c.path, params.Force)
@@ -84,8 +82,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, c.cfg.CachePath())
-
+	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, c.config.CachePath())
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)
 	if err != nil {
