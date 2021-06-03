@@ -169,7 +169,7 @@ func run() error {
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			err = open.Browser(constants.DocumentationURL)
+			err = open.Browser(constants.TrayDocumentationURL)
 			if err != nil {
 				logging.Error("Could not open documentation url: %v", err)
 			}
