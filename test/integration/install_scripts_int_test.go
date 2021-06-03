@@ -202,7 +202,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
@@ -219,7 +219,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
 
-	// Note: When updating from an old update, we always installing to the default installation path.
+	// Note: When updating from an old update, we always install to the default installation path.
 	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
 	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
