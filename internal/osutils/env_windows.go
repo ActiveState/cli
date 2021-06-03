@@ -5,6 +5,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -37,9 +38,14 @@ func IsNotExistError(err error) bool {
 	return errors.Is(err, registry.ErrNotExist)
 }
 
-func PropagateEnv() {
+func PropagateEnv() error {
 	// Note: Always use SendNotifyMessageW here, as SendMessageW can hang forever (https://stackoverflow.com/a/1956702)
-	syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
+	result, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
+
+	if result == 0 {
+		return errs.Wrap(err, "sendNotifyMessageW failed.")
+	}
+	return nil
 }
 
 func SetStringValue(key RegistryKey, name string, valType uint32, value string) error {

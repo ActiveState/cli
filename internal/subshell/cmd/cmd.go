@@ -86,7 +86,9 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 		}
 	}
 
-	osutils.PropagateEnv()
+	if err := osutils.PropagateEnv(); err != nil {
+		return errs.Wrap(err, "Sending OS signal to update environment failed.")
+	}
 	return nil
 }
 
@@ -101,7 +103,9 @@ func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcId
 		}
 	}
 
-	osutils.PropagateEnv()
+	if err := osutils.PropagateEnv(); err != nil {
+		return errs.Wrap(err, "Sending OS signal to update environment failed.")
+	}
 	return nil
 }
 
