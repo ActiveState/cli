@@ -67,11 +67,6 @@ func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
 }
 
 func run() error {
-	logging.Debug("running transitional state tool")
-	if len(os.Args) == 2 && os.Args[1] == "__is_transitional" {
-		fmt.Println("true")
-		return nil
-	}
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
 		cfg, err := config.Get()
@@ -99,6 +94,11 @@ func run() error {
 	machineid.SetErrorLogger(logging.Error)
 	logging.UpdateConfig(cfg)
 
+	oldInfo, err := os.Stat(appinfo.StateApp().Exec())
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
+	}
+
 	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
@@ -110,7 +110,16 @@ func run() error {
 
 	logging.Debug("Multi-file State Tool is installed.")
 
+	info, err := os.Stat(appinfo.StateApp().Exec())
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
+	}
+
 	// if the transitional state tool has been replaced by the installer, we are done
+	if oldInfo.ModTime() != info.ModTime() {
+		return nil
+	}
+
 	stdout, _, err := exeutils.ExecSimple(appinfo.StateApp().Exec(), "__is_transitional")
 	if err != nil || strings.TrimSpace(stdout) != "true" {
 		return nil
