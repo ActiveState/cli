@@ -555,7 +555,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	paths := strings.Split(pathEnv, string(os.PathListSeparator))
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 
-	// Note: When updating from an old update, we always installing to the default installation path.
+	// Note: When updating from an old update, we always install to the default installation path.
 	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
 	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
