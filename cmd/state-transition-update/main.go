@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -12,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -117,11 +115,6 @@ func run() error {
 
 	// if the transitional state tool has been replaced by the installer, we are done
 	if oldInfo.ModTime() != info.ModTime() {
-		return nil
-	}
-
-	stdout, _, err := exeutils.ExecSimple(appinfo.StateApp().Exec(), "__is_transitional")
-	if err != nil || strings.TrimSpace(stdout) != "true" {
 		return nil
 	}
 
