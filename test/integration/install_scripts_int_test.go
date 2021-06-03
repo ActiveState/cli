@@ -212,7 +212,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
 		e2e.AppendEnv(
 			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
-			fmt.Sprintf("_TEST_INSTALL_PATH=%s", filepath.Join(ts.Dirs.Work, "multi-file")),
+			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
 	expectLegacyStateToolInstallation(cp, "n")
@@ -544,7 +544,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 		e2e.AppendEnv(
 			"SHELL=",
 			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
-			fmt.Sprintf("_TEST_INSTALL_PATH=%s", filepath.Join(ts.Dirs.Work, "multi-file")),
+			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
 	expectLegacyStateToolInstallationWindows(cp)

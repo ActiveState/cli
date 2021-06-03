@@ -94,7 +94,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
-	env = append(env, fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
+	env = append(env, fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir))
 
 	return env
 }
