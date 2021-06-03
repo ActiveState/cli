@@ -35,7 +35,7 @@ for /d %%i in (%paths%) do (
     if exist %%i\* (
         rmdir /s /q %%i >> %logfile%
     ) else (
-        del /s /q %%i >> %logfile%
+        del /q %%i >> %logfile%
     )
     if %ERRORLEVEL% NEQ 0 (
         echo "Could not remove directory: %%i" >> %logfile%

@@ -304,3 +304,9 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// OverwriteDefaultInstallationPath is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
+
+// OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
+const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"

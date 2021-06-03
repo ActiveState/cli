@@ -2,12 +2,14 @@ package resolver
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"time"
 
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -92,7 +94,8 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
-	proc, err := up.InstallDeferred()
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
+	proc, err := up.InstallDeferred(installTargetPath)
 	if err != nil {
 		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}

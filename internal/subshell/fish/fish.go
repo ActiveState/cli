@@ -59,6 +59,28 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return sscommon.WriteRcFile("fishrc_append.fish", rcFile, envType, env)
 }
 
+func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile failure")
+	}
+
+	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
+	}
+
+	return nil
+}
+
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile-failure")
+	}
+
+	return sscommon.RemoveLegacyInstallPath(rcFile)
+}
+
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {

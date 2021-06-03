@@ -41,6 +41,7 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 var targetBranch = "beta"
 var testBranch = "test-channel"
 var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
+var oldReleaseUpdateVersion = "0.28.2-SHAbdac00e"
 var specificVersion = "0.29.0-SHA9f570a0"
 
 func init() {
@@ -93,7 +94,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
-	env = append(env, fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
+	env = append(env, fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir))
 
 	return env
 }
