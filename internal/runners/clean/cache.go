@@ -44,6 +44,10 @@ func (c *Cache) Run(params *CacheParams) error {
 	if params.Project != "" {
 		paths := projectfile.GetProjectPaths(c.config, params.Project)
 
+		if len(paths) == 0 {
+			return locale.NewInputError("err_cache_no_project", "Could not determine path to project {{.V0}}", params.Project)
+		}
+
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
 			if err != nil {
@@ -82,13 +86,9 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath, err := runtime.ProjectDirToTargetDir(projectDir, c.config.CachePath())
-	if err != nil {
-		return locale.WrapError(err, "err_cache_target_dir", "Could not get target cache directory")
-	}
+	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, c.config.CachePath())
 	logging.Debug("Remove project path: %s", projectInstallPath)
-
-	err = os.RemoveAll(projectInstallPath)
+	err := os.RemoveAll(projectInstallPath)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_remove_artifact", "Could not remove cached runtime environment for project: {{.V0}}", namespace)
 	}

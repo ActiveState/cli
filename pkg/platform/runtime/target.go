@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -23,13 +22,7 @@ func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit 
 }
 
 func (p *ProjectTarget) Dir() string {
-	projectDir := filepath.Dir(p.Project.Source().Path())
-	targetDir, err := ProjectDirToTargetDir(projectDir, p.cacheDir)
-	if err != nil {
-		logging.Error("Could not translate project dir to target dir, falling back to project dir, error: %v", err)
-		targetDir = projectDir
-	}
-	return targetDir
+	return ProjectDirToTargetDir(filepath.Dir(p.Project.Source().Path()), p.cacheDir)
 }
 
 func (p *ProjectTarget) CommitUUID() strfmt.UUID {
@@ -80,12 +73,13 @@ func (c *CustomTarget) OnlyUseCache() bool {
 	return c.commitUUID == ""
 }
 
-func ProjectDirToTargetDir(projectDir, cacheDir string) (string, error) {
+func ProjectDirToTargetDir(projectDir, cacheDir string) string {
 	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
 	if err != nil {
-		return "", locale.WrapError(err, "err_target_resolve_dir", "Could not resolve project directory")
+		logging.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
+		resolvedDir = projectDir
 	}
-	logging.Debug("In newStore: resolved project dir is: %s", projectDir)
+	logging.Debug("In newStore: resolved project dir is: %s", resolvedDir)
 
-	return filepath.Join(cacheDir, hash.ShortHash(resolvedDir)), nil
+	return filepath.Join(cacheDir, hash.ShortHash(resolvedDir))
 }
