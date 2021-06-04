@@ -142,7 +142,7 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 	switch meta {
 	case "path":
 		return expandPath(name, script)
-	case "path.posix":
+	case "path._posix":
 		path, err := expandPath(name, script)
 		if err != nil {
 			return "", err
