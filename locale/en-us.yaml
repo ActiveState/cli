@@ -1217,6 +1217,8 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+push_prompt_owner:
+  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:

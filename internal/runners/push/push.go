@@ -1,8 +1,6 @@
 package push
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -66,7 +64,8 @@ func (r *Push) Run(params PushParams) error {
 
 	owner := r.project.Owner()
 	name := r.project.Name()
-	if r.project.IsHeadless() {
+	isHeadless := r.project.IsHeadless()
+	if isHeadless {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
 			var err error
@@ -77,10 +76,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 		owner = namespace.Owner
 		name = namespace.Project
-
-		if err := r.project.Source().SetNamespace(owner, name); err != nil {
-			return errs.Wrap(err, "Could not set project namespace in project file")
-		}
+		isHeadless = false
 	} else {
 		if params.Namespace.IsValid() {
 			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
@@ -90,7 +86,7 @@ func (r *Push) Run(params PushParams) error {
 	// Get the project remotely if it already exists
 	pjm, err := model.FetchProjectByName(owner, name)
 	if err != nil {
-		if errs.Matches(err, &model.ErrProjectNotFound{}) && r.project.IsHeadless() {
+		if errs.Matches(err, &model.ErrProjectNotFound{}) && isHeadless {
 			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.", owner, name)
 		}
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
@@ -165,6 +161,12 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
+	if r.project.IsHeadless() {
+		if err := r.project.Source().SetNamespace(owner, name); err != nil {
+			return errs.Wrap(err, "Could not set project namespace in project file")
+		}
+	}
+
 	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
 		return errs.Wrap(err, "Could not set commit")
 	}
@@ -184,7 +186,7 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
 		owner := authentication.Get().WhoAmI()
-		owner, err := r.prompt.Input("", locale.Tl("push_prompt_owner", "With this push you will be creating a new project on the ActiveState Platform. Who would you like the owner of this project to be?"), &owner)
+		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
 		}
@@ -201,7 +203,7 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 		}
-		namespace = fmt.Sprintf("%s/%s", owner, name)
+		namespace = project.NewNamespace(owner, name, "").String()
 	}
 
 	ns, err := project.ParseNamespace(namespace)
