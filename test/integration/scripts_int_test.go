@@ -31,7 +31,7 @@ scripts:
   - name: super-script
     language: bash
     value: |
-      $scripts.first-script.bash-path()
+      $scripts.first-script.path.posix()
 `)
 
 	ts.PrepareActiveStateYAML(configFileContent)

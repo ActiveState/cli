@@ -1,13 +1,11 @@
 package project
 
 import (
-	"fmt"
-	"path/filepath"
 	"regexp"
-	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -141,22 +139,12 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 		switch meta {
 		case "path":
 			return expandPath(name, script)
-		case "slash-path":
+		case "path.posix":
 			path, err := expandPath(name, script)
 			if err != nil {
 				return "", err
 			}
-			return filepath.ToSlash(path), nil
-		case "bash-path":
-			path, err := expandPath(name, script)
-			if err != nil {
-				return "", err
-			}
-			if runtime.GOOS == "windows" {
-				return fmt.Sprintf("$((type cygpath > /dev/null && cygpath '%s') || (type wslpath > /dev/null && wslpath -u '%s') || echo '%s')", path, path, path), nil
-			} else {
-				return path, nil
-			}
+			return osutils.BashifyPath(path)
 		}
 	}
 	return script.Raw(), nil
