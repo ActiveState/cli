@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -33,7 +34,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
-	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w-]+)?(\(\))?}?`)
+	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w\.-]+)?(\(\))?}?`)
 	var err error
 	expanded := rxutils.ReplaceAllStringSubmatchFunc(regex, s, func(groups []string) string {
 		if err != nil {
@@ -134,9 +135,21 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 		return "", nil
 	}
 
-	if meta == "path" && isFunction {
-		return expandPath(name, script)
+	if !isFunction {
+		return script.Raw(), nil
 	}
+
+	switch meta {
+	case "path":
+		return expandPath(name, script)
+	case "path._posix":
+		path, err := expandPath(name, script)
+		if err != nil {
+			return "", err
+		}
+		return osutils.BashifyPath(path)
+	}
+
 	return script.Raw(), nil
 }
 

@@ -138,17 +138,17 @@ scripts:
     value: |
       set -e
       echo "Building State Tool"
-      $scripts.build.path()
+      $scripts.build.path._posix()
       echo "Building State Installer"
-      $scripts.build-installer.path()
+      $scripts.build-installer.path._posix()
       echo "Building State Service"
-      $scripts.build-svc.path()
+      $scripts.build-svc.path._posix()
       echo "Building State Tray App"
-      $scripts.build-tray.path()
+      $scripts.build-tray.path._posix()
       echo "Building State Update Dialog Frontend"
-      $scripts.build-updlg-front.path()
+      $scripts.build-updlg-front.path._posix()
       echo "Building State Update Dialog"
-      $scripts.build-updlg.path()
+      $scripts.build-updlg.path._posix()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -262,9 +262,9 @@ scripts:
       ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
       mv /tmp/README.md .github/workflows
 
-      $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
-      $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
-      $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
+      $scripts.build-for.path._posix() "windows" ./.github/deps/Windows/bin/state.exe
+      $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
+      $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
