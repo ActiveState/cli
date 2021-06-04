@@ -59,6 +59,7 @@ func BashifyPath(absolutePath string) (string, error) {
 
 	winPath, err := winPathToLinPath(absolutePath)
 	if err == nil {
+		winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
 		return winPath, nil
 	}
 	logging.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
@@ -66,9 +67,9 @@ func BashifyPath(absolutePath string) (string, error) {
 	vol := filepath.VolumeName(absolutePath)
 	absolutePath = absolutePath[len(vol):]
 	vol = strings.Replace(vol, ":", "", 1)
-	res := "/" + vol + filepath.ToSlash(absolutePath)
-	res = strings.Replace(res, ` `, `\ `, -1) // escape space
-	return res, nil
+	winPath = "/" + vol + filepath.ToSlash(absolutePath)
+	winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
+	return winPath, nil
 }
 
 func winPathToLinPath(name string) (string, error) {
