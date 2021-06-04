@@ -175,6 +175,7 @@ scripts:
       $constants.SET_ENV
       CGO_ENABLED=1
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_UPDLG_TARGET $constants.UPDLG_BUILDFLAGS ./cmd/state-update-dialog
+      ./build/state-update-dialog.exe
   - name: build-updlg-front
     description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
     language: bash
