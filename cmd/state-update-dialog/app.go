@@ -31,7 +31,6 @@ type App struct {
 }
 
 func NewApp(cfg *config.Instance) *App {
-	fmt.Printf("html:\n%s\n\n===js===\n%s\n\ncss\n%s\n", html, js, css)
 	a := &App{cfg: cfg}
 	a.wails = wails.CreateApp(&wails.AppConfig{
 		Width:  600,

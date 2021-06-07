@@ -61,11 +61,11 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg prod
+      run: state run build-updlg debug
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg debug"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg debug; exit 0;"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -243,11 +243,11 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg prod
+      run: state run build-updlg debug
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg debug; exit 0;"
     - name: Build Installer
       shell: bash
       run: state run build-installer
@@ -341,11 +341,11 @@ jobs:
     - name: Build Update Dialog (Linux & Mac)
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg prod
+      run: state run build-updlg debug
     - name: Build Update Dialog (Windows)
       if: runner.os == 'Windows'
       shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
+      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg debug; exit 0;"
     - name: Build Installer
       shell: bash
       run: state run build-installer
