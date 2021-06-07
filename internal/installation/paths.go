@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -15,11 +16,14 @@ func InstallPath() (string, error) {
 	if !rtutils.BuiltViaCI && strings.Contains(appinfo.StateApp().Exec(), "/build/") {
 		return filepath.Dir(appinfo.StateApp().Exec()), nil
 	}
+	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
+		return path, nil
+	}
 	return defaultInstallPath()
 }
 
 func LauncherInstallPath() (string, error) {
-	if path, ok := os.LookupEnv("_TEST_SYSTEM_PATH"); ok {
+	if path, ok := os.LookupEnv(constants.OverwriteDefaultSystemPathEnvVarName); ok {
 		return path, nil
 	}
 	return defaultSystemInstallPath()

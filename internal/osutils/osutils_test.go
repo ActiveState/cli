@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,14 +38,20 @@ func TestCmdExitCode(t *testing.T) {
 }
 
 func TestBashifyPath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skipf("Bashify path only runs on windows")
+	}
 	bashify := func(value string) string {
 		result, err := BashifyPath(value)
 		require.NoError(t, err)
 		return result
 	}
-	assert.Equal(t, "/c/temp", bashify(`C:\temp`))
-	assert.Equal(t, "/c/temp\\ temp", bashify(`C:\temp temp`))
+	res := bashify(`C:\temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp"), "Expected suffix '/c/temp', got %s", res)
+	res = bashify(`C:\temp temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp\\ temp"), "Expected suffix 'c/temp\\ temp', got %s", res)
 	assert.Equal(t, "/foo", bashify(`/foo`))
+
 	_, err := BashifyPath("not a valid path")
 	require.Error(t, err)
 	_, err = BashifyPath("../relative/path")

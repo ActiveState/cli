@@ -67,7 +67,7 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		"Env":   env,
 	}
 
-	if err := cleanRcFile(path, data); err != nil {
+	if err := CleanRcFile(path, data); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 		return err
 	}
 
-	if err := cleanRcFile(path, identification); err != nil {
+	if err := CleanRcFile(path, identification); err != nil {
 		return err
 	}
 
@@ -104,9 +104,37 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
 }
 
-func cleanRcFile(path string, data RcIdentification) error {
+// RemoveLegacyInstallPath removes the PATH modification statement added to the shell-rc file by the legacy install script
+func RemoveLegacyInstallPath(path string) error {
 	readFile, err := os.Open(path)
+	if err != nil {
+		return errs.Wrap(err, "IO failure")
+	}
 
+	scanner := bufio.NewScanner(readFile)
+	scanner.Split(bufio.ScanLines)
+
+	var fileContents []string
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		// remove lines with marker added by legacy install script
+		if strings.Contains(text, "# ActiveState State Tool") {
+			continue
+		}
+
+		// Rebuild file contents
+		fileContents = append(fileContents, scanner.Text())
+	}
+	if err := readFile.Close(); err != nil {
+		return errs.Wrap(err, "failed to close %s", path)
+	}
+
+	return fileutils.WriteFile(path, []byte(strings.Join(fileContents, fileutils.LineEnd)))
+}
+
+func CleanRcFile(path string, data RcIdentification) error {
+	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
 	}

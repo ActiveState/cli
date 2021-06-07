@@ -33,13 +33,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Fixed duplicate ActiveState Desktop and state services started
+  during update when switching channels ([PR #1387](https://github.com/ActiveState/cli/pull/1387))
 - Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
 - Fixed issue where `state clean uninstall` would not remove expected files on
   Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
-
-### Fixed
-
 - Fixed a rare case where the configuration file can get corrupted when two processes access it
   simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
 

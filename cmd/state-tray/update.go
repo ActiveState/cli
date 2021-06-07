@@ -12,7 +12,7 @@ import (
 
 const (
 	iconUpdateFile      = "icon-update.ico"
-	updateCheckInterval = time.Hour * 24
+	updateCheckInterval = time.Hour
 )
 
 func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
