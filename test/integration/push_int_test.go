@@ -80,10 +80,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.Spawn("auth", "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.Send("y")
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -147,9 +143,6 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		"install", suite.extraPackage),
 		e2e.WithWorkDirectory(wd),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.Send("y")
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
