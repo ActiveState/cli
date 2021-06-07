@@ -80,6 +80,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.Spawn("auth", "logout")
 	cp.ExpectExitCode(0)
 
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
