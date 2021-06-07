@@ -273,7 +273,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	if err := prj.Source().SetNamespace(names.Owner, names.Project); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	if err := prj.Source().SetCommit(commitID, prj.IsHeadless()); err != nil {
+	if err := prj.SetCommit(commitID); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to update commitID.")
 	}
 	if err := prj.Source().SetBranch(branch); err != nil {
