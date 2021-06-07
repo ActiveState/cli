@@ -86,9 +86,6 @@ func (r *Push) Run(params PushParams) error {
 	// Get the project remotely if it already exists
 	pjm, err := model.FetchProjectByName(owner, name)
 	if err != nil {
-		if errs.Matches(err, &model.ErrProjectNotFound{}) && isHeadless {
-			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.", owner, name)
-		}
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
@@ -126,7 +123,8 @@ func (r *Push) Run(params PushParams) error {
 		}
 		branchName = branch.Label
 	} else {
-		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
+		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`
+		// and the project does not exist remotely.
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
