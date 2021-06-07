@@ -119,14 +119,16 @@ name: Sign (MacOS)
 shell: bash
 if: runner.os == 'MacOS'
 run: |
+  security list-keychains # debug
   echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-  security list-keychains
   security create-keychain -p ${CODE_SIGNING_PASSWD} build.keychain 
+  security list-keychains -d user -s login.keychain build.keychain
   security default-keychain -s build.keychain
   security unlock-keychain -p ${CODE_SIGNING_PASSWD} build.keychain
-  security import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign
+  security list-keychains # debug
+  security import Cert.p12 -k build.keychain -P ${CODE_SIGNING_PASSWD} -T /usr/bin/codesign -A
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${CODE_SIGNING_PASSWD} build.keychain
-  security find-identity -v build.keychain
+  security find-identity -v build.keychain # debug
   /usr/bin/codesign --force -s 04DDEB9CED0B3F2FDB0731E574BEDF68038A6341 ./build/state -v
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
