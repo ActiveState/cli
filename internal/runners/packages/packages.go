@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -43,24 +42,6 @@ type configurable interface {
 const latestVersion = "latest"
 
 func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
-	isHeadless := pj.IsHeadless()
-	if !isHeadless && !authentication.Authenticated() {
-		anonConfirmDefault := true
-		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
-		if err != nil {
-			return locale.WrapInputError(err, "Authentication cancelled.")
-		}
-		isHeadless = anonymousOk
-	}
-
-	// Note: User also lands here if answering No to the question about anonymous commit.
-	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
-		if err != nil {
-			return locale.WrapInputError(err, "err_auth_required")
-		}
-	}
-
 	if strings.ToLower(version) == latestVersion {
 		version = ""
 	}
@@ -76,14 +57,12 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 	}
 
-	if !isHeadless {
-		behind, err := checker.CommitsBehind(pj)
-		if err != nil {
-			return locale.WrapError(err, "err_could_not_get_commit_behind_count")
-		}
-		if behind > 0 {
-			return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
-		}
+	behind, err := checker.CommitsBehind(pj)
+	if err != nil {
+		return locale.WrapError(err, "err_could_not_get_commit_behind_count")
+	}
+	if behind > 0 {
+		return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
 	}
 
 	parentCommitID := pj.CommitUUID()
@@ -101,7 +80,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 
 	logging.Debug("Order changed: %v", orderChanged)
 	if orderChanged {
-		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
