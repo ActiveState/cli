@@ -52,6 +52,10 @@ type Project struct {
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
 
+func (p *Project) SetCommit(commitID string) error {
+	return p.Source().SetCommit(commitID, p.IsHeadless())
+}
+
 // Platforms gets platforms
 func (p *Project) Platforms() []*Platform {
 	platforms := []*Platform{}
