@@ -1680,7 +1680,8 @@ err_pull_incompatible:
     The remote project has an incompatible commit history. Target a different project with `[ACTIONABLE--set-project[/RESET]` or reset your local checkout with `[ACTIONABLE]state reset[/RESET]`.
 pull_diverged_message:
   other: |
-    A merge commit will be created for project {{.V0}} on branch {{.V1}}.
-    To view the merge commit run `[ACTIONABLE]state history[/RESET]` or navigate to `[ACTIONABLE]{{.V2}}[/RESET]`
+    A merge commit will be created for project [NOTICE]{{.V0}}[/RESET] on branch [NOTICE]{{.V1}}[/RESET].
+    Merging commits [NOTICE]{{.V2}}[/RESET] (local) and [NOTICE]{{.V3}}[/RESET] (remote).
+    To view the merge commit run `[ACTIONABLE]state history[/RESET]` or navigate to [ACTIONABLE]{{.V4}}[/RESET]
 pull_merge_commit:
-  other: Merged conflicting local commits
+  other: Merged {{.V1}} into {{.V0}}

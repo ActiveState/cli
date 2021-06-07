@@ -182,6 +182,9 @@ const ActiveStateSupportURL = "https://www.activestate.com/support/"
 // ActiveStateAccountURL is the URL for the ActiveState account preferences page
 const ActiveStateAccountURL = "https://platform.activestate.com/preferences"
 
+// DashboardCommitURL is the URL used to inspect commits
+const DashboardCommitURL = "https://platform.activestate.com/commit/"
+
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 

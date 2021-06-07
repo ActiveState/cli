@@ -1,7 +1,11 @@
 package pull
 
 import (
+	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -120,7 +124,10 @@ func (p *Pull) Run(params *PullParams) error {
 
 	if targetCommit != nil && (noCommonParent || divergedHistory) {
 		p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
-		p.out.Notice(locale.Tr("pull_diverged_message", p.project.Namespace().String(), p.project.BranchName(), p.project.URL()))
+		p.out.Notice(locale.Tr(
+			"pull_diverged_message",
+			p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), targetCommit.String(),
+			constants.DashboardCommitURL+p.project.CommitID()))
 
 		changeset, err := model.DiffCommits(*targetCommit, p.project.CommitUUID())
 		if err != nil {
@@ -129,11 +136,20 @@ func (p *Pull) Run(params *PullParams) error {
 				"Could not generate diff between commits {{.V0}}, and {{.V1}}", targetCommit.String(), p.project.CommitID())
 		}
 
-		resultCommit, err := model.CommitChangeset(*targetCommit, locale.T("pull_merge_commit"), machineid.UniqID(), changeset)
+		commitMessage := locale.Tr("pull_merge_commit", targetCommit.String(), p.project.CommitID())
+		resultCommit, err := model.CommitChangeset(*targetCommit, commitMessage, machineid.UniqID(), changeset)
 		if err != nil {
 			return locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 		}
 		targetCommit = &resultCommit
+
+		cmit, err := model.GetCommit(resultCommit)
+		if err != nil {
+			return locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
+		}
+		p.out.Notice(locale.Tl(
+			"pull_diverged_changes",
+			"The following changes will be merged:\n{{.V0}}\n", strings.Join(commit.FormatChanges(cmit), "\n")))
 	}
 
 	// Update the commit ID in the activestate.yaml

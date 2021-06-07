@@ -232,6 +232,14 @@ func TestDiffCheckpoints(t *testing.T) {
 			changes(requirement{"req1", "2.0", updated}),
 		},
 		{
+			"cp2 added one package",
+			args{
+				checkpoint(requirement{"req1", "1.0", ""}),
+				checkpoint(requirement{"req2", "1.0", ""}),
+			},
+			changes(requirement{"req2", "1.0", added}),
+		},
+		{
 			"complex change",
 			args{
 				checkpoint(
