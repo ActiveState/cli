@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
     entry: ['babel-polyfill', './main.js'],
     target: "es5",
-    mode: 'development',
+    mode: 'production',
     output: {
         filename: 'main.js',
         path: path.resolve(__dirname, 'generated')
