@@ -99,9 +99,7 @@ func (i *Instance) ReleaseLock() error {
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
-	if runtime.GOOS == "windows" {
-		os.Remove(i.getLockFile())
-	}
+	i.cleanLockFile()
 	return nil
 }
 
@@ -434,18 +432,6 @@ func (i *Instance) ensureCacheExists() error {
 		return errs.Wrap(err, "Cannot create cache directory")
 	}
 	return nil
-}
-
-func (i *Instance) getLockFile() string {
-	// On Linux and Darwin, we can use the config file itself for locking
-	if runtime.GOOS != "windows" {
-		return i.getConfigFile()
-	}
-	if i.lockFile == "" {
-		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
-	}
-
-	return i.lockFile
 }
 
 func (i *Instance) getConfigFile() string {
