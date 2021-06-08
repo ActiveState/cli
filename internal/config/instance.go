@@ -35,6 +35,7 @@ type Instance struct {
 	configDir     *configdir.Config
 	cacheDir      *configdir.Config
 	configFile    string
+	lockFile      string
 	localPath     string
 	installSource string
 	lock          *flock.Flock
@@ -53,12 +54,7 @@ func new(localPath string) (*Instance, error) {
 	if err != nil {
 		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
 	}
-	cfgFile, err := instance.getConfigFile()
-	if err != nil {
-		return instance, errs.Wrap(nil, "Failed to get get config file path")
-	}
-
-	instance.lock = flock.New(cfgFile)
+	instance.lock = flock.New(instance.getLockFile())
 
 	if err := instance.Reload(); err != nil {
 		return instance, errs.Wrap(err, "Failed to load configuration.")
@@ -438,6 +434,14 @@ func (i *Instance) ensureCacheExists() error {
 		return errs.Wrap(err, "Cannot create cache directory")
 	}
 	return nil
+}
+
+func (i *Instance) getLockFile() string {
+	if i.lockFile == "" {
+		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
+	}
+
+	return i.lockFile
 }
 
 func (i *Instance) getConfigFile() (string, error) {
