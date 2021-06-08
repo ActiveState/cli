@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/thoas/go-funk"
@@ -370,7 +371,7 @@ func (ed *EnvironmentDefinition) ExecutablePaths() (ExecutablePaths, error) {
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	exes, err := exeutils.Executables(bins)
+	exes, err := exeutils.Executables(bins, constants.ExecDir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not detect executables")
 	}

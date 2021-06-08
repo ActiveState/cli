@@ -17,13 +17,18 @@ import (
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
-func Executables(bins []string) ([]string, error) {
+func Executables(bins []string, skip ...string) ([]string, error) {
 	exes := []string{}
 
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
 			// Filter out files that are not executable
 			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
+				for _, s := range skip {
+					if info.Name() == s {
+						return filepath.SkipDir
+					}
+				}
 				return nil // not executable
 			}
 
