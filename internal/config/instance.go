@@ -99,6 +99,9 @@ func (i *Instance) ReleaseLock() error {
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
+	if runtime.GOOS == "windows" {
+		os.Remove(i.getLockFile())
+	}
 	return nil
 }
 
@@ -328,10 +331,7 @@ func (i *Instance) InstallSource() string {
 }
 
 func (i *Instance) ReadInConfig() error {
-	configFile, err := i.getConfigFile()
-	if err != nil {
-		return errs.Wrap(err, "Could not find config file")
-	}
+	configFile := i.getConfigFile()
 
 	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -437,6 +437,10 @@ func (i *Instance) ensureCacheExists() error {
 }
 
 func (i *Instance) getLockFile() string {
+	// On Linux and Darwin, we can use the config file itself for locking
+	if runtime.GOOS != "windows" {
+		return i.getConfigFile()
+	}
 	if i.lockFile == "" {
 		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
 	}
@@ -444,12 +448,12 @@ func (i *Instance) getLockFile() string {
 	return i.lockFile
 }
 
-func (i *Instance) getConfigFile() (string, error) {
+func (i *Instance) getConfigFile() string {
 	if i.configFile == "" {
 		i.configFile = filepath.Join(i.configDir.Path, C.InternalConfigFileName)
 	}
 
-	return i.configFile, nil
+	return i.configFile
 }
 
 // tempDir returns a temp directory path at the topmost directory possible
