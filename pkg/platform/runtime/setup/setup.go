@@ -532,5 +532,5 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 }
 
 func ExecDir(targetDir string) string {
-	return filepath.Join(targetDir, "exec")
+	return filepath.Join(targetDir, constants.ExecDir)
 }
