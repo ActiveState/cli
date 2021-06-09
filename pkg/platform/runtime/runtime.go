@@ -41,12 +41,8 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 		store:  store.New(target.Dir()),
 	}
 
-	// invalidates setups produced by older tool versions: https://www.pivotaltracker.com/story/show/178292912
-	if !fileutils.DirExists(setup.ExecDir(target.Dir())) {
-		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
-	}
-
-	if !rt.store.MatchesCommit(target.CommitUUID()) {
+	// exec dir may not exist after update or if set up with older State Tool version: https://www.pivotaltracker.com/story/show/178292912
+	if !fileutils.DirExists(setup.ExecDir(target.Dir())) || !rt.store.MatchesCommit(target.CommitUUID()) {
 		if target.OnlyUseCache() {
 			logging.Debug("Using forced cache")
 		} else {
