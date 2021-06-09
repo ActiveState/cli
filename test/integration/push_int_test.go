@@ -92,8 +92,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, "/commit/") {
-		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
+	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
+		suite.FailNow("project field should include project (not headless): " + pjfile.Project)
 	}
 
 	ts.LoginAsPersistentUser()
@@ -102,11 +102,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
-	pjfile, err = projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project again: " + pjfile.Project)
-	}
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
