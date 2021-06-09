@@ -22,17 +22,23 @@ func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 
 	for _, bin := range bins {
-		entries, err := ioutil.ReadDir(bin)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not read directory")
+		if fileutils.IsDir(bin) {
+			entries, err := ioutil.ReadDir(bin)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not read directory")
+			}
+
+			for _, entry := range entries {
+				fpath := filepath.Join(bin, entry.Name())
+				if fileutils.IsExecutable(fpath) {
+					exes = append(exes, fpath)
+				}
+			}
+			continue
 		}
 
-		for _, entry := range entries {
-			fpath := filepath.Join(bin, entry.Name())
-			if !fileutils.IsExecutable(fpath) {
-				continue
-			}
-			exes = append(exes, fpath)
+		if fileutils.IsExecutable(bin) {
+			exes = append(exes, bin)
 		}
 	}
 
