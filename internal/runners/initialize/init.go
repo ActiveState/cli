@@ -124,7 +124,10 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if isHeadless {
-		proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		err = proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		if err != nil {
+			return "", locale.WrapError(err, "err_init_set_namespace", "Could not set namespace in project file")
+		}
 	} else {
 		// Sanitize rest of params
 		if err := sanitize(params); err != nil {
