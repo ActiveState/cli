@@ -1203,19 +1203,22 @@ func (p *Project) Persist() {
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
 
+type EntriesMap = map[string][]string
+
 type ConfigGetter interface {
-	GetStringMapStringSlice(key string) map[string][]string
+	GetStringMapStringSlice(key string) EntriesMap
 	AllKeys() []string
 	GetStringSlice(string) []string
 	Set(string, interface{}) error
+	SetWithLock(string, func(interface{}) (interface{}, error)) error
 }
 
-func GetProjectMapping(config ConfigGetter) map[string][]string {
+func GetProjectMapping(config ConfigGetter) EntriesMap {
 	addDeprecatedProjectMappings(config)
 	CleanProjectMapping(config)
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
-		return map[string][]string{}
+		return EntriesMap{}
 	}
 	return projects
 }
@@ -1263,36 +1266,48 @@ func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
 	return ""
 }
 
-func addDeprecatedProjectMappings(config ConfigGetter) {
-	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
-	keys := funk.FilterString(config.AllKeys(), func(v string) bool {
-		return strings.HasPrefix(v, "project_")
-	})
+func addDeprecatedProjectMappings(cfg ConfigGetter) {
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			var projects EntriesMap
 
-	if len(keys) == 0 {
-		return
-	}
+			switch ps := v.(type) {
+			case EntriesMap:
+				if ps == nil {
+					ps = make(EntriesMap)
+				}
+				projects = ps
+			default:
+				return nil, errs.New("Projects data in config is abnormal")
+			}
 
-	for _, key := range keys {
-		namespace := strings.TrimPrefix(key, "project_")
-		newPaths := projects[namespace]
-		paths := config.GetStringSlice(key)
-		projects[namespace] = funk.UniqString(append(newPaths, paths...))
-		err := config.Set(key, nil)
-		if err != nil {
-			logging.Error("Could not clear config entry for key %s, error: %v", key, err)
-		}
-	}
+			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
+				return strings.HasPrefix(v, "project_")
+			})
 
-	err := config.Set(LocalProjectsConfigKey, projects)
+			for _, key := range keys {
+				namespace := strings.TrimPrefix(key, "project_")
+				newPaths := projects[namespace]
+				paths := cfg.GetStringSlice(key)
+				projects[namespace] = funk.UniqString(append(newPaths, paths...))
+				if err := cfg.Set(key, nil); err != nil {
+					logging.Error("Could not clear config entry for key %s, error: %v", key, err)
+				}
+			}
+
+			return projects, nil
+
+		},
+	)
 	if err != nil {
 		logging.Error("Could not update project mapping in config, error: %v", err)
 	}
 }
 
 // GetProjectPaths returns the paths of all projects associated with the namespace
-func GetProjectPaths(config ConfigGetter, namespace string) []string {
-	projects := GetProjectMapping(config)
+func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
+	projects := GetProjectMapping(cfg)
 
 	// match case-insensitively
 	var paths []string
@@ -1308,27 +1323,37 @@ func GetProjectPaths(config ConfigGetter, namespace string) []string {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
-	projectMapMutex.Lock()
-	defer projectMapMutex.Unlock()
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			var projects EntriesMap
 
-	projectPath = filepath.Clean(projectPath)
+			switch ps := v.(type) {
+			case EntriesMap:
+				if ps == nil {
+					ps = make(EntriesMap)
+				}
+				projects = ps
+			default:
+				return nil, errs.New("Projects data in config is abnormal")
+			}
 
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	if projects == nil {
-		projects = make(map[string][]string)
-	}
+			projectPath = filepath.Clean(projectPath)
 
-	paths := projects[namespace]
-	if paths == nil {
-		paths = make([]string, 0)
-	}
+			paths := projects[namespace]
+			if paths == nil {
+				paths = make([]string, 0)
+			}
 
-	if !funk.Contains(paths, projectPath) {
-		paths = append(paths, projectPath)
-	}
+			if !funk.Contains(paths, projectPath) {
+				paths = append(paths, projectPath)
+			}
 
-	projects[namespace] = paths
-	err := cfg.Set(LocalProjectsConfigKey, projects)
+			projects[namespace] = paths
+
+			return projects, nil
+		},
+	)
 	if err != nil {
 		logging.Error("Could not set project mapping in config, error: %v", err)
 	}
@@ -1337,25 +1362,41 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping(cfg ConfigGetter) {
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	seen := map[string]bool{}
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			var projects EntriesMap
 
-	for namespace, paths := range projects {
-		var removals []int
-		for i, path := range paths {
-			if !fileutils.DirExists(path) {
-				removals = append(removals, i)
+			switch ps := v.(type) {
+			case EntriesMap:
+				if ps == nil {
+					ps = make(EntriesMap)
+				}
+				projects = ps
+			default:
+				return nil, errs.New("Projects data in config is abnormal")
 			}
-		}
-		projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
-		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
-			delete(projects, namespace)
-			continue
-		}
-		seen[strings.ToLower(namespace)] = true
-	}
 
-	err := cfg.Set("projects", projects)
+			seen := make(map[string]struct{})
+
+			for namespace, paths := range projects {
+				var removals []int
+				for i, path := range paths {
+					if !fileutils.DirExists(path) {
+						removals = append(removals, i)
+					}
+				}
+				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
+				if _, ok := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
+					delete(projects, namespace)
+					continue
+				}
+				seen[strings.ToLower(namespace)] = struct{}{}
+			}
+
+			return projects, nil
+		},
+	)
 	if err != nil {
 		logging.Debug("Could not set clean project mapping in config, error: %v", err)
 	}
