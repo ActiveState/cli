@@ -99,7 +99,9 @@ func (i *Instance) ReleaseLock() error {
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
-	i.cleanLockFile()
+
+	// Ignore the error, as there are legitimate cases where it will fail (when another processes has locked the file again)
+	_ = os.Remove(i.getLockFile())
 	return nil
 }
 
@@ -440,6 +442,14 @@ func (i *Instance) getConfigFile() string {
 	}
 
 	return i.configFile
+}
+
+func (i *Instance) getLockFile() string {
+	if i.lockFile == "" {
+		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
+	}
+
+	return i.lockFile
 }
 
 // tempDir returns a temp directory path at the topmost directory possible
