@@ -90,9 +90,6 @@ const ArtifactCacheFileName = "artifact_cache.json"
 // ArtifactMetaDir is the directory in which we store meta information about artifacts
 const ArtifactMetaDir = "artifacts"
 
-// ExecDir is the directory within the runtime that contains executors
-const ExecDir = "exec"
-
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
 

@@ -2,6 +2,7 @@ package exeutils
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,34 +18,21 @@ import (
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
-func Executables(bins []string, skip ...string) ([]string, error) {
+func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 
 	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			if info == nil {
-				return nil
-			}
-
-			if info.IsDir() {
-				for _, s := range skip {
-					if info.Name() == s {
-						return filepath.SkipDir
-					}
-				}
-				return nil
-			}
-
-			// Filter out files that are not executable
-			if !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
-			}
-
-			exes = append(exes, fpath)
-			return nil
-		})
+		entries, err := ioutil.ReadDir(bin)
 		if err != nil {
-			return exes, errs.Wrap(err, "Error while walking path")
+			return nil, errs.Wrap(err, "Could not read directory")
+		}
+
+		for _, entry := range entries {
+			fpath := filepath.Join(bin, entry.Name())
+			if !fileutils.IsExecutable(fpath) {
+				continue
+			}
+			exes = append(exes, fpath)
 		}
 	}
 
