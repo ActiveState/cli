@@ -22,9 +22,8 @@ func Executables(bins []string, skip ...string) ([]string, error) {
 
 	for _, bin := range bins {
 		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
+			if info == nil {
+				return nil
 			}
 
 			if info.IsDir() {
@@ -34,6 +33,11 @@ func Executables(bins []string, skip ...string) ([]string, error) {
 					}
 				}
 				return nil
+			}
+
+			// Filter out files that are not executable
+			if !fileutils.IsExecutable(fpath) { // check if executable by anyone
+				return nil // not executable
 			}
 
 			exes = append(exes, fpath)
