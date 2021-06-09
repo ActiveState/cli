@@ -150,7 +150,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(err, "Could not parse project file")
-	suite.Assert().True(prj.IsHeadless(), "project should be headless: URL is %s", prj.URL())
+	suite.Assert().False(prj.IsHeadless(), "project should NOT be headless: URL is %s", prj.URL())
 
 	ts.LoginAsPersistentUser()
 
