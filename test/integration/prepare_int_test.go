@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -68,32 +67,32 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), true, "ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
 	)
-	cp.ExpectLongString("default project?")
-	cp.Send("y")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
+	cp.ExpectLongString("Successfully configured ActiveState-CLI/small-python as the global default")
 	cp.Expect("activated state")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	// Remove global executors
 	cfg, err := config.NewWithDir(ts.Dirs.Config)
 	suite.Require().NoError(err)
-	globalExecDir := globaldefault.BinDir(cfg)
+	suite.Require().Equal(ts.Dirs.Work, cfg.GetString(constants.GlobalDefaultPrefname))
+
+	// Remove global executors
+	globalExecDir := filepath.Join(ts.Dirs.Cache, "bin")
 	os.RemoveAll(globalExecDir)
 
 	// check existens of exec dir
-	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Work, cfg.CachePath())
+	targetDir := rt.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
 	projectExecDir := setup.ExecDir(targetDir)
 	suite.DirExists(projectExecDir)
 
@@ -103,13 +102,11 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.FileExists(filepath.Join(globalExecDir, executor.NameForExe("python3"+osutils.ExeExt)))
 	suite.NoDirExists(projectExecDir)
 
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.Spawn("activate")
 	cp.Expect("activated state")
+	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
-	cp.Expect("Python 3.6.6")
+	cp.Expect("Python 3.8.8")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
