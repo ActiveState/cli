@@ -77,6 +77,16 @@ func (i *Instance) GetLock() error {
 		return errs.New("Timeout out waiting for exclusive lock")
 
 	}
+
+	f, err := os.OpenFile("/tmp/config_lock",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(fmt.Sprintf("[%s] Process %s (%d) acquired lock %p\n", time.Now(), os.Args[0], os.Getpid(), i.lock)); err != nil {
+		log.Println(err)
+	}
 	return nil
 }
 
@@ -97,6 +107,15 @@ func (i *Instance) GetRLock() error {
 }
 
 func (i *Instance) ReleaseLock() error {
+	f, err := os.OpenFile("/tmp/config_lock",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	if _, err := f.WriteString(fmt.Sprintf("[%s] Process %s (%d) releases lock\n", time.Now(), os.Args[0], os.Getpid())); err != nil {
+		log.Println(err)
+	}
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
