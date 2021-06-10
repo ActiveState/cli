@@ -138,7 +138,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs(
 		"install", suite.extraPackage),
 		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
