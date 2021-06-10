@@ -155,7 +155,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	ts.LoginAsPersistentUser()
 
 	// convert to real project
-	cp = ts.SpawnWithOpts(e2e.WithArgs("init", namespace), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("init", namespace, "python3"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString("has been successfully initialized")
 	cp.ExpectExitCode(0)
 
