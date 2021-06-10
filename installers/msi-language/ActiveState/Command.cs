@@ -56,6 +56,7 @@ namespace ActiveState
                 {
                     procStartInfo.EnvironmentVariables["VERBOSE"] = "true";
                     procStartInfo.EnvironmentVariables["ACTIVESTATE_NONINTERACTIVE"] = "true";
+                    procStartInfo.EnvironmentVariables["ACTIVESTATE_CLI_DISABLE_UPDATES"] = "true";
                 }
                 // Do not create the black window.
                 procStartInfo.CreateNoWindow = true;
