@@ -1279,7 +1279,10 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 				}
 				projects = ps
 			default:
-				return nil, errs.New("Projects data in config is abnormal")
+				if ps != nil {
+					return nil, errs.New("Projects data in config is abnormal")
+				}
+				projects = make(EntriesMap)
 			}
 
 			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
@@ -1335,7 +1338,10 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 				}
 				projects = ps
 			default:
-				return nil, errs.New("Projects data in config is abnormal")
+				if ps != nil {
+					return nil, errs.New("Projects data in config is abnormal")
+				}
+				projects = make(EntriesMap)
 			}
 
 			projectPath = filepath.Clean(projectPath)
@@ -1374,7 +1380,10 @@ func CleanProjectMapping(cfg ConfigGetter) {
 				}
 				projects = ps
 			default:
-				return nil, errs.New("Projects data in config is abnormal")
+				if ps != nil {
+					return nil, errs.New("Projects data in config is abnormal")
+				}
+				projects = make(EntriesMap)
 			}
 
 			seen := make(map[string]struct{})
