@@ -43,6 +43,9 @@ type Instance struct {
 	data          map[string]interface{}
 	// dataMutex is used to synchronize manipulations of the data map between threads, as most of these are not guarded by the file lock.
 	dataMutex *sync.RWMutex
+	// lockMutex ensures that file lock can be held only once per process.  Theoretically, this should be ensured by the `flock` package, but it isn't.  So, we need this hack.
+	// https://www.pivotaltracker.com/story/show/178478669
+	lockMutex *sync.Mutex
 }
 
 func new(localPath string) (*Instance, error) {
@@ -50,6 +53,7 @@ func new(localPath string) (*Instance, error) {
 		localPath: localPath,
 		data:      make(map[string]interface{}),
 		dataMutex: &sync.RWMutex{},
+		lockMutex: &sync.Mutex{},
 	}
 	err := instance.ensureConfigExists()
 	if err != nil {
@@ -65,15 +69,18 @@ func new(localPath string) (*Instance, error) {
 }
 
 func (i *Instance) GetLock() error {
+	i.lockMutex.Lock()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
 	if err != nil {
+		i.lockMutex.Unlock()
 		return errs.Wrap(err, "Timed out waiting for exclusive lock")
 	}
 
 	if !locked {
+		i.lockMutex.Unlock()
 		return errs.New("Timeout out waiting for exclusive lock")
 
 	}
@@ -107,6 +114,7 @@ func (i *Instance) GetRLock() error {
 }
 
 func (i *Instance) ReleaseLock() error {
+	defer i.lockMutex.Unlock()
 	f, err := os.OpenFile("/tmp/config_lock",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -116,6 +124,7 @@ func (i *Instance) ReleaseLock() error {
 	if _, err := f.WriteString(fmt.Sprintf("[%s] Process %s (%d) releases lock\n", time.Now(), os.Args[0], os.Getpid())); err != nil {
 		log.Println(err)
 	}
+
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
