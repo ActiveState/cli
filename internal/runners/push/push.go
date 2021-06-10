@@ -1,9 +1,8 @@
 package push
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -11,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -64,24 +64,19 @@ func (r *Push) Run(params PushParams) error {
 
 	owner := r.project.Owner()
 	name := r.project.Name()
-	if r.project.IsHeadless() {
+	isHeadless := r.project.IsHeadless()
+	if isHeadless {
 		namespace := params.Namespace
 		if !namespace.IsValid() {
-			names := projectfile.GetProjectNameForPath(r.config, filepath.Dir(r.project.Source().Path()))
-			if names == "" {
-				return errs.AddTips(
-					locale.NewInputError("push_needs_namespace", "Could not find out what project to push to."),
-					locale.Tl("push_add_namespace_tip", "You can specify a project by running [ACTIONABLE]state push <project>[/RESET]."),
-				)
-			}
 			var err error
-			namespace, err = project.ParseNamespace(names)
+			namespace, err = r.getNamespace()
 			if err != nil {
-				return errs.Wrap(err, "Could not parse namespace %s to push headless commit to", name)
+				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 			}
 		}
 		owner = namespace.Owner
 		name = namespace.Project
+		isHeadless = false
 	} else {
 		if params.Namespace.IsValid() {
 			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
@@ -91,9 +86,6 @@ func (r *Push) Run(params PushParams) error {
 	// Get the project remotely if it already exists
 	pjm, err := model.FetchProjectByName(owner, name)
 	if err != nil {
-		if errs.Matches(err, &model.ErrProjectNotFound{}) && r.project.IsHeadless() {
-			return locale.WrapInputError(err, "err_push_existing_project_needed", "Cannot push to [NOTICE]{{.V0}}/{{.V1}}[/RESET], as project does not exist.", owner, name)
-		}
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
@@ -132,7 +124,8 @@ func (r *Push) Run(params PushParams) error {
 		}
 		branchName = branch.Label
 	} else {
-		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
+		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`
+		// and the project does not exist remotely.
 		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
@@ -192,23 +185,43 @@ func (r *Push) Run(params PushParams) error {
 	return nil
 }
 
-func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
-	if pj.CommitID() != "" {
-		lang, err := model.FetchLanguageForCommit(pj.CommitUUID())
+func (r *Push) getNamespace() (*project.Namespaced, error) {
+	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
+	if namespace == "" {
+		owner := authentication.Get().WhoAmI()
+		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
 		if err != nil {
-			return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit.")
+			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
 		}
 
-		l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
+		var name string
+		lang, _, err := fetchLanguage(r.project.CommitUUID())
+		if err == nil {
+			name = lang.String()
+		} else {
+			logging.Error("Could not fetch language, got error: %v. Falling back to empty project name", err)
+		}
+
+		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
 		if err != nil {
-			return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
 		}
-		ls := language.Supported{Language: l}
-		if !ls.Recognized() {
-			return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
-		}
-		return &ls, lang.Version, nil
+		namespace = project.NewNamespace(owner, name, "").String()
 	}
+
+	ns, err := project.ParseNamespace(namespace)
+	if err != nil {
+		return nil, locale.WrapError(err, locale.Tl("err_push_parse_namespace", "Could not parse namespace"))
+	}
+
+	return ns, nil
+}
+
+func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
+	if pj.CommitID() != "" {
+		return fetchLanguage(pj.CommitUUID())
+	}
+
 	langs := pj.Languages()
 	if len(langs) == 0 {
 		return nil, "", locale.NewError("err_push_nolang",
@@ -227,4 +240,23 @@ func (r *Push) languageForProject(pj *project.Project) (*language.Supported, str
 	}
 
 	return &lang, langs[0].Version(), nil
+}
+
+func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
+	lang, err := model.FetchLanguageForCommit(commitID)
+	if err != nil {
+		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit.")
+	}
+
+	l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
+	if err != nil {
+		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+	}
+
+	ls := language.Supported{Language: l}
+	if !ls.Recognized() {
+		return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
+	}
+
+	return &ls, lang.Version, nil
 }

@@ -122,8 +122,8 @@ func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAns
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
-	cp.Expect("Allow $PATH to be appended in your")
+	cp.Expect("Fetching version info")
+	cp.Expect("Allow $PATH to be appended in your", 20*time.Second)
 	cp.SendLine(addToPathAnswer)
 	cp.Expect("State Tool installation complete")
 }
@@ -160,7 +160,7 @@ func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
 	cp.Expect("Continue?")
 	cp.SendLine("y")
-	cp.Expect("Fetching the latest version")
+	cp.Expect("Fetching version info")
 	cp.Expect("State Tool successfully installed to")
 }
 
@@ -187,6 +187,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
 	cp := ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work))
+	cp.Expect("Please provide an argument for parameter '-v'")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion))
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
@@ -205,15 +209,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort)))
+		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(
+			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
+			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
+		))
 
 	expectLegacyStateToolInstallation(cp, "n")
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
 
-	suite.FileExists(filepath.Join(ts.Dirs.Work, "state-svc"))
-	suite.FileExists(filepath.Join(ts.Dirs.Work, "state-tray"))
+	// Note: When updating from an old update, we always install to the default installation path.
+	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
+	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -492,6 +502,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 	}()
 
 	cp := ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work), e2e.AppendEnv("SHELL="))
+	cp.ExpectLongString("Please provide an argument for parameter '-v'")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-v", oldReleaseUpdateVersion), e2e.AppendEnv("SHELL="))
 	expectLegacyStateToolInstallationWindows(cp)
 	cp.ExpectExitCode(0)
 
@@ -526,8 +540,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
-		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName),
-		e2e.AppendEnv("SHELL=", fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort)))
+		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(
+			"SHELL=",
+			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
+			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
+		))
 
 	expectLegacyStateToolInstallationWindows(cp)
 	cp.ExpectExitCode(0)
@@ -537,8 +555,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	paths := strings.Split(pathEnv, string(os.PathListSeparator))
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 
-	suite.FileExists(filepath.Join(ts.Dirs.Work, "state-svc.exe"))
-	suite.FileExists(filepath.Join(ts.Dirs.Work, "state-tray.exe"))
+	// Note: When updating from an old update, we always install to the default installation path.
+	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
+	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state.exe"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc.exe"))
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray.exe"))
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
