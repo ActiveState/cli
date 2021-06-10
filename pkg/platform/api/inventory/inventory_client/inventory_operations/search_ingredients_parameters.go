@@ -25,12 +25,14 @@ func NewSearchIngredientsParams() *SearchIngredientsParams {
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
+		qDefault             = string("")
 	)
 	return &SearchIngredientsParams{
 		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
+		Q:             &qDefault,
 
 		timeout: cr.DefaultTimeout,
 	}
@@ -44,12 +46,14 @@ func NewSearchIngredientsParamsWithTimeout(timeout time.Duration) *SearchIngredi
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
+		qDefault             = string("")
 	)
 	return &SearchIngredientsParams{
 		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
+		Q:             &qDefault,
 
 		timeout: timeout,
 	}
@@ -63,12 +67,14 @@ func NewSearchIngredientsParamsWithContext(ctx context.Context) *SearchIngredien
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
+		qDefault             = string("")
 	)
 	return &SearchIngredientsParams{
 		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
+		Q:             &qDefault,
 
 		Context: ctx,
 	}
@@ -82,12 +88,14 @@ func NewSearchIngredientsParamsWithHTTPClient(client *http.Client) *SearchIngred
 		allowUnstableDefault = bool(false)
 		limitDefault         = int64(50)
 		offsetDefault        = int64(0)
+		qDefault             = string("")
 	)
 	return &SearchIngredientsParams{
 		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
+		Q:             &qDefault,
 		HTTPClient:    client,
 	}
 }
@@ -113,7 +121,7 @@ type SearchIngredientsParams struct {
 	*/
 	Limit *int64
 	/*Namespaces*/
-	Namespaces string
+	Namespaces *string
 	/*Offset
 	  The number of ingredients to skip
 
@@ -123,7 +131,7 @@ type SearchIngredientsParams struct {
 	  Return only ingredients whose names or features match the specified substring
 
 	*/
-	Q string
+	Q *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -197,13 +205,13 @@ func (o *SearchIngredientsParams) SetLimit(limit *int64) {
 }
 
 // WithNamespaces adds the namespaces to the search ingredients params
-func (o *SearchIngredientsParams) WithNamespaces(namespaces string) *SearchIngredientsParams {
+func (o *SearchIngredientsParams) WithNamespaces(namespaces *string) *SearchIngredientsParams {
 	o.SetNamespaces(namespaces)
 	return o
 }
 
 // SetNamespaces adds the namespaces to the search ingredients params
-func (o *SearchIngredientsParams) SetNamespaces(namespaces string) {
+func (o *SearchIngredientsParams) SetNamespaces(namespaces *string) {
 	o.Namespaces = namespaces
 }
 
@@ -219,13 +227,13 @@ func (o *SearchIngredientsParams) SetOffset(offset *int64) {
 }
 
 // WithQ adds the q to the search ingredients params
-func (o *SearchIngredientsParams) WithQ(q string) *SearchIngredientsParams {
+func (o *SearchIngredientsParams) WithQ(q *string) *SearchIngredientsParams {
 	o.SetQ(q)
 	return o
 }
 
 // SetQ adds the q to the search ingredients params
-func (o *SearchIngredientsParams) SetQ(q string) {
+func (o *SearchIngredientsParams) SetQ(q *string) {
 	o.Q = q
 }
 
@@ -285,13 +293,20 @@ func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg st
 
 	}
 
-	// query param namespaces
-	qrNamespaces := o.Namespaces
-	qNamespaces := qrNamespaces
-	if qNamespaces != "" {
-		if err := r.SetQueryParam("namespaces", qNamespaces); err != nil {
-			return err
+	if o.Namespaces != nil {
+
+		// query param namespaces
+		var qrNamespaces string
+		if o.Namespaces != nil {
+			qrNamespaces = *o.Namespaces
 		}
+		qNamespaces := qrNamespaces
+		if qNamespaces != "" {
+			if err := r.SetQueryParam("namespaces", qNamespaces); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if o.Offset != nil {
@@ -310,13 +325,20 @@ func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg st
 
 	}
 
-	// query param q
-	qrQ := o.Q
-	qQ := qrQ
-	if qQ != "" {
-		if err := r.SetQueryParam("q", qQ); err != nil {
-			return err
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+		if o.Q != nil {
+			qrQ = *o.Q
 		}
+		qQ := qrQ
+		if qQ != "" {
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	if len(res) > 0 {

@@ -153,6 +153,7 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
+// TODO: This hsould probably use a blank namespace type
 func NewBlankNamespace() Namespace {
 	return Namespace{NamespacePackage, ""}
 }

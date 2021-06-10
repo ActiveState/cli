@@ -12,9 +12,11 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// SolverValidationErrorItem A single validation error
+// SolverValidationErrorItem Solver Validation Error Item
 //
-// swagger:model SolverValidationErrorItem
+// A single validation error.
+//
+// swagger:model solverValidationErrorItem
 type SolverValidationErrorItem struct {
 
 	// Human-readable message about this specific validation error

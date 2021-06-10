@@ -112,9 +112,10 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 
 	client := inventory.Get()
 
+	namespace := ns.String()
 	params := inventory_operations.NewSearchIngredientsParams()
-	params.SetQ(name)
-	params.SetNamespaces(ns.String())
+	params.SetQ(&name)
+	params.SetNamespaces(&namespace)
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
@@ -129,7 +130,7 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	ingredients := []*IngredientAndVersion{}
 	for _, res := range results.Payload.Ingredients {
 		for _, v := range res.Versions {
-			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, ns.String()})
+			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, namespace})
 		}
 	}
 	return ingredients, nil

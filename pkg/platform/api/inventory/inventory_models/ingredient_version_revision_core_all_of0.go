@@ -26,11 +26,8 @@ type IngredientVersionRevisionCoreAllOf0 struct {
 	// Camel-specific metadata needed to build this ingredient version revision in camel, if there is any.
 	CamelExtras interface{} `json:"camel_extras,omitempty"`
 
-	// dependency sets
-	DependencySets []*DependencySet `json:"dependency_sets"`
-
-	// ingredient options
-	IngredientOptions []*IngredientOption `json:"ingredient_options"`
+	// dependencies
+	Dependencies []Dependency `json:"dependencies"`
 
 	// Whether or not this revision is indemnified for customers paying for indemnification. If set to null, then this will use the is_indemnified value of the previous revision or false if this is the first revision.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
@@ -61,11 +58,7 @@ type IngredientVersionRevisionCoreAllOf0 struct {
 func (m *IngredientVersionRevisionCoreAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDependencySets(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateIngredientOptions(formats); err != nil {
+	if err := m.validateDependencies(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -87,49 +80,19 @@ func (m *IngredientVersionRevisionCoreAllOf0) Validate(formats strfmt.Registry) 
 	return nil
 }
 
-func (m *IngredientVersionRevisionCoreAllOf0) validateDependencySets(formats strfmt.Registry) error {
+func (m *IngredientVersionRevisionCoreAllOf0) validateDependencies(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.DependencySets) { // not required
+	if swag.IsZero(m.Dependencies) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.DependencySets); i++ {
-		if swag.IsZero(m.DependencySets[i]) { // not required
-			continue
-		}
+	for i := 0; i < len(m.Dependencies); i++ {
 
-		if m.DependencySets[i] != nil {
-			if err := m.DependencySets[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("dependency_sets" + "." + strconv.Itoa(i))
-				}
-				return err
+		if err := m.Dependencies[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
 			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionRevisionCoreAllOf0) validateIngredientOptions(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.IngredientOptions) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.IngredientOptions); i++ {
-		if swag.IsZero(m.IngredientOptions[i]) { // not required
-			continue
-		}
-
-		if m.IngredientOptions[i] != nil {
-			if err := m.IngredientOptions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
+			return err
 		}
 
 	}

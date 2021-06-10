@@ -16,18 +16,20 @@ import (
 
 // IngredientOption Ingredient Option
 //
-// A string of command line arguments that should be passed to the builder used for this ingredient if this ingredient option's condition sets are satisfied
+// Parameters to the build of this ingredient that should be applied if the conditions are met. Must specify either command line args, resource requirements, or both.
 //
 // swagger:model ingredientOption
 type IngredientOption struct {
 
-	// The command-line arguments to append to the build invocation
-	// Required: true
+	// Command-line arguments to append to the builder invocation
 	// Min Items: 1
 	CommandLineArgs []string `json:"command_line_args"`
 
 	// At least one condition set from this list must be satisfied for this ingredient option to be applied in a recipe (i.e condition sets are ORed together)
-	ConditionSets []*IngredientOptionConditionSetsItems `json:"condition_sets"`
+	ConditionSets []*IngredientOptionConditionSet `json:"condition_sets"`
+
+	// resources
+	Resources *IngredientOptionResources `json:"resources,omitempty"`
 }
 
 // Validate validates this ingredient option
@@ -42,6 +44,10 @@ func (m *IngredientOption) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateResources(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -50,8 +56,8 @@ func (m *IngredientOption) Validate(formats strfmt.Registry) error {
 
 func (m *IngredientOption) validateCommandLineArgs(formats strfmt.Registry) error {
 
-	if err := validate.Required("command_line_args", "body", m.CommandLineArgs); err != nil {
-		return err
+	if swag.IsZero(m.CommandLineArgs) { // not required
+		return nil
 	}
 
 	iCommandLineArgsSize := int64(len(m.CommandLineArgs))
@@ -91,6 +97,24 @@ func (m *IngredientOption) validateConditionSets(formats strfmt.Registry) error 
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *IngredientOption) validateResources(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Resources) { // not required
+		return nil
+	}
+
+	if m.Resources != nil {
+		if err := m.Resources.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("resources")
+			}
+			return err
+		}
 	}
 
 	return nil

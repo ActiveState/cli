@@ -24,6 +24,9 @@ type Dependency struct {
 	// The features that must already be present in the recipe for this requirement to apply. For example, can be used to create requirements that only apply on specific operating systems.
 	Conditions []*DependencyCondition `json:"conditions"`
 
+	// A description of this dependency
+	Description string `json:"description,omitempty"`
+
 	// The name of the feature this ingredient version is dependent on
 	// Required: true
 	Feature *string `json:"feature"`
@@ -38,6 +41,10 @@ type Dependency struct {
 	// requirements
 	// Required: true
 	Requirements Requirements `json:"requirements"`
+
+	// type
+	// Required: true
+	Type DependencyType `json:"type"`
 }
 
 // Validate validates this dependency
@@ -57,6 +64,10 @@ func (m *Dependency) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRequirements(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -118,6 +129,18 @@ func (m *Dependency) validateRequirements(formats strfmt.Registry) error {
 	if err := m.Requirements.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("requirements")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *Dependency) validateType(formats strfmt.Registry) error {
+
+	if err := m.Type.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("type")
 		}
 		return err
 	}
