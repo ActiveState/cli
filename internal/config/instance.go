@@ -86,22 +86,6 @@ func (i *Instance) GetLock() error {
 	return nil
 }
 
-func (i *Instance) GetRLock() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	locked, err := i.lock.TryRLockContext(ctx, lockRetryDelay)
-	if err != nil {
-		return errs.Wrap(err, "Timed out waiting for shared lock")
-	}
-
-	if !locked {
-		return errs.New("Timeout out waiting for shared lock")
-
-	}
-	return nil
-}
-
 func (i *Instance) ReleaseLock() error {
 	defer i.lockMutex.Unlock()
 	f, err := os.OpenFile("/tmp/config_lock",
@@ -131,7 +115,7 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	if err = i.GetRLock(); err != nil {
+	if err = i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
 	defer i.ReleaseLock()
