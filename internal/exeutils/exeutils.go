@@ -37,7 +37,6 @@ func Executables(bins []string) ([]string, error) {
 				exes = append(exes, fpath)
 			}
 		}
-		continue
 	}
 
 	return exes, nil
