@@ -99,7 +99,7 @@ func (i *Installation) BackupFiles() error {
 	if err != nil {
 		return errs.Wrap(err, "Backup of existing files failed.")
 	}
-	i.backups = backups
+	i.backups = append(i.backups, backups...)
 	return nil
 }
 

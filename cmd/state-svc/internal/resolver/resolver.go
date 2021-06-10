@@ -2,12 +2,14 @@ package resolver
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"time"
 
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -47,6 +49,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	logging.Debug("AvailableUpdate resolver")
 	const cacheKey = "AvailableUpdate"
 	c := cache.New(12*time.Hour, time.Hour)
 	if up, exists := c.Get(cacheKey); exists {
@@ -75,6 +78,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
+	logging.Debug("Update resolver")
 	ch := ""
 	ver := ""
 	if channel != nil {
@@ -90,7 +94,8 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
-	proc, err := up.InstallDeferred()
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
+	proc, err := up.InstallDeferred(installTargetPath)
 	if err != nil {
 		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}

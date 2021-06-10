@@ -1217,6 +1217,8 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+push_prompt_owner:
+  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
@@ -1260,7 +1262,7 @@ field_changes:
 change_added:
   other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
 change_removed:
-  other: "[ERROR]+[/RESET] {{.V0}}"
+  other: "[ERROR]-[/RESET] {{.V0}}"
 change_updated:
   other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
 namespace_label_platform:
@@ -1670,3 +1672,5 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_revert_refresh:
+  other: Could not get revert commit to check if changes were indeed made

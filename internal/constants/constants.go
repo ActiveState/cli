@@ -164,6 +164,9 @@ const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
+// TrayDocumentationURL is the url for the state tool documentation to be used in the state tray application
+const TrayDocumentationURL = "http://docs.activestate.com/platform/state/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
@@ -174,13 +177,13 @@ const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 const DocumentationURLCreateProject = DocumentationURL + "create-project/"
 
 // ActiveStateBlogURL is the URL for the ActiveState Blog
-const ActiveStateBlogURL = "https://www.activestate.com/blog/"
+const ActiveStateBlogURL = "https://www.activestate.com/blog/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
 // ActiveStateSupportURL is the URL for the AciveState support page
-const ActiveStateSupportURL = "https://www.activestate.com/support/"
+const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
-// ActiveStateAccountURL is the URL for the ActiveState account preferences page
-const ActiveStateAccountURL = "https://platform.activestate.com/preferences"
+// ActiveStateDashboardURL is the URL for the ActiveState account preferences page
+const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -304,3 +307,9 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// OverwriteDefaultInstallationPath is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
+
+// OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
+const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"

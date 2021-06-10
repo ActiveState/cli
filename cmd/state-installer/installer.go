@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -88,6 +87,7 @@ func run(out output.Outputer) error {
 		}
 	}
 
+	logging.Debug("Installing to %s", installPath)
 	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644
@@ -104,27 +104,13 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Could not detect executable path")
 	}
 
-	svcInfo := appinfo.SvcApp(installPath)
 	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
 
 	out.Print("Stopping services")
 
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installation.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
-	}
-
-	// Stop state-svc before accessing its files
-	if fileutils.FileExists(svcInfo.Exec()) {
-		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
-		if err != nil {
-			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
-		}
-		if exitCode != 0 {
-			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
-		}
+	if err := installation.StopRunning(installPath); err != nil {
+		return errs.Wrap(err, "Failed to stop running services")
 	}
 
 	tmpDir := filepath.Dir(exe)

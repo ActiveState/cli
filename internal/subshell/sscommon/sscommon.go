@@ -122,34 +122,20 @@ func runWithCmd(env []string, name string, args ...string) error {
 		args = append([]string{"-file", name}, args...)
 		name = "powershell"
 	case ".sh":
-		linPath, err := winPathToLinPath(name)
+		bashPath, err := osutils.BashifyPath(name)
 		if err != nil {
 			return locale.WrapError(
 				err, "err_sscommon_cannot_translate_path",
 				"Cannot translate Windows path ({{.V0}}) to bash path.", name,
 			)
 		}
-		args = append([]string{linPath}, args...)
+		args = append([]string{bashPath}, args...)
 		name = "bash"
 	default:
 		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
 
 	return runDirect(env, name, args...)
-}
-
-func winPathToLinPath(name string) (string, error) {
-	cmd := exec.Command("bash", "-c", "pwd")
-	cmd.Dir = filepath.Dir(name)
-
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	path := strings.TrimSpace(string(out)) + "/" + filepath.Base(name)
-
-	return path, nil
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {
