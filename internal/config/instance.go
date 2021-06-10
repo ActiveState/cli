@@ -116,7 +116,7 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	if err = i.GetRLock(); err != nil {
+	if err = i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
 	defer i.ReleaseLock()
