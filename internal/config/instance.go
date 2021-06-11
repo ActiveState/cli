@@ -101,6 +101,9 @@ func (i *Instance) ReleaseLock() error {
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
 	}
+
+	// Ignore the error, as there are legitimate cases where it will fail (when another processes has locked the file again)
+	_ = os.Remove(i.getLockFile())
 	return nil
 }
 
@@ -330,10 +333,7 @@ func (i *Instance) InstallSource() string {
 }
 
 func (i *Instance) ReadInConfig() error {
-	configFile, err := i.getConfigFile()
-	if err != nil {
-		return errs.Wrap(err, "Could not find config file")
-	}
+	configFile := i.getConfigFile()
 
 	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
@@ -438,20 +438,20 @@ func (i *Instance) ensureCacheExists() error {
 	return nil
 }
 
+func (i *Instance) getConfigFile() string {
+	if i.configFile == "" {
+		i.configFile = filepath.Join(i.configDir.Path, C.InternalConfigFileName)
+	}
+
+	return i.configFile
+}
+
 func (i *Instance) getLockFile() string {
 	if i.lockFile == "" {
 		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
 	}
 
 	return i.lockFile
-}
-
-func (i *Instance) getConfigFile() (string, error) {
-	if i.configFile == "" {
-		i.configFile = filepath.Join(i.configDir.Path, C.InternalConfigFileName)
-	}
-
-	return i.configFile, nil
 }
 
 // tempDir returns a temp directory path at the topmost directory possible

@@ -157,5 +157,12 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 		return nil, errs.Wrap(err, "Could not start %s %v", command, args)
 	}
 	cmd.Stdin = nil
+
+	// Wait for the command to finish in a go-routine.  If we do not do that, and the parent process keeps running,
+	// the launched process will keep around flagged <defunct> (at least on Linux)
+	go func() {
+		cmd.Wait()
+	}()
+
 	return cmd.Process, nil
 }
