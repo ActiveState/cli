@@ -85,15 +85,6 @@ func (i *Instance) GetLock() error {
 
 func (i *Instance) ReleaseLock() error {
 	defer i.lockMutex.Unlock()
-	f, err := os.OpenFile("/tmp/config_lock",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	if _, err := f.WriteString(fmt.Sprintf("[%s] Process %s (%d) releases lock\n", time.Now(), os.Args[0], os.Getpid())); err != nil {
-		log.Println(err)
-	}
 
 	if err := i.lock.Unlock(); err != nil {
 		return errs.Wrap(err, "Failed to release lock")
