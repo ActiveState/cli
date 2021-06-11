@@ -61,7 +61,8 @@ namespace StateDeploy
 
             var paths = GetPaths();
             string stateURL = "https://state-tool.s3.amazonaws.com/update/state/release/";
-            string jsonURL = stateURL + paths.JsonDescription;
+            string latestSingleFileRelease = "0.28.2-SHAbdac00e";
+            string jsonURL = stateURL + latestSingleFileRelease + "/" + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
             string stateToolInstallDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ActiveState", "bin");
