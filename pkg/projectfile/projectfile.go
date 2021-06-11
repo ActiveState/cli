@@ -1266,6 +1266,8 @@ func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
 }
 
 func addDeprecatedProjectMappings(cfg ConfigGetter) {
+	var unsets []string
+
 	err := cfg.Update(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1278,8 +1280,6 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 				return strings.HasPrefix(v, "project_")
 			})
 
-			var unsets []string
-
 			for _, key := range keys {
 				namespace := strings.TrimPrefix(key, "project_")
 				newPaths := projects[namespace]
@@ -1288,18 +1288,18 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 				unsets = append(unsets, key)
 			}
 
-			for _, unset := range unsets {
-				if err := cfg.Set(unset, nil); err != nil {
-					logging.Error("Could not clear config entry for key %s, error: %v", unset, err)
-				}
-			}
-
 			return projects, nil
 		},
 	)
 	if err != nil {
 		logging.Error("Could not update project mapping in config, error: %v", err)
 	}
+	for _, unset := range unsets {
+		if err := cfg.Set(unset, nil); err != nil {
+			logging.Error("Could not clear config entry for key %s, error: %v", unset, err)
+		}
+	}
+
 }
 
 // GetProjectPaths returns the paths of all projects associated with the namespace
