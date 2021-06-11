@@ -16,6 +16,7 @@ import (
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
+	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
@@ -1203,22 +1204,20 @@ func (p *Project) Persist() {
 	os.Setenv(constants.ProjectEnvVarName, p.Path())
 }
 
-type EntriesMap = map[string][]string
-
 type ConfigGetter interface {
-	GetStringMapStringSlice(key string) EntriesMap
+	GetStringMapStringSlice(key string) map[string][]string
 	AllKeys() []string
 	GetStringSlice(string) []string
 	Set(string, interface{}) error
 	SetWithLock(string, func(interface{}) (interface{}, error)) error
 }
 
-func GetProjectMapping(config ConfigGetter) EntriesMap {
+func GetProjectMapping(config ConfigGetter) map[string][]string {
 	addDeprecatedProjectMappings(config)
 	CleanProjectMapping(config)
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
-		return EntriesMap{}
+		return map[string][]string{}
 	}
 	return projects
 }
@@ -1270,19 +1269,9 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
-			var projects EntriesMap
-
-			switch ps := v.(type) {
-			case EntriesMap:
-				if ps == nil {
-					ps = make(EntriesMap)
-				}
-				projects = ps
-			default:
-				if ps != nil {
-					return nil, errs.New("Projects data in config is abnormal")
-				}
-				projects = make(EntriesMap)
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil {
+				return nil, errs.New("Projects data in config is abnormal")
 			}
 
 			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
@@ -1329,19 +1318,9 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
-			var projects EntriesMap
-
-			switch ps := v.(type) {
-			case EntriesMap:
-				if ps == nil {
-					ps = make(EntriesMap)
-				}
-				projects = ps
-			default:
-				if ps != nil {
-					return nil, errs.New("Projects data in config is abnormal")
-				}
-				projects = make(EntriesMap)
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil {
+				return nil, errs.New("Projects data in config is abnormal")
 			}
 
 			projectPath = filepath.Clean(projectPath)
@@ -1371,19 +1350,9 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
-			var projects EntriesMap
-
-			switch ps := v.(type) {
-			case EntriesMap:
-				if ps == nil {
-					ps = make(EntriesMap)
-				}
-				projects = ps
-			default:
-				if ps != nil {
-					return nil, errs.New("Projects data in config is abnormal")
-				}
-				projects = make(EntriesMap)
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil {
+				return nil, errs.New("Projects data in config is abnormal")
 			}
 
 			seen := make(map[string]struct{})
