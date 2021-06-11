@@ -1278,13 +1278,19 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 				return strings.HasPrefix(v, "project_")
 			})
 
+			var unsets []string
+
 			for _, key := range keys {
 				namespace := strings.TrimPrefix(key, "project_")
 				newPaths := projects[namespace]
 				paths := cfg.GetStringSlice(key)
 				projects[namespace] = funk.UniqString(append(newPaths, paths...))
-				if err := cfg.Set(key, nil); err != nil {
-					logging.Error("Could not clear config entry for key %s, error: %v", key, err)
+				unsets = append(unsets, key)
+			}
+
+			for _, unset := range unsets {
+				if err := cfg.Set(unset, nil); err != nil {
+					logging.Error("Could not clear config entry for key %s, error: %v", unset, err)
 				}
 			}
 
