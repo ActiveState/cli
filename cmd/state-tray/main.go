@@ -88,8 +88,12 @@ func run() error {
 
 	logging.Debug("Running packr.NewBox()")
 	box := packr.NewBox(assetsPath)
-	logging.Debug("set icon file: len(iconFile) = %d", len(box.Bytes(iconFile)))
-	// systray.SetIcon(box.Bytes(iconFile))
+	iconBytes, err := box.MustBytes(iconFile)
+	if err != nil {
+		return errs.Wrap(err, "could not find %s in assets", iconFile)
+	}
+	logging.Debug("set icon file: len(iconFile) = %d", len(iconBytes))
+	systray.SetIcon(box.Bytes(iconFile))
 
 	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
