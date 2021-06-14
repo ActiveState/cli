@@ -62,6 +62,12 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 	cp.ExpectExitCode(1)
 }
 
+func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
+	cp := ts.Spawn("auth")
+	cp.Expect("username:")
+	cp.SendCtrlC()
+}
+
 type userJSON struct {
 	Username        string `json:"username,omitempty"`
 	URLName         string `json:"urlname,omitempty"`
