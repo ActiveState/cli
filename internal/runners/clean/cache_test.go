@@ -46,6 +46,11 @@ func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }
 
+func (c *configMock) Update(key string, fn func(interface{}) (interface{}, error)) {
+	fn(nil)
+	return nil
+}
+
 func (c *configMock) CachePath() string {
 	if c.cachePath != "" {
 		return c.cachePath
