@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -35,7 +35,7 @@ var commands = []command{
 func main() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)

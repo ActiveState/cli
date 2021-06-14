@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
@@ -44,7 +44,7 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
