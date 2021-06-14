@@ -97,7 +97,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free",
+		"free_legacy",
 		false,
 	}
 
