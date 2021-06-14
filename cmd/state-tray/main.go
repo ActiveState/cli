@@ -63,7 +63,7 @@ func onReady() {
 		exitCode = 1
 	}
 
-	logging.Debug("run() returned with exit code 0")
+	logging.Debug("run() returned with exit code 0: %v", err)
 }
 
 func run() error {
@@ -88,8 +88,8 @@ func run() error {
 
 	logging.Debug("Running packr.NewBox()")
 	box := packr.NewBox(assetsPath)
-	logging.Debug("set icon file")
-	systray.SetIcon(box.Bytes(iconFile))
+	logging.Debug("set icon file: len(iconFile) = %d", len(box.Bytes(iconFile)))
+	// systray.SetIcon(box.Bytes(iconFile))
 
 	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
