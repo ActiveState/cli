@@ -86,18 +86,15 @@ func run() error {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
+	logging.Debug("Running packr.NewBox()")
 	box := packr.NewBox(assetsPath)
+	logging.Debug("set icon file")
 	systray.SetIcon(box.Bytes(iconFile))
 
 	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
-	}
-
-	logging.Debug("starting svc manager")
-	if err := svcm.Start(); err != nil {
-		return errs.Wrap(err, "Failed to start svc manager")
 	}
 
 	logging.Debug("initiating svc model")
