@@ -38,6 +38,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.interactiveLogin(ts, username)
 	ts.LogoutUser()
 	suite.loginFlags(ts, username)
+	suite.ensureLogout(ts)
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
