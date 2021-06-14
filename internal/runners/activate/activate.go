@@ -219,9 +219,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	// update config with project
-	projectfile.GetProjectFileMapping(r.config)
-
 	venv := virtualenvironment.New(rt)
 
 	if setDefault {
