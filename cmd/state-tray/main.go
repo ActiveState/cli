@@ -39,14 +39,18 @@ func main() {
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
 
 	systray.Run(onReady, onExit)
+
+	logging.Debug("systray.Run returned")
 }
 
 func onReady() {
+	logging.Debug("onReady has been called")
 	var exitCode int
 	defer func() {
 		if runbits.HandlePanics() {
 			exitCode = 1
 		}
+		logging.Debug("onReady is done with exit code %d", exitCode)
 		events.WaitForEvents(1*time.Second, rollbar.Close)
 		os.Exit(exitCode)
 	}()
@@ -58,9 +62,12 @@ func onReady() {
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
+
+	logging.Debug("run() returned with exit code 0")
 }
 
 func run() error {
+	logging.Debug("getting configuration")
 	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
@@ -74,6 +81,7 @@ func run() error {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
+	logging.Debug("registering tray pid")
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
@@ -81,28 +89,39 @@ func run() error {
 	box := packr.NewBox(assetsPath)
 	systray.SetIcon(box.Bytes(iconFile))
 
+	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
+	logging.Debug("starting svc manager")
+	if err := svcm.Start(); err != nil {
+		return errs.Wrap(err, "Failed to start svc manager")
+	}
+
+	logging.Debug("initiating svc model")
 	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
+	logging.Debug("setting tooltip")
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 
 	mUpdate := systray.AddMenuItem(
 		locale.Tl("tray_update_title", "Update Available"),
 		locale.Tl("tray_update_tooltip", "Update your ActiveState Desktop installation"),
 	)
+	logging.Debug("hiding systray menu")
 	mUpdate.Hide()
 
 	updNotice := updateNotice{
 		box:  box,
 		item: mUpdate,
 	}
+
+	logging.Debug("supervise update")
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
 	defer closeUpdateSupervision()
 
@@ -131,10 +150,11 @@ func run() error {
 		locale.Tl("tray_support_title", "Support"),
 		locale.Tl("tray_support_tooltip", "Open support page"),
 	)
+	systray.AddSeparator()
 
+	logging.Debug("handle auto-start configuration")
 	trayInfo := appinfo.TrayApp()
 
-	systray.AddSeparator()
 	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
 	enabled, err := as.IsEnabled()
 	if err != nil {
@@ -149,6 +169,7 @@ func run() error {
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
 	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
 
+	logging.Debug("get local projects")
 	localProjects, err := model.LocalProjects()
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
@@ -235,7 +256,7 @@ func run() error {
 }
 
 func onExit() {
-	// Not implemented
+	logging.Debug("systray.OnExit() was called.")
 }
 
 func execute(exec string, args []string) error {

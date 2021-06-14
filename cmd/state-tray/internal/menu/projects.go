@@ -47,6 +47,7 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}
 
+	logging.Debug("start event loop for local project menu items")
 	u.startEventLoops()
 }
 
