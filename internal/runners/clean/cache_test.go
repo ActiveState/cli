@@ -46,7 +46,7 @@ func (c *configMock) GetStringMapStringSlice(key string) map[string][]string {
 	return map[string][]string{}
 }
 
-func (c *configMock) Update(key string, fn func(interface{}) (interface{}, error)) {
+func (c *configMock) Update(key string, fn func(interface{}) (interface{}, error)) error {
 	fn(nil)
 	return nil
 }
