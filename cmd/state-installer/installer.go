@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/rollbar/rollbar-go"
@@ -29,7 +29,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
