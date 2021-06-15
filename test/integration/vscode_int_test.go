@@ -97,7 +97,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free",
+		"free_legacy",
 		false,
 	}
 
@@ -112,7 +112,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
-		Tier:     "free",
+		Tier:     "free_legacy",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
