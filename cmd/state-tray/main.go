@@ -41,8 +41,6 @@ func main() {
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
 
 	systray.Run(onReady, onExit)
-
-	logging.Debug("systray.Run returned")
 }
 
 func onReady() {
@@ -63,8 +61,6 @@ func onReady() {
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
-
-	logging.Debug("run() returned with exit code 0: %v", err)
 }
 
 func run() error {
@@ -81,26 +77,22 @@ func run() error {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
-	logging.Debug("registering tray pid")
 	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
 	systray.SetIcon(iconFile)
 
-	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	logging.Debug("initiating svc model")
 	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}
 
-	logging.Debug("setting tooltip")
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 
 	mUpdate := systray.AddMenuItem(
@@ -114,7 +106,6 @@ func run() error {
 		item: mUpdate,
 	}
 
-	logging.Debug("supervise update")
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
 	defer closeUpdateSupervision()
 
@@ -145,7 +136,6 @@ func run() error {
 	)
 	systray.AddSeparator()
 
-	logging.Debug("handle auto-start configuration")
 	trayInfo := appinfo.TrayApp()
 
 	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
@@ -162,7 +152,6 @@ func run() error {
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
 	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
 
-	logging.Debug("get local projects")
 	localProjects, err := model.LocalProjects()
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
