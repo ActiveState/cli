@@ -109,6 +109,10 @@ func ByteStreamProducer(opts ...byteStreamOpt) Producer {
 		}
 		defer close()
 
+		if rc, ok := data.(io.ReadCloser); ok {
+			defer rc.Close()
+		}
+
 		if rdr, ok := data.(io.Reader); ok {
 			_, err := io.Copy(writer, rdr)
 			return err
@@ -125,6 +129,11 @@ func ByteStreamProducer(opts ...byteStreamOpt) Producer {
 		}
 
 		if data != nil {
+			if str, ok := data.(string); ok {
+				_, err := writer.Write([]byte(str))
+				return err
+			}
+
 			if e, ok := data.(error); ok {
 				_, err := writer.Write([]byte(e.Error()))
 				return err
