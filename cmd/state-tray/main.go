@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	_ "embed"
+
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -22,15 +24,15 @@ import (
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
 	"github.com/shirou/gopsutil/process"
 )
 
-const (
-	assetsPath = "../../assets"
-	iconFile   = "icon.ico"
-)
+//go:embed icons/icon.ico
+var iconFile []byte
+
+//go:embed icons/icon-update.ico
+var iconUpdateFile []byte
 
 func main() {
 	verbose := os.Getenv("VERBOSE") != ""
@@ -44,7 +46,6 @@ func main() {
 }
 
 func onReady() {
-	logging.Debug("onReady has been called")
 	var exitCode int
 	defer func() {
 		if runbits.HandlePanics() {
@@ -67,7 +68,6 @@ func onReady() {
 }
 
 func run() error {
-	logging.Debug("getting configuration")
 	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
@@ -86,14 +86,7 @@ func run() error {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
-	logging.Debug("Running packr.NewBox()")
-	box := packr.NewBox(assetsPath)
-	iconBytes, err := box.MustBytes(iconFile)
-	if err != nil {
-		return errs.Wrap(err, "could not find %s in assets", iconFile)
-	}
-	logging.Debug("set icon file: len(iconFile) = %d", len(iconBytes))
-	systray.SetIcon(box.Bytes(iconFile))
+	systray.SetIcon(iconFile)
 
 	logging.Debug("initiating svcmanager")
 	svcm := svcmanager.New(cfg)
@@ -118,7 +111,6 @@ func run() error {
 	mUpdate.Hide()
 
 	updNotice := updateNotice{
-		box:  box,
 		item: mUpdate,
 	}
 
