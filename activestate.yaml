@@ -130,10 +130,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      packr
-      find -iname '*-packr*' | xargs grep -l icon.ico
-
-      packr build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
   - name: build-all
     description: Builds all our tools
     standalone: true
