@@ -167,11 +167,11 @@ func Get() (*Instance, error) {
 	return defaultConfig, nil
 }
 
-// Update updates a value at the given key. The valueF argument returns the
+// SetWithLock updates a value at the given key. The valueF argument returns the
 // new value based on the previous one.  If the function returns with an error, the
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
-func (i *Instance) Update(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
 	}

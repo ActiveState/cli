@@ -27,7 +27,7 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 
 func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
-	err := s.cfg.Update(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
+	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
 		oldPid := cast.ToInt(oldPidI)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {

@@ -1209,7 +1209,7 @@ type ConfigGetter interface {
 	AllKeys() []string
 	GetStringSlice(string) []string
 	Set(string, interface{}) error
-	Update(string, func(interface{}) (interface{}, error)) error
+	SetWithLock(string, func(interface{}) (interface{}, error)) error
 }
 
 func GetProjectMapping(config ConfigGetter) map[string][]string {
@@ -1268,7 +1268,7 @@ func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
 func addDeprecatedProjectMappings(cfg ConfigGetter) {
 	var unsets []string
 
-	err := cfg.Update(
+	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
@@ -1320,7 +1320,7 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 // storeProjectMapping associates the namespace with the project
 // path in the config
 func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
-	err := cfg.Update(
+	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
@@ -1352,7 +1352,7 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping(cfg ConfigGetter) {
-	err := cfg.Update(
+	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
