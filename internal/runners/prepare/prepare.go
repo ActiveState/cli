@@ -52,7 +52,10 @@ func (r *Prepare) resetExecutors() error {
 		for _, projectDir := range projectDirs {
 			installDir := rt.ProjectDirToTargetDir(projectDir, r.cfg.CachePath())
 			logging.Debug("Reset executor for %s", projectDir)
-			_ = os.RemoveAll(setup.ExecDir(installDir))
+			err := os.RemoveAll(setup.ExecDir(installDir))
+			if err != nil {
+				logging.Error("Failed to re-set executor directory %s", setup.ExecDir(installDir))
+			}
 		}
 	}
 
