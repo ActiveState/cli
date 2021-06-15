@@ -122,7 +122,7 @@ func (p *Pull) Run(params *PullParams) error {
 		return locale.WrapError(err, "err_pull_incompatible")
 	}
 
-	if targetCommit != nil && (noCommonParent || divergedHistory) {
+	if divergedHistory {
 		p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
 		p.out.Notice(locale.Tr(
 			"pull_diverged_message",

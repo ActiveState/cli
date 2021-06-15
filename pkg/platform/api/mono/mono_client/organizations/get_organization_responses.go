@@ -41,9 +41,8 @@ func (o *GetOrganizationReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetOrganizationOK() *GetOrganizationOK {
 	return &GetOrganizationOK{}
 }
 
-/*GetOrganizationOK handles this case with default header values.
+/* GetOrganizationOK describes a response with status code 200, with default header values.
 
 Organization Record
 */
@@ -63,7 +62,6 @@ type GetOrganizationOK struct {
 func (o *GetOrganizationOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrganizationOK) GetPayload() *mono_models.Organization {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetOrganizationNotFound() *GetOrganizationNotFound {
 	return &GetOrganizationNotFound{}
 }
 
-/*GetOrganizationNotFound handles this case with default header values.
+/* GetOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetOrganizationNotFound struct {
 func (o *GetOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetOrganizationInternalServerError() *GetOrganizationInternalServerError
 	return &GetOrganizationInternalServerError{}
 }
 
-/*GetOrganizationInternalServerError handles this case with default header values.
+/* GetOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetOrganizationInternalServerError struct {
 func (o *GetOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

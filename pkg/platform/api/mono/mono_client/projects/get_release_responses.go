@@ -41,9 +41,8 @@ func (o *GetReleaseReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetReleaseOK() *GetReleaseOK {
 	return &GetReleaseOK{}
 }
 
-/*GetReleaseOK handles this case with default header values.
+/* GetReleaseOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetReleaseOK struct {
 func (o *GetReleaseOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] getReleaseOK  %+v", 200, o.Payload)
 }
-
 func (o *GetReleaseOK) GetPayload() *mono_models.Release {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetReleaseNotFound() *GetReleaseNotFound {
 	return &GetReleaseNotFound{}
 }
 
-/*GetReleaseNotFound handles this case with default header values.
+/* GetReleaseNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetReleaseNotFound struct {
 func (o *GetReleaseNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] getReleaseNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetReleaseNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetReleaseInternalServerError() *GetReleaseInternalServerError {
 	return &GetReleaseInternalServerError{}
 }
 
-/*GetReleaseInternalServerError handles this case with default header values.
+/* GetReleaseInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetReleaseInternalServerError struct {
 func (o *GetReleaseInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] getReleaseInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetReleaseInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

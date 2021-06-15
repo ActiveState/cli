@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewAddCommitParams creates a new AddCommitParams object
-// with the default values initialized.
+// NewAddCommitParams creates a new AddCommitParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddCommitParams() *AddCommitParams {
-	var ()
 	return &AddCommitParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddCommitParamsWithTimeout creates a new AddCommitParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddCommitParamsWithTimeout(timeout time.Duration) *AddCommitParams {
-	var ()
 	return &AddCommitParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddCommitParamsWithContext creates a new AddCommitParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddCommitParamsWithContext(ctx context.Context) *AddCommitParams {
-	var ()
 	return &AddCommitParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddCommitParamsWithHTTPClient creates a new AddCommitParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddCommitParamsWithHTTPClient(client *http.Client) *AddCommitParams {
-	var ()
 	return &AddCommitParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddCommitParams contains all the parameters to send to the API endpoint
-for the add commit operation typically these are written to a http.Request
+/* AddCommitParams contains all the parameters to send to the API endpoint
+   for the add commit operation.
+
+   Typically these are written to a http.Request.
 */
 type AddCommitParams struct {
 
-	/*Commit*/
+	// Commit.
 	Commit *mono_models.CommitEditable
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add commit params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCommitParams) WithDefaults() *AddCommitParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add commit params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCommitParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add commit params
@@ -121,7 +135,6 @@ func (o *AddCommitParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return err
 	}
 	var res []error
-
 	if o.Commit != nil {
 		if err := r.SetBodyParam(o.Commit); err != nil {
 			return err

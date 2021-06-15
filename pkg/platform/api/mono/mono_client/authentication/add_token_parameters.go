@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewAddTokenParams creates a new AddTokenParams object
-// with the default values initialized.
+// NewAddTokenParams creates a new AddTokenParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddTokenParams() *AddTokenParams {
-	var ()
 	return &AddTokenParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddTokenParamsWithTimeout creates a new AddTokenParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddTokenParamsWithTimeout(timeout time.Duration) *AddTokenParams {
-	var ()
 	return &AddTokenParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddTokenParamsWithContext creates a new AddTokenParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddTokenParamsWithContext(ctx context.Context) *AddTokenParams {
-	var ()
 	return &AddTokenParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddTokenParamsWithHTTPClient creates a new AddTokenParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddTokenParamsWithHTTPClient(client *http.Client) *AddTokenParams {
-	var ()
 	return &AddTokenParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddTokenParams contains all the parameters to send to the API endpoint
-for the add token operation typically these are written to a http.Request
+/* AddTokenParams contains all the parameters to send to the API endpoint
+   for the add token operation.
+
+   Typically these are written to a http.Request.
 */
 type AddTokenParams struct {
 
-	/*TokenOptions*/
+	// TokenOptions.
 	TokenOptions *mono_models.TokenEditable
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddTokenParams) WithDefaults() *AddTokenParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddTokenParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add token params
@@ -121,7 +135,6 @@ func (o *AddTokenParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
-
 	if o.TokenOptions != nil {
 		if err := r.SetBodyParam(o.TokenOptions); err != nil {
 			return err

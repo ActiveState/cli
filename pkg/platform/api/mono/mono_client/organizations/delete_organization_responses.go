@@ -53,9 +53,8 @@ func (o *DeleteOrganizationReader) ReadResponse(response runtime.ClientResponse,
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewDeleteOrganizationOK() *DeleteOrganizationOK {
 	return &DeleteOrganizationOK{}
 }
 
-/*DeleteOrganizationOK handles this case with default header values.
+/* DeleteOrganizationOK describes a response with status code 200, with default header values.
 
 Organizartion deleted
 */
@@ -75,7 +74,6 @@ type DeleteOrganizationOK struct {
 func (o *DeleteOrganizationOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteOrganizationOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewDeleteOrganizationBadRequest() *DeleteOrganizationBadRequest {
 	return &DeleteOrganizationBadRequest{}
 }
 
-/*DeleteOrganizationBadRequest handles this case with default header values.
+/* DeleteOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type DeleteOrganizationBadRequest struct {
 func (o *DeleteOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DeleteOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewDeleteOrganizationForbidden() *DeleteOrganizationForbidden {
 	return &DeleteOrganizationForbidden{}
 }
 
-/*DeleteOrganizationForbidden handles this case with default header values.
+/* DeleteOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type DeleteOrganizationForbidden struct {
 func (o *DeleteOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewDeleteOrganizationNotFound() *DeleteOrganizationNotFound {
 	return &DeleteOrganizationNotFound{}
 }
 
-/*DeleteOrganizationNotFound handles this case with default header values.
+/* DeleteOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type DeleteOrganizationNotFound struct {
 func (o *DeleteOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewDeleteOrganizationInternalServerError() *DeleteOrganizationInternalServe
 	return &DeleteOrganizationInternalServerError{}
 }
 
-/*DeleteOrganizationInternalServerError handles this case with default header values.
+/* DeleteOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type DeleteOrganizationInternalServerError struct {
 func (o *DeleteOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationIdentifier}][%d] deleteOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

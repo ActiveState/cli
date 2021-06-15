@@ -17,74 +17,93 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListDistrosParams creates a new ListDistrosParams object
-// with the default values initialized.
+// NewListDistrosParams creates a new ListDistrosParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListDistrosParams() *ListDistrosParams {
-	var ()
 	return &ListDistrosParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListDistrosParamsWithTimeout creates a new ListDistrosParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListDistrosParamsWithTimeout(timeout time.Duration) *ListDistrosParams {
-	var ()
 	return &ListDistrosParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListDistrosParamsWithContext creates a new ListDistrosParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListDistrosParamsWithContext(ctx context.Context) *ListDistrosParams {
-	var ()
 	return &ListDistrosParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListDistrosParamsWithHTTPClient creates a new ListDistrosParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListDistrosParamsWithHTTPClient(client *http.Client) *ListDistrosParams {
-	var ()
 	return &ListDistrosParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListDistrosParams contains all the parameters to send to the API endpoint
-for the list distros operation typically these are written to a http.Request
+/* ListDistrosParams contains all the parameters to send to the API endpoint
+   for the list distros operation.
+
+   Typically these are written to a http.Request.
 */
 type ListDistrosParams struct {
 
-	/*IncludeDetails
-	  include the manifest and formats in the response
+	/* IncludeDetails.
 
+	   include the manifest and formats in the response
 	*/
 	IncludeDetails *bool
-	/*OrganizationName
-	  desired organization
 
+	/* OrganizationName.
+
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list distros params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDistrosParams) WithDefaults() *ListDistrosParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list distros params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListDistrosParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list distros params
@@ -176,16 +195,17 @@ func (o *ListDistrosParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 		// query param includeDetails
 		var qrIncludeDetails bool
+
 		if o.IncludeDetails != nil {
 			qrIncludeDetails = *o.IncludeDetails
 		}
 		qIncludeDetails := swag.FormatBool(qrIncludeDetails)
 		if qIncludeDetails != "" {
+
 			if err := r.SetQueryParam("includeDetails", qIncludeDetails); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationName

@@ -25,17 +25,20 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOK, error)
+	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOK, error)
 
-	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error)
+	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOK, error)
 
-	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error)
+	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionOK, error)
 
-	ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientVersionsOK, error)
+	ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIngredientVersionsOK, error)
 
-	ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientsOK, error)
+	ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIngredientsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -45,13 +48,12 @@ type ClientService interface {
 
   Create a new package
 */
-func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOK, error) {
+func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addIngredient",
 		Method:             "POST",
 		PathPattern:        "/ingredients",
@@ -63,7 +65,12 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +89,12 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 
   fetch a specific ingredient
 */
-func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error) {
+func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getIngredient",
 		Method:             "GET",
 		PathPattern:        "/ingredients/{ingredientID}",
@@ -100,7 +106,12 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -117,13 +128,12 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 /*
   GetIngredientVersion List of valid versions for an ingredient
 */
-func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error) {
+func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getIngredientVersion",
 		Method:             "GET",
 		PathPattern:        "/ingredients/{ingredientID}/versions/{version}",
@@ -135,7 +145,12 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -152,13 +167,12 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 /*
   ListIngredientVersions List of valid versions for an ingredient
 */
-func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientVersionsOK, error) {
+func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListIngredientVersionsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listIngredientVersions",
 		Method:             "GET",
 		PathPattern:        "/ingredients/{ingredientID}/versions",
@@ -170,7 +184,12 @@ func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -189,13 +208,12 @@ func (a *Client) ListIngredientVersions(params *ListIngredientVersionsParams, au
 
   Retrieve a list of all valid builder ingredients
 */
-func (a *Client) ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*ListIngredientsOK, error) {
+func (a *Client) ListIngredients(params *ListIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIngredientsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListIngredientsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listIngredients",
 		Method:             "GET",
 		PathPattern:        "/ingredients",
@@ -207,7 +225,12 @@ func (a *Client) ListIngredients(params *ListIngredientsParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

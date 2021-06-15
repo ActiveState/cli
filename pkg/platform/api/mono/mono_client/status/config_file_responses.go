@@ -27,9 +27,8 @@ func (o *ConfigFileReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return result, nil
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -38,7 +37,7 @@ func NewConfigFileOK() *ConfigFileOK {
 	return &ConfigFileOK{}
 }
 
-/*ConfigFileOK handles this case with default header values.
+/* ConfigFileOK describes a response with status code 200, with default header values.
 
 Config File Download
 */
@@ -49,7 +48,6 @@ type ConfigFileOK struct {
 func (o *ConfigFileOK) Error() string {
 	return fmt.Sprintf("[GET /config][%d] configFileOK  %+v", 200, o.Payload)
 }
-
 func (o *ConfigFileOK) GetPayload() string {
 	return o.Payload
 }

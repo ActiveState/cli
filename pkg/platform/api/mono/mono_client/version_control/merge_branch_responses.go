@@ -59,9 +59,8 @@ func (o *MergeBranchReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,25 +69,24 @@ func NewMergeBranchOK() *MergeBranchOK {
 	return &MergeBranchOK{}
 }
 
-/*MergeBranchOK handles this case with default header values.
+/* MergeBranchOK describes a response with status code 200, with default header values.
 
 Merge the branch with the branch it was forked from using the given strategy or preview options
 */
 type MergeBranchOK struct {
-	Payload *mono_models.BranchMergeStrategies
+	Payload *mono_models.MergeStrategies
 }
 
 func (o *MergeBranchOK) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchOK  %+v", 200, o.Payload)
 }
-
-func (o *MergeBranchOK) GetPayload() *mono_models.BranchMergeStrategies {
+func (o *MergeBranchOK) GetPayload() *mono_models.MergeStrategies {
 	return o.Payload
 }
 
 func (o *MergeBranchOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(mono_models.BranchMergeStrategies)
+	o.Payload = new(mono_models.MergeStrategies)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -103,7 +101,7 @@ func NewMergeBranchBadRequest() *MergeBranchBadRequest {
 	return &MergeBranchBadRequest{}
 }
 
-/*MergeBranchBadRequest handles this case with default header values.
+/* MergeBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type MergeBranchBadRequest struct {
 func (o *MergeBranchBadRequest) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *MergeBranchBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewMergeBranchForbidden() *MergeBranchForbidden {
 	return &MergeBranchForbidden{}
 }
 
-/*MergeBranchForbidden handles this case with default header values.
+/* MergeBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -147,7 +144,6 @@ type MergeBranchForbidden struct {
 func (o *MergeBranchForbidden) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchForbidden  %+v", 403, o.Payload)
 }
-
 func (o *MergeBranchForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewMergeBranchNotFound() *MergeBranchNotFound {
 	return &MergeBranchNotFound{}
 }
 
-/*MergeBranchNotFound handles this case with default header values.
+/* MergeBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -180,7 +176,6 @@ type MergeBranchNotFound struct {
 func (o *MergeBranchNotFound) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchNotFound  %+v", 404, o.Payload)
 }
-
 func (o *MergeBranchNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewMergeBranchConflict() *MergeBranchConflict {
 	return &MergeBranchConflict{}
 }
 
-/*MergeBranchConflict handles this case with default header values.
+/* MergeBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type MergeBranchConflict struct {
 func (o *MergeBranchConflict) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchConflict  %+v", 409, o.Payload)
 }
-
 func (o *MergeBranchConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewMergeBranchInternalServerError() *MergeBranchInternalServerError {
 	return &MergeBranchInternalServerError{}
 }
 
-/*MergeBranchInternalServerError handles this case with default header values.
+/* MergeBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type MergeBranchInternalServerError struct {
 func (o *MergeBranchInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /vcs/branch/{branchID}/merge][%d] mergeBranchInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *MergeBranchInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -35,9 +35,8 @@ func (o *GetLogoutReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewGetLogoutNoContent() *GetLogoutNoContent {
 	return &GetLogoutNoContent{}
 }
 
-/*GetLogoutNoContent handles this case with default header values.
+/* GetLogoutNoContent describes a response with status code 204, with default header values.
 
 Success
 */
@@ -67,7 +66,7 @@ func NewGetLogoutInternalServerError() *GetLogoutInternalServerError {
 	return &GetLogoutInternalServerError{}
 }
 
-/*GetLogoutInternalServerError handles this case with default header values.
+/* GetLogoutInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -78,7 +77,6 @@ type GetLogoutInternalServerError struct {
 func (o *GetLogoutInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /logout][%d] getLogoutInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetLogoutInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

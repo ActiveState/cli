@@ -35,9 +35,8 @@ func (o *NewTOTPReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewNewTOTPOK() *NewTOTPOK {
 	return &NewTOTPOK{}
 }
 
-/*NewTOTPOK handles this case with default header values.
+/* NewTOTPOK describes a response with status code 200, with default header values.
 
 New TOTP Key
 */
@@ -57,7 +56,6 @@ type NewTOTPOK struct {
 func (o *NewTOTPOK) Error() string {
 	return fmt.Sprintf("[GET /totp][%d] newTOTPOK  %+v", 200, o.Payload)
 }
-
 func (o *NewTOTPOK) GetPayload() *mono_models.TOTPKey {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewNewTOTPBadRequest() *NewTOTPBadRequest {
 	return &NewTOTPBadRequest{}
 }
 
-/*NewTOTPBadRequest handles this case with default header values.
+/* NewTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -90,7 +88,6 @@ type NewTOTPBadRequest struct {
 func (o *NewTOTPBadRequest) Error() string {
 	return fmt.Sprintf("[GET /totp][%d] newTOTPBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *NewTOTPBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }

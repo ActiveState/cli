@@ -18,81 +18,98 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewCreateInvoiceParams creates a new CreateInvoiceParams object
-// with the default values initialized.
+// NewCreateInvoiceParams creates a new CreateInvoiceParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCreateInvoiceParams() *CreateInvoiceParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &CreateInvoiceParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCreateInvoiceParamsWithTimeout creates a new CreateInvoiceParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCreateInvoiceParamsWithTimeout(timeout time.Duration) *CreateInvoiceParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &CreateInvoiceParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewCreateInvoiceParamsWithContext creates a new CreateInvoiceParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCreateInvoiceParamsWithContext(ctx context.Context) *CreateInvoiceParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &CreateInvoiceParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewCreateInvoiceParamsWithHTTPClient creates a new CreateInvoiceParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCreateInvoiceParamsWithHTTPClient(client *http.Client) *CreateInvoiceParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &CreateInvoiceParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*CreateInvoiceParams contains all the parameters to send to the API endpoint
-for the create invoice operation typically these are written to a http.Request
+/* CreateInvoiceParams contains all the parameters to send to the API endpoint
+   for the create invoice operation.
+
+   Typically these are written to a http.Request.
 */
 type CreateInvoiceParams struct {
 
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
+	/* IdentifierType.
 
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*InvoiceInfo
-	  information used to create an invoice
 
+	/* InvoiceInfo.
+
+	   information used to create an invoice
 	*/
 	InvoiceInfo *mono_models.InvoiceInfo
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the create invoice params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateInvoiceParams) WithDefaults() *CreateInvoiceParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the create invoice params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CreateInvoiceParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := CreateInvoiceParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the create invoice params
@@ -173,18 +190,18 @@ func (o *CreateInvoiceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
-
 	if o.InvoiceInfo != nil {
 		if err := r.SetBodyParam(o.InvoiceInfo); err != nil {
 			return err

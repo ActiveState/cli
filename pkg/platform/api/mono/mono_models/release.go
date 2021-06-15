@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -68,7 +70,6 @@ func (m *Release) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Release) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -81,7 +82,6 @@ func (m *Release) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Release) validateProjectID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProjectID) { // not required
 		return nil
 	}
@@ -94,7 +94,6 @@ func (m *Release) validateProjectID(formats strfmt.Registry) error {
 }
 
 func (m *Release) validateReleaseID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ReleaseID) { // not required
 		return nil
 	}
@@ -107,7 +106,6 @@ func (m *Release) validateReleaseID(formats strfmt.Registry) error {
 }
 
 func (m *Release) validateReleaseTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ReleaseTime) { // not required
 		return nil
 	}
@@ -116,6 +114,11 @@ func (m *Release) validateReleaseTime(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this release based on context it is used
+func (m *Release) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

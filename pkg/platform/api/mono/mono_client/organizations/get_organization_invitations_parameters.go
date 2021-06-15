@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOrganizationInvitationsParams creates a new GetOrganizationInvitationsParams object
-// with the default values initialized.
+// NewGetOrganizationInvitationsParams creates a new GetOrganizationInvitationsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOrganizationInvitationsParams() *GetOrganizationInvitationsParams {
-	var ()
 	return &GetOrganizationInvitationsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOrganizationInvitationsParamsWithTimeout creates a new GetOrganizationInvitationsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOrganizationInvitationsParamsWithTimeout(timeout time.Duration) *GetOrganizationInvitationsParams {
-	var ()
 	return &GetOrganizationInvitationsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOrganizationInvitationsParamsWithContext creates a new GetOrganizationInvitationsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOrganizationInvitationsParamsWithContext(ctx context.Context) *GetOrganizationInvitationsParams {
-	var ()
 	return &GetOrganizationInvitationsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetOrganizationInvitationsParamsWithHTTPClient creates a new GetOrganizationInvitationsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOrganizationInvitationsParamsWithHTTPClient(client *http.Client) *GetOrganizationInvitationsParams {
-	var ()
 	return &GetOrganizationInvitationsParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetOrganizationInvitationsParams contains all the parameters to send to the API endpoint
-for the get organization invitations operation typically these are written to a http.Request
+/* GetOrganizationInvitationsParams contains all the parameters to send to the API endpoint
+   for the get organization invitations operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOrganizationInvitationsParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/* OrganizationName.
 
+	   organizationName of desired organization
 	*/
 	OrganizationName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get organization invitations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationInvitationsParams) WithDefaults() *GetOrganizationInvitationsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get organization invitations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationInvitationsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get organization invitations params

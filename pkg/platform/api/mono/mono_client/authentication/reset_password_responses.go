@@ -47,9 +47,8 @@ func (o *ResetPasswordReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewResetPasswordOK() *ResetPasswordOK {
 	return &ResetPasswordOK{}
 }
 
-/*ResetPasswordOK handles this case with default header values.
+/* ResetPasswordOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type ResetPasswordOK struct {
 func (o *ResetPasswordOK) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordOK  %+v", 200, o.Payload)
 }
-
 func (o *ResetPasswordOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewResetPasswordBadRequest() *ResetPasswordBadRequest {
 	return &ResetPasswordBadRequest{}
 }
 
-/*ResetPasswordBadRequest handles this case with default header values.
+/* ResetPasswordBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -102,7 +100,6 @@ type ResetPasswordBadRequest struct {
 func (o *ResetPasswordBadRequest) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *ResetPasswordBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewResetPasswordForbidden() *ResetPasswordForbidden {
 	return &ResetPasswordForbidden{}
 }
 
-/*ResetPasswordForbidden handles this case with default header values.
+/* ResetPasswordForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -135,7 +132,6 @@ type ResetPasswordForbidden struct {
 func (o *ResetPasswordForbidden) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordForbidden  %+v", 403, o.Payload)
 }
-
 func (o *ResetPasswordForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewResetPasswordInternalServerError() *ResetPasswordInternalServerError {
 	return &ResetPasswordInternalServerError{}
 }
 
-/*ResetPasswordInternalServerError handles this case with default header values.
+/* ResetPasswordInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type ResetPasswordInternalServerError struct {
 func (o *ResetPasswordInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /reset-password][%d] resetPasswordInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ResetPasswordInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -53,9 +53,8 @@ func (o *EditOrganizationReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditOrganizationOK() *EditOrganizationOK {
 	return &EditOrganizationOK{}
 }
 
-/*EditOrganizationOK handles this case with default header values.
+/* EditOrganizationOK describes a response with status code 200, with default header values.
 
 Organization updated
 */
@@ -75,7 +74,6 @@ type EditOrganizationOK struct {
 func (o *EditOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *EditOrganizationOK) GetPayload() *mono_models.Organization {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewEditOrganizationBadRequest() *EditOrganizationBadRequest {
 	return &EditOrganizationBadRequest{}
 }
 
-/*EditOrganizationBadRequest handles this case with default header values.
+/* EditOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type EditOrganizationBadRequest struct {
 func (o *EditOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewEditOrganizationForbidden() *EditOrganizationForbidden {
 	return &EditOrganizationForbidden{}
 }
 
-/*EditOrganizationForbidden handles this case with default header values.
+/* EditOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -141,7 +138,6 @@ type EditOrganizationForbidden struct {
 func (o *EditOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewEditOrganizationNotFound() *EditOrganizationNotFound {
 	return &EditOrganizationNotFound{}
 }
 
-/*EditOrganizationNotFound handles this case with default header values.
+/* EditOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type EditOrganizationNotFound struct {
 func (o *EditOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewEditOrganizationInternalServerError() *EditOrganizationInternalServerErr
 	return &EditOrganizationInternalServerError{}
 }
 
-/*EditOrganizationInternalServerError handles this case with default header values.
+/* EditOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type EditOrganizationInternalServerError struct {
 func (o *EditOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}][%d] editOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

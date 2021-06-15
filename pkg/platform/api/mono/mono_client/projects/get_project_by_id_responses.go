@@ -41,9 +41,8 @@ func (o *GetProjectByIDReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetProjectByIDOK() *GetProjectByIDOK {
 	return &GetProjectByIDOK{}
 }
 
-/*GetProjectByIDOK handles this case with default header values.
+/* GetProjectByIDOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetProjectByIDOK struct {
 func (o *GetProjectByIDOK) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdOK  %+v", 200, o.Payload)
 }
-
 func (o *GetProjectByIDOK) GetPayload() *mono_models.Project {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetProjectByIDNotFound() *GetProjectByIDNotFound {
 	return &GetProjectByIDNotFound{}
 }
 
-/*GetProjectByIDNotFound handles this case with default header values.
+/* GetProjectByIDNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetProjectByIDNotFound struct {
 func (o *GetProjectByIDNotFound) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetProjectByIDNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetProjectByIDInternalServerError() *GetProjectByIDInternalServerError {
 	return &GetProjectByIDInternalServerError{}
 }
 
-/*GetProjectByIDInternalServerError handles this case with default header values.
+/* GetProjectByIDInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetProjectByIDInternalServerError struct {
 func (o *GetProjectByIDInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /projects/{projectID}][%d] getProjectByIdInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetProjectByIDInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

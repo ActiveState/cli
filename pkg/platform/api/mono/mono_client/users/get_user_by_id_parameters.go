@@ -16,59 +16,75 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetUserByIDParams creates a new GetUserByIDParams object
-// with the default values initialized.
+// NewGetUserByIDParams creates a new GetUserByIDParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetUserByIDParams() *GetUserByIDParams {
-	var ()
 	return &GetUserByIDParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetUserByIDParamsWithTimeout creates a new GetUserByIDParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetUserByIDParamsWithTimeout(timeout time.Duration) *GetUserByIDParams {
-	var ()
 	return &GetUserByIDParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetUserByIDParamsWithContext creates a new GetUserByIDParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetUserByIDParamsWithContext(ctx context.Context) *GetUserByIDParams {
-	var ()
 	return &GetUserByIDParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetUserByIDParamsWithHTTPClient creates a new GetUserByIDParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetUserByIDParamsWithHTTPClient(client *http.Client) *GetUserByIDParams {
-	var ()
 	return &GetUserByIDParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetUserByIDParams contains all the parameters to send to the API endpoint
-for the get user by ID operation typically these are written to a http.Request
+/* GetUserByIDParams contains all the parameters to send to the API endpoint
+   for the get user by ID operation.
+
+   Typically these are written to a http.Request.
 */
 type GetUserByIDParams struct {
 
-	/*UserID
-	  userID of desired User
+	/* UserID.
 
+	   userID of desired User
+
+	   Format: uuid
 	*/
 	UserID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get user by ID params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetUserByIDParams) WithDefaults() *GetUserByIDParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get user by ID params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetUserByIDParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get user by ID params

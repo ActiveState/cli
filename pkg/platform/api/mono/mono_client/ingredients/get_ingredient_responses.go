@@ -41,9 +41,8 @@ func (o *GetIngredientReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetIngredientOK() *GetIngredientOK {
 	return &GetIngredientOK{}
 }
 
-/*GetIngredientOK handles this case with default header values.
+/* GetIngredientOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetIngredientOK struct {
 func (o *GetIngredientOK) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientOK  %+v", 200, o.Payload)
 }
-
 func (o *GetIngredientOK) GetPayload() *mono_models.Ingredient {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetIngredientNotFound() *GetIngredientNotFound {
 	return &GetIngredientNotFound{}
 }
 
-/*GetIngredientNotFound handles this case with default header values.
+/* GetIngredientNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetIngredientNotFound struct {
 func (o *GetIngredientNotFound) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetIngredientNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetIngredientInternalServerError() *GetIngredientInternalServerError {
 	return &GetIngredientInternalServerError{}
 }
 
-/*GetIngredientInternalServerError handles this case with default header values.
+/* GetIngredientInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetIngredientInternalServerError struct {
 func (o *GetIngredientInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}][%d] getIngredientInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetIngredientInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

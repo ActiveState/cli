@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -21,7 +23,7 @@ type OrganizationEditable struct {
 	URLname string `json:"URLname,omitempty"`
 
 	// add ons
-	AddOns map[string]AddOn `json:"addOns,omitempty"`
+	AddOns map[string]AddOnEditable `json:"addOns,omitempty"`
 
 	// billing email
 	// Format: email
@@ -59,7 +61,6 @@ func (m *OrganizationEditable) Validate(formats strfmt.Registry) error {
 }
 
 func (m *OrganizationEditable) validateAddOns(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AddOns) { // not required
 		return nil
 	}
@@ -81,13 +82,41 @@ func (m *OrganizationEditable) validateAddOns(formats strfmt.Registry) error {
 }
 
 func (m *OrganizationEditable) validateBillingEmail(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BillingEmail) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("billingEmail", "body", "email", m.BillingEmail.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this organization editable based on the context it is used
+func (m *OrganizationEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAddOns(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *OrganizationEditable) contextValidateAddOns(ctx context.Context, formats strfmt.Registry) error {
+
+	for k := range m.AddOns {
+
+		if val, ok := m.AddOns[k]; ok {
+			if err := val.ContextValidate(ctx, formats); err != nil {
+				return err
+			}
+		}
+
 	}
 
 	return nil

@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewUpdateBranchParams creates a new UpdateBranchParams object
-// with the default values initialized.
+// NewUpdateBranchParams creates a new UpdateBranchParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateBranchParams() *UpdateBranchParams {
-	var ()
 	return &UpdateBranchParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateBranchParamsWithTimeout creates a new UpdateBranchParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateBranchParamsWithTimeout(timeout time.Duration) *UpdateBranchParams {
-	var ()
 	return &UpdateBranchParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateBranchParamsWithContext creates a new UpdateBranchParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateBranchParamsWithContext(ctx context.Context) *UpdateBranchParams {
-	var ()
 	return &UpdateBranchParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateBranchParamsWithHTTPClient creates a new UpdateBranchParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateBranchParamsWithHTTPClient(client *http.Client) *UpdateBranchParams {
-	var ()
 	return &UpdateBranchParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateBranchParams contains all the parameters to send to the API endpoint
-for the update branch operation typically these are written to a http.Request
+/* UpdateBranchParams contains all the parameters to send to the API endpoint
+   for the update branch operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateBranchParams struct {
 
-	/*Branch*/
+	// Branch.
 	Branch *mono_models.BranchEditable
-	/*BranchID*/
+
+	// BranchID.
+	//
+	// Format: uuid
 	BranchID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBranchParams) WithDefaults() *UpdateBranchParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBranchParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update branch params
@@ -134,7 +151,6 @@ func (o *UpdateBranchParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.Branch != nil {
 		if err := r.SetBodyParam(o.Branch); err != nil {
 			return err

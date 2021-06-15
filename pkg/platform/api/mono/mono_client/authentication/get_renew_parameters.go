@@ -16,59 +16,75 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetRenewParams creates a new GetRenewParams object
-// with the default values initialized.
+// NewGetRenewParams creates a new GetRenewParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetRenewParams() *GetRenewParams {
-	var ()
 	return &GetRenewParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetRenewParamsWithTimeout creates a new GetRenewParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetRenewParamsWithTimeout(timeout time.Duration) *GetRenewParams {
-	var ()
 	return &GetRenewParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetRenewParamsWithContext creates a new GetRenewParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetRenewParamsWithContext(ctx context.Context) *GetRenewParams {
-	var ()
 	return &GetRenewParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetRenewParamsWithHTTPClient creates a new GetRenewParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetRenewParamsWithHTTPClient(client *http.Client) *GetRenewParams {
-	var ()
 	return &GetRenewParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetRenewParams contains all the parameters to send to the API endpoint
-for the get renew operation typically these are written to a http.Request
+/* GetRenewParams contains all the parameters to send to the API endpoint
+   for the get renew operation.
+
+   Typically these are written to a http.Request.
 */
 type GetRenewParams struct {
 
-	/*SessionID
-	  id of session to renew
+	/* SessionID.
 
+	   id of session to renew
+
+	   Format: uuid
 	*/
 	SessionID *strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get renew params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRenewParams) WithDefaults() *GetRenewParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get renew params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRenewParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get renew params
@@ -127,16 +143,17 @@ func (o *GetRenewParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 
 		// query param sessionID
 		var qrSessionID strfmt.UUID
+
 		if o.SessionID != nil {
 			qrSessionID = *o.SessionID
 		}
 		qSessionID := qrSessionID.String()
 		if qSessionID != "" {
+
 			if err := r.SetQueryParam("sessionID", qSessionID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

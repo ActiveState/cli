@@ -41,9 +41,8 @@ func (o *GetLoginJwtTokenReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetLoginJwtTokenFound() *GetLoginJwtTokenFound {
 	return &GetLoginJwtTokenFound{}
 }
 
-/*GetLoginJwtTokenFound handles this case with default header values.
+/* GetLoginJwtTokenFound describes a response with status code 302, with default header values.
 
 Found
 */
@@ -73,7 +72,7 @@ func NewGetLoginJwtTokenBadRequest() *GetLoginJwtTokenBadRequest {
 	return &GetLoginJwtTokenBadRequest{}
 }
 
-/*GetLoginJwtTokenBadRequest handles this case with default header values.
+/* GetLoginJwtTokenBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -84,7 +83,6 @@ type GetLoginJwtTokenBadRequest struct {
 func (o *GetLoginJwtTokenBadRequest) Error() string {
 	return fmt.Sprintf("[GET /login/jwt/{token}][%d] getLoginJwtTokenBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *GetLoginJwtTokenBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -106,7 +104,7 @@ func NewGetLoginJwtTokenInternalServerError() *GetLoginJwtTokenInternalServerErr
 	return &GetLoginJwtTokenInternalServerError{}
 }
 
-/*GetLoginJwtTokenInternalServerError handles this case with default header values.
+/* GetLoginJwtTokenInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -117,7 +115,6 @@ type GetLoginJwtTokenInternalServerError struct {
 func (o *GetLoginJwtTokenInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /login/jwt/{token}][%d] getLoginJwtTokenInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetLoginJwtTokenInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

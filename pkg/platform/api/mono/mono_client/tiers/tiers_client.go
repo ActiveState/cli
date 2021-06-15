@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error)
+	GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersOK, error)
 
-	GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error)
+	GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   GetTiers gets information about all available tiers
 */
-func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error) {
+func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetTiersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getTiers",
 		Method:             "GET",
 		PathPattern:        "/tiers",
@@ -55,7 +57,12 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +79,12 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 /*
   GetTiersPricing gets information about all available tiers including their price in cents per user per year
 */
-func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error) {
+func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetTiersPricingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getTiersPricing",
 		Method:             "GET",
 		PathPattern:        "/tiers/pricing",
@@ -90,7 +96,12 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

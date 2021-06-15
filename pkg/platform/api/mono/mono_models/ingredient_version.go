@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -64,7 +66,6 @@ func (m *IngredientVersion) Validate(formats strfmt.Registry) error {
 }
 
 func (m *IngredientVersion) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -77,7 +78,6 @@ func (m *IngredientVersion) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *IngredientVersion) validateIngredient(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Ingredient) { // not required
 		return nil
 	}
@@ -95,7 +95,6 @@ func (m *IngredientVersion) validateIngredient(formats strfmt.Registry) error {
 }
 
 func (m *IngredientVersion) validateIngredientVersionID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientVersionID) { // not required
 		return nil
 	}
@@ -108,13 +107,40 @@ func (m *IngredientVersion) validateIngredientVersionID(formats strfmt.Registry)
 }
 
 func (m *IngredientVersion) validateReleaseDate(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ReleaseDate) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("releaseDate", "body", "date-time", m.ReleaseDate.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient version based on the context it is used
+func (m *IngredientVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIngredient(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientVersion) contextValidateIngredient(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Ingredient != nil {
+		if err := m.Ingredient.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ingredient")
+			}
+			return err
+		}
 	}
 
 	return nil

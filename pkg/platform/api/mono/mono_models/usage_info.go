@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -41,7 +42,6 @@ func (m *UsageInfo) Validate(formats strfmt.Registry) error {
 }
 
 func (m *UsageInfo) validateActiveUsers(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ActiveUsers) { // not required
 		return nil
 	}
@@ -53,6 +53,38 @@ func (m *UsageInfo) validateActiveUsers(formats strfmt.Registry) error {
 
 		if m.ActiveUsers[i] != nil {
 			if err := m.ActiveUsers[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("activeUsers" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this usage info based on the context it is used
+func (m *UsageInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateActiveUsers(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *UsageInfo) contextValidateActiveUsers(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ActiveUsers); i++ {
+
+		if m.ActiveUsers[i] != nil {
+			if err := m.ActiveUsers[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("activeUsers" + "." + strconv.Itoa(i))
 				}
@@ -111,7 +143,6 @@ func (m *UsageInfoActiveUsersItems0) Validate(formats strfmt.Registry) error {
 }
 
 func (m *UsageInfoActiveUsersItems0) validateDate(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Date) { // not required
 		return nil
 	}
@@ -120,6 +151,11 @@ func (m *UsageInfoActiveUsersItems0) validateDate(formats strfmt.Registry) error
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this usage info active users items0 based on context it is used
+func (m *UsageInfoActiveUsersItems0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

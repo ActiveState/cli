@@ -47,9 +47,8 @@ func (o *QuitOrganizationReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewQuitOrganizationOK() *QuitOrganizationOK {
 	return &QuitOrganizationOK{}
 }
 
-/*QuitOrganizationOK handles this case with default header values.
+/* QuitOrganizationOK describes a response with status code 200, with default header values.
 
 Membership updated
 */
@@ -69,7 +68,6 @@ type QuitOrganizationOK struct {
 func (o *QuitOrganizationOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/members/{username}][%d] quitOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *QuitOrganizationOK) GetPayload() []*mono_models.Member {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewQuitOrganizationBadRequest() *QuitOrganizationBadRequest {
 	return &QuitOrganizationBadRequest{}
 }
 
-/*QuitOrganizationBadRequest handles this case with default header values.
+/* QuitOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -100,7 +98,6 @@ type QuitOrganizationBadRequest struct {
 func (o *QuitOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/members/{username}][%d] quitOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *QuitOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewQuitOrganizationForbidden() *QuitOrganizationForbidden {
 	return &QuitOrganizationForbidden{}
 }
 
-/*QuitOrganizationForbidden handles this case with default header values.
+/* QuitOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -133,7 +130,6 @@ type QuitOrganizationForbidden struct {
 func (o *QuitOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/members/{username}][%d] quitOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *QuitOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewQuitOrganizationInternalServerError() *QuitOrganizationInternalServerErr
 	return &QuitOrganizationInternalServerError{}
 }
 
-/*QuitOrganizationInternalServerError handles this case with default header values.
+/* QuitOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type QuitOrganizationInternalServerError struct {
 func (o *QuitOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/members/{username}][%d] quitOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *QuitOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -18,69 +18,85 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewAddReleaseParams creates a new AddReleaseParams object
-// with the default values initialized.
+// NewAddReleaseParams creates a new AddReleaseParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddReleaseParams() *AddReleaseParams {
-	var ()
 	return &AddReleaseParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddReleaseParamsWithTimeout creates a new AddReleaseParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddReleaseParamsWithTimeout(timeout time.Duration) *AddReleaseParams {
-	var ()
 	return &AddReleaseParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddReleaseParamsWithContext creates a new AddReleaseParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddReleaseParamsWithContext(ctx context.Context) *AddReleaseParams {
-	var ()
 	return &AddReleaseParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddReleaseParamsWithHTTPClient creates a new AddReleaseParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddReleaseParamsWithHTTPClient(client *http.Client) *AddReleaseParams {
-	var ()
 	return &AddReleaseParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddReleaseParams contains all the parameters to send to the API endpoint
-for the add release operation typically these are written to a http.Request
+/* AddReleaseParams contains all the parameters to send to the API endpoint
+   for the add release operation.
+
+   Typically these are written to a http.Request.
 */
 type AddReleaseParams struct {
 
-	/*OrganizationName
-	  desired organization
+	/* OrganizationName.
 
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*Release
-	  Release details
 
+	/* Release.
+
+	   Release details
 	*/
 	Release *mono_models.Release
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add release params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddReleaseParams) WithDefaults() *AddReleaseParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add release params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddReleaseParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add release params
@@ -166,7 +182,6 @@ func (o *AddReleaseParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 	if err := r.SetPathParam("projectName", o.ProjectName); err != nil {
 		return err
 	}
-
 	if o.Release != nil {
 		if err := r.SetBodyParam(o.Release); err != nil {
 			return err

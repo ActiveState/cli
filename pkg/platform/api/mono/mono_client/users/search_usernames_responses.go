@@ -6,6 +6,7 @@ package users
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -42,9 +43,8 @@ func (o *SearchUsernamesReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -53,7 +53,7 @@ func NewSearchUsernamesOK() *SearchUsernamesOK {
 	return &SearchUsernamesOK{}
 }
 
-/*SearchUsernamesOK handles this case with default header values.
+/* SearchUsernamesOK describes a response with status code 200, with default header values.
 
 Search for users matching the given search string
 */
@@ -64,7 +64,6 @@ type SearchUsernamesOK struct {
 func (o *SearchUsernamesOK) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesOK  %+v", 200, o.Payload)
 }
-
 func (o *SearchUsernamesOK) GetPayload() []*mono_models.User {
 	return o.Payload
 }
@@ -84,7 +83,7 @@ func NewSearchUsernamesForbidden() *SearchUsernamesForbidden {
 	return &SearchUsernamesForbidden{}
 }
 
-/*SearchUsernamesForbidden handles this case with default header values.
+/* SearchUsernamesForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -95,7 +94,6 @@ type SearchUsernamesForbidden struct {
 func (o *SearchUsernamesForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesForbidden  %+v", 403, o.Payload)
 }
-
 func (o *SearchUsernamesForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -117,7 +115,7 @@ func NewSearchUsernamesInternalServerError() *SearchUsernamesInternalServerError
 	return &SearchUsernamesInternalServerError{}
 }
 
-/*SearchUsernamesInternalServerError handles this case with default header values.
+/* SearchUsernamesInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -128,7 +126,6 @@ type SearchUsernamesInternalServerError struct {
 func (o *SearchUsernamesInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/search_usernames][%d] searchUsernamesInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *SearchUsernamesInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -156,6 +153,11 @@ type SearchUsernamesBody struct {
 
 // Validate validates this search usernames body
 func (o *SearchUsernamesBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this search usernames body based on context it is used
+func (o *SearchUsernamesBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewCalculateTaxParams creates a new CalculateTaxParams object
-// with the default values initialized.
+// NewCalculateTaxParams creates a new CalculateTaxParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewCalculateTaxParams() *CalculateTaxParams {
-	var ()
 	return &CalculateTaxParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewCalculateTaxParamsWithTimeout creates a new CalculateTaxParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewCalculateTaxParamsWithTimeout(timeout time.Duration) *CalculateTaxParams {
-	var ()
 	return &CalculateTaxParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewCalculateTaxParamsWithContext creates a new CalculateTaxParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewCalculateTaxParamsWithContext(ctx context.Context) *CalculateTaxParams {
-	var ()
 	return &CalculateTaxParams{
-
 		Context: ctx,
 	}
 }
 
 // NewCalculateTaxParamsWithHTTPClient creates a new CalculateTaxParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewCalculateTaxParamsWithHTTPClient(client *http.Client) *CalculateTaxParams {
-	var ()
 	return &CalculateTaxParams{
 		HTTPClient: client,
 	}
 }
 
-/*CalculateTaxParams contains all the parameters to send to the API endpoint
-for the calculate tax operation typically these are written to a http.Request
+/* CalculateTaxParams contains all the parameters to send to the API endpoint
+   for the calculate tax operation.
+
+   Typically these are written to a http.Request.
 */
 type CalculateTaxParams struct {
 
-	/*TaxOptions*/
+	// TaxOptions.
 	TaxOptions *mono_models.TaxOptions
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the calculate tax params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CalculateTaxParams) WithDefaults() *CalculateTaxParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the calculate tax params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *CalculateTaxParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the calculate tax params
@@ -121,7 +135,6 @@ func (o *CalculateTaxParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
-
 	if o.TaxOptions != nil {
 		if err := r.SetBodyParam(o.TaxOptions); err != nil {
 			return err
