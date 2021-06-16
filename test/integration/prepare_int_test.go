@@ -99,6 +99,10 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp = ts.Spawn("_prepare")
 	cp.ExpectExitCode(0)
 
+	// remove complete marker to force re-creation of executors
+	err = os.Remove(filepath.Join(targetDir, constants.RuntimeInstallationCompleteMarker))
+	suite.Assert().NoError(err, "removal of complete marker should have worked")
+
 	suite.FileExists(filepath.Join(globalExecDir, executor.NameForExe("python3"+osutils.ExeExt)))
 	suite.NoDirExists(projectExecDir)
 
