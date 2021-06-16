@@ -33,7 +33,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
-		Tier:     "free",
+		Tier:     "free_legacy",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
@@ -121,7 +121,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free",
+		"free_legacy",
 		false,
 	}
 

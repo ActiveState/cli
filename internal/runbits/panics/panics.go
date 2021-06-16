@@ -1,4 +1,4 @@
-package runbits
+package panics
 
 import (
 	"fmt"

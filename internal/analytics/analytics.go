@@ -229,7 +229,6 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
 	if deferAnalytics {
-		// TODO: figure out a way to pass configuration
 		cfg, err := config.Get()
 		if err != nil {
 			return locale.WrapError(err, "config_get_error")
