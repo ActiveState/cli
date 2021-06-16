@@ -1,7 +1,9 @@
 package store
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -70,22 +72,41 @@ func (s *Store) HasMarker() bool {
 	return false
 }
 
-// MatchesCommit checks if stored runtime is complete and can be loaded
-func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
+// MarkerIsValid checks if stored runtime is complete and can be loaded
+func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 	marker := s.markerFile()
 	if !fileutils.FileExists(marker) {
 		logging.Debug("Marker does not exist: %s", marker)
 		return false
 	}
 
-	contents, err := fileutils.ReadFile(marker)
+	f, err := os.OpenFile(marker, os.O_RDONLY, 0)
 	if err != nil {
-		logging.Error("Could not read marker: %v", err)
+		logging.Error("Could not open marker file: %v", err)
+		return false
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)
+	ok := sc.Scan()
+	if !ok {
+		logging.Error("Expected commit ID in marker file: %v", sc.Err())
+		return false
+	}
+	parsedID := strings.TrimSpace(sc.Text())
+	logging.Debug("Matching commitID for %s, %s==%s", marker, parsedID, commitID.String())
+	if parsedID != commitID.String() {
 		return false
 	}
 
-	logging.Debug("MatchesCommit for %s, %s==%s", marker, string(contents), commitID.String())
-	return strings.TrimSpace(string(contents)) == commitID.String()
+	ok = sc.Scan()
+	if !ok {
+		logging.Debug("Expected State Tool version in marker file: %v", sc.Err())
+		return false
+	}
+	parsedStateToolVersion := strings.TrimSpace(sc.Text())
+	logging.Debug("Matching State Tool Version for %s, %s==%s@%s", marker, parsedStateToolVersion, constants.BranchName, constants.Version)
+	return parsedStateToolVersion == fmt.Sprintf("%s@%s", constants.BranchName, constants.Version)
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
@@ -96,7 +117,7 @@ func (s *Store) MarkInstallationComplete(commitID strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	err = fileutils.WriteFile(markerFile, []byte(commitID.String()))
+	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s@%s", commitID.String(), constants.BranchName, constants.Version)))
 	if err != nil {
 		return errs.Wrap(err, "could not set completion marker")
 	}
