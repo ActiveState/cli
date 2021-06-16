@@ -113,6 +113,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	suite.OnlyRunForTags(tagsuite.Push)
+	// TODO: Re-enable and tweak test once https://www.pivotaltracker.com/story/show/178223554 is ready
+	suite.T().Skip("This test is currently not relevant due to local environment mangement")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
