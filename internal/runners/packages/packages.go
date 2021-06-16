@@ -3,10 +3,12 @@ package packages
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type PackageVersion struct {
@@ -43,6 +46,10 @@ type configurable interface {
 const latestVersion = "latest"
 
 func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+	if pj == nil {
+		return installNoProject(cfg, out, authentication, prompt, name, version, operation, ns)
+	}
+
 	isHeadless := pj.IsHeadless()
 	if !isHeadless && !authentication.Authenticated() {
 		anonConfirmDefault := true
@@ -161,4 +168,33 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
+}
+
+func installNoProject(cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+	if operation != model.OperationAdded {
+		return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
+	}
+
+	commitID, err := model.InitialCommit(name, version, model.HostPlatform, machineid.UniqID(), ns, strings.Split(ns.String(), "/")[1], "")
+	if err != nil {
+		return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
+	}
+
+	target, err := os.Getwd()
+	if err != nil {
+		return locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
+	}
+
+	params := &projectfile.CreateParams{
+		CommitID:   &commitID,
+		ProjectURL: fmt.Sprintf("https://%s/commit/%s", constants.PlatformURL, commitID.String()),
+		Directory:  target,
+	}
+
+	err = projectfile.Create(params)
+	if err != nil {
+		return locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
+	}
+
+	return nil
 }
