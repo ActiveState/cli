@@ -2,7 +2,6 @@ package prepare
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -18,8 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type primeable interface {
@@ -47,18 +44,6 @@ func New(prime primeable) *Prepare {
 // resetExecutors removes the executor directories for all project installations, and rewrites the global default executors
 // This ensures that the installation is compatible with an updated State Tool installation
 func (r *Prepare) resetExecutors() error {
-	projects := projectfile.GetProjectMapping(r.cfg)
-	for _, projectDirs := range projects {
-		for _, projectDir := range projectDirs {
-			installDir := rt.ProjectDirToTargetDir(projectDir, r.cfg.CachePath())
-			logging.Debug("Reset executor for %s", projectDir)
-			err := os.RemoveAll(setup.ExecDir(installDir))
-			if err != nil {
-				logging.Error("Failed to re-set executor directory %s", setup.ExecDir(installDir))
-			}
-		}
-	}
-
 	defaultProjectDir := r.cfg.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectDir == "" {
 		return nil
@@ -96,9 +81,9 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 		}
 	}
 
-	logging.Debug("Reset executors")
+	logging.Debug("Reset global executors")
 	if err := r.resetExecutors(); err != nil {
-		r.reportError(locale.Tl("err_reset_executor", "Could not reset project executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
+		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	r.prepareSystray()
