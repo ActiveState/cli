@@ -41,8 +41,6 @@ type Instance struct {
 	installSource string
 	lock          *flock.Flock
 	data          map[string]interface{}
-	// dataMutex is used to synchronize manipulations of the data map between threads, as most of these are not guarded by the file lock.
-	dataMutex *sync.RWMutex
 	// lockMutex ensures that file lock can be held only once per process.  Theoretically, this should be ensured by the `flock` package, but it isn't.  So, we need this hack.
 	// https://www.pivotaltracker.com/story/show/178478669
 	lockMutex *sync.Mutex
@@ -52,7 +50,6 @@ func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
-		dataMutex: &sync.RWMutex{},
 		lockMutex: &sync.Mutex{},
 	}
 	err := instance.ensureConfigExists()
@@ -82,22 +79,6 @@ func (i *Instance) GetLock() error {
 	if !locked {
 		i.lockMutex.Unlock()
 		return errs.New("Timeout out waiting for exclusive lock")
-
-	}
-	return nil
-}
-
-func (i *Instance) GetRLock() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	locked, err := i.lock.TryRLockContext(ctx, lockRetryDelay)
-	if err != nil {
-		return errs.Wrap(err, "Timed out waiting for shared lock")
-	}
-
-	if !locked {
-		return errs.New("Timeout out waiting for shared lock")
 
 	}
 	return nil
@@ -204,9 +185,6 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 		return err
 	}
 
-	i.dataMutex.Lock()
-	defer i.dataMutex.Unlock()
-
 	value, err := valueF(i.data[key])
 	if err != nil {
 		return err
@@ -232,8 +210,6 @@ func (i *Instance) Set(key string, value interface{}) error {
 		return err
 	}
 
-	i.dataMutex.Lock()
-	defer i.dataMutex.Unlock()
 	i.data[strings.ToLower(key)] = value
 
 	if err := i.save(); err != nil {
@@ -249,9 +225,6 @@ func (i *Instance) IsSet(key string) bool {
 }
 
 func (i *Instance) get(key string) interface{} {
-	i.dataMutex.RLock()
-	defer i.dataMutex.RUnlock()
-
 	return i.data[strings.ToLower(key)]
 }
 
@@ -267,9 +240,6 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
-	i.dataMutex.RLock()
-	defer i.dataMutex.RUnlock()
-
 	var keys []string
 	for k := range i.data {
 		keys = append(keys, k)
@@ -355,9 +325,6 @@ func (i *Instance) ReadInConfig() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not unmarshall config data")
 	}
-
-	i.dataMutex.Lock()
-	defer i.dataMutex.Unlock()
 
 	i.data = data
 	return nil
