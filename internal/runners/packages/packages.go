@@ -182,15 +182,15 @@ func languageForPackage(name string) (string, error) {
 
 	if len(packages) == 0 {
 		return "", errs.AddTips(
-			locale.NewInputError("err_install_no_package", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, name),
-			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
-			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+			locale.NewInputError("err_package_info_no_packages", "", name),
+			locale.T("info_try_search"),
+			locale.T("info_request"),
 		)
 	}
 
 	pkg := *packages[0]
 	if !model.NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, model.NamespacePackageMatch) {
-		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace is not valid")
+		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
 	}
 
 	re := regexp.MustCompile(model.NamespacePackageMatch)
@@ -219,11 +219,10 @@ func installInitial(cfg configurable, out output.Outputer, authentication *authe
 	if err != nil {
 		return locale.WrapError(err, "err_make_language_version", "Could not make language with name: {{.V0}} and version: {{.V1}}", languageName, languageVersions[0])
 	}
-	supported := &language.Supported{Language: lang}
 
 	commitParams := model.CommitInitialParams{
 		HostPlatform:     model.HostPlatform,
-		Language:         supported,
+		Language:         &language.Supported{Language: lang},
 		PackageName:      packageName,
 		PackageVersion:   packageVersion,
 		PackageNamespace: model.NewNamespacePackage(languageName),

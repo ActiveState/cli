@@ -117,7 +117,7 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
 	NamespaceLanguage = NamespaceType{"language", ""}
 	NamespacePlatform = NamespaceType{"platform", ""}
-	namespaceBlank    = NamespaceType{"", ""}
+	NamespaceBlank    = NamespaceType{"", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -155,7 +155,7 @@ func NewNamespacePackage(language string) Namespace {
 }
 
 func NewBlankNamespace() Namespace {
-	return Namespace{namespaceBlank, ""}
+	return Namespace{NamespaceBlank, ""}
 }
 
 // NewNamespaceBundle creates a new bundles namespace

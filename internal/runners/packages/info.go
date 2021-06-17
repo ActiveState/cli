@@ -53,9 +53,9 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_info_no_packages", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, params.Package.String()),
-			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
-			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+			locale.NewInputError("err_package_info_no_packages", "", params.Package.String()),
+			locale.T("info_try_search"),
+			locale.T("info_request"),
 		)
 	}
 
