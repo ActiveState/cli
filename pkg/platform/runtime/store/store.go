@@ -100,8 +100,8 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 		return false
 	}
 
-	if parsedStateToolVersion != fmt.Sprintf("%s@%s", constants.BranchName, constants.Version) {
-		logging.Debug("Could not match State Tool version in %s, expected: %s@%s, got: %s", marker, constants.BranchName, constants.Version, parsedStateToolVersion)
+	if parsedStateToolVersion != constants.Version {
+		logging.Debug("Could not match State Tool version in %s, expected: %s, got: %s", marker, constants.Version, parsedStateToolVersion)
 		return false
 	}
 
@@ -116,7 +116,7 @@ func (s *Store) MarkInstallationComplete(commitID strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s@%s", commitID.String(), constants.BranchName, constants.Version)))
+	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s", commitID.String(), constants.Version)))
 	if err != nil {
 		return errs.Wrap(err, "could not set completion marker")
 	}
