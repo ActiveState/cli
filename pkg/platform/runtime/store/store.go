@@ -1,7 +1,6 @@
 package store
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -80,33 +79,33 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 		return false
 	}
 
-	f, err := os.OpenFile(marker, os.O_RDONLY, 0)
+	contents, err := fileutils.ReadFile(marker)
 	if err != nil {
-		logging.Error("Could not open marker file: %v", err)
+		logging.Error("Could not read marker file %s: %v", marker, err)
+	}
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < 1 {
+		logging.Debug("Expected commit ID in marker file, but was empty")
 		return false
 	}
-	defer f.Close()
+	parsedCommitID := strings.TrimSpace(lines[0])
+	if len(lines) < 2 {
+		logging.Debug("Expected State Tool version in marker file")
+		return false
+	}
+	parsedStateToolVersion := strings.TrimSpace(lines[1])
 
-	sc := bufio.NewScanner(f)
-	ok := sc.Scan()
-	if !ok {
-		logging.Error("Expected commit ID in marker file: %v", sc.Err())
-		return false
-	}
-	parsedID := strings.TrimSpace(sc.Text())
-	logging.Debug("Matching commitID for %s, %s==%s", marker, parsedID, commitID.String())
-	if parsedID != commitID.String() {
+	if parsedCommitID != commitID.String() {
+		logging.Debug("Could not match commitID in %s, expected: %s, got: %s", marker, commitID.String(), parsedCommitID)
 		return false
 	}
 
-	ok = sc.Scan()
-	if !ok {
-		logging.Debug("Expected State Tool version in marker file: %v", sc.Err())
+	if parsedStateToolVersion != fmt.Sprintf("%s@%s", constants.BranchName, constants.Version) {
+		logging.Debug("Could not match State Tool version in %s, expected: %s@%s, got: %s", marker, constants.BranchName, constants.Version, parsedStateToolVersion)
 		return false
 	}
-	parsedStateToolVersion := strings.TrimSpace(sc.Text())
-	logging.Debug("Matching State Tool Version for %s, %s==%s@%s", marker, parsedStateToolVersion, constants.BranchName, constants.Version)
-	return parsedStateToolVersion == fmt.Sprintf("%s@%s", constants.BranchName, constants.Version)
+
+	return true
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
