@@ -95,6 +95,8 @@ func unwrapError(err error) (int, error) {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
+	err = locale.TransformLocalizerError(err)
+
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 

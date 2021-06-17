@@ -20,8 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/gofrs/flock"
 )
 
@@ -343,16 +341,11 @@ func (i *Instance) ReadInConfig() error {
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		end := len(configData)
-		if end > 4096 {
-			end = 4096
+		return &Error{
+			err:     err,
+			key:     "err_config_malformed",
+			baseMsg: "Your config file is currently malformed, please run [ACTIONABLE]state clean config[/RESET] to reset its contents, then try this command again.",
 		}
-		logging.Errorf("Config is in corrupted state: %q", string(configData[:end]))
-
-		return locale.WrapError(
-			err, "err_config_malformed",
-			"Your config file is currently malformed, please run [ACTIONABLE]state clean config[/RESET] to reset its contents, then try this command again.",
-		)
 	}
 
 	i.dataMutex.Lock()
