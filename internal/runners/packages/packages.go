@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -175,7 +177,37 @@ func installNoProject(cfg configurable, out output.Outputer, authentication *aut
 		return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
 	}
 
-	commitID, err := model.InitialCommit(name, version, model.HostPlatform, machineid.UniqID(), ns, strings.Split(ns.String(), "/")[1], "")
+	split := strings.Split(ns.String(), "/")
+	if len(split) != 2 {
+		return locale.NewError("err_invalid_namespace", "Namespace is invalid")
+	}
+	languageName := split[1]
+
+	languageVersions, err := model.FetchLanguageVersions(languageName)
+	if err != nil {
+		return locale.WrapError(err, "err_fetch_language_versions", "Could not fetch versions for language: {{.V0}}", languageName)
+	}
+	sort.Slice(languageVersions, func(i, j int) bool {
+		return languageVersions[j] < languageVersions[i]
+	})
+	languageVersion := languageVersions[0]
+
+	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
+	if err != nil {
+		return locale.WrapError(err, "err_make_language_version", "Could not make language with name: {{.V0}} and version: {{.V1}}", languageName, languageVersions[0])
+	}
+	supported := &language.Supported{Language: lang}
+
+	commitParams := model.CommitInitialParams{
+		HostPlatform:     model.HostPlatform,
+		Language:         supported,
+		PackageName:      name,
+		PackageVersion:   version,
+		PackageNamespace: ns,
+		AnonymousID:      machineid.UniqID(),
+	}
+
+	commitID, err := model.CommitInitial(commitParams)
 	if err != nil {
 		return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
 	}
@@ -185,13 +217,13 @@ func installNoProject(cfg configurable, out output.Outputer, authentication *aut
 		return locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
 	}
 
-	params := &projectfile.CreateParams{
+	createParams := &projectfile.CreateParams{
 		CommitID:   &commitID,
 		ProjectURL: fmt.Sprintf("https://%s/commit/%s", constants.PlatformURL, commitID.String()),
 		Directory:  target,
 	}
 
-	err = projectfile.Create(params)
+	err = projectfile.Create(createParams)
 	if err != nil {
 		return locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
 	}

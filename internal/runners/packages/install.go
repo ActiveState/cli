@@ -1,7 +1,7 @@
 package packages
 
 import (
-	"strings"
+	"regexp"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -58,8 +58,6 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	// TODO: Update package operation function to handle a nil project
-	// Maybe write this as it's own function first
 	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
 }
 
@@ -78,7 +76,16 @@ func (a *Install) getPackageLanguage(name, version string) (string, error) {
 		)
 	}
 
-	// TODO: Properly parse namespace
-	data := strings.Split(*packages[0].Ingredient.PrimaryNamespace, "/")
-	return data[1], nil
+	pkg := *packages[0]
+	if !model.NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, model.NamespacePackageMatch) {
+		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace is not valid")
+	}
+
+	re := regexp.MustCompile(model.NamespacePackageMatch)
+	match := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
+	if len(match) < 2 {
+		return "", locale.NewError("err_install_match_language", "Could not determine language from package namespace")
+	}
+
+	return match[1], nil
 }

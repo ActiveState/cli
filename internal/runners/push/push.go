@@ -140,7 +140,12 @@ func (r *Push) Run(params PushParams) error {
 	var commitID = r.project.CommitUUID()
 	if commitID.String() == "" {
 		var err error
-		commitID, err = model.CommitInitial(model.HostPlatform, lang, langVersion)
+		params := model.CommitInitialParams{
+			HostPlatform:    model.HostPlatform,
+			Language:        lang,
+			LanguageVersion: langVersion,
+		}
+		commitID, err = model.CommitInitial(params)
 		if err != nil {
 			return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", pjm.Name)
 		}

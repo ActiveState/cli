@@ -91,18 +91,10 @@ func GetNamespaces() (string, error) {
 		return "", errs.Wrap(err, "GetNamespaces failed")
 	}
 
-	// var namespaces []string
 	b, err := results.Payload.MarshalBinary()
 	if err != nil {
 		return "", errs.Wrap(err, "Unmarshall namespace failed")
 	}
-	// for _, thing := range results.Payload.Namespaces {
-	// 	b, err := thing.MarshalJSON()
-	// 	if err != nil {
-	// 		return nil, errs.Wrap(err, "Unmarshall namespace failed")
-	// 	}
-	// 	namespaces = append(namespaces, string(b))
-	// }
 
 	return string(b), nil
 }
