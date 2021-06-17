@@ -343,7 +343,11 @@ func (i *Instance) ReadInConfig() error {
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		logging.Errorf("Config is in corrupted state: %q", string(configData[:4096]))
+		end := len(configData)
+		if end > 4096 {
+			end = 4096
+		}
+		logging.Errorf("Config is in corrupted state: %q", string(configData[:end]))
 
 		return locale.WrapError(
 			err, "err_config_malformed",
