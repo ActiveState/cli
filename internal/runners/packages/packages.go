@@ -251,5 +251,7 @@ func installInitial(cfg configurable, out output.Outputer, authentication *authe
 		return locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
 	}
 
+	out.Print(locale.Tr("install_initial_success", target))
+
 	return nil
 }
