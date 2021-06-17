@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -95,7 +96,17 @@ func unwrapError(err error) (int, error) {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
-	err = locale.TransformLocalizerError(err)
+	var llerr *config.LocLogError // workaround type used to avoid circular import in config pkg
+	if errors.As(err, &llerr) {
+		key, base := llerr.Localization()
+		if key != "" && base != "" {
+			err = locale.WrapError(err, key, base)
+		}
+		reportMsg := llerr.ReportMessage()
+		if reportMsg != "" {
+			logging.Error(reportMsg)
+		}
+	}
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())

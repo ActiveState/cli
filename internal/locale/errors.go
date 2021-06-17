@@ -56,20 +56,6 @@ type ErrorLocalizer interface {
 	UserError() string
 }
 
-// Localizer describes types able to provide details for localization.
-type Localizer interface {
-	Localization() (key, base string)
-}
-
-func TransformLocalizerError(err error) error {
-	var l Localizer
-	if !errors.As(err, &l) {
-		key, base := l.Localization()
-		return WrapError(err, key, base)
-	}
-	return err
-}
-
 // ErrorInput represents a user input error
 type ErrorInput interface {
 	InputError() bool

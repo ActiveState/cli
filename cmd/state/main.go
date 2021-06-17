@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
@@ -117,7 +118,12 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg, err := config.Get()
+	configGetter := config.GetSafer
+	if funk.Contains(args, "clean") && funk.Contains(args, "config") {
+		configGetter = config.Get
+	}
+
+	cfg, err := configGetter()
 	if err != nil {
 		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
