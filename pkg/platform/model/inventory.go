@@ -83,22 +83,6 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	return results.Payload.Authors, nil
 }
 
-func GetNamespaces() (string, error) {
-	params := inventory_operations.NewGetNamespacesParams()
-	client := inventory.Get()
-	results, err := client.GetNamespaces(params, authentication.ClientAuth())
-	if err != nil {
-		return "", errs.Wrap(err, "GetNamespaces failed")
-	}
-
-	b, err := results.Payload.MarshalBinary()
-	if err != nil {
-		return "", errs.Wrap(err, "Unmarshall namespace failed")
-	}
-
-	return string(b), nil
-}
-
 func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
 	lim := int64(limit)
 
