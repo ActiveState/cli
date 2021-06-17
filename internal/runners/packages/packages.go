@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -47,9 +48,9 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion, languageName string, operation model.Operation, ns model.Namespace) error {
 	if pj == nil {
-		return installNoProject(cfg, out, authentication, prompt, name, version, operation, ns)
+		return installInitial(cfg, out, authentication, prompt, packageName, packageVersion, languageName, operation, ns)
 	}
 
 	isHeadless := pj.IsHeadless()
@@ -70,13 +71,13 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 	}
 
-	if strings.ToLower(version) == latestVersion {
-		version = ""
+	if strings.ToLower(packageVersion) == latestVersion {
+		packageVersion = ""
 	}
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), name)
+		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), packageName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -96,7 +97,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, err := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
+	commitID, err := model.CommitPackage(parentCommitID, operation, packageName, ns.String(), packageVersion, machineid.UniqID())
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
@@ -127,13 +128,13 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	if err != nil {
 		rerr := &inventory_operations.ResolveRecipesBadRequest{}
 		if errors.As(err, &rerr) {
-			suggestions, serr := getSuggestions(ns, name)
+			suggestions, serr := getSuggestions(ns, packageName)
 			if serr != nil {
 				logging.Error("Failed to retrieve suggestions: %v", err)
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
 		}
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", packageName)
 	}
 
 	// refresh runtime
@@ -143,10 +144,10 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// Print the result
-	if version != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), name, version))
+	if packageVersion != "" {
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), packageName, packageVersion))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), packageName))
 	}
 
 	return nil
@@ -172,16 +173,38 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	return suggestions, nil
 }
 
-func installNoProject(cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func languageForPackage(name string) (string, error) {
+	ns := model.NewBlankNamespace()
+	packages, err := model.SearchIngredientsStrict(ns, name)
+	if err != nil {
+		return "", locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
+
+	if len(packages) == 0 {
+		return "", errs.AddTips(
+			locale.NewInputError("err_install_no_package", `No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].`, name),
+			locale.Tl("info_try_search", "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"),
+			locale.Tl("info_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+		)
+	}
+
+	pkg := *packages[0]
+	if !model.NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, model.NamespacePackageMatch) {
+		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace is not valid")
+	}
+
+	re := regexp.MustCompile(model.NamespacePackageMatch)
+	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
+	if len(matches) < 2 {
+		return "", locale.NewError("err_install_match_language", "Could not determine language from package namespace")
+	}
+	return matches[1], nil
+}
+
+func installInitial(cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion, languageName string, operation model.Operation, ns model.Namespace) error {
 	if operation != model.OperationAdded {
 		return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
 	}
-
-	split := strings.Split(ns.String(), "/")
-	if len(split) != 2 {
-		return locale.NewError("err_invalid_namespace", "Namespace is invalid")
-	}
-	languageName := split[1]
 
 	languageVersions, err := model.FetchLanguageVersions(languageName)
 	if err != nil {
@@ -201,9 +224,9 @@ func installNoProject(cfg configurable, out output.Outputer, authentication *aut
 	commitParams := model.CommitInitialParams{
 		HostPlatform:     model.HostPlatform,
 		Language:         supported,
-		PackageName:      name,
-		PackageVersion:   version,
-		PackageNamespace: ns,
+		PackageName:      packageName,
+		PackageVersion:   packageVersion,
+		PackageNamespace: model.NewNamespacePackage(languageName),
 		AnonymousID:      machineid.UniqID(),
 	}
 
