@@ -23,6 +23,7 @@ import (
 	"github.com/gofrs/flock"
 )
 
+var defaultMutex *sync.Mutex = &sync.Mutex{}
 var defaultConfig *Instance
 
 const ConfigKeyShell = "shell"
@@ -157,6 +158,8 @@ func NewWithDir(dir string) (*Instance, error) {
 
 // Get returns the default configuration instance
 func Get() (*Instance, error) {
+	defaultMutex.Lock()
+	defer defaultMutex.Unlock()
 	if defaultConfig == nil {
 		var err error
 		defaultConfig, err = New()
