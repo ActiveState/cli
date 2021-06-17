@@ -89,6 +89,8 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	cp := ts.Spawn("orgs", "--output", "editor")
 	cp.ExpectExitCode(0)
 
+	// TODO: Response change from "free" to "free_legacy".  Check that vs code extension is okay with that.
+	// https://www.pivotaltracker.com/story/show/178544144
 	org := struct {
 		Name            string `json:"name,omitempty"`
 		URLName         string `json:"URLName,omitempty"`
@@ -97,7 +99,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free",
+		"free_legacy",
 		false,
 	}
 
@@ -109,10 +111,12 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
+	// TODO: Response change from "free" to "free_legacy".  Check that vs code extension is okay with that.
+	// https://www.pivotaltracker.com/story/show/178544144
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
-		Tier:     "free",
+		Tier:     "free_legacy",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
@@ -127,7 +131,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
+	suite.Equal(string(expected), cp.TrimmedSnapshot())
 
 	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)

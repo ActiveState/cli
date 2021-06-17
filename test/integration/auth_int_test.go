@@ -38,6 +38,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.interactiveLogin(ts, username)
 	ts.LogoutUser()
 	suite.loginFlags(ts, username)
+	suite.ensureLogout(ts)
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
@@ -58,8 +59,14 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
 	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
 	cp.Expect("Authentication failed")
-	cp.Expect("You are not authorized, did you provide valid login credentials?")
+	cp.ExpectLongString("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
+	cp := ts.Spawn("auth")
+	cp.Expect("username:")
+	cp.SendCtrlC()
 }
 
 type userJSON struct {
@@ -73,7 +80,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	user := userJSON{
 		Username:        "cli-integration-tests",
 		URLName:         "cli-integration-tests",
-		Tier:            "free",
+		Tier:            "free_legacy",
 		PrivateProjects: false,
 	}
 	data, err := json.Marshal(user)

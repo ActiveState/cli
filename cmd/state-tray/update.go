@@ -7,11 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
 )
 
 const (
-	iconUpdateFile      = "icon-update.ico"
 	updateCheckInterval = time.Hour
 )
 
@@ -44,7 +42,6 @@ func needsUpdate(mdl *model.SvcModel) bool {
 }
 
 type updateNotice struct {
-	box  packr.Box
 	item *systray.MenuItem
 }
 
@@ -52,9 +49,9 @@ func (n *updateNotice) show(show bool) {
 	switch show {
 	case true:
 		n.item.Show()
-		systray.SetIcon(n.box.Bytes(iconUpdateFile))
+		systray.SetIcon(iconUpdateFile)
 	case false:
 		n.item.Hide()
-		systray.SetIcon(n.box.Bytes(iconFile))
+		systray.SetIcon(iconFile)
 	}
 }
