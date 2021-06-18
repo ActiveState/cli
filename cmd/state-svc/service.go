@@ -14,19 +14,20 @@ import (
 )
 
 type service struct {
-	cfg    *config.Instance
-	server *server.Server
+	cfg      *config.Instance
+	shutdown chan<- struct{}
+	server   *server.Server
 }
 
-func NewService(cfg *config.Instance) *service {
-	return &service{cfg: cfg}
+func NewService(cfg *config.Instance, shutdown chan<- struct{}) *service {
+	return &service{cfg: cfg, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg)
+	s.server, err = server.New(s.cfg, s.shutdown)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -53,7 +54,8 @@ func (s *service) Stop() error {
 	}
 
 	if err := s.server.Shutdown(); err != nil {
-		fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
+		logging.Error("Closing server failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Closing server failed: %v\n", err)
 	}
 	return nil
 }

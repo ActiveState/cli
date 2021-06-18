@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -96,19 +97,37 @@ func run() error {
 func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
-	p := NewService(cfg)
-
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(sig)
+	shutdown := make(chan struct{})
 
+	p := NewService(cfg, shutdown)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		oscall := <-sig
-		logging.Debug("system call:%+v", oscall)
-		if err := p.Stop(); err != nil {
-			logging.Error("Stop on sigterm failed: %v", errs.Join(err, ": "))
+		defer wg.Done()
+		defer close(sig)
+		select {
+		case oscall, ok := <-sig:
+			if !ok {
+				return
+			}
+			logging.Debug("system call:%+v", oscall)
+		case <-shutdown:
 		}
+		if err := p.Stop(); err != nil {
+			logging.Error("Stopping server failed: %v", errs.Join(err, ": "))
+		}
+	}()
+
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+
+	// Note: p.Start() returns before the server is completely shut down. Hence we need to wait for the shutdown process to complete:
+	defer func() {
+		signal.Stop(sig)
+		close(shutdown)
+		wg.Wait()
 	}()
 
 	if err := p.Start(); err != nil {

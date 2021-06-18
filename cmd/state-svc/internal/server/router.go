@@ -3,8 +3,6 @@ package server
 import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
-
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 const QuitRoute = "/__quit"
@@ -21,12 +19,7 @@ func (s *Server) setupRouting() {
 	})
 
 	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
-		go func() {
-			err := s.Shutdown()
-			if err != nil {
-				logging.Errorf("Shutting down server failed: %v", err)
-			}
-		}()
+		s.shutdown <- struct{}{}
 		return nil
 	})
 }
