@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetIngredientParams creates a new GetIngredientParams object
-// with the default values initialized.
+// NewGetIngredientParams creates a new GetIngredientParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetIngredientParams() *GetIngredientParams {
-	var ()
 	return &GetIngredientParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetIngredientParamsWithTimeout creates a new GetIngredientParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetIngredientParamsWithTimeout(timeout time.Duration) *GetIngredientParams {
-	var ()
 	return &GetIngredientParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetIngredientParamsWithContext creates a new GetIngredientParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetIngredientParamsWithContext(ctx context.Context) *GetIngredientParams {
-	var ()
 	return &GetIngredientParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetIngredientParamsWithHTTPClient creates a new GetIngredientParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetIngredientParamsWithHTTPClient(client *http.Client) *GetIngredientParams {
-	var ()
 	return &GetIngredientParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetIngredientParams contains all the parameters to send to the API endpoint
-for the get ingredient operation typically these are written to a http.Request
+/* GetIngredientParams contains all the parameters to send to the API endpoint
+   for the get ingredient operation.
+
+   Typically these are written to a http.Request.
 */
 type GetIngredientParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get ingredient params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientParams) WithDefaults() *GetIngredientParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get ingredient params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get ingredient params

@@ -89,8 +89,13 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	client := inventory.Get()
 
 	params := inventory_operations.NewSearchIngredientsParams()
-	params.SetQ(name)
-	params.SetNamespaces(ns.String())
+	if name != "" {
+		params.SetQ(&name)
+	}
+	namespace := ns.String()
+	if namespace != "" {
+		params.SetNamespaces(&namespace)
+	}
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 

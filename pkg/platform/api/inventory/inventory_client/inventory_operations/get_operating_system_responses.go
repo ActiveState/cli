@@ -46,7 +46,7 @@ func NewGetOperatingSystemOK() *GetOperatingSystemOK {
 	return &GetOperatingSystemOK{}
 }
 
-/*GetOperatingSystemOK handles this case with default header values.
+/* GetOperatingSystemOK describes a response with status code 200, with default header values.
 
 The retrieved operating system
 */
@@ -57,7 +57,6 @@ type GetOperatingSystemOK struct {
 func (o *GetOperatingSystemOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}][%d] getOperatingSystemOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOperatingSystemOK) GetPayload() *inventory_models.OperatingSystem {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetOperatingSystemDefault(code int) *GetOperatingSystemDefault {
 	}
 }
 
-/*GetOperatingSystemDefault handles this case with default header values.
+/* GetOperatingSystemDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetOperatingSystemDefault) Code() int {
 func (o *GetOperatingSystemDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}][%d] getOperatingSystem default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetOperatingSystemDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

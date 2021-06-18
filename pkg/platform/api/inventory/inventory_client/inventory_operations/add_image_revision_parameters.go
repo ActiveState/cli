@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddImageRevisionParams creates a new AddImageRevisionParams object
-// with the default values initialized.
+// NewAddImageRevisionParams creates a new AddImageRevisionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddImageRevisionParams() *AddImageRevisionParams {
-	var ()
 	return &AddImageRevisionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddImageRevisionParamsWithTimeout creates a new AddImageRevisionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddImageRevisionParamsWithTimeout(timeout time.Duration) *AddImageRevisionParams {
-	var ()
 	return &AddImageRevisionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddImageRevisionParamsWithContext creates a new AddImageRevisionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddImageRevisionParamsWithContext(ctx context.Context) *AddImageRevisionParams {
-	var ()
 	return &AddImageRevisionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddImageRevisionParamsWithHTTPClient creates a new AddImageRevisionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddImageRevisionParamsWithHTTPClient(client *http.Client) *AddImageRevisionParams {
-	var ()
 	return &AddImageRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddImageRevisionParams contains all the parameters to send to the API endpoint
-for the add image revision operation typically these are written to a http.Request
+/* AddImageRevisionParams contains all the parameters to send to the API endpoint
+   for the add image revision operation.
+
+   Typically these are written to a http.Request.
 */
 type AddImageRevisionParams struct {
 
-	/*ImageID*/
+	// ImageID.
+	//
+	// Format: uuid
 	ImageID strfmt.UUID
-	/*ImageRevision*/
+
+	// ImageRevision.
 	ImageRevision *inventory_models.ImageRevisionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add image revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddImageRevisionParams) WithDefaults() *AddImageRevisionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add image revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddImageRevisionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add image revision params
@@ -139,7 +156,6 @@ func (o *AddImageRevisionParams) WriteToRequest(r runtime.ClientRequest, reg str
 	if err := r.SetPathParam("image_id", o.ImageID.String()); err != nil {
 		return err
 	}
-
 	if o.ImageRevision != nil {
 		if err := r.SetBodyParam(o.ImageRevision); err != nil {
 			return err

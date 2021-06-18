@@ -13,13 +13,11 @@ require (
 	github.com/ActiveState/termtest v0.7.1
 	github.com/ActiveState/termtest/expect v0.7.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
-	github.com/asaskevich/govalidator v0.0.0-20180315120708-ccb8e960c48f // indirect
-	github.com/aws/aws-sdk-go v1.13.8
+	github.com/aws/aws-sdk-go v1.34.28
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
@@ -33,16 +31,11 @@ require (
 	github.com/getlantern/systray v1.1.0
 	github.com/go-ini/ini v1.32.0 // indirect
 	github.com/go-ole/go-ole v1.2.4
-	github.com/go-openapi/analysis v0.0.0-20180418034448-863ac7f90e00 // indirect
-	github.com/go-openapi/errors v0.0.0-20171226161601-7bcb96a367ba
-	github.com/go-openapi/jsonpointer v0.0.0-20180322222829-3a0015ad55fa // indirect
-	github.com/go-openapi/jsonreference v0.0.0-20180322222742-3fb327e6747d // indirect
-	github.com/go-openapi/loads v0.0.0-20171207192234-2a2b323bab96 // indirect
-	github.com/go-openapi/runtime v0.0.0-20180420041453-f12926f16ac2
-	github.com/go-openapi/spec v0.0.0-20180415031709-bcff419492ee // indirect
-	github.com/go-openapi/strfmt v0.0.0-20180407011102-481808443b00
-	github.com/go-openapi/swag v0.0.0-20180405201759-811b1089cde9
-	github.com/go-openapi/validate v0.0.0-20180422194751-f8f9c5961cd5
+	github.com/go-openapi/errors v0.19.9
+	github.com/go-openapi/runtime v0.19.24
+	github.com/go-openapi/strfmt v0.20.0
+	github.com/go-openapi/swag v0.19.14
+	github.com/go-openapi/validate v0.20.2
 	github.com/gobuffalo/packr v1.10.7
 	github.com/gofrs/flock v0.8.0
 	github.com/golang/protobuf v1.4.3 // indirect
@@ -59,12 +52,10 @@ require (
 	github.com/imdario/mergo v0.3.11
 	github.com/jarcoal/httpmock v1.0.3
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/machinebox/graphql v0.2.2
-	github.com/mailru/easyjson v0.0.0-20180323154445-8b799c424f57 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.10
@@ -88,7 +79,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/objx v0.3.0 // indirect
-	github.com/stretchr/testify v1.6.2-0.20201103103935-92707c0b2d50
+	github.com/stretchr/testify v1.7.0
 	github.com/thoas/go-funk v0.8.0
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v6 v6.0.2

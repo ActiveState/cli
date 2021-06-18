@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -22,6 +23,12 @@ type IngredientVersionRevisionCreateAllOf0 struct {
 	// The build script(s) used to build this ingredient version, referenced by their build script ID.
 	BuildScripts []strfmt.UUID `json:"build_scripts"`
 
+	// The ingredient option sets that are used by default with this builder. This array may only be non-empty for ingredients in the builder namespace. Each ingredient option set listed must have a unique group. Ingredient options sets are applied to the builder in the order listed here. Defaults listed here may be overridden on a per-ingredient basis by specifying ingredient option set overrides on an ingredient using this builder.
+	DefaultIngredientOptionSets []strfmt.UUID `json:"default_ingredient_option_sets"`
+
+	// The ingredient option sets that are used to build this ingredient. This array may only be non-empty for ingredients not in the builder namespace. Each ingredient option set listed must have a unique group. Ingredient options sets are applied to the builder in the order listed here. If any set listed here has the same group as a default set on this ingredient's builder, the set listed here will override/replace the set with the same group on the builder.
+	IngredientOptionSetOverrides []strfmt.UUID `json:"ingredient_option_set_overrides"`
+
 	// The patch(es) applied to this ingredient version's source code, referenced by their patch ID.
 	Patches []*IngredientVersionRevisionCreatePatch `json:"patches"`
 }
@@ -31,6 +38,14 @@ func (m *IngredientVersionRevisionCreateAllOf0) Validate(formats strfmt.Registry
 	var res []error
 
 	if err := m.validateBuildScripts(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDefaultIngredientOptionSets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIngredientOptionSetOverrides(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -45,7 +60,6 @@ func (m *IngredientVersionRevisionCreateAllOf0) Validate(formats strfmt.Registry
 }
 
 func (m *IngredientVersionRevisionCreateAllOf0) validateBuildScripts(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BuildScripts) { // not required
 		return nil
 	}
@@ -61,8 +75,39 @@ func (m *IngredientVersionRevisionCreateAllOf0) validateBuildScripts(formats str
 	return nil
 }
 
-func (m *IngredientVersionRevisionCreateAllOf0) validatePatches(formats strfmt.Registry) error {
+func (m *IngredientVersionRevisionCreateAllOf0) validateDefaultIngredientOptionSets(formats strfmt.Registry) error {
+	if swag.IsZero(m.DefaultIngredientOptionSets) { // not required
+		return nil
+	}
 
+	for i := 0; i < len(m.DefaultIngredientOptionSets); i++ {
+
+		if err := validate.FormatOf("default_ingredient_option_sets"+"."+strconv.Itoa(i), "body", "uuid", m.DefaultIngredientOptionSets[i].String(), formats); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (m *IngredientVersionRevisionCreateAllOf0) validateIngredientOptionSetOverrides(formats strfmt.Registry) error {
+	if swag.IsZero(m.IngredientOptionSetOverrides) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.IngredientOptionSetOverrides); i++ {
+
+		if err := validate.FormatOf("ingredient_option_set_overrides"+"."+strconv.Itoa(i), "body", "uuid", m.IngredientOptionSetOverrides[i].String(), formats); err != nil {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (m *IngredientVersionRevisionCreateAllOf0) validatePatches(formats strfmt.Registry) error {
 	if swag.IsZero(m.Patches) { // not required
 		return nil
 	}
@@ -74,6 +119,38 @@ func (m *IngredientVersionRevisionCreateAllOf0) validatePatches(formats strfmt.R
 
 		if m.Patches[i] != nil {
 			if err := m.Patches[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient version revision create all of0 based on the context it is used
+func (m *IngredientVersionRevisionCreateAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidatePatches(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientVersionRevisionCreateAllOf0) contextValidatePatches(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Patches); i++ {
+
+		if m.Patches[i] != nil {
+			if err := m.Patches[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
 				}

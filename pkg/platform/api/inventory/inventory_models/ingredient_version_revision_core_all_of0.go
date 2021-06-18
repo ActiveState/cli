@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
@@ -26,11 +27,8 @@ type IngredientVersionRevisionCoreAllOf0 struct {
 	// Camel-specific metadata needed to build this ingredient version revision in camel, if there is any.
 	CamelExtras interface{} `json:"camel_extras,omitempty"`
 
-	// dependency sets
-	DependencySets []*DependencySet `json:"dependency_sets"`
-
-	// ingredient options
-	IngredientOptions []*IngredientOption `json:"ingredient_options"`
+	// dependencies
+	Dependencies []Dependency `json:"dependencies"`
 
 	// Whether or not this revision is indemnified for customers paying for indemnification. If set to null, then this will use the is_indemnified value of the previous revision or false if this is the first revision.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
@@ -61,11 +59,7 @@ type IngredientVersionRevisionCoreAllOf0 struct {
 func (m *IngredientVersionRevisionCoreAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDependencySets(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateIngredientOptions(formats); err != nil {
+	if err := m.validateDependencies(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -87,49 +81,18 @@ func (m *IngredientVersionRevisionCoreAllOf0) Validate(formats strfmt.Registry) 
 	return nil
 }
 
-func (m *IngredientVersionRevisionCoreAllOf0) validateDependencySets(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.DependencySets) { // not required
+func (m *IngredientVersionRevisionCoreAllOf0) validateDependencies(formats strfmt.Registry) error {
+	if swag.IsZero(m.Dependencies) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.DependencySets); i++ {
-		if swag.IsZero(m.DependencySets[i]) { // not required
-			continue
-		}
+	for i := 0; i < len(m.Dependencies); i++ {
 
-		if m.DependencySets[i] != nil {
-			if err := m.DependencySets[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("dependency_sets" + "." + strconv.Itoa(i))
-				}
-				return err
+		if err := m.Dependencies[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
 			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionRevisionCoreAllOf0) validateIngredientOptions(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.IngredientOptions) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.IngredientOptions); i++ {
-		if swag.IsZero(m.IngredientOptions[i]) { // not required
-			continue
-		}
-
-		if m.IngredientOptions[i] != nil {
-			if err := m.IngredientOptions[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
+			return err
 		}
 
 	}
@@ -138,7 +101,6 @@ func (m *IngredientVersionRevisionCoreAllOf0) validateIngredientOptions(formats 
 }
 
 func (m *IngredientVersionRevisionCoreAllOf0) validateLicenseManifestURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LicenseManifestURI) { // not required
 		return nil
 	}
@@ -151,7 +113,6 @@ func (m *IngredientVersionRevisionCoreAllOf0) validateLicenseManifestURI(formats
 }
 
 func (m *IngredientVersionRevisionCoreAllOf0) validatePlatformSourceURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.PlatformSourceURI) { // not required
 		return nil
 	}
@@ -192,14 +153,13 @@ const (
 
 // prop value enum
 func (m *IngredientVersionRevisionCoreAllOf0) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, ingredientVersionRevisionCoreAllOf0TypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, ingredientVersionRevisionCoreAllOf0TypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *IngredientVersionRevisionCoreAllOf0) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -207,6 +167,36 @@ func (m *IngredientVersionRevisionCoreAllOf0) validateStatus(formats strfmt.Regi
 	// value enum
 	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient version revision core all of0 based on the context it is used
+func (m *IngredientVersionRevisionCoreAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateDependencies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientVersionRevisionCoreAllOf0) contextValidateDependencies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Dependencies); i++ {
+
+		if err := m.Dependencies[i].ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
+			}
+			return err
+		}
+
 	}
 
 	return nil
