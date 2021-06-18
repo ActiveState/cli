@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/rollbar/rollbar-go"
@@ -53,7 +54,7 @@ func main() {
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logger := logging.Error
-		if errs.ShouldSkipRollbar(err) {
+		if locale.IsInputError(err) {
 			logger = logging.Debug
 		}
 		logger("state-svc errored out: %s", errMsg)
@@ -121,7 +122,7 @@ func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
 		if errors.Is(err, ErrSvcAlreadyRunning) {
-			err = errs.SkipRollbar(err)
+			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
 		}
 		return errs.Wrap(err, "Could not start serviceManager")
 	}
