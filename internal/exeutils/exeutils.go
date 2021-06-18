@@ -2,6 +2,7 @@ package exeutils
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,17 +22,20 @@ func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 
 	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
-			}
+		if !fileutils.DirExists(bin) {
+			continue
+		}
 
-			exes = append(exes, fpath)
-			return nil
-		})
+		entries, err := ioutil.ReadDir(bin)
 		if err != nil {
-			return exes, errs.Wrap(err, "Error while walking path")
+			return nil, errs.Wrap(err, "Could not read directory: %s", bin)
+		}
+
+		for _, entry := range entries {
+			fpath := filepath.Join(bin, entry.Name())
+			if fileutils.IsExecutable(fpath) {
+				exes = append(exes, fpath)
+			}
 		}
 	}
 
@@ -157,5 +161,12 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 		return nil, errs.Wrap(err, "Could not start %s %v", command, args)
 	}
 	cmd.Stdin = nil
+
+	// Wait for the command to finish in a go-routine.  If we do not do that, and the parent process keeps running,
+	// the launched process will keep around flagged <defunct> (at least on Linux)
+	go func() {
+		cmd.Wait()
+	}()
+
 	return cmd.Process, nil
 }

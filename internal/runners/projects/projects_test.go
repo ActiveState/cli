@@ -30,6 +30,11 @@ func (c *configMock) GetStringSlice(_ string) []string {
 
 func (c *configMock) Set(_ string, _ interface{}) error { return nil }
 
+func (c *configMock) SetWithLock(_ string, fn func(interface{}) (interface{}, error)) error {
+	_, err := fn(nil)
+	return err
+}
+
 func TestProjects(t *testing.T) {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
