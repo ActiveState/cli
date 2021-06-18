@@ -791,7 +791,7 @@ installer_err_engine_unknown:
 build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
-  other: "The local project checkout is currently building. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
+  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1674,3 +1674,8 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
+operation_success_local:
+  other: |
+    Your local project has been updated. 
+    Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
+    Run [ACTIONABLE]state history[/RESET] to review your local changes.

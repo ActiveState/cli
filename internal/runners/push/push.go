@@ -177,7 +177,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	if remoteExists {
-		r.Outputer.Notice(locale.Tl("push_project_existing", "Project at [NOTICE]{{.V0}}[/RESET] has been updated with local changes", r.project.URL()))
+		r.Outputer.Notice(locale.Tl("push_project_existing", "The project at [NOTICE]{{.V0}}[/RESET] has been updated with your changes.", r.project.URL()))
 	} else {
 		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
 	}

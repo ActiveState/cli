@@ -196,7 +196,7 @@ func ProjectURL(owner, name, commitID string) string {
 
 // CommitURL creates a valid platform commit URL for the given commit
 func CommitURL(commitID string) string {
-	return fmt.Sprintf("https://%s/commit/%s", constants.PlatformURL, commitID)
+	return fmt.Sprintf("%s/%s", constants.DashboardCommitURL, commitID)
 }
 
 func processProjectErrorResponse(err error, params ...string) error {

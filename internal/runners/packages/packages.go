@@ -132,7 +132,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	} else {
 		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
 	}
-	out.Print(locale.Tl("operation_success_local", "Your local project has been updated. Run [ACTIONABLE]state push[/RESET] to save changes to the platform."))
+	out.Print(locale.T("operation_success_local"))
 
 	return nil
 }

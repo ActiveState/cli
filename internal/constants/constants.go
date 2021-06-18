@@ -185,6 +185,9 @@ const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=p
 // ActiveStateDashboardURL is the URL for the ActiveState account preferences page
 const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
+// DashboardCommitURL is the URL to view a platform commit that is not a part of a project
+const DashboardCommitURL = "https://platform.activestate.com/commit"
+
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 
