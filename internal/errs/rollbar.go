@@ -1,5 +1,7 @@
 package errs
 
+import "errors"
+
 // RollbarSkipper is an interface that when implemented by an error struct, should skip the step of reporting this error to rollbar
 type RollbarSkipper interface {
 	SkipRollbar()
@@ -28,5 +30,5 @@ func (re *RollbarSkipError) SkipRollbar() {}
 // ShouldSkipRollbar checks if an error implements the RollbarSkipper interface
 func ShouldSkipRollbar(err error) bool {
 	var rs RollbarSkipper
-	return Matches(err, &rs)
+	return errors.As(err, &rs)
 }
