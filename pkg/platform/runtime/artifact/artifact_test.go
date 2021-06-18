@@ -109,6 +109,12 @@ func TestRequestedArtifactChanges(t *testing.T) {
 		expectedChanges ArtifactChangeset
 	}{
 		{
+			"no camel changes",
+			"camel",
+			"camel",
+			ArtifactChangeset{},
+		},
+		{
 			"no changes",
 			"perl-alternative-base",
 			"perl-alternative-base",
