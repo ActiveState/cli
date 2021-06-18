@@ -35,7 +35,7 @@ type MetaData struct {
 	// Env is a key value map containing all the env vars, values can contain the RelocationDir value (which will be replaced)
 	Env map[string]string `json:"env"`
 
-	// Env is a key value map containing all env vars, where the value is a list of paths that we have to prepend to the existing environment
+	// PathListEnv is a key value map containing all env vars, where the value is a list of paths that we have to prepend to the existing environment
 	PathListEnv map[string]string `json:"path_list_env"`
 
 	// BinaryLocations are locations that we should add to the PATH
