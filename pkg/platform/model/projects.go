@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/go-openapi/strfmt"
 
@@ -83,6 +84,35 @@ func LanguageForCommit(commitID strfmt.UUID) (string, error) {
 	}
 
 	return languages[0].Name, nil
+}
+
+// LanguageForPackage attempts to fetch the language belonging to the given package name
+func LanguageForPackage(name string) (string, error) {
+	ns := NewBlankNamespace()
+	packages, err := SearchIngredientsStrict(ns, name)
+	if err != nil {
+		return "", locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
+
+	if len(packages) == 0 {
+		return "", errs.AddTips(
+			locale.NewInputError("err_package_info_no_packages", "", name),
+			locale.T("info_try_search"),
+			locale.T("info_request"),
+		)
+	}
+
+	pkg := *packages[0]
+	if !NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, NamespacePackageMatch) {
+		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
+	}
+
+	re := regexp.MustCompile(NamespacePackageMatch)
+	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
+	if len(matches) < 2 {
+		return "", locale.NewError("err_install_match_language", "Could not determine language from package namespace")
+	}
+	return matches[1], nil
 }
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.

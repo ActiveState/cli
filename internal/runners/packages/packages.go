@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -171,34 +170,6 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
-}
-
-func languageForPackage(name string) (string, error) {
-	ns := model.NewBlankNamespace()
-	packages, err := model.SearchIngredientsStrict(ns, name)
-	if err != nil {
-		return "", locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
-	}
-
-	if len(packages) == 0 {
-		return "", errs.AddTips(
-			locale.NewInputError("err_package_info_no_packages", "", name),
-			locale.T("info_try_search"),
-			locale.T("info_request"),
-		)
-	}
-
-	pkg := *packages[0]
-	if !model.NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, model.NamespacePackageMatch) {
-		return "", locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
-	}
-
-	re := regexp.MustCompile(model.NamespacePackageMatch)
-	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
-	if len(matches) < 2 {
-		return "", locale.NewError("err_install_match_language", "Could not determine language from package namespace")
-	}
-	return matches[1], nil
 }
 
 func installInitial(cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion, languageName string, operation model.Operation, ns model.Namespace) error {

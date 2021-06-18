@@ -41,7 +41,7 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 	var language string
 	var err error
 	if a.proj == nil {
-		language, err = languageForPackage(params.Package.Name())
+		language, err = model.LanguageForPackage(params.Package.Name())
 		if err != nil {
 			return locale.WrapError(err, "err_install_get_langauge", "Could not get language for package: {{.V0}}", params.Package.Name())
 		}
