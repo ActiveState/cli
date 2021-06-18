@@ -28,6 +28,10 @@ import (
 
 var (
 	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
+
+	ErrMergeFastForward = errs.New("No merge required")
+
+	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
 )
 
 type ErrOrderAuth struct{ *locale.LocalizedError }
@@ -302,57 +306,6 @@ func checkpointFind(cp []*gqlModel.Requirement, namespace, requirement string) *
 			return c
 		}
 	}
-	return nil
-}
-
-func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
-	if commit1 == nil || commit2 == nil {
-		return nil, nil
-	}
-
-	if *commit1 == *commit2 {
-		return commit1, nil
-	}
-
-	history1, err := CommitHistoryFromID(*commit1)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get commit history for %s", commit1.String())
-	}
-
-	history2, err := CommitHistoryFromID(*commit2)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get commit history for %s", commit2.String())
-	}
-
-	return commonParentWithHistory(commit1, commit2, history1, history2), nil
-}
-
-func commonParentWithHistory(commit1, commit2 *strfmt.UUID, history1, history2 []*mono_models.Commit) *strfmt.UUID {
-	if commit1 == nil || commit2 == nil {
-		return nil
-	}
-
-	if *commit1 == *commit2 {
-		return commit1
-	}
-
-	for _, c := range history1 {
-		if c.CommitID == *commit2 {
-			return commit2 // commit1 history contains commit2
-		}
-		for _, c2 := range history2 {
-			if c.CommitID == c2.CommitID {
-				return &c.CommitID // commit1 and commit2 have a common parent
-			}
-		}
-	}
-
-	for _, c2 := range history2 {
-		if c2.CommitID == *commit1 {
-			return commit1 // commit2 history contains commit1
-		}
-	}
-
 	return nil
 }
 
@@ -915,6 +868,38 @@ func RevertCommit(pj ProjectInfo, to strfmt.UUID) error {
 	}
 
 	return nil
+}
+
+func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.MergeStrategies, error) {
+	params := vcsClient.NewMergeCommitsParams()
+	params.SetCommitReceivingChanges(commitReceiving)
+	params.SetCommitWithChanges(commitWithChanges)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
+	if err != nil {
+		if api.ErrorCodeFromPayload(err) == 409 {
+			logging.Debug("Received 409 from MergeCommit: %s", err.Error())
+			return nil, ErrMergeCommitInHistory
+		}
+		return nil, locale.WrapError(err, "err_api_mergecommit", api.ErrorMessageFromPayload(err))
+	}
+	if noContent != nil {
+		return nil, ErrMergeFastForward
+	}
+
+	return res.Payload, nil
+}
+
+func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error) {
+	_, err := MergeCommit(commitReceiving, commitWithChanges)
+	if err != nil {
+		if errors.Is(err, ErrMergeFastForward) || errors.Is(err, ErrMergeCommitInHistory) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {

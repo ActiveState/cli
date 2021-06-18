@@ -1,6 +1,7 @@
 package push
 
 import (
+	"errors"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -61,7 +62,7 @@ func (r *Push) Run(params PushParams) error {
 			locale.Tl("push_headless_push_tip_state_init", "Run [ACTIONABLE]state init[/RESET] to create a project with the State Tool."),
 		)
 	}
-
+	
 	owner := r.project.Owner()
 	name := r.project.Name()
 	if r.project.IsHeadless() {
@@ -126,19 +127,27 @@ func (r *Push) Run(params PushParams) error {
 		}
 
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
-			r.out.Notice(locale.T("push_up_to_date"))
+			r.out.Notice(locale.T("push_no_changes"))
 			return nil
 		}
 
 		pcid := r.project.CommitUUID()
-		parentCommit, err := model.CommonParent(&pcid, branch.CommitID)
-		if err != nil {
-			return locale.WrapError(err, "err_push_commonparent", "Could not check if commit conflicts with remote project.")
-		}
-		if parentCommit == nil || (branch.CommitID != nil && *parentCommit != *branch.CommitID) {
-			return errs.AddTips(
-				locale.NewInputError("err_push_outdated"),
-				locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
+		if branch.CommitID != nil && pcid != "" {
+			mergeStrategy, err := model.MergeCommit(*branch.CommitID, pcid)
+			if err != nil {
+				if errors.Is(err, model.ErrMergeCommitInHistory) {
+					r.out.Notice(locale.T("push_no_changes"))
+					return nil
+				}
+				if !errors.Is(err, model.ErrMergeFastForward) {
+					return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
+				}
+			}
+			if mergeStrategy != nil {
+				return errs.AddTips(
+					locale.NewInputError("err_push_outdated"),
+					locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
+			}
 		}
 	} else { // Remote project doesn't exist yet
 		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.

@@ -1,11 +1,12 @@
 package pull
 
 import (
+	"errors"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -81,24 +82,24 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	// Determine the project to pull from
-	target, err := targetProject(p.project, params.SetProject)
+	remoteProject, err := resolveRemoteProject(p.project, params.SetProject)
 	if err != nil {
 		return errs.Wrap(err, "Unable to determine target project")
 	}
 
-	var projectCommit *strfmt.UUID
+	var localCommit *strfmt.UUID
 	if p.project.CommitUUID() != "" {
 		v := p.project.CommitUUID()
-		projectCommit = &v
-	}
-	parentCommit, err := model.CommonParent(target.CommitID, projectCommit)
-	if err != nil {
-		return locale.WrapError(err, "err_pull_commonparent", "Could not check if target commit is compatible with local commit history.")
+		localCommit = &v
 	}
 
 	if params.SetProject != "" {
-		if parentCommit != nil && !params.Force {
-			confirmed, err := p.prompt.Confirm(locale.T("confirm"), locale.Tl("confirm_unrelated_pull_set_project", "If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", target.String()), new(bool))
+		if !params.Force {
+			confirmed, err := p.prompt.Confirm(
+				locale.T("confirm"),
+				locale.Tl("confirm_unrelated_pull_set_project",
+					"If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", remoteProject.String()),
+				new(bool))
 			if err != nil {
 				return locale.WrapError(err, "err_pull_confirm", "Failed to get user confirmation to update project")
 			}
@@ -107,60 +108,43 @@ func (p *Pull) Run(params *PullParams) error {
 			}
 		}
 
-		err = p.project.Source().SetNamespace(target.Owner, target.Project)
+		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
 		if err != nil {
 			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
 		}
 	}
 
-	targetCommit := target.CommitID
+	remoteCommit := remoteProject.CommitID
+	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
-	noCommonParent := parentCommit == nil
-	divergedHistory := targetCommit != nil && parentCommit != nil && *parentCommit != *targetCommit
-
-	if noCommonParent {
-		return locale.WrapError(err, "err_pull_incompatible")
-	}
-
-	if divergedHistory {
-		p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
-		p.out.Notice(locale.Tr(
-			"pull_diverged_message",
-			p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), targetCommit.String(),
-			constants.DashboardCommitURL+p.project.CommitID()))
-
-		changeset, err := model.DiffCommits(*targetCommit, p.project.CommitUUID())
+	if localCommit != nil {
+		strategies, err := model.MergeCommit(*remoteCommit, *localCommit)
 		if err != nil {
-			return locale.WrapError(
-				err, "err_pull_diff",
-				"Could not generate diff between commits {{.V0}}, and {{.V1}}", targetCommit.String(), p.project.CommitID())
+			if errors.Is(err, model.ErrMergeFastForward) {
+				// No merge necessary
+				resultingCommit = localCommit
+			} else if !errors.Is(err, model.ErrMergeCommitInHistory) {
+				return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
+			}
 		}
-
-		commitMessage := locale.Tr("pull_merge_commit", targetCommit.String(), p.project.CommitID())
-		resultCommit, err := model.CommitChangeset(*targetCommit, commitMessage, machineid.UniqID(), changeset)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
+		if err == nil && strategies != nil {
+			c, err := p.performMerge(strategies, *remoteCommit)
+			if err != nil {
+				return errs.Wrap(err, "performing merge commit failed")
+			}
+			resultingCommit = &c
 		}
-		targetCommit = &resultCommit
-
-		cmit, err := model.GetCommit(resultCommit)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
-		}
-		p.out.Notice(locale.Tl(
-			"pull_diverged_changes",
-			"The following changes will be merged:\n{{.V0}}\n", strings.Join(commit.FormatChanges(cmit), "\n")))
 	}
 
 	// Update the commit ID in the activestate.yaml
-	if p.project.CommitID() != targetCommit.String() {
-		err := p.project.Source().SetCommit(targetCommit.String(), false)
+	if p.project.CommitID() != resultingCommit.String() {
+		err := p.project.Source().SetCommit(resultingCommit.String(), false)
 		if err != nil {
 			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
 		}
 
 		p.out.Print(&outputFormat{
-			locale.Tr("pull_updated", target.String(), targetCommit.String()),
+			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
 		})
 	} else {
@@ -170,7 +154,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *targetCommit, true)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *resultingCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -178,7 +162,30 @@ func (p *Pull) Run(params *PullParams) error {
 	return nil
 }
 
-func targetProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {
+func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) (strfmt.UUID, error) {
+	p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
+	p.out.Notice(locale.Tr(
+		"pull_diverged_message",
+		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))
+
+	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), p.project.CommitID())
+	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, machineid.UniqID(), strategies.OverwriteChanges)
+	if err != nil {
+		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
+	}
+
+	cmit, err := model.GetCommit(resultCommit)
+	if err != nil {
+		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
+	}
+	p.out.Notice(locale.Tl(
+		"pull_diverged_changes",
+		"The following changes will be merged:\n{{.V0}}\n", strings.Join(commit.FormatChanges(cmit), "\n")))
+
+	return resultCommit, nil
+}
+
+func resolveRemoteProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {
 	ns := prj.Namespace()
 	if overwrite != "" {
 		var err error
