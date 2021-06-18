@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -51,7 +52,12 @@ func main() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logging.Errorf("state-svc errored out: %s", errMsg)
+		logger := logging.Error
+		if errs.ShouldSkipRollbar(err) {
+			logger = logging.Debug
+		}
+		logger("state-svc errored out: %s", errMsg)
+
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
@@ -114,6 +120,9 @@ func runForeground(cfg *config.Instance) error {
 func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+		if errors.Is(err, ErrSvcAlreadyRunning) {
+			err = errs.SkipRollbar(err)
+		}
 		return errs.Wrap(err, "Could not start serviceManager")
 	}
 

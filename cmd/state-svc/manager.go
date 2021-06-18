@@ -17,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+var ErrSvcAlreadyRunning error = errs.New("Service is already running")
+
 type serviceManager struct {
 	cfg *config.Instance
 }
@@ -31,7 +33,7 @@ func (s *serviceManager) Start(args ...string) error {
 		oldPid := cast.ToInt(oldPidI)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
-			return nil, errs.New("Service is already running")
+			return nil, ErrSvcAlreadyRunning
 		}
 
 		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
