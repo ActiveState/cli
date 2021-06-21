@@ -52,7 +52,7 @@ func NewSearchIngredientsOK() *SearchIngredientsOK {
 	return &SearchIngredientsOK{}
 }
 
-/* SearchIngredientsOK describes a response with status code 200, with default header values.
+/*SearchIngredientsOK handles this case with default header values.
 
 A paginated list of search results
 */
@@ -63,6 +63,7 @@ type SearchIngredientsOK struct {
 func (o *SearchIngredientsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/search][%d] searchIngredientsOK  %+v", 200, o.Payload)
 }
+
 func (o *SearchIngredientsOK) GetPayload() *inventory_models.SearchIngredientsResponse {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewSearchIngredientsBadRequest() *SearchIngredientsBadRequest {
 	return &SearchIngredientsBadRequest{}
 }
 
-/* SearchIngredientsBadRequest describes a response with status code 400, with default header values.
+/*SearchIngredientsBadRequest handles this case with default header values.
 
 The search parameters are invalid
 */
@@ -95,6 +96,7 @@ type SearchIngredientsBadRequest struct {
 func (o *SearchIngredientsBadRequest) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/search][%d] searchIngredientsBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *SearchIngredientsBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewSearchIngredientsDefault(code int) *SearchIngredientsDefault {
 	}
 }
 
-/* SearchIngredientsDefault describes a response with status code -1, with default header values.
+/*SearchIngredientsDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *SearchIngredientsDefault) Code() int {
 func (o *SearchIngredientsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/search][%d] searchIngredients default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *SearchIngredientsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewGetKernelVersionOK() *GetKernelVersionOK {
 	return &GetKernelVersionOK{}
 }
 
-/* GetKernelVersionOK describes a response with status code 200, with default header values.
+/*GetKernelVersionOK handles this case with default header values.
 
 The retrieved kernel version
 */
@@ -57,6 +57,7 @@ type GetKernelVersionOK struct {
 func (o *GetKernelVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/versions/{kernel_version_id}][%d] getKernelVersionOK  %+v", 200, o.Payload)
 }
+
 func (o *GetKernelVersionOK) GetPayload() *inventory_models.KernelVersion {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetKernelVersionDefault(code int) *GetKernelVersionDefault {
 	}
 }
 
-/* GetKernelVersionDefault describes a response with status code -1, with default header values.
+/*GetKernelVersionDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetKernelVersionDefault) Code() int {
 func (o *GetKernelVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/versions/{kernel_version_id}][%d] getKernelVersion default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetKernelVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

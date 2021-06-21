@@ -52,7 +52,7 @@ func NewResolveRecipesOK() *ResolveRecipesOK {
 	return &ResolveRecipesOK{}
 }
 
-/* ResolveRecipesOK describes a response with status code 200, with default header values.
+/*ResolveRecipesOK handles this case with default header values.
 
 Returns one or more recipes that fulfill the requirements of the order
 */
@@ -63,6 +63,7 @@ type ResolveRecipesOK struct {
 func (o *ResolveRecipesOK) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesOK  %+v", 200, o.Payload)
 }
+
 func (o *ResolveRecipesOK) GetPayload() *inventory_models.RecipeResponse {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewResolveRecipesBadRequest() *ResolveRecipesBadRequest {
 	return &ResolveRecipesBadRequest{}
 }
 
-/* ResolveRecipesBadRequest describes a response with status code 400, with default header values.
+/*ResolveRecipesBadRequest handles this case with default header values.
 
 If the order is invalid
 */
@@ -95,6 +96,7 @@ type ResolveRecipesBadRequest struct {
 func (o *ResolveRecipesBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *ResolveRecipesBadRequest) GetPayload() *inventory_models.SolverValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewResolveRecipesDefault(code int) *ResolveRecipesDefault {
 	}
 }
 
-/* ResolveRecipesDefault describes a response with status code -1, with default header values.
+/*ResolveRecipesDefault handles this case with default header values.
 
 If there is an error processing the order
 */
@@ -136,6 +138,7 @@ func (o *ResolveRecipesDefault) Code() int {
 func (o *ResolveRecipesDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipes default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *ResolveRecipesDefault) GetPayload() *inventory_models.SolverError {
 	return o.Payload
 }

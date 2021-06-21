@@ -52,7 +52,7 @@ func NewAddCPUArchitectureRevisionOK() *AddCPUArchitectureRevisionOK {
 	return &AddCPUArchitectureRevisionOK{}
 }
 
-/* AddCPUArchitectureRevisionOK describes a response with status code 200, with default header values.
+/*AddCPUArchitectureRevisionOK handles this case with default header values.
 
 The updated state of the CPU architecture
 */
@@ -63,6 +63,7 @@ type AddCPUArchitectureRevisionOK struct {
 func (o *AddCPUArchitectureRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddCPUArchitectureRevisionOK) GetPayload() *inventory_models.CPUArchitecture {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddCPUArchitectureRevisionBadRequest() *AddCPUArchitectureRevisionBadReq
 	return &AddCPUArchitectureRevisionBadRequest{}
 }
 
-/* AddCPUArchitectureRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddCPUArchitectureRevisionBadRequest handles this case with default header values.
 
 If the CPU architecture revision is invalid
 */
@@ -95,6 +96,7 @@ type AddCPUArchitectureRevisionBadRequest struct {
 func (o *AddCPUArchitectureRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddCPUArchitectureRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddCPUArchitectureRevisionDefault(code int) *AddCPUArchitectureRevisionD
 	}
 }
 
-/* AddCPUArchitectureRevisionDefault describes a response with status code -1, with default header values.
+/*AddCPUArchitectureRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddCPUArchitectureRevisionDefault) Code() int {
 func (o *AddCPUArchitectureRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/revisions][%d] addCpuArchitectureRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddCPUArchitectureRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

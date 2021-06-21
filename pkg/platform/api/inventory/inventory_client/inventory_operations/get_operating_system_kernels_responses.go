@@ -46,7 +46,7 @@ func NewGetOperatingSystemKernelsOK() *GetOperatingSystemKernelsOK {
 	return &GetOperatingSystemKernelsOK{}
 }
 
-/* GetOperatingSystemKernelsOK describes a response with status code 200, with default header values.
+/*GetOperatingSystemKernelsOK handles this case with default header values.
 
 A paginated list of kernels
 */
@@ -57,6 +57,7 @@ type GetOperatingSystemKernelsOK struct {
 func (o *GetOperatingSystemKernelsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/kernels][%d] getOperatingSystemKernelsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetOperatingSystemKernelsOK) GetPayload() *inventory_models.KernelPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetOperatingSystemKernelsDefault(code int) *GetOperatingSystemKernelsDef
 	}
 }
 
-/* GetOperatingSystemKernelsDefault describes a response with status code -1, with default header values.
+/*GetOperatingSystemKernelsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetOperatingSystemKernelsDefault) Code() int {
 func (o *GetOperatingSystemKernelsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/kernels][%d] getOperatingSystemKernels default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetOperatingSystemKernelsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

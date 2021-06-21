@@ -46,7 +46,7 @@ func NewGetIngredientVersionBuildScriptsOK() *GetIngredientVersionBuildScriptsOK
 	return &GetIngredientVersionBuildScriptsOK{}
 }
 
-/* GetIngredientVersionBuildScriptsOK describes a response with status code 200, with default header values.
+/*GetIngredientVersionBuildScriptsOK handles this case with default header values.
 
 A paginated list of build scripts
 */
@@ -57,6 +57,7 @@ type GetIngredientVersionBuildScriptsOK struct {
 func (o *GetIngredientVersionBuildScriptsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts][%d] getIngredientVersionBuildScriptsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetIngredientVersionBuildScriptsOK) GetPayload() *inventory_models.BuildScriptPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetIngredientVersionBuildScriptsDefault(code int) *GetIngredientVersionB
 	}
 }
 
-/* GetIngredientVersionBuildScriptsDefault describes a response with status code -1, with default header values.
+/*GetIngredientVersionBuildScriptsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetIngredientVersionBuildScriptsDefault) Code() int {
 func (o *GetIngredientVersionBuildScriptsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts][%d] getIngredientVersionBuildScripts default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetIngredientVersionBuildScriptsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

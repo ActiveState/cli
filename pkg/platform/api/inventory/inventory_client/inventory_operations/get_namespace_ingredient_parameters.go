@@ -16,73 +16,58 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetNamespaceIngredientParams creates a new GetNamespaceIngredientParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetNamespaceIngredientParams creates a new GetNamespaceIngredientParams object
+// with the default values initialized.
 func NewGetNamespaceIngredientParams() *GetNamespaceIngredientParams {
+	var ()
 	return &GetNamespaceIngredientParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetNamespaceIngredientParamsWithTimeout creates a new GetNamespaceIngredientParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetNamespaceIngredientParamsWithTimeout(timeout time.Duration) *GetNamespaceIngredientParams {
+	var ()
 	return &GetNamespaceIngredientParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewGetNamespaceIngredientParamsWithContext creates a new GetNamespaceIngredientParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetNamespaceIngredientParamsWithContext(ctx context.Context) *GetNamespaceIngredientParams {
+	var ()
 	return &GetNamespaceIngredientParams{
+
 		Context: ctx,
 	}
 }
 
 // NewGetNamespaceIngredientParamsWithHTTPClient creates a new GetNamespaceIngredientParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetNamespaceIngredientParamsWithHTTPClient(client *http.Client) *GetNamespaceIngredientParams {
+	var ()
 	return &GetNamespaceIngredientParams{
 		HTTPClient: client,
 	}
 }
 
-/* GetNamespaceIngredientParams contains all the parameters to send to the API endpoint
-   for the get namespace ingredient operation.
-
-   Typically these are written to a http.Request.
+/*GetNamespaceIngredientParams contains all the parameters to send to the API endpoint
+for the get namespace ingredient operation typically these are written to a http.Request
 */
 type GetNamespaceIngredientParams struct {
 
-	// Name.
+	/*Name*/
 	Name string
-
-	// Namespace.
+	/*Namespace*/
 	Namespace string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get namespace ingredient params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetNamespaceIngredientParams) WithDefaults() *GetNamespaceIngredientParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get namespace ingredient params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetNamespaceIngredientParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get namespace ingredient params
@@ -152,7 +137,6 @@ func (o *GetNamespaceIngredientParams) WriteToRequest(r runtime.ClientRequest, r
 	qrName := o.Name
 	qName := qrName
 	if qName != "" {
-
 		if err := r.SetQueryParam("name", qName); err != nil {
 			return err
 		}
@@ -162,7 +146,6 @@ func (o *GetNamespaceIngredientParams) WriteToRequest(r runtime.ClientRequest, r
 	qrNamespace := o.Namespace
 	qNamespace := qrNamespace
 	if qNamespace != "" {
-
 		if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 			return err
 		}

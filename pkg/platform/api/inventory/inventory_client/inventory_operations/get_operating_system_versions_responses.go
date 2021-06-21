@@ -46,7 +46,7 @@ func NewGetOperatingSystemVersionsOK() *GetOperatingSystemVersionsOK {
 	return &GetOperatingSystemVersionsOK{}
 }
 
-/* GetOperatingSystemVersionsOK describes a response with status code 200, with default header values.
+/*GetOperatingSystemVersionsOK handles this case with default header values.
 
 A paginated list of operating system versions
 */
@@ -57,6 +57,7 @@ type GetOperatingSystemVersionsOK struct {
 func (o *GetOperatingSystemVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions][%d] getOperatingSystemVersionsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetOperatingSystemVersionsOK) GetPayload() *inventory_models.OperatingSystemVersionPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetOperatingSystemVersionsDefault(code int) *GetOperatingSystemVersionsD
 	}
 }
 
-/* GetOperatingSystemVersionsDefault describes a response with status code -1, with default header values.
+/*GetOperatingSystemVersionsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetOperatingSystemVersionsDefault) Code() int {
 func (o *GetOperatingSystemVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/versions][%d] getOperatingSystemVersions default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetOperatingSystemVersionsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

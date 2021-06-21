@@ -46,7 +46,7 @@ func NewGetIngredientVersionAuthorsOK() *GetIngredientVersionAuthorsOK {
 	return &GetIngredientVersionAuthorsOK{}
 }
 
-/* GetIngredientVersionAuthorsOK describes a response with status code 200, with default header values.
+/*GetIngredientVersionAuthorsOK handles this case with default header values.
 
 A paginated list of authors
 */
@@ -57,6 +57,7 @@ type GetIngredientVersionAuthorsOK struct {
 func (o *GetIngredientVersionAuthorsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] getIngredientVersionAuthorsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetIngredientVersionAuthorsOK) GetPayload() *inventory_models.AuthorPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetIngredientVersionAuthorsDefault(code int) *GetIngredientVersionAuthor
 	}
 }
 
-/* GetIngredientVersionAuthorsDefault describes a response with status code -1, with default header values.
+/*GetIngredientVersionAuthorsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetIngredientVersionAuthorsDefault) Code() int {
 func (o *GetIngredientVersionAuthorsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] getIngredientVersionAuthors default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetIngredientVersionAuthorsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

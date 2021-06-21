@@ -52,7 +52,7 @@ func NewAddIngredientVersionCreated() *AddIngredientVersionCreated {
 	return &AddIngredientVersionCreated{}
 }
 
-/* AddIngredientVersionCreated describes a response with status code 201, with default header values.
+/*AddIngredientVersionCreated handles this case with default header values.
 
 The added ingredient version
 */
@@ -63,6 +63,7 @@ type AddIngredientVersionCreated struct {
 func (o *AddIngredientVersionCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions][%d] addIngredientVersionCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddIngredientVersionCreated) GetPayload() *inventory_models.IngredientVersion {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientVersionBadRequest() *AddIngredientVersionBadRequest {
 	return &AddIngredientVersionBadRequest{}
 }
 
-/* AddIngredientVersionBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientVersionBadRequest handles this case with default header values.
 
 If the ingredient version is invalid
 */
@@ -95,6 +96,7 @@ type AddIngredientVersionBadRequest struct {
 func (o *AddIngredientVersionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions][%d] addIngredientVersionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientVersionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientVersionDefault(code int) *AddIngredientVersionDefault {
 	}
 }
 
-/* AddIngredientVersionDefault describes a response with status code -1, with default header values.
+/*AddIngredientVersionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientVersionDefault) Code() int {
 func (o *AddIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions][%d] addIngredientVersion default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

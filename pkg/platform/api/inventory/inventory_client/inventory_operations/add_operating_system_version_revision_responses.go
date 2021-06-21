@@ -52,7 +52,7 @@ func NewAddOperatingSystemVersionRevisionOK() *AddOperatingSystemVersionRevision
 	return &AddOperatingSystemVersionRevisionOK{}
 }
 
-/* AddOperatingSystemVersionRevisionOK describes a response with status code 200, with default header values.
+/*AddOperatingSystemVersionRevisionOK handles this case with default header values.
 
 The updated state of the operating system version
 */
@@ -63,6 +63,7 @@ type AddOperatingSystemVersionRevisionOK struct {
 func (o *AddOperatingSystemVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddOperatingSystemVersionRevisionOK) GetPayload() *inventory_models.OperatingSystemVersion {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddOperatingSystemVersionRevisionBadRequest() *AddOperatingSystemVersion
 	return &AddOperatingSystemVersionRevisionBadRequest{}
 }
 
-/* AddOperatingSystemVersionRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddOperatingSystemVersionRevisionBadRequest handles this case with default header values.
 
 If the operating system version revision is invalid
 */
@@ -95,6 +96,7 @@ type AddOperatingSystemVersionRevisionBadRequest struct {
 func (o *AddOperatingSystemVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddOperatingSystemVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddOperatingSystemVersionRevisionDefault(code int) *AddOperatingSystemVe
 	}
 }
 
-/* AddOperatingSystemVersionRevisionDefault describes a response with status code -1, with default header values.
+/*AddOperatingSystemVersionRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddOperatingSystemVersionRevisionDefault) Code() int {
 func (o *AddOperatingSystemVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions][%d] addOperatingSystemVersionRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddOperatingSystemVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

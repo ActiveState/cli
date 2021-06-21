@@ -46,7 +46,7 @@ func NewGetIngredientsOK() *GetIngredientsOK {
 	return &GetIngredientsOK{}
 }
 
-/* GetIngredientsOK describes a response with status code 200, with default header values.
+/*GetIngredientsOK handles this case with default header values.
 
 A paginated list of ingredients
 */
@@ -57,6 +57,7 @@ type GetIngredientsOK struct {
 func (o *GetIngredientsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients][%d] getIngredientsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetIngredientsOK) GetPayload() *inventory_models.IngredientPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetIngredientsDefault(code int) *GetIngredientsDefault {
 	}
 }
 
-/* GetIngredientsDefault describes a response with status code -1, with default header values.
+/*GetIngredientsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetIngredientsDefault) Code() int {
 func (o *GetIngredientsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients][%d] getIngredients default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetIngredientsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

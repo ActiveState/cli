@@ -17,97 +17,78 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetCPUArchitectureParams creates a new GetCPUArchitectureParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetCPUArchitectureParams creates a new GetCPUArchitectureParams object
+// with the default values initialized.
 func NewGetCPUArchitectureParams() *GetCPUArchitectureParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetCPUArchitectureParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetCPUArchitectureParamsWithTimeout creates a new GetCPUArchitectureParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetCPUArchitectureParamsWithTimeout(timeout time.Duration) *GetCPUArchitectureParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetCPUArchitectureParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetCPUArchitectureParamsWithContext creates a new GetCPUArchitectureParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetCPUArchitectureParamsWithContext(ctx context.Context) *GetCPUArchitectureParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetCPUArchitectureParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetCPUArchitectureParamsWithHTTPClient creates a new GetCPUArchitectureParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetCPUArchitectureParamsWithHTTPClient(client *http.Client) *GetCPUArchitectureParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetCPUArchitectureParams{
-		HTTPClient: client,
+		AllowUnstable: &allowUnstableDefault,
+		HTTPClient:    client,
 	}
 }
 
-/* GetCPUArchitectureParams contains all the parameters to send to the API endpoint
-   for the get Cpu architecture operation.
-
-   Typically these are written to a http.Request.
+/*GetCPUArchitectureParams contains all the parameters to send to the API endpoint
+for the get Cpu architecture operation typically these are written to a http.Request
 */
 type GetCPUArchitectureParams struct {
 
-	/* AllowUnstable.
+	/*AllowUnstable
+	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
-	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-
-	// CPUArchitectureID.
-	//
-	// Format: uuid
+	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
+	/*StateAt
+	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
-	/* StateAt.
-
-	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
-
-	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get Cpu architecture params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetCPUArchitectureParams) WithDefaults() *GetCPUArchitectureParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get Cpu architecture params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetCPUArchitectureParams) SetDefaults() {
-	var (
-		allowUnstableDefault = bool(false)
-	)
-
-	val := GetCPUArchitectureParams{
-		AllowUnstable: &allowUnstableDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get Cpu architecture params
@@ -188,17 +169,16 @@ func (o *GetCPUArchitectureParams) WriteToRequest(r runtime.ClientRequest, reg s
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
-
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
-
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	// path param cpu_architecture_id
@@ -210,17 +190,16 @@ func (o *GetCPUArchitectureParams) WriteToRequest(r runtime.ClientRequest, reg s
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
-
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
-
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

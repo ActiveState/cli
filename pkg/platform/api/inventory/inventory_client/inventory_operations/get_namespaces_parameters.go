@@ -17,100 +17,86 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetNamespacesParams creates a new GetNamespacesParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetNamespacesParams creates a new GetNamespacesParams object
+// with the default values initialized.
 func NewGetNamespacesParams() *GetNamespacesParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetNamespacesParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetNamespacesParamsWithTimeout creates a new GetNamespacesParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetNamespacesParamsWithTimeout(timeout time.Duration) *GetNamespacesParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetNamespacesParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetNamespacesParamsWithContext creates a new GetNamespacesParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetNamespacesParamsWithContext(ctx context.Context) *GetNamespacesParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetNamespacesParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetNamespacesParamsWithHTTPClient creates a new GetNamespacesParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetNamespacesParamsWithHTTPClient(client *http.Client) *GetNamespacesParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetNamespacesParams{
+		Limit:      &limitDefault,
+		Page:       &pageDefault,
 		HTTPClient: client,
 	}
 }
 
-/* GetNamespacesParams contains all the parameters to send to the API endpoint
-   for the get namespaces operation.
-
-   Typically these are written to a http.Request.
+/*GetNamespacesParams contains all the parameters to send to the API endpoint
+for the get namespaces operation typically these are written to a http.Request
 */
 type GetNamespacesParams struct {
 
-	/* Limit.
+	/*Limit
+	  The maximum number of items returned per page
 
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
-
-	// Namespace.
+	/*Namespace*/
 	Namespace *string
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get namespaces params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetNamespacesParams) WithDefaults() *GetNamespacesParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get namespaces params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetNamespacesParams) SetDefaults() {
-	var (
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetNamespacesParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get namespaces params
@@ -191,51 +177,48 @@ func (o *GetNamespacesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Namespace != nil {
 
 		// query param namespace
 		var qrNamespace string
-
 		if o.Namespace != nil {
 			qrNamespace = *o.Namespace
 		}
 		qNamespace := qrNamespace
 		if qNamespace != "" {
-
 			if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

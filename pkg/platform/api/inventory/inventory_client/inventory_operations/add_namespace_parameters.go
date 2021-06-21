@@ -18,70 +18,56 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddNamespaceParams creates a new AddNamespaceParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddNamespaceParams creates a new AddNamespaceParams object
+// with the default values initialized.
 func NewAddNamespaceParams() *AddNamespaceParams {
+	var ()
 	return &AddNamespaceParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddNamespaceParamsWithTimeout creates a new AddNamespaceParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddNamespaceParamsWithTimeout(timeout time.Duration) *AddNamespaceParams {
+	var ()
 	return &AddNamespaceParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddNamespaceParamsWithContext creates a new AddNamespaceParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddNamespaceParamsWithContext(ctx context.Context) *AddNamespaceParams {
+	var ()
 	return &AddNamespaceParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddNamespaceParamsWithHTTPClient creates a new AddNamespaceParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddNamespaceParamsWithHTTPClient(client *http.Client) *AddNamespaceParams {
+	var ()
 	return &AddNamespaceParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddNamespaceParams contains all the parameters to send to the API endpoint
-   for the add namespace operation.
-
-   Typically these are written to a http.Request.
+/*AddNamespaceParams contains all the parameters to send to the API endpoint
+for the add namespace operation typically these are written to a http.Request
 */
 type AddNamespaceParams struct {
 
-	// Namespace.
+	/*Namespace*/
 	Namespace *inventory_models.NamespaceCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add namespace params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddNamespaceParams) WithDefaults() *AddNamespaceParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add namespace params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddNamespaceParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add namespace params
@@ -135,6 +121,7 @@ func (o *AddNamespaceParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
 	if o.Namespace != nil {
 		if err := r.SetBodyParam(o.Namespace); err != nil {
 			return err

@@ -46,7 +46,7 @@ func NewGetAuthorsOK() *GetAuthorsOK {
 	return &GetAuthorsOK{}
 }
 
-/* GetAuthorsOK describes a response with status code 200, with default header values.
+/*GetAuthorsOK handles this case with default header values.
 
 A paginated list of authors
 */
@@ -57,6 +57,7 @@ type GetAuthorsOK struct {
 func (o *GetAuthorsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/authors][%d] getAuthorsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetAuthorsOK) GetPayload() *inventory_models.AuthorPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetAuthorsDefault(code int) *GetAuthorsDefault {
 	}
 }
 
-/* GetAuthorsDefault describes a response with status code -1, with default header values.
+/*GetAuthorsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetAuthorsDefault) Code() int {
 func (o *GetAuthorsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/authors][%d] getAuthors default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetAuthorsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

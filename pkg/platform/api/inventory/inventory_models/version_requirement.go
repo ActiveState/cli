@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -86,7 +85,7 @@ const (
 
 // prop value enum
 func (m *VersionRequirement) validateComparatorEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, versionRequirementTypeComparatorPropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, versionRequirementTypeComparatorPropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -112,15 +111,10 @@ func (m *VersionRequirement) validateVersion(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinLength("version", "body", *m.Version, 1); err != nil {
+	if err := validate.MinLength("version", "body", string(*m.Version), 1); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this version requirement based on context it is used
-func (m *VersionRequirement) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

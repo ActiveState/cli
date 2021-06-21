@@ -17,97 +17,84 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetAuthorsParams creates a new GetAuthorsParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetAuthorsParams creates a new GetAuthorsParams object
+// with the default values initialized.
 func NewGetAuthorsParams() *GetAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetAuthorsParamsWithTimeout creates a new GetAuthorsParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetAuthorsParamsWithTimeout(timeout time.Duration) *GetAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetAuthorsParamsWithContext creates a new GetAuthorsParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetAuthorsParamsWithContext(ctx context.Context) *GetAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetAuthorsParamsWithHTTPClient creates a new GetAuthorsParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetAuthorsParamsWithHTTPClient(client *http.Client) *GetAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetAuthorsParams{
+		Limit:      &limitDefault,
+		Page:       &pageDefault,
 		HTTPClient: client,
 	}
 }
 
-/* GetAuthorsParams contains all the parameters to send to the API endpoint
-   for the get authors operation.
-
-   Typically these are written to a http.Request.
+/*GetAuthorsParams contains all the parameters to send to the API endpoint
+for the get authors operation typically these are written to a http.Request
 */
 type GetAuthorsParams struct {
 
-	/* Limit.
+	/*Limit
+	  The maximum number of items returned per page
 
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get authors params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetAuthorsParams) WithDefaults() *GetAuthorsParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get authors params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetAuthorsParams) SetDefaults() {
-	var (
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetAuthorsParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get authors params
@@ -177,34 +164,32 @@ func (o *GetAuthorsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

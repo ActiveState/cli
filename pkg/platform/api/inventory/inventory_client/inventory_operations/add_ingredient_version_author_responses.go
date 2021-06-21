@@ -52,7 +52,7 @@ func NewAddIngredientVersionAuthorOK() *AddIngredientVersionAuthorOK {
 	return &AddIngredientVersionAuthorOK{}
 }
 
-/* AddIngredientVersionAuthorOK describes a response with status code 200, with default header values.
+/*AddIngredientVersionAuthorOK handles this case with default header values.
 
 The author added to the ingredient version
 */
@@ -63,6 +63,7 @@ type AddIngredientVersionAuthorOK struct {
 func (o *AddIngredientVersionAuthorOK) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthorOK  %+v", 200, o.Payload)
 }
+
 func (o *AddIngredientVersionAuthorOK) GetPayload() *inventory_models.Author {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientVersionAuthorBadRequest() *AddIngredientVersionAuthorBadReq
 	return &AddIngredientVersionAuthorBadRequest{}
 }
 
-/* AddIngredientVersionAuthorBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientVersionAuthorBadRequest handles this case with default header values.
 
 If the author ID doesn't exist
 */
@@ -95,6 +96,7 @@ type AddIngredientVersionAuthorBadRequest struct {
 func (o *AddIngredientVersionAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthorBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientVersionAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientVersionAuthorDefault(code int) *AddIngredientVersionAuthorD
 	}
 }
 
-/* AddIngredientVersionAuthorDefault describes a response with status code -1, with default header values.
+/*AddIngredientVersionAuthorDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientVersionAuthorDefault) Code() int {
 func (o *AddIngredientVersionAuthorDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors][%d] addIngredientVersionAuthor default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientVersionAuthorDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

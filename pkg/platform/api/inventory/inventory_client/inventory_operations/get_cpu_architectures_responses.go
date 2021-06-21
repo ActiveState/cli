@@ -46,7 +46,7 @@ func NewGetCPUArchitecturesOK() *GetCPUArchitecturesOK {
 	return &GetCPUArchitecturesOK{}
 }
 
-/* GetCPUArchitecturesOK describes a response with status code 200, with default header values.
+/*GetCPUArchitecturesOK handles this case with default header values.
 
 A paginated list of CPU architectures
 */
@@ -57,6 +57,7 @@ type GetCPUArchitecturesOK struct {
 func (o *GetCPUArchitecturesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures][%d] getCpuArchitecturesOK  %+v", 200, o.Payload)
 }
+
 func (o *GetCPUArchitecturesOK) GetPayload() *inventory_models.CPUArchitecturePagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetCPUArchitecturesDefault(code int) *GetCPUArchitecturesDefault {
 	}
 }
 
-/* GetCPUArchitecturesDefault describes a response with status code -1, with default header values.
+/*GetCPUArchitecturesDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetCPUArchitecturesDefault) Code() int {
 func (o *GetCPUArchitecturesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-architectures][%d] getCpuArchitectures default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetCPUArchitecturesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -52,7 +52,7 @@ func NewAddIngredientOptionSetCreated() *AddIngredientOptionSetCreated {
 	return &AddIngredientOptionSetCreated{}
 }
 
-/* AddIngredientOptionSetCreated describes a response with status code 201, with default header values.
+/*AddIngredientOptionSetCreated handles this case with default header values.
 
 The added ingredient option set
 */
@@ -63,6 +63,7 @@ type AddIngredientOptionSetCreated struct {
 func (o *AddIngredientOptionSetCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets][%d] addIngredientOptionSetCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddIngredientOptionSetCreated) GetPayload() *inventory_models.IngredientOptionSet {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientOptionSetBadRequest() *AddIngredientOptionSetBadRequest {
 	return &AddIngredientOptionSetBadRequest{}
 }
 
-/* AddIngredientOptionSetBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientOptionSetBadRequest handles this case with default header values.
 
 If the ingredient option set is invalid
 */
@@ -95,6 +96,7 @@ type AddIngredientOptionSetBadRequest struct {
 func (o *AddIngredientOptionSetBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets][%d] addIngredientOptionSetBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientOptionSetBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientOptionSetDefault(code int) *AddIngredientOptionSetDefault {
 	}
 }
 
-/* AddIngredientOptionSetDefault describes a response with status code -1, with default header values.
+/*AddIngredientOptionSetDefault handles this case with default header values.
 
 If there is an error processing the ingredient option set
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientOptionSetDefault) Code() int {
 func (o *AddIngredientOptionSetDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets][%d] addIngredientOptionSet default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientOptionSetDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

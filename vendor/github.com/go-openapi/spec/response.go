@@ -23,7 +23,7 @@ import (
 
 // ResponseProps properties specific to a response
 type ResponseProps struct {
-	Description string                 `json:"description"`
+	Description string                 `json:"description,omitempty"`
 	Schema      *Schema                `json:"schema,omitempty"`
 	Headers     map[string]Header      `json:"headers,omitempty"`
 	Examples    map[string]interface{} `json:"examples,omitempty"`
@@ -39,15 +39,15 @@ type Response struct {
 }
 
 // JSONLookup look up a value by the json property name
-func (r Response) JSONLookup(token string) (interface{}, error) {
-	if ex, ok := r.Extensions[token]; ok {
+func (p Response) JSONLookup(token string) (interface{}, error) {
+	if ex, ok := p.Extensions[token]; ok {
 		return &ex, nil
 	}
 	if token == "$ref" {
-		return &r.Ref, nil
+		return &p.Ref, nil
 	}
-	ptr, _, err := jsonpointer.GetForToken(r.ResponseProps, token)
-	return ptr, err
+	r, _, err := jsonpointer.GetForToken(p.ResponseProps, token)
+	return r, err
 }
 
 // UnmarshalJSON hydrates this items instance with the data from JSON
@@ -58,36 +58,18 @@ func (r *Response) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &r.Refable); err != nil {
 		return err
 	}
-	return json.Unmarshal(data, &r.VendorExtensible)
+	if err := json.Unmarshal(data, &r.VendorExtensible); err != nil {
+		return err
+	}
+	return nil
 }
 
 // MarshalJSON converts this items object to JSON
 func (r Response) MarshalJSON() ([]byte, error) {
-	var (
-		b1  []byte
-		err error
-	)
-
-	if r.Ref.String() == "" {
-		// when there is no $ref, empty description is rendered as an empty string
-		b1, err = json.Marshal(r.ResponseProps)
-	} else {
-		// when there is $ref inside the schema, description should be omitempty-ied
-		b1, err = json.Marshal(struct {
-			Description string                 `json:"description,omitempty"`
-			Schema      *Schema                `json:"schema,omitempty"`
-			Headers     map[string]Header      `json:"headers,omitempty"`
-			Examples    map[string]interface{} `json:"examples,omitempty"`
-		}{
-			Description: r.ResponseProps.Description,
-			Schema:      r.ResponseProps.Schema,
-			Examples:    r.ResponseProps.Examples,
-		})
-	}
+	b1, err := json.Marshal(r.ResponseProps)
 	if err != nil {
 		return nil, err
 	}
-
 	b2, err := json.Marshal(r.Refable)
 	if err != nil {
 		return nil, err

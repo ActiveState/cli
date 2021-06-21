@@ -52,7 +52,7 @@ func NewAddKernelCreated() *AddKernelCreated {
 	return &AddKernelCreated{}
 }
 
-/* AddKernelCreated describes a response with status code 201, with default header values.
+/*AddKernelCreated handles this case with default header values.
 
 The added kernel
 */
@@ -63,6 +63,7 @@ type AddKernelCreated struct {
 func (o *AddKernelCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernelCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddKernelCreated) GetPayload() *inventory_models.Kernel {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddKernelBadRequest() *AddKernelBadRequest {
 	return &AddKernelBadRequest{}
 }
 
-/* AddKernelBadRequest describes a response with status code 400, with default header values.
+/*AddKernelBadRequest handles this case with default header values.
 
 If the kernel is invalid
 */
@@ -95,6 +96,7 @@ type AddKernelBadRequest struct {
 func (o *AddKernelBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernelBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddKernelBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddKernelDefault(code int) *AddKernelDefault {
 	}
 }
 
-/* AddKernelDefault describes a response with status code -1, with default header values.
+/*AddKernelDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddKernelDefault) Code() int {
 func (o *AddKernelDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels][%d] addKernel default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddKernelDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

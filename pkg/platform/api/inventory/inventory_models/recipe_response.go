@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -29,6 +28,7 @@ type RecipeResponse struct {
 
 	// List of resolved recipes by platform for a given order
 	// Required: true
+	// Min Length: 1
 	Recipes []*Recipe `json:"recipes"`
 }
 
@@ -76,38 +76,6 @@ func (m *RecipeResponse) validateRecipes(formats strfmt.Registry) error {
 
 		if m.Recipes[i] != nil {
 			if err := m.Recipes[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("recipes" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ContextValidate validate this recipe response based on the context it is used
-func (m *RecipeResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateRecipes(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *RecipeResponse) contextValidateRecipes(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.Recipes); i++ {
-
-		if m.Recipes[i] != nil {
-			if err := m.Recipes[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("recipes" + "." + strconv.Itoa(i))
 				}

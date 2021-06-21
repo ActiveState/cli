@@ -52,7 +52,7 @@ func NewAddPlatformCreated() *AddPlatformCreated {
 	return &AddPlatformCreated{}
 }
 
-/* AddPlatformCreated describes a response with status code 201, with default header values.
+/*AddPlatformCreated handles this case with default header values.
 
 The added platform
 */
@@ -63,6 +63,7 @@ type AddPlatformCreated struct {
 func (o *AddPlatformCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatformCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddPlatformCreated) GetPayload() *inventory_models.Platform {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddPlatformBadRequest() *AddPlatformBadRequest {
 	return &AddPlatformBadRequest{}
 }
 
-/* AddPlatformBadRequest describes a response with status code 400, with default header values.
+/*AddPlatformBadRequest handles this case with default header values.
 
 If the platform is invalid
 */
@@ -95,6 +96,7 @@ type AddPlatformBadRequest struct {
 func (o *AddPlatformBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatformBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddPlatformBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddPlatformDefault(code int) *AddPlatformDefault {
 	}
 }
 
-/* AddPlatformDefault describes a response with status code -1, with default header values.
+/*AddPlatformDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddPlatformDefault) Code() int {
 func (o *AddPlatformDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/platforms][%d] addPlatform default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddPlatformDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

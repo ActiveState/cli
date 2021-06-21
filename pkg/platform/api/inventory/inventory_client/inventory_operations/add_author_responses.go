@@ -52,7 +52,7 @@ func NewAddAuthorCreated() *AddAuthorCreated {
 	return &AddAuthorCreated{}
 }
 
-/* AddAuthorCreated describes a response with status code 201, with default header values.
+/*AddAuthorCreated handles this case with default header values.
 
 The added author
 */
@@ -63,6 +63,7 @@ type AddAuthorCreated struct {
 func (o *AddAuthorCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthorCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddAuthorCreated) GetPayload() *inventory_models.Author {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddAuthorBadRequest() *AddAuthorBadRequest {
 	return &AddAuthorBadRequest{}
 }
 
-/* AddAuthorBadRequest describes a response with status code 400, with default header values.
+/*AddAuthorBadRequest handles this case with default header values.
 
 If the author is invalid
 */
@@ -95,6 +96,7 @@ type AddAuthorBadRequest struct {
 func (o *AddAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthorBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddAuthorDefault(code int) *AddAuthorDefault {
 	}
 }
 
-/* AddAuthorDefault describes a response with status code -1, with default header values.
+/*AddAuthorDefault handles this case with default header values.
 
 If there is an error processing the author
 */
@@ -136,6 +138,7 @@ func (o *AddAuthorDefault) Code() int {
 func (o *AddAuthorDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/authors][%d] addAuthor default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddAuthorDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewUpdatePatchParams creates a new UpdatePatchParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewUpdatePatchParams creates a new UpdatePatchParams object
+// with the default values initialized.
 func NewUpdatePatchParams() *UpdatePatchParams {
+	var ()
 	return &UpdatePatchParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdatePatchParamsWithTimeout creates a new UpdatePatchParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewUpdatePatchParamsWithTimeout(timeout time.Duration) *UpdatePatchParams {
+	var ()
 	return &UpdatePatchParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewUpdatePatchParamsWithContext creates a new UpdatePatchParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewUpdatePatchParamsWithContext(ctx context.Context) *UpdatePatchParams {
+	var ()
 	return &UpdatePatchParams{
+
 		Context: ctx,
 	}
 }
 
 // NewUpdatePatchParamsWithHTTPClient creates a new UpdatePatchParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewUpdatePatchParamsWithHTTPClient(client *http.Client) *UpdatePatchParams {
+	var ()
 	return &UpdatePatchParams{
 		HTTPClient: client,
 	}
 }
 
-/* UpdatePatchParams contains all the parameters to send to the API endpoint
-   for the update patch operation.
-
-   Typically these are written to a http.Request.
+/*UpdatePatchParams contains all the parameters to send to the API endpoint
+for the update patch operation typically these are written to a http.Request
 */
 type UpdatePatchParams struct {
 
-	// Patch.
+	/*Patch*/
 	Patch *inventory_models.PatchCore
-
-	// PatchID.
-	//
-	// Format: uuid
+	/*PatchID*/
 	PatchID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the update patch params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *UpdatePatchParams) WithDefaults() *UpdatePatchParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the update patch params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *UpdatePatchParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update patch params
@@ -151,6 +134,7 @@ func (o *UpdatePatchParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
+
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

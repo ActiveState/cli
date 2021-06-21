@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -30,7 +29,7 @@ type OrderRequirement struct {
 	// Format: uuid
 	IngredientVersionID strfmt.UUID `json:"ingredient_version_id,omitempty"`
 
-	// The namespace for the required feature.
+	// The namespace for the required feature. For now, this can be empty as it is only used to request pre-platform installer ingredients.
 	// Required: true
 	Namespace *string `json:"namespace"`
 
@@ -83,6 +82,7 @@ func (m *OrderRequirement) validateFeature(formats strfmt.Registry) error {
 }
 
 func (m *OrderRequirement) validateIngredientVersionID(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.IngredientVersionID) { // not required
 		return nil
 	}
@@ -104,11 +104,12 @@ func (m *OrderRequirement) validateNamespace(formats strfmt.Registry) error {
 }
 
 func (m *OrderRequirement) validateRevision(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.Revision) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("revision", "body", m.Revision, 1, false); err != nil {
+	if err := validate.MinimumInt("revision", "body", int64(m.Revision), 1, false); err != nil {
 		return err
 	}
 
@@ -116,6 +117,7 @@ func (m *OrderRequirement) validateRevision(formats strfmt.Registry) error {
 }
 
 func (m *OrderRequirement) validateVersionRequirements(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.VersionRequirements) { // not required
 		return nil
 	}
@@ -133,38 +135,6 @@ func (m *OrderRequirement) validateVersionRequirements(formats strfmt.Registry) 
 
 		if m.VersionRequirements[i] != nil {
 			if err := m.VersionRequirements[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("version_requirements" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ContextValidate validate this order requirement based on the context it is used
-func (m *OrderRequirement) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateVersionRequirements(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *OrderRequirement) contextValidateVersionRequirements(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.VersionRequirements); i++ {
-
-		if m.VersionRequirements[i] != nil {
-			if err := m.VersionRequirements[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("version_requirements" + "." + strconv.Itoa(i))
 				}

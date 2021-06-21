@@ -24,7 +24,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/internal/shareddefaults"
 )
 
 // A Defaults provides a collection of default values for SDK clients.
@@ -74,7 +73,6 @@ func Handlers() request.Handlers {
 	handlers.Validate.PushBackNamed(corehandlers.ValidateEndpointHandler)
 	handlers.Validate.AfterEachFn = request.HandlerListStopOnError
 	handlers.Build.PushBackNamed(corehandlers.SDKVersionUserAgentHandler)
-	handlers.Build.PushBackNamed(corehandlers.AddHostExecEnvUserAgentHander)
 	handlers.Build.AfterEachFn = request.HandlerListStopOnError
 	handlers.Sign.PushBackNamed(corehandlers.BuildContentLengthHandler)
 	handlers.Send.PushBackNamed(corehandlers.ValidateReqSigHandler)
@@ -93,28 +91,17 @@ func Handlers() request.Handlers {
 func CredChain(cfg *aws.Config, handlers request.Handlers) *credentials.Credentials {
 	return credentials.NewCredentials(&credentials.ChainProvider{
 		VerboseErrors: aws.BoolValue(cfg.CredentialsChainVerboseErrors),
-		Providers:     CredProviders(cfg, handlers),
+		Providers: []credentials.Provider{
+			&credentials.EnvProvider{},
+			&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
+			RemoteCredProvider(*cfg, handlers),
+		},
 	})
 }
 
-// CredProviders returns the slice of providers used in
-// the default credential chain.
-//
-// For applications that need to use some other provider (for example use
-// different  environment variables for legacy reasons) but still fall back
-// on the default chain of providers. This allows that default chaint to be
-// automatically updated
-func CredProviders(cfg *aws.Config, handlers request.Handlers) []credentials.Provider {
-	return []credentials.Provider{
-		&credentials.EnvProvider{},
-		&credentials.SharedCredentialsProvider{Filename: "", Profile: ""},
-		RemoteCredProvider(*cfg, handlers),
-	}
-}
-
 const (
-	httpProviderAuthorizationEnvVar = "AWS_CONTAINER_AUTHORIZATION_TOKEN"
-	httpProviderEnvVar              = "AWS_CONTAINER_CREDENTIALS_FULL_URI"
+	httpProviderEnvVar     = "AWS_CONTAINER_CREDENTIALS_FULL_URI"
+	ecsCredsProviderEnvVar = "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI"
 )
 
 // RemoteCredProvider returns a credentials provider for the default remote
@@ -124,8 +111,8 @@ func RemoteCredProvider(cfg aws.Config, handlers request.Handlers) credentials.P
 		return localHTTPCredProvider(cfg, handlers, u)
 	}
 
-	if uri := os.Getenv(shareddefaults.ECSCredsProviderEnvVar); len(uri) > 0 {
-		u := fmt.Sprintf("%s%s", shareddefaults.ECSContainerCredentialsURI, uri)
+	if uri := os.Getenv(ecsCredsProviderEnvVar); len(uri) > 0 {
+		u := fmt.Sprintf("http://169.254.170.2%s", uri)
 		return httpCredProvider(cfg, handlers, u)
 	}
 
@@ -188,7 +175,6 @@ func httpCredProvider(cfg aws.Config, handlers request.Handlers, u string) crede
 	return endpointcreds.NewProviderClient(cfg, handlers, u,
 		func(p *endpointcreds.Provider) {
 			p.ExpiryWindow = 5 * time.Minute
-			p.AuthorizationToken = os.Getenv(httpProviderAuthorizationEnvVar)
 		},
 	)
 }

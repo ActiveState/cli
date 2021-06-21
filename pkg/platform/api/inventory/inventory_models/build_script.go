@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -71,25 +69,6 @@ func (m *BuildScript) Validate(formats strfmt.Registry) error {
 	}
 	// validation for a type composition with BuildScriptCore
 	if err := m.BuildScriptCore.Validate(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-// ContextValidate validate this build script based on the context it is used
-func (m *BuildScript) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	// validation for a type composition with BuildScriptAllOf0
-	if err := m.BuildScriptAllOf0.ContextValidate(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-	// validation for a type composition with BuildScriptCore
-	if err := m.BuildScriptCore.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

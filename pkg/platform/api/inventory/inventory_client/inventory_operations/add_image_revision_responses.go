@@ -52,7 +52,7 @@ func NewAddImageRevisionOK() *AddImageRevisionOK {
 	return &AddImageRevisionOK{}
 }
 
-/* AddImageRevisionOK describes a response with status code 200, with default header values.
+/*AddImageRevisionOK handles this case with default header values.
 
 The updated state of the image
 */
@@ -63,6 +63,7 @@ type AddImageRevisionOK struct {
 func (o *AddImageRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddImageRevisionOK) GetPayload() *inventory_models.Image {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddImageRevisionBadRequest() *AddImageRevisionBadRequest {
 	return &AddImageRevisionBadRequest{}
 }
 
-/* AddImageRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddImageRevisionBadRequest handles this case with default header values.
 
 If the image revision is invalid
 */
@@ -95,6 +96,7 @@ type AddImageRevisionBadRequest struct {
 func (o *AddImageRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddImageRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddImageRevisionDefault(code int) *AddImageRevisionDefault {
 	}
 }
 
-/* AddImageRevisionDefault describes a response with status code -1, with default header values.
+/*AddImageRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddImageRevisionDefault) Code() int {
 func (o *AddImageRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/images/{image_id}/revisions][%d] addImageRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddImageRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -52,7 +52,7 @@ func NewAddCPUArchitectureCPUExtensionOK() *AddCPUArchitectureCPUExtensionOK {
 	return &AddCPUArchitectureCPUExtensionOK{}
 }
 
-/* AddCPUArchitectureCPUExtensionOK describes a response with status code 200, with default header values.
+/*AddCPUArchitectureCPUExtensionOK handles this case with default header values.
 
 The CPU extension added to the kernel
 */
@@ -63,6 +63,7 @@ type AddCPUArchitectureCPUExtensionOK struct {
 func (o *AddCPUArchitectureCPUExtensionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtensionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddCPUArchitectureCPUExtensionOK) GetPayload() *inventory_models.CPUExtension {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddCPUArchitectureCPUExtensionBadRequest() *AddCPUArchitectureCPUExtensi
 	return &AddCPUArchitectureCPUExtensionBadRequest{}
 }
 
-/* AddCPUArchitectureCPUExtensionBadRequest describes a response with status code 400, with default header values.
+/*AddCPUArchitectureCPUExtensionBadRequest handles this case with default header values.
 
 If the CPU extension ID doesn't exist
 */
@@ -95,6 +96,7 @@ type AddCPUArchitectureCPUExtensionBadRequest struct {
 func (o *AddCPUArchitectureCPUExtensionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtensionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddCPUArchitectureCPUExtensionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddCPUArchitectureCPUExtensionDefault(code int) *AddCPUArchitectureCPUEx
 	}
 }
 
-/* AddCPUArchitectureCPUExtensionDefault describes a response with status code -1, with default header values.
+/*AddCPUArchitectureCPUExtensionDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *AddCPUArchitectureCPUExtensionDefault) Code() int {
 func (o *AddCPUArchitectureCPUExtensionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures/{cpu_architecture_id}/extensions][%d] addCpuArchitectureCpuExtension default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddCPUArchitectureCPUExtensionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

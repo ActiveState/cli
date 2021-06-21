@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -72,6 +71,7 @@ func (m *IngredientVersionRevisionAllOf2) Validate(formats strfmt.Registry) erro
 }
 
 func (m *IngredientVersionRevisionAllOf2) validateBuildScripts(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.BuildScripts) { // not required
 		return nil
 	}
@@ -140,6 +140,7 @@ func (m *IngredientVersionRevisionAllOf2) validateLinks(formats strfmt.Registry)
 }
 
 func (m *IngredientVersionRevisionAllOf2) validatePatches(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.Patches) { // not required
 		return nil
 	}
@@ -151,78 +152,6 @@ func (m *IngredientVersionRevisionAllOf2) validatePatches(formats strfmt.Registr
 
 		if m.Patches[i] != nil {
 			if err := m.Patches[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ContextValidate validate this ingredient version revision all of2 based on the context it is used
-func (m *IngredientVersionRevisionAllOf2) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateBuildScripts(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateLinks(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePatches(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *IngredientVersionRevisionAllOf2) contextValidateBuildScripts(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.BuildScripts); i++ {
-
-		if m.BuildScripts[i] != nil {
-			if err := m.BuildScripts[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("build_scripts" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionRevisionAllOf2) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Links != nil {
-		if err := m.Links.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionRevisionAllOf2) contextValidatePatches(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.Patches); i++ {
-
-		if m.Patches[i] != nil {
-			if err := m.Patches[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
 				}

@@ -17,119 +17,104 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetCPUArchitectureCPUExtensionsParams creates a new GetCPUArchitectureCPUExtensionsParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetCPUArchitectureCPUExtensionsParams creates a new GetCPUArchitectureCPUExtensionsParams object
+// with the default values initialized.
 func NewGetCPUArchitectureCPUExtensionsParams() *GetCPUArchitectureCPUExtensionsParams {
+	var (
+		allowUnstableDefault = bool(false)
+		limitDefault         = int64(50)
+		pageDefault          = int64(1)
+	)
 	return &GetCPUArchitectureCPUExtensionsParams{
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetCPUArchitectureCPUExtensionsParamsWithTimeout creates a new GetCPUArchitectureCPUExtensionsParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetCPUArchitectureCPUExtensionsParamsWithTimeout(timeout time.Duration) *GetCPUArchitectureCPUExtensionsParams {
+	var (
+		allowUnstableDefault = bool(false)
+		limitDefault         = int64(50)
+		pageDefault          = int64(1)
+	)
 	return &GetCPUArchitectureCPUExtensionsParams{
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetCPUArchitectureCPUExtensionsParamsWithContext creates a new GetCPUArchitectureCPUExtensionsParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetCPUArchitectureCPUExtensionsParamsWithContext(ctx context.Context) *GetCPUArchitectureCPUExtensionsParams {
+	var (
+		allowUnstableDefault = bool(false)
+		limitDefault         = int64(50)
+		pageDefault          = int64(1)
+	)
 	return &GetCPUArchitectureCPUExtensionsParams{
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetCPUArchitectureCPUExtensionsParamsWithHTTPClient creates a new GetCPUArchitectureCPUExtensionsParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetCPUArchitectureCPUExtensionsParamsWithHTTPClient(client *http.Client) *GetCPUArchitectureCPUExtensionsParams {
+	var (
+		allowUnstableDefault = bool(false)
+		limitDefault         = int64(50)
+		pageDefault          = int64(1)
+	)
 	return &GetCPUArchitectureCPUExtensionsParams{
-		HTTPClient: client,
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+		HTTPClient:    client,
 	}
 }
 
-/* GetCPUArchitectureCPUExtensionsParams contains all the parameters to send to the API endpoint
-   for the get Cpu architecture Cpu extensions operation.
-
-   Typically these are written to a http.Request.
+/*GetCPUArchitectureCPUExtensionsParams contains all the parameters to send to the API endpoint
+for the get Cpu architecture Cpu extensions operation typically these are written to a http.Request
 */
 type GetCPUArchitectureCPUExtensionsParams struct {
 
-	/* AllowUnstable.
+	/*AllowUnstable
+	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
-	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-
-	// CPUArchitectureID.
-	//
-	// Format: uuid
+	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
+	/*Limit
+	  The maximum number of items returned per page
 
-	/* Limit.
-
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
+	/*StateAt
+	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
-	/* StateAt.
-
-	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
-
-	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get Cpu architecture Cpu extensions params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetCPUArchitectureCPUExtensionsParams) WithDefaults() *GetCPUArchitectureCPUExtensionsParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get Cpu architecture Cpu extensions params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetCPUArchitectureCPUExtensionsParams) SetDefaults() {
-	var (
-		allowUnstableDefault = bool(false)
-
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetCPUArchitectureCPUExtensionsParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get Cpu architecture Cpu extensions params
@@ -232,17 +217,16 @@ func (o *GetCPUArchitectureCPUExtensionsParams) WriteToRequest(r runtime.ClientR
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
-
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
-
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	// path param cpu_architecture_id
@@ -254,51 +238,48 @@ func (o *GetCPUArchitectureCPUExtensionsParams) WriteToRequest(r runtime.ClientR
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.StateAt != nil {
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
-
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
-
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

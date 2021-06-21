@@ -46,7 +46,7 @@ func NewHealthCheckOK() *HealthCheckOK {
 	return &HealthCheckOK{}
 }
 
-/* HealthCheckOK describes a response with status code 200, with default header values.
+/*HealthCheckOK handles this case with default header values.
 
 Indicates whether the server is healthy
 */
@@ -57,6 +57,7 @@ type HealthCheckOK struct {
 func (o *HealthCheckOK) Error() string {
 	return fmt.Sprintf("[GET /health-check][%d] healthCheckOK  %+v", 200, o.Payload)
 }
+
 func (o *HealthCheckOK) GetPayload() bool {
 	return o.Payload
 }
@@ -78,7 +79,7 @@ func NewHealthCheckDefault(code int) *HealthCheckDefault {
 	}
 }
 
-/* HealthCheckDefault describes a response with status code -1, with default header values.
+/*HealthCheckDefault handles this case with default header values.
 
 generic error response
 */
@@ -96,6 +97,7 @@ func (o *HealthCheckDefault) Code() int {
 func (o *HealthCheckDefault) Error() string {
 	return fmt.Sprintf("[GET /health-check][%d] healthCheck default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *HealthCheckDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

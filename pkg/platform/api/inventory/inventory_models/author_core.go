@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -99,11 +98,6 @@ func (m *AuthorCore) validateWebsites(formats strfmt.Registry) error {
 
 	}
 
-	return nil
-}
-
-// ContextValidate validates this author core based on context it is used
-func (m *AuthorCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

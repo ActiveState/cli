@@ -52,7 +52,7 @@ func NewAddBuildFlagRevisionOK() *AddBuildFlagRevisionOK {
 	return &AddBuildFlagRevisionOK{}
 }
 
-/* AddBuildFlagRevisionOK describes a response with status code 200, with default header values.
+/*AddBuildFlagRevisionOK handles this case with default header values.
 
 The updated state of the build flag
 */
@@ -63,6 +63,7 @@ type AddBuildFlagRevisionOK struct {
 func (o *AddBuildFlagRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags/{build_flag_id}/revisions][%d] addBuildFlagRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddBuildFlagRevisionOK) GetPayload() *inventory_models.BuildFlag {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddBuildFlagRevisionBadRequest() *AddBuildFlagRevisionBadRequest {
 	return &AddBuildFlagRevisionBadRequest{}
 }
 
-/* AddBuildFlagRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddBuildFlagRevisionBadRequest handles this case with default header values.
 
 If the build flag revision is invalid
 */
@@ -95,6 +96,7 @@ type AddBuildFlagRevisionBadRequest struct {
 func (o *AddBuildFlagRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags/{build_flag_id}/revisions][%d] addBuildFlagRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddBuildFlagRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddBuildFlagRevisionDefault(code int) *AddBuildFlagRevisionDefault {
 	}
 }
 
-/* AddBuildFlagRevisionDefault describes a response with status code -1, with default header values.
+/*AddBuildFlagRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddBuildFlagRevisionDefault) Code() int {
 func (o *AddBuildFlagRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/build-flags/{build_flag_id}/revisions][%d] addBuildFlagRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddBuildFlagRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

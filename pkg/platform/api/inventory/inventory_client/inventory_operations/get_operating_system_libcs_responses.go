@@ -46,7 +46,7 @@ func NewGetOperatingSystemLibcsOK() *GetOperatingSystemLibcsOK {
 	return &GetOperatingSystemLibcsOK{}
 }
 
-/* GetOperatingSystemLibcsOK describes a response with status code 200, with default header values.
+/*GetOperatingSystemLibcsOK handles this case with default header values.
 
 A paginated list of libcs
 */
@@ -57,6 +57,7 @@ type GetOperatingSystemLibcsOK struct {
 func (o *GetOperatingSystemLibcsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/libcs][%d] getOperatingSystemLibcsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetOperatingSystemLibcsOK) GetPayload() *inventory_models.LibcPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetOperatingSystemLibcsDefault(code int) *GetOperatingSystemLibcsDefault
 	}
 }
 
-/* GetOperatingSystemLibcsDefault describes a response with status code -1, with default header values.
+/*GetOperatingSystemLibcsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetOperatingSystemLibcsDefault) Code() int {
 func (o *GetOperatingSystemLibcsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/operating-systems/{operating_system_id}/libcs][%d] getOperatingSystemLibcs default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetOperatingSystemLibcsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

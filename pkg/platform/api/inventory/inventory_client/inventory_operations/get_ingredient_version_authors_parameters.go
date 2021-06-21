@@ -17,107 +17,88 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetIngredientVersionAuthorsParams creates a new GetIngredientVersionAuthorsParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetIngredientVersionAuthorsParams creates a new GetIngredientVersionAuthorsParams object
+// with the default values initialized.
 func NewGetIngredientVersionAuthorsParams() *GetIngredientVersionAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientVersionAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetIngredientVersionAuthorsParamsWithTimeout creates a new GetIngredientVersionAuthorsParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetIngredientVersionAuthorsParamsWithTimeout(timeout time.Duration) *GetIngredientVersionAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientVersionAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetIngredientVersionAuthorsParamsWithContext creates a new GetIngredientVersionAuthorsParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetIngredientVersionAuthorsParamsWithContext(ctx context.Context) *GetIngredientVersionAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientVersionAuthorsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetIngredientVersionAuthorsParamsWithHTTPClient creates a new GetIngredientVersionAuthorsParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetIngredientVersionAuthorsParamsWithHTTPClient(client *http.Client) *GetIngredientVersionAuthorsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientVersionAuthorsParams{
+		Limit:      &limitDefault,
+		Page:       &pageDefault,
 		HTTPClient: client,
 	}
 }
 
-/* GetIngredientVersionAuthorsParams contains all the parameters to send to the API endpoint
-   for the get ingredient version authors operation.
-
-   Typically these are written to a http.Request.
+/*GetIngredientVersionAuthorsParams contains all the parameters to send to the API endpoint
+for the get ingredient version authors operation typically these are written to a http.Request
 */
 type GetIngredientVersionAuthorsParams struct {
 
-	// IngredientID.
-	//
-	// Format: uuid
+	/*IngredientID*/
 	IngredientID strfmt.UUID
-
-	// IngredientVersionID.
-	//
-	// Format: uuid
+	/*IngredientVersionID*/
 	IngredientVersionID strfmt.UUID
+	/*Limit
+	  The maximum number of items returned per page
 
-	/* Limit.
-
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get ingredient version authors params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetIngredientVersionAuthorsParams) WithDefaults() *GetIngredientVersionAuthorsParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get ingredient version authors params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetIngredientVersionAuthorsParams) SetDefaults() {
-	var (
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetIngredientVersionAuthorsParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get ingredient version authors params
@@ -219,34 +200,32 @@ func (o *GetIngredientVersionAuthorsParams) WriteToRequest(r runtime.ClientReque
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

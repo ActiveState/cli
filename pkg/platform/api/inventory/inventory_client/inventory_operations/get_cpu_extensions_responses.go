@@ -46,7 +46,7 @@ func NewGetCPUExtensionsOK() *GetCPUExtensionsOK {
 	return &GetCPUExtensionsOK{}
 }
 
-/* GetCPUExtensionsOK describes a response with status code 200, with default header values.
+/*GetCPUExtensionsOK handles this case with default header values.
 
 A paginated list of CPU extensions
 */
@@ -57,6 +57,7 @@ type GetCPUExtensionsOK struct {
 func (o *GetCPUExtensionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-extensions][%d] getCpuExtensionsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetCPUExtensionsOK) GetPayload() *inventory_models.CPUExtensionPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetCPUExtensionsDefault(code int) *GetCPUExtensionsDefault {
 	}
 }
 
-/* GetCPUExtensionsDefault describes a response with status code -1, with default header values.
+/*GetCPUExtensionsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetCPUExtensionsDefault) Code() int {
 func (o *GetCPUExtensionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/cpu-extensions][%d] getCpuExtensions default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetCPUExtensionsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

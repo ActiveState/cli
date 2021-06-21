@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddLibcVersionParams creates a new AddLibcVersionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddLibcVersionParams creates a new AddLibcVersionParams object
+// with the default values initialized.
 func NewAddLibcVersionParams() *AddLibcVersionParams {
+	var ()
 	return &AddLibcVersionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddLibcVersionParamsWithTimeout creates a new AddLibcVersionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddLibcVersionParamsWithTimeout(timeout time.Duration) *AddLibcVersionParams {
+	var ()
 	return &AddLibcVersionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddLibcVersionParamsWithContext creates a new AddLibcVersionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddLibcVersionParamsWithContext(ctx context.Context) *AddLibcVersionParams {
+	var ()
 	return &AddLibcVersionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddLibcVersionParamsWithHTTPClient creates a new AddLibcVersionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddLibcVersionParamsWithHTTPClient(client *http.Client) *AddLibcVersionParams {
+	var ()
 	return &AddLibcVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddLibcVersionParams contains all the parameters to send to the API endpoint
-   for the add libc version operation.
-
-   Typically these are written to a http.Request.
+/*AddLibcVersionParams contains all the parameters to send to the API endpoint
+for the add libc version operation typically these are written to a http.Request
 */
 type AddLibcVersionParams struct {
 
-	// LibcID.
-	//
-	// Format: uuid
+	/*LibcID*/
 	LibcID strfmt.UUID
-
-	// LibcVersion.
+	/*LibcVersion*/
 	LibcVersion *inventory_models.LibcVersionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add libc version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddLibcVersionParams) WithDefaults() *AddLibcVersionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add libc version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddLibcVersionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add libc version params
@@ -156,6 +139,7 @@ func (o *AddLibcVersionParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	if err := r.SetPathParam("libc_id", o.LibcID.String()); err != nil {
 		return err
 	}
+
 	if o.LibcVersion != nil {
 		if err := r.SetBodyParam(o.LibcVersion); err != nil {
 			return err

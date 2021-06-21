@@ -52,7 +52,7 @@ func NewAddOperatingSystemKernelOK() *AddOperatingSystemKernelOK {
 	return &AddOperatingSystemKernelOK{}
 }
 
-/* AddOperatingSystemKernelOK describes a response with status code 200, with default header values.
+/*AddOperatingSystemKernelOK handles this case with default header values.
 
 The kernel added to the operating system
 */
@@ -63,6 +63,7 @@ type AddOperatingSystemKernelOK struct {
 func (o *AddOperatingSystemKernelOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernelOK  %+v", 200, o.Payload)
 }
+
 func (o *AddOperatingSystemKernelOK) GetPayload() *inventory_models.Kernel {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddOperatingSystemKernelBadRequest() *AddOperatingSystemKernelBadRequest
 	return &AddOperatingSystemKernelBadRequest{}
 }
 
-/* AddOperatingSystemKernelBadRequest describes a response with status code 400, with default header values.
+/*AddOperatingSystemKernelBadRequest handles this case with default header values.
 
 If the kernel ID doesn't exist
 */
@@ -95,6 +96,7 @@ type AddOperatingSystemKernelBadRequest struct {
 func (o *AddOperatingSystemKernelBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernelBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddOperatingSystemKernelBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddOperatingSystemKernelDefault(code int) *AddOperatingSystemKernelDefau
 	}
 }
 
-/* AddOperatingSystemKernelDefault describes a response with status code -1, with default header values.
+/*AddOperatingSystemKernelDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *AddOperatingSystemKernelDefault) Code() int {
 func (o *AddOperatingSystemKernelDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/kernels][%d] addOperatingSystemKernel default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddOperatingSystemKernelDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

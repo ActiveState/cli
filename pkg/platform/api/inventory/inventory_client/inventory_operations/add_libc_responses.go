@@ -52,7 +52,7 @@ func NewAddLibcCreated() *AddLibcCreated {
 	return &AddLibcCreated{}
 }
 
-/* AddLibcCreated describes a response with status code 201, with default header values.
+/*AddLibcCreated handles this case with default header values.
 
 The added libc
 */
@@ -63,6 +63,7 @@ type AddLibcCreated struct {
 func (o *AddLibcCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibcCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddLibcCreated) GetPayload() *inventory_models.Libc {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddLibcBadRequest() *AddLibcBadRequest {
 	return &AddLibcBadRequest{}
 }
 
-/* AddLibcBadRequest describes a response with status code 400, with default header values.
+/*AddLibcBadRequest handles this case with default header values.
 
 If the libc is invalid
 */
@@ -95,6 +96,7 @@ type AddLibcBadRequest struct {
 func (o *AddLibcBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibcBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddLibcBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddLibcDefault(code int) *AddLibcDefault {
 	}
 }
 
-/* AddLibcDefault describes a response with status code -1, with default header values.
+/*AddLibcDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddLibcDefault) Code() int {
 func (o *AddLibcDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs][%d] addLibc default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddLibcDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

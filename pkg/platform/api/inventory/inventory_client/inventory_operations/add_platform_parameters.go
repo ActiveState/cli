@@ -18,70 +18,56 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddPlatformParams creates a new AddPlatformParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddPlatformParams creates a new AddPlatformParams object
+// with the default values initialized.
 func NewAddPlatformParams() *AddPlatformParams {
+	var ()
 	return &AddPlatformParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddPlatformParamsWithTimeout creates a new AddPlatformParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddPlatformParamsWithTimeout(timeout time.Duration) *AddPlatformParams {
+	var ()
 	return &AddPlatformParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddPlatformParamsWithContext creates a new AddPlatformParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddPlatformParamsWithContext(ctx context.Context) *AddPlatformParams {
+	var ()
 	return &AddPlatformParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddPlatformParamsWithHTTPClient creates a new AddPlatformParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddPlatformParamsWithHTTPClient(client *http.Client) *AddPlatformParams {
+	var ()
 	return &AddPlatformParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddPlatformParams contains all the parameters to send to the API endpoint
-   for the add platform operation.
-
-   Typically these are written to a http.Request.
+/*AddPlatformParams contains all the parameters to send to the API endpoint
+for the add platform operation typically these are written to a http.Request
 */
 type AddPlatformParams struct {
 
-	// Platform.
+	/*Platform*/
 	Platform *inventory_models.PlatformCreate
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add platform params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddPlatformParams) WithDefaults() *AddPlatformParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add platform params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddPlatformParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add platform params
@@ -135,6 +121,7 @@ func (o *AddPlatformParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
+
 	if o.Platform != nil {
 		if err := r.SetBodyParam(o.Platform); err != nil {
 			return err

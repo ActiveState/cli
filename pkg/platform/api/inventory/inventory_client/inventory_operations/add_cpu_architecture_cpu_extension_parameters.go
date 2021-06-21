@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddCPUArchitectureCPUExtensionParams creates a new AddCPUArchitectureCPUExtensionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddCPUArchitectureCPUExtensionParams creates a new AddCPUArchitectureCPUExtensionParams object
+// with the default values initialized.
 func NewAddCPUArchitectureCPUExtensionParams() *AddCPUArchitectureCPUExtensionParams {
+	var ()
 	return &AddCPUArchitectureCPUExtensionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddCPUArchitectureCPUExtensionParamsWithTimeout creates a new AddCPUArchitectureCPUExtensionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddCPUArchitectureCPUExtensionParamsWithTimeout(timeout time.Duration) *AddCPUArchitectureCPUExtensionParams {
+	var ()
 	return &AddCPUArchitectureCPUExtensionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddCPUArchitectureCPUExtensionParamsWithContext creates a new AddCPUArchitectureCPUExtensionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddCPUArchitectureCPUExtensionParamsWithContext(ctx context.Context) *AddCPUArchitectureCPUExtensionParams {
+	var ()
 	return &AddCPUArchitectureCPUExtensionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddCPUArchitectureCPUExtensionParamsWithHTTPClient creates a new AddCPUArchitectureCPUExtensionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddCPUArchitectureCPUExtensionParamsWithHTTPClient(client *http.Client) *AddCPUArchitectureCPUExtensionParams {
+	var ()
 	return &AddCPUArchitectureCPUExtensionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddCPUArchitectureCPUExtensionParams contains all the parameters to send to the API endpoint
-   for the add Cpu architecture Cpu extension operation.
-
-   Typically these are written to a http.Request.
+/*AddCPUArchitectureCPUExtensionParams contains all the parameters to send to the API endpoint
+for the add Cpu architecture Cpu extension operation typically these are written to a http.Request
 */
 type AddCPUArchitectureCPUExtensionParams struct {
 
-	// CPUArchitectureID.
-	//
-	// Format: uuid
+	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
-
-	// CPUExtensionID.
+	/*CPUExtensionID*/
 	CPUExtensionID *inventory_models.AddCPUArchitectureCPUExtensionParamsBody
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add Cpu architecture Cpu extension params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddCPUArchitectureCPUExtensionParams) WithDefaults() *AddCPUArchitectureCPUExtensionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add Cpu architecture Cpu extension params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddCPUArchitectureCPUExtensionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add Cpu architecture Cpu extension params
@@ -156,6 +139,7 @@ func (o *AddCPUArchitectureCPUExtensionParams) WriteToRequest(r runtime.ClientRe
 	if err := r.SetPathParam("cpu_architecture_id", o.CPUArchitectureID.String()); err != nil {
 		return err
 	}
+
 	if o.CPUExtensionID != nil {
 		if err := r.SetBodyParam(o.CPUExtensionID); err != nil {
 			return err

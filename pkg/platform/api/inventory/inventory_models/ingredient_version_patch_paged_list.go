@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -106,74 +105,6 @@ func (m *IngredientVersionPatchPagedList) validatePatches(formats strfmt.Registr
 
 		if m.Patches[i] != nil {
 			if err := m.Patches[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ContextValidate validate this ingredient version patch paged list based on the context it is used
-func (m *IngredientVersionPatchPagedList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateLinks(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePaging(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePatches(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *IngredientVersionPatchPagedList) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Links != nil {
-		if err := m.Links.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionPatchPagedList) contextValidatePaging(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Paging != nil {
-		if err := m.Paging.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("paging")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *IngredientVersionPatchPagedList) contextValidatePatches(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.Patches); i++ {
-
-		if m.Patches[i] != nil {
-			if err := m.Patches[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
 				}

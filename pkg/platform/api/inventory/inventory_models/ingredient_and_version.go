@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -74,52 +72,6 @@ func (m *IngredientAndVersion) validateVersion(formats strfmt.Registry) error {
 
 	if m.Version != nil {
 		if err := m.Version.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("version")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this ingredient and version based on the context it is used
-func (m *IngredientAndVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateIngredient(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateVersion(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *IngredientAndVersion) contextValidateIngredient(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Ingredient != nil {
-		if err := m.Ingredient.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("ingredient")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *IngredientAndVersion) contextValidateVersion(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Version != nil {
-		if err := m.Version.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("version")
 			}

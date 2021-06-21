@@ -52,7 +52,7 @@ func NewUpdateAuthorOK() *UpdateAuthorOK {
 	return &UpdateAuthorOK{}
 }
 
-/* UpdateAuthorOK describes a response with status code 200, with default header values.
+/*UpdateAuthorOK handles this case with default header values.
 
 Author updated
 */
@@ -63,6 +63,7 @@ type UpdateAuthorOK struct {
 func (o *UpdateAuthorOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthorOK  %+v", 200, o.Payload)
 }
+
 func (o *UpdateAuthorOK) GetPayload() *inventory_models.Author {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewUpdateAuthorBadRequest() *UpdateAuthorBadRequest {
 	return &UpdateAuthorBadRequest{}
 }
 
-/* UpdateAuthorBadRequest describes a response with status code 400, with default header values.
+/*UpdateAuthorBadRequest handles this case with default header values.
 
 If the author is invalid
 */
@@ -95,6 +96,7 @@ type UpdateAuthorBadRequest struct {
 func (o *UpdateAuthorBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthorBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *UpdateAuthorBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewUpdateAuthorDefault(code int) *UpdateAuthorDefault {
 	}
 }
 
-/* UpdateAuthorDefault describes a response with status code -1, with default header values.
+/*UpdateAuthorDefault handles this case with default header values.
 
 If there is an error processing the author
 */
@@ -136,6 +138,7 @@ func (o *UpdateAuthorDefault) Code() int {
 func (o *UpdateAuthorDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/authors/{author_id_or_email}][%d] updateAuthor default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *UpdateAuthorDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

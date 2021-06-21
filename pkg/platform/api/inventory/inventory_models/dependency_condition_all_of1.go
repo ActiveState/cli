@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -23,11 +21,6 @@ type DependencyConditionAllOf1 struct {
 
 // Validate validates this dependency condition all of1
 func (m *DependencyConditionAllOf1) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this dependency condition all of1 based on context it is used
-func (m *DependencyConditionAllOf1) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -52,7 +52,7 @@ func NewAddIngredientOptionSetRevisionOK() *AddIngredientOptionSetRevisionOK {
 	return &AddIngredientOptionSetRevisionOK{}
 }
 
-/* AddIngredientOptionSetRevisionOK describes a response with status code 200, with default header values.
+/*AddIngredientOptionSetRevisionOK handles this case with default header values.
 
 The updated state of the ingredient option set
 */
@@ -63,6 +63,7 @@ type AddIngredientOptionSetRevisionOK struct {
 func (o *AddIngredientOptionSetRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets/{ingredient_option_set_id}/revisions][%d] addIngredientOptionSetRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddIngredientOptionSetRevisionOK) GetPayload() *inventory_models.IngredientOptionSet {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientOptionSetRevisionBadRequest() *AddIngredientOptionSetRevisi
 	return &AddIngredientOptionSetRevisionBadRequest{}
 }
 
-/* AddIngredientOptionSetRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientOptionSetRevisionBadRequest handles this case with default header values.
 
 If the ingredient option set revision is invalid
 */
@@ -95,6 +96,7 @@ type AddIngredientOptionSetRevisionBadRequest struct {
 func (o *AddIngredientOptionSetRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets/{ingredient_option_set_id}/revisions][%d] addIngredientOptionSetRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientOptionSetRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientOptionSetRevisionDefault(code int) *AddIngredientOptionSetR
 	}
 }
 
-/* AddIngredientOptionSetRevisionDefault describes a response with status code -1, with default header values.
+/*AddIngredientOptionSetRevisionDefault handles this case with default header values.
 
 If there is an error processing the ingredient option set revision
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientOptionSetRevisionDefault) Code() int {
 func (o *AddIngredientOptionSetRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredient-option-sets/{ingredient_option_set_id}/revisions][%d] addIngredientOptionSetRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientOptionSetRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

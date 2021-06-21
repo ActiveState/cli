@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -45,15 +43,10 @@ func (m *IngredientVersionRevisionPatchAllOf1) validateSequenceNumber(formats st
 		return err
 	}
 
-	if err := validate.MinimumInt("sequence_number", "body", *m.SequenceNumber, 1, false); err != nil {
+	if err := validate.MinimumInt("sequence_number", "body", int64(*m.SequenceNumber), 1, false); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this ingredient version revision patch all of1 based on context it is used
-func (m *IngredientVersionRevisionPatchAllOf1) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

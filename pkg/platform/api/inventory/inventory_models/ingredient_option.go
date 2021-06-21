@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -17,20 +16,18 @@ import (
 
 // IngredientOption Ingredient Option
 //
-// Parameters to the build of this ingredient that should be applied if the conditions are met. Must specify either command line args, resource requirements, or both.
+// A string of command line arguments that should be passed to the builder used for this ingredient if this ingredient option's condition sets are satisfied
 //
 // swagger:model ingredientOption
 type IngredientOption struct {
 
-	// Command-line arguments to append to the builder invocation
+	// The command-line arguments to append to the build invocation
+	// Required: true
 	// Min Items: 1
 	CommandLineArgs []string `json:"command_line_args"`
 
 	// At least one condition set from this list must be satisfied for this ingredient option to be applied in a recipe (i.e condition sets are ORed together)
-	ConditionSets []*IngredientOptionConditionSet `json:"condition_sets"`
-
-	// resources
-	Resources *IngredientOptionResources `json:"resources,omitempty"`
+	ConditionSets []*IngredientOptionConditionSetsItems `json:"condition_sets"`
 }
 
 // Validate validates this ingredient option
@@ -45,10 +42,6 @@ func (m *IngredientOption) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateResources(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -56,8 +49,9 @@ func (m *IngredientOption) Validate(formats strfmt.Registry) error {
 }
 
 func (m *IngredientOption) validateCommandLineArgs(formats strfmt.Registry) error {
-	if swag.IsZero(m.CommandLineArgs) { // not required
-		return nil
+
+	if err := validate.Required("command_line_args", "body", m.CommandLineArgs); err != nil {
+		return err
 	}
 
 	iCommandLineArgsSize := int64(len(m.CommandLineArgs))
@@ -68,7 +62,7 @@ func (m *IngredientOption) validateCommandLineArgs(formats strfmt.Registry) erro
 
 	for i := 0; i < len(m.CommandLineArgs); i++ {
 
-		if err := validate.MinLength("command_line_args"+"."+strconv.Itoa(i), "body", m.CommandLineArgs[i], 1); err != nil {
+		if err := validate.MinLength("command_line_args"+"."+strconv.Itoa(i), "body", string(m.CommandLineArgs[i]), 1); err != nil {
 			return err
 		}
 
@@ -78,6 +72,7 @@ func (m *IngredientOption) validateCommandLineArgs(formats strfmt.Registry) erro
 }
 
 func (m *IngredientOption) validateConditionSets(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.ConditionSets) { // not required
 		return nil
 	}
@@ -96,73 +91,6 @@ func (m *IngredientOption) validateConditionSets(formats strfmt.Registry) error 
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *IngredientOption) validateResources(formats strfmt.Registry) error {
-	if swag.IsZero(m.Resources) { // not required
-		return nil
-	}
-
-	if m.Resources != nil {
-		if err := m.Resources.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("resources")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-// ContextValidate validate this ingredient option based on the context it is used
-func (m *IngredientOption) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateConditionSets(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateResources(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *IngredientOption) contextValidateConditionSets(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.ConditionSets); i++ {
-
-		if m.ConditionSets[i] != nil {
-			if err := m.ConditionSets[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("condition_sets" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *IngredientOption) contextValidateResources(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Resources != nil {
-		if err := m.Resources.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("resources")
-			}
-			return err
-		}
 	}
 
 	return nil

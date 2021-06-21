@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddCPUArchitectureRevisionParams creates a new AddCPUArchitectureRevisionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddCPUArchitectureRevisionParams creates a new AddCPUArchitectureRevisionParams object
+// with the default values initialized.
 func NewAddCPUArchitectureRevisionParams() *AddCPUArchitectureRevisionParams {
+	var ()
 	return &AddCPUArchitectureRevisionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddCPUArchitectureRevisionParamsWithTimeout creates a new AddCPUArchitectureRevisionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddCPUArchitectureRevisionParamsWithTimeout(timeout time.Duration) *AddCPUArchitectureRevisionParams {
+	var ()
 	return &AddCPUArchitectureRevisionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddCPUArchitectureRevisionParamsWithContext creates a new AddCPUArchitectureRevisionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddCPUArchitectureRevisionParamsWithContext(ctx context.Context) *AddCPUArchitectureRevisionParams {
+	var ()
 	return &AddCPUArchitectureRevisionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddCPUArchitectureRevisionParamsWithHTTPClient creates a new AddCPUArchitectureRevisionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddCPUArchitectureRevisionParamsWithHTTPClient(client *http.Client) *AddCPUArchitectureRevisionParams {
+	var ()
 	return &AddCPUArchitectureRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddCPUArchitectureRevisionParams contains all the parameters to send to the API endpoint
-   for the add Cpu architecture revision operation.
-
-   Typically these are written to a http.Request.
+/*AddCPUArchitectureRevisionParams contains all the parameters to send to the API endpoint
+for the add Cpu architecture revision operation typically these are written to a http.Request
 */
 type AddCPUArchitectureRevisionParams struct {
 
-	// CPUArchitectureID.
-	//
-	// Format: uuid
+	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
-
-	// CPUArchitectureRevision.
-	CPUArchitectureRevision *inventory_models.RevisionedFeatureProvider
+	/*CPUArchitectureRevision*/
+	CPUArchitectureRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add Cpu architecture revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddCPUArchitectureRevisionParams) WithDefaults() *AddCPUArchitectureRevisionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add Cpu architecture revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddCPUArchitectureRevisionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add Cpu architecture revision params
@@ -134,13 +117,13 @@ func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureID(cPUArchitectureI
 }
 
 // WithCPUArchitectureRevision adds the cPUArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.RevisionedFeatureProvider) *AddCPUArchitectureRevisionParams {
+func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) *AddCPUArchitectureRevisionParams {
 	o.SetCPUArchitectureRevision(cPUArchitectureRevision)
 	return o
 }
 
 // SetCPUArchitectureRevision adds the cpuArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.RevisionedFeatureProvider) {
+func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) {
 	o.CPUArchitectureRevision = cPUArchitectureRevision
 }
 
@@ -156,6 +139,7 @@ func (o *AddCPUArchitectureRevisionParams) WriteToRequest(r runtime.ClientReques
 	if err := r.SetPathParam("cpu_architecture_id", o.CPUArchitectureID.String()); err != nil {
 		return err
 	}
+
 	if o.CPUArchitectureRevision != nil {
 		if err := r.SetBodyParam(o.CPUArchitectureRevision); err != nil {
 			return err

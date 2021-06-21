@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -89,48 +87,7 @@ func (m *NamespaceAllOf0) validateNamespaceID(formats strfmt.Registry) error {
 
 func (m *NamespaceAllOf0) validateTypeDescription(formats strfmt.Registry) error {
 
-	if err := validate.RequiredString("type_description", "body", m.TypeDescription); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ContextValidate validate this namespace all of0 based on the context it is used
-func (m *NamespaceAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateLinks(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateTypeDescription(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *NamespaceAllOf0) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Links != nil {
-		if err := m.Links.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("links")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *NamespaceAllOf0) contextValidateTypeDescription(ctx context.Context, formats strfmt.Registry) error {
-
-	if err := validate.ReadOnly(ctx, "type_description", "body", string(m.TypeDescription)); err != nil {
+	if err := validate.RequiredString("type_description", "body", string(m.TypeDescription)); err != nil {
 		return err
 	}
 

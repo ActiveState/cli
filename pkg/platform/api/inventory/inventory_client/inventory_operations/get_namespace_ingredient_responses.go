@@ -52,7 +52,7 @@ func NewGetNamespaceIngredientOK() *GetNamespaceIngredientOK {
 	return &GetNamespaceIngredientOK{}
 }
 
-/* GetNamespaceIngredientOK describes a response with status code 200, with default header values.
+/*GetNamespaceIngredientOK handles this case with default header values.
 
 The retrieved ingredient
 */
@@ -63,6 +63,7 @@ type GetNamespaceIngredientOK struct {
 func (o *GetNamespaceIngredientOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredientOK  %+v", 200, o.Payload)
 }
+
 func (o *GetNamespaceIngredientOK) GetPayload() *inventory_models.Ingredient {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewGetNamespaceIngredientNotFound() *GetNamespaceIngredientNotFound {
 	return &GetNamespaceIngredientNotFound{}
 }
 
-/* GetNamespaceIngredientNotFound describes a response with status code 404, with default header values.
+/*GetNamespaceIngredientNotFound handles this case with default header values.
 
 There is no ingredient with the given namespace and name
 */
@@ -95,6 +96,7 @@ type GetNamespaceIngredientNotFound struct {
 func (o *GetNamespaceIngredientNotFound) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredientNotFound  %+v", 404, o.Payload)
 }
+
 func (o *GetNamespaceIngredientNotFound) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewGetNamespaceIngredientDefault(code int) *GetNamespaceIngredientDefault {
 	}
 }
 
-/* GetNamespaceIngredientDefault describes a response with status code -1, with default header values.
+/*GetNamespaceIngredientDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *GetNamespaceIngredientDefault) Code() int {
 func (o *GetNamespaceIngredientDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient][%d] getNamespaceIngredient default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetNamespaceIngredientDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

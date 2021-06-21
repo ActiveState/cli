@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -23,6 +22,7 @@ import (
 type NamespaceCore struct {
 
 	// The name of the language the ingredients in this namespace are for. Will be set based on namespace type.
+	// Enum: [perl python tcl]
 	ForLanguage string `json:"for_language,omitempty"`
 
 	// is public
@@ -45,18 +45,22 @@ type NamespaceCore struct {
 
 	// The type of the namespace. A namespace type tells what the namespace contains.
 	// Required: true
-	// Enum: [bundle compiler internal language-core language-ingredient platform-component shared-ingredient]
+	// Enum: [bundle internal language-core language-ingredient platform-component shared-ingredient]
 	Type *string `json:"type"`
 
 	// The algorithm to use for version parsing in this namespace
 	// Required: true
-	// Enum: [feature generic perl php python ruby semver]
+	// Enum: [feature generic perl python semver]
 	VersionParsingAlgorithm *string `json:"version_parsing_algorithm"`
 }
 
 // Validate validates this namespace core
 func (m *NamespaceCore) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateForLanguage(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateIsPublic(formats); err != nil {
 		res = append(res, err)
@@ -85,6 +89,52 @@ func (m *NamespaceCore) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+var namespaceCoreTypeForLanguagePropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["perl","python","tcl"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		namespaceCoreTypeForLanguagePropEnum = append(namespaceCoreTypeForLanguagePropEnum, v)
+	}
+}
+
+const (
+
+	// NamespaceCoreForLanguagePerl captures enum value "perl"
+	NamespaceCoreForLanguagePerl string = "perl"
+
+	// NamespaceCoreForLanguagePython captures enum value "python"
+	NamespaceCoreForLanguagePython string = "python"
+
+	// NamespaceCoreForLanguageTcl captures enum value "tcl"
+	NamespaceCoreForLanguageTcl string = "tcl"
+)
+
+// prop value enum
+func (m *NamespaceCore) validateForLanguageEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, namespaceCoreTypeForLanguagePropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *NamespaceCore) validateForLanguage(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ForLanguage) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateForLanguageEnum("for_language", "body", m.ForLanguage); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -120,7 +170,7 @@ const (
 
 // prop value enum
 func (m *NamespaceCore) validateNameNormalizationAlgorithmEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, namespaceCoreTypeNameNormalizationAlgorithmPropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, namespaceCoreTypeNameNormalizationAlgorithmPropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -166,7 +216,7 @@ var namespaceCoreTypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["bundle","compiler","internal","language-core","language-ingredient","platform-component","shared-ingredient"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["bundle","internal","language-core","language-ingredient","platform-component","shared-ingredient"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -179,28 +229,25 @@ const (
 	// NamespaceCoreTypeBundle captures enum value "bundle"
 	NamespaceCoreTypeBundle string = "bundle"
 
-	// NamespaceCoreTypeCompiler captures enum value "compiler"
-	NamespaceCoreTypeCompiler string = "compiler"
-
 	// NamespaceCoreTypeInternal captures enum value "internal"
 	NamespaceCoreTypeInternal string = "internal"
 
-	// NamespaceCoreTypeLanguageDashCore captures enum value "language-core"
-	NamespaceCoreTypeLanguageDashCore string = "language-core"
+	// NamespaceCoreTypeLanguageCore captures enum value "language-core"
+	NamespaceCoreTypeLanguageCore string = "language-core"
 
-	// NamespaceCoreTypeLanguageDashIngredient captures enum value "language-ingredient"
-	NamespaceCoreTypeLanguageDashIngredient string = "language-ingredient"
+	// NamespaceCoreTypeLanguageIngredient captures enum value "language-ingredient"
+	NamespaceCoreTypeLanguageIngredient string = "language-ingredient"
 
-	// NamespaceCoreTypePlatformDashComponent captures enum value "platform-component"
-	NamespaceCoreTypePlatformDashComponent string = "platform-component"
+	// NamespaceCoreTypePlatformComponent captures enum value "platform-component"
+	NamespaceCoreTypePlatformComponent string = "platform-component"
 
-	// NamespaceCoreTypeSharedDashIngredient captures enum value "shared-ingredient"
-	NamespaceCoreTypeSharedDashIngredient string = "shared-ingredient"
+	// NamespaceCoreTypeSharedIngredient captures enum value "shared-ingredient"
+	NamespaceCoreTypeSharedIngredient string = "shared-ingredient"
 )
 
 // prop value enum
 func (m *NamespaceCore) validateTypeEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, namespaceCoreTypeTypePropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, namespaceCoreTypeTypePropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -224,7 +271,7 @@ var namespaceCoreTypeVersionParsingAlgorithmPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["feature","generic","perl","php","python","ruby","semver"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["feature","generic","perl","python","semver"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -243,14 +290,8 @@ const (
 	// NamespaceCoreVersionParsingAlgorithmPerl captures enum value "perl"
 	NamespaceCoreVersionParsingAlgorithmPerl string = "perl"
 
-	// NamespaceCoreVersionParsingAlgorithmPhp captures enum value "php"
-	NamespaceCoreVersionParsingAlgorithmPhp string = "php"
-
 	// NamespaceCoreVersionParsingAlgorithmPython captures enum value "python"
 	NamespaceCoreVersionParsingAlgorithmPython string = "python"
-
-	// NamespaceCoreVersionParsingAlgorithmRuby captures enum value "ruby"
-	NamespaceCoreVersionParsingAlgorithmRuby string = "ruby"
 
 	// NamespaceCoreVersionParsingAlgorithmSemver captures enum value "semver"
 	NamespaceCoreVersionParsingAlgorithmSemver string = "semver"
@@ -258,7 +299,7 @@ const (
 
 // prop value enum
 func (m *NamespaceCore) validateVersionParsingAlgorithmEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, namespaceCoreTypeVersionParsingAlgorithmPropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, namespaceCoreTypeVersionParsingAlgorithmPropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -275,11 +316,6 @@ func (m *NamespaceCore) validateVersionParsingAlgorithm(formats strfmt.Registry)
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this namespace core based on context it is used
-func (m *NamespaceCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

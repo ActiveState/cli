@@ -52,7 +52,7 @@ func NewAddBuildScriptCreated() *AddBuildScriptCreated {
 	return &AddBuildScriptCreated{}
 }
 
-/* AddBuildScriptCreated describes a response with status code 201, with default header values.
+/*AddBuildScriptCreated handles this case with default header values.
 
 The added build script
 */
@@ -63,6 +63,7 @@ type AddBuildScriptCreated struct {
 func (o *AddBuildScriptCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScriptCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddBuildScriptCreated) GetPayload() *inventory_models.BuildScript {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddBuildScriptBadRequest() *AddBuildScriptBadRequest {
 	return &AddBuildScriptBadRequest{}
 }
 
-/* AddBuildScriptBadRequest describes a response with status code 400, with default header values.
+/*AddBuildScriptBadRequest handles this case with default header values.
 
 If the build script is invalid
 */
@@ -95,6 +96,7 @@ type AddBuildScriptBadRequest struct {
 func (o *AddBuildScriptBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScriptBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddBuildScriptBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddBuildScriptDefault(code int) *AddBuildScriptDefault {
 	}
 }
 
-/* AddBuildScriptDefault describes a response with status code -1, with default header values.
+/*AddBuildScriptDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddBuildScriptDefault) Code() int {
 func (o *AddBuildScriptDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/build-scripts][%d] addBuildScript default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddBuildScriptDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

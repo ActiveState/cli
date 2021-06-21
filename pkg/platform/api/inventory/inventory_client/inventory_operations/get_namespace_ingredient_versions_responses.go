@@ -52,7 +52,7 @@ func NewGetNamespaceIngredientVersionsOK() *GetNamespaceIngredientVersionsOK {
 	return &GetNamespaceIngredientVersionsOK{}
 }
 
-/* GetNamespaceIngredientVersionsOK describes a response with status code 200, with default header values.
+/*GetNamespaceIngredientVersionsOK handles this case with default header values.
 
 A paginated list of ingredient versions
 */
@@ -63,6 +63,7 @@ type GetNamespaceIngredientVersionsOK struct {
 func (o *GetNamespaceIngredientVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersionsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetNamespaceIngredientVersionsOK) GetPayload() *inventory_models.IngredientVersionPagedList {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewGetNamespaceIngredientVersionsNotFound() *GetNamespaceIngredientVersions
 	return &GetNamespaceIngredientVersionsNotFound{}
 }
 
-/* GetNamespaceIngredientVersionsNotFound describes a response with status code 404, with default header values.
+/*GetNamespaceIngredientVersionsNotFound handles this case with default header values.
 
 There is no ingredient with the given namespace and name
 */
@@ -95,6 +96,7 @@ type GetNamespaceIngredientVersionsNotFound struct {
 func (o *GetNamespaceIngredientVersionsNotFound) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersionsNotFound  %+v", 404, o.Payload)
 }
+
 func (o *GetNamespaceIngredientVersionsNotFound) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewGetNamespaceIngredientVersionsDefault(code int) *GetNamespaceIngredientV
 	}
 }
 
-/* GetNamespaceIngredientVersionsDefault describes a response with status code -1, with default header values.
+/*GetNamespaceIngredientVersionsDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *GetNamespaceIngredientVersionsDefault) Code() int {
 func (o *GetNamespaceIngredientVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/versions][%d] getNamespaceIngredientVersions default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetNamespaceIngredientVersionsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

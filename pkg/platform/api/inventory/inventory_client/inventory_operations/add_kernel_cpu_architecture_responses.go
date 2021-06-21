@@ -52,7 +52,7 @@ func NewAddKernelCPUArchitectureOK() *AddKernelCPUArchitectureOK {
 	return &AddKernelCPUArchitectureOK{}
 }
 
-/* AddKernelCPUArchitectureOK describes a response with status code 200, with default header values.
+/*AddKernelCPUArchitectureOK handles this case with default header values.
 
 The CPU architecture added to the kernel
 */
@@ -63,6 +63,7 @@ type AddKernelCPUArchitectureOK struct {
 func (o *AddKernelCPUArchitectureOK) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitectureOK  %+v", 200, o.Payload)
 }
+
 func (o *AddKernelCPUArchitectureOK) GetPayload() *inventory_models.CPUArchitecture {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddKernelCPUArchitectureBadRequest() *AddKernelCPUArchitectureBadRequest
 	return &AddKernelCPUArchitectureBadRequest{}
 }
 
-/* AddKernelCPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/*AddKernelCPUArchitectureBadRequest handles this case with default header values.
 
 If the CPU architecture ID doesn't exist
 */
@@ -95,6 +96,7 @@ type AddKernelCPUArchitectureBadRequest struct {
 func (o *AddKernelCPUArchitectureBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitectureBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddKernelCPUArchitectureBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddKernelCPUArchitectureDefault(code int) *AddKernelCPUArchitectureDefau
 	}
 }
 
-/* AddKernelCPUArchitectureDefault describes a response with status code -1, with default header values.
+/*AddKernelCPUArchitectureDefault handles this case with default header values.
 
 generic error response
 */
@@ -136,6 +138,7 @@ func (o *AddKernelCPUArchitectureDefault) Code() int {
 func (o *AddKernelCPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/cpu-architectures][%d] addKernelCpuArchitecture default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddKernelCPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

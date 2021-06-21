@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -71,7 +70,7 @@ const (
 
 // prop value enum
 func (m *CPUArchitectureCoreAllOf0) validateBitWidthEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, cpuArchitectureCoreAllOf0TypeBitWidthPropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, cpuArchitectureCoreAllOf0TypeBitWidthPropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -97,11 +96,6 @@ func (m *CPUArchitectureCoreAllOf0) validateName(formats strfmt.Registry) error 
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this cpu architecture core all of0 based on context it is used
-func (m *CPUArchitectureCoreAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

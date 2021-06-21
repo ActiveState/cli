@@ -52,7 +52,7 @@ func NewUpdatePlatformOK() *UpdatePlatformOK {
 	return &UpdatePlatformOK{}
 }
 
-/* UpdatePlatformOK describes a response with status code 200, with default header values.
+/*UpdatePlatformOK handles this case with default header values.
 
 The updated state of the platform
 */
@@ -63,6 +63,7 @@ type UpdatePlatformOK struct {
 func (o *UpdatePlatformOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/platforms/{platform_id}][%d] updatePlatformOK  %+v", 200, o.Payload)
 }
+
 func (o *UpdatePlatformOK) GetPayload() *inventory_models.Platform {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewUpdatePlatformBadRequest() *UpdatePlatformBadRequest {
 	return &UpdatePlatformBadRequest{}
 }
 
-/* UpdatePlatformBadRequest describes a response with status code 400, with default header values.
+/*UpdatePlatformBadRequest handles this case with default header values.
 
 If the platform update in invalid
 */
@@ -95,6 +96,7 @@ type UpdatePlatformBadRequest struct {
 func (o *UpdatePlatformBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/platforms/{platform_id}][%d] updatePlatformBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *UpdatePlatformBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewUpdatePlatformDefault(code int) *UpdatePlatformDefault {
 	}
 }
 
-/* UpdatePlatformDefault describes a response with status code -1, with default header values.
+/*UpdatePlatformDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *UpdatePlatformDefault) Code() int {
 func (o *UpdatePlatformDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/platforms/{platform_id}][%d] updatePlatform default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *UpdatePlatformDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

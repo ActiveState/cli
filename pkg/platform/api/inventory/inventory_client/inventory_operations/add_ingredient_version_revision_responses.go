@@ -52,7 +52,7 @@ func NewAddIngredientVersionRevisionOK() *AddIngredientVersionRevisionOK {
 	return &AddIngredientVersionRevisionOK{}
 }
 
-/* AddIngredientVersionRevisionOK describes a response with status code 200, with default header values.
+/*AddIngredientVersionRevisionOK handles this case with default header values.
 
 The updated state of the ingredient version
 */
@@ -63,6 +63,7 @@ type AddIngredientVersionRevisionOK struct {
 func (o *AddIngredientVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions][%d] addIngredientVersionRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddIngredientVersionRevisionOK) GetPayload() *inventory_models.IngredientVersion {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientVersionRevisionBadRequest() *AddIngredientVersionRevisionBa
 	return &AddIngredientVersionRevisionBadRequest{}
 }
 
-/* AddIngredientVersionRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientVersionRevisionBadRequest handles this case with default header values.
 
 If the ingredient version revision is invalid
 */
@@ -95,6 +96,7 @@ type AddIngredientVersionRevisionBadRequest struct {
 func (o *AddIngredientVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions][%d] addIngredientVersionRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientVersionRevisionDefault(code int) *AddIngredientVersionRevis
 	}
 }
 
-/* AddIngredientVersionRevisionDefault describes a response with status code -1, with default header values.
+/*AddIngredientVersionRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientVersionRevisionDefault) Code() int {
 func (o *AddIngredientVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions][%d] addIngredientVersionRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewGetBuildScriptsOK() *GetBuildScriptsOK {
 	return &GetBuildScriptsOK{}
 }
 
-/* GetBuildScriptsOK describes a response with status code 200, with default header values.
+/*GetBuildScriptsOK handles this case with default header values.
 
 A paginated list of build scripts
 */
@@ -57,6 +57,7 @@ type GetBuildScriptsOK struct {
 func (o *GetBuildScriptsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts][%d] getBuildScriptsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetBuildScriptsOK) GetPayload() *inventory_models.BuildScriptPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetBuildScriptsDefault(code int) *GetBuildScriptsDefault {
 	}
 }
 
-/* GetBuildScriptsDefault describes a response with status code -1, with default header values.
+/*GetBuildScriptsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetBuildScriptsDefault) Code() int {
 func (o *GetBuildScriptsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts][%d] getBuildScripts default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetBuildScriptsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -23,216 +23,207 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
-// ClientOption is the option for Client methods
-type ClientOption func(*runtime.ClientOperation)
-
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAuthorCreated, error)
+	AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error)
 
-	AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagCreated, error)
+	AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error)
 
-	AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagRevisionOK, error)
+	AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error)
 
-	AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildScriptCreated, error)
+	AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error)
 
-	AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCreated, error)
+	AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error)
 
-	AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCPUExtensionOK, error)
+	AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCPUExtensionOK, error)
 
-	AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureRevisionOK, error)
+	AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureRevisionOK, error)
 
-	AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionCreated, error)
+	AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionCreated, error)
 
-	AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionRevisionOK, error)
+	AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error)
 
-	AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureCreated, error)
+	AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error)
 
-	AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureRevisionOK, error)
+	AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error)
 
-	AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageCreated, error)
+	AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error)
 
-	AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageRevisionOK, error)
+	AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageRevisionOK, error)
 
-	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientCreated, error)
+	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientCreated, error)
 
-	AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetCreated, error)
+	AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOptionSetCreated, error)
 
-	AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetRevisionOK, error)
+	AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOptionSetRevisionOK, error)
 
-	AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionCreated, error)
+	AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionCreated, error)
 
-	AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionAuthorOK, error)
+	AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionAuthorOK, error)
 
-	AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionRevisionOK, error)
+	AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionRevisionOK, error)
 
-	AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCreated, error)
+	AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCreated, error)
 
-	AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCPUArchitectureOK, error)
+	AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error)
 
-	AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelGPUArchitectureOK, error)
+	AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error)
 
-	AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionCreated, error)
+	AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error)
 
-	AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionRevisionOK, error)
+	AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionRevisionOK, error)
 
-	AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcCreated, error)
+	AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcCreated, error)
 
-	AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionCreated, error)
+	AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionCreated, error)
 
-	AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionRevisionOK, error)
+	AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionRevisionOK, error)
 
-	AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddNamespaceCreated, error)
+	AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*AddNamespaceCreated, error)
 
-	AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemCreated, error)
+	AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemCreated, error)
 
-	AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemKernelOK, error)
+	AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemKernelOK, error)
 
-	AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemLibcOK, error)
+	AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemLibcOK, error)
 
-	AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionCreated, error)
+	AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionCreated, error)
 
-	AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionRevisionOK, error)
+	AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionRevisionOK, error)
 
-	AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPatchCreated, error)
+	AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter) (*AddPatchCreated, error)
 
-	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPlatformCreated, error)
+	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error)
 
-	DeleteImage(params *DeleteImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteImageNoContent, error)
+	DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIngredientVersionNoContent, error)
 
-	DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteIngredientVersionNoContent, error)
+	GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error)
 
-	GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetAuthorOK, error)
+	GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error)
 
-	GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*GetAuthorsOK, error)
+	GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error)
 
-	GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) (*GetBuildFlagOK, error)
+	GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error)
 
-	GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption) (*GetBuildFlagsOK, error)
+	GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error)
 
-	GetBuildScript(params *GetBuildScriptParams, opts ...ClientOption) (*GetBuildScriptOK, error)
+	GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error)
 
-	GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOption) (*GetBuildScriptsOK, error)
+	GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUArchitectureOK, error)
 
-	GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...ClientOption) (*GetCPUArchitectureOK, error)
+	GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams) (*GetCPUArchitectureCPUExtensionsOK, error)
 
-	GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams, opts ...ClientOption) (*GetCPUArchitectureCPUExtensionsOK, error)
+	GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPUArchitecturesOK, error)
 
-	GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...ClientOption) (*GetCPUArchitecturesOK, error)
+	GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensionOK, error)
 
-	GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOption) (*GetCPUExtensionOK, error)
+	GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error)
 
-	GetCPUExtensions(params *GetCPUExtensionsParams, opts ...ClientOption) (*GetCPUExtensionsOK, error)
+	GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error)
 
-	GetGPUArchitecture(params *GetGPUArchitectureParams, opts ...ClientOption) (*GetGPUArchitectureOK, error)
+	GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error)
 
-	GetGPUArchitectures(params *GetGPUArchitecturesParams, opts ...ClientOption) (*GetGPUArchitecturesOK, error)
+	GetImage(params *GetImageParams) (*GetImageOK, error)
 
-	GetImage(params *GetImageParams, opts ...ClientOption) (*GetImageOK, error)
+	GetImages(params *GetImagesParams) (*GetImagesOK, error)
 
-	GetImages(params *GetImagesParams, opts ...ClientOption) (*GetImagesOK, error)
+	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error)
 
-	GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOK, error)
+	GetIngredientOptionSet(params *GetIngredientOptionSetParams) (*GetIngredientOptionSetOK, error)
 
-	GetIngredientOptionSet(params *GetIngredientOptionSetParams, opts ...ClientOption) (*GetIngredientOptionSetOK, error)
+	GetIngredientOptionSets(params *GetIngredientOptionSetsParams) (*GetIngredientOptionSetsOK, error)
 
-	GetIngredientOptionSetIngredientVersions(params *GetIngredientOptionSetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOptionSetIngredientVersionsOK, error)
+	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error)
 
-	GetIngredientOptionSets(params *GetIngredientOptionSetsParams, opts ...ClientOption) (*GetIngredientOptionSetsOK, error)
+	GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error)
 
-	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionOK, error)
+	GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error)
 
-	GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionAuthorsOK, error)
+	GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error)
 
-	GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionBuildScriptsOK, error)
+	GetIngredientVersionRevision(params *GetIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionRevisionOK, error)
 
-	GetIngredientVersionIngredientOptionSets(params *GetIngredientVersionIngredientOptionSetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionIngredientOptionSetsOK, error)
+	GetIngredientVersionRevisions(params *GetIngredientVersionRevisionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionRevisionsOK, error)
 
-	GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionPatchesOK, error)
+	GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionsOK, error)
 
-	GetIngredientVersionRevision(params *GetIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionOK, error)
+	GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientsOK, error)
 
-	GetIngredientVersionRevisions(params *GetIngredientVersionRevisionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionsOK, error)
+	GetKernel(params *GetKernelParams) (*GetKernelOK, error)
 
-	GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionsOK, error)
+	GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error)
 
-	GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientsOK, error)
+	GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error)
 
-	GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetKernelOK, error)
+	GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error)
 
-	GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams, opts ...ClientOption) (*GetKernelCPUArchitecturesOK, error)
+	GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelVersionsOK, error)
 
-	GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesParams, opts ...ClientOption) (*GetKernelGPUArchitecturesOK, error)
+	GetKernels(params *GetKernelsParams) (*GetKernelsOK, error)
 
-	GetKernelVersion(params *GetKernelVersionParams, opts ...ClientOption) (*GetKernelVersionOK, error)
+	GetLibc(params *GetLibcParams) (*GetLibcOK, error)
 
-	GetKernelVersions(params *GetKernelVersionsParams, opts ...ClientOption) (*GetKernelVersionsOK, error)
+	GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK, error)
 
-	GetKernels(params *GetKernelsParams, opts ...ClientOption) (*GetKernelsOK, error)
+	GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersionsOK, error)
 
-	GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcOK, error)
+	GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error)
 
-	GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOption) (*GetLibcVersionOK, error)
+	GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientOK, error)
 
-	GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOption) (*GetLibcVersionsOK, error)
+	GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientVersionsOK, error)
 
-	GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLibcsOK, error)
+	GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error)
 
-	GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientOK, error)
+	GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error)
 
-	GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionsOK, error)
+	GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error)
 
-	GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientsOK, error)
+	GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams) (*GetOperatingSystemKernelsOK, error)
 
-	GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespacesOK, error)
+	GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) (*GetOperatingSystemLibcsOK, error)
 
-	GetOperatingSystem(params *GetOperatingSystemParams, opts ...ClientOption) (*GetOperatingSystemOK, error)
+	GetOperatingSystemVersion(params *GetOperatingSystemVersionParams) (*GetOperatingSystemVersionOK, error)
 
-	GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams, opts ...ClientOption) (*GetOperatingSystemKernelsOK, error)
+	GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams) (*GetOperatingSystemVersionsOK, error)
 
-	GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, opts ...ClientOption) (*GetOperatingSystemLibcsOK, error)
+	GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOperatingSystemsOK, error)
 
-	GetOperatingSystemVersion(params *GetOperatingSystemVersionParams, opts ...ClientOption) (*GetOperatingSystemVersionOK, error)
+	GetPatch(params *GetPatchParams) (*GetPatchOK, error)
 
-	GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams, opts ...ClientOption) (*GetOperatingSystemVersionsOK, error)
+	GetPatches(params *GetPatchesParams) (*GetPatchesOK, error)
 
-	GetOperatingSystems(params *GetOperatingSystemsParams, opts ...ClientOption) (*GetOperatingSystemsOK, error)
+	GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error)
 
-	GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPatchOK, error)
+	GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, error)
 
-	GetPatches(params *GetPatchesParams, opts ...ClientOption) (*GetPatchesOK, error)
+	GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter) (*GetSolutionRecipeOK, error)
 
-	GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*GetPlatformOK, error)
+	HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error)
 
-	GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) (*GetPlatformsOK, error)
+	NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error)
 
-	GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSolutionRecipeOK, error)
+	ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error)
 
-	HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*HealthCheckOK, error)
+	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error)
 
-	NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NormalizeNamesOK, error)
+	SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchIngredientsOK, error)
 
-	ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOption) (*ReadinessCheckOK, error)
+	SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter) (*SolveOrderCreated, error)
 
-	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, error)
+	UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAuthorOK, error)
 
-	SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchIngredientsOK, error)
+	UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBuildScriptOK, error)
 
-	SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SolveOrderCreated, error)
+	UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientOK, error)
 
-	UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAuthorOK, error)
+	UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientVersionOK, error)
 
-	UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBuildScriptOK, error)
+	UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error)
 
-	UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientOK, error)
+	UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error)
 
-	UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientVersionOK, error)
-
-	UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePatchOK, error)
-
-	UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePlatformOK, error)
-
-	ValidateRecipe(params *ValidateRecipeParams, opts ...ClientOption) (*ValidateRecipeOK, error)
+	ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -240,12 +231,13 @@ type ClientService interface {
 /*
   AddAuthor Add a new author
 */
-func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAuthorCreated, error) {
+func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddAuthorCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddAuthorParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addAuthor",
 		Method:             "POST",
 		PathPattern:        "/v1/authors",
@@ -257,12 +249,7 @@ func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -278,12 +265,13 @@ func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthI
 /*
   AddBuildFlag Add a new build flag
 */
-func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagCreated, error) {
+func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddBuildFlagParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addBuildFlag",
 		Method:             "POST",
 		PathPattern:        "/v1/build-flags",
@@ -295,12 +283,7 @@ func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -316,12 +299,13 @@ func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.Clien
 /*
   AddBuildFlagRevision Add a new revision of this build flag
 */
-func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagRevisionOK, error) {
+func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildFlagRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddBuildFlagRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addBuildFlagRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/build-flags/{build_flag_id}/revisions",
@@ -333,12 +317,7 @@ func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -354,12 +333,13 @@ func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authIn
 /*
   AddBuildScript Add a new build script
 */
-func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildScriptCreated, error) {
+func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*AddBuildScriptCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddBuildScriptParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addBuildScript",
 		Method:             "POST",
 		PathPattern:        "/v1/build-scripts",
@@ -371,12 +351,7 @@ func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -392,12 +367,13 @@ func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.C
 /*
   AddCPUArchitecture Add a new CPU architecture
 */
-func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCreated, error) {
+func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCPUArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addCpuArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/cpu-architectures",
@@ -409,12 +385,7 @@ func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -430,12 +401,13 @@ func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo r
 /*
   AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
 */
-func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCPUExtensionOK, error) {
+func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCPUArchitectureCPUExtensionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addCpuArchitectureCpuExtension",
 		Method:             "POST",
 		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/extensions",
@@ -447,12 +419,7 @@ func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExt
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -468,12 +435,13 @@ func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExt
 /*
   AddCPUArchitectureRevision Add a new revision of this CPU architecture
 */
-func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureRevisionOK, error) {
+func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCPUArchitectureRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addCpuArchitectureRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/revisions",
@@ -485,12 +453,7 @@ func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -506,12 +469,13 @@ func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionPa
 /*
   AddCPUExtension Add a new CPU extension
 */
-func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionCreated, error) {
+func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCPUExtensionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addCpuExtension",
 		Method:             "POST",
 		PathPattern:        "/v1/cpu-extensions",
@@ -523,12 +487,7 @@ func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -544,12 +503,13 @@ func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime
 /*
   AddCPUExtensionRevision Add a new revision of this CPU extension
 */
-func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionRevisionOK, error) {
+func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCPUExtensionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addCpuExtensionRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/cpu-extensions/{cpu_extension_id}/revisions",
@@ -561,12 +521,7 @@ func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -580,90 +535,83 @@ func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, 
 }
 
 /*
-  AddGPUArchitecture Add a new GPU architecture
+  AddGpuArchitecture Add a new GPU architecture
 */
-func (a *Client) AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureCreated, error) {
+func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddGPUArchitectureParams()
+		params = NewAddGpuArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "addGPUArchitecture",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addGpuArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddGPUArchitectureReader{formats: a.formats},
+		Reader:             &AddGpuArchitectureReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGPUArchitectureCreated)
+	success, ok := result.(*AddGpuArchitectureCreated)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddGPUArchitectureDefault)
+	unexpectedSuccess := result.(*AddGpuArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  AddGPUArchitectureRevision Add a new revision of this GPU architecture
+  AddGpuArchitectureRevision Add a new revision of this GPU architecture
 */
-func (a *Client) AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureRevisionOK, error) {
+func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddGPUArchitectureRevisionParams()
+		params = NewAddGpuArchitectureRevisionParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "addGPUArchitectureRevision",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addGpuArchitectureRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}/revisions",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddGPUArchitectureRevisionReader{formats: a.formats},
+		Reader:             &AddGpuArchitectureRevisionReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGPUArchitectureRevisionOK)
+	success, ok := result.(*AddGpuArchitectureRevisionOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddGPUArchitectureRevisionDefault)
+	unexpectedSuccess := result.(*AddGpuArchitectureRevisionDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
   AddImage Add a new image
 */
-func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageCreated, error) {
+func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddImageParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addImage",
 		Method:             "POST",
 		PathPattern:        "/v1/images",
@@ -675,12 +623,7 @@ func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -696,12 +639,13 @@ func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInf
 /*
   AddImageRevision Add a new revision of this image
 */
-func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageRevisionOK, error) {
+func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddImageRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addImageRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/images/{image_id}/revisions",
@@ -713,12 +657,7 @@ func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -734,12 +673,13 @@ func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runti
 /*
   AddIngredient Add a new ingredient
 */
-func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientCreated, error) {
+func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredient",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredients",
@@ -751,12 +691,7 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -772,12 +707,13 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 /*
   AddIngredientOptionSet Add a new ingredient option set
 */
-func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetCreated, error) {
+func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOptionSetCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientOptionSetParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredientOptionSet",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredient-option-sets",
@@ -789,12 +725,7 @@ func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -810,12 +741,13 @@ func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, au
 /*
   AddIngredientOptionSetRevision Add a new revision of this ingredient option set
 */
-func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetRevisionOK, error) {
+func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientOptionSetRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientOptionSetRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredientOptionSetRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredient-option-sets/{ingredient_option_set_id}/revisions",
@@ -827,12 +759,7 @@ func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRe
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -848,12 +775,13 @@ func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRe
 /*
   AddIngredientVersion Add a new version of this ingredient
 */
-func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionCreated, error) {
+func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredientVersion",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions",
@@ -865,12 +793,7 @@ func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -886,12 +809,13 @@ func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authIn
 /*
   AddIngredientVersionAuthor Add an author of this ingredient version
 */
-func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionAuthorOK, error) {
+func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionAuthorOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientVersionAuthorParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredientVersionAuthor",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors",
@@ -903,12 +827,7 @@ func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorPa
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -924,12 +843,13 @@ func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorPa
 /*
   AddIngredientVersionRevision Add a new revision of this ingredient version
 */
-func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionRevisionOK, error) {
+func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddIngredientVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddIngredientVersionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addIngredientVersionRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions",
@@ -941,12 +861,7 @@ func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisi
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -962,12 +877,13 @@ func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisi
 /*
   AddKernel Add a new kernel
 */
-func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCreated, error) {
+func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddKernelParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addKernel",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels",
@@ -979,12 +895,7 @@ func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1000,12 +911,13 @@ func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthI
 /*
   AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
 */
-func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCPUArchitectureOK, error) {
+func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddKernelCPUArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addKernelCpuArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels/{kernel_id}/cpu-architectures",
@@ -1017,12 +929,7 @@ func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1036,52 +943,49 @@ func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams
 }
 
 /*
-  AddKernelGPUArchitecture Add a GPU architecture that can be used with this kernel
+  AddKernelGpuArchitecture Add a GPU architecture that can be used with this kernel
 */
-func (a *Client) AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelGPUArchitectureOK, error) {
+func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddKernelGPUArchitectureParams()
+		params = NewAddKernelGpuArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "addKernelGPUArchitecture",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "addKernelGpuArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddKernelGPUArchitectureReader{formats: a.formats},
+		Reader:             &AddKernelGpuArchitectureReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelGPUArchitectureOK)
+	success, ok := result.(*AddKernelGpuArchitectureOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelGPUArchitectureDefault)
+	unexpectedSuccess := result.(*AddKernelGpuArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
   AddKernelVersion Add a new version for this kernel
 */
-func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionCreated, error) {
+func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddKernelVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addKernelVersion",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels/{kernel_id}/versions",
@@ -1093,12 +997,7 @@ func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1114,12 +1013,13 @@ func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runti
 /*
   AddKernelVersionRevision Add a new revision of this kernel version
 */
-func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionRevisionOK, error) {
+func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddKernelVersionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addKernelVersionRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions",
@@ -1131,12 +1031,7 @@ func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1152,12 +1047,13 @@ func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams
 /*
   AddLibc Add a new libc
 */
-func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcCreated, error) {
+func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddLibcParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addLibc",
 		Method:             "POST",
 		PathPattern:        "/v1/libcs",
@@ -1169,12 +1065,7 @@ func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1190,12 +1081,13 @@ func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoW
 /*
   AddLibcVersion Add a new version for this libc
 */
-func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionCreated, error) {
+func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddLibcVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addLibcVersion",
 		Method:             "POST",
 		PathPattern:        "/v1/libcs/{libc_id}/versions",
@@ -1207,12 +1099,7 @@ func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1228,12 +1115,13 @@ func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.C
 /*
   AddLibcVersionRevision Add a new revision of this libc version
 */
-func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionRevisionOK, error) {
+func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddLibcVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddLibcVersionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addLibcVersionRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/libcs/{libc_id}/versions/{libc_version_id}/revisions",
@@ -1245,12 +1133,7 @@ func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1266,12 +1149,13 @@ func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, au
 /*
   AddNamespace Add a new namespace
 */
-func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddNamespaceCreated, error) {
+func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*AddNamespaceCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddNamespaceParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addNamespace",
 		Method:             "POST",
 		PathPattern:        "/v1/namespaces",
@@ -1283,12 +1167,7 @@ func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1304,12 +1183,13 @@ func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.Clien
 /*
   AddOperatingSystem Add a new operating system
 */
-func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemCreated, error) {
+func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddOperatingSystemParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addOperatingSystem",
 		Method:             "POST",
 		PathPattern:        "/v1/operating-systems",
@@ -1321,12 +1201,7 @@ func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo r
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1342,12 +1217,13 @@ func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo r
 /*
   AddOperatingSystemKernel Add a kernel that can be used with this operating system
 */
-func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemKernelOK, error) {
+func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemKernelOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddOperatingSystemKernelParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addOperatingSystemKernel",
 		Method:             "POST",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/kernels",
@@ -1359,12 +1235,7 @@ func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1380,12 +1251,13 @@ func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams
 /*
   AddOperatingSystemLibc Add a libc that can be used with this operating system
 */
-func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemLibcOK, error) {
+func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemLibcOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddOperatingSystemLibcParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addOperatingSystemLibc",
 		Method:             "POST",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/libcs",
@@ -1397,12 +1269,7 @@ func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1418,12 +1285,13 @@ func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, au
 /*
   AddOperatingSystemVersion Add a new version for this operating system
 */
-func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionCreated, error) {
+func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddOperatingSystemVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addOperatingSystemVersion",
 		Method:             "POST",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions",
@@ -1435,12 +1303,7 @@ func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionPara
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1456,12 +1319,13 @@ func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionPara
 /*
   AddOperatingSystemVersionRevision Add a new revision of this operating system version
 */
-func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionRevisionOK, error) {
+func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddOperatingSystemVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddOperatingSystemVersionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addOperatingSystemVersionRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}/revisions",
@@ -1473,12 +1337,7 @@ func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVer
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1494,12 +1353,13 @@ func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVer
 /*
   AddPatch Add a new patch
 */
-func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPatchCreated, error) {
+func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter) (*AddPatchCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddPatchParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addPatch",
 		Method:             "POST",
 		PathPattern:        "/v1/patches",
@@ -1511,12 +1371,7 @@ func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1532,12 +1387,13 @@ func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInf
 /*
   AddPlatform Add a new platform
 */
-func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPlatformCreated, error) {
+func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddPlatformParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "addPlatform",
 		Method:             "POST",
 		PathPattern:        "/v1/platforms",
@@ -1549,12 +1405,7 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1568,52 +1419,15 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 }
 
 /*
-  DeleteImage Delete this image
-*/
-func (a *Client) DeleteImage(params *DeleteImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteImageNoContent, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewDeleteImageParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "deleteImage",
-		Method:             "DELETE",
-		PathPattern:        "/v1/images/{image_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &DeleteImageReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*DeleteImageNoContent)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*DeleteImageDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   DeleteIngredientVersion Delete this ingredient version
 */
-func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteIngredientVersionNoContent, error) {
+func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIngredientVersionNoContent, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteIngredientVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "deleteIngredientVersion",
 		Method:             "DELETE",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}",
@@ -1625,12 +1439,7 @@ func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1646,12 +1455,13 @@ func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, 
 /*
   GetAuthor Retrieve an author
 */
-func (a *Client) GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetAuthorOK, error) {
+func (a *Client) GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAuthorParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getAuthor",
 		Method:             "GET",
 		PathPattern:        "/v1/authors/{author_id_or_email}",
@@ -1662,12 +1472,7 @@ func (a *Client) GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetA
 		Reader:             &GetAuthorReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1683,12 +1488,13 @@ func (a *Client) GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetA
 /*
   GetAuthors Retrieve a paged set of authors
 */
-func (a *Client) GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*GetAuthorsOK, error) {
+func (a *Client) GetAuthors(params *GetAuthorsParams) (*GetAuthorsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetAuthorsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getAuthors",
 		Method:             "GET",
 		PathPattern:        "/v1/authors",
@@ -1699,12 +1505,7 @@ func (a *Client) GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*Ge
 		Reader:             &GetAuthorsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1720,12 +1521,13 @@ func (a *Client) GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*Ge
 /*
   GetBuildFlag Retrieve a build flag
 */
-func (a *Client) GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) (*GetBuildFlagOK, error) {
+func (a *Client) GetBuildFlag(params *GetBuildFlagParams) (*GetBuildFlagOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetBuildFlagParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getBuildFlag",
 		Method:             "GET",
 		PathPattern:        "/v1/build-flags/{build_flag_id}",
@@ -1736,12 +1538,7 @@ func (a *Client) GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) 
 		Reader:             &GetBuildFlagReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1757,12 +1554,13 @@ func (a *Client) GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) 
 /*
   GetBuildFlags Retrieve a paged set of build flags
 */
-func (a *Client) GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption) (*GetBuildFlagsOK, error) {
+func (a *Client) GetBuildFlags(params *GetBuildFlagsParams) (*GetBuildFlagsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetBuildFlagsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getBuildFlags",
 		Method:             "GET",
 		PathPattern:        "/v1/build-flags",
@@ -1773,12 +1571,7 @@ func (a *Client) GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption
 		Reader:             &GetBuildFlagsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1794,12 +1587,13 @@ func (a *Client) GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption
 /*
   GetBuildScript Retrieve a single build script
 */
-func (a *Client) GetBuildScript(params *GetBuildScriptParams, opts ...ClientOption) (*GetBuildScriptOK, error) {
+func (a *Client) GetBuildScript(params *GetBuildScriptParams) (*GetBuildScriptOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetBuildScriptParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getBuildScript",
 		Method:             "GET",
 		PathPattern:        "/v1/build-scripts/{build_script_id}",
@@ -1810,12 +1604,7 @@ func (a *Client) GetBuildScript(params *GetBuildScriptParams, opts ...ClientOpti
 		Reader:             &GetBuildScriptReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1831,12 +1620,13 @@ func (a *Client) GetBuildScript(params *GetBuildScriptParams, opts ...ClientOpti
 /*
   GetBuildScripts Retrieve all build scripts
 */
-func (a *Client) GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOption) (*GetBuildScriptsOK, error) {
+func (a *Client) GetBuildScripts(params *GetBuildScriptsParams) (*GetBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetBuildScriptsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getBuildScripts",
 		Method:             "GET",
 		PathPattern:        "/v1/build-scripts",
@@ -1847,12 +1637,7 @@ func (a *Client) GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOp
 		Reader:             &GetBuildScriptsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1868,12 +1653,13 @@ func (a *Client) GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOp
 /*
   GetCPUArchitecture Retrieve a single CPU architecture
 */
-func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...ClientOption) (*GetCPUArchitectureOK, error) {
+func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams) (*GetCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCPUArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getCpuArchitecture",
 		Method:             "GET",
 		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}",
@@ -1884,12 +1670,7 @@ func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...Cl
 		Reader:             &GetCPUArchitectureReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1905,12 +1686,13 @@ func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...Cl
 /*
   GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
 */
-func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams, opts ...ClientOption) (*GetCPUArchitectureCPUExtensionsOK, error) {
+func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams) (*GetCPUArchitectureCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCPUArchitectureCPUExtensionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getCpuArchitectureCpuExtensions",
 		Method:             "GET",
 		PathPattern:        "/v1/cpu-architectures/{cpu_architecture_id}/extensions",
@@ -1921,12 +1703,7 @@ func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUEx
 		Reader:             &GetCPUArchitectureCPUExtensionsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1942,12 +1719,13 @@ func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUEx
 /*
   GetCPUArchitectures Retrieve all CPU architectures
 */
-func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...ClientOption) (*GetCPUArchitecturesOK, error) {
+func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams) (*GetCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCPUArchitecturesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getCpuArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/cpu-architectures",
@@ -1958,12 +1736,7 @@ func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...
 		Reader:             &GetCPUArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1979,12 +1752,13 @@ func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...
 /*
   GetCPUExtension Retrieve a single CPU extension
 */
-func (a *Client) GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOption) (*GetCPUExtensionOK, error) {
+func (a *Client) GetCPUExtension(params *GetCPUExtensionParams) (*GetCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCPUExtensionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getCpuExtension",
 		Method:             "GET",
 		PathPattern:        "/v1/cpu-extensions/{cpu_extension_id}",
@@ -1995,12 +1769,7 @@ func (a *Client) GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOp
 		Reader:             &GetCPUExtensionReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2016,12 +1785,13 @@ func (a *Client) GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOp
 /*
   GetCPUExtensions Retrieve all CPU extensions
 */
-func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams, opts ...ClientOption) (*GetCPUExtensionsOK, error) {
+func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCPUExtensionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getCpuExtensions",
 		Method:             "GET",
 		PathPattern:        "/v1/cpu-extensions",
@@ -2032,12 +1802,7 @@ func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams, opts ...Client
 		Reader:             &GetCPUExtensionsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2051,88 +1816,81 @@ func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams, opts ...Client
 }
 
 /*
-  GetGPUArchitecture Retrieve a single GPU architecture
+  GetGpuArchitecture Retrieve a single GPU architecture
 */
-func (a *Client) GetGPUArchitecture(params *GetGPUArchitectureParams, opts ...ClientOption) (*GetGPUArchitectureOK, error) {
+func (a *Client) GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetGPUArchitectureParams()
+		params = NewGetGpuArchitectureParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "getGPUArchitecture",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getGpuArchitecture",
 		Method:             "GET",
 		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetGPUArchitectureReader{formats: a.formats},
+		Reader:             &GetGpuArchitectureReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGPUArchitectureOK)
+	success, ok := result.(*GetGpuArchitectureOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetGPUArchitectureDefault)
+	unexpectedSuccess := result.(*GetGpuArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  GetGPUArchitectures Retrieve all GPU architectures
+  GetGpuArchitectures Retrieve all GPU architectures
 */
-func (a *Client) GetGPUArchitectures(params *GetGPUArchitecturesParams, opts ...ClientOption) (*GetGPUArchitecturesOK, error) {
+func (a *Client) GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetGPUArchitecturesParams()
+		params = NewGetGpuArchitecturesParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "getGPUArchitectures",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getGpuArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetGPUArchitecturesReader{formats: a.formats},
+		Reader:             &GetGpuArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGPUArchitecturesOK)
+	success, ok := result.(*GetGpuArchitecturesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetGPUArchitecturesDefault)
+	unexpectedSuccess := result.(*GetGpuArchitecturesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
   GetImage Retrieve an image
 */
-func (a *Client) GetImage(params *GetImageParams, opts ...ClientOption) (*GetImageOK, error) {
+func (a *Client) GetImage(params *GetImageParams) (*GetImageOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetImageParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getImage",
 		Method:             "GET",
 		PathPattern:        "/v1/images/{image_id}",
@@ -2143,12 +1901,7 @@ func (a *Client) GetImage(params *GetImageParams, opts ...ClientOption) (*GetIma
 		Reader:             &GetImageReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2164,12 +1917,13 @@ func (a *Client) GetImage(params *GetImageParams, opts ...ClientOption) (*GetIma
 /*
   GetImages Retrieve a paged set of images
 */
-func (a *Client) GetImages(params *GetImagesParams, opts ...ClientOption) (*GetImagesOK, error) {
+func (a *Client) GetImages(params *GetImagesParams) (*GetImagesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetImagesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getImages",
 		Method:             "GET",
 		PathPattern:        "/v1/images",
@@ -2180,12 +1934,7 @@ func (a *Client) GetImages(params *GetImagesParams, opts ...ClientOption) (*GetI
 		Reader:             &GetImagesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2201,12 +1950,13 @@ func (a *Client) GetImages(params *GetImagesParams, opts ...ClientOption) (*GetI
 /*
   GetIngredient Retrieve a single ingredient
 */
-func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOK, error) {
+func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredient",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}",
@@ -2218,12 +1968,7 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2239,12 +1984,13 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 /*
   GetIngredientOptionSet Retrieve a single ingredient option set
 */
-func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams, opts ...ClientOption) (*GetIngredientOptionSetOK, error) {
+func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams) (*GetIngredientOptionSetOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientOptionSetParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientOptionSet",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredient-option-sets/{ingredient_option_set_id}",
@@ -2255,12 +2001,7 @@ func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams, op
 		Reader:             &GetIngredientOptionSetReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2274,52 +2015,15 @@ func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams, op
 }
 
 /*
-  GetIngredientOptionSetIngredientVersions Retrieve all ingredient versions which use this ingredient option set
-*/
-func (a *Client) GetIngredientOptionSetIngredientVersions(params *GetIngredientOptionSetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOptionSetIngredientVersionsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetIngredientOptionSetIngredientVersionsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getIngredientOptionSetIngredientVersions",
-		Method:             "GET",
-		PathPattern:        "/v1/ingredient-option-sets/{ingredient_option_set_id}/ingredient-versions",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &GetIngredientOptionSetIngredientVersionsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetIngredientOptionSetIngredientVersionsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientOptionSetIngredientVersionsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   GetIngredientOptionSets Iterate over all matching ingredient option sets
 */
-func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams, opts ...ClientOption) (*GetIngredientOptionSetsOK, error) {
+func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams) (*GetIngredientOptionSetsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientOptionSetsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientOptionSets",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredient-option-sets",
@@ -2330,12 +2034,7 @@ func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams, 
 		Reader:             &GetIngredientOptionSetsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2351,12 +2050,13 @@ func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams, 
 /*
   GetIngredientVersion Retrieve a single ingredient version
 */
-func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionOK, error) {
+func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersion",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}",
@@ -2368,12 +2068,7 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2389,12 +2084,13 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 /*
   GetIngredientVersionAuthors Retrieve all authors of this ingredient version
 */
-func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionAuthorsOK, error) {
+func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionAuthorsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersionAuthors",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/authors",
@@ -2406,12 +2102,7 @@ func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthors
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2427,12 +2118,13 @@ func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthors
 /*
   GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
 */
-func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionBuildScriptsOK, error) {
+func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionBuildScriptsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersionBuildScripts",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/build-scripts",
@@ -2444,12 +2136,7 @@ func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBu
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2463,52 +2150,15 @@ func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBu
 }
 
 /*
-  GetIngredientVersionIngredientOptionSets Retrieve all ingredient option sets used by the ingredient version
-*/
-func (a *Client) GetIngredientVersionIngredientOptionSets(params *GetIngredientVersionIngredientOptionSetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionIngredientOptionSetsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetIngredientVersionIngredientOptionSetsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getIngredientVersionIngredientOptionSets",
-		Method:             "GET",
-		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/ingredient-option-sets",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http"},
-		Params:             params,
-		Reader:             &GetIngredientVersionIngredientOptionSetsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetIngredientVersionIngredientOptionSetsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*GetIngredientVersionIngredientOptionSetsDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
 */
-func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionPatchesOK, error) {
+func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionPatchesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersionPatches",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/patches",
@@ -2520,12 +2170,7 @@ func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatches
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2541,12 +2186,13 @@ func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatches
 /*
   GetIngredientVersionRevision Retrieve a single ingredient version revision
 */
-func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionOK, error) {
+func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionRevisionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersionRevision",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions/{revision}",
@@ -2558,12 +2204,7 @@ func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisi
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2579,12 +2220,13 @@ func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisi
 /*
   GetIngredientVersionRevisions Retrieve all ingredient version revisions for an ingredient version
 */
-func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevisionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionsOK, error) {
+func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevisionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionRevisionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionRevisionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersionRevisions",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/revisions",
@@ -2596,12 +2238,7 @@ func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevis
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2617,12 +2254,13 @@ func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevis
 /*
   GetIngredientVersions Retrieve all versions of this ingredient
 */
-func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionsOK, error) {
+func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientVersionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredientVersions",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions",
@@ -2634,12 +2272,7 @@ func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2655,12 +2288,13 @@ func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, auth
 /*
   GetIngredients Retrieve all ingredients
 */
-func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientsOK, error) {
+func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetIngredientsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getIngredients",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients",
@@ -2672,12 +2306,7 @@ func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2693,12 +2322,13 @@ func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.C
 /*
   GetKernel Retrieve a single kernel
 */
-func (a *Client) GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetKernelOK, error) {
+func (a *Client) GetKernel(params *GetKernelParams) (*GetKernelOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKernelParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getKernel",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}",
@@ -2709,12 +2339,7 @@ func (a *Client) GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetK
 		Reader:             &GetKernelReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2730,12 +2355,13 @@ func (a *Client) GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetK
 /*
   GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
 */
-func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams, opts ...ClientOption) (*GetKernelCPUArchitecturesOK, error) {
+func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKernelCPUArchitecturesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getKernelCpuArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}/cpu-architectures",
@@ -2746,12 +2372,7 @@ func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesPara
 		Reader:             &GetKernelCPUArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2765,51 +2386,48 @@ func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesPara
 }
 
 /*
-  GetKernelGPUArchitectures Retrieve all GPU architectures that can be used with this kernel
+  GetKernelGpuArchitectures Retrieve all GPU architectures that can be used with this kernel
 */
-func (a *Client) GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesParams, opts ...ClientOption) (*GetKernelGPUArchitecturesOK, error) {
+func (a *Client) GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetKernelGPUArchitecturesParams()
+		params = NewGetKernelGpuArchitecturesParams()
 	}
-	op := &runtime.ClientOperation{
-		ID:                 "getKernelGPUArchitectures",
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getKernelGpuArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetKernelGPUArchitecturesReader{formats: a.formats},
+		Reader:             &GetKernelGpuArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelGPUArchitecturesOK)
+	success, ok := result.(*GetKernelGpuArchitecturesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelGPUArchitecturesDefault)
+	unexpectedSuccess := result.(*GetKernelGpuArchitecturesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
   GetKernelVersion Retrieve a single kernel version
 */
-func (a *Client) GetKernelVersion(params *GetKernelVersionParams, opts ...ClientOption) (*GetKernelVersionOK, error) {
+func (a *Client) GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKernelVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getKernelVersion",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}/versions/{kernel_version_id}",
@@ -2820,12 +2438,7 @@ func (a *Client) GetKernelVersion(params *GetKernelVersionParams, opts ...Client
 		Reader:             &GetKernelVersionReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2841,12 +2454,13 @@ func (a *Client) GetKernelVersion(params *GetKernelVersionParams, opts ...Client
 /*
   GetKernelVersions Retrieve all versions of this kernel
 */
-func (a *Client) GetKernelVersions(params *GetKernelVersionsParams, opts ...ClientOption) (*GetKernelVersionsOK, error) {
+func (a *Client) GetKernelVersions(params *GetKernelVersionsParams) (*GetKernelVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKernelVersionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getKernelVersions",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}/versions",
@@ -2857,12 +2471,7 @@ func (a *Client) GetKernelVersions(params *GetKernelVersionsParams, opts ...Clie
 		Reader:             &GetKernelVersionsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2878,12 +2487,13 @@ func (a *Client) GetKernelVersions(params *GetKernelVersionsParams, opts ...Clie
 /*
   GetKernels Retrieve all kernels
 */
-func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*GetKernelsOK, error) {
+func (a *Client) GetKernels(params *GetKernelsParams) (*GetKernelsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetKernelsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getKernels",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels",
@@ -2894,12 +2504,7 @@ func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*Ge
 		Reader:             &GetKernelsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2915,12 +2520,13 @@ func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*Ge
 /*
   GetLibc Retrieve a single libc
 */
-func (a *Client) GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcOK, error) {
+func (a *Client) GetLibc(params *GetLibcParams) (*GetLibcOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLibcParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getLibc",
 		Method:             "GET",
 		PathPattern:        "/v1/libcs/{libc_id}",
@@ -2931,12 +2537,7 @@ func (a *Client) GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcO
 		Reader:             &GetLibcReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2952,12 +2553,13 @@ func (a *Client) GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcO
 /*
   GetLibcVersion Retrieve a single libc version
 */
-func (a *Client) GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOption) (*GetLibcVersionOK, error) {
+func (a *Client) GetLibcVersion(params *GetLibcVersionParams) (*GetLibcVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLibcVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getLibcVersion",
 		Method:             "GET",
 		PathPattern:        "/v1/libcs/{libc_id}/versions/{libc_version_id}",
@@ -2968,12 +2570,7 @@ func (a *Client) GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOpti
 		Reader:             &GetLibcVersionReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -2989,12 +2586,13 @@ func (a *Client) GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOpti
 /*
   GetLibcVersions Retrieve all versions of this libc
 */
-func (a *Client) GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOption) (*GetLibcVersionsOK, error) {
+func (a *Client) GetLibcVersions(params *GetLibcVersionsParams) (*GetLibcVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLibcVersionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getLibcVersions",
 		Method:             "GET",
 		PathPattern:        "/v1/libcs/{libc_id}/versions",
@@ -3005,12 +2603,7 @@ func (a *Client) GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOp
 		Reader:             &GetLibcVersionsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3026,12 +2619,13 @@ func (a *Client) GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOp
 /*
   GetLibcs Retrieve all libcs
 */
-func (a *Client) GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLibcsOK, error) {
+func (a *Client) GetLibcs(params *GetLibcsParams) (*GetLibcsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLibcsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getLibcs",
 		Method:             "GET",
 		PathPattern:        "/v1/libcs",
@@ -3042,12 +2636,7 @@ func (a *Client) GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLib
 		Reader:             &GetLibcsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3063,12 +2652,13 @@ func (a *Client) GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLib
 /*
   GetNamespaceIngredient Retrieve a single ingredient by namespace and name
 */
-func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientOK, error) {
+func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNamespaceIngredientParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getNamespaceIngredient",
 		Method:             "GET",
 		PathPattern:        "/v1/namespaces/ingredient",
@@ -3080,12 +2670,7 @@ func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3101,12 +2686,13 @@ func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, au
 /*
   GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
 */
-func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionsOK, error) {
+func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNamespaceIngredientVersionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getNamespaceIngredientVersions",
 		Method:             "GET",
 		PathPattern:        "/v1/namespaces/ingredient/versions",
@@ -3118,12 +2704,7 @@ func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVe
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3139,12 +2720,13 @@ func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVe
 /*
   GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
 */
-func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientsOK, error) {
+func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespaceIngredientsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNamespaceIngredientsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getNamespaceIngredients",
 		Method:             "GET",
 		PathPattern:        "/v1/namespaces/ingredients",
@@ -3156,12 +2738,7 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3177,12 +2754,13 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 /*
   GetNamespaces Retrieve all namespaces
 */
-func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespacesOK, error) {
+func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter) (*GetNamespacesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetNamespacesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getNamespaces",
 		Method:             "GET",
 		PathPattern:        "/v1/namespaces",
@@ -3194,12 +2772,7 @@ func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3215,12 +2788,13 @@ func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.Cli
 /*
   GetOperatingSystem Retrieve a single operating system
 */
-func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams, opts ...ClientOption) (*GetOperatingSystemOK, error) {
+func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams) (*GetOperatingSystemOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystem",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}",
@@ -3231,12 +2805,7 @@ func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams, opts ...Cl
 		Reader:             &GetOperatingSystemReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3252,12 +2821,13 @@ func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams, opts ...Cl
 /*
   GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
 */
-func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams, opts ...ClientOption) (*GetOperatingSystemKernelsOK, error) {
+func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams) (*GetOperatingSystemKernelsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemKernelsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystemKernels",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/kernels",
@@ -3268,12 +2838,7 @@ func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsPara
 		Reader:             &GetOperatingSystemKernelsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3289,12 +2854,13 @@ func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsPara
 /*
   GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
 */
-func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, opts ...ClientOption) (*GetOperatingSystemLibcsOK, error) {
+func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams) (*GetOperatingSystemLibcsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemLibcsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystemLibcs",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/libcs",
@@ -3305,12 +2871,7 @@ func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, 
 		Reader:             &GetOperatingSystemLibcsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3326,12 +2887,13 @@ func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, 
 /*
   GetOperatingSystemVersion Retrieve a single operating system version
 */
-func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionParams, opts ...ClientOption) (*GetOperatingSystemVersionOK, error) {
+func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionParams) (*GetOperatingSystemVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystemVersion",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions/{operating_system_version_id}",
@@ -3342,12 +2904,7 @@ func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionPara
 		Reader:             &GetOperatingSystemVersionReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3363,12 +2920,13 @@ func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionPara
 /*
   GetOperatingSystemVersions Retrieve all versions of this operating system
 */
-func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams, opts ...ClientOption) (*GetOperatingSystemVersionsOK, error) {
+func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams) (*GetOperatingSystemVersionsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemVersionsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystemVersions",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems/{operating_system_id}/versions",
@@ -3379,12 +2937,7 @@ func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsPa
 		Reader:             &GetOperatingSystemVersionsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3400,12 +2953,13 @@ func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsPa
 /*
   GetOperatingSystems Retrieve all operating systems
 */
-func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams, opts ...ClientOption) (*GetOperatingSystemsOK, error) {
+func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams) (*GetOperatingSystemsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOperatingSystemsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getOperatingSystems",
 		Method:             "GET",
 		PathPattern:        "/v1/operating-systems",
@@ -3416,12 +2970,7 @@ func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams, opts ...
 		Reader:             &GetOperatingSystemsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3437,12 +2986,13 @@ func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams, opts ...
 /*
   GetPatch Retrieve a single patch
 */
-func (a *Client) GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPatchOK, error) {
+func (a *Client) GetPatch(params *GetPatchParams) (*GetPatchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetPatchParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getPatch",
 		Method:             "GET",
 		PathPattern:        "/v1/patches/{patch_id}",
@@ -3453,12 +3003,7 @@ func (a *Client) GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPat
 		Reader:             &GetPatchReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3474,12 +3019,13 @@ func (a *Client) GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPat
 /*
   GetPatches Retrieve all patches
 */
-func (a *Client) GetPatches(params *GetPatchesParams, opts ...ClientOption) (*GetPatchesOK, error) {
+func (a *Client) GetPatches(params *GetPatchesParams) (*GetPatchesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetPatchesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getPatches",
 		Method:             "GET",
 		PathPattern:        "/v1/patches",
@@ -3490,12 +3036,7 @@ func (a *Client) GetPatches(params *GetPatchesParams, opts ...ClientOption) (*Ge
 		Reader:             &GetPatchesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3511,12 +3052,13 @@ func (a *Client) GetPatches(params *GetPatchesParams, opts ...ClientOption) (*Ge
 /*
   GetPlatform Retrieve a single platform
 */
-func (a *Client) GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*GetPlatformOK, error) {
+func (a *Client) GetPlatform(params *GetPlatformParams) (*GetPlatformOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetPlatformParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getPlatform",
 		Method:             "GET",
 		PathPattern:        "/v1/platforms/{platform_id}",
@@ -3527,12 +3069,7 @@ func (a *Client) GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*
 		Reader:             &GetPlatformReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3548,12 +3085,13 @@ func (a *Client) GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*
 /*
   GetPlatforms Retrieve all platforms
 */
-func (a *Client) GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) (*GetPlatformsOK, error) {
+func (a *Client) GetPlatforms(params *GetPlatformsParams) (*GetPlatformsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetPlatformsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getPlatforms",
 		Method:             "GET",
 		PathPattern:        "/v1/platforms",
@@ -3564,12 +3102,7 @@ func (a *Client) GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) 
 		Reader:             &GetPlatformsReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3585,12 +3118,13 @@ func (a *Client) GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) 
 /*
   GetSolutionRecipe Retrieve a recipe produced as part of a solution
 */
-func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSolutionRecipeOK, error) {
+func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter) (*GetSolutionRecipeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetSolutionRecipeParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getSolutionRecipe",
 		Method:             "GET",
 		PathPattern:        "/v1/solutions/recipes/{recipe_id}",
@@ -3602,12 +3136,7 @@ func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3623,12 +3152,13 @@ func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo run
 /*
   HealthCheck health check API
 */
-func (a *Client) HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*HealthCheckOK, error) {
+func (a *Client) HealthCheck(params *HealthCheckParams) (*HealthCheckOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewHealthCheckParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "healthCheck",
 		Method:             "GET",
 		PathPattern:        "/health-check",
@@ -3639,12 +3169,7 @@ func (a *Client) HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*
 		Reader:             &HealthCheckReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3660,12 +3185,13 @@ func (a *Client) HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*
 /*
   NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
 */
-func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NormalizeNamesOK, error) {
+func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter) (*NormalizeNamesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewNormalizeNamesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "normalizeNames",
 		Method:             "POST",
 		PathPattern:        "/v1/namespaces/normalized-names",
@@ -3677,12 +3203,7 @@ func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3698,12 +3219,13 @@ func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.C
 /*
   ReadinessCheck readiness check API
 */
-func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOption) (*ReadinessCheckOK, error) {
+func (a *Client) ReadinessCheck(params *ReadinessCheckParams) (*ReadinessCheckOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewReadinessCheckParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "readinessCheck",
 		Method:             "GET",
 		PathPattern:        "/readiness-check",
@@ -3714,12 +3236,7 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOpti
 		Reader:             &ReadinessCheckReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3737,12 +3254,13 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOpti
 
   Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
 */
-func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, error) {
+func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter) (*ResolveRecipesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewResolveRecipesParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "resolveRecipes",
 		Method:             "POST",
 		PathPattern:        "/v1/recipes",
@@ -3754,12 +3272,7 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3775,12 +3288,13 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 /*
   SearchIngredients Search ingredients
 */
-func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchIngredientsOK, error) {
+func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchIngredientsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSearchIngredientsParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "searchIngredients",
 		Method:             "GET",
 		PathPattern:        "/v1/ingredients/search",
@@ -3792,12 +3306,7 @@ func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3813,12 +3322,13 @@ func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo run
 /*
   SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
 */
-func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SolveOrderCreated, error) {
+func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter) (*SolveOrderCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSolveOrderParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "solveOrder",
 		Method:             "POST",
 		PathPattern:        "/v1/solutions",
@@ -3830,12 +3340,7 @@ func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3851,12 +3356,13 @@ func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAut
 /*
   UpdateAuthor Update an author
 */
-func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAuthorOK, error) {
+func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAuthorOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateAuthorParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updateAuthor",
 		Method:             "PUT",
 		PathPattern:        "/v1/authors/{author_id_or_email}",
@@ -3868,12 +3374,7 @@ func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3889,12 +3390,13 @@ func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.Clien
 /*
   UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
 */
-func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBuildScriptOK, error) {
+func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBuildScriptOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateBuildScriptParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updateBuildScript",
 		Method:             "PUT",
 		PathPattern:        "/v1/build-scripts/{build_script_id}",
@@ -3906,12 +3408,7 @@ func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3927,12 +3424,13 @@ func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo run
 /*
   UpdateIngredient Update this ingredient
 */
-func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientOK, error) {
+func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateIngredientParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updateIngredient",
 		Method:             "PUT",
 		PathPattern:        "/v1/ingredients/{ingredient_id}",
@@ -3944,12 +3442,7 @@ func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -3965,12 +3458,13 @@ func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runti
 /*
   UpdateIngredientVersion Update this ingredient version
 */
-func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientVersionOK, error) {
+func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateIngredientVersionParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updateIngredientVersion",
 		Method:             "PUT",
 		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}",
@@ -3982,12 +3476,7 @@ func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, 
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -4003,12 +3492,13 @@ func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, 
 /*
   UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
 */
-func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePatchOK, error) {
+func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePatchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdatePatchParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updatePatch",
 		Method:             "PUT",
 		PathPattern:        "/v1/patches/{patch_id}",
@@ -4020,12 +3510,7 @@ func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -4041,12 +3526,13 @@ func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientA
 /*
   UpdatePlatform Update the platform end of support date
 */
-func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePlatformOK, error) {
+func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter) (*UpdatePlatformOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdatePlatformParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updatePlatform",
 		Method:             "PUT",
 		PathPattern:        "/v1/platforms/{platform_id}",
@@ -4058,12 +3544,7 @@ func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -4079,12 +3560,13 @@ func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.C
 /*
   ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
 */
-func (a *Client) ValidateRecipe(params *ValidateRecipeParams, opts ...ClientOption) (*ValidateRecipeOK, error) {
+func (a *Client) ValidateRecipe(params *ValidateRecipeParams) (*ValidateRecipeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewValidateRecipeParams()
 	}
-	op := &runtime.ClientOperation{
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "validateRecipe",
 		Method:             "POST",
 		PathPattern:        "/v1/recipes/validation",
@@ -4095,12 +3577,7 @@ func (a *Client) ValidateRecipe(params *ValidateRecipeParams, opts ...ClientOpti
 		Reader:             &ValidateRecipeReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
+	})
 	if err != nil {
 		return nil, err
 	}

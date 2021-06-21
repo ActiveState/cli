@@ -46,7 +46,7 @@ func NewGetLibcsOK() *GetLibcsOK {
 	return &GetLibcsOK{}
 }
 
-/* GetLibcsOK describes a response with status code 200, with default header values.
+/*GetLibcsOK handles this case with default header values.
 
 A paginated list of libcs
 */
@@ -57,6 +57,7 @@ type GetLibcsOK struct {
 func (o *GetLibcsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs][%d] getLibcsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetLibcsOK) GetPayload() *inventory_models.LibcPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetLibcsDefault(code int) *GetLibcsDefault {
 	}
 }
 
-/* GetLibcsDefault describes a response with status code -1, with default header values.
+/*GetLibcsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetLibcsDefault) Code() int {
 func (o *GetLibcsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/libcs][%d] getLibcs default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetLibcsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

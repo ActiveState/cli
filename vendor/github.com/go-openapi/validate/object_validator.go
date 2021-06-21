@@ -35,7 +35,6 @@ type objectValidator struct {
 	PatternProperties    map[string]spec.Schema
 	Root                 interface{}
 	KnownFormats         strfmt.Registry
-	Options              SchemaValidatorOptions
 }
 
 func (o *objectValidator) SetPath(path string) {
@@ -51,56 +50,40 @@ func (o *objectValidator) Applies(source interface{}, kind reflect.Kind) bool {
 	return r
 }
 
-func (o *objectValidator) isProperties() bool {
+func (o *objectValidator) isPropertyName() bool {
 	p := strings.Split(o.Path, ".")
-	return len(p) > 1 && p[len(p)-1] == jsonProperties && p[len(p)-2] != jsonProperties
-}
-
-func (o *objectValidator) isDefault() bool {
-	p := strings.Split(o.Path, ".")
-	return len(p) > 1 && p[len(p)-1] == jsonDefault && p[len(p)-2] != jsonDefault
-}
-
-func (o *objectValidator) isExample() bool {
-	p := strings.Split(o.Path, ".")
-	return len(p) > 1 && (p[len(p)-1] == swaggerExample || p[len(p)-1] == swaggerExamples) && p[len(p)-2] != swaggerExample
+	return p[len(p)-1] == "properties" && p[len(p)-2] != "properties"
 }
 
 func (o *objectValidator) checkArrayMustHaveItems(res *Result, val map[string]interface{}) {
-	// for swagger 2.0 schemas, there is an additional constraint to have array items defined explicitly.
-	// with pure jsonschema draft 4, one may have arrays with undefined items (i.e. any type).
-	if t, typeFound := val[jsonType]; typeFound {
-		if tpe, ok := t.(string); ok && tpe == arrayType {
-			if item, itemsKeyFound := val[jsonItems]; !itemsKeyFound {
-				res.AddErrors(errors.Required(jsonItems, o.Path, item))
+	if t, typeFound := val["type"]; typeFound {
+		if tpe, ok := t.(string); ok && tpe == "array" {
+			if _, itemsKeyFound := val["items"]; !itemsKeyFound {
+				res.AddErrors(errors.Required("items", o.Path))
 			}
 		}
 	}
 }
 
 func (o *objectValidator) checkItemsMustBeTypeArray(res *Result, val map[string]interface{}) {
-	if !o.isProperties() && !o.isDefault() && !o.isExample() {
-		if _, itemsKeyFound := val[jsonItems]; itemsKeyFound {
-			t, typeFound := val[jsonType]
+	if !o.isPropertyName() {
+		if _, itemsKeyFound := val["items"]; itemsKeyFound {
+			t, typeFound := val["type"]
 			if typeFound {
-				if tpe, ok := t.(string); !ok || tpe != arrayType {
-					res.AddErrors(errors.InvalidType(o.Path, o.In, arrayType, nil))
+				if tpe, ok := t.(string); !ok || tpe != "array" {
+					res.AddErrors(errors.InvalidType(o.Path, o.In, "array", nil))
 				}
 			} else {
 				// there is no type
-				res.AddErrors(errors.Required(jsonType, o.Path, t))
+				res.AddErrors(errors.Required("type", o.Path))
 			}
 		}
 	}
 }
 
 func (o *objectValidator) precheck(res *Result, val map[string]interface{}) {
-	if o.Options.EnableArrayMustHaveItemsCheck {
-		o.checkArrayMustHaveItems(res, val)
-	}
-	if o.Options.EnableObjectArrayTypeCheck {
-		o.checkItemsMustBeTypeArray(res, val)
-	}
+	o.checkArrayMustHaveItems(res, val)
+	o.checkItemsMustBeTypeArray(res, val)
 }
 
 func (o *objectValidator) Validate(data interface{}) *Result {
@@ -148,18 +131,21 @@ func (o *objectValidator) Validate(data interface{}) *Result {
 				// NOTE: prefix your messages here by "IMPORTANT!" so there are not filtered
 				// by higher level callers (the IMPORTANT! tag will be eventually
 				// removed).
-				if k == "headers" && val[k] != nil {
-					// $ref is forbidden in header
-					if headers, mapOk := val[k].(map[string]interface{}); mapOk {
-						for headerKey, headerBody := range headers {
-							if headerBody != nil {
-								if headerSchema, mapOfMapOk := headerBody.(map[string]interface{}); mapOfMapOk {
-									if _, found := headerSchema["$ref"]; found {
-										var msg string
-										if refString, stringOk := headerSchema["$ref"].(string); stringOk {
-											msg = strings.Join([]string{", one may not use $ref=\":", refString, "\""}, "")
+				switch k {
+				// $ref is forbidden in header
+				case "headers":
+					if val[k] != nil {
+						if headers, mapOk := val[k].(map[string]interface{}); mapOk {
+							for headerKey, headerBody := range headers {
+								if headerBody != nil {
+									if headerSchema, mapOfMapOk := headerBody.(map[string]interface{}); mapOfMapOk {
+										if _, found := headerSchema["$ref"]; found {
+											var msg string
+											if refString, stringOk := headerSchema["$ref"].(string); stringOk {
+												msg = strings.Join([]string{", one may not use $ref=\":", refString, "\""}, "")
+											}
+											res.AddErrors(refNotAllowedInHeaderMsg(o.Path, headerKey, msg))
 										}
-										res.AddErrors(refNotAllowedInHeaderMsg(o.Path, headerKey, msg))
 									}
 								}
 							}
@@ -190,7 +176,7 @@ func (o *objectValidator) Validate(data interface{}) *Result {
 				// Cases: properties which are not regular properties and have not been matched by the PatternProperties validator
 				if o.AdditionalProperties != nil && o.AdditionalProperties.Schema != nil {
 					// AdditionalProperties as Schema
-					r := NewSchemaValidator(o.AdditionalProperties.Schema, o.Root, o.Path+"."+key, o.KnownFormats, o.Options.Options()...).Validate(value)
+					r := NewSchemaValidator(o.AdditionalProperties.Schema, o.Root, o.Path+"."+key, o.KnownFormats).Validate(value)
 					res.mergeForField(data.(map[string]interface{}), key, r)
 				} else if regularProperty && !(matched || succeededOnce) {
 					// TODO: this is dead code since regularProperty=false here
@@ -214,7 +200,7 @@ func (o *objectValidator) Validate(data interface{}) *Result {
 
 		// Recursively validates each property against its schema
 		if v, ok := val[pName]; ok {
-			r := NewSchemaValidator(&pSchema, o.Root, rName, o.KnownFormats, o.Options.Options()...).Validate(v)
+			r := NewSchemaValidator(&pSchema, o.Root, rName, o.KnownFormats).Validate(v)
 			res.mergeForField(data.(map[string]interface{}), pName, r)
 		} else if pSchema.Default != nil {
 			// If a default value is defined, creates the property from defaults
@@ -227,8 +213,8 @@ func (o *objectValidator) Validate(data interface{}) *Result {
 	// Check required properties
 	if len(o.Required) > 0 {
 		for _, k := range o.Required {
-			if v, ok := val[k]; !ok && !createdFromDefaults[k] {
-				res.AddErrors(errors.Required(o.Path+"."+k, o.In, v))
+			if _, ok := val[k]; !ok && !createdFromDefaults[k] {
+				res.AddErrors(errors.Required(o.Path+"."+k, o.In))
 				continue
 			}
 		}
@@ -242,7 +228,7 @@ func (o *objectValidator) Validate(data interface{}) *Result {
 		if !regularProperty && (matched /*|| succeededOnce*/) {
 			for _, pName := range patterns {
 				if v, ok := o.PatternProperties[pName]; ok {
-					r := NewSchemaValidator(&v, o.Root, o.Path+"."+key, o.KnownFormats, o.Options.Options()...).Validate(value)
+					r := NewSchemaValidator(&v, o.Root, o.Path+"."+key, o.KnownFormats).Validate(value)
 					res.mergeForField(data.(map[string]interface{}), key, r)
 				}
 			}
@@ -258,11 +244,10 @@ func (o *objectValidator) validatePatternProperty(key string, value interface{},
 	var patterns []string
 
 	for k, schema := range o.PatternProperties {
-		sch := schema
 		if match, _ := regexp.MatchString(k, key); match {
 			patterns = append(patterns, k)
 			matched = true
-			validator := NewSchemaValidator(&sch, o.Root, o.Path+"."+key, o.KnownFormats, o.Options.Options()...)
+			validator := NewSchemaValidator(&schema, o.Root, o.Path+"."+key, o.KnownFormats)
 
 			res := validator.Validate(value)
 			result.Merge(res)
@@ -271,9 +256,9 @@ func (o *objectValidator) validatePatternProperty(key string, value interface{},
 
 	// BUG(fredbi): can't get to here. Should remove dead code (commented out).
 
-	// if succeededOnce {
+	//if succeededOnce {
 	//	result.Inc()
-	// }
+	//}
 
 	return matched, succeededOnce, patterns
 }

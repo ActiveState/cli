@@ -52,7 +52,7 @@ func NewAddCPUExtensionCreated() *AddCPUExtensionCreated {
 	return &AddCPUExtensionCreated{}
 }
 
-/* AddCPUExtensionCreated describes a response with status code 201, with default header values.
+/*AddCPUExtensionCreated handles this case with default header values.
 
 The added CPU extension
 */
@@ -63,6 +63,7 @@ type AddCPUExtensionCreated struct {
 func (o *AddCPUExtensionCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions][%d] addCpuExtensionCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddCPUExtensionCreated) GetPayload() *inventory_models.CPUExtension {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddCPUExtensionBadRequest() *AddCPUExtensionBadRequest {
 	return &AddCPUExtensionBadRequest{}
 }
 
-/* AddCPUExtensionBadRequest describes a response with status code 400, with default header values.
+/*AddCPUExtensionBadRequest handles this case with default header values.
 
 If the CPU extension is invalid
 */
@@ -95,6 +96,7 @@ type AddCPUExtensionBadRequest struct {
 func (o *AddCPUExtensionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions][%d] addCpuExtensionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddCPUExtensionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddCPUExtensionDefault(code int) *AddCPUExtensionDefault {
 	}
 }
 
-/* AddCPUExtensionDefault describes a response with status code -1, with default header values.
+/*AddCPUExtensionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddCPUExtensionDefault) Code() int {
 func (o *AddCPUExtensionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions][%d] addCpuExtension default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddCPUExtensionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

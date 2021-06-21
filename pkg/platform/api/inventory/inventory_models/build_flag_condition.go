@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -81,7 +80,7 @@ const (
 
 // prop value enum
 func (m *BuildFlagCondition) validateComparatorEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, buildFlagConditionTypeComparatorPropEnum, true); err != nil {
+	if err := validate.Enum(path, location, value, buildFlagConditionTypeComparatorPropEnum); err != nil {
 		return err
 	}
 	return nil
@@ -116,11 +115,6 @@ func (m *BuildFlagCondition) validateValue(formats strfmt.Registry) error {
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this build flag condition based on context it is used
-func (m *BuildFlagCondition) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

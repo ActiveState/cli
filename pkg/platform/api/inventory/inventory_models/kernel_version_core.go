@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -21,7 +19,7 @@ import (
 type KernelVersionCore struct {
 	VersionInfo
 
-	RevisionedFeatureProvider
+	Revision
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,11 +32,11 @@ func (m *KernelVersionCore) UnmarshalJSON(raw []byte) error {
 	m.VersionInfo = aO0
 
 	// AO1
-	var aO1 RevisionedFeatureProvider
+	var aO1 Revision
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.RevisionedFeatureProvider = aO1
+	m.Revision = aO1
 
 	return nil
 }
@@ -53,7 +51,7 @@ func (m KernelVersionCore) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.RevisionedFeatureProvider)
+	aO1, err := swag.WriteJSON(m.Revision)
 	if err != nil {
 		return nil, err
 	}
@@ -69,27 +67,8 @@ func (m *KernelVersionCore) Validate(formats strfmt.Registry) error {
 	if err := m.VersionInfo.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with RevisionedFeatureProvider
-	if err := m.RevisionedFeatureProvider.Validate(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-// ContextValidate validate this kernel version core based on the context it is used
-func (m *KernelVersionCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	// validation for a type composition with VersionInfo
-	if err := m.VersionInfo.ContextValidate(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-	// validation for a type composition with RevisionedFeatureProvider
-	if err := m.RevisionedFeatureProvider.ContextValidate(ctx, formats); err != nil {
+	// validation for a type composition with Revision
+	if err := m.Revision.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

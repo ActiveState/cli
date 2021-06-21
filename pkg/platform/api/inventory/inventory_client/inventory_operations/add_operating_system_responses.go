@@ -52,7 +52,7 @@ func NewAddOperatingSystemCreated() *AddOperatingSystemCreated {
 	return &AddOperatingSystemCreated{}
 }
 
-/* AddOperatingSystemCreated describes a response with status code 201, with default header values.
+/*AddOperatingSystemCreated handles this case with default header values.
 
 The added operating system
 */
@@ -63,6 +63,7 @@ type AddOperatingSystemCreated struct {
 func (o *AddOperatingSystemCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems][%d] addOperatingSystemCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddOperatingSystemCreated) GetPayload() *inventory_models.OperatingSystem {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddOperatingSystemBadRequest() *AddOperatingSystemBadRequest {
 	return &AddOperatingSystemBadRequest{}
 }
 
-/* AddOperatingSystemBadRequest describes a response with status code 400, with default header values.
+/*AddOperatingSystemBadRequest handles this case with default header values.
 
 If the operating system is invalid
 */
@@ -95,6 +96,7 @@ type AddOperatingSystemBadRequest struct {
 func (o *AddOperatingSystemBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems][%d] addOperatingSystemBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddOperatingSystemBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddOperatingSystemDefault(code int) *AddOperatingSystemDefault {
 	}
 }
 
-/* AddOperatingSystemDefault describes a response with status code -1, with default header values.
+/*AddOperatingSystemDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddOperatingSystemDefault) Code() int {
 func (o *AddOperatingSystemDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems][%d] addOperatingSystem default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddOperatingSystemDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

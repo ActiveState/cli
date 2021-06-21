@@ -52,7 +52,7 @@ func NewAddCPUArchitectureCreated() *AddCPUArchitectureCreated {
 	return &AddCPUArchitectureCreated{}
 }
 
-/* AddCPUArchitectureCreated describes a response with status code 201, with default header values.
+/*AddCPUArchitectureCreated handles this case with default header values.
 
 The added CPU architecture
 */
@@ -63,6 +63,7 @@ type AddCPUArchitectureCreated struct {
 func (o *AddCPUArchitectureCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures][%d] addCpuArchitectureCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddCPUArchitectureCreated) GetPayload() *inventory_models.CPUArchitecture {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddCPUArchitectureBadRequest() *AddCPUArchitectureBadRequest {
 	return &AddCPUArchitectureBadRequest{}
 }
 
-/* AddCPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/*AddCPUArchitectureBadRequest handles this case with default header values.
 
 If the CPU architecture is invalid
 */
@@ -95,6 +96,7 @@ type AddCPUArchitectureBadRequest struct {
 func (o *AddCPUArchitectureBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures][%d] addCpuArchitectureBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddCPUArchitectureBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddCPUArchitectureDefault(code int) *AddCPUArchitectureDefault {
 	}
 }
 
-/* AddCPUArchitectureDefault describes a response with status code -1, with default header values.
+/*AddCPUArchitectureDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddCPUArchitectureDefault) Code() int {
 func (o *AddCPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-architectures][%d] addCpuArchitecture default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddCPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

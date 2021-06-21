@@ -52,7 +52,7 @@ func NewAddPatchCreated() *AddPatchCreated {
 	return &AddPatchCreated{}
 }
 
-/* AddPatchCreated describes a response with status code 201, with default header values.
+/*AddPatchCreated handles this case with default header values.
 
 The added patch
 */
@@ -63,6 +63,7 @@ type AddPatchCreated struct {
 func (o *AddPatchCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatchCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddPatchCreated) GetPayload() *inventory_models.Patch {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddPatchBadRequest() *AddPatchBadRequest {
 	return &AddPatchBadRequest{}
 }
 
-/* AddPatchBadRequest describes a response with status code 400, with default header values.
+/*AddPatchBadRequest handles this case with default header values.
 
 If the patch is invalid
 */
@@ -95,6 +96,7 @@ type AddPatchBadRequest struct {
 func (o *AddPatchBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatchBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddPatchBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddPatchDefault(code int) *AddPatchDefault {
 	}
 }
 
-/* AddPatchDefault describes a response with status code -1, with default header values.
+/*AddPatchDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddPatchDefault) Code() int {
 func (o *AddPatchDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/patches][%d] addPatch default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddPatchDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

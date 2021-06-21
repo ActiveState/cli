@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddOperatingSystemVersionParams creates a new AddOperatingSystemVersionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddOperatingSystemVersionParams creates a new AddOperatingSystemVersionParams object
+// with the default values initialized.
 func NewAddOperatingSystemVersionParams() *AddOperatingSystemVersionParams {
+	var ()
 	return &AddOperatingSystemVersionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddOperatingSystemVersionParamsWithTimeout creates a new AddOperatingSystemVersionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddOperatingSystemVersionParamsWithTimeout(timeout time.Duration) *AddOperatingSystemVersionParams {
+	var ()
 	return &AddOperatingSystemVersionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddOperatingSystemVersionParamsWithContext creates a new AddOperatingSystemVersionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddOperatingSystemVersionParamsWithContext(ctx context.Context) *AddOperatingSystemVersionParams {
+	var ()
 	return &AddOperatingSystemVersionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddOperatingSystemVersionParamsWithHTTPClient creates a new AddOperatingSystemVersionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddOperatingSystemVersionParamsWithHTTPClient(client *http.Client) *AddOperatingSystemVersionParams {
+	var ()
 	return &AddOperatingSystemVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddOperatingSystemVersionParams contains all the parameters to send to the API endpoint
-   for the add operating system version operation.
-
-   Typically these are written to a http.Request.
+/*AddOperatingSystemVersionParams contains all the parameters to send to the API endpoint
+for the add operating system version operation typically these are written to a http.Request
 */
 type AddOperatingSystemVersionParams struct {
 
-	// OperatingSystemID.
-	//
-	// Format: uuid
+	/*OperatingSystemID*/
 	OperatingSystemID strfmt.UUID
-
-	// OperatingSystemVersion.
+	/*OperatingSystemVersion*/
 	OperatingSystemVersion *inventory_models.OperatingSystemVersionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add operating system version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddOperatingSystemVersionParams) WithDefaults() *AddOperatingSystemVersionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add operating system version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddOperatingSystemVersionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add operating system version params
@@ -156,6 +139,7 @@ func (o *AddOperatingSystemVersionParams) WriteToRequest(r runtime.ClientRequest
 	if err := r.SetPathParam("operating_system_id", o.OperatingSystemID.String()); err != nil {
 		return err
 	}
+
 	if o.OperatingSystemVersion != nil {
 		if err := r.SetBodyParam(o.OperatingSystemVersion); err != nil {
 			return err

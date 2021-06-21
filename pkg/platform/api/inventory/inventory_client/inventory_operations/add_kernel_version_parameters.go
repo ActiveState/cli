@@ -18,75 +18,58 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddKernelVersionParams creates a new AddKernelVersionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddKernelVersionParams creates a new AddKernelVersionParams object
+// with the default values initialized.
 func NewAddKernelVersionParams() *AddKernelVersionParams {
+	var ()
 	return &AddKernelVersionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddKernelVersionParamsWithTimeout creates a new AddKernelVersionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddKernelVersionParamsWithTimeout(timeout time.Duration) *AddKernelVersionParams {
+	var ()
 	return &AddKernelVersionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddKernelVersionParamsWithContext creates a new AddKernelVersionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddKernelVersionParamsWithContext(ctx context.Context) *AddKernelVersionParams {
+	var ()
 	return &AddKernelVersionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddKernelVersionParamsWithHTTPClient creates a new AddKernelVersionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddKernelVersionParamsWithHTTPClient(client *http.Client) *AddKernelVersionParams {
+	var ()
 	return &AddKernelVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddKernelVersionParams contains all the parameters to send to the API endpoint
-   for the add kernel version operation.
-
-   Typically these are written to a http.Request.
+/*AddKernelVersionParams contains all the parameters to send to the API endpoint
+for the add kernel version operation typically these are written to a http.Request
 */
 type AddKernelVersionParams struct {
 
-	// KernelID.
-	//
-	// Format: uuid
+	/*KernelID*/
 	KernelID strfmt.UUID
-
-	// KernelVersion.
+	/*KernelVersion*/
 	KernelVersion *inventory_models.KernelVersionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add kernel version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddKernelVersionParams) WithDefaults() *AddKernelVersionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add kernel version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddKernelVersionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add kernel version params
@@ -156,6 +139,7 @@ func (o *AddKernelVersionParams) WriteToRequest(r runtime.ClientRequest, reg str
 	if err := r.SetPathParam("kernel_id", o.KernelID.String()); err != nil {
 		return err
 	}
+
 	if o.KernelVersion != nil {
 		if err := r.SetBodyParam(o.KernelVersion); err != nil {
 			return err

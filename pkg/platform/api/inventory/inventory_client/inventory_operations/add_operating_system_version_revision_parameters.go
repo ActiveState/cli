@@ -18,80 +18,60 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddOperatingSystemVersionRevisionParams creates a new AddOperatingSystemVersionRevisionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddOperatingSystemVersionRevisionParams creates a new AddOperatingSystemVersionRevisionParams object
+// with the default values initialized.
 func NewAddOperatingSystemVersionRevisionParams() *AddOperatingSystemVersionRevisionParams {
+	var ()
 	return &AddOperatingSystemVersionRevisionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddOperatingSystemVersionRevisionParamsWithTimeout creates a new AddOperatingSystemVersionRevisionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddOperatingSystemVersionRevisionParamsWithTimeout(timeout time.Duration) *AddOperatingSystemVersionRevisionParams {
+	var ()
 	return &AddOperatingSystemVersionRevisionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddOperatingSystemVersionRevisionParamsWithContext creates a new AddOperatingSystemVersionRevisionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddOperatingSystemVersionRevisionParamsWithContext(ctx context.Context) *AddOperatingSystemVersionRevisionParams {
+	var ()
 	return &AddOperatingSystemVersionRevisionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddOperatingSystemVersionRevisionParamsWithHTTPClient creates a new AddOperatingSystemVersionRevisionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddOperatingSystemVersionRevisionParamsWithHTTPClient(client *http.Client) *AddOperatingSystemVersionRevisionParams {
+	var ()
 	return &AddOperatingSystemVersionRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddOperatingSystemVersionRevisionParams contains all the parameters to send to the API endpoint
-   for the add operating system version revision operation.
-
-   Typically these are written to a http.Request.
+/*AddOperatingSystemVersionRevisionParams contains all the parameters to send to the API endpoint
+for the add operating system version revision operation typically these are written to a http.Request
 */
 type AddOperatingSystemVersionRevisionParams struct {
 
-	// OperatingSystemID.
-	//
-	// Format: uuid
+	/*OperatingSystemID*/
 	OperatingSystemID strfmt.UUID
-
-	// OperatingSystemVersionID.
-	//
-	// Format: uuid
+	/*OperatingSystemVersionID*/
 	OperatingSystemVersionID strfmt.UUID
-
-	// OperatingSystemVersionRevision.
-	OperatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider
+	/*OperatingSystemVersionRevision*/
+	OperatingSystemVersionRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add operating system version revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddOperatingSystemVersionRevisionParams) WithDefaults() *AddOperatingSystemVersionRevisionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add operating system version revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddOperatingSystemVersionRevisionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add operating system version revision params
@@ -150,13 +130,13 @@ func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionID(op
 }
 
 // WithOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider) *AddOperatingSystemVersionRevisionParams {
+func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) *AddOperatingSystemVersionRevisionParams {
 	o.SetOperatingSystemVersionRevision(operatingSystemVersionRevision)
 	return o
 }
 
 // SetOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider) {
+func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) {
 	o.OperatingSystemVersionRevision = operatingSystemVersionRevision
 }
 
@@ -177,6 +157,7 @@ func (o *AddOperatingSystemVersionRevisionParams) WriteToRequest(r runtime.Clien
 	if err := r.SetPathParam("operating_system_version_id", o.OperatingSystemVersionID.String()); err != nil {
 		return err
 	}
+
 	if o.OperatingSystemVersionRevision != nil {
 		if err := r.SetBodyParam(o.OperatingSystemVersionRevision); err != nil {
 			return err

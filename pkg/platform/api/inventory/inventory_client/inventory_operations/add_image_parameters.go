@@ -18,70 +18,56 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddImageParams creates a new AddImageParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddImageParams creates a new AddImageParams object
+// with the default values initialized.
 func NewAddImageParams() *AddImageParams {
+	var ()
 	return &AddImageParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddImageParamsWithTimeout creates a new AddImageParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddImageParamsWithTimeout(timeout time.Duration) *AddImageParams {
+	var ()
 	return &AddImageParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddImageParamsWithContext creates a new AddImageParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddImageParamsWithContext(ctx context.Context) *AddImageParams {
+	var ()
 	return &AddImageParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddImageParamsWithHTTPClient creates a new AddImageParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddImageParamsWithHTTPClient(client *http.Client) *AddImageParams {
+	var ()
 	return &AddImageParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddImageParams contains all the parameters to send to the API endpoint
-   for the add image operation.
-
-   Typically these are written to a http.Request.
+/*AddImageParams contains all the parameters to send to the API endpoint
+for the add image operation typically these are written to a http.Request
 */
 type AddImageParams struct {
 
-	// Image.
+	/*Image*/
 	Image *inventory_models.ImageCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add image params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddImageParams) WithDefaults() *AddImageParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add image params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddImageParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add image params
@@ -135,6 +121,7 @@ func (o *AddImageParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
+
 	if o.Image != nil {
 		if err := r.SetBodyParam(o.Image); err != nil {
 			return err

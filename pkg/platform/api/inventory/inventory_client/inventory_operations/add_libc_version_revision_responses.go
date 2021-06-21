@@ -52,7 +52,7 @@ func NewAddLibcVersionRevisionOK() *AddLibcVersionRevisionOK {
 	return &AddLibcVersionRevisionOK{}
 }
 
-/* AddLibcVersionRevisionOK describes a response with status code 200, with default header values.
+/*AddLibcVersionRevisionOK handles this case with default header values.
 
 The updated state of the libc version
 */
@@ -63,6 +63,7 @@ type AddLibcVersionRevisionOK struct {
 func (o *AddLibcVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs/{libc_id}/versions/{libc_version_id}/revisions][%d] addLibcVersionRevisionOK  %+v", 200, o.Payload)
 }
+
 func (o *AddLibcVersionRevisionOK) GetPayload() *inventory_models.LibcVersion {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddLibcVersionRevisionBadRequest() *AddLibcVersionRevisionBadRequest {
 	return &AddLibcVersionRevisionBadRequest{}
 }
 
-/* AddLibcVersionRevisionBadRequest describes a response with status code 400, with default header values.
+/*AddLibcVersionRevisionBadRequest handles this case with default header values.
 
 If the libc version revision is invalid
 */
@@ -95,6 +96,7 @@ type AddLibcVersionRevisionBadRequest struct {
 func (o *AddLibcVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs/{libc_id}/versions/{libc_version_id}/revisions][%d] addLibcVersionRevisionBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddLibcVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddLibcVersionRevisionDefault(code int) *AddLibcVersionRevisionDefault {
 	}
 }
 
-/* AddLibcVersionRevisionDefault describes a response with status code -1, with default header values.
+/*AddLibcVersionRevisionDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddLibcVersionRevisionDefault) Code() int {
 func (o *AddLibcVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/libcs/{libc_id}/versions/{libc_version_id}/revisions][%d] addLibcVersionRevision default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddLibcVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

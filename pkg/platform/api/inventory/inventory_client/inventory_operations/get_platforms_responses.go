@@ -46,7 +46,7 @@ func NewGetPlatformsOK() *GetPlatformsOK {
 	return &GetPlatformsOK{}
 }
 
-/* GetPlatformsOK describes a response with status code 200, with default header values.
+/*GetPlatformsOK handles this case with default header values.
 
 A paginated list of platforms
 */
@@ -57,6 +57,7 @@ type GetPlatformsOK struct {
 func (o *GetPlatformsOK) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatformsOK  %+v", 200, o.Payload)
 }
+
 func (o *GetPlatformsOK) GetPayload() *inventory_models.PlatformPagedList {
 	return o.Payload
 }
@@ -80,7 +81,7 @@ func NewGetPlatformsDefault(code int) *GetPlatformsDefault {
 	}
 }
 
-/* GetPlatformsDefault describes a response with status code -1, with default header values.
+/*GetPlatformsDefault handles this case with default header values.
 
 generic error response
 */
@@ -98,6 +99,7 @@ func (o *GetPlatformsDefault) Code() int {
 func (o *GetPlatformsDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/platforms][%d] getPlatforms default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *GetPlatformsDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

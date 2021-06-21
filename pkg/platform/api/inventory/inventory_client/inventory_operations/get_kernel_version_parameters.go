@@ -17,102 +17,80 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetKernelVersionParams creates a new GetKernelVersionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetKernelVersionParams creates a new GetKernelVersionParams object
+// with the default values initialized.
 func NewGetKernelVersionParams() *GetKernelVersionParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetKernelVersionParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetKernelVersionParamsWithTimeout creates a new GetKernelVersionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetKernelVersionParamsWithTimeout(timeout time.Duration) *GetKernelVersionParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetKernelVersionParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetKernelVersionParamsWithContext creates a new GetKernelVersionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetKernelVersionParamsWithContext(ctx context.Context) *GetKernelVersionParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetKernelVersionParams{
+		AllowUnstable: &allowUnstableDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetKernelVersionParamsWithHTTPClient creates a new GetKernelVersionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetKernelVersionParamsWithHTTPClient(client *http.Client) *GetKernelVersionParams {
+	var (
+		allowUnstableDefault = bool(false)
+	)
 	return &GetKernelVersionParams{
-		HTTPClient: client,
+		AllowUnstable: &allowUnstableDefault,
+		HTTPClient:    client,
 	}
 }
 
-/* GetKernelVersionParams contains all the parameters to send to the API endpoint
-   for the get kernel version operation.
-
-   Typically these are written to a http.Request.
+/*GetKernelVersionParams contains all the parameters to send to the API endpoint
+for the get kernel version operation typically these are written to a http.Request
 */
 type GetKernelVersionParams struct {
 
-	/* AllowUnstable.
+	/*AllowUnstable
+	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 
-	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-
-	// KernelID.
-	//
-	// Format: uuid
+	/*KernelID*/
 	KernelID strfmt.UUID
-
-	// KernelVersionID.
-	//
-	// Format: uuid
+	/*KernelVersionID*/
 	KernelVersionID strfmt.UUID
+	/*StateAt
+	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
-	/* StateAt.
-
-	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
-
-	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get kernel version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetKernelVersionParams) WithDefaults() *GetKernelVersionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get kernel version params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetKernelVersionParams) SetDefaults() {
-	var (
-		allowUnstableDefault = bool(false)
-	)
-
-	val := GetKernelVersionParams{
-		AllowUnstable: &allowUnstableDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get kernel version params
@@ -204,17 +182,16 @@ func (o *GetKernelVersionParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
-
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
-
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	// path param kernel_id
@@ -231,17 +208,16 @@ func (o *GetKernelVersionParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
-
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
-
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

@@ -17,97 +17,84 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetLibcsParams creates a new GetLibcsParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetLibcsParams creates a new GetLibcsParams object
+// with the default values initialized.
 func NewGetLibcsParams() *GetLibcsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetLibcsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetLibcsParamsWithTimeout creates a new GetLibcsParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetLibcsParamsWithTimeout(timeout time.Duration) *GetLibcsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetLibcsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetLibcsParamsWithContext creates a new GetLibcsParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetLibcsParamsWithContext(ctx context.Context) *GetLibcsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetLibcsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetLibcsParamsWithHTTPClient creates a new GetLibcsParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetLibcsParamsWithHTTPClient(client *http.Client) *GetLibcsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetLibcsParams{
+		Limit:      &limitDefault,
+		Page:       &pageDefault,
 		HTTPClient: client,
 	}
 }
 
-/* GetLibcsParams contains all the parameters to send to the API endpoint
-   for the get libcs operation.
-
-   Typically these are written to a http.Request.
+/*GetLibcsParams contains all the parameters to send to the API endpoint
+for the get libcs operation typically these are written to a http.Request
 */
 type GetLibcsParams struct {
 
-	/* Limit.
+	/*Limit
+	  The maximum number of items returned per page
 
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get libcs params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetLibcsParams) WithDefaults() *GetLibcsParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get libcs params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetLibcsParams) SetDefaults() {
-	var (
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetLibcsParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get libcs params
@@ -177,34 +164,32 @@ func (o *GetLibcsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

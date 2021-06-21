@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -90,29 +88,6 @@ func (m *Image) Validate(formats strfmt.Registry) error {
 	}
 	// validation for a type composition with RevisionedResource
 	if err := m.RevisionedResource.Validate(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-// ContextValidate validate this image based on the context it is used
-func (m *Image) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	// validation for a type composition with ImageAllOf0
-	if err := m.ImageAllOf0.ContextValidate(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-	// validation for a type composition with ImageCore
-	if err := m.ImageCore.ContextValidate(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-	// validation for a type composition with RevisionedResource
-	if err := m.RevisionedResource.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

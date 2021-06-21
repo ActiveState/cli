@@ -6,7 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -126,6 +125,7 @@ func (m *PlatformCreate) validateCPUExtensions(formats strfmt.Registry) error {
 }
 
 func (m *PlatformCreate) validateEndOfSupportDate(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.EndOfSupportDate) { // not required
 		return nil
 	}
@@ -138,6 +138,7 @@ func (m *PlatformCreate) validateEndOfSupportDate(formats strfmt.Registry) error
 }
 
 func (m *PlatformCreate) validateGpuArchitectureID(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.GpuArchitectureID) { // not required
 		return nil
 	}
@@ -163,6 +164,7 @@ func (m *PlatformCreate) validateKernelVersionID(formats strfmt.Registry) error 
 }
 
 func (m *PlatformCreate) validateLibcVersionID(formats strfmt.Registry) error {
+
 	if swag.IsZero(m.LibcVersionID) { // not required
 		return nil
 	}
@@ -184,11 +186,6 @@ func (m *PlatformCreate) validateOperatingSystemVersionID(formats strfmt.Registr
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this platform create based on context it is used
-func (m *PlatformCreate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

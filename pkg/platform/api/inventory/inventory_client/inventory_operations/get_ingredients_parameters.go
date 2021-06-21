@@ -17,97 +17,84 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetIngredientsParams creates a new GetIngredientsParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewGetIngredientsParams creates a new GetIngredientsParams object
+// with the default values initialized.
 func NewGetIngredientsParams() *GetIngredientsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetIngredientsParamsWithTimeout creates a new GetIngredientsParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewGetIngredientsParamsWithTimeout(timeout time.Duration) *GetIngredientsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		timeout: timeout,
 	}
 }
 
 // NewGetIngredientsParamsWithContext creates a new GetIngredientsParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewGetIngredientsParamsWithContext(ctx context.Context) *GetIngredientsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientsParams{
+		Limit: &limitDefault,
+		Page:  &pageDefault,
+
 		Context: ctx,
 	}
 }
 
 // NewGetIngredientsParamsWithHTTPClient creates a new GetIngredientsParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetIngredientsParamsWithHTTPClient(client *http.Client) *GetIngredientsParams {
+	var (
+		limitDefault = int64(50)
+		pageDefault  = int64(1)
+	)
 	return &GetIngredientsParams{
+		Limit:      &limitDefault,
+		Page:       &pageDefault,
 		HTTPClient: client,
 	}
 }
 
-/* GetIngredientsParams contains all the parameters to send to the API endpoint
-   for the get ingredients operation.
-
-   Typically these are written to a http.Request.
+/*GetIngredientsParams contains all the parameters to send to the API endpoint
+for the get ingredients operation typically these are written to a http.Request
 */
 type GetIngredientsParams struct {
 
-	/* Limit.
+	/*Limit
+	  The maximum number of items returned per page
 
-	   The maximum number of items returned per page
-
-	   Default: 50
 	*/
 	Limit *int64
+	/*Page
+	  The page number returned
 
-	/* Page.
-
-	   The page number returned
-
-	   Default: 1
 	*/
 	Page *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the get ingredients params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetIngredientsParams) WithDefaults() *GetIngredientsParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the get ingredients params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *GetIngredientsParams) SetDefaults() {
-	var (
-		limitDefault = int64(50)
-
-		pageDefault = int64(1)
-	)
-
-	val := GetIngredientsParams{
-		Limit: &limitDefault,
-		Page:  &pageDefault,
-	}
-
-	val.timeout = o.timeout
-	val.Context = o.Context
-	val.HTTPClient = o.HTTPClient
-	*o = val
 }
 
 // WithTimeout adds the timeout to the get ingredients params
@@ -177,34 +164,32 @@ func (o *GetIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// query param limit
 		var qrLimit int64
-
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
-
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
-
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
-
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
+
 	}
 
 	if len(res) > 0 {

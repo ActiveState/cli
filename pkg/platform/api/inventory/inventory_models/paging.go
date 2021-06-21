@@ -6,8 +6,6 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -83,7 +81,7 @@ func (m *Paging) validateAvailableCount(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("available_count", "body", *m.AvailableCount, 0, false); err != nil {
+	if err := validate.MinimumInt("available_count", "body", int64(*m.AvailableCount), 0, false); err != nil {
 		return err
 	}
 
@@ -96,7 +94,7 @@ func (m *Paging) validateItemCount(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("item_count", "body", *m.ItemCount, 0, false); err != nil {
+	if err := validate.MinimumInt("item_count", "body", int64(*m.ItemCount), 0, false); err != nil {
 		return err
 	}
 
@@ -109,7 +107,7 @@ func (m *Paging) validateLimit(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("limit", "body", *m.Limit, 1, false); err != nil {
+	if err := validate.MinimumInt("limit", "body", int64(*m.Limit), 1, false); err != nil {
 		return err
 	}
 
@@ -122,7 +120,7 @@ func (m *Paging) validatePage(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("page", "body", *m.Page, 1, false); err != nil {
+	if err := validate.MinimumInt("page", "body", int64(*m.Page), 1, false); err != nil {
 		return err
 	}
 
@@ -135,15 +133,10 @@ func (m *Paging) validatePageCount(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("page_count", "body", *m.PageCount, 1, false); err != nil {
+	if err := validate.MinimumInt("page_count", "body", int64(*m.PageCount), 1, false); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-// ContextValidate validates this paging based on context it is used
-func (m *Paging) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

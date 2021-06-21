@@ -52,7 +52,7 @@ func NewAddIngredientCreated() *AddIngredientCreated {
 	return &AddIngredientCreated{}
 }
 
-/* AddIngredientCreated describes a response with status code 201, with default header values.
+/*AddIngredientCreated handles this case with default header values.
 
 The added ingredient
 */
@@ -63,6 +63,7 @@ type AddIngredientCreated struct {
 func (o *AddIngredientCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredientCreated  %+v", 201, o.Payload)
 }
+
 func (o *AddIngredientCreated) GetPayload() *inventory_models.Ingredient {
 	return o.Payload
 }
@@ -84,7 +85,7 @@ func NewAddIngredientBadRequest() *AddIngredientBadRequest {
 	return &AddIngredientBadRequest{}
 }
 
-/* AddIngredientBadRequest describes a response with status code 400, with default header values.
+/*AddIngredientBadRequest handles this case with default header values.
 
 If the ingredient is invalid
 */
@@ -95,6 +96,7 @@ type AddIngredientBadRequest struct {
 func (o *AddIngredientBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredientBadRequest  %+v", 400, o.Payload)
 }
+
 func (o *AddIngredientBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -118,7 +120,7 @@ func NewAddIngredientDefault(code int) *AddIngredientDefault {
 	}
 }
 
-/* AddIngredientDefault describes a response with status code -1, with default header values.
+/*AddIngredientDefault handles this case with default header values.
 
 If there is an error processing the request
 */
@@ -136,6 +138,7 @@ func (o *AddIngredientDefault) Code() int {
 func (o *AddIngredientDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/ingredients][%d] addIngredient default  %+v", o._statusCode, o.Payload)
 }
+
 func (o *AddIngredientDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

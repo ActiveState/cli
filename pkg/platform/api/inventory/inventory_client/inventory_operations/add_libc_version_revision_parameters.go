@@ -18,80 +18,60 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddLibcVersionRevisionParams creates a new AddLibcVersionRevisionParams object,
-// with the default timeout for this client.
-//
-// Default values are not hydrated, since defaults are normally applied by the API server side.
-//
-// To enforce default values in parameter, use SetDefaults or WithDefaults.
+// NewAddLibcVersionRevisionParams creates a new AddLibcVersionRevisionParams object
+// with the default values initialized.
 func NewAddLibcVersionRevisionParams() *AddLibcVersionRevisionParams {
+	var ()
 	return &AddLibcVersionRevisionParams{
+
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddLibcVersionRevisionParamsWithTimeout creates a new AddLibcVersionRevisionParams object
-// with the ability to set a timeout on a request.
+// with the default values initialized, and the ability to set a timeout on a request
 func NewAddLibcVersionRevisionParamsWithTimeout(timeout time.Duration) *AddLibcVersionRevisionParams {
+	var ()
 	return &AddLibcVersionRevisionParams{
+
 		timeout: timeout,
 	}
 }
 
 // NewAddLibcVersionRevisionParamsWithContext creates a new AddLibcVersionRevisionParams object
-// with the ability to set a context for a request.
+// with the default values initialized, and the ability to set a context for a request
 func NewAddLibcVersionRevisionParamsWithContext(ctx context.Context) *AddLibcVersionRevisionParams {
+	var ()
 	return &AddLibcVersionRevisionParams{
+
 		Context: ctx,
 	}
 }
 
 // NewAddLibcVersionRevisionParamsWithHTTPClient creates a new AddLibcVersionRevisionParams object
-// with the ability to set a custom HTTPClient for a request.
+// with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewAddLibcVersionRevisionParamsWithHTTPClient(client *http.Client) *AddLibcVersionRevisionParams {
+	var ()
 	return &AddLibcVersionRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/* AddLibcVersionRevisionParams contains all the parameters to send to the API endpoint
-   for the add libc version revision operation.
-
-   Typically these are written to a http.Request.
+/*AddLibcVersionRevisionParams contains all the parameters to send to the API endpoint
+for the add libc version revision operation typically these are written to a http.Request
 */
 type AddLibcVersionRevisionParams struct {
 
-	// LibcID.
-	//
-	// Format: uuid
+	/*LibcID*/
 	LibcID strfmt.UUID
-
-	// LibcVersionID.
-	//
-	// Format: uuid
+	/*LibcVersionID*/
 	LibcVersionID strfmt.UUID
-
-	// LibcVersionRevision.
-	LibcVersionRevision *inventory_models.RevisionedFeatureProvider
+	/*LibcVersionRevision*/
+	LibcVersionRevision *inventory_models.Revision
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
-}
-
-// WithDefaults hydrates default values in the add libc version revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddLibcVersionRevisionParams) WithDefaults() *AddLibcVersionRevisionParams {
-	o.SetDefaults()
-	return o
-}
-
-// SetDefaults hydrates default values in the add libc version revision params (not the query body).
-//
-// All values with no default are reset to their zero value.
-func (o *AddLibcVersionRevisionParams) SetDefaults() {
-	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add libc version revision params
@@ -150,13 +130,13 @@ func (o *AddLibcVersionRevisionParams) SetLibcVersionID(libcVersionID strfmt.UUI
 }
 
 // WithLibcVersionRevision adds the libcVersionRevision to the add libc version revision params
-func (o *AddLibcVersionRevisionParams) WithLibcVersionRevision(libcVersionRevision *inventory_models.RevisionedFeatureProvider) *AddLibcVersionRevisionParams {
+func (o *AddLibcVersionRevisionParams) WithLibcVersionRevision(libcVersionRevision *inventory_models.Revision) *AddLibcVersionRevisionParams {
 	o.SetLibcVersionRevision(libcVersionRevision)
 	return o
 }
 
 // SetLibcVersionRevision adds the libcVersionRevision to the add libc version revision params
-func (o *AddLibcVersionRevisionParams) SetLibcVersionRevision(libcVersionRevision *inventory_models.RevisionedFeatureProvider) {
+func (o *AddLibcVersionRevisionParams) SetLibcVersionRevision(libcVersionRevision *inventory_models.Revision) {
 	o.LibcVersionRevision = libcVersionRevision
 }
 
@@ -177,6 +157,7 @@ func (o *AddLibcVersionRevisionParams) WriteToRequest(r runtime.ClientRequest, r
 	if err := r.SetPathParam("libc_version_id", o.LibcVersionID.String()); err != nil {
 		return err
 	}
+
 	if o.LibcVersionRevision != nil {
 		if err := r.SetBodyParam(o.LibcVersionRevision); err != nil {
 			return err
