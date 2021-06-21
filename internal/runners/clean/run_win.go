@@ -14,12 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
@@ -33,9 +30,9 @@ func (u *Uninstall) runUninstall() error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	err = removeInstall(u.cfg, logFile.Name(), u.installDir, u.cfg.ConfigPath())
+	err = removeInstall(u.cfg, logFile.Name(), u.cfg.ConfigPath())
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
 	err = removeCache(u.cfg.CachePath())
@@ -66,28 +63,9 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(cfg configurable, logFile, installPath, configPath string) error {
-	// On Windows we need to halt the state tray and the state service before we can remove them
-	svcInfo := appinfo.SvcApp(installPath)
-	trayInfo := appinfo.TrayApp(installPath)
-
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installation.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
-	}
-
-	// Stop state-svc before accessing its files
-	if fileutils.FileExists(svcInfo.Exec()) {
-		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
-		if err != nil {
-			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
-		}
-		if exitCode != 0 {
-			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
-		}
-	}
-
+func removeInstall(cfg configurable, logFile, configPath string) error {
+	svcInfo := appinfo.SvcApp()
+	trayInfo := appinfo.TrayApp()
 	var aggErr error
 	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
 		err := os.Remove(info.Exec())
@@ -103,7 +81,7 @@ func removeInstall(cfg configurable, logFile, installPath, configPath string) er
 		return aggErr
 	}
 
-	return removePaths(logFile, filepath.Join(installPath, "state"+osutils.ExeExt), configPath)
+	return removePaths(logFile, appinfo.StateApp().Exec(), configPath)
 }
 
 func removePaths(logFile string, paths ...string) error {

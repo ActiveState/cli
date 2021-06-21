@@ -1293,6 +1293,8 @@ config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
+flag_state_clean_ignore_errors_description:
+  other: Does not stop when an error occurs, removing as much as possible
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
 arg_state_clean_cache_project_description:
