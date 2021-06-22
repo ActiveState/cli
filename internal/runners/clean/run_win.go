@@ -30,7 +30,7 @@ func (u *Uninstall) runUninstall() error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	err = removeInstall(u.cfg, logFile.Name(), u.cfg.ConfigPath())
+	err = removeInstall(logFile.Name(), u.cfg.ConfigPath())
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -63,7 +63,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(cfg configurable, logFile, configPath string) error {
+func removeInstall(logFile, configPath string) error {
 	svcInfo := appinfo.SvcApp()
 	trayInfo := appinfo.TrayApp()
 	var aggErr error
