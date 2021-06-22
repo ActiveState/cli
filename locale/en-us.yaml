@@ -1600,8 +1600,6 @@ prepare_instructions_windows:
   other: |
     Could not update user environment.
     To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
-prompt_headless_anonymous:
-  other: You're about to add packages as an anonymous user, you might want to authenticate first using [ACTIONABLE]`state auth`[/RESET] if you already have an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:

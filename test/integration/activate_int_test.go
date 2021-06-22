@@ -366,8 +366,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "dateparser@0.7.2")
-	cp.ExpectLongString("Do you want to continue as an anonymous user?")
-	cp.Send("Y")
 	cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 	cp.Wait()
 

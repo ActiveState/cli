@@ -344,8 +344,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
 		cp.Expect("Could not match json")
 		cp.Expect("json2")
 		cp.ExpectLongString("to see more results run `state search json`")
@@ -354,8 +352,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
 		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
 		cp.Wait()
 	})

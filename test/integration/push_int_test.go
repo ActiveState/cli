@@ -81,9 +81,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.Send("y")
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -95,8 +92,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, "/commit/") {
-		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
+	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
+		suite.FailNow("project field should include project (not headless): " + pjfile.Project)
 	}
 
 	ts.LoginAsPersistentUser()
@@ -104,11 +101,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
-	pjfile, err = projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project again: " + pjfile.Project)
-	}
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
@@ -228,10 +220,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs(
 		"install", suite.extraPackage),
 		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.Send("y")
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -243,12 +232,12 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	prj, err := project.FromPath(filepath.Join(wd, constants.ConfigFileName))
 	suite.Require().NoError(err, "Could not parse project file")
-	suite.Assert().True(prj.IsHeadless(), "project should be headless: URL is %s", prj.URL())
+	suite.Assert().False(prj.IsHeadless(), "project should NOT be headless: URL is %s", prj.URL())
 
 	ts.LoginAsPersistentUser()
 
 	// convert to real project
-	cp = ts.SpawnWithOpts(e2e.WithArgs("init", namespace), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("init", namespace, "python3"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString("has been successfully initialized")
 	cp.ExpectExitCode(0)
 
