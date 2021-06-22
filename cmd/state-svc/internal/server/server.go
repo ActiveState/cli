@@ -25,20 +25,23 @@ import (
 
 type Server struct {
 	cfg         *config.Instance
-	shutdown    chan<- struct{}
+	ctx         context.Context
+	done        chan struct{}
+	cancel      context.CancelFunc
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
 }
 
-func New(cfg *config.Instance, shutdown chan<- struct{}) (*Server, error) {
+func New(cfg *config.Instance, parentCtx context.Context) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{cfg: cfg, shutdown: shutdown}
+	ctx, cancel := context.WithCancel(parentCtx)
+	s := &Server{cfg: cfg, ctx: ctx, cancel: cancel, done: make(chan struct{})}
 	s.graphServer = newGraphServer(cfg)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
@@ -61,11 +64,27 @@ func (s *Server) Port() int {
 	return s.port
 }
 
+func (s *Server) Wait() {
+	<-s.done
+}
+
 func (s *Server) Start() error {
+	go func() {
+		defer close(s.done)
+
+		<-s.ctx.Done()
+		if err := s.shutdown(); err != nil {
+			logging.Error("Failed to shut down server: %s\n", errs.JoinMessage(err))
+		}
+	}()
 	return s.httpServer.Start(s.listener.Addr().String())
 }
 
-func (s *Server) Shutdown() error {
+func (s *Server) Close() {
+	s.cancel()
+}
+
+func (s *Server) shutdown() error {
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
