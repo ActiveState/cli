@@ -20,27 +20,24 @@ func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) erro
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := installation.StopTrayApp(cfg); err != nil {
-		if ignoreErrors {
+		if !ignoreErrors {
 			return errs.AddTips(
 				locale.WrapError(err, "clean_stop_tray_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", trayInfo.Name()),
 				cleanForceTip)
-		} else {
-			out.Print(locale.Tl("clean_stop_tray_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", trayInfo.Name()))
 		}
+		out.Print(locale.Tl("clean_stop_tray_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", trayInfo.Name()))
 	}
 
 	// Stop state-svc before accessing its files
 	if fileutils.FileExists(svcInfo.Exec()) {
 		_, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
 		if err != nil {
-			if ignoreErrors {
+			if !ignoreErrors {
 				return errs.AddTips(
 					locale.WrapError(err, "clean_stop_svc_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", svcInfo.Name()),
 					cleanForceTip)
-
-			} else {
-				out.Print(locale.Tl("clean_stop_svc_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", svcInfo.Name()))
 			}
+			out.Print(locale.Tl("clean_stop_svc_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", svcInfo.Name()))
 		}
 	}
 	return nil
