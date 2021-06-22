@@ -181,6 +181,11 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
 		}
+
+		r.out.Notice(locale.Tl(
+			"global_default_modify_note",
+			"You can switch your default project at any time by passing the `[ACTIONABLE]--default[/RESET]` flag to `[ACTIONABLE]state activate[/RESET]`.",
+		))
 	}
 
 	if params.Command != "" {
