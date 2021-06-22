@@ -56,7 +56,6 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	return nil
 }
 
-
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
 func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, projectPath string) error {
 	logging.Debug("Setting up globaldefault")
@@ -79,4 +78,24 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	return nil
+}
+
+// SetAskedOnce tracks whether it has been called before using the
+// configuration type. A response of true indicates that the config has been
+// updated. A response of false indicates that the config has not been updated.
+// If the configuration "set" call fails, this functions always returns true.
+func SetAskedOnce(cfg DefaultConfigurer) bool {
+	askedKey := "default_project_asked"
+
+	asked := cfg.GetBool(askedKey)
+	if asked {
+		logging.Debug("globaldefault: already asked")
+		return false
+	}
+
+	logging.Debug("globaldefault: setting asked")
+	if err := cfg.Set(askedKey, true); err != nil {
+		logging.Errorf("Failed to set %q: %v", askedKey, err)
+	}
+	return true
 }
