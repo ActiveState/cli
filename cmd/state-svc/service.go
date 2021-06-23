@@ -1,9 +1,10 @@
 package main
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
@@ -13,20 +14,20 @@ import (
 )
 
 type service struct {
-	cfg    *config.Instance
-	ctx    context.Context
-	server *server.Server
+	cfg      *config.Instance
+	shutdown chan<- struct{}
+	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, ctx context.Context) *service {
-	return &service{cfg: cfg, ctx: ctx}
+func NewService(cfg *config.Instance, shutdown chan<- struct{}) *service {
+	return &service{cfg: cfg, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg, s.ctx)
+	s.server, err = server.New(s.cfg, s.shutdown)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -47,11 +48,14 @@ func (s *service) Start() error {
 	return nil
 }
 
-func (s *service) Wait() error {
+func (s *service) Stop() error {
 	if s.server == nil {
-		return errs.New("Can't wait for service as it was never started")
+		return errs.New("Can't stop service as it was never started")
 	}
 
-	s.server.Wait()
+	if err := s.server.Shutdown(); err != nil {
+		logging.Error("Closing server failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Closing server failed: %v\n", err)
+	}
 	return nil
 }

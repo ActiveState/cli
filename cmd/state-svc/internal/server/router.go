@@ -19,7 +19,7 @@ func (s *Server) setupRouting() {
 	})
 
 	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
-		s.Close()
+		s.shutdown <- struct{}{}
 		return nil
 	})
 }
