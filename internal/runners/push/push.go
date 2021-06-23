@@ -62,26 +62,16 @@ func (r *Push) Run(params PushParams) error {
 		)
 	}
 
-	owner := r.project.Owner()
-	name := r.project.Name()
-	isHeadless := r.project.IsHeadless()
-	if isHeadless {
-		namespace := params.Namespace
-		if !namespace.IsValid() {
-			var err error
-			namespace, err = r.getNamespace()
-			if err != nil {
-				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
-			}
-		}
-		owner = namespace.Owner
-		name = namespace.Project
-		isHeadless = false
-	} else {
-		if params.Namespace.IsValid() {
-			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
+	namespace := params.Namespace
+	if !namespace.IsValid() {
+		var err error
+		namespace, err = r.getNamespace()
+		if err != nil {
+			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 		}
 	}
+	owner := namespace.Owner
+	name := namespace.Project
 
 	// Get the project remotely if it already exists
 	pjm, err := model.FetchProjectByName(owner, name)
