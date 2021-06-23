@@ -176,7 +176,10 @@ func (r *Push) Run(params PushParams) error {
 }
 
 func (r *Push) getNamespace() (*project.Namespaced, error) {
-	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
+	if !r.project.IsHeadless() {
+		return r.project.Namespace(), nil
+	}
+	namespace := projectfile.GetCachedProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
 		owner := authentication.Get().WhoAmI()
 		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
