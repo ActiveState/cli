@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -97,44 +97,43 @@ func run() error {
 func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
-	// Handle sigterm
-	sig := make(chan os.Signal, 1)
-	shutdown := make(chan struct{})
-
+	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
+	ctx, shutdown := context.WithCancel(context.Background())
 	p := NewService(cfg, shutdown)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	// Handle sigterm
+	sig := make(chan os.Signal, 1)
 	go func() {
-		defer wg.Done()
 		defer close(sig)
-		select {
-		case oscall, ok := <-sig:
-			if !ok {
-				return
-			}
-			logging.Debug("system call:%+v", oscall)
-		case <-shutdown:
+		oscall, ok := <-sig
+		if !ok {
+			return
 		}
-		if err := p.Stop(); err != nil {
-			logging.Error("Stopping server failed: %v", errs.Join(err, ": "))
-		}
+		logging.Debug("system call:%+v", oscall)
+		// issue a service shutdown on interrupt
+		shutdown()
 	}()
-
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
 
-	// Note: p.Start() returns before the server is completely shut down. Hence we need to wait for the shutdown process to complete:
-	defer func() {
-		signal.Stop(sig)
-		close(shutdown)
-		wg.Wait()
+	serverErr := make(chan error)
+	go func() {
+		err := p.Start()
+		if err != nil {
+			err = errs.Wrap(err, "Could not start service")
+		}
+
+		serverErr <- err
 	}()
 
-	if err := p.Start(); err != nil {
-		return errs.Wrap(err, "Could not start service")
+	// cancellation of context issues server shutdown
+	<-ctx.Done()
+	if err := p.Stop(); err != nil {
+		return errs.Wrap(err, "Failed to stop service")
 	}
 
-	return nil
+	err := <-serverErr
+	return err
 }
 
 func runStart(cfg *config.Instance) error {

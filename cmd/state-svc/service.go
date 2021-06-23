@@ -1,8 +1,8 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -11,15 +11,16 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/spf13/cast"
 )
 
 type service struct {
 	cfg      *config.Instance
-	shutdown chan<- struct{}
+	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, shutdown chan<- struct{}) *service {
+func NewService(cfg *config.Instance, shutdown context.CancelFunc) *service {
 	return &service{cfg: cfg, shutdown: shutdown}
 }
 
@@ -54,8 +55,19 @@ func (s *service) Stop() error {
 	}
 
 	if err := s.server.Shutdown(); err != nil {
-		logging.Error("Closing server failed: %v", err)
-		fmt.Fprintf(os.Stderr, "Closing server failed: %v\n", err)
+		return errs.Wrap(err, "Failed to stop server")
 	}
+
+	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
+		setPid := cast.ToInt(setPidI)
+		if setPid != os.Getpid() {
+			return nil, errs.New("PID in configuration file does not match PID of server shutting down")
+		}
+		return "", nil
+	})
+	if err != nil {
+		return errs.Wrap(err, "Could not unset State Service PID in configuration file")
+	}
+
 	return nil
 }

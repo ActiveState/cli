@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"net"
-	"os"
 	"strconv"
 	"time"
 
@@ -13,32 +12,29 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/spf13/cast"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Server struct {
-	cfg         *config.Instance
-	shutdown    chan<- struct{}
+	shutdown    context.CancelFunc
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
 }
 
-func New(cfg *config.Instance, shutdown chan<- struct{}) (*Server, error) {
+func New(cfg *config.Instance, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{cfg: cfg, shutdown: shutdown}
+	s := &Server{shutdown: shutdown}
 	s.graphServer = newGraphServer(cfg)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
@@ -73,16 +69,6 @@ func (s *Server) Shutdown() error {
 		return errs.Wrap(err, "Could not close http server")
 	}
 
-	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
-		setPid := cast.ToInt(setPidI)
-		if setPid != os.Getpid() {
-			return nil, errs.New("PID in configuration file does not match PID of server shutting down")
-		}
-		return "", nil
-	})
-	if err != nil {
-		return errs.Wrap(err, "Could not unset State Service PID in configuration file.")
-	}
 	return nil
 }
 
