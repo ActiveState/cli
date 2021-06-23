@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/sliceutils"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
@@ -247,66 +246,6 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	}
 
 	return res.Payload, nil
-}
-
-func DiffCommits(commit1, commit2 strfmt.UUID) ([]*mono_models.CommitChangeEditable, error) {
-	cp1, _, err := FetchCheckpointForCommit(commit1)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit1))
-	}
-
-	cp2, _, err := FetchCheckpointForCommit(commit2)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not grab commit: %s", string(commit2))
-	}
-
-	return DiffCheckpoints(cp1, cp2), nil
-}
-
-func DiffCheckpoints(cp1, cp2 []*gqlModel.Requirement) []*mono_models.CommitChangeEditable {
-	var computedChanges []*mono_models.CommitChangeEditable
-	for _, change2 := range cp2 {
-		change1 := checkpointFind(cp1, change2.Namespace, change2.Requirement)
-		if change1 != nil && change1.VersionConstraints == nil && change2.VersionConstraints == nil {
-			continue // addresses nil case
-		}
-		if change1 != nil && change1.VersionConstraints != nil && change2.VersionConstraints != nil &&
-			sliceutils.ElementsMatchImplicit(change1.VersionConstraints, change2.VersionConstraints) {
-			continue // no change required
-		}
-		computedChange := &mono_models.CommitChangeEditable{
-			Namespace:          change2.Namespace,
-			Requirement:        change2.Requirement,
-			VersionConstraints: change2.VersionConstraints,
-		}
-		if change1 == nil {
-			computedChange.Operation = mono_models.CommitChangeOperationAdded
-		} else {
-			computedChange.Operation = mono_models.CommitChangeOperationUpdated
-		}
-		computedChanges = append(computedChanges, computedChange)
-	}
-	for _, change1 := range cp1 {
-		if checkpointFind(cp2, change1.Namespace, change1.Requirement) != nil {
-			continue
-		}
-		computedChanges = append(computedChanges, &mono_models.CommitChangeEditable{
-			Namespace:          change1.Namespace,
-			Requirement:        change1.Requirement,
-			VersionConstraints: change1.VersionConstraints,
-			Operation:          mono_models.CommitChangeOperationRemoved,
-		})
-	}
-	return computedChanges
-}
-
-func checkpointFind(cp []*gqlModel.Requirement, namespace, requirement string) *gqlModel.Requirement {
-	for _, c := range cp {
-		if c.Namespace == namespace && c.Requirement == requirement {
-			return c
-		}
-	}
-	return nil
 }
 
 // CommitsBehind compares the provided commit id with the latest commit
