@@ -45,27 +45,11 @@ func TestExecutor(t *testing.T) {
 	}
 
 	t.Run("Cleanup old executors", func(t *testing.T) {
-		err = fw.Cleanup([]string{exes[1]})
+		err = fw.Cleanup()
 		require.NoError(t, err, errs.Join(err, ": "))
 
 		files := fileutils.ListDir(fw.BinPath(), false)
-		require.Len(t, files, 1, "Cleanup should only keep one exe")
-		require.Equal(t, filepath.Base(NameForExe(exes[1])), filepath.Base(files[0]), "Cleanup should leave the executor we requested")
-	})
-
-	t.Run("Update doesn't needlessly write", func(t *testing.T) {
-		// Verify that another update doesn't needlessly write the same executor again
-		files := fileutils.ListDir(fw.BinPath(), false)
-		modtime, err := fileutils.ModTime(files[0])
-		require.NoError(t, err, errs.Join(err, ": "))
-
-		err = fw.Update([]string{exes[1]})
-		require.NoError(t, err, errs.Join(err, ": "))
-
-		newModtime, err := fileutils.ModTime(files[0])
-		require.NoError(t, err, errs.Join(err, ": "))
-
-		assert.Equal(t, modtime, newModtime, "Exe should not have been updated as the old value is still valid")
+		require.Len(t, files, 0, "Cleanup should remove all exes")
 	})
 }
 
