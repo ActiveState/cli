@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -24,6 +25,7 @@ type Run struct {
 	proj     *project.Project
 	subshell subshell.SubShell
 	cfg      *config.Instance
+	svcMgr   *svcmanager.Manager
 }
 
 type primeable interface {
@@ -32,6 +34,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Subsheller
 	primer.Configurer
+	primer.Svcer
 }
 
 // New constructs a new instance of Run.
@@ -42,18 +45,19 @@ func New(prime primeable) *Run {
 		prime.Project(),
 		prime.Subshell(),
 		prime.Config(),
+		prime.SvcManager(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.auth, r.out, r.subshell, r.proj, r.cfg, name, args)
+	return run(r.auth, r.out, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
 }
 
-func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, name string, args []string) error {
+func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
-	checker.RunUpdateNotifier(cfg, out)
+	checker.RunUpdateNotifier(svcMgr, cfg, out)
 
 	if proj == nil {
 		return locale.NewInputError("err_no_project")

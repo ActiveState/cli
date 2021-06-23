@@ -4,7 +4,6 @@ package camel
 
 import (
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 
@@ -53,7 +52,7 @@ func (m *MetaData) Prepare(installRoot string) error {
 	}
 
 	if fileutils.DirExists(sitePackages) {
-		m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
+		m.PathListEnv["PYTHONPATH"] = sitePackages
 	}
 
 	if m.TargetedRelocations == nil {

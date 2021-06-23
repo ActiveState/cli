@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
@@ -44,7 +45,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 
@@ -117,7 +118,12 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg, err := config.Get()
+	configGetter := config.GetSafer
+	if funk.Contains(args, "clean") && funk.Contains(args, "config") {
+		configGetter = config.Get
+	}
+
+	cfg, err := configGetter()
 	if err != nil {
 		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
@@ -183,7 +189,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

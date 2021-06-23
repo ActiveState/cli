@@ -25,7 +25,7 @@ func Terminal(command string) error {
 		shell = "bash"
 	}
 
-	command = fmt.Sprintf("%s;%s", command, shell)
+	command = fmt.Sprintf("set +e;%s;%s", command, shell)
 	cmd := exec.Command("x-terminal-emulator", "-e", shell, "-c", command)
 	if err := cmd.Run(); err != nil {
 		return locale.WrapError(err, "err_open_prompt", "Could not open prompt")

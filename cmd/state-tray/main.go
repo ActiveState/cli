@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	_ "embed"
+
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -18,19 +20,19 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
 	"github.com/shirou/gopsutil/process"
 )
 
-const (
-	assetsPath = "../../assets"
-	iconFile   = "icon.ico"
-)
+//go:embed icons/icon.ico
+var iconFile []byte
+
+//go:embed icons/icon-update.ico
+var iconUpdateFile []byte
 
 func main() {
 	verbose := os.Getenv("VERBOSE") != ""
@@ -44,9 +46,10 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
+		logging.Debug("onReady is done with exit code %d", exitCode)
 		events.WaitForEvents(1*time.Second, rollbar.Close)
 		os.Exit(exitCode)
 	}()
@@ -78,15 +81,14 @@ func run() error {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
-	box := packr.NewBox(assetsPath)
-	systray.SetIcon(box.Bytes(iconFile))
+	systray.SetIcon(iconFile)
 
 	svcm := svcmanager.New(cfg)
-	if err := svcm.StartAndWait(); err != nil {
+	if err := svcm.Start(); err != nil {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), cfg)
+	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
 	if err != nil {
 		return errs.Wrap(err, "Could not create new service model")
 	}
@@ -97,12 +99,13 @@ func run() error {
 		locale.Tl("tray_update_title", "Update Available"),
 		locale.Tl("tray_update_tooltip", "Update your ActiveState Desktop installation"),
 	)
+	logging.Debug("hiding systray menu")
 	mUpdate.Hide()
 
 	updNotice := updateNotice{
-		box:  box,
 		item: mUpdate,
 	}
+
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
 	defer closeUpdateSupervision()
 
@@ -119,6 +122,10 @@ func run() error {
 	)
 
 	mPlatform := systray.AddMenuItem(locale.Tl("tray_platform_title", "ActiveState Platform"), "")
+	mDashboard := mPlatform.AddSubMenuItem(
+		locale.Tl("tray_dashboard_title", "Dashboard"),
+		locale.Tl("tray_dashboard_tooltip", "Open ActiveState Platform dashboard"),
+	)
 	mLearn := mPlatform.AddSubMenuItem(
 		locale.Tl("tray_blog_title", "Blog"),
 		locale.Tl("tray_blog_tooltip", "Open ActiveState blog"),
@@ -127,14 +134,10 @@ func run() error {
 		locale.Tl("tray_support_title", "Support"),
 		locale.Tl("tray_support_tooltip", "Open support page"),
 	)
-	mAccount := mPlatform.AddSubMenuItem(
-		locale.Tl("tray_account_title", "Account"),
-		locale.Tl("tray_account_tooltip", "Open your account page"),
-	)
+	systray.AddSeparator()
 
 	trayInfo := appinfo.TrayApp()
 
-	systray.AddSeparator()
 	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
 	enabled, err := as.IsEnabled()
 	if err != nil {
@@ -169,7 +172,7 @@ func run() error {
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
-			err = open.Browser(constants.DocumentationURL)
+			err = open.Browser(constants.TrayDocumentationURL)
 			if err != nil {
 				logging.Error("Could not open documentation url: %v", err)
 			}
@@ -185,9 +188,9 @@ func run() error {
 			if err != nil {
 				logging.Error("Could not open support url: %v", err)
 			}
-		case <-mAccount.ClickedCh:
+		case <-mDashboard.ClickedCh:
 			logging.Debug("Account event")
-			err = open.Browser(constants.ActiveStateAccountURL)
+			err = open.Browser(constants.ActiveStateDashboardURL)
 			if err != nil {
 				logging.Error("Could not open account url: %v", err)
 			}
@@ -235,7 +238,7 @@ func run() error {
 }
 
 func onExit() {
-	// Not implemented
+	logging.Debug("systray.OnExit() was called.")
 }
 
 func execute(exec string, args []string) error {

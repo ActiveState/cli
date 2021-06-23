@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"context"
 	"errors"
 	"net"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"golang.org/x/net/context"
 )
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
@@ -55,9 +55,10 @@ func CommitsBehind(p *project.Project) (int, error) {
 	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
 }
 
-func RunUpdateNotifier(cfg *config.Instance, out output.Outputer) {
-	ctx, _ := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
-	svc, err := model.NewSvcModel(ctx, cfg)
+func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out output.Outputer) {
+	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
+	defer cancel()
+	svc, err := model.NewSvcModel(ctx, cfg, svcManager)
 	if err != nil {
 		logging.Error("Could not init svc model when running update notifier, error: %v", errs.JoinMessage(err))
 		return

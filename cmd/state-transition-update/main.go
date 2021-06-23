@@ -6,12 +6,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/rollbar/rollbar-go"
 )
@@ -19,7 +24,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
@@ -37,6 +42,26 @@ func main() {
 		exitCode = 1
 		return
 	}
+}
+
+func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
+	isAdmin, err := osutils.IsWindowsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+
+	// remove shell file additions
+	s := subshell.New(cfg)
+	if err := s.CleanUserEnv(cfg, sscommon.InstallID, isAdmin); err != nil {
+		return errs.Wrap(err, "Failed to remove environment variable changes")
+
+	}
+
+	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
+		return errs.Wrap(err, "Failed to remove legacy install path")
+	}
+
+	return nil
 }
 
 func run() error {
@@ -59,9 +84,44 @@ func run() error {
 		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
-	err = up.InstallBlocking()
+	cfg, err := config.Get()
 	if err != nil {
-		return errs.Wrap(err, "Failed to install mult-file update.")
+		return errs.Wrap(err, "Failed to read configuration.")
+	}
+	machineid.SetConfiguration(cfg)
+	machineid.SetErrorLogger(logging.Error)
+	logging.UpdateConfig(cfg)
+
+	oldInfo, err := os.Stat(appinfo.StateApp().Exec())
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
+	}
+
+	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
+		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
+	}
+
+	err = up.InstallBlocking("")
+	if err != nil {
+		return errs.Wrap(err, "Failed to install multi-file update.")
+	}
+
+	logging.Debug("Multi-file State Tool is installed.")
+
+	info, err := os.Stat(appinfo.StateApp().Exec())
+	if err != nil {
+		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
+	}
+
+	// if the transitional state tool has been replaced by the installer, we are done
+	if oldInfo.ModTime() != info.ModTime() {
+		return nil
+	}
+
+	logging.Debug("Removing transitional State Tool")
+	// otherwise: remove the transitional State Tool
+	if err := removeSelf(); err != nil {
+		logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
 	}
 
 	return nil

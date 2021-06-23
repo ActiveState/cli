@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,8 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -35,7 +37,7 @@ var commands = []command{
 func main() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
@@ -51,7 +53,12 @@ func main() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logging.Errorf("state-svc errored out: %s", errMsg)
+		logger := logging.Error
+		if locale.IsInputError(err) {
+			logger = logging.Debug
+		}
+		logger("state-svc errored out: %s", errMsg)
+
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
@@ -114,6 +121,9 @@ func runForeground(cfg *config.Instance) error {
 func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+		if errors.Is(err, ErrSvcAlreadyRunning) {
+			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
+		}
 		return errs.Wrap(err, "Could not start serviceManager")
 	}
 

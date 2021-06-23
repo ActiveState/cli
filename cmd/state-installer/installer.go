@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/rollbar/rollbar-go"
@@ -29,7 +29,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if runbits.HandlePanics() {
+		if panics.HandlePanics() {
 			exitCode = 1
 		}
 		events.WaitForEvents(1*time.Second, rollbar.Close)
@@ -87,6 +87,7 @@ func run(out output.Outputer) error {
 		}
 	}
 
+	logging.Debug("Installing to %s", installPath)
 	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
 		// https://www.pivotaltracker.com/story/show/177691644

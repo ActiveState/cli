@@ -1217,6 +1217,8 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+push_prompt_owner:
+  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
@@ -1291,6 +1293,8 @@ config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
+flag_state_clean_ignore_errors_description:
+  other: Does not stop when an error occurs, removing as much as possible
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
 arg_state_clean_cache_project_description:

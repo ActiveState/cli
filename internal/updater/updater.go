@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -37,33 +36,36 @@ func NewAvailableUpdate(version, channel, platform, path, sha256 string) *Availa
 
 const InstallerName = "state-installer" + osutils.ExeExt
 
-func (u *AvailableUpdate) prepare() (string, string, error) {
+func (u *AvailableUpdate) prepare() (string, error) {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
-		return "", "", errs.Wrap(err, "Could not create temp dir")
+		return "", errs.Wrap(err, "Could not create temp dir")
 	}
 
 	if err := NewFetcher().Fetch(u, tmpDir); err != nil {
-		return "", "", errs.Wrap(err, "Could not download and unpack update")
+		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
 	installerPath := filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir, InstallerName)
 	if !fileutils.FileExists(installerPath) {
-		return "", "", errs.Wrap(err, "Downloaded update does not have installer")
+		return "", errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
-	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-
-	return installerPath, installTargetPath, nil
+	return installerPath, nil
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
-	installerPath, installTargetPath, err := u.prepare()
+func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
+	installerPath, err := u.prepare()
 	if err != nil {
 		return nil, err
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath})
+
+	var args []string
+	if installTargetPath != "" {
+		args = append(args, installTargetPath)
+	}
+	proc, err := exeutils.ExecuteAndForget(installerPath, args)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not start installer")
 	}
@@ -71,13 +73,17 @@ func (u *AvailableUpdate) InstallDeferred() (*os.Process, error) {
 	return proc, nil
 }
 
-func (u *AvailableUpdate) InstallBlocking() error {
-	installerPath, installTargetPath, err := u.prepare()
+func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
+	installerPath, err := u.prepare()
 	if err != nil {
 		return err
 	}
 
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, []string{installTargetPath}, []string{})
+	var args []string
+	if installTargetPath != "" {
+		args = append(args, installTargetPath)
+	}
+	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
@@ -86,8 +92,8 @@ func (u *AvailableUpdate) InstallBlocking() error {
 }
 
 // InstallWithProgress will fetch the update and run its installer
-func (u *AvailableUpdate) InstallWithProgress(progressCb func(string, bool)) (*os.Process, error) {
-	installerPath, installTargetPath, err := u.prepare()
+func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
+	installerPath, err := u.prepare()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not download update")
 	}

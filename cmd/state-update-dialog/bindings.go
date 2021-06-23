@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/cmd/state-update-dialog/internal/lockedprj"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -56,7 +58,8 @@ func (b *Bindings) Changelog() string {
 
 func (b *Bindings) Install() error {
 	logging.Debug("Bindings:Install called")
-	proc, err := b.update.InstallWithProgress(func(output string, done bool) {
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
+	proc, err := b.update.InstallWithProgress(installTargetPath, func(output string, done bool) {
 		b.installLog = b.installLog + "\n" + output
 		b.installDone = done
 	})

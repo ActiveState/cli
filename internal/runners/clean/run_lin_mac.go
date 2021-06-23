@@ -5,6 +5,7 @@ package clean
 import (
 	"errors"
 	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
@@ -23,9 +24,9 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
 	}
 
-	err = removeInstall(u.cfg, u.installDir)
+	err = removeInstall(u.cfg)
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", u.installDir)
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
 	err = removeConfig(u.cfg.ConfigPath(), u.out)
@@ -70,10 +71,16 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return nil
 }
 
-func removeInstall(_ configurable, installDir string) error {
-	stateInfo := appinfo.StateApp(installDir)
-	stateSvcInfo := appinfo.SvcApp(installDir)
-	stateTrayInfo := appinfo.TrayApp(installDir)
+func removeInstall(cfg configurable) error {
+	stateInfo := appinfo.StateApp()
+	stateSvcInfo := appinfo.SvcApp()
+	stateTrayInfo := appinfo.TrayApp()
+
+	// Todo: https://www.pivotaltracker.com/story/show/177585085
+	// Yes this is awkward right now
+	if err := installation.StopTrayApp(cfg); err != nil {
+		return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
+	}
 
 	var aggErr error
 

@@ -2,12 +2,14 @@ package resolver
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"time"
 
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -92,7 +94,8 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if up == nil {
 		return &graph.DeferredUpdate{}, nil
 	}
-	proc, err := up.InstallDeferred()
+	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
+	proc, err := up.InstallDeferred(installTargetPath)
 	if err != nil {
 		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}
@@ -106,13 +109,12 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	config, err := config.Get()
-	if err != nil {
-		return nil, fmt.Errorf("Could not get new config instance: %w", errs.Join(err, ": "))
+	if err := r.cfg.Reload(); err != nil {
+		return nil, errs.Wrap(err, "failed to reload configuration")
 	}
 
 	var projects []*graph.Project
-	localConfigProjects := projectfile.GetProjectMapping(config)
+	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
 	for ns, locations := range localConfigProjects {
 		projects = append(projects, &graph.Project{
 			Namespace: ns,

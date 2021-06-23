@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 )
 
 type primeable interface {
@@ -39,6 +41,28 @@ func New(prime primeable) *Prepare {
 	}
 }
 
+// resetExecutors removes the executor directories for all project installations, and rewrites the global default executors
+// This ensures that the installation is compatible with an updated State Tool installation
+func (r *Prepare) resetExecutors() error {
+	defaultProjectDir := r.cfg.GetString(constants.GlobalDefaultPrefname)
+	if defaultProjectDir == "" {
+		return nil
+	}
+
+	logging.Debug("Reset default project at %s", defaultProjectDir)
+	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, r.cfg.CachePath())
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir))
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize runtime for global default project.")
+	}
+
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, defaultProjectDir); err != nil {
+		return errs.Wrap(err, "Failed to rewrite the default executors.")
+	}
+
+	return nil
+}
+
 // Run executes the prepare behavior.
 func (r *Prepare) Run(cmd *captain.Command) error {
 	logging.Debug("ExecutePrepare")
@@ -53,14 +77,13 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
 		if !errs.Matches(err, &ErrorNotSupported{}) {
-			r.reportError(locale.Tr("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
+			r.reportError(locale.Tl("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
 		}
 	}
 
-	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) {
-			r.reportError(locale.Tr("err_prepare_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
-		}
+	logging.Debug("Reset global executors")
+	if err := r.resetExecutors(); err != nil {
+		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
 	r.prepareSystray()
