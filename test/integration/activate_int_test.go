@@ -158,6 +158,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", namespace),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv("PYTHONPATH=/custom_pythonpath"),
 		e2e.AppendEnv(extraEnv...),
 	)
 	cp.Expect("Where would you like to place")
@@ -207,6 +208,10 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	pipVersionMatch := pipVersionRe.FindStringSubmatch(cp.TrimmedSnapshot())
 	suite.Require().Len(pipVersionMatch, 2, "expected pip version to match")
 	suite.Contains(pipVersionMatch[1], "cache", "pip loaded from activestate cache dir")
+
+	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
+	cp.SendLine(fmt.Sprintf(`%s -c 'import os; print(os.environ["PYTHONPATH"]);'`, pythonExe))
+	cp.Expect("/custom_pythonpath")
 
 	// de-activate shell
 	cp.SendLine("exit")

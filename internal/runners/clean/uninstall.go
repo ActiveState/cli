@@ -2,9 +2,9 @@ package clean
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -15,14 +15,14 @@ type confirmAble interface {
 }
 
 type Uninstall struct {
-	out        output.Outputer
-	confirm    confirmAble
-	cfg        configurable
-	installDir string
+	out     output.Outputer
+	confirm confirmAble
+	cfg     configurable
 }
 
 type UninstallParams struct {
-	Force bool
+	Force        bool
+	IgnoreErrors bool
 }
 
 type primeable interface {
@@ -36,20 +36,10 @@ func NewUninstall(prime primeable) (*Uninstall, error) {
 }
 
 func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable) (*Uninstall, error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}
-	absPath, err := filepath.Abs(execPath)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Uninstall{
-		out:        out,
-		confirm:    confirm,
-		installDir: filepath.Dir(absPath),
-		cfg:        cfg,
+		out:     out,
+		confirm: confirm,
+		cfg:     cfg,
 	}, nil
 }
 
@@ -66,6 +56,10 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		if !ok {
 			return nil
 		}
+	}
+
+	if err := stopServices(u.cfg, u.out, params.IgnoreErrors); err != nil {
+		return errs.Wrap(err, "Failed to stop services.")
 	}
 
 	return u.runUninstall()

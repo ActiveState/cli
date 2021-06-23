@@ -109,13 +109,12 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	config, err := config.Get()
-	if err != nil {
-		return nil, fmt.Errorf("Could not get new config instance: %w", errs.Join(err, ": "))
+	if err := r.cfg.Reload(); err != nil {
+		return nil, errs.Wrap(err, "failed to reload configuration")
 	}
 
 	var projects []*graph.Project
-	localConfigProjects := projectfile.GetProjectMapping(config)
+	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
 	for ns, locations := range localConfigProjects {
 		projects = append(projects, &graph.Project{
 			Namespace: ns,

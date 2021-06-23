@@ -69,7 +69,7 @@ func (i *localProjectsMenuItem) eventLoop() {
 			if i.customCallback != nil {
 				i.customCallback()
 			} else {
-				err := open.Terminal(fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location))
+				err := open.TerminalAndWait(fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location))
 				if err != nil {
 					logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 				}
