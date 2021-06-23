@@ -212,17 +212,3 @@ func resolveRemoteProject(prj *project.Project, overwrite string) (*project.Name
 
 	return ns, nil
 }
-
-func areCommitsRelated(targetCommit strfmt.UUID, sourceCommmit strfmt.UUID) (bool, error) {
-	history, err := model.CommitHistoryFromID(targetCommit)
-	if err != nil {
-		return false, locale.WrapError(err, "err_pull_commit_history", "Could not fetch commit history for target project.")
-	}
-
-	for _, c := range history {
-		if sourceCommmit.String() == c.CommitID.String() {
-			return true, nil
-		}
-	}
-	return false, nil
-}
