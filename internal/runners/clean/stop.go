@@ -25,7 +25,7 @@ func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) erro
 				locale.WrapError(err, "clean_stop_tray_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", trayInfo.Name()),
 				cleanForceTip)
 		}
-		out.Print(locale.Tl("clean_stop_tray_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", trayInfo.Name()))
+		out.Error(locale.Tl("clean_stop_tray_warning", "Failed to stop running {{.V0}} process. Continuing anyways, because --force flag was provided.", trayInfo.Name()))
 	}
 
 	// Stop state-svc before accessing its files
@@ -37,7 +37,7 @@ func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) erro
 					locale.WrapError(err, "clean_stop_svc_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", svcInfo.Name()),
 					cleanForceTip)
 			}
-			out.Print(locale.Tl("clean_stop_svc_warning", "[ERROR]Failed to stop running {{.V0}} process.[/RESET] Continuing anyways, because --force flag was provided.", svcInfo.Name()))
+			out.Error(locale.Tl("clean_stop_svc_warning", "Failed to stop running {{.V0}} process. Continuing anyways, because --force flag was provided.", svcInfo.Name()))
 		}
 	}
 	return nil
