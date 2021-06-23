@@ -67,7 +67,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 		}
 	}
 
-	if err := f.Cleanup(exes); err != nil {
+	if err := f.Cleanup(); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
 	}
 
@@ -80,7 +80,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 	return nil
 }
 
-func (f *Executor) Cleanup(keep []string) error {
+func (f *Executor) Cleanup() error {
 	if !fileutils.DirExists(f.executorPath) {
 		return nil
 	}
@@ -92,10 +92,6 @@ func (f *Executor) Cleanup(keep []string) error {
 
 	for _, file := range files {
 		if file.IsDir() {
-			continue
-		}
-
-		if containsBase(keep, file.Name()) {
 			continue
 		}
 
@@ -169,16 +165,6 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	return nil
-}
-
-func containsBase(sourcePaths []string, targetPath string) bool {
-	for _, p := range sourcePaths {
-		p = NameForExe(p)
-		if filepath.Base(p) == filepath.Base(targetPath) {
-			return true
-		}
-	}
-	return false
 }
 
 func IsExecutor(filePath string) (bool, error) {
