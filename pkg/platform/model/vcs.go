@@ -261,7 +261,7 @@ func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
 
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(latestCID)
-	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	res, err := mono.Get().VersionControl.GetCommitHistory(params, nil)
 	if err != nil {
 		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
