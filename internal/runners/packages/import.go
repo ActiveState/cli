@@ -123,7 +123,7 @@ func (i *Import) Run(params ImportRunParams) error {
 	return runbits.RefreshRuntime(i.auth, i.out, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
-func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs []*gqlModel.Requirement) error {
+func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
