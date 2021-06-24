@@ -18,6 +18,8 @@ type Prompter interface {
 	Confirm(title, message string, defaultChoice *bool) (bool, error)
 	InputSecret(title, message string, flags ...ValidatorFlag) (string, error)
 	IsInteractive() bool
+	IsPromptable() bool
+	IsPromptableOnce(Configurer, OnceKey) bool
 }
 
 // ValidatorFunc is a function pass to the Prompter to perform validation
@@ -230,4 +232,15 @@ func processValidators(flags []ValidatorFlag) ([]ValidatorFunc, error) {
 		}
 	}
 	return validators, err
+}
+
+// IsPromptable reports whether the output type permits prompts to be shown.
+func (p *Prompt) IsPromptable() bool {
+	return p.out.Type() == output.PlainFormatName
+}
+
+// IsPromptableOnce reports whether the output type permits prompts to be shown
+// and also whether a prompt has not been shown before.
+func (p *Prompt) IsPromptableOnce(cfg Configurer, key OnceKey) bool {
+	return p.IsPromptable() && SetPrompted(cfg, key)
 }
