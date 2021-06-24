@@ -26,6 +26,7 @@ import (
 	"github.com/getlantern/systray"
 	"github.com/rollbar/rollbar-go"
 	"github.com/shirou/gopsutil/process"
+	"github.com/spf13/cast"
 )
 
 //go:embed icons/icon.ico
@@ -239,6 +240,20 @@ func run() error {
 
 func onExit() {
 	logging.Debug("systray.OnExit() was called.")
+	cfg, err := config.Get()
+	if err != nil {
+		logging.Error("Could not get configuration object on Systray exit")
+	}
+	err = cfg.SetWithLock(config.ConfigKeyTrayPid, func(setPidI interface{}) (interface{}, error) {
+		setPid := cast.ToInt(setPidI)
+		if setPid != os.Getpid() {
+			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
+		}
+		return "", nil
+	})
+	if err != nil {
+		logging.Error("Failed to unset Systray PID in configuration file.")
+	}
 }
 
 func execute(exec string, args []string) error {

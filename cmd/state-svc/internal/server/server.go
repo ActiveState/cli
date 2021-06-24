@@ -17,22 +17,24 @@ import (
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Server struct {
+	shutdown    context.CancelFunc
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
 }
 
-func New(cfg *config.Instance) (*Server, error) {
+func New(cfg *config.Instance, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{}
+	s := &Server{shutdown: shutdown}
 	s.graphServer = newGraphServer(cfg)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
@@ -60,14 +62,13 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Shutdown() error {
+	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
 	}
-	if err := s.listener.Close(); err != nil {
-		return errs.Wrap(err, "Could not close listener")
-	}
+
 	return nil
 }
 
