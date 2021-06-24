@@ -27,7 +27,7 @@ func Terminal(command string) error {
 }
 
 func TerminalAndWait(command string) error {
-	return Terminal(command + "\nread -p \"Press enter to continue\"")
+	return Terminal("set +e;" + command + ";read -p \"Press enter to continue\"")
 }
 
 func getPrompt() string {

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -26,7 +27,8 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Force bool
+	Force        bool
+	IgnoreErrors bool
 }
 
 func NewConfig(prime primeable) *Config {
@@ -54,6 +56,10 @@ func (c *Config) Run(params *ConfigParams) error {
 		if !ok {
 			return nil
 		}
+	}
+
+	if err := stopServices(c.cfg, c.output, params.IgnoreErrors); err != nil {
+		return errs.Wrap(err, "Failed to stop services.")
 	}
 
 	logging.Debug("Removing config directory: %s", c.cfg.ConfigPath())

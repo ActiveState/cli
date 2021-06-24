@@ -97,6 +97,15 @@ func convertToEnvVars(metadata *MetaData) []envdef.EnvironmentVariable {
 			Inherit: false,
 		})
 	}
+	for k, v := range metadata.PathListEnv {
+		res = append(res, envdef.EnvironmentVariable{
+			Name:      k,
+			Values:    []string{v},
+			Join:      envdef.Prepend,
+			Separator: string(os.PathListSeparator),
+			Inherit:   true,
+		})
+	}
 	var binPaths []string
 
 	// set up PATH according to binary locations
