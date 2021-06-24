@@ -65,7 +65,18 @@ func (m *Mock) OnMethod(methodName string) *tmock.Call {
 	return m.On(methodName, anyArgs...)
 }
 
+// IsInteractive always returns true.
 func (m *Mock) IsInteractive() bool {
+	return true
+}
+
+// IsPromptable always returns true.
+func (m *Mock) IsPromptable() bool {
+	return true
+}
+
+// IsPromptableOnce always returns true.
+func (m *Mock) IsPromptableOnce(cfg prompt.Configurer, key prompt.OnceKey) bool {
 	return true
 }
 
