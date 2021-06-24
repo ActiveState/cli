@@ -99,6 +99,8 @@ func (r *Push) Run(params PushParams) error {
 		return errs.Wrap(err, "Failed to retrieve project language.")
 	}
 
+	projectCreated := false
+
 	if pjm != nil { // Remote project exists
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
@@ -153,6 +155,8 @@ func (r *Push) Run(params PushParams) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not get default branch")
 		}
+
+		projectCreated = true
 	}
 
 	var commitID = r.project.CommitUUID()
@@ -193,7 +197,11 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
-	r.out.Notice(locale.Tr("push_project_updated"))
+	if projectCreated {
+		r.out.Notice(locale.Tr("push_project_created", r.project.URL()))
+	} else {
+		r.out.Notice(locale.Tr("push_project_updated"))
+	}
 
 	return nil
 }

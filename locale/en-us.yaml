@@ -1211,6 +1211,8 @@ push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
   other: "The remote Project has been updated"
+push_project_created:
+  other: "Project created at [ACTIONABLE]{{.V0}}[/RESET]."
 push_no_changes:
   other: "You have no local changes to push. To pull in remote changes run `[ACTIONABLE]state pull[/RESET]`."
 init_description:

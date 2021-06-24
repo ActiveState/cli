@@ -121,7 +121,9 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	ts.LoginAsPersistentUser()
 	username := "cli-integration-tests"
 	pname := strutils.UUID()
+	pname2 := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
+	namespace2 := fmt.Sprintf("%s/%s", username, pname2)
 	cp := ts.Spawn(
 		"init",
 		namespace,
@@ -134,7 +136,6 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
-	cp.ExpectLongString(fmt.Sprintf("with language %s", strings.Split(suite.language, "@")[0]))
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
@@ -184,13 +185,13 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	cp.Expect("> Other")
 	cp.Send("")
 	cp.Expect(">")
-	cp.Send(pname.String())
+	cp.Send(pname2.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
+	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace2)) {
 		suite.FailNow("project field should include project again: " + pjfile.Project)
 	}
 }
@@ -274,7 +275,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Your project has new commits available")
+	cp.ExpectLongString("Your project has new changes available")
 	cp.ExpectExitCode(1)
 }
 
