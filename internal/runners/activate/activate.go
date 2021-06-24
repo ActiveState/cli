@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/promptable"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
@@ -170,7 +171,8 @@ func (r *Activate) run(params *ActivateParams) error {
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
 	setDefault := params.Default
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
-	if !setDefault && firstActivate && r.prompt.IsPromptableOnce(r.config, prompt.DefaultProject) {
+	isPromptable, promptableKey := promptable.IsPromptableOnce, promptable.DefaultProject
+	if !setDefault && firstActivate && isPromptable(r.out, r.config, promptableKey) {
 		var err error
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),

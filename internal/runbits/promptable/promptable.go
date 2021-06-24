@@ -1,0 +1,51 @@
+package promptable
+
+import (
+	"fmt"
+
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
+)
+
+// IsPromptable reports whether the output type permits prompts to be shown.
+func IsPromptable(out output.Outputer) bool {
+	return out.Type() == output.PlainFormatName
+}
+
+// IsPromptableOnce reports whether the output type permits prompts to be shown
+// and also whether a prompt has not been shown before.
+func IsPromptableOnce(out output.Outputer, cfg Configurer, key OnceKey) bool {
+	return IsPromptable(out) && SetPrompted(cfg, key)
+}
+
+// OnceKey represents config keys as tokens.
+type OnceKey string
+
+// OnceKey contants enumerate relevant config keys.
+const (
+	DefaultProject OnceKey = "default_project_prompt"
+)
+
+// Configurer describes the behavior required to track info via config.
+type Configurer interface {
+	GetBool(key string) (value bool)
+	Set(key string, value interface{}) error
+}
+
+// SetPrompted tracks whether a prompt has been called before using the config
+// type and key. A response of true indicates that the config has been updated.
+// A response of false indicates that the config has not been updated. If the
+// configuration "set" call fails, this functions always returns true.
+func SetPrompted(cfg Configurer, key OnceKey) bool {
+	asked := cfg.GetBool(string(key))
+	if asked {
+		logging.Debug(fmt.Sprintf("%s: already asked", key))
+		return false
+	}
+
+	logging.Debug(fmt.Sprintf("%s: setting asked", key))
+	if err := cfg.Set(string(key), true); err != nil {
+		logging.Errorf("Failed to set %q: %v", key, err)
+	}
+	return true
+}
