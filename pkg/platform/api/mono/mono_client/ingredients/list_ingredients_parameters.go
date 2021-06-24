@@ -17,64 +17,79 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewListIngredientsParams creates a new ListIngredientsParams object
-// with the default values initialized.
+// NewListIngredientsParams creates a new ListIngredientsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListIngredientsParams() *ListIngredientsParams {
-	var ()
 	return &ListIngredientsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListIngredientsParamsWithTimeout creates a new ListIngredientsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListIngredientsParamsWithTimeout(timeout time.Duration) *ListIngredientsParams {
-	var ()
 	return &ListIngredientsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListIngredientsParamsWithContext creates a new ListIngredientsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListIngredientsParamsWithContext(ctx context.Context) *ListIngredientsParams {
-	var ()
 	return &ListIngredientsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListIngredientsParamsWithHTTPClient creates a new ListIngredientsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListIngredientsParamsWithHTTPClient(client *http.Client) *ListIngredientsParams {
-	var ()
 	return &ListIngredientsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListIngredientsParams contains all the parameters to send to the API endpoint
-for the list ingredients operation typically these are written to a http.Request
+/* ListIngredientsParams contains all the parameters to send to the API endpoint
+   for the list ingredients operation.
+
+   Typically these are written to a http.Request.
 */
 type ListIngredientsParams struct {
 
-	/*LanguageCore
-	  filter for core language ingredients
+	/* LanguageCore.
 
+	   filter for core language ingredients
 	*/
 	LanguageCore *bool
-	/*NameFilter
-	  Match ingredient names based on this regexp
 
+	/* NameFilter.
+
+	   Match ingredient names based on this regexp
 	*/
 	NameFilter *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list ingredients params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListIngredientsParams) WithDefaults() *ListIngredientsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list ingredients params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListIngredientsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list ingredients params
@@ -144,32 +159,34 @@ func (o *ListIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg strf
 
 		// query param languageCore
 		var qrLanguageCore bool
+
 		if o.LanguageCore != nil {
 			qrLanguageCore = *o.LanguageCore
 		}
 		qLanguageCore := swag.FormatBool(qrLanguageCore)
 		if qLanguageCore != "" {
+
 			if err := r.SetQueryParam("languageCore", qLanguageCore); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.NameFilter != nil {
 
 		// query param nameFilter
 		var qrNameFilter string
+
 		if o.NameFilter != nil {
 			qrNameFilter = *o.NameFilter
 		}
 		qNameFilter := qrNameFilter
 		if qNameFilter != "" {
+
 			if err := r.SetQueryParam("nameFilter", qNameFilter); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

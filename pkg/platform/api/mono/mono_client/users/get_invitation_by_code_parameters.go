@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetInvitationByCodeParams creates a new GetInvitationByCodeParams object
-// with the default values initialized.
+// NewGetInvitationByCodeParams creates a new GetInvitationByCodeParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetInvitationByCodeParams() *GetInvitationByCodeParams {
-	var ()
 	return &GetInvitationByCodeParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetInvitationByCodeParamsWithTimeout creates a new GetInvitationByCodeParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetInvitationByCodeParamsWithTimeout(timeout time.Duration) *GetInvitationByCodeParams {
-	var ()
 	return &GetInvitationByCodeParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetInvitationByCodeParamsWithContext creates a new GetInvitationByCodeParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetInvitationByCodeParamsWithContext(ctx context.Context) *GetInvitationByCodeParams {
-	var ()
 	return &GetInvitationByCodeParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetInvitationByCodeParamsWithHTTPClient creates a new GetInvitationByCodeParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetInvitationByCodeParamsWithHTTPClient(client *http.Client) *GetInvitationByCodeParams {
-	var ()
 	return &GetInvitationByCodeParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetInvitationByCodeParams contains all the parameters to send to the API endpoint
-for the get invitation by code operation typically these are written to a http.Request
+/* GetInvitationByCodeParams contains all the parameters to send to the API endpoint
+   for the get invitation by code operation.
+
+   Typically these are written to a http.Request.
 */
 type GetInvitationByCodeParams struct {
 
-	/*Code
-	  Invite code
+	/* Code.
 
+	   Invite code
 	*/
 	Code string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get invitation by code params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetInvitationByCodeParams) WithDefaults() *GetInvitationByCodeParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get invitation by code params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetInvitationByCodeParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get invitation by code params

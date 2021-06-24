@@ -18,79 +18,101 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewAddFormatParams creates a new AddFormatParams object
-// with the default values initialized.
+// NewAddFormatParams creates a new AddFormatParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddFormatParams() *AddFormatParams {
-	var ()
 	return &AddFormatParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddFormatParamsWithTimeout creates a new AddFormatParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddFormatParamsWithTimeout(timeout time.Duration) *AddFormatParams {
-	var ()
 	return &AddFormatParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddFormatParamsWithContext creates a new AddFormatParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddFormatParamsWithContext(ctx context.Context) *AddFormatParams {
-	var ()
 	return &AddFormatParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddFormatParamsWithHTTPClient creates a new AddFormatParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddFormatParamsWithHTTPClient(client *http.Client) *AddFormatParams {
-	var ()
 	return &AddFormatParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddFormatParams contains all the parameters to send to the API endpoint
-for the add format operation typically these are written to a http.Request
+/* AddFormatParams contains all the parameters to send to the API endpoint
+   for the add format operation.
+
+   Typically these are written to a http.Request.
 */
 type AddFormatParams struct {
 
-	/*DistroID
-	  desired distro
+	/* DistroID.
 
+	   desired distro
+
+	   Format: uuid
 	*/
 	DistroID strfmt.UUID
-	/*Format
-	  Format details
 
+	/* Format.
+
+	   Format details
 	*/
 	Format *mono_models.Format
-	/*OrganizationName
-	  desired organization
 
+	/* OrganizationName.
+
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add format params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddFormatParams) WithDefaults() *AddFormatParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add format params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddFormatParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add format params
@@ -193,7 +215,6 @@ func (o *AddFormatParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 	if err := r.SetPathParam("distroID", o.DistroID.String()); err != nil {
 		return err
 	}
-
 	if o.Format != nil {
 		if err := r.SetBodyParam(o.Format); err != nil {
 			return err

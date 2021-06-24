@@ -41,9 +41,8 @@ func (o *GetDistroReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetDistroOK() *GetDistroOK {
 	return &GetDistroOK{}
 }
 
-/*GetDistroOK handles this case with default header values.
+/* GetDistroOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetDistroOK struct {
 func (o *GetDistroOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}][%d] getDistroOK  %+v", 200, o.Payload)
 }
-
 func (o *GetDistroOK) GetPayload() *mono_models.Distro {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetDistroNotFound() *GetDistroNotFound {
 	return &GetDistroNotFound{}
 }
 
-/*GetDistroNotFound handles this case with default header values.
+/* GetDistroNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetDistroNotFound struct {
 func (o *GetDistroNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}][%d] getDistroNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetDistroNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetDistroInternalServerError() *GetDistroInternalServerError {
 	return &GetDistroInternalServerError{}
 }
 
-/*GetDistroInternalServerError handles this case with default header values.
+/* GetDistroInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetDistroInternalServerError struct {
 func (o *GetDistroInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}][%d] getDistroInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetDistroInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

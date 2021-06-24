@@ -56,7 +56,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
 	}
 
-	err = s.project.Source().SetCommit(branch.CommitID.String(), s.project.IsHeadless())
+	err = s.project.SetCommit(branch.CommitID.String())
 	if err != nil {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}

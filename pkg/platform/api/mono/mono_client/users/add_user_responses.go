@@ -47,9 +47,8 @@ func (o *AddUserReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewAddUserOK() *AddUserOK {
 	return &AddUserOK{}
 }
 
-/*AddUserOK handles this case with default header values.
+/* AddUserOK describes a response with status code 200, with default header values.
 
 Successfully Created
 */
@@ -69,7 +68,6 @@ type AddUserOK struct {
 func (o *AddUserOK) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserOK  %+v", 200, o.Payload)
 }
-
 func (o *AddUserOK) GetPayload() *mono_models.JWT {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewAddUserBadRequest() *AddUserBadRequest {
 	return &AddUserBadRequest{}
 }
 
-/*AddUserBadRequest handles this case with default header values.
+/* AddUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -102,7 +100,6 @@ type AddUserBadRequest struct {
 func (o *AddUserBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddUserBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewAddUserConflict() *AddUserConflict {
 	return &AddUserConflict{}
 }
 
-/*AddUserConflict handles this case with default header values.
+/* AddUserConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -135,7 +132,6 @@ type AddUserConflict struct {
 func (o *AddUserConflict) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddUserConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewAddUserInternalServerError() *AddUserInternalServerError {
 	return &AddUserInternalServerError{}
 }
 
-/*AddUserInternalServerError handles this case with default header values.
+/* AddUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type AddUserInternalServerError struct {
 func (o *AddUserInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users][%d] addUserInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddUserInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

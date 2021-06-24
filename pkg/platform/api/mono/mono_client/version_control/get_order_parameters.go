@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOrderParams creates a new GetOrderParams object
-// with the default values initialized.
+// NewGetOrderParams creates a new GetOrderParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOrderParams() *GetOrderParams {
-	var ()
 	return &GetOrderParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOrderParamsWithTimeout creates a new GetOrderParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOrderParamsWithTimeout(timeout time.Duration) *GetOrderParams {
-	var ()
 	return &GetOrderParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOrderParamsWithContext creates a new GetOrderParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOrderParamsWithContext(ctx context.Context) *GetOrderParams {
-	var ()
 	return &GetOrderParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetOrderParamsWithHTTPClient creates a new GetOrderParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOrderParamsWithHTTPClient(client *http.Client) *GetOrderParams {
-	var ()
 	return &GetOrderParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetOrderParams contains all the parameters to send to the API endpoint
-for the get order operation typically these are written to a http.Request
+/* GetOrderParams contains all the parameters to send to the API endpoint
+   for the get order operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOrderParams struct {
 
-	/*CommitID*/
+	// CommitID.
+	//
+	// Format: uuid
 	CommitID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get order params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrderParams) WithDefaults() *GetOrderParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get order params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrderParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get order params

@@ -53,9 +53,8 @@ func (o *PostLoginReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewPostLoginOK() *PostLoginOK {
 	return &PostLoginOK{}
 }
 
-/*PostLoginOK handles this case with default header values.
+/* PostLoginOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type PostLoginOK struct {
 func (o *PostLoginOK) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginOK  %+v", 200, o.Payload)
 }
-
 func (o *PostLoginOK) GetPayload() *mono_models.JWT {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewPostLoginBadRequest() *PostLoginBadRequest {
 	return &PostLoginBadRequest{}
 }
 
-/*PostLoginBadRequest handles this case with default header values.
+/* PostLoginBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type PostLoginBadRequest struct {
 func (o *PostLoginBadRequest) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *PostLoginBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewPostLoginUnauthorized() *PostLoginUnauthorized {
 	return &PostLoginUnauthorized{}
 }
 
-/*PostLoginUnauthorized handles this case with default header values.
+/* PostLoginUnauthorized describes a response with status code 401, with default header values.
 
 Invalid credentials
 */
@@ -141,7 +138,6 @@ type PostLoginUnauthorized struct {
 func (o *PostLoginUnauthorized) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginUnauthorized  %+v", 401, o.Payload)
 }
-
 func (o *PostLoginUnauthorized) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewPostLoginRetryWith() *PostLoginRetryWith {
 	return &PostLoginRetryWith{}
 }
 
-/*PostLoginRetryWith handles this case with default header values.
+/* PostLoginRetryWith describes a response with status code 449, with default header values.
 
 TOTP Required
 */
@@ -174,7 +170,6 @@ type PostLoginRetryWith struct {
 func (o *PostLoginRetryWith) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginRetryWith  %+v", 449, o.Payload)
 }
-
 func (o *PostLoginRetryWith) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewPostLoginInternalServerError() *PostLoginInternalServerError {
 	return &PostLoginInternalServerError{}
 }
 
-/*PostLoginInternalServerError handles this case with default header values.
+/* PostLoginInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type PostLoginInternalServerError struct {
 func (o *PostLoginInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /login][%d] postLoginInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *PostLoginInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

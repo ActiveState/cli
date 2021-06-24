@@ -16,69 +16,85 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewJoinOrganizationParams creates a new JoinOrganizationParams object
-// with the default values initialized.
+// NewJoinOrganizationParams creates a new JoinOrganizationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewJoinOrganizationParams() *JoinOrganizationParams {
-	var ()
 	return &JoinOrganizationParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewJoinOrganizationParamsWithTimeout creates a new JoinOrganizationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewJoinOrganizationParamsWithTimeout(timeout time.Duration) *JoinOrganizationParams {
-	var ()
 	return &JoinOrganizationParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewJoinOrganizationParamsWithContext creates a new JoinOrganizationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewJoinOrganizationParamsWithContext(ctx context.Context) *JoinOrganizationParams {
-	var ()
 	return &JoinOrganizationParams{
-
 		Context: ctx,
 	}
 }
 
 // NewJoinOrganizationParamsWithHTTPClient creates a new JoinOrganizationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewJoinOrganizationParamsWithHTTPClient(client *http.Client) *JoinOrganizationParams {
-	var ()
 	return &JoinOrganizationParams{
 		HTTPClient: client,
 	}
 }
 
-/*JoinOrganizationParams contains all the parameters to send to the API endpoint
-for the join organization operation typically these are written to a http.Request
+/* JoinOrganizationParams contains all the parameters to send to the API endpoint
+   for the join organization operation.
+
+   Typically these are written to a http.Request.
 */
 type JoinOrganizationParams struct {
 
-	/*InviteCode
-	  Invite code
+	/* InviteCode.
 
+	   Invite code
 	*/
 	InviteCode JoinOrganizationBody
-	/*OrganizationName
-	  organizationID of desired organization
 
+	/* OrganizationName.
+
+	   organizationID of desired organization
 	*/
 	OrganizationName string
-	/*Username
-	  username to join
 
+	/* Username.
+
+	   username to join
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the join organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *JoinOrganizationParams) WithDefaults() *JoinOrganizationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the join organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *JoinOrganizationParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the join organization params
@@ -154,7 +170,6 @@ func (o *JoinOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg str
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.InviteCode); err != nil {
 		return err
 	}

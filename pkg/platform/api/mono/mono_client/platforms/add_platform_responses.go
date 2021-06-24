@@ -53,9 +53,8 @@ func (o *AddPlatformReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewAddPlatformOK() *AddPlatformOK {
 	return &AddPlatformOK{}
 }
 
-/*AddPlatformOK handles this case with default header values.
+/* AddPlatformOK describes a response with status code 200, with default header values.
 
 Platform Created
 */
@@ -75,7 +74,6 @@ type AddPlatformOK struct {
 func (o *AddPlatformOK) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformOK  %+v", 200, o.Payload)
 }
-
 func (o *AddPlatformOK) GetPayload() *mono_models.Platform {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewAddPlatformBadRequest() *AddPlatformBadRequest {
 	return &AddPlatformBadRequest{}
 }
 
-/*AddPlatformBadRequest handles this case with default header values.
+/* AddPlatformBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type AddPlatformBadRequest struct {
 func (o *AddPlatformBadRequest) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddPlatformBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewAddPlatformForbidden() *AddPlatformForbidden {
 	return &AddPlatformForbidden{}
 }
 
-/*AddPlatformForbidden handles this case with default header values.
+/* AddPlatformForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type AddPlatformForbidden struct {
 func (o *AddPlatformForbidden) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddPlatformForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewAddPlatformConflict() *AddPlatformConflict {
 	return &AddPlatformConflict{}
 }
 
-/*AddPlatformConflict handles this case with default header values.
+/* AddPlatformConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -174,7 +170,6 @@ type AddPlatformConflict struct {
 func (o *AddPlatformConflict) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddPlatformConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewAddPlatformInternalServerError() *AddPlatformInternalServerError {
 	return &AddPlatformInternalServerError{}
 }
 
-/*AddPlatformInternalServerError handles this case with default header values.
+/* AddPlatformInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type AddPlatformInternalServerError struct {
 func (o *AddPlatformInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /platforms][%d] addPlatformInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddPlatformInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

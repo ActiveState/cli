@@ -59,9 +59,8 @@ func (o *MutateOrganizationReader) ReadResponse(response runtime.ClientResponse,
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewMutateOrganizationOK() *MutateOrganizationOK {
 	return &MutateOrganizationOK{}
 }
 
-/*MutateOrganizationOK handles this case with default header values.
+/* MutateOrganizationOK describes a response with status code 200, with default header values.
 
 Organization updated
 */
@@ -81,7 +80,6 @@ type MutateOrganizationOK struct {
 func (o *MutateOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *MutateOrganizationOK) GetPayload() *mono_models.Organization {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewMutateOrganizationBadRequest() *MutateOrganizationBadRequest {
 	return &MutateOrganizationBadRequest{}
 }
 
-/*MutateOrganizationBadRequest handles this case with default header values.
+/* MutateOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type MutateOrganizationBadRequest struct {
 func (o *MutateOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *MutateOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewMutateOrganizationForbidden() *MutateOrganizationForbidden {
 	return &MutateOrganizationForbidden{}
 }
 
-/*MutateOrganizationForbidden handles this case with default header values.
+/* MutateOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -147,7 +144,6 @@ type MutateOrganizationForbidden struct {
 func (o *MutateOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *MutateOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewMutateOrganizationNotFound() *MutateOrganizationNotFound {
 	return &MutateOrganizationNotFound{}
 }
 
-/*MutateOrganizationNotFound handles this case with default header values.
+/* MutateOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -180,7 +176,6 @@ type MutateOrganizationNotFound struct {
 func (o *MutateOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *MutateOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewMutateOrganizationConflict() *MutateOrganizationConflict {
 	return &MutateOrganizationConflict{}
 }
 
-/*MutateOrganizationConflict handles this case with default header values.
+/* MutateOrganizationConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type MutateOrganizationConflict struct {
 func (o *MutateOrganizationConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationConflict  %+v", 409, o.Payload)
 }
-
 func (o *MutateOrganizationConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewMutateOrganizationInternalServerError() *MutateOrganizationInternalServe
 	return &MutateOrganizationInternalServerError{}
 }
 
-/*MutateOrganizationInternalServerError handles this case with default header values.
+/* MutateOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type MutateOrganizationInternalServerError struct {
 func (o *MutateOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/mutations][%d] mutateOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *MutateOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

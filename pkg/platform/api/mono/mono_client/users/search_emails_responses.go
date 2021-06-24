@@ -6,6 +6,7 @@ package users
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -42,9 +43,8 @@ func (o *SearchEmailsReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -53,7 +53,7 @@ func NewSearchEmailsOK() *SearchEmailsOK {
 	return &SearchEmailsOK{}
 }
 
-/*SearchEmailsOK handles this case with default header values.
+/* SearchEmailsOK describes a response with status code 200, with default header values.
 
 Search for users matching the given search string
 */
@@ -64,7 +64,6 @@ type SearchEmailsOK struct {
 func (o *SearchEmailsOK) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsOK  %+v", 200, o.Payload)
 }
-
 func (o *SearchEmailsOK) GetPayload() []*mono_models.User {
 	return o.Payload
 }
@@ -84,7 +83,7 @@ func NewSearchEmailsForbidden() *SearchEmailsForbidden {
 	return &SearchEmailsForbidden{}
 }
 
-/*SearchEmailsForbidden handles this case with default header values.
+/* SearchEmailsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -95,7 +94,6 @@ type SearchEmailsForbidden struct {
 func (o *SearchEmailsForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *SearchEmailsForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -117,7 +115,7 @@ func NewSearchEmailsInternalServerError() *SearchEmailsInternalServerError {
 	return &SearchEmailsInternalServerError{}
 }
 
-/*SearchEmailsInternalServerError handles this case with default header values.
+/* SearchEmailsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -128,7 +126,6 @@ type SearchEmailsInternalServerError struct {
 func (o *SearchEmailsInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/search_emails][%d] searchEmailsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *SearchEmailsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -156,6 +153,11 @@ type SearchEmailsBody struct {
 
 // Validate validates this search emails body
 func (o *SearchEmailsBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this search emails body based on context it is used
+func (o *SearchEmailsBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

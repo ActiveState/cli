@@ -47,9 +47,8 @@ func (o *GetOrganizationMembersReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetOrganizationMembersOK() *GetOrganizationMembersOK {
 	return &GetOrganizationMembersOK{}
 }
 
-/*GetOrganizationMembersOK handles this case with default header values.
+/* GetOrganizationMembersOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type GetOrganizationMembersOK struct {
 func (o *GetOrganizationMembersOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrganizationMembersOK) GetPayload() []*mono_models.Member {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewGetOrganizationMembersForbidden() *GetOrganizationMembersForbidden {
 	return &GetOrganizationMembersForbidden{}
 }
 
-/*GetOrganizationMembersForbidden handles this case with default header values.
+/* GetOrganizationMembersForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -100,7 +98,6 @@ type GetOrganizationMembersForbidden struct {
 func (o *GetOrganizationMembersForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetOrganizationMembersForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewGetOrganizationMembersNotFound() *GetOrganizationMembersNotFound {
 	return &GetOrganizationMembersNotFound{}
 }
 
-/*GetOrganizationMembersNotFound handles this case with default header values.
+/* GetOrganizationMembersNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -133,7 +130,6 @@ type GetOrganizationMembersNotFound struct {
 func (o *GetOrganizationMembersNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetOrganizationMembersNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewGetOrganizationMembersInternalServerError() *GetOrganizationMembersInter
 	return &GetOrganizationMembersInternalServerError{}
 }
 
-/*GetOrganizationMembersInternalServerError handles this case with default header values.
+/* GetOrganizationMembersInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type GetOrganizationMembersInternalServerError struct {
 func (o *GetOrganizationMembersInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/members][%d] getOrganizationMembersInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrganizationMembersInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -53,9 +53,8 @@ func (o *VerifyEmailReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewVerifyEmailOK() *VerifyEmailOK {
 	return &VerifyEmailOK{}
 }
 
-/*VerifyEmailOK handles this case with default header values.
+/* VerifyEmailOK describes a response with status code 200, with default header values.
 
 Email updated
 */
@@ -75,7 +74,6 @@ type VerifyEmailOK struct {
 func (o *VerifyEmailOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailOK  %+v", 200, o.Payload)
 }
-
 func (o *VerifyEmailOK) GetPayload() *mono_models.Email {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewVerifyEmailBadRequest() *VerifyEmailBadRequest {
 	return &VerifyEmailBadRequest{}
 }
 
-/*VerifyEmailBadRequest handles this case with default header values.
+/* VerifyEmailBadRequest describes a response with status code 400, with default header values.
 
 Invalid Code
 */
@@ -108,7 +106,6 @@ type VerifyEmailBadRequest struct {
 func (o *VerifyEmailBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *VerifyEmailBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewVerifyEmailForbidden() *VerifyEmailForbidden {
 	return &VerifyEmailForbidden{}
 }
 
-/*VerifyEmailForbidden handles this case with default header values.
+/* VerifyEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type VerifyEmailForbidden struct {
 func (o *VerifyEmailForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailForbidden  %+v", 403, o.Payload)
 }
-
 func (o *VerifyEmailForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewVerifyEmailNotFound() *VerifyEmailNotFound {
 	return &VerifyEmailNotFound{}
 }
 
-/*VerifyEmailNotFound handles this case with default header values.
+/* VerifyEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type VerifyEmailNotFound struct {
 func (o *VerifyEmailNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailNotFound  %+v", 404, o.Payload)
 }
-
 func (o *VerifyEmailNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewVerifyEmailInternalServerError() *VerifyEmailInternalServerError {
 	return &VerifyEmailInternalServerError{}
 }
 
-/*VerifyEmailInternalServerError handles this case with default header values.
+/* VerifyEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type VerifyEmailInternalServerError struct {
 func (o *VerifyEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails/{email}/verification/check][%d] verifyEmailInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *VerifyEmailInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

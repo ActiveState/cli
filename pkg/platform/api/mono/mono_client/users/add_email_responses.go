@@ -6,6 +6,7 @@ package users
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,9 +61,8 @@ func (o *AddEmailReader) ReadResponse(response runtime.ClientResponse, consumer 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -71,7 +71,7 @@ func NewAddEmailOK() *AddEmailOK {
 	return &AddEmailOK{}
 }
 
-/*AddEmailOK handles this case with default header values.
+/* AddEmailOK describes a response with status code 200, with default header values.
 
 Email added
 */
@@ -82,7 +82,6 @@ type AddEmailOK struct {
 func (o *AddEmailOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailOK  %+v", 200, o.Payload)
 }
-
 func (o *AddEmailOK) GetPayload() *mono_models.Email {
 	return o.Payload
 }
@@ -104,7 +103,7 @@ func NewAddEmailBadRequest() *AddEmailBadRequest {
 	return &AddEmailBadRequest{}
 }
 
-/*AddEmailBadRequest handles this case with default header values.
+/* AddEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -115,7 +114,6 @@ type AddEmailBadRequest struct {
 func (o *AddEmailBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddEmailBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -137,7 +135,7 @@ func NewAddEmailForbidden() *AddEmailForbidden {
 	return &AddEmailForbidden{}
 }
 
-/*AddEmailForbidden handles this case with default header values.
+/* AddEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -148,7 +146,6 @@ type AddEmailForbidden struct {
 func (o *AddEmailForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddEmailForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -170,7 +167,7 @@ func NewAddEmailNotFound() *AddEmailNotFound {
 	return &AddEmailNotFound{}
 }
 
-/*AddEmailNotFound handles this case with default header values.
+/* AddEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -181,7 +178,6 @@ type AddEmailNotFound struct {
 func (o *AddEmailNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailNotFound  %+v", 404, o.Payload)
 }
-
 func (o *AddEmailNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -203,7 +199,7 @@ func NewAddEmailConflict() *AddEmailConflict {
 	return &AddEmailConflict{}
 }
 
-/*AddEmailConflict handles this case with default header values.
+/* AddEmailConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -214,7 +210,6 @@ type AddEmailConflict struct {
 func (o *AddEmailConflict) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddEmailConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -236,7 +231,7 @@ func NewAddEmailInternalServerError() *AddEmailInternalServerError {
 	return &AddEmailInternalServerError{}
 }
 
-/*AddEmailInternalServerError handles this case with default header values.
+/* AddEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -247,7 +242,6 @@ type AddEmailInternalServerError struct {
 func (o *AddEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}/emails][%d] addEmailInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddEmailInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -275,6 +269,11 @@ type AddEmailBody struct {
 
 // Validate validates this add email body
 func (o *AddEmailBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this add email body based on context it is used
+func (o *AddEmailBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

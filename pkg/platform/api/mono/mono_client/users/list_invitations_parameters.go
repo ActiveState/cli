@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListInvitationsParams creates a new ListInvitationsParams object
-// with the default values initialized.
+// NewListInvitationsParams creates a new ListInvitationsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListInvitationsParams() *ListInvitationsParams {
-	var ()
 	return &ListInvitationsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListInvitationsParamsWithTimeout creates a new ListInvitationsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListInvitationsParamsWithTimeout(timeout time.Duration) *ListInvitationsParams {
-	var ()
 	return &ListInvitationsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListInvitationsParamsWithContext creates a new ListInvitationsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListInvitationsParamsWithContext(ctx context.Context) *ListInvitationsParams {
-	var ()
 	return &ListInvitationsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListInvitationsParamsWithHTTPClient creates a new ListInvitationsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListInvitationsParamsWithHTTPClient(client *http.Client) *ListInvitationsParams {
-	var ()
 	return &ListInvitationsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListInvitationsParams contains all the parameters to send to the API endpoint
-for the list invitations operation typically these are written to a http.Request
+/* ListInvitationsParams contains all the parameters to send to the API endpoint
+   for the list invitations operation.
+
+   Typically these are written to a http.Request.
 */
 type ListInvitationsParams struct {
 
-	/*Email
-	  Email address
+	/* Email.
 
+	   Email address
 	*/
 	Email string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list invitations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListInvitationsParams) WithDefaults() *ListInvitationsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list invitations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListInvitationsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list invitations params

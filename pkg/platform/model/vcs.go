@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,6 +27,10 @@ import (
 
 var (
 	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
+
+	ErrMergeFastForward = errs.New("No merge required")
+
+	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
 )
 
 type ErrOrderAuth struct{ *locale.LocalizedError }
@@ -261,7 +266,7 @@ func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
 
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(latestCID)
-	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	res, err := mono.Get().VersionControl.GetCommitHistory(params, nil)
 	if err != nil {
 		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
@@ -647,7 +652,7 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
-func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
+func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
 	var changeset Changeset
 
 	for _, req := range reqs {
@@ -802,6 +807,38 @@ func RevertCommit(pj ProjectInfo, to strfmt.UUID) error {
 	}
 
 	return nil
+}
+
+func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.MergeStrategies, error) {
+	params := vcsClient.NewMergeCommitsParams()
+	params.SetCommitReceivingChanges(commitReceiving)
+	params.SetCommitWithChanges(commitWithChanges)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
+	if err != nil {
+		if api.ErrorCodeFromPayload(err) == 409 {
+			logging.Debug("Received 409 from MergeCommit: %s", err.Error())
+			return nil, ErrMergeCommitInHistory
+		}
+		return nil, locale.WrapError(err, "err_api_mergecommit", api.ErrorMessageFromPayload(err))
+	}
+	if noContent != nil {
+		return nil, ErrMergeFastForward
+	}
+
+	return res.Payload, nil
+}
+
+func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error) {
+	_, err := MergeCommit(commitReceiving, commitWithChanges)
+	if err != nil {
+		if errors.Is(err, ErrMergeFastForward) || errors.Is(err, ErrMergeCommitInHistory) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {

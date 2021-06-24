@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListReleasesParams creates a new ListReleasesParams object
-// with the default values initialized.
+// NewListReleasesParams creates a new ListReleasesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListReleasesParams() *ListReleasesParams {
-	var ()
 	return &ListReleasesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListReleasesParamsWithTimeout creates a new ListReleasesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListReleasesParamsWithTimeout(timeout time.Duration) *ListReleasesParams {
-	var ()
 	return &ListReleasesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListReleasesParamsWithContext creates a new ListReleasesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListReleasesParamsWithContext(ctx context.Context) *ListReleasesParams {
-	var ()
 	return &ListReleasesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListReleasesParamsWithHTTPClient creates a new ListReleasesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListReleasesParamsWithHTTPClient(client *http.Client) *ListReleasesParams {
-	var ()
 	return &ListReleasesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListReleasesParams contains all the parameters to send to the API endpoint
-for the list releases operation typically these are written to a http.Request
+/* ListReleasesParams contains all the parameters to send to the API endpoint
+   for the list releases operation.
+
+   Typically these are written to a http.Request.
 */
 type ListReleasesParams struct {
 
-	/*OrganizationName
-	  desired organization
+	/* OrganizationName.
 
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list releases params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListReleasesParams) WithDefaults() *ListReleasesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list releases params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListReleasesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list releases params

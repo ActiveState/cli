@@ -21,6 +21,7 @@ func (p *checkpointByCommit) Query() string {
 		  namespace
 		  requirement
 		  version_constraint
+		  constraint_json
 		}
 		vcs_commits_by_pk(commit_id: $commit_id) {
 		  at_time

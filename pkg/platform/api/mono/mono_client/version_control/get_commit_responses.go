@@ -47,9 +47,8 @@ func (o *GetCommitReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetCommitOK() *GetCommitOK {
 	return &GetCommitOK{}
 }
 
-/*GetCommitOK handles this case with default header values.
+/* GetCommitOK describes a response with status code 200, with default header values.
 
 Get commit details
 */
@@ -69,7 +68,6 @@ type GetCommitOK struct {
 func (o *GetCommitOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitOK  %+v", 200, o.Payload)
 }
-
 func (o *GetCommitOK) GetPayload() *mono_models.Commit {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetCommitForbidden() *GetCommitForbidden {
 	return &GetCommitForbidden{}
 }
 
-/*GetCommitForbidden handles this case with default header values.
+/* GetCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetCommitForbidden struct {
 func (o *GetCommitForbidden) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetCommitForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetCommitNotFound() *GetCommitNotFound {
 	return &GetCommitNotFound{}
 }
 
-/*GetCommitNotFound handles this case with default header values.
+/* GetCommitNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -135,7 +132,6 @@ type GetCommitNotFound struct {
 func (o *GetCommitNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetCommitNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetCommitInternalServerError() *GetCommitInternalServerError {
 	return &GetCommitInternalServerError{}
 }
 
-/*GetCommitInternalServerError handles this case with default header values.
+/* GetCommitInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving commit
 */
@@ -168,7 +164,6 @@ type GetCommitInternalServerError struct {
 func (o *GetCommitInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}][%d] getCommitInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetCommitInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

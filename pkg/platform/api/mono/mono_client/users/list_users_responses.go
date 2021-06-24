@@ -35,9 +35,8 @@ func (o *ListUsersReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewListUsersOK() *ListUsersOK {
 	return &ListUsersOK{}
 }
 
-/*ListUsersOK handles this case with default header values.
+/* ListUsersOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -57,7 +56,6 @@ type ListUsersOK struct {
 func (o *ListUsersOK) Error() string {
 	return fmt.Sprintf("[GET /users][%d] listUsersOK  %+v", 200, o.Payload)
 }
-
 func (o *ListUsersOK) GetPayload() []*mono_models.User {
 	return o.Payload
 }
@@ -77,7 +75,7 @@ func NewListUsersInternalServerError() *ListUsersInternalServerError {
 	return &ListUsersInternalServerError{}
 }
 
-/*ListUsersInternalServerError handles this case with default header values.
+/* ListUsersInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -88,7 +86,6 @@ type ListUsersInternalServerError struct {
 func (o *ListUsersInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users][%d] listUsersInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ListUsersInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

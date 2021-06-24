@@ -53,9 +53,8 @@ func (o *AddOrganizationReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewAddOrganizationOK() *AddOrganizationOK {
 	return &AddOrganizationOK{}
 }
 
-/*AddOrganizationOK handles this case with default header values.
+/* AddOrganizationOK describes a response with status code 200, with default header values.
 
 Organization Created
 */
@@ -75,7 +74,6 @@ type AddOrganizationOK struct {
 func (o *AddOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *AddOrganizationOK) GetPayload() *mono_models.Organization {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewAddOrganizationBadRequest() *AddOrganizationBadRequest {
 	return &AddOrganizationBadRequest{}
 }
 
-/*AddOrganizationBadRequest handles this case with default header values.
+/* AddOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type AddOrganizationBadRequest struct {
 func (o *AddOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewAddOrganizationForbidden() *AddOrganizationForbidden {
 	return &AddOrganizationForbidden{}
 }
 
-/*AddOrganizationForbidden handles this case with default header values.
+/* AddOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type AddOrganizationForbidden struct {
 func (o *AddOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewAddOrganizationConflict() *AddOrganizationConflict {
 	return &AddOrganizationConflict{}
 }
 
-/*AddOrganizationConflict handles this case with default header values.
+/* AddOrganizationConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -174,7 +170,6 @@ type AddOrganizationConflict struct {
 func (o *AddOrganizationConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddOrganizationConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewAddOrganizationInternalServerError() *AddOrganizationInternalServerError
 	return &AddOrganizationInternalServerError{}
 }
 
-/*AddOrganizationInternalServerError handles this case with default header values.
+/* AddOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type AddOrganizationInternalServerError struct {
 func (o *AddOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations][%d] addOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

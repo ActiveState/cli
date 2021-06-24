@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListUsersParams creates a new ListUsersParams object
-// with the default values initialized.
+// NewListUsersParams creates a new ListUsersParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListUsersParams() *ListUsersParams {
-
 	return &ListUsersParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListUsersParamsWithTimeout creates a new ListUsersParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListUsersParamsWithTimeout(timeout time.Duration) *ListUsersParams {
-
 	return &ListUsersParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListUsersParamsWithContext creates a new ListUsersParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListUsersParamsWithContext(ctx context.Context) *ListUsersParams {
-
 	return &ListUsersParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListUsersParamsWithHTTPClient creates a new ListUsersParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListUsersParamsWithHTTPClient(client *http.Client) *ListUsersParams {
-
 	return &ListUsersParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListUsersParams contains all the parameters to send to the API endpoint
-for the list users operation typically these are written to a http.Request
+/* ListUsersParams contains all the parameters to send to the API endpoint
+   for the list users operation.
+
+   Typically these are written to a http.Request.
 */
 type ListUsersParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list users params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListUsersParams) WithDefaults() *ListUsersParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list users params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListUsersParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list users params

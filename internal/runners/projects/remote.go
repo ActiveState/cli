@@ -39,7 +39,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
-			return nil, locale.NewError("err_api_not_authenticated")
+			return nil, locale.NewInputError("err_api_not_authenticated")
 		}
 		return nil, errs.Wrap(err, "Unknown failure")
 	}

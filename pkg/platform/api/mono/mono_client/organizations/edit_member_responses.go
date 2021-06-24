@@ -53,9 +53,8 @@ func (o *EditMemberReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditMemberOK() *EditMemberOK {
 	return &EditMemberOK{}
 }
 
-/*EditMemberOK handles this case with default header values.
+/* EditMemberOK describes a response with status code 200, with default header values.
 
 Membership Roster
 */
@@ -75,7 +74,6 @@ type EditMemberOK struct {
 func (o *EditMemberOK) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberOK  %+v", 200, o.Payload)
 }
-
 func (o *EditMemberOK) GetPayload() []*mono_models.Member {
 	return o.Payload
 }
@@ -95,7 +93,7 @@ func NewEditMemberBadRequest() *EditMemberBadRequest {
 	return &EditMemberBadRequest{}
 }
 
-/*EditMemberBadRequest handles this case with default header values.
+/* EditMemberBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -106,7 +104,6 @@ type EditMemberBadRequest struct {
 func (o *EditMemberBadRequest) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditMemberBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -128,7 +125,7 @@ func NewEditMemberForbidden() *EditMemberForbidden {
 	return &EditMemberForbidden{}
 }
 
-/*EditMemberForbidden handles this case with default header values.
+/* EditMemberForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -139,7 +136,6 @@ type EditMemberForbidden struct {
 func (o *EditMemberForbidden) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditMemberForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -161,7 +157,7 @@ func NewEditMemberNotFound() *EditMemberNotFound {
 	return &EditMemberNotFound{}
 }
 
-/*EditMemberNotFound handles this case with default header values.
+/* EditMemberNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -172,7 +168,6 @@ type EditMemberNotFound struct {
 func (o *EditMemberNotFound) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditMemberNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -194,7 +189,7 @@ func NewEditMemberInternalServerError() *EditMemberInternalServerError {
 	return &EditMemberInternalServerError{}
 }
 
-/*EditMemberInternalServerError handles this case with default header values.
+/* EditMemberInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -205,7 +200,6 @@ type EditMemberInternalServerError struct {
 func (o *EditMemberInternalServerError) Error() string {
 	return fmt.Sprintf("[PATCH /organizations/{organizationName}/members/{username}][%d] editMemberInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditMemberInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

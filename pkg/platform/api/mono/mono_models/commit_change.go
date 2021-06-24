@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -90,14 +91,13 @@ const (
 
 // prop value enum
 func (m *CommitChange) validateOperationEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, commitChangeTypeOperationPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, commitChangeTypeOperationPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *CommitChange) validateOperation(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Operation) { // not required
 		return nil
 	}
@@ -111,7 +111,6 @@ func (m *CommitChange) validateOperation(formats strfmt.Registry) error {
 }
 
 func (m *CommitChange) validateVersionConstraints(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.VersionConstraints) { // not required
 		return nil
 	}
@@ -127,12 +126,53 @@ func (m *CommitChange) validateVersionConstraints(formats strfmt.Registry) error
 }
 
 func (m *CommitChange) validateVersionConstraintsOld(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.VersionConstraintsOld) { // not required
 		return nil
 	}
 
 	if err := m.VersionConstraintsOld.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints_old")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this commit change based on the context it is used
+func (m *CommitChange) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateVersionConstraints(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateVersionConstraintsOld(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CommitChange) contextValidateVersionConstraints(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.VersionConstraints.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *CommitChange) contextValidateVersionConstraintsOld(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.VersionConstraintsOld.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version_constraints_old")
 		}

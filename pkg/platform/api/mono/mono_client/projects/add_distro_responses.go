@@ -53,9 +53,8 @@ func (o *AddDistroReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewAddDistroOK() *AddDistroOK {
 	return &AddDistroOK{}
 }
 
-/*AddDistroOK handles this case with default header values.
+/* AddDistroOK describes a response with status code 200, with default header values.
 
 Distro Added
 */
@@ -75,7 +74,6 @@ type AddDistroOK struct {
 func (o *AddDistroOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroOK  %+v", 200, o.Payload)
 }
-
 func (o *AddDistroOK) GetPayload() *mono_models.Distro {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewAddDistroBadRequest() *AddDistroBadRequest {
 	return &AddDistroBadRequest{}
 }
 
-/*AddDistroBadRequest handles this case with default header values.
+/* AddDistroBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type AddDistroBadRequest struct {
 func (o *AddDistroBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddDistroBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewAddDistroForbidden() *AddDistroForbidden {
 	return &AddDistroForbidden{}
 }
 
-/*AddDistroForbidden handles this case with default header values.
+/* AddDistroForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -141,7 +138,6 @@ type AddDistroForbidden struct {
 func (o *AddDistroForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddDistroForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewAddDistroConflict() *AddDistroConflict {
 	return &AddDistroConflict{}
 }
 
-/*AddDistroConflict handles this case with default header values.
+/* AddDistroConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -174,7 +170,6 @@ type AddDistroConflict struct {
 func (o *AddDistroConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddDistroConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewAddDistroInternalServerError() *AddDistroInternalServerError {
 	return &AddDistroInternalServerError{}
 }
 
-/*AddDistroInternalServerError handles this case with default header values.
+/* AddDistroInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type AddDistroInternalServerError struct {
 func (o *AddDistroInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] addDistroInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddDistroInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

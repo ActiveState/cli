@@ -47,9 +47,8 @@ func (o *GetOrganizationTierReader) ReadResponse(response runtime.ClientResponse
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetOrganizationTierOK() *GetOrganizationTierOK {
 	return &GetOrganizationTierOK{}
 }
 
-/*GetOrganizationTierOK handles this case with default header values.
+/* GetOrganizationTierOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type GetOrganizationTierOK struct {
 func (o *GetOrganizationTierOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrganizationTierOK) GetPayload() *mono_models.Tier {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetOrganizationTierForbidden() *GetOrganizationTierForbidden {
 	return &GetOrganizationTierForbidden{}
 }
 
-/*GetOrganizationTierForbidden handles this case with default header values.
+/* GetOrganizationTierForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetOrganizationTierForbidden struct {
 func (o *GetOrganizationTierForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetOrganizationTierForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetOrganizationTierNotFound() *GetOrganizationTierNotFound {
 	return &GetOrganizationTierNotFound{}
 }
 
-/*GetOrganizationTierNotFound handles this case with default header values.
+/* GetOrganizationTierNotFound describes a response with status code 404, with default header values.
 
 Forbidden
 */
@@ -135,7 +132,6 @@ type GetOrganizationTierNotFound struct {
 func (o *GetOrganizationTierNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetOrganizationTierNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetOrganizationTierInternalServerError() *GetOrganizationTierInternalSer
 	return &GetOrganizationTierInternalServerError{}
 }
 
-/*GetOrganizationTierInternalServerError handles this case with default header values.
+/* GetOrganizationTierInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type GetOrganizationTierInternalServerError struct {
 func (o *GetOrganizationTierInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/tier][%d] getOrganizationTierInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrganizationTierInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

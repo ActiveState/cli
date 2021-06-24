@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -64,7 +66,6 @@ func (m *Invitation) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Invitation) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -77,7 +78,6 @@ func (m *Invitation) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Invitation) validateChanged(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Changed) { // not required
 		return nil
 	}
@@ -90,13 +90,40 @@ func (m *Invitation) validateChanged(formats strfmt.Registry) error {
 }
 
 func (m *Invitation) validateOrganization(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Organization) { // not required
 		return nil
 	}
 
 	if m.Organization != nil {
 		if err := m.Organization.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("organization")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this invitation based on the context it is used
+func (m *Invitation) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateOrganization(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Invitation) contextValidateOrganization(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Organization != nil {
+		if err := m.Organization.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("organization")
 			}
