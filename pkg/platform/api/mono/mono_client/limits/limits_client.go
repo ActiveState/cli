@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationLimitsOK, error)
+	EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditOrganizationLimitsOK, error)
 
-	GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationLimitsOK, error)
+	GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationLimitsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 
   Update an orgs limits
 */
-func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*EditOrganizationLimitsOK, error) {
+func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditOrganizationLimitsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEditOrganizationLimitsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "editOrganizationLimits",
 		Method:             "PUT",
 		PathPattern:        "/organizations/{organizationIdentifier}/limits",
@@ -57,7 +59,12 @@ func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, au
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +83,12 @@ func (a *Client) EditOrganizationLimits(params *EditOrganizationLimitsParams, au
 
   Returns the limitations that apply to the org (inherited from their tier)
 */
-func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrganizationLimitsOK, error) {
+func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationLimitsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOrganizationLimitsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getOrganizationLimits",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationIdentifier}/limits",
@@ -94,7 +100,12 @@ func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

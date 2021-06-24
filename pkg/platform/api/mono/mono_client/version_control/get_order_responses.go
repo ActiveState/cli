@@ -47,9 +47,8 @@ func (o *GetOrderReader) ReadResponse(response runtime.ClientResponse, consumer 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetOrderOK() *GetOrderOK {
 	return &GetOrderOK{}
 }
 
-/*GetOrderOK handles this case with default header values.
+/* GetOrderOK describes a response with status code 200, with default header values.
 
 Get the solver order for the given commit
 */
@@ -69,7 +68,6 @@ type GetOrderOK struct {
 func (o *GetOrderOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/order][%d] getOrderOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrderOK) GetPayload() *mono_models.Order {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetOrderForbidden() *GetOrderForbidden {
 	return &GetOrderForbidden{}
 }
 
-/*GetOrderForbidden handles this case with default header values.
+/* GetOrderForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetOrderForbidden struct {
 func (o *GetOrderForbidden) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/order][%d] getOrderForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetOrderForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetOrderNotFound() *GetOrderNotFound {
 	return &GetOrderNotFound{}
 }
 
-/*GetOrderNotFound handles this case with default header values.
+/* GetOrderNotFound describes a response with status code 404, with default header values.
 
 order was not found
 */
@@ -135,7 +132,6 @@ type GetOrderNotFound struct {
 func (o *GetOrderNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/order][%d] getOrderNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetOrderNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetOrderInternalServerError() *GetOrderInternalServerError {
 	return &GetOrderInternalServerError{}
 }
 
-/*GetOrderInternalServerError handles this case with default header values.
+/* GetOrderInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving order
 */
@@ -168,7 +164,6 @@ type GetOrderInternalServerError struct {
 func (o *GetOrderInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/order][%d] getOrderInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrderInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetEmailsByUserParams creates a new GetEmailsByUserParams object
-// with the default values initialized.
+// NewGetEmailsByUserParams creates a new GetEmailsByUserParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetEmailsByUserParams() *GetEmailsByUserParams {
-	var ()
 	return &GetEmailsByUserParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetEmailsByUserParamsWithTimeout creates a new GetEmailsByUserParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetEmailsByUserParamsWithTimeout(timeout time.Duration) *GetEmailsByUserParams {
-	var ()
 	return &GetEmailsByUserParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetEmailsByUserParamsWithContext creates a new GetEmailsByUserParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetEmailsByUserParamsWithContext(ctx context.Context) *GetEmailsByUserParams {
-	var ()
 	return &GetEmailsByUserParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetEmailsByUserParamsWithHTTPClient creates a new GetEmailsByUserParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetEmailsByUserParamsWithHTTPClient(client *http.Client) *GetEmailsByUserParams {
-	var ()
 	return &GetEmailsByUserParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetEmailsByUserParams contains all the parameters to send to the API endpoint
-for the get emails by user operation typically these are written to a http.Request
+/* GetEmailsByUserParams contains all the parameters to send to the API endpoint
+   for the get emails by user operation.
+
+   Typically these are written to a http.Request.
 */
 type GetEmailsByUserParams struct {
 
-	/*Username
-	  username of desired User
+	/* Username.
 
+	   username of desired User
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get emails by user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEmailsByUserParams) WithDefaults() *GetEmailsByUserParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get emails by user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEmailsByUserParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get emails by user params

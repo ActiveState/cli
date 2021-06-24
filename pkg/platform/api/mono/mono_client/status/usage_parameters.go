@@ -17,69 +17,85 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewUsageParams creates a new UsageParams object
-// with the default values initialized.
+// NewUsageParams creates a new UsageParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUsageParams() *UsageParams {
-	var ()
 	return &UsageParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUsageParamsWithTimeout creates a new UsageParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUsageParamsWithTimeout(timeout time.Duration) *UsageParams {
-	var ()
 	return &UsageParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUsageParamsWithContext creates a new UsageParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUsageParamsWithContext(ctx context.Context) *UsageParams {
-	var ()
 	return &UsageParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUsageParamsWithHTTPClient creates a new UsageParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUsageParamsWithHTTPClient(client *http.Client) *UsageParams {
-	var ()
 	return &UsageParams{
 		HTTPClient: client,
 	}
 }
 
-/*UsageParams contains all the parameters to send to the API endpoint
-for the usage operation typically these are written to a http.Request
+/* UsageParams contains all the parameters to send to the API endpoint
+   for the usage operation.
+
+   Typically these are written to a http.Request.
 */
 type UsageParams struct {
 
-	/*Grouping
-	  Desired grouping (day, week, month, year)
+	/* Grouping.
 
+	   Desired grouping (day, week, month, year)
 	*/
 	Grouping *string
-	/*IncludeActivators
-	  Include Activators in user counts
 
+	/* IncludeActivators.
+
+	   Include Activators in user counts
 	*/
 	IncludeActivators *bool
-	/*Limit
-	  Number of periods to look back
 
+	/* Limit.
+
+	   Number of periods to look back
 	*/
 	Limit *int64
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the usage params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UsageParams) WithDefaults() *UsageParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the usage params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UsageParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the usage params
@@ -160,48 +176,51 @@ func (o *UsageParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registr
 
 		// query param grouping
 		var qrGrouping string
+
 		if o.Grouping != nil {
 			qrGrouping = *o.Grouping
 		}
 		qGrouping := qrGrouping
 		if qGrouping != "" {
+
 			if err := r.SetQueryParam("grouping", qGrouping); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.IncludeActivators != nil {
 
 		// query param includeActivators
 		var qrIncludeActivators bool
+
 		if o.IncludeActivators != nil {
 			qrIncludeActivators = *o.IncludeActivators
 		}
 		qIncludeActivators := swag.FormatBool(qrIncludeActivators)
 		if qIncludeActivators != "" {
+
 			if err := r.SetQueryParam("includeActivators", qIncludeActivators); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Limit != nil {
 
 		// query param limit
 		var qrLimit int64
+
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
+
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

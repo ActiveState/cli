@@ -6,6 +6,7 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -54,9 +55,8 @@ func (o *UpdateBillingDateReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -65,7 +65,7 @@ func NewUpdateBillingDateOK() *UpdateBillingDateOK {
 	return &UpdateBillingDateOK{}
 }
 
-/*UpdateBillingDateOK handles this case with default header values.
+/* UpdateBillingDateOK describes a response with status code 200, with default header values.
 
 Billing date updated
 */
@@ -76,7 +76,6 @@ type UpdateBillingDateOK struct {
 func (o *UpdateBillingDateOK) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateBillingDateOK) GetPayload() *mono_models.Organization {
 	return o.Payload
 }
@@ -98,7 +97,7 @@ func NewUpdateBillingDateBadRequest() *UpdateBillingDateBadRequest {
 	return &UpdateBillingDateBadRequest{}
 }
 
-/*UpdateBillingDateBadRequest handles this case with default header values.
+/* UpdateBillingDateBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -109,7 +108,6 @@ type UpdateBillingDateBadRequest struct {
 func (o *UpdateBillingDateBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UpdateBillingDateBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -131,7 +129,7 @@ func NewUpdateBillingDateForbidden() *UpdateBillingDateForbidden {
 	return &UpdateBillingDateForbidden{}
 }
 
-/*UpdateBillingDateForbidden handles this case with default header values.
+/* UpdateBillingDateForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -142,7 +140,6 @@ type UpdateBillingDateForbidden struct {
 func (o *UpdateBillingDateForbidden) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateForbidden  %+v", 403, o.Payload)
 }
-
 func (o *UpdateBillingDateForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -164,7 +161,7 @@ func NewUpdateBillingDateNotFound() *UpdateBillingDateNotFound {
 	return &UpdateBillingDateNotFound{}
 }
 
-/*UpdateBillingDateNotFound handles this case with default header values.
+/* UpdateBillingDateNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -175,7 +172,6 @@ type UpdateBillingDateNotFound struct {
 func (o *UpdateBillingDateNotFound) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateNotFound  %+v", 404, o.Payload)
 }
-
 func (o *UpdateBillingDateNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -197,7 +193,7 @@ func NewUpdateBillingDateInternalServerError() *UpdateBillingDateInternalServerE
 	return &UpdateBillingDateInternalServerError{}
 }
 
-/*UpdateBillingDateInternalServerError handles this case with default header values.
+/* UpdateBillingDateInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -208,7 +204,6 @@ type UpdateBillingDateInternalServerError struct {
 func (o *UpdateBillingDateInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /admin/organizations/{organizationName}/updateBillingDate][%d] updateBillingDateInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *UpdateBillingDateInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -236,6 +231,11 @@ type UpdateBillingDateBody struct {
 
 // Validate validates this update billing date body
 func (o *UpdateBillingDateBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this update billing date body based on context it is used
+func (o *UpdateBillingDateBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

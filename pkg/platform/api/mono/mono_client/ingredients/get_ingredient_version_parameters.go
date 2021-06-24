@@ -16,58 +16,75 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetIngredientVersionParams creates a new GetIngredientVersionParams object
-// with the default values initialized.
+// NewGetIngredientVersionParams creates a new GetIngredientVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetIngredientVersionParams() *GetIngredientVersionParams {
-	var ()
 	return &GetIngredientVersionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetIngredientVersionParamsWithTimeout creates a new GetIngredientVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetIngredientVersionParamsWithTimeout(timeout time.Duration) *GetIngredientVersionParams {
-	var ()
 	return &GetIngredientVersionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetIngredientVersionParamsWithContext creates a new GetIngredientVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetIngredientVersionParamsWithContext(ctx context.Context) *GetIngredientVersionParams {
-	var ()
 	return &GetIngredientVersionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetIngredientVersionParamsWithHTTPClient creates a new GetIngredientVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetIngredientVersionParamsWithHTTPClient(client *http.Client) *GetIngredientVersionParams {
-	var ()
 	return &GetIngredientVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetIngredientVersionParams contains all the parameters to send to the API endpoint
-for the get ingredient version operation typically these are written to a http.Request
+/* GetIngredientVersionParams contains all the parameters to send to the API endpoint
+   for the get ingredient version operation.
+
+   Typically these are written to a http.Request.
 */
 type GetIngredientVersionParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
-	/*Version*/
+
+	// Version.
 	Version string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientVersionParams) WithDefaults() *GetIngredientVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientVersionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get ingredient version params

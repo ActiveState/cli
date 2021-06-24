@@ -53,9 +53,8 @@ func (o *SetPreferredEmailReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewSetPreferredEmailOK() *SetPreferredEmailOK {
 	return &SetPreferredEmailOK{}
 }
 
-/*SetPreferredEmailOK handles this case with default header values.
+/* SetPreferredEmailOK describes a response with status code 200, with default header values.
 
 Email updated
 */
@@ -75,7 +74,6 @@ type SetPreferredEmailOK struct {
 func (o *SetPreferredEmailOK) Error() string {
 	return fmt.Sprintf("[PATCH /users/{username}/emails/{email}/preferred][%d] setPreferredEmailOK  %+v", 200, o.Payload)
 }
-
 func (o *SetPreferredEmailOK) GetPayload() *mono_models.Email {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewSetPreferredEmailBadRequest() *SetPreferredEmailBadRequest {
 	return &SetPreferredEmailBadRequest{}
 }
 
-/*SetPreferredEmailBadRequest handles this case with default header values.
+/* SetPreferredEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type SetPreferredEmailBadRequest struct {
 func (o *SetPreferredEmailBadRequest) Error() string {
 	return fmt.Sprintf("[PATCH /users/{username}/emails/{email}/preferred][%d] setPreferredEmailBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *SetPreferredEmailBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewSetPreferredEmailForbidden() *SetPreferredEmailForbidden {
 	return &SetPreferredEmailForbidden{}
 }
 
-/*SetPreferredEmailForbidden handles this case with default header values.
+/* SetPreferredEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type SetPreferredEmailForbidden struct {
 func (o *SetPreferredEmailForbidden) Error() string {
 	return fmt.Sprintf("[PATCH /users/{username}/emails/{email}/preferred][%d] setPreferredEmailForbidden  %+v", 403, o.Payload)
 }
-
 func (o *SetPreferredEmailForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewSetPreferredEmailNotFound() *SetPreferredEmailNotFound {
 	return &SetPreferredEmailNotFound{}
 }
 
-/*SetPreferredEmailNotFound handles this case with default header values.
+/* SetPreferredEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type SetPreferredEmailNotFound struct {
 func (o *SetPreferredEmailNotFound) Error() string {
 	return fmt.Sprintf("[PATCH /users/{username}/emails/{email}/preferred][%d] setPreferredEmailNotFound  %+v", 404, o.Payload)
 }
-
 func (o *SetPreferredEmailNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewSetPreferredEmailInternalServerError() *SetPreferredEmailInternalServerE
 	return &SetPreferredEmailInternalServerError{}
 }
 
-/*SetPreferredEmailInternalServerError handles this case with default header values.
+/* SetPreferredEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type SetPreferredEmailInternalServerError struct {
 func (o *SetPreferredEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[PATCH /users/{username}/emails/{email}/preferred][%d] setPreferredEmailInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *SetPreferredEmailInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

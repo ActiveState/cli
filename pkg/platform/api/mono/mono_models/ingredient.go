@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -69,7 +71,6 @@ func (m *Ingredient) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Ingredient) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -82,7 +83,6 @@ func (m *Ingredient) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Ingredient) validateIngredientID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientID) { // not required
 		return nil
 	}
@@ -95,7 +95,6 @@ func (m *Ingredient) validateIngredientID(formats strfmt.Registry) error {
 }
 
 func (m *Ingredient) validateWebsiteURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.WebsiteURI) { // not required
 		return nil
 	}
@@ -104,6 +103,11 @@ func (m *Ingredient) validateWebsiteURI(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this ingredient based on context it is used
+func (m *Ingredient) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -47,9 +47,8 @@ func (o *GetOrganizationLimitsReader) ReadResponse(response runtime.ClientRespon
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetOrganizationLimitsOK() *GetOrganizationLimitsOK {
 	return &GetOrganizationLimitsOK{}
 }
 
-/*GetOrganizationLimitsOK handles this case with default header values.
+/* GetOrganizationLimitsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type GetOrganizationLimitsOK struct {
 func (o *GetOrganizationLimitsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrganizationLimitsOK) GetPayload() *mono_models.Limits {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetOrganizationLimitsForbidden() *GetOrganizationLimitsForbidden {
 	return &GetOrganizationLimitsForbidden{}
 }
 
-/*GetOrganizationLimitsForbidden handles this case with default header values.
+/* GetOrganizationLimitsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetOrganizationLimitsForbidden struct {
 func (o *GetOrganizationLimitsForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetOrganizationLimitsForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetOrganizationLimitsNotFound() *GetOrganizationLimitsNotFound {
 	return &GetOrganizationLimitsNotFound{}
 }
 
-/*GetOrganizationLimitsNotFound handles this case with default header values.
+/* GetOrganizationLimitsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -135,7 +132,6 @@ type GetOrganizationLimitsNotFound struct {
 func (o *GetOrganizationLimitsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetOrganizationLimitsNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetOrganizationLimitsInternalServerError() *GetOrganizationLimitsInterna
 	return &GetOrganizationLimitsInternalServerError{}
 }
 
-/*GetOrganizationLimitsInternalServerError handles this case with default header values.
+/* GetOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type GetOrganizationLimitsInternalServerError struct {
 func (o *GetOrganizationLimitsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/limits][%d] getOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrganizationLimitsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

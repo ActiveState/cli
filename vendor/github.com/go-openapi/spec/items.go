@@ -22,8 +22,14 @@ import (
 	"github.com/go-openapi/swag"
 )
 
+const (
+	jsonRef = "$ref"
+)
+
+// SimpleSchema describe swagger simple schemas for parameters and headers
 type SimpleSchema struct {
 	Type             string      `json:"type,omitempty"`
+	Nullable         bool        `json:"nullable,omitempty"`
 	Format           string      `json:"format,omitempty"`
 	Items            *Items      `json:"items,omitempty"`
 	CollectionFormat string      `json:"collectionFormat,omitempty"`
@@ -31,6 +37,7 @@ type SimpleSchema struct {
 	Example          interface{} `json:"example,omitempty"`
 }
 
+// TypeName return the type (or format) of a simple schema
 func (s *SimpleSchema) TypeName() string {
 	if s.Format != "" {
 		return s.Format
@@ -38,26 +45,12 @@ func (s *SimpleSchema) TypeName() string {
 	return s.Type
 }
 
+// ItemsTypeName yields the type of items in a simple schema array
 func (s *SimpleSchema) ItemsTypeName() string {
 	if s.Items == nil {
 		return ""
 	}
 	return s.Items.TypeName()
-}
-
-type CommonValidations struct {
-	Maximum          *float64      `json:"maximum,omitempty"`
-	ExclusiveMaximum bool          `json:"exclusiveMaximum,omitempty"`
-	Minimum          *float64      `json:"minimum,omitempty"`
-	ExclusiveMinimum bool          `json:"exclusiveMinimum,omitempty"`
-	MaxLength        *int64        `json:"maxLength,omitempty"`
-	MinLength        *int64        `json:"minLength,omitempty"`
-	Pattern          string        `json:"pattern,omitempty"`
-	MaxItems         *int64        `json:"maxItems,omitempty"`
-	MinItems         *int64        `json:"minItems,omitempty"`
-	UniqueItems      bool          `json:"uniqueItems,omitempty"`
-	MultipleOf       *float64      `json:"multipleOf,omitempty"`
-	Enum             []interface{} `json:"enum,omitempty"`
 }
 
 // Items a limited subset of JSON-Schema's items object.
@@ -83,9 +76,15 @@ func (i *Items) Typed(tpe, format string) *Items {
 	return i
 }
 
+// AsNullable flags this schema as nullable.
+func (i *Items) AsNullable() *Items {
+	i.Nullable = true
+	return i
+}
+
 // CollectionOf a fluent builder method for an array item
 func (i *Items) CollectionOf(items *Items, format string) *Items {
-	i.Type = "array"
+	i.Type = jsonArray
 	i.Items = items
 	i.CollectionFormat = format
 	return i
@@ -165,6 +164,12 @@ func (i *Items) AllowDuplicates() *Items {
 	return i
 }
 
+// WithValidations is a fluent method to set Items validations
+func (i *Items) WithValidations(val CommonValidations) *Items {
+	i.SetValidations(SchemaValidations{CommonValidations: val})
+	return i
+}
+
 // UnmarshalJSON hydrates this items instance with the data from JSON
 func (i *Items) UnmarshalJSON(data []byte) error {
 	var validations CommonValidations
@@ -212,18 +217,18 @@ func (i Items) MarshalJSON() ([]byte, error) {
 }
 
 // JSONLookup look up a value by the json property name
-func (p Items) JSONLookup(token string) (interface{}, error) {
-	if token == "$ref" {
-		return &p.Ref, nil
+func (i Items) JSONLookup(token string) (interface{}, error) {
+	if token == jsonRef {
+		return &i.Ref, nil
 	}
 
-	r, _, err := jsonpointer.GetForToken(p.CommonValidations, token)
+	r, _, err := jsonpointer.GetForToken(i.CommonValidations, token)
 	if err != nil && !strings.HasPrefix(err.Error(), "object has no field") {
 		return nil, err
 	}
 	if r != nil {
 		return r, nil
 	}
-	r, _, err = jsonpointer.GetForToken(p.SimpleSchema, token)
+	r, _, err = jsonpointer.GetForToken(i.SimpleSchema, token)
 	return r, err
 }

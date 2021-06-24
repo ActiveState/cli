@@ -16,76 +16,92 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOrganizationLimitsParams creates a new GetOrganizationLimitsParams object
-// with the default values initialized.
+// NewGetOrganizationLimitsParams creates a new GetOrganizationLimitsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOrganizationLimitsParams() *GetOrganizationLimitsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationLimitsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOrganizationLimitsParamsWithTimeout creates a new GetOrganizationLimitsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOrganizationLimitsParamsWithTimeout(timeout time.Duration) *GetOrganizationLimitsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationLimitsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOrganizationLimitsParamsWithContext creates a new GetOrganizationLimitsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOrganizationLimitsParamsWithContext(ctx context.Context) *GetOrganizationLimitsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationLimitsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetOrganizationLimitsParamsWithHTTPClient creates a new GetOrganizationLimitsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOrganizationLimitsParamsWithHTTPClient(client *http.Client) *GetOrganizationLimitsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationLimitsParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*GetOrganizationLimitsParams contains all the parameters to send to the API endpoint
-for the get organization limits operation typically these are written to a http.Request
+/* GetOrganizationLimitsParams contains all the parameters to send to the API endpoint
+   for the get organization limits operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOrganizationLimitsParams struct {
 
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
+	/* IdentifierType.
 
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get organization limits params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationLimitsParams) WithDefaults() *GetOrganizationLimitsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get organization limits params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationLimitsParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := GetOrganizationLimitsParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get organization limits params
@@ -155,16 +171,17 @@ func (o *GetOrganizationLimitsParams) WriteToRequest(r runtime.ClientRequest, re
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationIdentifier

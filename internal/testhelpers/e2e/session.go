@@ -71,14 +71,14 @@ func init() {
 	if PersistentUsername == "" {
 		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stderr: %v\n", err, stderr)
+			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
 		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
 		if err != nil {
-			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stderr: %v\n", err, stderr)
+			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}

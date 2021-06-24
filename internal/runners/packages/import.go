@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -140,7 +141,7 @@ func (i *Import) Run(params ImportRunParams) error {
 	return runbits.RefreshRuntime(i.auth, i.out, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
-func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {
+func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs []*gqlModel.Requirement) error {
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 

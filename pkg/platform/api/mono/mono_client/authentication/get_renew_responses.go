@@ -41,9 +41,8 @@ func (o *GetRenewReader) ReadResponse(response runtime.ClientResponse, consumer 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetRenewOK() *GetRenewOK {
 	return &GetRenewOK{}
 }
 
-/*GetRenewOK handles this case with default header values.
+/* GetRenewOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetRenewOK struct {
 func (o *GetRenewOK) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewOK  %+v", 200, o.Payload)
 }
-
 func (o *GetRenewOK) GetPayload() *mono_models.JWT {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetRenewNotFound() *GetRenewNotFound {
 	return &GetRenewNotFound{}
 }
 
-/*GetRenewNotFound handles this case with default header values.
+/* GetRenewNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetRenewNotFound struct {
 func (o *GetRenewNotFound) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetRenewNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetRenewInternalServerError() *GetRenewInternalServerError {
 	return &GetRenewInternalServerError{}
 }
 
-/*GetRenewInternalServerError handles this case with default header values.
+/* GetRenewInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetRenewInternalServerError struct {
 func (o *GetRenewInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /renew][%d] getRenewInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetRenewInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

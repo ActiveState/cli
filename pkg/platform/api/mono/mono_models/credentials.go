@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -30,6 +32,11 @@ type Credentials struct {
 
 // Validate validates this credentials
 func (m *Credentials) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this credentials based on context it is used
+func (m *Credentials) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

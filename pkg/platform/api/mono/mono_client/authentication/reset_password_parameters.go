@@ -18,59 +18,73 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewResetPasswordParams creates a new ResetPasswordParams object
-// with the default values initialized.
+// NewResetPasswordParams creates a new ResetPasswordParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewResetPasswordParams() *ResetPasswordParams {
-	var ()
 	return &ResetPasswordParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewResetPasswordParamsWithTimeout creates a new ResetPasswordParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewResetPasswordParamsWithTimeout(timeout time.Duration) *ResetPasswordParams {
-	var ()
 	return &ResetPasswordParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewResetPasswordParamsWithContext creates a new ResetPasswordParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewResetPasswordParamsWithContext(ctx context.Context) *ResetPasswordParams {
-	var ()
 	return &ResetPasswordParams{
-
 		Context: ctx,
 	}
 }
 
 // NewResetPasswordParamsWithHTTPClient creates a new ResetPasswordParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewResetPasswordParamsWithHTTPClient(client *http.Client) *ResetPasswordParams {
-	var ()
 	return &ResetPasswordParams{
 		HTTPClient: client,
 	}
 }
 
-/*ResetPasswordParams contains all the parameters to send to the API endpoint
-for the reset password operation typically these are written to a http.Request
+/* ResetPasswordParams contains all the parameters to send to the API endpoint
+   for the reset password operation.
+
+   Typically these are written to a http.Request.
 */
 type ResetPasswordParams struct {
 
-	/*ResetRequest
-	  Reset Request
+	/* ResetRequest.
 
+	   Reset Request
 	*/
 	ResetRequest *mono_models.PasswordReset
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the reset password params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ResetPasswordParams) WithDefaults() *ResetPasswordParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the reset password params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ResetPasswordParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the reset password params
@@ -124,7 +138,6 @@ func (o *ResetPasswordParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
-
 	if o.ResetRequest != nil {
 		if err := r.SetBodyParam(o.ResetRequest); err != nil {
 			return err

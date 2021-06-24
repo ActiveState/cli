@@ -41,9 +41,8 @@ func (o *UniqueUsernameReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewUniqueUsernameOK() *UniqueUsernameOK {
 	return &UniqueUsernameOK{}
 }
 
-/*UniqueUsernameOK handles this case with default header values.
+/* UniqueUsernameOK describes a response with status code 200, with default header values.
 
 Username available
 */
@@ -63,7 +62,6 @@ type UniqueUsernameOK struct {
 func (o *UniqueUsernameOK) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameOK  %+v", 200, o.Payload)
 }
-
 func (o *UniqueUsernameOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewUniqueUsernameBadRequest() *UniqueUsernameBadRequest {
 	return &UniqueUsernameBadRequest{}
 }
 
-/*UniqueUsernameBadRequest handles this case with default header values.
+/* UniqueUsernameBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -96,7 +94,6 @@ type UniqueUsernameBadRequest struct {
 func (o *UniqueUsernameBadRequest) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UniqueUsernameBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewUniqueUsernameConflict() *UniqueUsernameConflict {
 	return &UniqueUsernameConflict{}
 }
 
-/*UniqueUsernameConflict handles this case with default header values.
+/* UniqueUsernameConflict describes a response with status code 409, with default header values.
 
 Username Conflict
 */
@@ -129,7 +126,6 @@ type UniqueUsernameConflict struct {
 func (o *UniqueUsernameConflict) Error() string {
 	return fmt.Sprintf("[GET /users/uniqueUsername/{username}][%d] uniqueUsernameConflict  %+v", 409, o.Payload)
 }
-
 func (o *UniqueUsernameConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }

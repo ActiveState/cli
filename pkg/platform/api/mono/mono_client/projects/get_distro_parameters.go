@@ -17,79 +17,101 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetDistroParams creates a new GetDistroParams object
-// with the default values initialized.
+// NewGetDistroParams creates a new GetDistroParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetDistroParams() *GetDistroParams {
-	var ()
 	return &GetDistroParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetDistroParamsWithTimeout creates a new GetDistroParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetDistroParamsWithTimeout(timeout time.Duration) *GetDistroParams {
-	var ()
 	return &GetDistroParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetDistroParamsWithContext creates a new GetDistroParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetDistroParamsWithContext(ctx context.Context) *GetDistroParams {
-	var ()
 	return &GetDistroParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetDistroParamsWithHTTPClient creates a new GetDistroParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetDistroParamsWithHTTPClient(client *http.Client) *GetDistroParams {
-	var ()
 	return &GetDistroParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetDistroParams contains all the parameters to send to the API endpoint
-for the get distro operation typically these are written to a http.Request
+/* GetDistroParams contains all the parameters to send to the API endpoint
+   for the get distro operation.
+
+   Typically these are written to a http.Request.
 */
 type GetDistroParams struct {
 
-	/*DistroID
-	  desired distro
+	/* DistroID.
 
+	   desired distro
+
+	   Format: uuid
 	*/
 	DistroID strfmt.UUID
-	/*IncludeDetails
-	  include the manifest and formats in the response
 
+	/* IncludeDetails.
+
+	   include the manifest and formats in the response
 	*/
 	IncludeDetails *bool
-	/*OrganizationName
-	  desired organization
 
+	/* OrganizationName.
+
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get distro params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetDistroParams) WithDefaults() *GetDistroParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get distro params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetDistroParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get distro params
@@ -197,16 +219,17 @@ func (o *GetDistroParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 
 		// query param includeDetails
 		var qrIncludeDetails bool
+
 		if o.IncludeDetails != nil {
 			qrIncludeDetails = *o.IncludeDetails
 		}
 		qIncludeDetails := swag.FormatBool(qrIncludeDetails)
 		if qIncludeDetails != "" {
+
 			if err := r.SetQueryParam("includeDetails", qIncludeDetails); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationName

@@ -47,9 +47,8 @@ func (o *GetCheckpointReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetCheckpointOK() *GetCheckpointOK {
 	return &GetCheckpointOK{}
 }
 
-/*GetCheckpointOK handles this case with default header values.
+/* GetCheckpointOK describes a response with status code 200, with default header values.
 
 Get the checkpoint for the given commit
 */
@@ -69,7 +68,6 @@ type GetCheckpointOK struct {
 func (o *GetCheckpointOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/checkpoint][%d] getCheckpointOK  %+v", 200, o.Payload)
 }
-
 func (o *GetCheckpointOK) GetPayload() []*mono_models.Checkpoint {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewGetCheckpointForbidden() *GetCheckpointForbidden {
 	return &GetCheckpointForbidden{}
 }
 
-/*GetCheckpointForbidden handles this case with default header values.
+/* GetCheckpointForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -100,7 +98,6 @@ type GetCheckpointForbidden struct {
 func (o *GetCheckpointForbidden) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/checkpoint][%d] getCheckpointForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetCheckpointForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewGetCheckpointNotFound() *GetCheckpointNotFound {
 	return &GetCheckpointNotFound{}
 }
 
-/*GetCheckpointNotFound handles this case with default header values.
+/* GetCheckpointNotFound describes a response with status code 404, with default header values.
 
 checkpoint was not found
 */
@@ -133,7 +130,6 @@ type GetCheckpointNotFound struct {
 func (o *GetCheckpointNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/checkpoint][%d] getCheckpointNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetCheckpointNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewGetCheckpointInternalServerError() *GetCheckpointInternalServerError {
 	return &GetCheckpointInternalServerError{}
 }
 
-/*GetCheckpointInternalServerError handles this case with default header values.
+/* GetCheckpointInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving checkpoint
 */
@@ -166,7 +162,6 @@ type GetCheckpointInternalServerError struct {
 func (o *GetCheckpointInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitID}/checkpoint][%d] getCheckpointInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetCheckpointInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

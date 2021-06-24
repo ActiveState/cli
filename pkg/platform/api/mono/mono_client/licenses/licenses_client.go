@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter) (*GetLicenseOK, error)
+	GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLicenseOK, error)
 
-	ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLicensesOK, error)
+	ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListLicensesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 
   Return a specific license matching licenseID
 */
-func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter) (*GetLicenseOK, error) {
+func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLicenseOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLicenseParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getLicense",
 		Method:             "GET",
 		PathPattern:        "/licenses/{licenseID}",
@@ -57,7 +59,12 @@ func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +83,12 @@ func (a *Client) GetLicense(params *GetLicenseParams, authInfo runtime.ClientAut
 
   Retrieve all licenses from the system that the user has access to
 */
-func (a *Client) ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLicensesOK, error) {
+func (a *Client) ListLicenses(params *ListLicensesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListLicensesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListLicensesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listLicenses",
 		Method:             "GET",
 		PathPattern:        "/licenses",
@@ -94,7 +100,12 @@ func (a *Client) ListLicenses(params *ListLicensesParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

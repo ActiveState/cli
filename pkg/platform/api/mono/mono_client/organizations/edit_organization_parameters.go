@@ -18,78 +18,95 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditOrganizationParams creates a new EditOrganizationParams object
-// with the default values initialized.
+// NewEditOrganizationParams creates a new EditOrganizationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditOrganizationParams() *EditOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditOrganizationParamsWithTimeout creates a new EditOrganizationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditOrganizationParamsWithTimeout(timeout time.Duration) *EditOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewEditOrganizationParamsWithContext creates a new EditOrganizationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditOrganizationParamsWithContext(ctx context.Context) *EditOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewEditOrganizationParamsWithHTTPClient creates a new EditOrganizationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditOrganizationParamsWithHTTPClient(client *http.Client) *EditOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*EditOrganizationParams contains all the parameters to send to the API endpoint
-for the edit organization operation typically these are written to a http.Request
+/* EditOrganizationParams contains all the parameters to send to the API endpoint
+   for the edit organization operation.
+
+   Typically these are written to a http.Request.
 */
 type EditOrganizationParams struct {
 
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
+	/* IdentifierType.
 
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*Organization*/
-	Organization *mono_models.OrganizationEditable
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	// Organization.
+	Organization *mono_models.OrganizationEditable
+
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditOrganizationParams) WithDefaults() *EditOrganizationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditOrganizationParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := EditOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the edit organization params
@@ -170,18 +187,18 @@ func (o *EditOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg str
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
-
 	if o.Organization != nil {
 		if err := r.SetBodyParam(o.Organization); err != nil {
 			return err

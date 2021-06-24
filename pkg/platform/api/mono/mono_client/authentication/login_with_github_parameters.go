@@ -16,64 +16,82 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewLoginWithGithubParams creates a new LoginWithGithubParams object
-// with the default values initialized.
+// NewLoginWithGithubParams creates a new LoginWithGithubParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewLoginWithGithubParams() *LoginWithGithubParams {
-	var ()
 	return &LoginWithGithubParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewLoginWithGithubParamsWithTimeout creates a new LoginWithGithubParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewLoginWithGithubParamsWithTimeout(timeout time.Duration) *LoginWithGithubParams {
-	var ()
 	return &LoginWithGithubParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewLoginWithGithubParamsWithContext creates a new LoginWithGithubParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewLoginWithGithubParamsWithContext(ctx context.Context) *LoginWithGithubParams {
-	var ()
 	return &LoginWithGithubParams{
-
 		Context: ctx,
 	}
 }
 
 // NewLoginWithGithubParamsWithHTTPClient creates a new LoginWithGithubParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewLoginWithGithubParamsWithHTTPClient(client *http.Client) *LoginWithGithubParams {
-	var ()
 	return &LoginWithGithubParams{
 		HTTPClient: client,
 	}
 }
 
-/*LoginWithGithubParams contains all the parameters to send to the API endpoint
-for the login with github operation typically these are written to a http.Request
+/* LoginWithGithubParams contains all the parameters to send to the API endpoint
+   for the login with github operation.
+
+   Typically these are written to a http.Request.
 */
 type LoginWithGithubParams struct {
 
-	/*Code*/
+	// Code.
 	Code *string
-	/*Error*/
+
+	// Error.
 	Error *string
-	/*InviteCode*/
+
+	// InviteCode.
 	InviteCode *string
-	/*NextRoute*/
+
+	// NextRoute.
 	NextRoute *string
-	/*State*/
+
+	// State.
 	State *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the login with github params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LoginWithGithubParams) WithDefaults() *LoginWithGithubParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the login with github params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LoginWithGithubParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the login with github params
@@ -176,80 +194,85 @@ func (o *LoginWithGithubParams) WriteToRequest(r runtime.ClientRequest, reg strf
 
 		// query param code
 		var qrCode string
+
 		if o.Code != nil {
 			qrCode = *o.Code
 		}
 		qCode := qrCode
 		if qCode != "" {
+
 			if err := r.SetQueryParam("code", qCode); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Error != nil {
 
 		// query param error
 		var qrError string
+
 		if o.Error != nil {
 			qrError = *o.Error
 		}
 		qError := qrError
 		if qError != "" {
+
 			if err := r.SetQueryParam("error", qError); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.InviteCode != nil {
 
 		// query param inviteCode
 		var qrInviteCode string
+
 		if o.InviteCode != nil {
 			qrInviteCode = *o.InviteCode
 		}
 		qInviteCode := qrInviteCode
 		if qInviteCode != "" {
+
 			if err := r.SetQueryParam("inviteCode", qInviteCode); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.NextRoute != nil {
 
 		// query param nextRoute
 		var qrNextRoute string
+
 		if o.NextRoute != nil {
 			qrNextRoute = *o.NextRoute
 		}
 		qNextRoute := qrNextRoute
 		if qNextRoute != "" {
+
 			if err := r.SetQueryParam("nextRoute", qNextRoute); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.State != nil {
 
 		// query param state
 		var qrState string
+
 		if o.State != nil {
 			qrState = *o.State
 		}
 		qState := qrState
 		if qState != "" {
+
 			if err := r.SetQueryParam("state", qState); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

@@ -35,9 +35,8 @@ func (o *DisableTOTPReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewDisableTOTPOK() *DisableTOTPOK {
 	return &DisableTOTPOK{}
 }
 
-/*DisableTOTPOK handles this case with default header values.
+/* DisableTOTPOK describes a response with status code 200, with default header values.
 
 Disabled TOTP
 */
@@ -57,7 +56,6 @@ type DisableTOTPOK struct {
 func (o *DisableTOTPOK) Error() string {
 	return fmt.Sprintf("[DELETE /totp][%d] disableTOTPOK  %+v", 200, o.Payload)
 }
-
 func (o *DisableTOTPOK) GetPayload() *mono_models.User {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewDisableTOTPBadRequest() *DisableTOTPBadRequest {
 	return &DisableTOTPBadRequest{}
 }
 
-/*DisableTOTPBadRequest handles this case with default header values.
+/* DisableTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -90,7 +88,6 @@ type DisableTOTPBadRequest struct {
 func (o *DisableTOTPBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /totp][%d] disableTOTPBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DisableTOTPBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -123,7 +124,7 @@ func prepareCommit(commit string) (*strfmt.UUID, error) {
 	return &uuid, nil
 }
 
-func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, error) {
+func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
 	if commit == nil {
 		logging.Debug("commit id is nil")
 		return nil, nil
@@ -137,7 +138,7 @@ func fetchCheckpoint(commit *strfmt.UUID) (model.Checkpoint, error) {
 	return checkpoint, err
 }
 
-func newFilteredRequirementsTable(requirements model.Checkpoint, filter string, nstype model.NamespaceType) *packageTable {
+func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) *packageTable {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil

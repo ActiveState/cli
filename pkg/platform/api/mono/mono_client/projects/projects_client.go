@@ -25,41 +25,46 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter) (*AddBranchOK, error)
+	AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBranchOK, error)
 
-	AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter) (*AddDistroOK, error)
+	AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddDistroOK, error)
 
-	AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter) (*AddFormatOK, error)
+	AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddFormatOK, error)
 
-	AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddProjectOK, error)
+	AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddProjectOK, error)
 
-	AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*AddReleaseOK, error)
+	AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddReleaseOK, error)
 
-	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error)
+	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error)
 
-	EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditProjectOK, error)
+	EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditProjectOK, error)
 
-	EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*EditReleaseOK, error)
+	EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditReleaseOK, error)
 
-	GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter) (*GetDistroOK, error)
+	ForkProject(params *ForkProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForkProjectOK, error)
 
-	GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter) (*GetFormatOK, error)
+	GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDistroOK, error)
 
-	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error)
+	GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetFormatOK, error)
 
-	GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectByIDOK, error)
+	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
-	GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*GetReleaseOK, error)
+	GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectByIDOK, error)
 
-	ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter) (*ListDistrosOK, error)
+	GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error)
 
-	ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter) (*ListFormatsOK, error)
+	ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDistrosOK, error)
 
-	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error)
+	ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListFormatsOK, error)
 
-	ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter) (*ListReleasesOK, error)
+	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error)
+
+	ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -69,13 +74,12 @@ type ClientService interface {
 
   Add a branch on the specified project
 */
-func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter) (*AddBranchOK, error) {
+func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBranchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddBranchParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addBranch",
 		Method:             "POST",
 		PathPattern:        "/projects/{projectID}/branches",
@@ -87,7 +91,12 @@ func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -106,13 +115,12 @@ func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthI
 
   Add a distro to an existing project release
 */
-func (a *Client) AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter) (*AddDistroOK, error) {
+func (a *Client) AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddDistroOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddDistroParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addDistro",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros",
@@ -124,7 +132,12 @@ func (a *Client) AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -143,13 +156,12 @@ func (a *Client) AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthI
 
   Add a format to an existing distro
 */
-func (a *Client) AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter) (*AddFormatOK, error) {
+func (a *Client) AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddFormatOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddFormatParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addFormat",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats",
@@ -161,7 +173,12 @@ func (a *Client) AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -180,13 +197,12 @@ func (a *Client) AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthI
 
   Add a new project to an organization
 */
-func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter) (*AddProjectOK, error) {
+func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addProject",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects",
@@ -198,7 +214,12 @@ func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +238,12 @@ func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAut
 
   Add a release to an existing project
 */
-func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*AddReleaseOK, error) {
+func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddReleaseOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddReleaseParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addRelease",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases",
@@ -235,7 +255,12 @@ func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -254,13 +279,12 @@ func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAut
 
   Delete a Project
 */
-func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteProjectOK, error) {
+func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteProject",
 		Method:             "DELETE",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}",
@@ -272,7 +296,12 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -291,13 +320,12 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 
   Edit a project
 */
-func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter) (*EditProjectOK, error) {
+func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEditProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "editProject",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}",
@@ -309,7 +337,12 @@ func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -328,13 +361,12 @@ func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientA
 
   Edit a release
 */
-func (a *Client) EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*EditReleaseOK, error) {
+func (a *Client) EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditReleaseOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEditReleaseParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "editRelease",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}",
@@ -346,7 +378,12 @@ func (a *Client) EditRelease(params *EditReleaseParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -361,17 +398,57 @@ func (a *Client) EditRelease(params *EditReleaseParams, authInfo runtime.ClientA
 }
 
 /*
+  ForkProject forks a project
+
+  Fork a project
+*/
+func (a *Client) ForkProject(params *ForkProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForkProjectOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewForkProjectParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "forkProject",
+		Method:             "POST",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/fork",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &ForkProjectReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ForkProjectOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for forkProject: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   GetDistro releases distro
 
   fetch a specific distro for a release
 */
-func (a *Client) GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter) (*GetDistroOK, error) {
+func (a *Client) GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDistroOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetDistroParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getDistro",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}",
@@ -383,7 +460,12 @@ func (a *Client) GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -402,13 +484,12 @@ func (a *Client) GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthI
 
   fetch a specific format for a distro
 */
-func (a *Client) GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter) (*GetFormatOK, error) {
+func (a *Client) GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetFormatOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetFormatParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getFormat",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats/{formatID}",
@@ -420,7 +501,12 @@ func (a *Client) GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -439,13 +525,12 @@ func (a *Client) GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthI
 
   Get project details
 */
-func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectOK, error) {
+func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetProjectParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getProject",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}",
@@ -457,7 +542,12 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -476,13 +566,12 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 
   Get project details by ID
 */
-func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetProjectByIDOK, error) {
+func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectByIDOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetProjectByIDParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getProjectByID",
 		Method:             "GET",
 		PathPattern:        "/projects/{projectID}",
@@ -494,7 +583,12 @@ func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -513,13 +607,12 @@ func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.C
 
   Get release details
 */
-func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter) (*GetReleaseOK, error) {
+func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetReleaseParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getRelease",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}",
@@ -531,7 +624,12 @@ func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -550,13 +648,12 @@ func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAut
 
   Return a list of distros for a release
 */
-func (a *Client) ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter) (*ListDistrosOK, error) {
+func (a *Client) ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDistrosOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListDistrosParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listDistros",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros",
@@ -568,7 +665,12 @@ func (a *Client) ListDistros(params *ListDistrosParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -587,13 +689,12 @@ func (a *Client) ListDistros(params *ListDistrosParams, authInfo runtime.ClientA
 
   Return a list of formats for a specific distro
 */
-func (a *Client) ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter) (*ListFormatsOK, error) {
+func (a *Client) ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListFormatsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListFormatsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listFormats",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats",
@@ -605,7 +706,12 @@ func (a *Client) ListFormats(params *ListFormatsParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -624,13 +730,12 @@ func (a *Client) ListFormats(params *ListFormatsParams, authInfo runtime.ClientA
 
   Return a list of projects for an organization
 */
-func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error) {
+func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListProjectsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listProjects",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects",
@@ -642,7 +747,12 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -661,13 +771,12 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 
   Return a list of releases for a project
 */
-func (a *Client) ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter) (*ListReleasesOK, error) {
+func (a *Client) ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListReleasesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listReleases",
 		Method:             "GET",
 		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases",
@@ -679,7 +788,12 @@ func (a *Client) ListReleases(params *ListReleasesParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

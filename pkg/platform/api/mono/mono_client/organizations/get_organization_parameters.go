@@ -16,76 +16,92 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOrganizationParams creates a new GetOrganizationParams object
-// with the default values initialized.
+// NewGetOrganizationParams creates a new GetOrganizationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOrganizationParams() *GetOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOrganizationParamsWithTimeout creates a new GetOrganizationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOrganizationParamsWithTimeout(timeout time.Duration) *GetOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOrganizationParamsWithContext creates a new GetOrganizationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOrganizationParamsWithContext(ctx context.Context) *GetOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetOrganizationParamsWithHTTPClient creates a new GetOrganizationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOrganizationParamsWithHTTPClient(client *http.Client) *GetOrganizationParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*GetOrganizationParams contains all the parameters to send to the API endpoint
-for the get organization operation typically these are written to a http.Request
+/* GetOrganizationParams contains all the parameters to send to the API endpoint
+   for the get organization operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOrganizationParams struct {
 
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
+	/* IdentifierType.
 
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationParams) WithDefaults() *GetOrganizationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := GetOrganizationParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get organization params
@@ -155,16 +171,17 @@ func (o *GetOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg strf
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationIdentifier

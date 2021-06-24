@@ -18,59 +18,73 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewAddUserParams creates a new AddUserParams object
-// with the default values initialized.
+// NewAddUserParams creates a new AddUserParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddUserParams() *AddUserParams {
-	var ()
 	return &AddUserParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddUserParamsWithTimeout creates a new AddUserParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddUserParamsWithTimeout(timeout time.Duration) *AddUserParams {
-	var ()
 	return &AddUserParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddUserParamsWithContext creates a new AddUserParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddUserParamsWithContext(ctx context.Context) *AddUserParams {
-	var ()
 	return &AddUserParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddUserParamsWithHTTPClient creates a new AddUserParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddUserParamsWithHTTPClient(client *http.Client) *AddUserParams {
-	var ()
 	return &AddUserParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddUserParams contains all the parameters to send to the API endpoint
-for the add user operation typically these are written to a http.Request
+/* AddUserParams contains all the parameters to send to the API endpoint
+   for the add user operation.
+
+   Typically these are written to a http.Request.
 */
 type AddUserParams struct {
 
-	/*User
-	  User to add
+	/* User.
 
+	   User to add
 	*/
 	User *mono_models.UserEditable
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddUserParams) WithDefaults() *AddUserParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddUserParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add user params
@@ -124,7 +138,6 @@ func (o *AddUserParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regis
 		return err
 	}
 	var res []error
-
 	if o.User != nil {
 		if err := r.SetBodyParam(o.User); err != nil {
 			return err

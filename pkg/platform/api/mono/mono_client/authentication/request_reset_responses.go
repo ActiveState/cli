@@ -41,9 +41,8 @@ func (o *RequestResetReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewRequestResetOK() *RequestResetOK {
 	return &RequestResetOK{}
 }
 
-/*RequestResetOK handles this case with default header values.
+/* RequestResetOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type RequestResetOK struct {
 func (o *RequestResetOK) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetOK  %+v", 200, o.Payload)
 }
-
 func (o *RequestResetOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewRequestResetBadRequest() *RequestResetBadRequest {
 	return &RequestResetBadRequest{}
 }
 
-/*RequestResetBadRequest handles this case with default header values.
+/* RequestResetBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -96,7 +94,6 @@ type RequestResetBadRequest struct {
 func (o *RequestResetBadRequest) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *RequestResetBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewRequestResetInternalServerError() *RequestResetInternalServerError {
 	return &RequestResetInternalServerError{}
 }
 
-/*RequestResetInternalServerError handles this case with default header values.
+/* RequestResetInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type RequestResetInternalServerError struct {
 func (o *RequestResetInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /request-reset/{email}][%d] requestResetInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *RequestResetInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

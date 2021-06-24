@@ -6,6 +6,7 @@ package users
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -54,9 +55,8 @@ func (o *DeleteEmailReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -65,7 +65,7 @@ func NewDeleteEmailOK() *DeleteEmailOK {
 	return &DeleteEmailOK{}
 }
 
-/*DeleteEmailOK handles this case with default header values.
+/* DeleteEmailOK describes a response with status code 200, with default header values.
 
 Email deleted
 */
@@ -76,7 +76,6 @@ type DeleteEmailOK struct {
 func (o *DeleteEmailOK) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteEmailOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -98,7 +97,7 @@ func NewDeleteEmailBadRequest() *DeleteEmailBadRequest {
 	return &DeleteEmailBadRequest{}
 }
 
-/*DeleteEmailBadRequest handles this case with default header values.
+/* DeleteEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -109,7 +108,6 @@ type DeleteEmailBadRequest struct {
 func (o *DeleteEmailBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DeleteEmailBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -131,7 +129,7 @@ func NewDeleteEmailForbidden() *DeleteEmailForbidden {
 	return &DeleteEmailForbidden{}
 }
 
-/*DeleteEmailForbidden handles this case with default header values.
+/* DeleteEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -142,7 +140,6 @@ type DeleteEmailForbidden struct {
 func (o *DeleteEmailForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteEmailForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -164,7 +161,7 @@ func NewDeleteEmailNotFound() *DeleteEmailNotFound {
 	return &DeleteEmailNotFound{}
 }
 
-/*DeleteEmailNotFound handles this case with default header values.
+/* DeleteEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -175,7 +172,6 @@ type DeleteEmailNotFound struct {
 func (o *DeleteEmailNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteEmailNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -197,7 +193,7 @@ func NewDeleteEmailInternalServerError() *DeleteEmailInternalServerError {
 	return &DeleteEmailInternalServerError{}
 }
 
-/*DeleteEmailInternalServerError handles this case with default header values.
+/* DeleteEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -208,7 +204,6 @@ type DeleteEmailInternalServerError struct {
 func (o *DeleteEmailInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}/emails][%d] deleteEmailInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteEmailInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -236,6 +231,11 @@ type DeleteEmailBody struct {
 
 // Validate validates this delete email body
 func (o *DeleteEmailBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this delete email body based on context it is used
+func (o *DeleteEmailBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

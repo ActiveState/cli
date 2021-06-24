@@ -35,9 +35,8 @@ func (o *GetOrderFromCheckpointReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewGetOrderFromCheckpointOK() *GetOrderFromCheckpointOK {
 	return &GetOrderFromCheckpointOK{}
 }
 
-/*GetOrderFromCheckpointOK handles this case with default header values.
+/* GetOrderFromCheckpointOK describes a response with status code 200, with default header values.
 
 Generate a solver order for the provided checkpoint data
 */
@@ -57,7 +56,6 @@ type GetOrderFromCheckpointOK struct {
 func (o *GetOrderFromCheckpointOK) Error() string {
 	return fmt.Sprintf("[POST /vcs/order][%d] getOrderFromCheckpointOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrderFromCheckpointOK) GetPayload() *mono_models.Order {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewGetOrderFromCheckpointInternalServerError() *GetOrderFromCheckpointInter
 	return &GetOrderFromCheckpointInternalServerError{}
 }
 
-/*GetOrderFromCheckpointInternalServerError handles this case with default header values.
+/* GetOrderFromCheckpointInternalServerError describes a response with status code 500, with default header values.
 
 Error generating order
 */
@@ -90,7 +88,6 @@ type GetOrderFromCheckpointInternalServerError struct {
 func (o *GetOrderFromCheckpointInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /vcs/order][%d] getOrderFromCheckpointInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrderFromCheckpointInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

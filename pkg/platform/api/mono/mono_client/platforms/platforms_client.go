@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformOK, error)
+	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPlatformOK, error)
 
-	ListPlatforms(params *ListPlatformsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPlatformsOK, error)
+	ListPlatforms(params *ListPlatformsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPlatformsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 
   Create a new platform
 */
-func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformOK, error) {
+func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPlatformOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddPlatformParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addPlatform",
 		Method:             "POST",
 		PathPattern:        "/platforms",
@@ -57,7 +59,12 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +83,12 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 
   Retrieve a list of all valid builder platforms
 */
-func (a *Client) ListPlatforms(params *ListPlatformsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPlatformsOK, error) {
+func (a *Client) ListPlatforms(params *ListPlatformsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPlatformsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListPlatformsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listPlatforms",
 		Method:             "GET",
 		PathPattern:        "/platforms",
@@ -94,7 +100,12 @@ func (a *Client) ListPlatforms(params *ListPlatformsParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

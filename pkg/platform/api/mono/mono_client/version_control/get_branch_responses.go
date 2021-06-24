@@ -35,9 +35,8 @@ func (o *GetBranchReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewGetBranchOK() *GetBranchOK {
 	return &GetBranchOK{}
 }
 
-/*GetBranchOK handles this case with default header values.
+/* GetBranchOK describes a response with status code 200, with default header values.
 
 Get details about the branch
 */
@@ -57,7 +56,6 @@ type GetBranchOK struct {
 func (o *GetBranchOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/branch/{branchID}][%d] getBranchOK  %+v", 200, o.Payload)
 }
-
 func (o *GetBranchOK) GetPayload() *mono_models.Branch {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewGetBranchNotFound() *GetBranchNotFound {
 	return &GetBranchNotFound{}
 }
 
-/*GetBranchNotFound handles this case with default header values.
+/* GetBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -90,7 +88,6 @@ type GetBranchNotFound struct {
 func (o *GetBranchNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/branch/{branchID}][%d] getBranchNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetBranchNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }

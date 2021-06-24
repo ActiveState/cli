@@ -41,9 +41,8 @@ func (o *GetUserReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetUserOK() *GetUserOK {
 	return &GetUserOK{}
 }
 
-/*GetUserOK handles this case with default header values.
+/* GetUserOK describes a response with status code 200, with default header values.
 
 User Record
 */
@@ -63,7 +62,6 @@ type GetUserOK struct {
 func (o *GetUserOK) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserOK  %+v", 200, o.Payload)
 }
-
 func (o *GetUserOK) GetPayload() *mono_models.User {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetUserNotFound() *GetUserNotFound {
 	return &GetUserNotFound{}
 }
 
-/*GetUserNotFound handles this case with default header values.
+/* GetUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetUserNotFound struct {
 func (o *GetUserNotFound) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetUserNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetUserInternalServerError() *GetUserInternalServerError {
 	return &GetUserInternalServerError{}
 }
 
-/*GetUserInternalServerError handles this case with default header values.
+/* GetUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetUserInternalServerError struct {
 func (o *GetUserInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/{username}][%d] getUserInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetUserInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

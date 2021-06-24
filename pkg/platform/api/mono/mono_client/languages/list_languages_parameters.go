@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListLanguagesParams creates a new ListLanguagesParams object
-// with the default values initialized.
+// NewListLanguagesParams creates a new ListLanguagesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListLanguagesParams() *ListLanguagesParams {
-
 	return &ListLanguagesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListLanguagesParamsWithTimeout creates a new ListLanguagesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListLanguagesParamsWithTimeout(timeout time.Duration) *ListLanguagesParams {
-
 	return &ListLanguagesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListLanguagesParamsWithContext creates a new ListLanguagesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListLanguagesParamsWithContext(ctx context.Context) *ListLanguagesParams {
-
 	return &ListLanguagesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListLanguagesParamsWithHTTPClient creates a new ListLanguagesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListLanguagesParamsWithHTTPClient(client *http.Client) *ListLanguagesParams {
-
 	return &ListLanguagesParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListLanguagesParams contains all the parameters to send to the API endpoint
-for the list languages operation typically these are written to a http.Request
+/* ListLanguagesParams contains all the parameters to send to the API endpoint
+   for the list languages operation.
+
+   Typically these are written to a http.Request.
 */
 type ListLanguagesParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list languages params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListLanguagesParams) WithDefaults() *ListLanguagesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list languages params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListLanguagesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list languages params

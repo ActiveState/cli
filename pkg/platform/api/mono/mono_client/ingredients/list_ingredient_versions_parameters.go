@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListIngredientVersionsParams creates a new ListIngredientVersionsParams object
-// with the default values initialized.
+// NewListIngredientVersionsParams creates a new ListIngredientVersionsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListIngredientVersionsParams() *ListIngredientVersionsParams {
-	var ()
 	return &ListIngredientVersionsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListIngredientVersionsParamsWithTimeout creates a new ListIngredientVersionsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListIngredientVersionsParamsWithTimeout(timeout time.Duration) *ListIngredientVersionsParams {
-	var ()
 	return &ListIngredientVersionsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListIngredientVersionsParamsWithContext creates a new ListIngredientVersionsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListIngredientVersionsParamsWithContext(ctx context.Context) *ListIngredientVersionsParams {
-	var ()
 	return &ListIngredientVersionsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListIngredientVersionsParamsWithHTTPClient creates a new ListIngredientVersionsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListIngredientVersionsParamsWithHTTPClient(client *http.Client) *ListIngredientVersionsParams {
-	var ()
 	return &ListIngredientVersionsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListIngredientVersionsParams contains all the parameters to send to the API endpoint
-for the list ingredient versions operation typically these are written to a http.Request
+/* ListIngredientVersionsParams contains all the parameters to send to the API endpoint
+   for the list ingredient versions operation.
+
+   Typically these are written to a http.Request.
 */
 type ListIngredientVersionsParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list ingredient versions params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListIngredientVersionsParams) WithDefaults() *ListIngredientVersionsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list ingredient versions params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListIngredientVersionsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list ingredient versions params
