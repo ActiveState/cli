@@ -214,7 +214,7 @@ const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 // in the platform DB.
 const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
-	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
+	LinuxBit64UUID = "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
 	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
@@ -301,7 +301,7 @@ const SvcAppName = "State Service"
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
 
-// StateUpdateDialogName is the name we give our state-update-dialog executable
+// UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
@@ -311,7 +311,7 @@ const ToplevelInstallArchiveDir = "state-install"
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
 
-// OverwriteDefaultInstallationPath is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+// OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
 const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
 
 // OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
