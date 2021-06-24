@@ -64,7 +64,7 @@ func (r *Reset) Run() error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	err = r.project.Source().SetCommit(latestCommit.String(), r.project.IsHeadless())
+	err = r.project.SetCommit(latestCommit.String())
 	if err != nil {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}

@@ -3,7 +3,6 @@ package packages
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -15,8 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -43,24 +40,6 @@ type configurable interface {
 const latestVersion = "latest"
 
 func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
-	isHeadless := pj.IsHeadless()
-	if !isHeadless && !authentication.Authenticated() {
-		anonConfirmDefault := true
-		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
-		if err != nil {
-			return locale.WrapInputError(err, "Authentication cancelled.")
-		}
-		isHeadless = anonymousOk
-	}
-
-	// Note: User also lands here if answering No to the question about anonymous commit.
-	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
-		if err != nil {
-			return locale.WrapInputError(err, "err_auth_required")
-		}
-	}
-
 	if strings.ToLower(version) == latestVersion {
 		version = ""
 	}
@@ -73,16 +52,6 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 		if req != nil {
 			operation = model.OperationUpdated
-		}
-	}
-
-	if !isHeadless {
-		behind, err := checker.CommitsBehind(pj)
-		if err != nil {
-			return locale.WrapError(err, "err_could_not_get_commit_behind_count")
-		}
-		if behind > 0 {
-			return locale.NewError("err_commit_behind", "Your activestate.yaml is {{.V0}} commits behind, please run [ACTIONABLE]state pull[/RESET] to update your local project, then try again.", strconv.Itoa(behind))
 		}
 	}
 
@@ -100,15 +69,8 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	orderChanged := len(revertCommit.Changeset) > 0
 
 	logging.Debug("Order changed: %v", orderChanged)
-	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
-		if !isHeadless {
-			err := model.UpdateProjectBranchCommit(pj, commitID)
-			if err != nil {
-				return locale.WrapError(err, "err_package_"+string(operation))
-			}
-		}
-		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
@@ -139,6 +101,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	} else {
 		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
 	}
+	out.Print(locale.T("operation_success_local"))
 
 	return nil
 }

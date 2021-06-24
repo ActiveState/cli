@@ -64,26 +64,16 @@ func (r *Push) Run(params PushParams) error {
 		)
 	}
 
-	owner := r.project.Owner()
-	name := r.project.Name()
-	isHeadless := r.project.IsHeadless()
-	if isHeadless {
-		namespace := params.Namespace
-		if !namespace.IsValid() {
-			var err error
-			namespace, err = r.getNamespace()
-			if err != nil {
-				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
-			}
-		}
-		owner = namespace.Owner
-		name = namespace.Project
-		isHeadless = false
-	} else {
-		if params.Namespace.IsValid() {
-			return locale.NewInputError("push_invalid_arg_namespace", "The project name argument is only allowed when pushing an anonymous commit.")
+	namespace := params.Namespace
+	if !namespace.IsValid() {
+		var err error
+		namespace, err = r.getNamespace()
+		if err != nil {
+			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 		}
 	}
+	owner := namespace.Owner
+	name := namespace.Project
 
 	// Get the project remotely if it already exists
 	pjm, err := model.FetchProjectByName(owner, name)
@@ -92,6 +82,7 @@ func (r *Push) Run(params PushParams) error {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
 	}
+	remoteExists := pjm != nil
 
 	var branch *mono_models.Branch
 	lang, langVersion, err := r.languageForProject(r.project)
@@ -101,7 +92,7 @@ func (r *Push) Run(params PushParams) error {
 
 	projectCreated := false
 
-	if pjm != nil { // Remote project exists
+	if remoteExists { // Remote project exists
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
 			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
@@ -207,7 +198,10 @@ func (r *Push) Run(params PushParams) error {
 }
 
 func (r *Push) getNamespace() (*project.Namespaced, error) {
-	namespace := projectfile.GetProjectNameForPath(r.config, r.project.Source().Path())
+	if !r.project.IsHeadless() {
+		return r.project.Namespace(), nil
+	}
+	namespace := projectfile.GetCachedProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
 		owner := authentication.Get().WhoAmI()
 		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)

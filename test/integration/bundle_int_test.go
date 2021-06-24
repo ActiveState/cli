@@ -178,8 +178,6 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("bundles", "install", "non-existing")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
 		cp.Expect("Could not match non-existing")
 		cp.ExpectLongString("to see more results run `state bundles search non-existing`")
 		cp.Wait()
@@ -187,8 +185,6 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
 		cp.ExpectRe("(?:Bundle added|project is currently building)", 45*time.Second)
 		cp.Wait()
 	})
