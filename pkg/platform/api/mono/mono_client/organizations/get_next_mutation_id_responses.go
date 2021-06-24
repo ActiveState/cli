@@ -47,9 +47,8 @@ func (o *GetNextMutationIDReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetNextMutationIDOK() *GetNextMutationIDOK {
 	return &GetNextMutationIDOK{}
 }
 
-/*GetNextMutationIDOK handles this case with default header values.
+/* GetNextMutationIDOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type GetNextMutationIDOK struct {
 func (o *GetNextMutationIDOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/nextMutationID][%d] getNextMutationIdOK  %+v", 200, o.Payload)
 }
-
 func (o *GetNextMutationIDOK) GetPayload() string {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewGetNextMutationIDForbidden() *GetNextMutationIDForbidden {
 	return &GetNextMutationIDForbidden{}
 }
 
-/*GetNextMutationIDForbidden handles this case with default header values.
+/* GetNextMutationIDForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -100,7 +98,6 @@ type GetNextMutationIDForbidden struct {
 func (o *GetNextMutationIDForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/nextMutationID][%d] getNextMutationIdForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetNextMutationIDForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewGetNextMutationIDNotFound() *GetNextMutationIDNotFound {
 	return &GetNextMutationIDNotFound{}
 }
 
-/*GetNextMutationIDNotFound handles this case with default header values.
+/* GetNextMutationIDNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -133,7 +130,6 @@ type GetNextMutationIDNotFound struct {
 func (o *GetNextMutationIDNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/nextMutationID][%d] getNextMutationIdNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetNextMutationIDNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewGetNextMutationIDInternalServerError() *GetNextMutationIDInternalServerE
 	return &GetNextMutationIDInternalServerError{}
 }
 
-/*GetNextMutationIDInternalServerError handles this case with default header values.
+/* GetNextMutationIDInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type GetNextMutationIDInternalServerError struct {
 func (o *GetNextMutationIDInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/nextMutationID][%d] getNextMutationIdInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetNextMutationIDInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

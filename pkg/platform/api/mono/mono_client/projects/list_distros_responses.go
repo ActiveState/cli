@@ -41,9 +41,8 @@ func (o *ListDistrosReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewListDistrosOK() *ListDistrosOK {
 	return &ListDistrosOK{}
 }
 
-/*ListDistrosOK handles this case with default header values.
+/* ListDistrosOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type ListDistrosOK struct {
 func (o *ListDistrosOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] listDistrosOK  %+v", 200, o.Payload)
 }
-
 func (o *ListDistrosOK) GetPayload() []*mono_models.Distro {
 	return o.Payload
 }
@@ -83,7 +81,7 @@ func NewListDistrosNotFound() *ListDistrosNotFound {
 	return &ListDistrosNotFound{}
 }
 
-/*ListDistrosNotFound handles this case with default header values.
+/* ListDistrosNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -94,7 +92,6 @@ type ListDistrosNotFound struct {
 func (o *ListDistrosNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] listDistrosNotFound  %+v", 404, o.Payload)
 }
-
 func (o *ListDistrosNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -116,7 +113,7 @@ func NewListDistrosInternalServerError() *ListDistrosInternalServerError {
 	return &ListDistrosInternalServerError{}
 }
 
-/*ListDistrosInternalServerError handles this case with default header values.
+/* ListDistrosInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -127,7 +124,6 @@ type ListDistrosInternalServerError struct {
 func (o *ListDistrosInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros][%d] listDistrosInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ListDistrosInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetTiersPricingParams creates a new GetTiersPricingParams object
-// with the default values initialized.
+// NewGetTiersPricingParams creates a new GetTiersPricingParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetTiersPricingParams() *GetTiersPricingParams {
-
 	return &GetTiersPricingParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetTiersPricingParamsWithTimeout creates a new GetTiersPricingParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetTiersPricingParamsWithTimeout(timeout time.Duration) *GetTiersPricingParams {
-
 	return &GetTiersPricingParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetTiersPricingParamsWithContext creates a new GetTiersPricingParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetTiersPricingParamsWithContext(ctx context.Context) *GetTiersPricingParams {
-
 	return &GetTiersPricingParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetTiersPricingParamsWithHTTPClient creates a new GetTiersPricingParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetTiersPricingParamsWithHTTPClient(client *http.Client) *GetTiersPricingParams {
-
 	return &GetTiersPricingParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetTiersPricingParams contains all the parameters to send to the API endpoint
-for the get tiers pricing operation typically these are written to a http.Request
+/* GetTiersPricingParams contains all the parameters to send to the API endpoint
+   for the get tiers pricing operation.
+
+   Typically these are written to a http.Request.
 */
 type GetTiersPricingParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get tiers pricing params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetTiersPricingParams) WithDefaults() *GetTiersPricingParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get tiers pricing params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetTiersPricingParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get tiers pricing params

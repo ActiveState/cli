@@ -16,69 +16,85 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewInviteOrganizationParams creates a new InviteOrganizationParams object
-// with the default values initialized.
+// NewInviteOrganizationParams creates a new InviteOrganizationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewInviteOrganizationParams() *InviteOrganizationParams {
-	var ()
 	return &InviteOrganizationParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewInviteOrganizationParamsWithTimeout creates a new InviteOrganizationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewInviteOrganizationParamsWithTimeout(timeout time.Duration) *InviteOrganizationParams {
-	var ()
 	return &InviteOrganizationParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewInviteOrganizationParamsWithContext creates a new InviteOrganizationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewInviteOrganizationParamsWithContext(ctx context.Context) *InviteOrganizationParams {
-	var ()
 	return &InviteOrganizationParams{
-
 		Context: ctx,
 	}
 }
 
 // NewInviteOrganizationParamsWithHTTPClient creates a new InviteOrganizationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewInviteOrganizationParamsWithHTTPClient(client *http.Client) *InviteOrganizationParams {
-	var ()
 	return &InviteOrganizationParams{
 		HTTPClient: client,
 	}
 }
 
-/*InviteOrganizationParams contains all the parameters to send to the API endpoint
-for the invite organization operation typically these are written to a http.Request
+/* InviteOrganizationParams contains all the parameters to send to the API endpoint
+   for the invite organization operation.
+
+   Typically these are written to a http.Request.
 */
 type InviteOrganizationParams struct {
 
-	/*Attributes
-	  join the user as an organization owner
+	/* Attributes.
 
+	   join the user as an organization owner
 	*/
 	Attributes InviteOrganizationBody
-	/*Email
-	  email address of invitee
 
+	/* Email.
+
+	   email address of invitee
 	*/
 	Email string
-	/*OrganizationName
-	  organizationName of desired organization
 
+	/* OrganizationName.
+
+	   organizationName of desired organization
 	*/
 	OrganizationName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the invite organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *InviteOrganizationParams) WithDefaults() *InviteOrganizationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the invite organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *InviteOrganizationParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the invite organization params
@@ -154,7 +170,6 @@ func (o *InviteOrganizationParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Attributes); err != nil {
 		return err
 	}

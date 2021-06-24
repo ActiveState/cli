@@ -15,6 +15,7 @@
 package errors
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -38,6 +39,27 @@ func (e *Validation) Code() int32 {
 	return e.code
 }
 
+// MarshalJSON implements the JSON encoding interface
+func (e Validation) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"code":    e.code,
+		"message": e.message,
+		"in":      e.In,
+		"name":    e.Name,
+		"value":   e.Value,
+		"values":  e.Values,
+	})
+}
+
+// ValidateName produces an error message name for an aliased property
+func (e *Validation) ValidateName(name string) *Validation {
+	if e.Name == "" && name != "" {
+		e.Name = name
+		e.message = name + e.message
+	}
+	return e
+}
+
 const (
 	contentTypeFail    = `unsupported media type %q, only %v are allowed`
 	responseFormatFail = `unsupported media type requested, only %v are available`
@@ -45,7 +67,7 @@ const (
 
 // InvalidContentType error for an invalid content type
 func InvalidContentType(value string, allowed []string) *Validation {
-	var values []interface{}
+	values := make([]interface{}, 0, len(allowed))
 	for _, v := range allowed {
 		values = append(values, v)
 	}
@@ -61,7 +83,7 @@ func InvalidContentType(value string, allowed []string) *Validation {
 
 // InvalidResponseFormat error for an unacceptable response format request
 func InvalidResponseFormat(value string, allowed []string) *Validation {
-	var values []interface{}
+	values := make([]interface{}, 0, len(allowed))
 	for _, v := range allowed {
 		values = append(values, v)
 	}
@@ -73,13 +95,4 @@ func InvalidResponseFormat(value string, allowed []string) *Validation {
 		Values:  values,
 		message: fmt.Sprintf(responseFormatFail, allowed),
 	}
-}
-
-// Validate error message name for aliased property
-func (e *Validation) ValidateName(name string) *Validation {
-	if e.Name == "" && name != "" {
-		e.Name = name
-		e.message = name+e.message
-	}
-	return e
 }

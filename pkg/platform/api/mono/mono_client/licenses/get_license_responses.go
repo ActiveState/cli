@@ -35,9 +35,8 @@ func (o *GetLicenseReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewGetLicenseOK() *GetLicenseOK {
 	return &GetLicenseOK{}
 }
 
-/*GetLicenseOK handles this case with default header values.
+/* GetLicenseOK describes a response with status code 200, with default header values.
 
 License Record
 */
@@ -57,7 +56,6 @@ type GetLicenseOK struct {
 func (o *GetLicenseOK) Error() string {
 	return fmt.Sprintf("[GET /licenses/{licenseID}][%d] getLicenseOK  %+v", 200, o.Payload)
 }
-
 func (o *GetLicenseOK) GetPayload() *mono_models.License {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewGetLicenseNotFound() *GetLicenseNotFound {
 	return &GetLicenseNotFound{}
 }
 
-/*GetLicenseNotFound handles this case with default header values.
+/* GetLicenseNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -90,7 +88,6 @@ type GetLicenseNotFound struct {
 func (o *GetLicenseNotFound) Error() string {
 	return fmt.Sprintf("[GET /licenses/{licenseID}][%d] getLicenseNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetLicenseNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }

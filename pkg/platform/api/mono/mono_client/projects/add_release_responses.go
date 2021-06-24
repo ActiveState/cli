@@ -59,9 +59,8 @@ func (o *AddReleaseReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewAddReleaseOK() *AddReleaseOK {
 	return &AddReleaseOK{}
 }
 
-/*AddReleaseOK handles this case with default header values.
+/* AddReleaseOK describes a response with status code 200, with default header values.
 
 Release Added
 */
@@ -81,7 +80,6 @@ type AddReleaseOK struct {
 func (o *AddReleaseOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseOK  %+v", 200, o.Payload)
 }
-
 func (o *AddReleaseOK) GetPayload() *mono_models.Release {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewAddReleaseBadRequest() *AddReleaseBadRequest {
 	return &AddReleaseBadRequest{}
 }
 
-/*AddReleaseBadRequest handles this case with default header values.
+/* AddReleaseBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type AddReleaseBadRequest struct {
 func (o *AddReleaseBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddReleaseBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewAddReleaseForbidden() *AddReleaseForbidden {
 	return &AddReleaseForbidden{}
 }
 
-/*AddReleaseForbidden handles this case with default header values.
+/* AddReleaseForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -147,7 +144,6 @@ type AddReleaseForbidden struct {
 func (o *AddReleaseForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddReleaseForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewAddReleaseNotFound() *AddReleaseNotFound {
 	return &AddReleaseNotFound{}
 }
 
-/*AddReleaseNotFound handles this case with default header values.
+/* AddReleaseNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -180,7 +176,6 @@ type AddReleaseNotFound struct {
 func (o *AddReleaseNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseNotFound  %+v", 404, o.Payload)
 }
-
 func (o *AddReleaseNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewAddReleaseConflict() *AddReleaseConflict {
 	return &AddReleaseConflict{}
 }
 
-/*AddReleaseConflict handles this case with default header values.
+/* AddReleaseConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type AddReleaseConflict struct {
 func (o *AddReleaseConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddReleaseConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewAddReleaseInternalServerError() *AddReleaseInternalServerError {
 	return &AddReleaseInternalServerError{}
 }
 
-/*AddReleaseInternalServerError handles this case with default header values.
+/* AddReleaseInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type AddReleaseInternalServerError struct {
 func (o *AddReleaseInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases][%d] addReleaseInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddReleaseInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

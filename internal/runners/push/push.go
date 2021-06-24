@@ -1,6 +1,8 @@
 package push
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -25,8 +27,8 @@ type configGetter interface {
 }
 
 type Push struct {
-	config configGetter
-	output.Outputer
+	config  configGetter
+	out     output.Outputer
 	project *project.Project
 	prompt  prompt.Prompter
 }
@@ -48,7 +50,7 @@ func NewPush(prime primeable) *Push {
 
 func (r *Push) Run(params PushParams) error {
 	if !authentication.Get().Authenticated() {
-		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.Outputer, r.prompt)
+		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt)
 		if err != nil {
 			return locale.WrapError(err, "err_push_auth", "Failed to authenticate")
 		}
@@ -82,19 +84,21 @@ func (r *Push) Run(params PushParams) error {
 	}
 	remoteExists := pjm != nil
 
-	var branchName string
+	var branch *mono_models.Branch
 	lang, langVersion, err := r.languageForProject(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Failed to retrieve project language.")
 	}
-	if remoteExists {
+
+	projectCreated := false
+
+	if remoteExists { // Remote project exists
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
 			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
 		}
-		r.Outputer.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
+		r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
 
-		var branch *mono_models.Branch
 		if r.project.BranchName() == "" {
 			// https://www.pivotaltracker.com/story/show/176806415
 			branch, err = model.DefaultBranchForProject(pjm)
@@ -109,23 +113,41 @@ func (r *Push) Run(params PushParams) error {
 		}
 
 		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
-			r.Outputer.Notice(locale.T("push_up_to_date"))
+			r.out.Notice(locale.T("push_no_changes"))
 			return nil
 		}
-		branchName = branch.Label
-	} else {
-		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`
-		// and the project does not exist remotely.
-		r.Outputer.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
+
+		pcid := r.project.CommitUUID()
+		if branch.CommitID != nil && pcid != "" {
+			mergeStrategy, err := model.MergeCommit(*branch.CommitID, pcid)
+			if err != nil {
+				if errors.Is(err, model.ErrMergeCommitInHistory) {
+					r.out.Notice(locale.T("push_no_changes"))
+					return nil
+				}
+				if !errors.Is(err, model.ErrMergeFastForward) {
+					return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
+				}
+			}
+			if mergeStrategy != nil {
+				return errs.AddTips(
+					locale.NewInputError("err_push_outdated"),
+					locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
+			}
+		}
+	} else { // Remote project doesn't exist yet
+		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
+		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
 		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
 		if err != nil {
 			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
-		branch, err := model.DefaultBranchForProject(pjm)
+		branch, err = model.DefaultBranchForProject(pjm)
 		if err != nil {
 			return errs.Wrap(err, "Could not get default branch")
 		}
-		branchName = branch.Label
+
+		projectCreated = true
 	}
 
 	var commitID = r.project.CommitUUID()
@@ -138,7 +160,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitWithModel(pjm, branchName, commitID)
+	err = model.UpdateProjectBranchCommitWithModel(pjm, branch.Label, commitID)
 	if err != nil {
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 	}
@@ -160,16 +182,16 @@ func (r *Push) Run(params PushParams) error {
 		return errs.Wrap(err, "Could not set commit")
 	}
 
-	if branchName != r.project.BranchName() {
-		if err := r.project.Source().SetBranch(branchName); err != nil {
+	if branch.Label != r.project.BranchName() {
+		if err := r.project.Source().SetBranch(branch.Label); err != nil {
 			return errs.Wrap(err, "Could not set branch")
 		}
 	}
 
-	if remoteExists {
-		r.Outputer.Notice(locale.Tl("push_project_existing", "The project at [NOTICE]{{.V0}}[/RESET] has been updated with your changes.", r.project.URL()))
+	if projectCreated {
+		r.out.Notice(locale.Tr("push_project_created", r.project.URL()))
 	} else {
-		r.Outputer.Notice(locale.Tr("push_project_created", r.project.URL(), lang.String(), langVersion))
+		r.out.Notice(locale.Tr("push_project_updated"))
 	}
 
 	return nil

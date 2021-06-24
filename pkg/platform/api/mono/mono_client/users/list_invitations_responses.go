@@ -47,9 +47,8 @@ func (o *ListInvitationsReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewListInvitationsOK() *ListInvitationsOK {
 	return &ListInvitationsOK{}
 }
 
-/*ListInvitationsOK handles this case with default header values.
+/* ListInvitationsOK describes a response with status code 200, with default header values.
 
 Pending Invitations
 */
@@ -69,7 +68,6 @@ type ListInvitationsOK struct {
 func (o *ListInvitationsOK) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListInvitationsOK) GetPayload() []*mono_models.Invitation {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewListInvitationsBadRequest() *ListInvitationsBadRequest {
 	return &ListInvitationsBadRequest{}
 }
 
-/*ListInvitationsBadRequest handles this case with default header values.
+/* ListInvitationsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -100,7 +98,6 @@ type ListInvitationsBadRequest struct {
 func (o *ListInvitationsBadRequest) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *ListInvitationsBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewListInvitationsForbidden() *ListInvitationsForbidden {
 	return &ListInvitationsForbidden{}
 }
 
-/*ListInvitationsForbidden handles this case with default header values.
+/* ListInvitationsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -133,7 +130,6 @@ type ListInvitationsForbidden struct {
 func (o *ListInvitationsForbidden) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *ListInvitationsForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewListInvitationsInternalServerError() *ListInvitationsInternalServerError
 	return &ListInvitationsInternalServerError{}
 }
 
-/*ListInvitationsInternalServerError handles this case with default header values.
+/* ListInvitationsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type ListInvitationsInternalServerError struct {
 func (o *ListInvitationsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /invitations/{email}][%d] listInvitationsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ListInvitationsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

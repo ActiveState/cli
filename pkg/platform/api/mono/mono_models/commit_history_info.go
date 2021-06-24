@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -40,7 +41,6 @@ func (m *CommitHistoryInfo) Validate(formats strfmt.Registry) error {
 }
 
 func (m *CommitHistoryInfo) validateCommits(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Commits) { // not required
 		return nil
 	}
@@ -52,6 +52,38 @@ func (m *CommitHistoryInfo) validateCommits(formats strfmt.Registry) error {
 
 		if m.Commits[i] != nil {
 			if err := m.Commits[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("commits" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this commit history info based on the context it is used
+func (m *CommitHistoryInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCommits(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CommitHistoryInfo) contextValidateCommits(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Commits); i++ {
+
+		if m.Commits[i] != nil {
+			if err := m.Commits[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("commits" + "." + strconv.Itoa(i))
 				}

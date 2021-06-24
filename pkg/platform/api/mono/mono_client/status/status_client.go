@@ -25,17 +25,16 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter) (*GetInfoOK, error)
+	GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInfoOK, error)
 
-	ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter) (*ConfigFileOK, error)
+	ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ConfigFileOK, error)
 
-	ListActivities(params *ListActivitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListActivitiesOK, error)
-
-	PythonPlugins(params *PythonPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*PythonPluginsOK, error)
-
-	Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter) (*UsageOK, error)
+	Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UsageOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -45,13 +44,12 @@ type ClientService interface {
 
   Helpful for testing JWT operation
 */
-func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter) (*GetInfoOK, error) {
+func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInfoOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetInfoParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "GetInfo",
 		Method:             "GET",
 		PathPattern:        "/info",
@@ -63,7 +61,12 @@ func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +85,12 @@ func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoW
 
   Your own personal config file
 */
-func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter) (*ConfigFileOK, error) {
+func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ConfigFileOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewConfigFileParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "configFile",
 		Method:             "GET",
 		PathPattern:        "/config",
@@ -100,7 +102,12 @@ func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -115,91 +122,16 @@ func (a *Client) ConfigFile(params *ConfigFileParams, authInfo runtime.ClientAut
 }
 
 /*
-  ListActivities recents s and c activity
-
-  List of recent user and application activity
-*/
-func (a *Client) ListActivities(params *ListActivitiesParams, authInfo runtime.ClientAuthInfoWriter) (*ListActivitiesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListActivitiesParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listActivities",
-		Method:             "GET",
-		PathPattern:        "/activities",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &ListActivitiesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListActivitiesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for listActivities: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  PythonPlugins availables python plugin installers
-
-  Listing of available Python plugin installer files (sorted by version, descending)
-*/
-func (a *Client) PythonPlugins(params *PythonPluginsParams, authInfo runtime.ClientAuthInfoWriter) (*PythonPluginsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewPythonPluginsParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "pythonPlugins",
-		Method:             "GET",
-		PathPattern:        "/plugins/python",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &PythonPluginsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*PythonPluginsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for pythonPlugins: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
   Usage reports platform usage statistics
 
   Active users by date range
 */
-func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter) (*UsageOK, error) {
+func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UsageOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUsageParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "usage",
 		Method:             "GET",
 		PathPattern:        "/usage",
@@ -211,7 +143,12 @@ func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWrite
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

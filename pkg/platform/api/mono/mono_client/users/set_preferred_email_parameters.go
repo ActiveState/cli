@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewSetPreferredEmailParams creates a new SetPreferredEmailParams object
-// with the default values initialized.
+// NewSetPreferredEmailParams creates a new SetPreferredEmailParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewSetPreferredEmailParams() *SetPreferredEmailParams {
-	var ()
 	return &SetPreferredEmailParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewSetPreferredEmailParamsWithTimeout creates a new SetPreferredEmailParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewSetPreferredEmailParamsWithTimeout(timeout time.Duration) *SetPreferredEmailParams {
-	var ()
 	return &SetPreferredEmailParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewSetPreferredEmailParamsWithContext creates a new SetPreferredEmailParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewSetPreferredEmailParamsWithContext(ctx context.Context) *SetPreferredEmailParams {
-	var ()
 	return &SetPreferredEmailParams{
-
 		Context: ctx,
 	}
 }
 
 // NewSetPreferredEmailParamsWithHTTPClient creates a new SetPreferredEmailParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewSetPreferredEmailParamsWithHTTPClient(client *http.Client) *SetPreferredEmailParams {
-	var ()
 	return &SetPreferredEmailParams{
 		HTTPClient: client,
 	}
 }
 
-/*SetPreferredEmailParams contains all the parameters to send to the API endpoint
-for the set preferred email operation typically these are written to a http.Request
+/* SetPreferredEmailParams contains all the parameters to send to the API endpoint
+   for the set preferred email operation.
+
+   Typically these are written to a http.Request.
 */
 type SetPreferredEmailParams struct {
 
-	/*Email
-	  email address to change
+	/* Email.
 
+	   email address to change
 	*/
 	Email string
-	/*Username
-	  username of desired User
 
+	/* Username.
+
+	   username of desired User
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the set preferred email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SetPreferredEmailParams) WithDefaults() *SetPreferredEmailParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the set preferred email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SetPreferredEmailParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the set preferred email params

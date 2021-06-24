@@ -18,71 +18,90 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditReleaseParams creates a new EditReleaseParams object
-// with the default values initialized.
+// NewEditReleaseParams creates a new EditReleaseParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditReleaseParams() *EditReleaseParams {
-	var ()
 	return &EditReleaseParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditReleaseParamsWithTimeout creates a new EditReleaseParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditReleaseParamsWithTimeout(timeout time.Duration) *EditReleaseParams {
-	var ()
 	return &EditReleaseParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEditReleaseParamsWithContext creates a new EditReleaseParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditReleaseParamsWithContext(ctx context.Context) *EditReleaseParams {
-	var ()
 	return &EditReleaseParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEditReleaseParamsWithHTTPClient creates a new EditReleaseParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditReleaseParamsWithHTTPClient(client *http.Client) *EditReleaseParams {
-	var ()
 	return &EditReleaseParams{
 		HTTPClient: client,
 	}
 }
 
-/*EditReleaseParams contains all the parameters to send to the API endpoint
-for the edit release operation typically these are written to a http.Request
+/* EditReleaseParams contains all the parameters to send to the API endpoint
+   for the edit release operation.
+
+   Typically these are written to a http.Request.
 */
 type EditReleaseParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/* OrganizationName.
 
+	   organizationName of desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  projectName of desired project
 
+	/* ProjectName.
+
+	   projectName of desired project
 	*/
 	ProjectName string
-	/*Release*/
-	Release *mono_models.Release
-	/*ReleaseID
-	  release to fetch
 
+	// Release.
+	Release *mono_models.Release
+
+	/* ReleaseID.
+
+	   release to fetch
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit release params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditReleaseParams) WithDefaults() *EditReleaseParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit release params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditReleaseParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the edit release params
@@ -179,7 +198,6 @@ func (o *EditReleaseParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	if err := r.SetPathParam("projectName", o.ProjectName); err != nil {
 		return err
 	}
-
 	if o.Release != nil {
 		if err := r.SetBodyParam(o.Release); err != nil {
 			return err

@@ -47,9 +47,8 @@ func (o *GetTiersPricingReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetTiersPricingOK() *GetTiersPricingOK {
 	return &GetTiersPricingOK{}
 }
 
-/*GetTiersPricingOK handles this case with default header values.
+/* GetTiersPricingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type GetTiersPricingOK struct {
 func (o *GetTiersPricingOK) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingOK  %+v", 200, o.Payload)
 }
-
 func (o *GetTiersPricingOK) GetPayload() []*mono_models.TierPricing {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewGetTiersPricingForbidden() *GetTiersPricingForbidden {
 	return &GetTiersPricingForbidden{}
 }
 
-/*GetTiersPricingForbidden handles this case with default header values.
+/* GetTiersPricingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -100,7 +98,6 @@ type GetTiersPricingForbidden struct {
 func (o *GetTiersPricingForbidden) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetTiersPricingForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewGetTiersPricingNotFound() *GetTiersPricingNotFound {
 	return &GetTiersPricingNotFound{}
 }
 
-/*GetTiersPricingNotFound handles this case with default header values.
+/* GetTiersPricingNotFound describes a response with status code 404, with default header values.
 
 No tiers available
 */
@@ -133,7 +130,6 @@ type GetTiersPricingNotFound struct {
 func (o *GetTiersPricingNotFound) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetTiersPricingNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewGetTiersPricingInternalServerError() *GetTiersPricingInternalServerError
 	return &GetTiersPricingInternalServerError{}
 }
 
-/*GetTiersPricingInternalServerError handles this case with default header values.
+/* GetTiersPricingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type GetTiersPricingInternalServerError struct {
 func (o *GetTiersPricingInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /tiers/pricing][%d] getTiersPricingInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetTiersPricingInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -53,9 +53,8 @@ func (o *DeleteUserReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewDeleteUserOK() *DeleteUserOK {
 	return &DeleteUserOK{}
 }
 
-/*DeleteUserOK handles this case with default header values.
+/* DeleteUserOK describes a response with status code 200, with default header values.
 
 User deleted
 */
@@ -75,7 +74,6 @@ type DeleteUserOK struct {
 func (o *DeleteUserOK) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteUserOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewDeleteUserBadRequest() *DeleteUserBadRequest {
 	return &DeleteUserBadRequest{}
 }
 
-/*DeleteUserBadRequest handles this case with default header values.
+/* DeleteUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type DeleteUserBadRequest struct {
 func (o *DeleteUserBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DeleteUserBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewDeleteUserForbidden() *DeleteUserForbidden {
 	return &DeleteUserForbidden{}
 }
 
-/*DeleteUserForbidden handles this case with default header values.
+/* DeleteUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type DeleteUserForbidden struct {
 func (o *DeleteUserForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteUserForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewDeleteUserNotFound() *DeleteUserNotFound {
 	return &DeleteUserNotFound{}
 }
 
-/*DeleteUserNotFound handles this case with default header values.
+/* DeleteUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type DeleteUserNotFound struct {
 func (o *DeleteUserNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteUserNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewDeleteUserInternalServerError() *DeleteUserInternalServerError {
 	return &DeleteUserInternalServerError{}
 }
 
-/*DeleteUserInternalServerError handles this case with default header values.
+/* DeleteUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type DeleteUserInternalServerError struct {
 func (o *DeleteUserInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /users/{username}][%d] deleteUserInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteUserInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

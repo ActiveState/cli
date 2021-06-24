@@ -16,52 +16,66 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewNewTOTPParams creates a new NewTOTPParams object
-// with the default values initialized.
+// NewNewTOTPParams creates a new NewTOTPParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewNewTOTPParams() *NewTOTPParams {
-
 	return &NewTOTPParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewNewTOTPParamsWithTimeout creates a new NewTOTPParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewNewTOTPParamsWithTimeout(timeout time.Duration) *NewTOTPParams {
-
 	return &NewTOTPParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewNewTOTPParamsWithContext creates a new NewTOTPParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewNewTOTPParamsWithContext(ctx context.Context) *NewTOTPParams {
-
 	return &NewTOTPParams{
-
 		Context: ctx,
 	}
 }
 
 // NewNewTOTPParamsWithHTTPClient creates a new NewTOTPParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewNewTOTPParamsWithHTTPClient(client *http.Client) *NewTOTPParams {
-
 	return &NewTOTPParams{
 		HTTPClient: client,
 	}
 }
 
-/*NewTOTPParams contains all the parameters to send to the API endpoint
-for the new t o t p operation typically these are written to a http.Request
+/* NewTOTPParams contains all the parameters to send to the API endpoint
+   for the new t o t p operation.
+
+   Typically these are written to a http.Request.
 */
 type NewTOTPParams struct {
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the new t o t p params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *NewTOTPParams) WithDefaults() *NewTOTPParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the new t o t p params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *NewTOTPParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the new t o t p params

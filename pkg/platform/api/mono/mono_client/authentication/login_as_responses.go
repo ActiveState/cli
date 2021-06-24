@@ -47,9 +47,8 @@ func (o *LoginAsReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewLoginAsOK() *LoginAsOK {
 	return &LoginAsOK{}
 }
 
-/*LoginAsOK handles this case with default header values.
+/* LoginAsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type LoginAsOK struct {
 func (o *LoginAsOK) Error() string {
 	return fmt.Sprintf("[POST /login/{username}][%d] loginAsOK  %+v", 200, o.Payload)
 }
-
 func (o *LoginAsOK) GetPayload() *mono_models.JWT {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewLoginAsBadRequest() *LoginAsBadRequest {
 	return &LoginAsBadRequest{}
 }
 
-/*LoginAsBadRequest handles this case with default header values.
+/* LoginAsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -102,7 +100,6 @@ type LoginAsBadRequest struct {
 func (o *LoginAsBadRequest) Error() string {
 	return fmt.Sprintf("[POST /login/{username}][%d] loginAsBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *LoginAsBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewLoginAsUnauthorized() *LoginAsUnauthorized {
 	return &LoginAsUnauthorized{}
 }
 
-/*LoginAsUnauthorized handles this case with default header values.
+/* LoginAsUnauthorized describes a response with status code 401, with default header values.
 
 Invalid credentials
 */
@@ -135,7 +132,6 @@ type LoginAsUnauthorized struct {
 func (o *LoginAsUnauthorized) Error() string {
 	return fmt.Sprintf("[POST /login/{username}][%d] loginAsUnauthorized  %+v", 401, o.Payload)
 }
-
 func (o *LoginAsUnauthorized) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewLoginAsInternalServerError() *LoginAsInternalServerError {
 	return &LoginAsInternalServerError{}
 }
 
-/*LoginAsInternalServerError handles this case with default header values.
+/* LoginAsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type LoginAsInternalServerError struct {
 func (o *LoginAsInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /login/{username}][%d] loginAsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *LoginAsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

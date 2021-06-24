@@ -41,9 +41,8 @@ func (o *DeleteTokenReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewDeleteTokenOK() *DeleteTokenOK {
 	return &DeleteTokenOK{}
 }
 
-/*DeleteTokenOK handles this case with default header values.
+/* DeleteTokenOK describes a response with status code 200, with default header values.
 
 Token deleted
 */
@@ -63,7 +62,6 @@ type DeleteTokenOK struct {
 func (o *DeleteTokenOK) Error() string {
 	return fmt.Sprintf("[DELETE /apikeys/{tokenID}][%d] deleteTokenOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteTokenOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewDeleteTokenBadRequest() *DeleteTokenBadRequest {
 	return &DeleteTokenBadRequest{}
 }
 
-/*DeleteTokenBadRequest handles this case with default header values.
+/* DeleteTokenBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -96,7 +94,6 @@ type DeleteTokenBadRequest struct {
 func (o *DeleteTokenBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /apikeys/{tokenID}][%d] deleteTokenBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DeleteTokenBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewDeleteTokenForbidden() *DeleteTokenForbidden {
 	return &DeleteTokenForbidden{}
 }
 
-/*DeleteTokenForbidden handles this case with default header values.
+/* DeleteTokenForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */

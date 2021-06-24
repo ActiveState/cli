@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewEnableTOTPParams creates a new EnableTOTPParams object
-// with the default values initialized.
+// NewEnableTOTPParams creates a new EnableTOTPParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEnableTOTPParams() *EnableTOTPParams {
-	var ()
 	return &EnableTOTPParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEnableTOTPParamsWithTimeout creates a new EnableTOTPParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEnableTOTPParamsWithTimeout(timeout time.Duration) *EnableTOTPParams {
-	var ()
 	return &EnableTOTPParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEnableTOTPParamsWithContext creates a new EnableTOTPParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEnableTOTPParamsWithContext(ctx context.Context) *EnableTOTPParams {
-	var ()
 	return &EnableTOTPParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEnableTOTPParamsWithHTTPClient creates a new EnableTOTPParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEnableTOTPParamsWithHTTPClient(client *http.Client) *EnableTOTPParams {
-	var ()
 	return &EnableTOTPParams{
 		HTTPClient: client,
 	}
 }
 
-/*EnableTOTPParams contains all the parameters to send to the API endpoint
-for the enable t o t p operation typically these are written to a http.Request
+/* EnableTOTPParams contains all the parameters to send to the API endpoint
+   for the enable t o t p operation.
+
+   Typically these are written to a http.Request.
 */
 type EnableTOTPParams struct {
 
-	/*Code
-	  TOTP 2FA Rolling Code
+	/* Code.
 
+	   TOTP 2FA Rolling Code
 	*/
 	Code string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the enable t o t p params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EnableTOTPParams) WithDefaults() *EnableTOTPParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the enable t o t p params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EnableTOTPParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the enable t o t p params
@@ -127,6 +141,7 @@ func (o *EnableTOTPParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 	qrCode := o.Code
 	qCode := qrCode
 	if qCode != "" {
+
 		if err := r.SetQueryParam("code", qCode); err != nil {
 			return err
 		}

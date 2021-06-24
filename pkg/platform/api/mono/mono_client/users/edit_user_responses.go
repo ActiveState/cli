@@ -53,9 +53,8 @@ func (o *EditUserReader) ReadResponse(response runtime.ClientResponse, consumer 
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditUserOK() *EditUserOK {
 	return &EditUserOK{}
 }
 
-/*EditUserOK handles this case with default header values.
+/* EditUserOK describes a response with status code 200, with default header values.
 
 User updated
 */
@@ -75,7 +74,6 @@ type EditUserOK struct {
 func (o *EditUserOK) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserOK  %+v", 200, o.Payload)
 }
-
 func (o *EditUserOK) GetPayload() *mono_models.User {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewEditUserBadRequest() *EditUserBadRequest {
 	return &EditUserBadRequest{}
 }
 
-/*EditUserBadRequest handles this case with default header values.
+/* EditUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type EditUserBadRequest struct {
 func (o *EditUserBadRequest) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditUserBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewEditUserForbidden() *EditUserForbidden {
 	return &EditUserForbidden{}
 }
 
-/*EditUserForbidden handles this case with default header values.
+/* EditUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type EditUserForbidden struct {
 func (o *EditUserForbidden) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditUserForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewEditUserNotFound() *EditUserNotFound {
 	return &EditUserNotFound{}
 }
 
-/*EditUserNotFound handles this case with default header values.
+/* EditUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type EditUserNotFound struct {
 func (o *EditUserNotFound) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditUserNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewEditUserInternalServerError() *EditUserInternalServerError {
 	return &EditUserInternalServerError{}
 }
 
-/*EditUserInternalServerError handles this case with default header values.
+/* EditUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type EditUserInternalServerError struct {
 func (o *EditUserInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /users/{username}][%d] editUserInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditUserInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

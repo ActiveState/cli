@@ -6,6 +6,7 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -54,9 +55,8 @@ func (o *JoinOrganizationReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -65,7 +65,7 @@ func NewJoinOrganizationOK() *JoinOrganizationOK {
 	return &JoinOrganizationOK{}
 }
 
-/*JoinOrganizationOK handles this case with default header values.
+/* JoinOrganizationOK describes a response with status code 200, with default header values.
 
 Membership Roster
 */
@@ -76,7 +76,6 @@ type JoinOrganizationOK struct {
 func (o *JoinOrganizationOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *JoinOrganizationOK) GetPayload() []*mono_models.Member {
 	return o.Payload
 }
@@ -96,7 +95,7 @@ func NewJoinOrganizationBadRequest() *JoinOrganizationBadRequest {
 	return &JoinOrganizationBadRequest{}
 }
 
-/*JoinOrganizationBadRequest handles this case with default header values.
+/* JoinOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -107,7 +106,6 @@ type JoinOrganizationBadRequest struct {
 func (o *JoinOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *JoinOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -129,7 +127,7 @@ func NewJoinOrganizationForbidden() *JoinOrganizationForbidden {
 	return &JoinOrganizationForbidden{}
 }
 
-/*JoinOrganizationForbidden handles this case with default header values.
+/* JoinOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -140,7 +138,6 @@ type JoinOrganizationForbidden struct {
 func (o *JoinOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *JoinOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -162,7 +159,7 @@ func NewJoinOrganizationNotFound() *JoinOrganizationNotFound {
 	return &JoinOrganizationNotFound{}
 }
 
-/*JoinOrganizationNotFound handles this case with default header values.
+/* JoinOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -173,7 +170,6 @@ type JoinOrganizationNotFound struct {
 func (o *JoinOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *JoinOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -195,7 +191,7 @@ func NewJoinOrganizationInternalServerError() *JoinOrganizationInternalServerErr
 	return &JoinOrganizationInternalServerError{}
 }
 
-/*JoinOrganizationInternalServerError handles this case with default header values.
+/* JoinOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -206,7 +202,6 @@ type JoinOrganizationInternalServerError struct {
 func (o *JoinOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationName}/members/{username}][%d] joinOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *JoinOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -234,6 +229,11 @@ type JoinOrganizationBody struct {
 
 // Validate validates this join organization body
 func (o *JoinOrganizationBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this join organization body based on context it is used
+func (o *JoinOrganizationBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -6,6 +6,7 @@ package projects
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -60,9 +61,8 @@ func (o *AddBranchReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -71,7 +71,7 @@ func NewAddBranchOK() *AddBranchOK {
 	return &AddBranchOK{}
 }
 
-/*AddBranchOK handles this case with default header values.
+/* AddBranchOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -82,7 +82,6 @@ type AddBranchOK struct {
 func (o *AddBranchOK) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchOK  %+v", 200, o.Payload)
 }
-
 func (o *AddBranchOK) GetPayload() *mono_models.Branch {
 	return o.Payload
 }
@@ -104,7 +103,7 @@ func NewAddBranchBadRequest() *AddBranchBadRequest {
 	return &AddBranchBadRequest{}
 }
 
-/*AddBranchBadRequest handles this case with default header values.
+/* AddBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -115,7 +114,6 @@ type AddBranchBadRequest struct {
 func (o *AddBranchBadRequest) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddBranchBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -137,7 +135,7 @@ func NewAddBranchForbidden() *AddBranchForbidden {
 	return &AddBranchForbidden{}
 }
 
-/*AddBranchForbidden handles this case with default header values.
+/* AddBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -148,7 +146,6 @@ type AddBranchForbidden struct {
 func (o *AddBranchForbidden) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddBranchForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -170,7 +167,7 @@ func NewAddBranchNotFound() *AddBranchNotFound {
 	return &AddBranchNotFound{}
 }
 
-/*AddBranchNotFound handles this case with default header values.
+/* AddBranchNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -181,7 +178,6 @@ type AddBranchNotFound struct {
 func (o *AddBranchNotFound) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchNotFound  %+v", 404, o.Payload)
 }
-
 func (o *AddBranchNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -203,7 +199,7 @@ func NewAddBranchConflict() *AddBranchConflict {
 	return &AddBranchConflict{}
 }
 
-/*AddBranchConflict handles this case with default header values.
+/* AddBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -214,7 +210,6 @@ type AddBranchConflict struct {
 func (o *AddBranchConflict) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddBranchConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -236,7 +231,7 @@ func NewAddBranchInternalServerError() *AddBranchInternalServerError {
 	return &AddBranchInternalServerError{}
 }
 
-/*AddBranchInternalServerError handles this case with default header values.
+/* AddBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -247,7 +242,6 @@ type AddBranchInternalServerError struct {
 func (o *AddBranchInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /projects/{projectID}/branches][%d] addBranchInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddBranchInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -275,6 +269,11 @@ type AddBranchBody struct {
 
 // Validate validates this add branch body
 func (o *AddBranchBody) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this add branch body based on context it is used
+func (o *AddBranchBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

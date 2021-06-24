@@ -53,9 +53,8 @@ func (o *AddFormatReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewAddFormatOK() *AddFormatOK {
 	return &AddFormatOK{}
 }
 
-/*AddFormatOK handles this case with default header values.
+/* AddFormatOK describes a response with status code 200, with default header values.
 
 Distro Added
 */
@@ -75,7 +74,6 @@ type AddFormatOK struct {
 func (o *AddFormatOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatOK  %+v", 200, o.Payload)
 }
-
 func (o *AddFormatOK) GetPayload() *mono_models.Format {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewAddFormatBadRequest() *AddFormatBadRequest {
 	return &AddFormatBadRequest{}
 }
 
-/*AddFormatBadRequest handles this case with default header values.
+/* AddFormatBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type AddFormatBadRequest struct {
 func (o *AddFormatBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddFormatBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewAddFormatForbidden() *AddFormatForbidden {
 	return &AddFormatForbidden{}
 }
 
-/*AddFormatForbidden handles this case with default header values.
+/* AddFormatForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -141,7 +138,6 @@ type AddFormatForbidden struct {
 func (o *AddFormatForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddFormatForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewAddFormatConflict() *AddFormatConflict {
 	return &AddFormatConflict{}
 }
 
-/*AddFormatConflict handles this case with default header values.
+/* AddFormatConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -174,7 +170,6 @@ type AddFormatConflict struct {
 func (o *AddFormatConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddFormatConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewAddFormatInternalServerError() *AddFormatInternalServerError {
 	return &AddFormatInternalServerError{}
 }
 
-/*AddFormatInternalServerError handles this case with default header values.
+/* AddFormatInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type AddFormatInternalServerError struct {
 func (o *AddFormatInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] addFormatInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddFormatInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

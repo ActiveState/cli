@@ -11,8 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/components"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/identities"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/github"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/ingredients"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/invoices"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/languages"
@@ -22,8 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/platforms"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/scans"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/sessions"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/status"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/tiers"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -73,8 +70,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli := new(Mono)
 	cli.Transport = transport
 	cli.Authentication = authentication.New(transport, formats)
-	cli.Components = components.New(transport, formats)
-	cli.Identities = identities.New(transport, formats)
+	cli.Github = github.New(transport, formats)
 	cli.Ingredients = ingredients.New(transport, formats)
 	cli.Invoices = invoices.New(transport, formats)
 	cli.Languages = languages.New(transport, formats)
@@ -84,8 +80,6 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli.Platforms = platforms.New(transport, formats)
 	cli.Projects = projects.New(transport, formats)
 	cli.S3 = s3.New(transport, formats)
-	cli.Scans = scans.New(transport, formats)
-	cli.Sessions = sessions.New(transport, formats)
 	cli.Status = status.New(transport, formats)
 	cli.Tiers = tiers.New(transport, formats)
 	cli.Users = users.New(transport, formats)
@@ -136,9 +130,7 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 type Mono struct {
 	Authentication authentication.ClientService
 
-	Components components.ClientService
-
-	Identities identities.ClientService
+	Github github.ClientService
 
 	Ingredients ingredients.ClientService
 
@@ -158,10 +150,6 @@ type Mono struct {
 
 	S3 s3.ClientService
 
-	Scans scans.ClientService
-
-	Sessions sessions.ClientService
-
 	Status status.ClientService
 
 	Tiers tiers.ClientService
@@ -177,8 +165,7 @@ type Mono struct {
 func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Authentication.SetTransport(transport)
-	c.Components.SetTransport(transport)
-	c.Identities.SetTransport(transport)
+	c.Github.SetTransport(transport)
 	c.Ingredients.SetTransport(transport)
 	c.Invoices.SetTransport(transport)
 	c.Languages.SetTransport(transport)
@@ -188,8 +175,6 @@ func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Platforms.SetTransport(transport)
 	c.Projects.SetTransport(transport)
 	c.S3.SetTransport(transport)
-	c.Scans.SetTransport(transport)
-	c.Sessions.SetTransport(transport)
 	c.Status.SetTransport(transport)
 	c.Tiers.SetTransport(transport)
 	c.Users.SetTransport(transport)

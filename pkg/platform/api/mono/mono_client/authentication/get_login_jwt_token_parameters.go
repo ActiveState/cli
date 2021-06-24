@@ -16,64 +16,83 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetLoginJwtTokenParams creates a new GetLoginJwtTokenParams object
-// with the default values initialized.
+// NewGetLoginJwtTokenParams creates a new GetLoginJwtTokenParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetLoginJwtTokenParams() *GetLoginJwtTokenParams {
-	var ()
 	return &GetLoginJwtTokenParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetLoginJwtTokenParamsWithTimeout creates a new GetLoginJwtTokenParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetLoginJwtTokenParamsWithTimeout(timeout time.Duration) *GetLoginJwtTokenParams {
-	var ()
 	return &GetLoginJwtTokenParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetLoginJwtTokenParamsWithContext creates a new GetLoginJwtTokenParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetLoginJwtTokenParamsWithContext(ctx context.Context) *GetLoginJwtTokenParams {
-	var ()
 	return &GetLoginJwtTokenParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetLoginJwtTokenParamsWithHTTPClient creates a new GetLoginJwtTokenParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetLoginJwtTokenParamsWithHTTPClient(client *http.Client) *GetLoginJwtTokenParams {
-	var ()
 	return &GetLoginJwtTokenParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetLoginJwtTokenParams contains all the parameters to send to the API endpoint
-for the get login jwt token operation typically these are written to a http.Request
+/* GetLoginJwtTokenParams contains all the parameters to send to the API endpoint
+   for the get login jwt token operation.
+
+   Typically these are written to a http.Request.
 */
 type GetLoginJwtTokenParams struct {
 
-	/*RedirectURL
-	  redirectURL after login
+	/* RedirectURL.
 
+	   redirectURL after login
+
+	   Format: uri
 	*/
 	RedirectURL strfmt.URI
-	/*Token
-	  token to login with
 
+	/* Token.
+
+	   token to login with
+
+	   Format: string
 	*/
 	Token string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get login jwt token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLoginJwtTokenParams) WithDefaults() *GetLoginJwtTokenParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get login jwt token params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLoginJwtTokenParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get login jwt token params
@@ -143,6 +162,7 @@ func (o *GetLoginJwtTokenParams) WriteToRequest(r runtime.ClientRequest, reg str
 	qrRedirectURL := o.RedirectURL
 	qRedirectURL := qrRedirectURL.String()
 	if qRedirectURL != "" {
+
 		if err := r.SetQueryParam("redirectURL", qRedirectURL); err != nil {
 			return err
 		}

@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -108,7 +109,6 @@ func (m *User) Validate(formats strfmt.Registry) error {
 }
 
 func (m *User) validateEULAAccepted(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.EULAAccepted) { // not required
 		return nil
 	}
@@ -121,7 +121,6 @@ func (m *User) validateEULAAccepted(formats strfmt.Registry) error {
 }
 
 func (m *User) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -134,7 +133,6 @@ func (m *User) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *User) validateExpires(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Expires) { // not required
 		return nil
 	}
@@ -147,7 +145,6 @@ func (m *User) validateExpires(formats strfmt.Registry) error {
 }
 
 func (m *User) validateLastLogin(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LastLogin) { // not required
 		return nil
 	}
@@ -160,7 +157,6 @@ func (m *User) validateLastLogin(formats strfmt.Registry) error {
 }
 
 func (m *User) validateOrganizations(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Organizations) { // not required
 		return nil
 	}
@@ -185,13 +181,44 @@ func (m *User) validateOrganizations(formats strfmt.Registry) error {
 }
 
 func (m *User) validateUserID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UserID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("userID", "body", "uuid", m.UserID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this user based on the context it is used
+func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateOrganizations(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *User) contextValidateOrganizations(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Organizations); i++ {
+
+		if m.Organizations[i] != nil {
+			if err := m.Organizations[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("organizations" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -229,6 +256,9 @@ type UserOrganizationsItems0 struct {
 
 	// role
 	Role string `json:"role,omitempty"`
+
+	// tier
+	Tier string `json:"tier,omitempty"`
 }
 
 // Validate validates this user organizations items0
@@ -246,7 +276,6 @@ func (m *UserOrganizationsItems0) Validate(formats strfmt.Registry) error {
 }
 
 func (m *UserOrganizationsItems0) validateOrganizationID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.OrganizationID) { // not required
 		return nil
 	}
@@ -255,6 +284,11 @@ func (m *UserOrganizationsItems0) validateOrganizationID(formats strfmt.Registry
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this user organizations items0 based on context it is used
+func (m *UserOrganizationsItems0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

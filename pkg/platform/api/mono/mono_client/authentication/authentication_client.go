@@ -25,37 +25,40 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetLoginJwtToken(params *GetLoginJwtTokenParams) error
+	GetLoginJwtToken(params *GetLoginJwtTokenParams, opts ...ClientOption) error
 
-	GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
+	GetLogout(params *GetLogoutParams, opts ...ClientOption) (*GetLogoutNoContent, error)
 
-	GetRenew(params *GetRenewParams) (*GetRenewOK, error)
+	GetRenew(params *GetRenewParams, opts ...ClientOption) (*GetRenewOK, error)
 
-	PostLogin(params *PostLoginParams) (*PostLoginOK, error)
+	PostLogin(params *PostLoginParams, opts ...ClientOption) (*PostLoginOK, error)
 
-	AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenOK, error)
+	AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenOK, error)
 
-	ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter) (*ChangePasswordOK, error)
+	ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ChangePasswordOK, error)
 
-	DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteTokenOK, error)
+	DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTokenOK, error)
 
-	DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*DisableTOTPOK, error)
+	DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DisableTOTPOK, error)
 
-	EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*EnableTOTPOK, error)
+	EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnableTOTPOK, error)
 
-	ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListTokensOK, error)
+	ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListTokensOK, error)
 
-	LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter) (*LoginAsOK, error)
+	LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LoginAsOK, error)
 
-	LoginWithGithub(params *LoginWithGithubParams) error
+	LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOption) error
 
-	NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*NewTOTPOK, error)
+	NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NewTOTPOK, error)
 
-	RequestReset(params *RequestResetParams) (*RequestResetOK, error)
+	RequestReset(params *RequestResetParams, opts ...ClientOption) (*RequestResetOK, error)
 
-	ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, error)
+	ResetPassword(params *ResetPasswordParams, opts ...ClientOption) (*ResetPasswordOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -65,13 +68,12 @@ type ClientService interface {
 
   Login with a valid JWT and redirect to a platform URL
 */
-func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
+func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLoginJwtTokenParams()
 	}
-
-	_, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "GetLoginJwtToken",
 		Method:             "GET",
 		PathPattern:        "/login/jwt/{token}",
@@ -82,7 +84,12 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
 		Reader:             &GetLoginJwtTokenReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	_, err := a.transport.Submit(op)
 	if err != nil {
 		return err
 	}
@@ -94,13 +101,12 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams) error {
 
   Log out of the current session
 */
-func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error) {
+func (a *Client) GetLogout(params *GetLogoutParams, opts ...ClientOption) (*GetLogoutNoContent, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetLogoutParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "GetLogout",
 		Method:             "GET",
 		PathPattern:        "/logout",
@@ -111,7 +117,12 @@ func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
 		Reader:             &GetLogoutReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -130,13 +141,12 @@ func (a *Client) GetLogout(params *GetLogoutParams) (*GetLogoutNoContent, error)
 
   Renew your current JWT to forestall expiration
 */
-func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
+func (a *Client) GetRenew(params *GetRenewParams, opts ...ClientOption) (*GetRenewOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetRenewParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "GetRenew",
 		Method:             "GET",
 		PathPattern:        "/renew",
@@ -147,7 +157,12 @@ func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 		Reader:             &GetRenewReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -166,13 +181,12 @@ func (a *Client) GetRenew(params *GetRenewParams) (*GetRenewOK, error) {
 
   Supply either username/password OR token
 */
-func (a *Client) PostLogin(params *PostLoginParams) (*PostLoginOK, error) {
+func (a *Client) PostLogin(params *PostLoginParams, opts ...ClientOption) (*PostLoginOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewPostLoginParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "PostLogin",
 		Method:             "POST",
 		PathPattern:        "/login",
@@ -183,7 +197,12 @@ func (a *Client) PostLogin(params *PostLoginParams) (*PostLoginOK, error) {
 		Reader:             &PostLoginReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -202,13 +221,12 @@ func (a *Client) PostLogin(params *PostLoginParams) (*PostLoginOK, error) {
 
   Produces an API token for use with automated API clients
 */
-func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenOK, error) {
+func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addToken",
 		Method:             "POST",
 		PathPattern:        "/apikeys",
@@ -220,7 +238,12 @@ func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -239,13 +262,12 @@ func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInf
 
   Prompts for current password which is used to change it to something new.
 */
-func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter) (*ChangePasswordOK, error) {
+func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ChangePasswordOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewChangePasswordParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "changePassword",
 		Method:             "POST",
 		PathPattern:        "/change-password",
@@ -257,7 +279,12 @@ func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.C
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -276,13 +303,12 @@ func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.C
 
   Deletes the specified API Token
 */
-func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteTokenOK, error) {
+func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTokenOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteTokenParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteToken",
 		Method:             "DELETE",
 		PathPattern:        "/apikeys/{tokenID}",
@@ -294,7 +320,12 @@ func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -313,13 +344,12 @@ func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientA
 
   Disable TOTP authentication
 */
-func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*DisableTOTPOK, error) {
+func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DisableTOTPOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDisableTOTPParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "disableTOTP",
 		Method:             "DELETE",
 		PathPattern:        "/totp",
@@ -331,7 +361,12 @@ func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -350,13 +385,12 @@ func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientA
 
   Enable TOTP authentication by performing initial code validation
 */
-func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*EnableTOTPOK, error) {
+func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnableTOTPOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEnableTOTPParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "enableTOTP",
 		Method:             "POST",
 		PathPattern:        "/totp",
@@ -368,7 +402,12 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -387,13 +426,12 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 
   List of all active API Tokens for current user
 */
-func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListTokensOK, error) {
+func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListTokensOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListTokensParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listTokens",
 		Method:             "GET",
 		PathPattern:        "/apikeys",
@@ -405,7 +443,12 @@ func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -422,13 +465,12 @@ func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAut
 /*
   LoginAs logins as given user requires you to be a superuser
 */
-func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter) (*LoginAsOK, error) {
+func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LoginAsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewLoginAsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "loginAs",
 		Method:             "POST",
 		PathPattern:        "/login/{username}",
@@ -440,7 +482,12 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -457,13 +504,12 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 /*
   LoginWithGithub callbacks endpoint for github auth
 */
-func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
+func (a *Client) LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewLoginWithGithubParams()
 	}
-
-	_, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "loginWithGithub",
 		Method:             "GET",
 		PathPattern:        "/githubLogin",
@@ -474,7 +520,12 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
 		Reader:             &LoginWithGithubReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	_, err := a.transport.Submit(op)
 	if err != nil {
 		return err
 	}
@@ -486,13 +537,12 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams) error {
 
   Establish the private key for two-factor authentication
 */
-func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter) (*NewTOTPOK, error) {
+func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NewTOTPOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewNewTOTPParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "newTOTP",
 		Method:             "GET",
 		PathPattern:        "/totp",
@@ -504,7 +554,12 @@ func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -523,13 +578,12 @@ func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoW
 
   Sends a link which can be used to reset a forgotten password.
 */
-func (a *Client) RequestReset(params *RequestResetParams) (*RequestResetOK, error) {
+func (a *Client) RequestReset(params *RequestResetParams, opts ...ClientOption) (*RequestResetOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewRequestResetParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "requestReset",
 		Method:             "POST",
 		PathPattern:        "/request-reset/{email}",
@@ -540,7 +594,12 @@ func (a *Client) RequestReset(params *RequestResetParams) (*RequestResetOK, erro
 		Reader:             &RequestResetReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -559,13 +618,12 @@ func (a *Client) RequestReset(params *RequestResetParams) (*RequestResetOK, erro
 
   Sends a link which can be used to reset a forgotten password.
 */
-func (a *Client) ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, error) {
+func (a *Client) ResetPassword(params *ResetPasswordParams, opts ...ClientOption) (*ResetPasswordOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewResetPasswordParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "resetPassword",
 		Method:             "POST",
 		PathPattern:        "/reset-password",
@@ -576,7 +634,12 @@ func (a *Client) ResetPassword(params *ResetPasswordParams) (*ResetPasswordOK, e
 		Reader:             &ResetPasswordReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

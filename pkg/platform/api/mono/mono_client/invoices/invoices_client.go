@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	CalculateTax(params *CalculateTaxParams, authInfo runtime.ClientAuthInfoWriter) (*CalculateTaxOK, error)
+	CalculateTax(params *CalculateTaxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CalculateTaxOK, error)
 
-	CreateInvoice(params *CreateInvoiceParams, authInfo runtime.ClientAuthInfoWriter) (*CreateInvoiceOK, error)
+	CreateInvoice(params *CreateInvoiceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInvoiceOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 /*
   CalculateTax calculates the tax for the given address and options
 */
-func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.ClientAuthInfoWriter) (*CalculateTaxOK, error) {
+func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CalculateTaxOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCalculateTaxParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "calculateTax",
 		Method:             "POST",
 		PathPattern:        "/taxes",
@@ -55,7 +57,12 @@ func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +81,12 @@ func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.Clien
 
   Creates a new invoice for the organization
 */
-func (a *Client) CreateInvoice(params *CreateInvoiceParams, authInfo runtime.ClientAuthInfoWriter) (*CreateInvoiceOK, error) {
+func (a *Client) CreateInvoice(params *CreateInvoiceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInvoiceOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewCreateInvoiceParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "createInvoice",
 		Method:             "POST",
 		PathPattern:        "/organizations/{organizationIdentifier}/invoices",
@@ -92,7 +98,12 @@ func (a *Client) CreateInvoice(params *CreateInvoiceParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

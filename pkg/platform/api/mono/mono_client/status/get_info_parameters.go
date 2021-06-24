@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetInfoParams creates a new GetInfoParams object
-// with the default values initialized.
+// NewGetInfoParams creates a new GetInfoParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetInfoParams() *GetInfoParams {
-	var ()
 	return &GetInfoParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetInfoParamsWithTimeout creates a new GetInfoParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetInfoParamsWithTimeout(timeout time.Duration) *GetInfoParams {
-	var ()
 	return &GetInfoParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetInfoParamsWithContext creates a new GetInfoParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetInfoParamsWithContext(ctx context.Context) *GetInfoParams {
-	var ()
 	return &GetInfoParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetInfoParamsWithHTTPClient creates a new GetInfoParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetInfoParamsWithHTTPClient(client *http.Client) *GetInfoParams {
-	var ()
 	return &GetInfoParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetInfoParams contains all the parameters to send to the API endpoint
-for the get info operation typically these are written to a http.Request
+/* GetInfoParams contains all the parameters to send to the API endpoint
+   for the get info operation.
+
+   Typically these are written to a http.Request.
 */
 type GetInfoParams struct {
 
-	/*Value
-	  Whatever you like
+	/* Value.
 
+	   Whatever you like
 	*/
 	Value *string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get info params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetInfoParams) WithDefaults() *GetInfoParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get info params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetInfoParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get info params
@@ -127,16 +141,17 @@ func (o *GetInfoParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regis
 
 		// query param value
 		var qrValue string
+
 		if o.Value != nil {
 			qrValue = *o.Value
 		}
 		qValue := qrValue
 		if qValue != "" {
+
 			if err := r.SetQueryParam("value", qValue); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

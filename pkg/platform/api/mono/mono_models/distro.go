@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -81,7 +82,6 @@ func (m *Distro) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -94,7 +94,6 @@ func (m *Distro) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validateDistroID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DistroID) { // not required
 		return nil
 	}
@@ -107,7 +106,6 @@ func (m *Distro) validateDistroID(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validateFormats(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Formats) { // not required
 		return nil
 	}
@@ -132,7 +130,6 @@ func (m *Distro) validateFormats(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validateManifest(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Manifest) { // not required
 		return nil
 	}
@@ -157,7 +154,6 @@ func (m *Distro) validateManifest(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validatePlatformID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.PlatformID) { // not required
 		return nil
 	}
@@ -170,13 +166,66 @@ func (m *Distro) validatePlatformID(formats strfmt.Registry) error {
 }
 
 func (m *Distro) validateReleaseID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ReleaseID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("releaseID", "body", "uuid", m.ReleaseID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this distro based on the context it is used
+func (m *Distro) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateFormats(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateManifest(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Distro) contextValidateFormats(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Formats); i++ {
+
+		if m.Formats[i] != nil {
+			if err := m.Formats[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("formats" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Distro) contextValidateManifest(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Manifest); i++ {
+
+		if m.Manifest[i] != nil {
+			if err := m.Manifest[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("manifest" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

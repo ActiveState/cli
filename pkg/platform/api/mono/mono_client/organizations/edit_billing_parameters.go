@@ -18,81 +18,98 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditBillingParams creates a new EditBillingParams object
-// with the default values initialized.
+// NewEditBillingParams creates a new EditBillingParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditBillingParams() *EditBillingParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditBillingParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditBillingParamsWithTimeout creates a new EditBillingParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditBillingParamsWithTimeout(timeout time.Duration) *EditBillingParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditBillingParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewEditBillingParamsWithContext creates a new EditBillingParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditBillingParamsWithContext(ctx context.Context) *EditBillingParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditBillingParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewEditBillingParamsWithHTTPClient creates a new EditBillingParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditBillingParamsWithHTTPClient(client *http.Client) *EditBillingParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &EditBillingParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*EditBillingParams contains all the parameters to send to the API endpoint
-for the edit billing operation typically these are written to a http.Request
+/* EditBillingParams contains all the parameters to send to the API endpoint
+   for the edit billing operation.
+
+   Typically these are written to a http.Request.
 */
 type EditBillingParams struct {
 
-	/*BillingInformation
-	  updated billing information
+	/* BillingInformation.
 
+	   updated billing information
 	*/
 	BillingInformation *mono_models.BillingInformationEditable
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
 
+	/* IdentifierType.
+
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit billing params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditBillingParams) WithDefaults() *EditBillingParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit billing params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditBillingParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := EditBillingParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the edit billing params
@@ -168,7 +185,6 @@ func (o *EditBillingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
-
 	if o.BillingInformation != nil {
 		if err := r.SetBodyParam(o.BillingInformation); err != nil {
 			return err
@@ -179,16 +195,17 @@ func (o *EditBillingParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationIdentifier

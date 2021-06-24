@@ -41,9 +41,8 @@ func (o *ListFormatsReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewListFormatsOK() *ListFormatsOK {
 	return &ListFormatsOK{}
 }
 
-/*ListFormatsOK handles this case with default header values.
+/* ListFormatsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type ListFormatsOK struct {
 func (o *ListFormatsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListFormatsOK) GetPayload() []*mono_models.Format {
 	return o.Payload
 }
@@ -83,7 +81,7 @@ func NewListFormatsNotFound() *ListFormatsNotFound {
 	return &ListFormatsNotFound{}
 }
 
-/*ListFormatsNotFound handles this case with default header values.
+/* ListFormatsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -94,7 +92,6 @@ type ListFormatsNotFound struct {
 func (o *ListFormatsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsNotFound  %+v", 404, o.Payload)
 }
-
 func (o *ListFormatsNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -116,7 +113,7 @@ func NewListFormatsInternalServerError() *ListFormatsInternalServerError {
 	return &ListFormatsInternalServerError{}
 }
 
-/*ListFormatsInternalServerError handles this case with default header values.
+/* ListFormatsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -127,7 +124,6 @@ type ListFormatsInternalServerError struct {
 func (o *ListFormatsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats][%d] listFormatsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ListFormatsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -109,7 +110,6 @@ func (m *Project) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -122,7 +122,6 @@ func (m *Project) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateBranches(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Branches) { // not required
 		return nil
 	}
@@ -138,7 +137,6 @@ func (m *Project) validateBranches(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateForkedFrom(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ForkedFrom) { // not required
 		return nil
 	}
@@ -156,7 +154,6 @@ func (m *Project) validateForkedFrom(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateLanguages(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Languages) { // not required
 		return nil
 	}
@@ -181,7 +178,6 @@ func (m *Project) validateLanguages(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateLastEdited(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LastEdited) { // not required
 		return nil
 	}
@@ -194,7 +190,6 @@ func (m *Project) validateLastEdited(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateOrganizationID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.OrganizationID) { // not required
 		return nil
 	}
@@ -207,7 +202,6 @@ func (m *Project) validateOrganizationID(formats strfmt.Registry) error {
 }
 
 func (m *Project) validatePlatforms(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Platforms) { // not required
 		return nil
 	}
@@ -232,13 +226,100 @@ func (m *Project) validatePlatforms(formats strfmt.Registry) error {
 }
 
 func (m *Project) validateProjectID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProjectID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("projectID", "body", "uuid", m.ProjectID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this project based on the context it is used
+func (m *Project) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBranches(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateForkedFrom(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLanguages(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePlatforms(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Project) contextValidateBranches(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.Branches.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("branches")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *Project) contextValidateForkedFrom(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ForkedFrom != nil {
+		if err := m.ForkedFrom.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("forkedFrom")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Project) contextValidateLanguages(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Languages); i++ {
+
+		if m.Languages[i] != nil {
+			if err := m.Languages[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("languages" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Project) contextValidatePlatforms(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Platforms); i++ {
+
+		if m.Platforms[i] != nil {
+			if err := m.Platforms[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("platforms" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -276,6 +357,11 @@ type ProjectForkedFrom struct {
 
 // Validate validates this project forked from
 func (m *ProjectForkedFrom) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this project forked from based on context it is used
+func (m *ProjectForkedFrom) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
@@ -325,7 +411,6 @@ func (m *ProjectLanguagesItems0) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ProjectLanguagesItems0) validateIngredientID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientID) { // not required
 		return nil
 	}
@@ -334,6 +419,11 @@ func (m *ProjectLanguagesItems0) validateIngredientID(formats strfmt.Registry) e
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this project languages items0 based on context it is used
+func (m *ProjectLanguagesItems0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
@@ -383,7 +473,6 @@ func (m *ProjectPlatformsItems0) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ProjectPlatformsItems0) validatePlatformID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.PlatformID) { // not required
 		return nil
 	}
@@ -392,6 +481,11 @@ func (m *ProjectPlatformsItems0) validatePlatformID(formats strfmt.Registry) err
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this project platforms items0 based on context it is used
+func (m *ProjectPlatformsItems0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

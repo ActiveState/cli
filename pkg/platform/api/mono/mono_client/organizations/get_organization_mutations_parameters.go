@@ -16,76 +16,92 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetOrganizationMutationsParams creates a new GetOrganizationMutationsParams object
-// with the default values initialized.
+// NewGetOrganizationMutationsParams creates a new GetOrganizationMutationsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetOrganizationMutationsParams() *GetOrganizationMutationsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationMutationsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetOrganizationMutationsParamsWithTimeout creates a new GetOrganizationMutationsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetOrganizationMutationsParamsWithTimeout(timeout time.Duration) *GetOrganizationMutationsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationMutationsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetOrganizationMutationsParamsWithContext creates a new GetOrganizationMutationsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetOrganizationMutationsParamsWithContext(ctx context.Context) *GetOrganizationMutationsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationMutationsParams{
-		IdentifierType: &identifierTypeDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetOrganizationMutationsParamsWithHTTPClient creates a new GetOrganizationMutationsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetOrganizationMutationsParamsWithHTTPClient(client *http.Client) *GetOrganizationMutationsParams {
-	var (
-		identifierTypeDefault = string("URLname")
-	)
 	return &GetOrganizationMutationsParams{
-		IdentifierType: &identifierTypeDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*GetOrganizationMutationsParams contains all the parameters to send to the API endpoint
-for the get organization mutations operation typically these are written to a http.Request
+/* GetOrganizationMutationsParams contains all the parameters to send to the API endpoint
+   for the get organization mutations operation.
+
+   Typically these are written to a http.Request.
 */
 type GetOrganizationMutationsParams struct {
 
-	/*IdentifierType
-	  what kind of thing the provided organizationIdentifier is
+	/* IdentifierType.
 
+	   what kind of thing the provided organizationIdentifier is
+
+	   Default: "URLname"
 	*/
 	IdentifierType *string
-	/*OrganizationIdentifier
-	  identifier (URLname, by default) of the desired organization
 
+	/* OrganizationIdentifier.
+
+	   identifier (URLname, by default) of the desired organization
 	*/
 	OrganizationIdentifier string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get organization mutations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationMutationsParams) WithDefaults() *GetOrganizationMutationsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get organization mutations params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetOrganizationMutationsParams) SetDefaults() {
+	var (
+		identifierTypeDefault = string("URLname")
+	)
+
+	val := GetOrganizationMutationsParams{
+		IdentifierType: &identifierTypeDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get organization mutations params
@@ -155,16 +171,17 @@ func (o *GetOrganizationMutationsParams) WriteToRequest(r runtime.ClientRequest,
 
 		// query param identifierType
 		var qrIdentifierType string
+
 		if o.IdentifierType != nil {
 			qrIdentifierType = *o.IdentifierType
 		}
 		qIdentifierType := qrIdentifierType
 		if qIdentifierType != "" {
+
 			if err := r.SetQueryParam("identifierType", qIdentifierType); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param organizationIdentifier

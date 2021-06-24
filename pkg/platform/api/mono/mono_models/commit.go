@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -89,7 +90,6 @@ func (m *Commit) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -102,7 +102,6 @@ func (m *Commit) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateAtTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AtTime) { // not required
 		return nil
 	}
@@ -115,7 +114,6 @@ func (m *Commit) validateAtTime(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateAuthor(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Author) { // not required
 		return nil
 	}
@@ -128,7 +126,6 @@ func (m *Commit) validateAuthor(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateChangeset(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Changeset) { // not required
 		return nil
 	}
@@ -153,7 +150,6 @@ func (m *Commit) validateChangeset(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CommitID) { // not required
 		return nil
 	}
@@ -166,12 +162,69 @@ func (m *Commit) validateCommitID(formats strfmt.Registry) error {
 }
 
 func (m *Commit) validateParentCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ParentCommitID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("parentCommitID", "body", "uuid", m.ParentCommitID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this commit based on the context it is used
+func (m *Commit) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateChangeset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCommitID(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateParentCommitID(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Commit) contextValidateChangeset(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Changeset); i++ {
+
+		if m.Changeset[i] != nil {
+			if err := m.Changeset[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("changeset" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Commit) contextValidateCommitID(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := validate.ReadOnly(ctx, "commitID", "body", strfmt.UUID(m.CommitID)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Commit) contextValidateParentCommitID(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := validate.ReadOnly(ctx, "parentCommitID", "body", strfmt.UUID(m.ParentCommitID)); err != nil {
 		return err
 	}
 

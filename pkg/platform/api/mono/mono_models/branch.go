@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -85,7 +86,6 @@ func (m *Branch) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Branch) validateBranchID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BranchID) { // not required
 		return nil
 	}
@@ -98,7 +98,6 @@ func (m *Branch) validateBranchID(formats strfmt.Registry) error {
 }
 
 func (m *Branch) validateCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CommitID) { // not required
 		return nil
 	}
@@ -111,7 +110,6 @@ func (m *Branch) validateCommitID(formats strfmt.Registry) error {
 }
 
 func (m *Branch) validateProjectID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ProjectID) { // not required
 		return nil
 	}
@@ -149,14 +147,13 @@ const (
 
 // prop value enum
 func (m *Branch) validateTrackingTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, branchTypeTrackingTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, branchTypeTrackingTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Branch) validateTrackingType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.TrackingType) { // not required
 		return nil
 	}
@@ -170,7 +167,6 @@ func (m *Branch) validateTrackingType(formats strfmt.Registry) error {
 }
 
 func (m *Branch) validateTracks(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Tracks) { // not required
 		return nil
 	}
@@ -183,7 +179,6 @@ func (m *Branch) validateTracks(formats strfmt.Registry) error {
 }
 
 func (m *Branch) validateUpstreamCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.UpstreamCommitID) { // not required
 		return nil
 	}
@@ -192,6 +187,11 @@ func (m *Branch) validateUpstreamCommitID(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this branch based on context it is used
+func (m *Branch) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
