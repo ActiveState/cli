@@ -125,7 +125,12 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 				done <- "LOCKED"
 
 				// wait for the signal to kill process and to release the lock
-				<-ctx.Done()
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(60 * time.Second):
+					done <- "TIMEOUT"
+				}
 				interruptProcess(tt, lockCmd.Process)
 
 				err = lockCmd.Wait()
@@ -134,16 +139,6 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 				assert.Equal(tt, 0, lockCmd.ProcessState.ExitCode())
 			}()
 		}
-
-		// timeout if test does not finish after 60 seconds
-		go func() {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(60 * time.Second):
-				done <- "TIMEOUT"
-			}
-		}()
 
 		// ensure that numProcesses-1 processes are denied access and only 1 got the lock
 		var denied int
