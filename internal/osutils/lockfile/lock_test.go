@@ -183,7 +183,11 @@ func Test_acquirePidLock(t *testing.T) {
 	pl2, err := NewLock(lockFile)
 	require.NoError(t, err, "should pidlock on existing file with existing lock")
 	err = pl2.TryLock()
-	assert.NoError(t, err, "same process should be able to lock file again")
+	if runtime.GOOS == "windows" {
+		assert.Error(t, err, "on Windows a process can lock a file only once")
+	} else {
+		assert.NoError(t, err, "same process should be able to lock file again")
+	}
 
 	err = pl2.Close()
 	require.NoError(t, err, "should close the second lock successfully")
