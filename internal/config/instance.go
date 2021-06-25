@@ -67,7 +67,7 @@ func new(localPath string) (*Instance, error) {
 	return instance, nil
 }
 
-func (i *Instance) GetLock() (func() error, error) {
+func (i *Instance) GetLock() (ReleaseLock func() error, err error) {
 	i.lockMutex.Lock()
 
 	pl, err := lockfile.NewLock(i.lockFile)
