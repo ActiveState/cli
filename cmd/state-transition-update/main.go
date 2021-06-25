@@ -42,6 +42,8 @@ func main() {
 		exitCode = 1
 		return
 	}
+
+	fmt.Println("Please start a new shell to continue using the State Tool.")
 }
 
 func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {

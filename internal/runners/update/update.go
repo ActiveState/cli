@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/internal/version"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -87,15 +86,6 @@ func (u *Update) Run(params *Params) error {
 	}
 
 	u.out.Print(locale.Tl("version_updating_deferred", "Version update to {{.V0}}@{{.V1}} has started and should complete in seconds.\nRefer to log file [ACTIONABLE]{{.V2}}[/RESET] for progress.", up.Channel, up.Version, up.Logfile))
-
-	curVrsn, err := version.ParseStateToolVersion(constants.Version)
-	if err != nil {
-		return locale.WrapError(err, "err_update_parse_version", "Cannot parse current version")
-	}
-	if (channel == constants.ReleaseBranch || channel == constants.BetaBranch || channel == constants.ExperimentalBranch) && !version.IsMultiFileUpdate(curVrsn) {
-		u.out.Print(locale.Tl("update_to_multifile", "Once update is complete, please start a new shell to continue using the State Tool."))
-	}
-
 	return nil
 }
 
