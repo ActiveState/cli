@@ -41,9 +41,8 @@ type Instance struct {
 	lockFile      string
 	localPath     string
 	installSource string
-	// lock          *flock.Flock
-	data map[string]interface{}
-	// lockMutex ensures that file lock can be held only once per process.  Theoretically, this should be ensured by the `flock` package, but it isn't.  So, we need this hack.
+	data          map[string]interface{}
+	// lockMutex ensures that file lock can be held only once per process.  This is otherwise not ensured by the `lockfile` package.
 	// https://www.pivotaltracker.com/story/show/178478669
 	lockMutex *sync.Mutex
 }
