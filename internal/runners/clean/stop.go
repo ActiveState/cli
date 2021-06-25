@@ -11,7 +11,7 @@ import (
 )
 
 func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) error {
-	cleanForceTip := locale.Tl("clean_force_tip", "You can re-run the command with the [ACTIONABLE]--ignore-errors[/RESET] flag.")
+	cleanForceTip := locale.Tl("clean_force_tip", "You can re-run the command with the [ACTIONABLE]--force[/RESET] flag.")
 
 	// On Windows we need to halt the state tray and the state service before we can remove them
 	svcInfo := appinfo.SvcApp()

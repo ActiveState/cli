@@ -38,11 +38,6 @@ func newCleanUninstallCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("flag_state_clean_uninstall_force_description"),
 				Value:       &params.Force,
 			},
-			{
-				Name:        "ignore-errors",
-				Description: locale.T("flag_state_clean_ignore_errors_description"),
-				Value:       &params.IgnoreErrors,
-			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -71,11 +66,6 @@ func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 				Shorthand:   "f",
 				Description: locale.T("flag_state_clean_cache_force_description"),
 				Value:       &params.Force,
-			},
-			{
-				Name:        "ignore-errors",
-				Description: locale.T("flag_state_clean_ignore_errors_description"),
-				Value:       &params.IgnoreErrors,
 			},
 		},
 		[]*captain.Argument{
@@ -107,11 +97,6 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 				Shorthand:   "f",
 				Description: locale.T("flag_state_config_cache_force_description"),
 				Value:       &params.Force,
-			},
-			{
-				Name:        "ignore-errors",
-				Description: locale.T("flag_state_clean_ignore_errors_description"),
-				Value:       &params.IgnoreErrors,
 			},
 		},
 		[]*captain.Argument{},
