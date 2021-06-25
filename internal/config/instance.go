@@ -334,7 +334,7 @@ func (i *Instance) ReadInConfig() error {
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		baseMsg := "Your config file is currently malformed, please run [ACTIONABLE]state clean config[/RESET] to reset its contents, then try this command again."
+		baseMsg := "Your config file is currently malformed, please run [ACTIONABLE]state clean config --force[/RESET] to reset its contents, then try this command again."
 		return &LocLogError{
 			Err:       err,
 			Key:       "err_config_malformed",
