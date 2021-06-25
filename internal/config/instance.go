@@ -49,7 +49,6 @@ type Instance struct {
 }
 
 func new(localPath string) (*Instance, error) {
-	globLog(fmt.Sprintf("creating config instance at %s", localPath))
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
@@ -72,20 +71,17 @@ func new(localPath string) (*Instance, error) {
 func (i *Instance) GetLock() (func() error, error) {
 	i.lockMutex.Lock()
 
-	pl, err := lockfile.NewPidLock(i.lockFile)
+	pl, err := lockfile.NewLock(i.lockFile)
 	if err != nil {
 		i.lockMutex.Unlock()
-		globLog("timed out waiting for lock")
 		return nil, errs.Wrap(err, "Timed out waiting for exclusive lock")
 	}
 
 	if err := pl.WaitForLock(5 * time.Second); err != nil {
 		i.lockMutex.Unlock()
-		globLog("timed out waiting for lock")
 		return nil, errs.Wrap(err, "Timed out waiting for exclusive lock")
 	}
 
-	globLog("got lock")
 	return func() error {
 		defer i.lockMutex.Unlock()
 
@@ -93,7 +89,6 @@ func (i *Instance) GetLock() (func() error, error) {
 			return errs.Wrap(err, "Failed to release lock")
 		}
 
-		globLog("unlocked")
 		return nil
 	}, nil
 }
@@ -109,7 +104,6 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	globLog("reload")
 	unlock, err := i.GetLock()
 	if err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
@@ -187,7 +181,6 @@ func GetSafer() (*Instance, error) {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
-	globLog(fmt.Sprintf("SetWithLock %s", key))
 	unlock, err := i.GetLock()
 	if err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
@@ -213,21 +206,8 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 	return nil
 }
 
-func globLog(msg string) {
-	f, err := os.OpenFile("lock.log",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	if _, err := f.WriteString(fmt.Sprintf("%s [%d] %s\n", time.Now(), os.Getpid(), msg)); err != nil {
-		log.Println(err)
-	}
-}
-
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	globLog(fmt.Sprintf("Set %s %s", key, value))
 	unlock, err := i.GetLock()
 	if err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")

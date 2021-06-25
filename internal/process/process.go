@@ -82,13 +82,13 @@ func ActivationPIDFileName(configpath string, n int) string {
 // Activation eases the use of a PidLock for the purpose of "marking" a process
 // as being a valid "activation".
 type Activation struct {
-	PIDLock *lockfile.PidLock
+	PIDLock *lockfile.Lock
 }
 
 // NewActivation creates an instance of Activation.
 func NewActivation(cfg Configurable, pid int) (*Activation, error) {
 	pidFileName := ActivationPIDFileName(cfg.ConfigPath(), pid)
-	pidLock, err := lockfile.NewPidLock(pidFileName)
+	pidLock, err := lockfile.NewLock(pidFileName)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot create new pid lock file")
 	}
@@ -107,7 +107,7 @@ func NewActivation(cfg Configurable, pid int) (*Activation, error) {
 
 // Close cleans up the used resources.
 func (a *Activation) Close() error {
-	return a.PIDLock.Close(false)
+	return a.PIDLock.Close()
 }
 
 // IsActivated returns whether or not this process is being run in an activated

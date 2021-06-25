@@ -153,7 +153,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	// Synchronize the update process between state tool instances by acquiring a lock file
 	lockFile := filepath.Join(filepath.Dir(path), fmt.Sprintf(".%s.update-lock", "state"))
 	logging.Debug("Attempting to open lock file at %s", lockFile)
-	pl, err := lockfile.NewPidLock(lockFile)
+	pl, err := lockfile.NewLock(lockFile)
 	if err != nil {
 		return errs.Wrap(err, "could not create pid lock file for update process")
 	}

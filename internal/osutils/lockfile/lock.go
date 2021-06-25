@@ -3,94 +3,84 @@ package lockfile
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
-// PidLock represents a lock file that can be used for exclusive access to
+// Lock represents a lock file that can be used for exclusive access to
 // resources that should be accessed by only one process at a time.
 //
 // The characteristics of the lock are:
-// - Lockfiles are removed after use
-// - Even if the lockfiles are not removed (because a process has been terminated prematurely), it is unlocked
+// - Lockfiles are NOT removed after use (This seems to create race conditions)  There may be possible solutions out there: https://stackoverflow.com/questions/17708885/flock-removing-locked-file-without-race-condition,
+//     but they are not straight-forward, and even in the linked SO question, the answers imply that some of the solutions might leave some loopholes left.
+// - Even though the lockfiles are not removed (because a process has been terminated prematurely), it is unlocked
 // - On file-systems that support advisory locks via fcntl or LockFileEx, all file system operations are atomic
+// - The lock is NOT thread-safe!
 //
 // Notes:
 // - The implementation currently does not support a blocking wait operation that returns once the lock can be acquired. If required, it can be extended this way.
-// - Storing the PID inside the lockfile was initially intended to be fall-back mechanism for file systems that do not support locking files.  This is probably unnecessary, but could be extended to communicate with the process currently holding the lock via its PID.
-type PidLock struct {
+type Lock struct {
 	path   string
 	file   *os.File
 	locked bool
 }
 
-// NewPidLock creates a new PidLock that can be used to get exclusive access to resources between processes
-func NewPidLock(path string) (pl *PidLock, err error) {
+// NewLock creates a new Lock that can be used to get exclusive access to resources between processes
+func NewLock(path string) (pl *Lock, err error) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to open lock file %s", path)
 	}
-	return &PidLock{
+	return &Lock{
 		path: path,
 		file: f,
 	}, nil
 }
 
-func logAccessMessage(msg string) error {
-	f, err := os.OpenFile(filepath.Join(os.TempDir(), fmt.Sprintf("access_log.%d", os.Getpid())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if _, err := f.WriteString(fmt.Sprintf("%s: %s", time.Now(), msg)); err != nil {
-		return err
-	}
-	return nil
-}
-
 // TryLock attempts to lock the created lock file.
-func (pl *PidLock) TryLock() (err error) {
+func (pl *Lock) TryLock() (err error) {
 	err = LockFile(pl.file)
-	logAccessMessage(fmt.Sprintf("Trying to lock file %s from process %d with err=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 	if err != nil {
 		// if lock cannot be acquired it means that another process is holding the lock
 		return NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
 	}
 
 	pl.locked = true
-	logAccessMessage(fmt.Sprintf("Process %d locked file %s\n", os.Getpid(), pl.path))
 	return nil
 }
 
 // Close removes the lock file and releases the lock
-func (pl *PidLock) Close(keepFile ...bool) error {
-	keep := false
-	logAccessMessage(fmt.Sprintf("releasing lock on file %s from process %d\n", pl.path, os.Getpid()))
-	if len(keepFile) == 1 {
-		keep = keepFile[0]
-	}
+func (pl *Lock) Close() error {
 	if !pl.locked {
 		err := pl.file.Close()
-		logAccessMessage(fmt.Sprintf("released lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
 		if err != nil {
 			return errs.Wrap(err, "failed to close unlocked lock file %s", pl.path)
 		}
 		return nil
 	}
-	err := pl.cleanLockFile(keep)
-	logAccessMessage(fmt.Sprintf("released and cleaned lock on file %s from process %d with error=%v\n", pl.path, os.Getpid(), errs.JoinMessage(err)))
+	err := pl.cleanLockFile()
 	if err != nil {
 		return errs.Wrap(err, "failed to remove lock file")
 	}
 	return nil
 }
 
+func (pl *Lock) cleanLockFile() error {
+	err := LockRelease(pl.file)
+	if err != nil {
+		return errs.Wrap(err, "failed to release lock on lock file %s", pl.path)
+	}
+	err = pl.file.Close()
+	if err != nil {
+		return errs.Wrap(err, "failed to close lock file %s", pl.path)
+	}
+	return nil
+}
+
 // WaitForLock will attempt to acquire the lock for the duration given
-func (pl *PidLock) WaitForLock(timeout time.Duration) error {
+func (pl *Lock) WaitForLock(timeout time.Duration) error {
 	expiration := time.Now().Add(timeout)
 	for {
 		err := pl.TryLock()
