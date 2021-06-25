@@ -70,12 +70,14 @@ func LockRelease(f *os.File) error {
 
 func (pl *PidLock) cleanLockFile(keep bool) error {
 	// On Linux we have to remove the file before removing the file lock to avoid race conditions.
-	if !keep {
-		err := os.Remove(pl.path)
-		if err != nil {
-			return errs.Wrap(err, "failed to remove lock file %s", pl.path)
+	/*
+		if !keep {
+			err := os.Remove(pl.path)
+			if err != nil {
+				return errs.Wrap(err, "failed to remove lock file %s", pl.path)
+			}
 		}
-	}
+	*/
 	err := LockRelease(pl.file)
 	if err != nil {
 		return errs.Wrap(err, "failed to release lock on lock file %s", pl.path)
