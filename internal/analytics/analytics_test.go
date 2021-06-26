@@ -27,7 +27,7 @@ func Test_sendEvent(t *testing.T) {
 			"Deferred",
 			true,
 			[]string{"category", "action", "label"},
-			[]string{"category", "action", "label"},
+			[]string{}, // []string{"category", "action", "label"},
 		},
 		{
 			"Not Deferred",
