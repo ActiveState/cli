@@ -92,7 +92,7 @@ func (pl *Lock) WaitForLock(timeout time.Duration) error {
 			if time.Now().After(expiration) {
 				return errs.Wrap(err, "Timed out trying to acquire lock")
 			}
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 		return nil
