@@ -142,14 +142,8 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 }
 
 func saveDeferred(cfg Configurable, v []deferredData) error {
-	s, err := json.Marshal(v)
-	if err != nil {
-		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
-	}
-	err = cfg.Set(deferredCfgKey, string(s))
-	if err != nil {
-		return errs.Wrap(err, "Could not save deferred data in config")
-	}
+	// This is de-activated for now.
+	// Todo: Implement by appending data to a separate file https://www.pivotaltracker.com/story/show/178680862
 	return nil
 }
 
