@@ -360,6 +360,10 @@ func (i *Instance) save() error {
 		return errs.Wrap(err, "Could not write config file")
 	}
 
+	if err = f.Sync(); err != nil {
+		return errs.Wrap(err, "Failed to sync file contents")
+	}
+
 	return nil
 }
 
