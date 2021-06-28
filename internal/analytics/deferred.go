@@ -2,9 +2,11 @@ package analytics
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,11 +24,15 @@ type deferredData struct {
 	Dimensions map[string]string
 }
 
-const deferredCfgKey = "deferrer_analytics"
 const deferrerFileName = "deferrer"
+const deferredDataFileName = "deferred_data"
 
 func deferrerFilePath(cfg Configurable) string {
 	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
+}
+
+func deferredDataFilePath(cfg Configurable) string {
+	return filepath.Join(cfg.ConfigPath(), deferredDataFileName)
 }
 
 func isDeferralDayAgo(cfg Configurable) bool {
@@ -98,37 +104,43 @@ type Configurable interface {
 
 func deferEvent(cfg Configurable, category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
-	deferred, err := loadDeferred(cfg)
-	if err != nil {
-		return errs.Wrap(err, "Could not load events on defer")
-	}
 
 	if !fileutils.FileExists(deferrerFilePath(cfg)) {
-		err = fileutils.Touch(deferrerFilePath(cfg))
-		if err != nil {
+		if err := fileutils.Touch(deferrerFilePath(cfg)); err != nil {
 			logging.Errorf("Failed to create deferrer time stamp file: %v", err)
 		}
 	}
 
-	deferred = append(deferred, deferredData{category, action, label, dimensions})
-	if err := saveDeferred(cfg, deferred); err != nil {
+	if err := saveDeferred(cfg, deferredData{category, action, label, dimensions}); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
 }
 
 func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
-	deferred, err := loadDeferred(cfg)
-	if err != nil {
-		return errs.Wrap(err, "Could not load events on send")
+	// move deferred data file, so it is not being appended anymore
+	outboxFile := filepath.Join(cfg.ConfigPath(), "deferred.outbox")
+
+	if err := os.Rename(deferredDataFilePath(cfg), outboxFile); err != nil {
+		return errs.Wrap(err, "Could not rename deferred_data file")
 	}
-	if len(deferred) > 0 {
-		for n, event := range deferred {
+	b, err := os.ReadFile(outboxFile)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read deferred_data")
+	}
+	lines := strings.Split(string(b), "\n")
+	var unmarshalErrorReported bool
+	if len(lines) > 0 {
+		for _, line := range lines {
+			var event deferredData
+			if err := json.Unmarshal([]byte(line), &event); err != nil {
+				if !unmarshalErrorReported {
+					logging.Error("Failed to unmarshal line in deferred_data file: %v", err)
+					unmarshalErrorReported = true
+				}
+			}
 			if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
 				return errs.Wrap(err, "Could not send deferred event")
-			}
-			if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
-				return errs.Wrap(err, "Could not save deferred event on send")
 			}
 		}
 	}
@@ -141,20 +153,19 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	return nil
 }
 
-func saveDeferred(cfg Configurable, v []deferredData) error {
-	// This is de-activated for now.
-	// Todo: Implement by appending data to a separate file https://www.pivotaltracker.com/story/show/178680862
-	return nil
-}
-
-func loadDeferred(cfg Configurable) ([]deferredData, error) {
-	v := cfg.GetString(deferredCfgKey)
-	d := []deferredData{}
-	if v != "" {
-		err := json.Unmarshal([]byte(v), &d)
-		if err != nil {
-			return d, errs.Wrap(err, "Could not deserialize deferred analytics: %v", v)
-		}
+func saveDeferred(cfg Configurable, v deferredData) error {
+	vj, err := json.Marshal(v)
+	if err != nil {
+		return errs.Wrap(err, "Failed to marshal deferred data")
 	}
-	return d, nil
+	f, err := os.OpenFile(deferredDataFilePath(cfg), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return errs.Wrap(err, "Failed to open deferred_data file for appending")
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(fmt.Sprintf("%s\n", string(vj))); err != nil {
+		return errs.Wrap(err, "Failed to append deferred data")
+	}
+	return nil
 }
