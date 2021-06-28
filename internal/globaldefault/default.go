@@ -56,6 +56,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	return nil
 }
 
+
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
 func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, projectPath string) error {
 	logging.Debug("Setting up globaldefault")
