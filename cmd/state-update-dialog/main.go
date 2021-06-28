@@ -22,7 +22,7 @@ func main() {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close); err != nil {
-			logging.Error("Failed to wait for rollbar to close")
+			logging.Warning("Failed to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
 	}()
