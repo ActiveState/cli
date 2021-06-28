@@ -433,9 +433,9 @@ func (i *Instance) getConfigFile() string {
 	return i.configFile
 }
 
-func (i *Instance) getLockFile() string {
+func (i *Instance) getPidFile() string {
 	if i.lockFile == "" {
-		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
+		i.lockFile = filepath.Join(i.configDir.Path, "state.pid")
 	}
 
 	return i.lockFile
