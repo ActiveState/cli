@@ -50,7 +50,9 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		events.WaitForEvents(time.Second, rollbar.Close)
+		if err := events.WaitForEvents(time.Second, rollbar.Close); err != nil {
+			logging.Error("Failed waiting for events: %v", err)
+		}
 
 		// exit with exitCode
 		os.Exit(exitCode)

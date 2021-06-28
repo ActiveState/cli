@@ -120,7 +120,6 @@ func deferEvent(cfg Configurable, category, action, label string, dimensions map
 func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
 	// move deferred data file, so it is not being appended anymore
 	outboxFile := filepath.Join(cfg.ConfigPath(), "deferred.outbox")
-
 	if err := os.Rename(deferredDataFilePath(cfg), outboxFile); err != nil {
 		return errs.Wrap(err, "Could not rename deferred_data file")
 	}
@@ -150,6 +149,9 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	if err != nil && !os.IsNotExist(err) {
 		logging.Errorf("Could not remove deferrer time stamp file: %v", err)
 	}
+
+	// clean up outbox
+	_ = os.Remove(outboxFile)
 	return nil
 }
 

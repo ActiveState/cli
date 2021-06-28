@@ -32,7 +32,9 @@ func main() {
 		if panics.HandlePanics() {
 			exitCode = 1
 		}
-		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close); err != nil {
+			logging.Error("Failed to wait for rollbar to close: %v", err)
+		}
 		os.Exit(exitCode)
 	}()
 
