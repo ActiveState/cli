@@ -26,11 +26,12 @@ func main() {
 		cancel()
 	}()
 
-	if len(os.Args) < 2 {
-		fmt.Printf("one argument required")
+	if len(os.Args) < 3 {
+		fmt.Printf("two arguments required")
 		os.Exit(2)
 	}
-	pl, err := lockfile.NewLock(os.Args[1])
+	keep := os.Args[2] == "keep"
+	pl, err := lockfile.NewPidLock(os.Args[1])
 	if err != nil {
 		log.Fatalf("Could not open lock file: %s", os.Args[1])
 	}
@@ -45,5 +46,5 @@ func main() {
 	<-ctx.Done()
 	fmt.Println("done")
 
-	pl.Close()
+	pl.Close(keep)
 }
