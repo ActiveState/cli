@@ -25,29 +25,38 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter) (*AddCommitOK, error)
+	AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCommitOK, error)
 
-	DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteBranchOK, error)
+	AddTag(params *AddTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTagOK, error)
 
-	GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter) (*GetBranchOK, error)
+	DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBranchOK, error)
 
-	GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter) (*GetCheckpointOK, error)
+	GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBranchOK, error)
 
-	GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitOK, error)
+	GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCheckpointOK, error)
 
-	GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitHistoryOK, error)
+	GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitOK, error)
 
-	GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrderOK, error)
+	GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitHistoryOK, error)
 
-	GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*GetOrderFromCheckpointOK, error)
+	GetHARepo(params *GetHARepoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHARepoOK, error)
 
-	GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetRevertCommitOK, error)
+	GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrderOK, error)
 
-	MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter) (*MergeBranchOK, error)
+	GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams, opts ...ClientOption) (*GetOrderFromCheckpointOK, error)
 
-	UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBranchOK, error)
+	GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRevertCommitOK, error)
+
+	MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MergeBranchOK, error)
+
+	MergeCommits(params *MergeCommitsParams, opts ...ClientOption) (*MergeCommitsOK, *MergeCommitsNoContent, error)
+
+	UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBranchOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -55,13 +64,12 @@ type ClientService interface {
 /*
   AddCommit add commit API
 */
-func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter) (*AddCommitOK, error) {
+func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCommitOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddCommitParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addCommit",
 		Method:             "POST",
 		PathPattern:        "/vcs/commit",
@@ -73,7 +81,12 @@ func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +101,55 @@ func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthI
 }
 
 /*
+  AddTag adds tag
+
+  Add a tag by org and project names
+*/
+func (a *Client) AddTag(params *AddTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddTagParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "addTag",
+		Method:             "POST",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/tags",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &AddTagReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddTagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   DeleteBranch Delete the branch and all descendent forks that are of the same project.  Removes 'tracks' and 'tracking_type' data from all descendent forks in different projects.
 */
-func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteBranchOK, error) {
+func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBranchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteBranchParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteBranch",
 		Method:             "DELETE",
 		PathPattern:        "/vcs/branch/{branchID}",
@@ -108,7 +161,12 @@ func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -125,13 +183,12 @@ func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.Clien
 /*
   GetBranch get branch API
 */
-func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter) (*GetBranchOK, error) {
+func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBranchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetBranchParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getBranch",
 		Method:             "GET",
 		PathPattern:        "/vcs/branch/{branchID}",
@@ -143,7 +200,12 @@ func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +222,12 @@ func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthI
 /*
   GetCheckpoint get checkpoint API
 */
-func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter) (*GetCheckpointOK, error) {
+func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCheckpointOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCheckpointParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCheckpoint",
 		Method:             "GET",
 		PathPattern:        "/vcs/commits/{commitID}/checkpoint",
@@ -178,7 +239,12 @@ func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -195,13 +261,12 @@ func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.Cli
 /*
   GetCommit get commit API
 */
-func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitOK, error) {
+func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCommitParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCommit",
 		Method:             "GET",
 		PathPattern:        "/vcs/commits/{commitID}",
@@ -213,7 +278,12 @@ func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -230,13 +300,12 @@ func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthI
 /*
   GetCommitHistory get commit history API
 */
-func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter) (*GetCommitHistoryOK, error) {
+func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitHistoryOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetCommitHistoryParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getCommitHistory",
 		Method:             "GET",
 		PathPattern:        "/vcs/history/{commitID}",
@@ -248,7 +317,12 @@ func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runti
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -263,15 +337,55 @@ func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runti
 }
 
 /*
+  GetHARepo gets h a repo info
+
+  Get HARepo by org and project names and HARepo label
+*/
+func (a *Client) GetHARepo(params *GetHARepoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHARepoOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetHARepoParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getHARepo",
+		Method:             "GET",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/harepos/{label}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetHARepoReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetHARepoOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getHARepo: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   GetOrder get order API
 */
-func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter) (*GetOrderOK, error) {
+func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrderOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOrderParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getOrder",
 		Method:             "GET",
 		PathPattern:        "/vcs/commits/{commitID}/order",
@@ -283,7 +397,12 @@ func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -300,13 +419,12 @@ func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInf
 /*
   GetOrderFromCheckpoint get order from checkpoint API
 */
-func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*GetOrderFromCheckpointOK, error) {
+func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams, opts ...ClientOption) (*GetOrderFromCheckpointOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetOrderFromCheckpointParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getOrderFromCheckpoint",
 		Method:             "POST",
 		PathPattern:        "/vcs/order",
@@ -317,7 +435,12 @@ func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*
 		Reader:             &GetOrderFromCheckpointReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -334,13 +457,12 @@ func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams) (*
 /*
   GetRevertCommit get revert commit API
 */
-func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter) (*GetRevertCommitOK, error) {
+func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRevertCommitOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetRevertCommitParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getRevertCommit",
 		Method:             "GET",
 		PathPattern:        "/vcs/commits/{commitFromID}/revert/{commitToID}",
@@ -352,7 +474,12 @@ func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -369,13 +496,12 @@ func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime
 /*
   MergeBranch merge branch API
 */
-func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter) (*MergeBranchOK, error) {
+func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MergeBranchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewMergeBranchParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "mergeBranch",
 		Method:             "POST",
 		PathPattern:        "/vcs/branch/{branchID}/merge",
@@ -387,7 +513,12 @@ func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -402,15 +533,53 @@ func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientA
 }
 
 /*
+  MergeCommits merge commits API
+*/
+func (a *Client) MergeCommits(params *MergeCommitsParams, opts ...ClientOption) (*MergeCommitsOK, *MergeCommitsNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewMergeCommitsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "mergeCommits",
+		Method:             "POST",
+		PathPattern:        "/vcs/commits/{commitReceivingChanges}/merge/{commitWithChanges}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &MergeCommitsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+	switch value := result.(type) {
+	case *MergeCommitsOK:
+		return value, nil, nil
+	case *MergeCommitsNoContent:
+		return nil, value, nil
+	}
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for version_control: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   UpdateBranch update branch API
 */
-func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateBranchOK, error) {
+func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBranchOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUpdateBranchParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "updateBranch",
 		Method:             "PUT",
 		PathPattern:        "/vcs/branch/{branchID}",
@@ -422,7 +591,12 @@ func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

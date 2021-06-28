@@ -41,9 +41,8 @@ func (o *GetInfoReader) ReadResponse(response runtime.ClientResponse, consumer r
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetInfoOK() *GetInfoOK {
 	return &GetInfoOK{}
 }
 
-/*GetInfoOK handles this case with default header values.
+/* GetInfoOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetInfoOK struct {
 func (o *GetInfoOK) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoOK  %+v", 200, o.Payload)
 }
-
 func (o *GetInfoOK) GetPayload() *mono_models.SysInfo {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetInfoUnauthorized() *GetInfoUnauthorized {
 	return &GetInfoUnauthorized{}
 }
 
-/*GetInfoUnauthorized handles this case with default header values.
+/* GetInfoUnauthorized describes a response with status code 401, with default header values.
 
 Unauthenticated
 */
@@ -96,7 +94,6 @@ type GetInfoUnauthorized struct {
 func (o *GetInfoUnauthorized) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoUnauthorized  %+v", 401, o.Payload)
 }
-
 func (o *GetInfoUnauthorized) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetInfoForbidden() *GetInfoForbidden {
 	return &GetInfoForbidden{}
 }
 
-/*GetInfoForbidden handles this case with default header values.
+/* GetInfoForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -129,7 +126,6 @@ type GetInfoForbidden struct {
 func (o *GetInfoForbidden) Error() string {
 	return fmt.Sprintf("[GET /info][%d] getInfoForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetInfoForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }

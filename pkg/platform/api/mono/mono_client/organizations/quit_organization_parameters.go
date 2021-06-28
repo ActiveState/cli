@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewQuitOrganizationParams creates a new QuitOrganizationParams object
-// with the default values initialized.
+// NewQuitOrganizationParams creates a new QuitOrganizationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewQuitOrganizationParams() *QuitOrganizationParams {
-	var ()
 	return &QuitOrganizationParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewQuitOrganizationParamsWithTimeout creates a new QuitOrganizationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewQuitOrganizationParamsWithTimeout(timeout time.Duration) *QuitOrganizationParams {
-	var ()
 	return &QuitOrganizationParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewQuitOrganizationParamsWithContext creates a new QuitOrganizationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewQuitOrganizationParamsWithContext(ctx context.Context) *QuitOrganizationParams {
-	var ()
 	return &QuitOrganizationParams{
-
 		Context: ctx,
 	}
 }
 
 // NewQuitOrganizationParamsWithHTTPClient creates a new QuitOrganizationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewQuitOrganizationParamsWithHTTPClient(client *http.Client) *QuitOrganizationParams {
-	var ()
 	return &QuitOrganizationParams{
 		HTTPClient: client,
 	}
 }
 
-/*QuitOrganizationParams contains all the parameters to send to the API endpoint
-for the quit organization operation typically these are written to a http.Request
+/* QuitOrganizationParams contains all the parameters to send to the API endpoint
+   for the quit organization operation.
+
+   Typically these are written to a http.Request.
 */
 type QuitOrganizationParams struct {
 
-	/*OrganizationName
-	  organization name of desired organization
+	/* OrganizationName.
 
+	   organization name of desired organization
 	*/
 	OrganizationName string
-	/*Username
-	  user to remove
 
+	/* Username.
+
+	   user to remove
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the quit organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *QuitOrganizationParams) WithDefaults() *QuitOrganizationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the quit organization params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *QuitOrganizationParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the quit organization params

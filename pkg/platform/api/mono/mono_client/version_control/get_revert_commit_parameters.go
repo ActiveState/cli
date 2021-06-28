@@ -16,64 +16,83 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetRevertCommitParams creates a new GetRevertCommitParams object
-// with the default values initialized.
+// NewGetRevertCommitParams creates a new GetRevertCommitParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetRevertCommitParams() *GetRevertCommitParams {
-	var ()
 	return &GetRevertCommitParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetRevertCommitParamsWithTimeout creates a new GetRevertCommitParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetRevertCommitParamsWithTimeout(timeout time.Duration) *GetRevertCommitParams {
-	var ()
 	return &GetRevertCommitParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetRevertCommitParamsWithContext creates a new GetRevertCommitParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetRevertCommitParamsWithContext(ctx context.Context) *GetRevertCommitParams {
-	var ()
 	return &GetRevertCommitParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetRevertCommitParamsWithHTTPClient creates a new GetRevertCommitParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetRevertCommitParamsWithHTTPClient(client *http.Client) *GetRevertCommitParams {
-	var ()
 	return &GetRevertCommitParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetRevertCommitParams contains all the parameters to send to the API endpoint
-for the get revert commit operation typically these are written to a http.Request
+/* GetRevertCommitParams contains all the parameters to send to the API endpoint
+   for the get revert commit operation.
+
+   Typically these are written to a http.Request.
 */
 type GetRevertCommitParams struct {
 
-	/*CommitFromID
-	  The commit to start from (usually the latest commit)
+	/* CommitFromID.
 
+	   The commit to start from (usually the latest commit)
+
+	   Format: uuid
 	*/
 	CommitFromID strfmt.UUID
-	/*CommitToID
-	  The commit you would like to mirror
 
+	/* CommitToID.
+
+	   The commit you would like to mirror
+
+	   Format: uuid
 	*/
 	CommitToID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get revert commit params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRevertCommitParams) WithDefaults() *GetRevertCommitParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get revert commit params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetRevertCommitParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get revert commit params

@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetEmailVerificationLinkParams creates a new GetEmailVerificationLinkParams object
-// with the default values initialized.
+// NewGetEmailVerificationLinkParams creates a new GetEmailVerificationLinkParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetEmailVerificationLinkParams() *GetEmailVerificationLinkParams {
-	var ()
 	return &GetEmailVerificationLinkParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetEmailVerificationLinkParamsWithTimeout creates a new GetEmailVerificationLinkParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetEmailVerificationLinkParamsWithTimeout(timeout time.Duration) *GetEmailVerificationLinkParams {
-	var ()
 	return &GetEmailVerificationLinkParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetEmailVerificationLinkParamsWithContext creates a new GetEmailVerificationLinkParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetEmailVerificationLinkParamsWithContext(ctx context.Context) *GetEmailVerificationLinkParams {
-	var ()
 	return &GetEmailVerificationLinkParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetEmailVerificationLinkParamsWithHTTPClient creates a new GetEmailVerificationLinkParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetEmailVerificationLinkParamsWithHTTPClient(client *http.Client) *GetEmailVerificationLinkParams {
-	var ()
 	return &GetEmailVerificationLinkParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetEmailVerificationLinkParams contains all the parameters to send to the API endpoint
-for the get email verification link operation typically these are written to a http.Request
+/* GetEmailVerificationLinkParams contains all the parameters to send to the API endpoint
+   for the get email verification link operation.
+
+   Typically these are written to a http.Request.
 */
 type GetEmailVerificationLinkParams struct {
 
-	/*Email
-	  Email address for which to get the verification link
+	/* Email.
 
+	   Email address for which to get the verification link
 	*/
 	Email string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get email verification link params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEmailVerificationLinkParams) WithDefaults() *GetEmailVerificationLinkParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get email verification link params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetEmailVerificationLinkParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get email verification link params

@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -62,7 +64,7 @@ func (m *TaxOptions) Validate(formats strfmt.Registry) error {
 
 func (m *TaxOptions) validateOrgURLName(formats strfmt.Registry) error {
 
-	if err := validate.RequiredString("orgURLName", "body", string(m.OrgURLName)); err != nil {
+	if err := validate.RequiredString("orgURLName", "body", m.OrgURLName); err != nil {
 		return err
 	}
 
@@ -89,7 +91,7 @@ func (m *TaxOptions) validateShippingAddress(formats strfmt.Registry) error {
 
 func (m *TaxOptions) validateTierName(formats strfmt.Registry) error {
 
-	if err := validate.RequiredString("tierName", "body", string(m.TierName)); err != nil {
+	if err := validate.RequiredString("tierName", "body", m.TierName); err != nil {
 		return err
 	}
 
@@ -100,6 +102,34 @@ func (m *TaxOptions) validateUsers(formats strfmt.Registry) error {
 
 	if err := validate.Required("users", "body", int64(m.Users)); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this tax options based on the context it is used
+func (m *TaxOptions) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateShippingAddress(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *TaxOptions) contextValidateShippingAddress(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ShippingAddress != nil {
+		if err := m.ShippingAddress.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("shippingAddress")
+			}
+			return err
+		}
 	}
 
 	return nil

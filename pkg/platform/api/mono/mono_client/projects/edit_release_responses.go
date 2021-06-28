@@ -53,9 +53,8 @@ func (o *EditReleaseReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditReleaseOK() *EditReleaseOK {
 	return &EditReleaseOK{}
 }
 
-/*EditReleaseOK handles this case with default header values.
+/* EditReleaseOK describes a response with status code 200, with default header values.
 
 Release updated
 */
@@ -75,7 +74,6 @@ type EditReleaseOK struct {
 func (o *EditReleaseOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseOK  %+v", 200, o.Payload)
 }
-
 func (o *EditReleaseOK) GetPayload() *mono_models.Release {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewEditReleaseBadRequest() *EditReleaseBadRequest {
 	return &EditReleaseBadRequest{}
 }
 
-/*EditReleaseBadRequest handles this case with default header values.
+/* EditReleaseBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type EditReleaseBadRequest struct {
 func (o *EditReleaseBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditReleaseBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewEditReleaseForbidden() *EditReleaseForbidden {
 	return &EditReleaseForbidden{}
 }
 
-/*EditReleaseForbidden handles this case with default header values.
+/* EditReleaseForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -141,7 +138,6 @@ type EditReleaseForbidden struct {
 func (o *EditReleaseForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditReleaseForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewEditReleaseNotFound() *EditReleaseNotFound {
 	return &EditReleaseNotFound{}
 }
 
-/*EditReleaseNotFound handles this case with default header values.
+/* EditReleaseNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type EditReleaseNotFound struct {
 func (o *EditReleaseNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditReleaseNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewEditReleaseInternalServerError() *EditReleaseInternalServerError {
 	return &EditReleaseInternalServerError{}
 }
 
-/*EditReleaseInternalServerError handles this case with default header values.
+/* EditReleaseInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type EditReleaseInternalServerError struct {
 func (o *EditReleaseInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}/releases/{releaseID}][%d] editReleaseInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditReleaseInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

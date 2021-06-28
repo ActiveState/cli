@@ -47,9 +47,8 @@ func (o *GetCommitHistoryReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetCommitHistoryOK() *GetCommitHistoryOK {
 	return &GetCommitHistoryOK{}
 }
 
-/*GetCommitHistoryOK handles this case with default header values.
+/* GetCommitHistoryOK describes a response with status code 200, with default header values.
 
 Get commit history starting from the given commit
 */
@@ -69,7 +68,6 @@ type GetCommitHistoryOK struct {
 func (o *GetCommitHistoryOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/history/{commitID}][%d] getCommitHistoryOK  %+v", 200, o.Payload)
 }
-
 func (o *GetCommitHistoryOK) GetPayload() *mono_models.CommitHistoryInfo {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetCommitHistoryForbidden() *GetCommitHistoryForbidden {
 	return &GetCommitHistoryForbidden{}
 }
 
-/*GetCommitHistoryForbidden handles this case with default header values.
+/* GetCommitHistoryForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetCommitHistoryForbidden struct {
 func (o *GetCommitHistoryForbidden) Error() string {
 	return fmt.Sprintf("[GET /vcs/history/{commitID}][%d] getCommitHistoryForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetCommitHistoryForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetCommitHistoryNotFound() *GetCommitHistoryNotFound {
 	return &GetCommitHistoryNotFound{}
 }
 
-/*GetCommitHistoryNotFound handles this case with default header values.
+/* GetCommitHistoryNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -135,7 +132,6 @@ type GetCommitHistoryNotFound struct {
 func (o *GetCommitHistoryNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/history/{commitID}][%d] getCommitHistoryNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetCommitHistoryNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetCommitHistoryInternalServerError() *GetCommitHistoryInternalServerErr
 	return &GetCommitHistoryInternalServerError{}
 }
 
-/*GetCommitHistoryInternalServerError handles this case with default header values.
+/* GetCommitHistoryInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type GetCommitHistoryInternalServerError struct {
 func (o *GetCommitHistoryInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/history/{commitID}][%d] getCommitHistoryInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetCommitHistoryInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

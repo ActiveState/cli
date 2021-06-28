@@ -53,9 +53,8 @@ func (o *GetBillingReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewGetBillingOK() *GetBillingOK {
 	return &GetBillingOK{}
 }
 
-/*GetBillingOK handles this case with default header values.
+/* GetBillingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type GetBillingOK struct {
 func (o *GetBillingOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingOK  %+v", 200, o.Payload)
 }
-
 func (o *GetBillingOK) GetPayload() *mono_models.BillingInformation {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewGetBillingBadRequest() *GetBillingBadRequest {
 	return &GetBillingBadRequest{}
 }
 
-/*GetBillingBadRequest handles this case with default header values.
+/* GetBillingBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type GetBillingBadRequest struct {
 func (o *GetBillingBadRequest) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *GetBillingBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewGetBillingForbidden() *GetBillingForbidden {
 	return &GetBillingForbidden{}
 }
 
-/*GetBillingForbidden handles this case with default header values.
+/* GetBillingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type GetBillingForbidden struct {
 func (o *GetBillingForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetBillingForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewGetBillingNotFound() *GetBillingNotFound {
 	return &GetBillingNotFound{}
 }
 
-/*GetBillingNotFound handles this case with default header values.
+/* GetBillingNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type GetBillingNotFound struct {
 func (o *GetBillingNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetBillingNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewGetBillingInternalServerError() *GetBillingInternalServerError {
 	return &GetBillingInternalServerError{}
 }
 
-/*GetBillingInternalServerError handles this case with default header values.
+/* GetBillingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type GetBillingInternalServerError struct {
 func (o *GetBillingInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}/billing][%d] getBillingInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetBillingInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

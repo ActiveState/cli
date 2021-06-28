@@ -1246,7 +1246,7 @@ func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
 	return res
 }
 
-func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
+func GetCachedProjectNameForPath(config ConfigGetter, projectPath string) string {
 	projects := GetProjectMapping(config)
 
 	for name, paths := range projects {
@@ -1272,7 +1272,7 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
-			if err != nil {
+			if err != nil && v != nil { // don't report if error due to nil input
 				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
 
@@ -1324,7 +1324,7 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
-			if err != nil {
+			if err != nil && v != nil { // don't report if error due to nil input
 				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
 
@@ -1356,7 +1356,7 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
-			if err != nil {
+			if err != nil && v != nil { // don't report if error due to nil input
 				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
 

@@ -16,59 +16,75 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewConfigFileParams creates a new ConfigFileParams object
-// with the default values initialized.
+// NewConfigFileParams creates a new ConfigFileParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewConfigFileParams() *ConfigFileParams {
-	var ()
 	return &ConfigFileParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewConfigFileParamsWithTimeout creates a new ConfigFileParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewConfigFileParamsWithTimeout(timeout time.Duration) *ConfigFileParams {
-	var ()
 	return &ConfigFileParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewConfigFileParamsWithContext creates a new ConfigFileParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewConfigFileParamsWithContext(ctx context.Context) *ConfigFileParams {
-	var ()
 	return &ConfigFileParams{
-
 		Context: ctx,
 	}
 }
 
 // NewConfigFileParamsWithHTTPClient creates a new ConfigFileParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewConfigFileParamsWithHTTPClient(client *http.Client) *ConfigFileParams {
-	var ()
 	return &ConfigFileParams{
 		HTTPClient: client,
 	}
 }
 
-/*ConfigFileParams contains all the parameters to send to the API endpoint
-for the config file operation typically these are written to a http.Request
+/* ConfigFileParams contains all the parameters to send to the API endpoint
+   for the config file operation.
+
+   Typically these are written to a http.Request.
 */
 type ConfigFileParams struct {
 
-	/*IdentityID
-	  Identity UUID (optional)
+	/* IdentityID.
 
+	   Identity UUID (optional)
+
+	   Format: uuid
 	*/
 	IdentityID *strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the config file params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ConfigFileParams) WithDefaults() *ConfigFileParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the config file params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ConfigFileParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the config file params
@@ -127,16 +143,17 @@ func (o *ConfigFileParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 
 		// query param identityID
 		var qrIdentityID strfmt.UUID
+
 		if o.IdentityID != nil {
 			qrIdentityID = *o.IdentityID
 		}
 		qIdentityID := qrIdentityID.String()
 		if qIdentityID != "" {
+
 			if err := r.SetQueryParam("identityID", qIdentityID); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

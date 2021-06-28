@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewUpdateBillingDateParams creates a new UpdateBillingDateParams object
-// with the default values initialized.
+// NewUpdateBillingDateParams creates a new UpdateBillingDateParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateBillingDateParams() *UpdateBillingDateParams {
-	var ()
 	return &UpdateBillingDateParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateBillingDateParamsWithTimeout creates a new UpdateBillingDateParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateBillingDateParamsWithTimeout(timeout time.Duration) *UpdateBillingDateParams {
-	var ()
 	return &UpdateBillingDateParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateBillingDateParamsWithContext creates a new UpdateBillingDateParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateBillingDateParamsWithContext(ctx context.Context) *UpdateBillingDateParams {
-	var ()
 	return &UpdateBillingDateParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateBillingDateParamsWithHTTPClient creates a new UpdateBillingDateParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateBillingDateParamsWithHTTPClient(client *http.Client) *UpdateBillingDateParams {
-	var ()
 	return &UpdateBillingDateParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateBillingDateParams contains all the parameters to send to the API endpoint
-for the update billing date operation typically these are written to a http.Request
+/* UpdateBillingDateParams contains all the parameters to send to the API endpoint
+   for the update billing date operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateBillingDateParams struct {
 
-	/*Body
-	  Date to be added as billing date
+	/* Body.
 
+	   Date to be added as billing date
 	*/
 	Body UpdateBillingDateBody
-	/*OrganizationName
-	  organizationName of desired organization
 
+	/* OrganizationName.
+
+	   organizationName of desired organization
 	*/
 	OrganizationName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update billing date params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBillingDateParams) WithDefaults() *UpdateBillingDateParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update billing date params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBillingDateParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update billing date params
@@ -138,7 +153,6 @@ func (o *UpdateBillingDateParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Body); err != nil {
 		return err
 	}

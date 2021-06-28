@@ -53,9 +53,8 @@ func (o *DeleteProjectReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewDeleteProjectOK() *DeleteProjectOK {
 	return &DeleteProjectOK{}
 }
 
-/*DeleteProjectOK handles this case with default header values.
+/* DeleteProjectOK describes a response with status code 200, with default header values.
 
 Project deleted
 */
@@ -75,7 +74,6 @@ type DeleteProjectOK struct {
 func (o *DeleteProjectOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteProjectOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewDeleteProjectBadRequest() *DeleteProjectBadRequest {
 	return &DeleteProjectBadRequest{}
 }
 
-/*DeleteProjectBadRequest handles this case with default header values.
+/* DeleteProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type DeleteProjectBadRequest struct {
 func (o *DeleteProjectBadRequest) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *DeleteProjectBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewDeleteProjectForbidden() *DeleteProjectForbidden {
 	return &DeleteProjectForbidden{}
 }
 
-/*DeleteProjectForbidden handles this case with default header values.
+/* DeleteProjectForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type DeleteProjectForbidden struct {
 func (o *DeleteProjectForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteProjectForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewDeleteProjectNotFound() *DeleteProjectNotFound {
 	return &DeleteProjectNotFound{}
 }
 
-/*DeleteProjectNotFound handles this case with default header values.
+/* DeleteProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type DeleteProjectNotFound struct {
 func (o *DeleteProjectNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteProjectNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewDeleteProjectInternalServerError() *DeleteProjectInternalServerError {
 	return &DeleteProjectInternalServerError{}
 }
 
-/*DeleteProjectInternalServerError handles this case with default header values.
+/* DeleteProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type DeleteProjectInternalServerError struct {
 func (o *DeleteProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/projects/{projectName}][%d] deleteProjectInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteProjectInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

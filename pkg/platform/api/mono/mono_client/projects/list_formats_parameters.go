@@ -16,74 +16,95 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewListFormatsParams creates a new ListFormatsParams object
-// with the default values initialized.
+// NewListFormatsParams creates a new ListFormatsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewListFormatsParams() *ListFormatsParams {
-	var ()
 	return &ListFormatsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewListFormatsParamsWithTimeout creates a new ListFormatsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewListFormatsParamsWithTimeout(timeout time.Duration) *ListFormatsParams {
-	var ()
 	return &ListFormatsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewListFormatsParamsWithContext creates a new ListFormatsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewListFormatsParamsWithContext(ctx context.Context) *ListFormatsParams {
-	var ()
 	return &ListFormatsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewListFormatsParamsWithHTTPClient creates a new ListFormatsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewListFormatsParamsWithHTTPClient(client *http.Client) *ListFormatsParams {
-	var ()
 	return &ListFormatsParams{
 		HTTPClient: client,
 	}
 }
 
-/*ListFormatsParams contains all the parameters to send to the API endpoint
-for the list formats operation typically these are written to a http.Request
+/* ListFormatsParams contains all the parameters to send to the API endpoint
+   for the list formats operation.
+
+   Typically these are written to a http.Request.
 */
 type ListFormatsParams struct {
 
-	/*DistroID
-	  desired distro
+	/* DistroID.
 
+	   desired distro
+
+	   Format: uuid
 	*/
 	DistroID strfmt.UUID
-	/*OrganizationName
-	  desired organization
 
+	/* OrganizationName.
+
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the list formats params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListFormatsParams) WithDefaults() *ListFormatsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the list formats params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *ListFormatsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the list formats params

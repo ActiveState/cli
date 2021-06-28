@@ -25,11 +25,14 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter) (*AddLanguageOK, error)
+	AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLanguageOK, error)
 
-	ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLanguagesOK, error)
+	ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListLanguagesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -39,13 +42,12 @@ type ClientService interface {
 
   Create a new language
 */
-func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter) (*AddLanguageOK, error) {
+func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLanguageOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddLanguageParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addLanguage",
 		Method:             "POST",
 		PathPattern:        "/languages",
@@ -57,7 +59,12 @@ func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +83,12 @@ func (a *Client) AddLanguage(params *AddLanguageParams, authInfo runtime.ClientA
 
   Retrieve a list of all valid builder languages
 */
-func (a *Client) ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter) (*ListLanguagesOK, error) {
+func (a *Client) ListLanguages(params *ListLanguagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListLanguagesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListLanguagesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listLanguages",
 		Method:             "GET",
 		PathPattern:        "/languages",
@@ -94,7 +100,12 @@ func (a *Client) ListLanguages(params *ListLanguagesParams, authInfo runtime.Cli
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

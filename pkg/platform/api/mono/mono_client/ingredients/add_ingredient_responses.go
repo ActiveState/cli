@@ -47,9 +47,8 @@ func (o *AddIngredientReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewAddIngredientOK() *AddIngredientOK {
 	return &AddIngredientOK{}
 }
 
-/*AddIngredientOK handles this case with default header values.
+/* AddIngredientOK describes a response with status code 200, with default header values.
 
 Ingredient Created
 */
@@ -69,7 +68,6 @@ type AddIngredientOK struct {
 func (o *AddIngredientOK) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientOK  %+v", 200, o.Payload)
 }
-
 func (o *AddIngredientOK) GetPayload() *mono_models.Ingredient {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewAddIngredientBadRequest() *AddIngredientBadRequest {
 	return &AddIngredientBadRequest{}
 }
 
-/*AddIngredientBadRequest handles this case with default header values.
+/* AddIngredientBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -102,7 +100,6 @@ type AddIngredientBadRequest struct {
 func (o *AddIngredientBadRequest) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddIngredientBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewAddIngredientForbidden() *AddIngredientForbidden {
 	return &AddIngredientForbidden{}
 }
 
-/*AddIngredientForbidden handles this case with default header values.
+/* AddIngredientForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -135,7 +132,6 @@ type AddIngredientForbidden struct {
 func (o *AddIngredientForbidden) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddIngredientForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewAddIngredientConflict() *AddIngredientConflict {
 	return &AddIngredientConflict{}
 }
 
-/*AddIngredientConflict handles this case with default header values.
+/* AddIngredientConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -168,7 +164,6 @@ type AddIngredientConflict struct {
 func (o *AddIngredientConflict) Error() string {
 	return fmt.Sprintf("[POST /ingredients][%d] addIngredientConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddIngredientConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }

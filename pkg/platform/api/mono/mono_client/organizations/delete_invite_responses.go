@@ -47,9 +47,8 @@ func (o *DeleteInviteReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewDeleteInviteOK() *DeleteInviteOK {
 	return &DeleteInviteOK{}
 }
 
-/*DeleteInviteOK handles this case with default header values.
+/* DeleteInviteOK describes a response with status code 200, with default header values.
 
 Invitation Delete
 */
@@ -69,7 +68,6 @@ type DeleteInviteOK struct {
 func (o *DeleteInviteOK) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteInviteOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewDeleteInviteForbidden() *DeleteInviteForbidden {
 	return &DeleteInviteForbidden{}
 }
 
-/*DeleteInviteForbidden handles this case with default header values.
+/* DeleteInviteForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type DeleteInviteForbidden struct {
 func (o *DeleteInviteForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteInviteForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewDeleteInviteNotFound() *DeleteInviteNotFound {
 	return &DeleteInviteNotFound{}
 }
 
-/*DeleteInviteNotFound handles this case with default header values.
+/* DeleteInviteNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -135,7 +132,6 @@ type DeleteInviteNotFound struct {
 func (o *DeleteInviteNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteInviteNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewDeleteInviteInternalServerError() *DeleteInviteInternalServerError {
 	return &DeleteInviteInternalServerError{}
 }
 
-/*DeleteInviteInternalServerError handles this case with default header values.
+/* DeleteInviteInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type DeleteInviteInternalServerError struct {
 func (o *DeleteInviteInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /organizations/{organizationName}/invitations/{email}][%d] deleteInviteInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteInviteInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

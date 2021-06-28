@@ -16,79 +16,103 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetFormatParams creates a new GetFormatParams object
-// with the default values initialized.
+// NewGetFormatParams creates a new GetFormatParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetFormatParams() *GetFormatParams {
-	var ()
 	return &GetFormatParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetFormatParamsWithTimeout creates a new GetFormatParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetFormatParamsWithTimeout(timeout time.Duration) *GetFormatParams {
-	var ()
 	return &GetFormatParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetFormatParamsWithContext creates a new GetFormatParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetFormatParamsWithContext(ctx context.Context) *GetFormatParams {
-	var ()
 	return &GetFormatParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetFormatParamsWithHTTPClient creates a new GetFormatParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetFormatParamsWithHTTPClient(client *http.Client) *GetFormatParams {
-	var ()
 	return &GetFormatParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetFormatParams contains all the parameters to send to the API endpoint
-for the get format operation typically these are written to a http.Request
+/* GetFormatParams contains all the parameters to send to the API endpoint
+   for the get format operation.
+
+   Typically these are written to a http.Request.
 */
 type GetFormatParams struct {
 
-	/*DistroID
-	  desired distro
+	/* DistroID.
 
+	   desired distro
+
+	   Format: uuid
 	*/
 	DistroID strfmt.UUID
-	/*FormatID
-	  desired format
 
+	/* FormatID.
+
+	   desired format
+
+	   Format: uuid
 	*/
 	FormatID strfmt.UUID
-	/*OrganizationName
-	  desired organization
 
+	/* OrganizationName.
+
+	   desired organization
 	*/
 	OrganizationName string
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get format params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetFormatParams) WithDefaults() *GetFormatParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get format params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetFormatParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get format params

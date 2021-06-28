@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -39,6 +40,10 @@ func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Ca
 func (c *Cache) Run(params *CacheParams) error {
 	if os.Getenv(constants.ActivatedStateEnvVarName) != "" {
 		return locale.NewError("err_clean_cache_activated")
+	}
+
+	if err := stopServices(c.config, c.output, params.Force); err != nil {
+		return errs.Wrap(err, "Failed to stop services.")
 	}
 
 	if params.Project != "" {

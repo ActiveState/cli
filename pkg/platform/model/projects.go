@@ -224,6 +224,11 @@ func ProjectURL(owner, name, commitID string) string {
 	return url
 }
 
+// CommitURL creates a valid platform commit URL for the given commit
+func CommitURL(commitID string) string {
+	return fmt.Sprintf("%s/%s", constants.DashboardCommitURL, commitID)
+}
+
 func processProjectErrorResponse(err error, params ...string) error {
 	switch statusCode := api.ErrorCode(err); statusCode {
 	case 401:

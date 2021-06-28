@@ -53,9 +53,8 @@ func (o *GetEmailVerificationLinkReader) ReadResponse(response runtime.ClientRes
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewGetEmailVerificationLinkOK() *GetEmailVerificationLinkOK {
 	return &GetEmailVerificationLinkOK{}
 }
 
-/*GetEmailVerificationLinkOK handles this case with default header values.
+/* GetEmailVerificationLinkOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type GetEmailVerificationLinkOK struct {
 func (o *GetEmailVerificationLinkOK) Error() string {
 	return fmt.Sprintf("[GET /users/verification/{email}][%d] getEmailVerificationLinkOK  %+v", 200, o.Payload)
 }
-
 func (o *GetEmailVerificationLinkOK) GetPayload() string {
 	return o.Payload
 }
@@ -95,7 +93,7 @@ func NewGetEmailVerificationLinkBadRequest() *GetEmailVerificationLinkBadRequest
 	return &GetEmailVerificationLinkBadRequest{}
 }
 
-/*GetEmailVerificationLinkBadRequest handles this case with default header values.
+/* GetEmailVerificationLinkBadRequest describes a response with status code 400, with default header values.
 
 Email is already verified
 */
@@ -106,7 +104,6 @@ type GetEmailVerificationLinkBadRequest struct {
 func (o *GetEmailVerificationLinkBadRequest) Error() string {
 	return fmt.Sprintf("[GET /users/verification/{email}][%d] getEmailVerificationLinkBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *GetEmailVerificationLinkBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -128,7 +125,7 @@ func NewGetEmailVerificationLinkForbidden() *GetEmailVerificationLinkForbidden {
 	return &GetEmailVerificationLinkForbidden{}
 }
 
-/*GetEmailVerificationLinkForbidden handles this case with default header values.
+/* GetEmailVerificationLinkForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -139,7 +136,6 @@ type GetEmailVerificationLinkForbidden struct {
 func (o *GetEmailVerificationLinkForbidden) Error() string {
 	return fmt.Sprintf("[GET /users/verification/{email}][%d] getEmailVerificationLinkForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetEmailVerificationLinkForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -161,7 +157,7 @@ func NewGetEmailVerificationLinkNotFound() *GetEmailVerificationLinkNotFound {
 	return &GetEmailVerificationLinkNotFound{}
 }
 
-/*GetEmailVerificationLinkNotFound handles this case with default header values.
+/* GetEmailVerificationLinkNotFound describes a response with status code 404, with default header values.
 
 Email not found
 */
@@ -172,7 +168,6 @@ type GetEmailVerificationLinkNotFound struct {
 func (o *GetEmailVerificationLinkNotFound) Error() string {
 	return fmt.Sprintf("[GET /users/verification/{email}][%d] getEmailVerificationLinkNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetEmailVerificationLinkNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -194,7 +189,7 @@ func NewGetEmailVerificationLinkInternalServerError() *GetEmailVerificationLinkI
 	return &GetEmailVerificationLinkInternalServerError{}
 }
 
-/*GetEmailVerificationLinkInternalServerError handles this case with default header values.
+/* GetEmailVerificationLinkInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -205,7 +200,6 @@ type GetEmailVerificationLinkInternalServerError struct {
 func (o *GetEmailVerificationLinkInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/verification/{email}][%d] getEmailVerificationLinkInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetEmailVerificationLinkInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

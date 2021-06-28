@@ -47,9 +47,8 @@ func (o *KomodoAuthorizedReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewKomodoAuthorizedOK() *KomodoAuthorizedOK {
 	return &KomodoAuthorizedOK{}
 }
 
-/*KomodoAuthorizedOK handles this case with default header values.
+/* KomodoAuthorizedOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -79,7 +78,7 @@ func NewKomodoAuthorizedBadRequest() *KomodoAuthorizedBadRequest {
 	return &KomodoAuthorizedBadRequest{}
 }
 
-/*KomodoAuthorizedBadRequest handles this case with default header values.
+/* KomodoAuthorizedBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -90,7 +89,6 @@ type KomodoAuthorizedBadRequest struct {
 func (o *KomodoAuthorizedBadRequest) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *KomodoAuthorizedBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -112,7 +110,7 @@ func NewKomodoAuthorizedForbidden() *KomodoAuthorizedForbidden {
 	return &KomodoAuthorizedForbidden{}
 }
 
-/*KomodoAuthorizedForbidden handles this case with default header values.
+/* KomodoAuthorizedForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,7 +121,6 @@ type KomodoAuthorizedForbidden struct {
 func (o *KomodoAuthorizedForbidden) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedForbidden  %+v", 403, o.Payload)
 }
-
 func (o *KomodoAuthorizedForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -145,7 +142,7 @@ func NewKomodoAuthorizedInternalServerError() *KomodoAuthorizedInternalServerErr
 	return &KomodoAuthorizedInternalServerError{}
 }
 
-/*KomodoAuthorizedInternalServerError handles this case with default header values.
+/* KomodoAuthorizedInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -156,7 +153,6 @@ type KomodoAuthorizedInternalServerError struct {
 func (o *KomodoAuthorizedInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /status/komodo][%d] komodoAuthorizedInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *KomodoAuthorizedInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

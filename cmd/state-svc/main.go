@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/rollbar/rollbar-go"
@@ -51,7 +54,12 @@ func main() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logging.Errorf("state-svc errored out: %s", errMsg)
+		logger := logging.Error
+		if locale.IsInputError(err) {
+			logger = logging.Debug
+		}
+		logger("state-svc errored out: %s", errMsg)
+
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
@@ -89,31 +97,51 @@ func run() error {
 func runForeground(cfg *config.Instance) error {
 	logging.Debug("Running in Foreground")
 
-	p := NewService(cfg)
+	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
+	ctx, shutdown := context.WithCancel(context.Background())
+	p := NewService(cfg, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
+	go func() {
+		defer close(sig)
+		oscall, ok := <-sig
+		if !ok {
+			return
+		}
+		logging.Debug("system call:%+v", oscall)
+		// issue a service shutdown on interrupt
+		shutdown()
+	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
+	serverErr := make(chan error)
 	go func() {
-		oscall := <-sig
-		logging.Debug("system call:%+v", oscall)
-		if err := p.Stop(); err != nil {
-			logging.Error("Stop on sigterm failed: %v", errs.Join(err, ": "))
+		err := p.Start()
+		if err != nil {
+			err = errs.Wrap(err, "Could not start service")
 		}
+
+		serverErr <- err
 	}()
 
-	if err := p.Start(); err != nil {
-		return errs.Wrap(err, "Could not start service")
+	// cancellation of context issues server shutdown
+	<-ctx.Done()
+	if err := p.Stop(); err != nil {
+		return errs.Wrap(err, "Failed to stop service")
 	}
 
-	return nil
+	err := <-serverErr
+	return err
 }
 
 func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+		if errors.Is(err, ErrSvcAlreadyRunning) {
+			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
+		}
 		return errs.Wrap(err, "Could not start serviceManager")
 	}
 

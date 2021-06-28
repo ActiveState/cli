@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewDeleteEmailParams creates a new DeleteEmailParams object
-// with the default values initialized.
+// NewDeleteEmailParams creates a new DeleteEmailParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewDeleteEmailParams() *DeleteEmailParams {
-	var ()
 	return &DeleteEmailParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewDeleteEmailParamsWithTimeout creates a new DeleteEmailParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewDeleteEmailParamsWithTimeout(timeout time.Duration) *DeleteEmailParams {
-	var ()
 	return &DeleteEmailParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewDeleteEmailParamsWithContext creates a new DeleteEmailParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewDeleteEmailParamsWithContext(ctx context.Context) *DeleteEmailParams {
-	var ()
 	return &DeleteEmailParams{
-
 		Context: ctx,
 	}
 }
 
 // NewDeleteEmailParamsWithHTTPClient creates a new DeleteEmailParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewDeleteEmailParamsWithHTTPClient(client *http.Client) *DeleteEmailParams {
-	var ()
 	return &DeleteEmailParams{
 		HTTPClient: client,
 	}
 }
 
-/*DeleteEmailParams contains all the parameters to send to the API endpoint
-for the delete email operation typically these are written to a http.Request
+/* DeleteEmailParams contains all the parameters to send to the API endpoint
+   for the delete email operation.
+
+   Typically these are written to a http.Request.
 */
 type DeleteEmailParams struct {
 
-	/*Email
-	  Email to delete
+	/* Email.
 
+	   Email to delete
 	*/
 	Email DeleteEmailBody
-	/*Username
-	  username of desired User
 
+	/* Username.
+
+	   username of desired User
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the delete email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteEmailParams) WithDefaults() *DeleteEmailParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the delete email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *DeleteEmailParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the delete email params
@@ -138,7 +153,6 @@ func (o *DeleteEmailParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Email); err != nil {
 		return err
 	}

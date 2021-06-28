@@ -16,64 +16,79 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewSendEmailVerificationParams creates a new SendEmailVerificationParams object
-// with the default values initialized.
+// NewSendEmailVerificationParams creates a new SendEmailVerificationParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewSendEmailVerificationParams() *SendEmailVerificationParams {
-	var ()
 	return &SendEmailVerificationParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewSendEmailVerificationParamsWithTimeout creates a new SendEmailVerificationParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewSendEmailVerificationParamsWithTimeout(timeout time.Duration) *SendEmailVerificationParams {
-	var ()
 	return &SendEmailVerificationParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewSendEmailVerificationParamsWithContext creates a new SendEmailVerificationParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewSendEmailVerificationParamsWithContext(ctx context.Context) *SendEmailVerificationParams {
-	var ()
 	return &SendEmailVerificationParams{
-
 		Context: ctx,
 	}
 }
 
 // NewSendEmailVerificationParamsWithHTTPClient creates a new SendEmailVerificationParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewSendEmailVerificationParamsWithHTTPClient(client *http.Client) *SendEmailVerificationParams {
-	var ()
 	return &SendEmailVerificationParams{
 		HTTPClient: client,
 	}
 }
 
-/*SendEmailVerificationParams contains all the parameters to send to the API endpoint
-for the send email verification operation typically these are written to a http.Request
+/* SendEmailVerificationParams contains all the parameters to send to the API endpoint
+   for the send email verification operation.
+
+   Typically these are written to a http.Request.
 */
 type SendEmailVerificationParams struct {
 
-	/*Email
-	  email address to change
+	/* Email.
 
+	   email address to change
 	*/
 	Email string
-	/*Username
-	  username of desired User
 
+	/* Username.
+
+	   username of desired User
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the send email verification params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SendEmailVerificationParams) WithDefaults() *SendEmailVerificationParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the send email verification params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SendEmailVerificationParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the send email verification params

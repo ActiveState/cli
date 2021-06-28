@@ -41,9 +41,8 @@ func (o *ListProjectsReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewListProjectsOK() *ListProjectsOK {
 	return &ListProjectsOK{}
 }
 
-/*ListProjectsOK handles this case with default header values.
+/* ListProjectsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type ListProjectsOK struct {
 func (o *ListProjectsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListProjectsOK) GetPayload() []*mono_models.Project {
 	return o.Payload
 }
@@ -83,7 +81,7 @@ func NewListProjectsNotFound() *ListProjectsNotFound {
 	return &ListProjectsNotFound{}
 }
 
-/*ListProjectsNotFound handles this case with default header values.
+/* ListProjectsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -94,7 +92,6 @@ type ListProjectsNotFound struct {
 func (o *ListProjectsNotFound) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsNotFound  %+v", 404, o.Payload)
 }
-
 func (o *ListProjectsNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -116,7 +113,7 @@ func NewListProjectsInternalServerError() *ListProjectsInternalServerError {
 	return &ListProjectsInternalServerError{}
 }
 
-/*ListProjectsInternalServerError handles this case with default header values.
+/* ListProjectsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -127,7 +124,6 @@ type ListProjectsInternalServerError struct {
 func (o *ListProjectsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/projects][%d] listProjectsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ListProjectsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

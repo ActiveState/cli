@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -40,7 +42,6 @@ func (m *Token) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Token) validateTokenID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.TokenID) { // not required
 		return nil
 	}
@@ -49,6 +50,11 @@ func (m *Token) validateTokenID(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this token based on context it is used
+func (m *Token) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

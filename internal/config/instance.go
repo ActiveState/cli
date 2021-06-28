@@ -23,8 +23,11 @@ import (
 	"github.com/gofrs/flock"
 )
 
-var defaultMutex *sync.Mutex = &sync.Mutex{}
-var defaultConfig *Instance
+var (
+	defaultMutex       *sync.Mutex = &sync.Mutex{}
+	defaultConfig      *Instance
+	defaultConfigError error
+)
 
 const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
@@ -164,10 +167,18 @@ func Get() (*Instance, error) {
 		var err error
 		defaultConfig, err = New()
 		if err != nil {
+			defaultConfigError = err
 			return defaultConfig, err
 		}
 	}
 	return defaultConfig, nil
+}
+
+func GetSafer() (*Instance, error) {
+	if defaultConfigError != nil {
+		return nil, defaultConfigError
+	}
+	return Get()
 }
 
 // SetWithLock updates a value at the given key. The valueF argument returns the
@@ -323,7 +334,13 @@ func (i *Instance) ReadInConfig() error {
 	data := make(map[string]interface{})
 	err = yaml.Unmarshal(configData, data)
 	if err != nil {
-		return errs.Wrap(err, "Could not unmarshall config data")
+		baseMsg := "Your config file is currently malformed, please run [ACTIONABLE]state clean config --force[/RESET] to reset its contents, then try this command again."
+		return &LocLogError{
+			Err:       err,
+			Key:       "err_config_malformed",
+			BaseMsg:   baseMsg,
+			ReportMsg: baseMsg,
+		}
 	}
 
 	i.data = data

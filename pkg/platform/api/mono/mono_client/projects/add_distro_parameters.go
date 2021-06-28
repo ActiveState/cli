@@ -16,74 +16,95 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewAddDistroParams creates a new AddDistroParams object
-// with the default values initialized.
+// NewAddDistroParams creates a new AddDistroParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddDistroParams() *AddDistroParams {
-	var ()
 	return &AddDistroParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddDistroParamsWithTimeout creates a new AddDistroParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddDistroParamsWithTimeout(timeout time.Duration) *AddDistroParams {
-	var ()
 	return &AddDistroParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddDistroParamsWithContext creates a new AddDistroParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddDistroParamsWithContext(ctx context.Context) *AddDistroParams {
-	var ()
 	return &AddDistroParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddDistroParamsWithHTTPClient creates a new AddDistroParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddDistroParamsWithHTTPClient(client *http.Client) *AddDistroParams {
-	var ()
 	return &AddDistroParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddDistroParams contains all the parameters to send to the API endpoint
-for the add distro operation typically these are written to a http.Request
+/* AddDistroParams contains all the parameters to send to the API endpoint
+   for the add distro operation.
+
+   Typically these are written to a http.Request.
 */
 type AddDistroParams struct {
 
-	/*OrganizationName
-	  desired organization
+	/* OrganizationName.
 
+	   desired organization
 	*/
 	OrganizationName string
-	/*PlatformID
-	  Distro PlatformID
 
+	/* PlatformID.
+
+	   Distro PlatformID
+
+	   Format: uuid
 	*/
 	PlatformID strfmt.UUID
-	/*ProjectName
-	  desired project
 
+	/* ProjectName.
+
+	   desired project
 	*/
 	ProjectName string
-	/*ReleaseID
-	  desired release
 
+	/* ReleaseID.
+
+	   desired release
+
+	   Format: uuid
 	*/
 	ReleaseID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add distro params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddDistroParams) WithDefaults() *AddDistroParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add distro params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddDistroParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add distro params
@@ -175,7 +196,6 @@ func (o *AddDistroParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
 		return err
 	}
-
 	if err := r.SetBodyParam(o.PlatformID); err != nil {
 		return err
 	}

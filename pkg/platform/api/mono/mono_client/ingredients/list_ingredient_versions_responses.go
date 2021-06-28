@@ -35,9 +35,8 @@ func (o *ListIngredientVersionsReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewListIngredientVersionsOK() *ListIngredientVersionsOK {
 	return &ListIngredientVersionsOK{}
 }
 
-/*ListIngredientVersionsOK handles this case with default header values.
+/* ListIngredientVersionsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -57,7 +56,6 @@ type ListIngredientVersionsOK struct {
 func (o *ListIngredientVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}/versions][%d] listIngredientVersionsOK  %+v", 200, o.Payload)
 }
-
 func (o *ListIngredientVersionsOK) GetPayload() []*mono_models.IngredientVersion {
 	return o.Payload
 }
@@ -77,7 +75,7 @@ func NewListIngredientVersionsBadRequest() *ListIngredientVersionsBadRequest {
 	return &ListIngredientVersionsBadRequest{}
 }
 
-/*ListIngredientVersionsBadRequest handles this case with default header values.
+/* ListIngredientVersionsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -88,7 +86,6 @@ type ListIngredientVersionsBadRequest struct {
 func (o *ListIngredientVersionsBadRequest) Error() string {
 	return fmt.Sprintf("[GET /ingredients/{ingredientID}/versions][%d] listIngredientVersionsBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *ListIngredientVersionsBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }

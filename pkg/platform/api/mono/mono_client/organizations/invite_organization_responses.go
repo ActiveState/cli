@@ -6,9 +6,11 @@ package organizations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"fmt"
 	"io"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -54,9 +56,8 @@ func (o *InviteOrganizationReader) ReadResponse(response runtime.ClientResponse,
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -65,7 +66,7 @@ func NewInviteOrganizationOK() *InviteOrganizationOK {
 	return &InviteOrganizationOK{}
 }
 
-/*InviteOrganizationOK handles this case with default header values.
+/* InviteOrganizationOK describes a response with status code 200, with default header values.
 
 Invitation Sent
 */
@@ -76,7 +77,6 @@ type InviteOrganizationOK struct {
 func (o *InviteOrganizationOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationOK  %+v", 200, o.Payload)
 }
-
 func (o *InviteOrganizationOK) GetPayload() []*mono_models.Invitation {
 	return o.Payload
 }
@@ -96,7 +96,7 @@ func NewInviteOrganizationBadRequest() *InviteOrganizationBadRequest {
 	return &InviteOrganizationBadRequest{}
 }
 
-/*InviteOrganizationBadRequest handles this case with default header values.
+/* InviteOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -107,7 +107,6 @@ type InviteOrganizationBadRequest struct {
 func (o *InviteOrganizationBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *InviteOrganizationBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -129,7 +128,7 @@ func NewInviteOrganizationForbidden() *InviteOrganizationForbidden {
 	return &InviteOrganizationForbidden{}
 }
 
-/*InviteOrganizationForbidden handles this case with default header values.
+/* InviteOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -140,7 +139,6 @@ type InviteOrganizationForbidden struct {
 func (o *InviteOrganizationForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationForbidden  %+v", 403, o.Payload)
 }
-
 func (o *InviteOrganizationForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -162,7 +160,7 @@ func NewInviteOrganizationNotFound() *InviteOrganizationNotFound {
 	return &InviteOrganizationNotFound{}
 }
 
-/*InviteOrganizationNotFound handles this case with default header values.
+/* InviteOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -173,7 +171,6 @@ type InviteOrganizationNotFound struct {
 func (o *InviteOrganizationNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationNotFound  %+v", 404, o.Payload)
 }
-
 func (o *InviteOrganizationNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -195,7 +192,7 @@ func NewInviteOrganizationInternalServerError() *InviteOrganizationInternalServe
 	return &InviteOrganizationInternalServerError{}
 }
 
-/*InviteOrganizationInternalServerError handles this case with default header values.
+/* InviteOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -206,7 +203,6 @@ type InviteOrganizationInternalServerError struct {
 func (o *InviteOrganizationInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/invitations/{email}][%d] inviteOrganizationInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *InviteOrganizationInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -232,7 +228,10 @@ type InviteOrganizationBody struct {
 	AddedOnly bool `json:"addedOnly,omitempty"`
 
 	// as owner
-	AsOwner bool `json:"asOwner,omitempty"`
+	AsOwner *bool `json:"asOwner,omitempty"`
+
+	// role
+	Role *mono_models.Role `json:"role,omitempty"`
 
 	// Set to false to skip sending email.
 	SendEmail *bool `json:"sendEmail,omitempty"`
@@ -240,6 +239,60 @@ type InviteOrganizationBody struct {
 
 // Validate validates this invite organization body
 func (o *InviteOrganizationBody) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.validateRole(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *InviteOrganizationBody) validateRole(formats strfmt.Registry) error {
+	if swag.IsZero(o.Role) { // not required
+		return nil
+	}
+
+	if o.Role != nil {
+		if err := o.Role.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("attributes" + "." + "role")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this invite organization body based on the context it is used
+func (o *InviteOrganizationBody) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.contextValidateRole(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *InviteOrganizationBody) contextValidateRole(ctx context.Context, formats strfmt.Registry) error {
+
+	if o.Role != nil {
+		if err := o.Role.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("attributes" + "." + "role")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

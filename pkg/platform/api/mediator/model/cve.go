@@ -12,6 +12,7 @@ const (
 	Critical Severity = iota
 	High
 	Moderate
+	Medium
 	Low
 	Unknown
 )
@@ -24,6 +25,8 @@ func ParseSeverityIndex(severity string) Severity {
 		return High
 	case "MODERATE":
 		return Moderate
+	case "MEDIUM":
+		return Medium
 	case "LOW":
 		return Low
 	default:

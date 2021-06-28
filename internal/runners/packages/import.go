@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -85,23 +85,6 @@ func (i *Import) Run(params ImportRunParams) error {
 		params.FileName = defaultImportFile
 	}
 
-	isHeadless := i.proj.IsHeadless()
-	if !isHeadless && !authentication.Get().Authenticated() {
-		anonConfirmDefault := true
-		anonymousOk, err := i.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
-		if err != nil {
-			return locale.WrapInputError(err, "Authentication cancelled.")
-		}
-		isHeadless = anonymousOk
-	}
-
-	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), i.cfg, i.out, i.Prompter)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_auth_required")
-		}
-	}
-
 	latestCommit, err := model.BranchCommitID(i.proj.Owner(), i.proj.Name(), i.proj.BranchName())
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_commit")
@@ -125,14 +108,14 @@ func (i *Import) Run(params ImportRunParams) error {
 	packageReqs := model.FilterCheckpointPackages(reqs)
 	if len(packageReqs) > 0 {
 		force := params.Force
-		err = removeRequirements(i.Prompter, i.proj, force, isHeadless, packageReqs)
+		err = removeRequirements(i.Prompter, i.proj, force, packageReqs)
 		if err != nil {
 			return locale.WrapError(err, "err_cannot_remove_existing")
 		}
 	}
 
 	msg := locale.T("commit_reqstext_message")
-	commitID, err := commitChangeset(i.proj, msg, isHeadless, changeset)
+	commitID, err := commitChangeset(i.proj, msg, changeset)
 	if err != nil {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
@@ -140,7 +123,7 @@ func (i *Import) Run(params ImportRunParams) error {
 	return runbits.RefreshRuntime(i.auth, i.out, i.proj, i.cfg.CachePath(), commitID, true)
 }
 
-func removeRequirements(conf Confirmer, project *project.Project, force, isHeadless bool, reqs model.Checkpoint) error {
+func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {
 	if !force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
@@ -155,7 +138,7 @@ func removeRequirements(conf Confirmer, project *project.Project, force, isHeadl
 
 	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
 	msg := locale.T("commit_reqstext_remove_existing_message")
-	_, err := commitChangeset(project, msg, isHeadless, removal)
+	_, err := commitChangeset(project, msg, removal)
 	return err
 }
 
@@ -173,19 +156,13 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 	return changeset, err
 }
 
-func commitChangeset(project *project.Project, msg string, isHeadless bool, changeset model.Changeset) (strfmt.UUID, error) {
+func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
 	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, machineid.UniqID(), changeset)
 	if err != nil {
 		return "", locale.WrapError(err, "err_packages_removed")
 	}
 
-	if !isHeadless {
-		err := model.UpdateProjectBranchCommit(project, commitID)
-		if err != nil {
-			return "", locale.WrapError(err, "err_import_update_branch", "Failed to update branch with new commit ID")
-		}
-	}
-	if err := project.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+	if err := project.SetCommit(commitID.String()); err != nil {
 		return "", locale.WrapError(err, "err_package_update_pjfile")
 	}
 	return commitID, nil

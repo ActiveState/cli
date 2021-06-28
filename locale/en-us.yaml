@@ -791,7 +791,7 @@ installer_err_engine_unknown:
 build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
-  other: "The project is currently building. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
+  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1209,10 +1209,12 @@ err_push_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]', please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
+push_project_updated:
+  other: "The remote Project has been updated"
 push_project_created:
-  other: "Project created at [NOTICE]{{.V0}}[/RESET] with language [NOTICE]{{.V1}} {{.V2}}[/RESET]"
-push_up_to_date:
-  other: "Your project is up to date"
+  other: "Project created at [ACTIONABLE]{{.V0}}[/RESET]."
+push_no_changes:
+  other: "You have no local changes to push. To pull in remote changes run `[ACTIONABLE]state pull[/RESET]`."
 init_description:
   other: Initialize a new project
 push_description:
@@ -1293,6 +1295,8 @@ config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts
+flag_state_clean_ignore_errors_description:
+  other: Does not stop when an error occurs, removing as much as possible
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
 arg_state_clean_cache_project_description:
@@ -1600,8 +1604,6 @@ prepare_instructions_windows:
   other: |
     Could not update user environment.
     To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
-prompt_headless_anonymous:
-  other: You're about to add packages as an anonymous user, you might want to authenticate first using [ACTIONABLE]`state auth`[/RESET] if you already have an account. Do you want to continue as an anonymous user?
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
@@ -1682,3 +1684,21 @@ package_try_search:
   other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
 package_info_request:
   other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+err_push_outdated:
+  other: |
+    Your project has new changes available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
+err_pull_incompatible:
+  other: |
+    The remote project has an incompatible commit history. Target a different project with `[ACTIONABLE--set-project[/RESET]` or reset your local checkout with `[ACTIONABLE]state reset[/RESET]`.
+pull_diverged_message:
+  other: |
+    A merge commit will be created for project [NOTICE]{{.V0}}[/RESET] on branch [NOTICE]{{.V1}}[/RESET].
+    Merging commits [NOTICE]{{.V2}}[/RESET] (local) and [NOTICE]{{.V3}}[/RESET] (remote).
+    Any conflicts will favour your local changes. To view the merge commit run `[ACTIONABLE]state history[/RESET]`
+pull_merge_commit:
+  other: Merged {{.V1}} into {{.V0}}
+operation_success_local:
+  other: |
+    Your local project has been updated.
+    Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
+    Run [ACTIONABLE]state history[/RESET] to review your local changes.

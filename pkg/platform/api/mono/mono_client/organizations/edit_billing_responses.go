@@ -53,9 +53,8 @@ func (o *EditBillingReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditBillingOK() *EditBillingOK {
 	return &EditBillingOK{}
 }
 
-/*EditBillingOK handles this case with default header values.
+/* EditBillingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type EditBillingOK struct {
 func (o *EditBillingOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingOK  %+v", 200, o.Payload)
 }
-
 func (o *EditBillingOK) GetPayload() *mono_models.BillingInformation {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewEditBillingBadRequest() *EditBillingBadRequest {
 	return &EditBillingBadRequest{}
 }
 
-/*EditBillingBadRequest handles this case with default header values.
+/* EditBillingBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type EditBillingBadRequest struct {
 func (o *EditBillingBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditBillingBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewEditBillingForbidden() *EditBillingForbidden {
 	return &EditBillingForbidden{}
 }
 
-/*EditBillingForbidden handles this case with default header values.
+/* EditBillingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type EditBillingForbidden struct {
 func (o *EditBillingForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditBillingForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewEditBillingNotFound() *EditBillingNotFound {
 	return &EditBillingNotFound{}
 }
 
-/*EditBillingNotFound handles this case with default header values.
+/* EditBillingNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type EditBillingNotFound struct {
 func (o *EditBillingNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditBillingNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewEditBillingInternalServerError() *EditBillingInternalServerError {
 	return &EditBillingInternalServerError{}
 }
 
-/*EditBillingInternalServerError handles this case with default header values.
+/* EditBillingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type EditBillingInternalServerError struct {
 func (o *EditBillingInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/billing][%d] editBillingInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditBillingInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

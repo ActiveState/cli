@@ -47,9 +47,8 @@ func (o *GetRevertCommitReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewGetRevertCommitOK() *GetRevertCommitOK {
 	return &GetRevertCommitOK{}
 }
 
-/*GetRevertCommitOK handles this case with default header values.
+/* GetRevertCommitOK describes a response with status code 200, with default header values.
 
 Calculate a revert commit
 */
@@ -69,7 +68,6 @@ type GetRevertCommitOK struct {
 func (o *GetRevertCommitOK) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitFromID}/revert/{commitToID}][%d] getRevertCommitOK  %+v", 200, o.Payload)
 }
-
 func (o *GetRevertCommitOK) GetPayload() *mono_models.Commit {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewGetRevertCommitForbidden() *GetRevertCommitForbidden {
 	return &GetRevertCommitForbidden{}
 }
 
-/*GetRevertCommitForbidden handles this case with default header values.
+/* GetRevertCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type GetRevertCommitForbidden struct {
 func (o *GetRevertCommitForbidden) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitFromID}/revert/{commitToID}][%d] getRevertCommitForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetRevertCommitForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewGetRevertCommitNotFound() *GetRevertCommitNotFound {
 	return &GetRevertCommitNotFound{}
 }
 
-/*GetRevertCommitNotFound handles this case with default header values.
+/* GetRevertCommitNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -135,7 +132,6 @@ type GetRevertCommitNotFound struct {
 func (o *GetRevertCommitNotFound) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitFromID}/revert/{commitToID}][%d] getRevertCommitNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetRevertCommitNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewGetRevertCommitInternalServerError() *GetRevertCommitInternalServerError
 	return &GetRevertCommitInternalServerError{}
 }
 
-/*GetRevertCommitInternalServerError handles this case with default header values.
+/* GetRevertCommitInternalServerError describes a response with status code 500, with default header values.
 
 error calculating commit
 */
@@ -168,7 +164,6 @@ type GetRevertCommitInternalServerError struct {
 func (o *GetRevertCommitInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /vcs/commits/{commitFromID}/revert/{commitToID}][%d] getRevertCommitInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetRevertCommitInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }
