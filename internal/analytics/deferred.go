@@ -117,41 +117,62 @@ func deferEvent(cfg Configurable, category, action, label string, dimensions map
 	return nil
 }
 
+func loadDeferred(deferredDataPath string) ([]deferredData, error) {
+	b, err := os.ReadFile(deferredDataPath)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to read deferred_data")
+	}
+	lines := strings.Split(string(b), "\n")
+	var events []deferredData
+	var unmarshalErrorReported bool
+	for _, line := range lines {
+		var event deferredData
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			if !unmarshalErrorReported {
+				logging.Error("Failed to unmarshal line in deferred_data file: %v", err)
+				unmarshalErrorReported = true
+			}
+			continue
+		}
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
 func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
 	// move deferred data file, so it is not being appended anymore
 	outboxFile := filepath.Join(cfg.ConfigPath(), "deferred.outbox")
 	if err := os.Rename(deferredDataFilePath(cfg), outboxFile); err != nil {
-		return errs.Wrap(err, "Could not rename deferred_data file")
+		if !os.IsNotExist(err) {
+			return errs.Wrap(err, "Could not rename deferred_data file")
+		}
+		if err := os.Remove(deferrerFilePath(cfg)); err != nil && !os.IsNotExist(err) {
+			return errs.Wrap(err, "Could not remove deferrer time stamp file")
+		}
+		return nil
 	}
-	b, err := os.ReadFile(outboxFile)
+	defer os.Remove(outboxFile)
+
+	events, err := loadDeferred(outboxFile)
 	if err != nil {
-		return errs.Wrap(err, "Failed to read deferred_data")
+		return errs.Wrap(err, "Failed to load deferred_data events")
 	}
-	lines := strings.Split(string(b), "\n")
-	var unmarshalErrorReported bool
-	if len(lines) > 0 {
-		for _, line := range lines {
-			var event deferredData
-			if err := json.Unmarshal([]byte(line), &event); err != nil {
-				if !unmarshalErrorReported {
-					logging.Error("Failed to unmarshal line in deferred_data file: %v", err)
-					unmarshalErrorReported = true
-				}
-			}
-			if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
-				return errs.Wrap(err, "Could not send deferred event")
-			}
+	for _, event := range events {
+		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
+			return errs.Wrap(err, "Could not send deferred event")
 		}
 	}
 
 	// remove deferrer time stamp file
 	err = os.Remove(deferrerFilePath(cfg))
 	if err != nil && !os.IsNotExist(err) {
-		logging.Errorf("Could not remove deferrer time stamp file: %v", err)
+		return errs.Wrap(err, "Could not remove deferrer time stamp file")
 	}
 
-	// clean up outbox
-	_ = os.Remove(outboxFile)
 	return nil
 }
 

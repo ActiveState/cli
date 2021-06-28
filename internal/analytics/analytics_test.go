@@ -27,7 +27,7 @@ func Test_sendEvent(t *testing.T) {
 			"Deferred",
 			true,
 			[]string{"category", "action", "label"},
-			[]string{}, // []string{"category", "action", "label"},
+			[]string{"category", "action", "label"},
 		},
 		{
 			"Not Deferred",
@@ -42,7 +42,7 @@ func Test_sendEvent(t *testing.T) {
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
 				t.Errorf("sendEvent() error = %v", err)
 			}
-			got, _ := loadDeferred(cfg)
+			got, _ := loadDeferred(deferredDataFilePath(cfg))
 			gotSlice := []string{}
 			if len(got) > 0 {
 				gotSlice = []string{got[0].Category, got[0].Action, got[0].Label}
@@ -63,12 +63,12 @@ func Test_sendEvent(t *testing.T) {
 				if !called {
 					t.Errorf("sendDeferred not called")
 				}
-				got, _ = loadDeferred(cfg)
+				got, _ = loadDeferred(deferredDataFilePath(cfg))
 				if len(got) > 0 {
 					t.Errorf("Deferred events not cleared after sending, got: %v", got)
 				}
 			}
-			saveDeferred(cfg, []deferredData{}) // Ensure cleanup
+			require.NoFileExists(t, deferredDataFilePath(cfg), "deferred_data file should have been cleaned up")
 		})
 	}
 }
