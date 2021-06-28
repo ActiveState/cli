@@ -3,12 +3,8 @@ package packages
 import (
 	"errors"
 	"fmt"
-<<<<<<< HEAD
 	"os"
 	"sort"
-	"strconv"
-=======
->>>>>>> master
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
