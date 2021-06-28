@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils/lockfile"
+	"github.com/gofrs/flock"
 )
 
 var (
@@ -41,24 +42,20 @@ type Instance struct {
 	lockFile      string
 	localPath     string
 	installSource string
+	lock          *flock.Flock
 	data          map[string]interface{}
-	// lockMutex ensures that file lock can be held only once per process.  This is otherwise not ensured by the `lockfile` package.
-	// https://www.pivotaltracker.com/story/show/178478669
-	lockMutex *sync.Mutex
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
-		lockMutex: &sync.Mutex{},
 	}
 	err := instance.ensureConfigExists()
 	if err != nil {
 		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
 	}
-	instance.lockFile = instance.getLockFile()
-	// instance.lock = flock.New(instance.getLockFile())
+	instance.lock = flock.New(instance.getPidFile())
 
 	if err := instance.Reload(); err != nil {
 		return instance, errs.Wrap(err, "Failed to load configuration.")
@@ -67,29 +64,28 @@ func new(localPath string) (*Instance, error) {
 	return instance, nil
 }
 
-func (i *Instance) GetLock() (ReleaseLock func() error, err error) {
-	i.lockMutex.Lock()
+func (i *Instance) GetLock() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	pl, err := lockfile.NewLock(i.lockFile)
+	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
 	if err != nil {
-		i.lockMutex.Unlock()
-		return nil, errs.Wrap(err, "Timed out waiting for exclusive lock")
+		return errs.Wrap(err, "Timed out waiting for exclusive lock")
 	}
 
-	if err := pl.WaitForLock(5 * time.Second); err != nil {
-		i.lockMutex.Unlock()
-		return nil, errs.Wrap(err, "Timed out waiting for exclusive lock")
+	if !locked {
+		return errs.New("Timeout out waiting for exclusive lock")
+
+	}
+	return nil
+}
+
+func (i *Instance) ReleaseLock() error {
+	if err := i.lock.Unlock(); err != nil {
+		return errs.Wrap(err, "Failed to release lock")
 	}
 
-	return func() error {
-		defer i.lockMutex.Unlock()
-
-		if err := pl.Close(); err != nil {
-			return errs.Wrap(err, "Failed to release lock")
-		}
-
-		return nil
-	}, nil
+	return nil
 }
 
 // Reload reloads the configuration data from the config file
@@ -103,11 +99,10 @@ func (i *Instance) Reload() error {
 		return err
 	}
 
-	unlock, err := i.GetLock()
-	if err != nil {
+	if err = i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
-	defer unlock()
+	defer i.ReleaseLock()
 
 	err = i.ReadInConfig()
 	if err != nil {
@@ -180,13 +175,12 @@ func GetSafer() (*Instance, error) {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
-	unlock, err := i.GetLock()
-	if err != nil {
+	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
 	}
-	defer unlock()
+	defer i.ReleaseLock()
 
-	err = i.ReadInConfig()
+	err := i.ReadInConfig()
 	if err != nil {
 		return err
 	}
@@ -207,11 +201,10 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	unlock, err := i.GetLock()
-	if err != nil {
+	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire config file lock")
 	}
-	defer unlock()
+	defer i.ReleaseLock()
 
 	if err := i.ReadInConfig(); err != nil {
 		return err
