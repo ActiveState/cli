@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -25,14 +24,9 @@ type deferredData struct {
 }
 
 const deferrerFileName = "deferrer"
-const deferredDataFileName = "deferred_data"
 
 func deferrerFilePath(cfg Configurable) string {
 	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
-}
-
-func deferredDataFilePath(cfg Configurable) string {
-	return filepath.Join(cfg.ConfigPath(), deferredDataFileName)
 }
 
 func isDeferralDayAgo(cfg Configurable) bool {
@@ -50,7 +44,7 @@ func isDeferralDayAgo(cfg Configurable) bool {
 	return diff > 24*time.Hour
 }
 
-func runNonDeferredStateToolCommand(cfg Configurable) error {
+func runNonDeferredStateToolCommand() error {
 	exe, err := os.Executable()
 	if err != nil {
 		logging.Errorf("Could not determine State Tool executable: %v", err)
@@ -80,13 +74,15 @@ func SetDeferred(cfg Configurable, da bool) {
 		// if we have not send deferred messages for a day, run a non-deferred
 		// state command in the background to flush these messages.
 		if isDeferralDayAgo(cfg) {
-			err := runNonDeferredStateToolCommand(cfg)
+			err := runNonDeferredStateToolCommand()
 			if err != nil {
 				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
 			}
 		}
 		return
 	}
+
+	// If we are not in a deferred state then we flush the deferred events that have been queued up
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
@@ -104,12 +100,6 @@ type Configurable interface {
 
 func deferEvent(cfg Configurable, category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
-
-	if !fileutils.FileExists(deferrerFilePath(cfg)) {
-		if err := fileutils.Touch(deferrerFilePath(cfg)); err != nil {
-			logging.Errorf("Failed to create deferrer time stamp file: %v", err)
-		}
-	}
 
 	if err := saveDeferred(cfg, deferredData{category, action, label, dimensions}); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
@@ -145,32 +135,23 @@ func loadDeferred(deferredDataPath string) ([]deferredData, error) {
 
 func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
 	// move deferred data file, so it is not being appended anymore
-	outboxFile := filepath.Join(cfg.ConfigPath(), "deferred.outbox")
-	if err := os.Rename(deferredDataFilePath(cfg), outboxFile); err != nil {
+	outboxFile := filepath.Join(cfg.ConfigPath(), fmt.Sprintf("deferred.%d", time.Now().Unix()))
+	if err := os.Rename(deferrerFilePath(cfg), outboxFile); err != nil {
 		if !os.IsNotExist(err) {
 			return errs.Wrap(err, "Could not rename deferred_data file")
 		}
-		if err := os.Remove(deferrerFilePath(cfg)); err != nil && !os.IsNotExist(err) {
-			return errs.Wrap(err, "Could not remove deferrer time stamp file")
-		}
-		return nil
+		return nil // No deferred data to send
 	}
 	defer os.Remove(outboxFile)
 
 	events, err := loadDeferred(outboxFile)
 	if err != nil {
-		return errs.Wrap(err, "Failed to load deferred_data events")
+		return errs.Wrap(err, "Failed to load deferred events")
 	}
 	for _, event := range events {
 		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
 			return errs.Wrap(err, "Could not send deferred event")
 		}
-	}
-
-	// remove deferrer time stamp file
-	err = os.Remove(deferrerFilePath(cfg))
-	if err != nil && !os.IsNotExist(err) {
-		return errs.Wrap(err, "Could not remove deferrer time stamp file")
 	}
 
 	return nil
@@ -181,7 +162,7 @@ func saveDeferred(cfg Configurable, v deferredData) error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal deferred data")
 	}
-	f, err := os.OpenFile(deferredDataFilePath(cfg), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(deferrerFilePath(cfg), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errs.Wrap(err, "Failed to open deferred_data file for appending")
 	}
