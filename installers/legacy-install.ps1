@@ -395,7 +395,6 @@ function install() {
     $Command = "`"$StatePath`" export config --filter=dir"
     $ConfigDir = Invoke-Expression "& $Command" | Out-String
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
-    Write-host "DEBUG: $InstallFilePath"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
 
     $prepExitCode = runPreparationStep $installDir
