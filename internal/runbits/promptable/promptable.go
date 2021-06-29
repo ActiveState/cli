@@ -1,8 +1,6 @@
 package promptable
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
@@ -39,11 +37,11 @@ type Configurer interface {
 func SetPrompted(cfg Configurer, key OnceKey) bool {
 	asked := cfg.GetBool(string(key))
 	if asked {
-		logging.Debug(fmt.Sprintf("%s: already asked", key))
+		logging.Debug("%s: already asked", key)
 		return false
 	}
 
-	logging.Debug(fmt.Sprintf("%s: setting asked", key))
+	logging.Debug("%s: setting asked", key)
 	if err := cfg.Set(string(key), true); err != nil {
 		logging.Errorf("Failed to set %q: %v", key, err)
 	}
