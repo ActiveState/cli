@@ -85,6 +85,11 @@ func (i *Instance) ReleaseLock() error {
 		return errs.Wrap(err, "Failed to release lock")
 	}
 
+	if runtime.GOOS == "windows" {
+		// On Windows, it is safe to remove the pid file after use.  And if we don't, the config directory cannot be removed by the State Tool, as likely a file handle to the pid file is kept open.
+		_ = os.Remove(i.getPidFile())
+	}
+
 	return nil
 }
 
