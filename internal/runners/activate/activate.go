@@ -172,7 +172,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	setDefault := params.Default
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
 	isPromptable, promptableKey := promptable.IsPromptableOnce, promptable.DefaultProject
-	if !setDefault && firstActivate && isPromptable(r.out, r.config, promptableKey) {
+	if !setDefault && firstActivate && isPromptable(r.prompt, r.config, promptableKey) {
 		var err error
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),

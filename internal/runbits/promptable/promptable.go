@@ -2,18 +2,22 @@ package promptable
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 )
 
-// IsPromptable reports whether the output type permits prompts to be shown.
-func IsPromptable(out output.Outputer) bool {
-	return out.Type() == output.PlainFormatName
+// Contextualizer describes any type which can provide needed contextual info.
+type Contextualizer interface {
+	IsInteractive() bool
 }
 
-// IsPromptableOnce reports whether the output type permits prompts to be shown
-// and also whether a prompt has not been shown before.
-func IsPromptableOnce(out output.Outputer, cfg Configurer, key OnceKey) bool {
-	return IsPromptable(out) && SetPrompted(cfg, key)
+// IsPromptable reports whether the output type permits prompts to be shown.
+func IsPromptable(c Contextualizer) bool {
+	return c.IsInteractive()
+}
+
+// IsPromptableOnce reports whether the given context permits prompts to be
+// shown and also whether a prompt has not been shown before.
+func IsPromptableOnce(c Contextualizer, cfg Configurer, key OnceKey) bool {
+	return IsPromptable(c) && SetPrompted(cfg, key)
 }
 
 // OnceKey represents config keys as tokens.
