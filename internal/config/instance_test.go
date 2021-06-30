@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -159,6 +160,24 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 
 	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
 	suite.Contains(string(dat), "ishould: exist", "Config should contain the pre-existing field")
+}
+
+func TestRace(t *testing.T) {
+	dir := filepath.Join(os.TempDir(), "StateConfigTestRace")
+	configReuse, err := config.NewWithDir(dir)
+	defer configReuse.Close()
+	require.NoError(t, err)
+	x := 0
+	for x < 1000 {
+		go func() {
+			config, err := config.NewWithDir(dir)
+			defer config.Close()
+			require.NoError(t, err)
+			require.NoError(t, config.Set("foo", "bar"))
+			require.NoError(t, configReuse.Set("foo", "bar"))
+		}()
+		x++
+	}
 }
 
 func TestConfigTestSuite(t *testing.T) {

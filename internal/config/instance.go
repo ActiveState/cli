@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,7 +23,6 @@ import (
 )
 
 var (
-	defaultMutex       *sync.Mutex = &sync.Mutex{}
 	defaultConfig      *Instance
 	defaultConfigError error
 )
@@ -33,6 +31,11 @@ const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
 
 const lockRetryDelay = 50 * time.Millisecond
+
+type setparams struct {
+	key   string
+	value func(interface{}) (interface{}, error)
+}
 
 // Instance holds our main config logic
 type Instance struct {
@@ -44,12 +47,16 @@ type Instance struct {
 	installSource string
 	lock          *flock.Flock
 	data          map[string]interface{}
+	setter        chan (setparams)
+	close         chan (struct{})
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
 		data:      make(map[string]interface{}),
+		setter:    make(chan (setparams)),
+		close:     make(chan (struct{})),
 	}
 	err := instance.ensureConfigExists()
 	if err != nil {
@@ -64,6 +71,23 @@ func new(localPath string) (*Instance, error) {
 	return instance, nil
 }
 
+func (i *Instance) waitForSetters() {
+	for {
+		select {
+		case v := <-i.setter:
+			if err := i.setWithLock(v.key, v.value); err != nil {
+				fmt.Printf("setWithLock %s; failed: %v", v.key, err)
+			}
+		case <-i.close:
+			return
+		}
+	}
+}
+
+func (i *Instance) Close() {
+	i.close <- struct{}{}
+}
+
 func (i *Instance) GetLock() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -75,7 +99,6 @@ func (i *Instance) GetLock() error {
 
 	if !locked {
 		return errs.New("Timeout out waiting for exclusive lock")
-
 	}
 	return nil
 }
@@ -155,8 +178,6 @@ func NewWithDir(dir string) (*Instance, error) {
 
 // Get returns the default configuration instance
 func Get() (*Instance, error) {
-	defaultMutex.Lock()
-	defer defaultMutex.Unlock()
 	if defaultConfig == nil {
 		var err error
 		defaultConfig, err = New()
@@ -180,6 +201,11 @@ func GetSafer() (*Instance, error) {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+	i.setter <- setparams{key, valueF}
+	return nil
+}
+
+func (i *Instance) setWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	if err := i.GetLock(); err != nil {
 		return errs.Wrap(err, "Could not acquire configuration lock.")
 	}
@@ -206,21 +232,9 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	if err := i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire config file lock")
-	}
-	defer i.ReleaseLock()
-
-	if err := i.ReadInConfig(); err != nil {
-		return err
-	}
-
-	i.data[strings.ToLower(key)] = value
-
-	if err := i.save(); err != nil {
-		return err
-	}
-
+	i.SetWithLock(key, func(_ interface{}) (interface{}, error) {
+		return value, nil
+	})
 	return nil
 }
 
