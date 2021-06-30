@@ -4,14 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -23,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 type PackageVersion struct {
@@ -44,18 +43,40 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion, languageName string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) error {
+	var ns model.Namespace
+	var err error
 	if pj == nil {
-		return installInitial(cfg, out, authentication, prompt, packageName, packageVersion, languageName, operation, ns)
+		if operation != model.OperationAdded {
+			return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
+		}
+
+		pj, err = initializeProject()
+		if err != nil {
+			return locale.WrapError(err, "err_package_get_project", "Could not get project from path: {{.V0}}", pj.Source().Path())
+		}
+
+		ns, err = model.NamespaceForPackage(packageName)
+		if err != nil {
+			return locale.WrapError(err, "err_install_get_langauge", "Could not get language for package: {{.V0}}", packageName)
+		}
+	} else {
+		language, err := model.LanguageForCommit(pj.CommitUUID())
+		if err != nil {
+			return locale.WrapError(err, "err_fetch_languages")
+		}
+		ns = model.NewNamespacePkgOrBundle(language, nsType)
 	}
 
 	if strings.ToLower(packageVersion) == latestVersion {
 		packageVersion = ""
 	}
 
+	parentCommitID := pj.CommitUUID()
+
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), packageName)
+	if operation == model.OperationAdded && parentCommitID != "" {
+		req, err := model.GetRequirement(parentCommitID, ns.String(), packageName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -64,10 +85,30 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 	}
 
-	parentCommitID := pj.CommitUUID()
-	commitID, err := model.CommitPackage(parentCommitID, operation, packageName, ns.String(), packageVersion, machineid.UniqID())
-	if err != nil {
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+	var commitID strfmt.UUID
+	if parentCommitID != "" {
+		commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns.String(), packageVersion, machineid.UniqID())
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+		}
+	} else {
+		commitParams := model.CommitInitialParams{
+			HostPlatform:     model.HostPlatform,
+			PackageName:      packageName,
+			PackageVersion:   packageVersion,
+			PackageNamespace: ns,
+			AnonymousID:      machineid.UniqID(),
+		}
+
+		commitID, err = model.CommitInitial(commitParams)
+		if err != nil {
+			return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
+		}
+
+		err = pj.SetCommit(commitID.String())
+		if err != nil {
+			return locale.WrapError(err, "err_install_set_commit", "Could not set commit ID in project file")
+		}
 	}
 
 	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
@@ -98,18 +139,24 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", packageName)
 	}
 
-	// refresh runtime
+	// refresh or install runtime
 	err = runbits.RefreshRuntime(authentication, out, pj, cfg.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}
 
 	// Print the result
+	if parentCommitID == "" {
+		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
+		return nil
+	}
+
 	if packageVersion != "" {
 		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), packageName, packageVersion))
 	} else {
 		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), packageName))
 	}
+
 	out.Print(locale.T("operation_success_local"))
 
 	return nil
@@ -135,56 +182,21 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	return suggestions, nil
 }
 
-func installInitial(cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion, languageName string, operation model.Operation, ns model.Namespace) error {
-	if operation != model.OperationAdded {
-		return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
-	}
-
-	languageVersions, err := model.FetchLanguageVersions(languageName)
-	if err != nil {
-		return locale.WrapError(err, "err_fetch_language_versions", "Could not fetch versions for language: {{.V0}}", languageName)
-	}
-	sort.Slice(languageVersions, func(i, j int) bool {
-		return languageVersions[j] < languageVersions[i]
-	})
-	languageVersion := languageVersions[0]
-
-	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
-	if err != nil {
-		return locale.WrapError(err, "err_make_language_version", "Could not make language with name: {{.V0}} and version: {{.V1}}", languageName, languageVersions[0])
-	}
-
-	commitParams := model.CommitInitialParams{
-		HostPlatform:     model.HostPlatform,
-		Language:         &language.Supported{Language: lang},
-		PackageName:      packageName,
-		PackageVersion:   packageVersion,
-		PackageNamespace: model.NewNamespacePackage(languageName),
-		AnonymousID:      machineid.UniqID(),
-	}
-
-	commitID, err := model.CommitInitial(commitParams)
-	if err != nil {
-		return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
-	}
-
+func initializeProject() (*project.Project, error) {
 	target, err := os.Getwd()
 	if err != nil {
-		return locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
+		return nil, locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
 	}
 
 	createParams := &projectfile.CreateParams{
-		CommitID:   &commitID,
-		ProjectURL: fmt.Sprintf("https://%s/commit/%s", constants.PlatformURL, commitID.String()),
+		ProjectURL: constants.DashboardCommitURL,
 		Directory:  target,
 	}
 
 	err = projectfile.Create(createParams)
 	if err != nil {
-		return locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
+		return nil, locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
 	}
 
-	out.Print(locale.Tr("install_initial_success", target))
-
-	return nil
+	return project.FromPath(target)
 }

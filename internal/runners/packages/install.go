@@ -1,7 +1,6 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -38,21 +37,5 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	var language string
-	var err error
-	if a.proj == nil {
-		language, err = model.LanguageForPackage(params.Package.Name())
-		if err != nil {
-			return locale.WrapError(err, "err_install_get_langauge", "Could not get language for package: {{.V0}}", params.Package.Name())
-		}
-	} else {
-		language, err = model.LanguageForCommit(a.proj.CommitUUID())
-		if err != nil {
-			return locale.WrapError(err, "err_fetch_languages")
-		}
-	}
-
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
-
-	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), language, model.OperationAdded, ns)
+	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, nstype)
 }

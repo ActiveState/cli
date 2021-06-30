@@ -42,12 +42,5 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	// Commit the package
-	language, err := model.LanguageForCommit(r.proj.CommitUUID())
-	if err != nil {
-		return locale.WrapError(err, "err_fetch_languages")
-	}
-
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	return executePackageOperation(r.proj, r.cfg, r.out, r.auth, r.Prompter, params.Name, "", language, model.OperationRemoved, ns)
+	return executePackageOperation(r.proj, r.cfg, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, nstype)
 }

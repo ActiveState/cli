@@ -178,6 +178,36 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
+func NamespaceForPackage(name string) (Namespace, error) {
+	ns := NewBlankNamespace()
+	packages, err := SearchIngredientsStrict(ns, name)
+	if err != nil {
+		return ns, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+	}
+
+	if len(packages) == 0 {
+		return ns, errs.AddTips(
+			locale.NewInputError("err_package_info_no_packages", "", name),
+			locale.T("info_try_search"),
+			locale.T("info_request"),
+		)
+	}
+
+	pkg := *packages[0]
+	if !NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, NamespacePackageMatch) {
+		return ns, locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
+	}
+
+	// TODO: Do we want a ParsePackageNamespace func here?
+	re := regexp.MustCompile(NamespacePackageMatch)
+	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
+	if len(matches) < 2 {
+		return ns, locale.NewError("err_install_match_language", "Could not determine language from package namespace")
+	}
+
+	return NewNamespacePackage(matches[1]), nil
+}
+
 // BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
 func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
