@@ -248,7 +248,8 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	return res.Payload, nil
 }
 
-// CommonParent is copied from commit f8cce50.
+// CommonParent returns the first commit id which both provided commit id
+// histories have in common.
 func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
 	if commit1 == nil || commit2 == nil {
 		return nil, nil

@@ -108,7 +108,7 @@ func Test_commonParentWithHistory(t *testing.T) {
 		{
 			"Both nil",
 			args{
-				cidp(1), nil, nil, nil,
+				nil, nil, nil, nil,
 			},
 			nil,
 		},
