@@ -92,15 +92,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 			return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 		}
 	} else {
-		commitParams := model.CommitInitialParams{
-			HostPlatform:     model.HostPlatform,
-			PackageName:      packageName,
-			PackageVersion:   packageVersion,
-			PackageNamespace: ns,
-			AnonymousID:      machineid.UniqID(),
-		}
-
-		commitID, err = model.CommitInitial(commitParams)
+		commitID, err = model.CommitPackageInitial(packageName, packageVersion, ns, machineid.UniqID())
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
 		}

@@ -458,6 +458,46 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 	return commit.CommitID, nil
 }
 
+func CommitPackageInitial(packageName, packageVersion string, packageNamespace Namespace, anonymousID string) (strfmt.UUID, error) {
+	var changes []*mono_models.CommitChangeEditable
+
+	platformID, err := hostPlatformToPlatformID(HostPlatform)
+	if err != nil {
+		return "", err
+	}
+
+	changes = append(changes, &mono_models.CommitChangeEditable{
+		Operation:         string(OperationAdded),
+		Namespace:         NewNamespacePlatform().String(),
+		Requirement:       platformID,
+		VersionConstraint: "",
+	})
+
+	changes = append(changes, &mono_models.CommitChangeEditable{
+		Operation:         string(OperationAdded),
+		Namespace:         packageNamespace.String(),
+		Requirement:       packageName,
+		VersionConstraint: packageVersion,
+	})
+
+	commit := &mono_models.CommitEditable{
+		Changeset: changes,
+		Message:   locale.T("commit_message_add_initial"),
+		AnonID:    anonymousID,
+	}
+
+	addCommitParams := vcsClient.NewAddCommitParams()
+	addCommitParams.SetCommit(commit)
+
+	res, err := mono.New().VersionControl.AddCommit(addCommitParams, authentication.ClientAuth())
+	if err != nil {
+		logging.Error("AddCommit Error: %s", err.Error())
+		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+	}
+
+	return res.Payload.CommitID, nil
+}
+
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
 	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
@@ -512,12 +552,30 @@ type CommitInitialParams struct {
 }
 
 // CommitInitial creates a root commit for a new branch
-func CommitInitial(params CommitInitialParams) (strfmt.UUID, error) {
-	var changes []*mono_models.CommitChangeEditable
+func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
+	var language string
+	if lang != nil {
+		language = lang.Requirement()
+		if langVersion == "" {
+			langVersion = lang.RecommendedVersion()
+		}
+	}
 
-	platformID, err := hostPlatformToPlatformID(params.HostPlatform)
+	platformID, err := hostPlatformToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err
+	}
+
+	var changes []*mono_models.CommitChangeEditable
+
+	if language != "" {
+		c := &mono_models.CommitChangeEditable{
+			Operation:         string(OperationAdded),
+			Namespace:         NewNamespaceLanguage().String(),
+			Requirement:       language,
+			VersionConstraint: langVersion,
+		}
+		changes = append(changes, c)
 	}
 
 	c := &mono_models.CommitChangeEditable{
@@ -528,45 +586,14 @@ func CommitInitial(params CommitInitialParams) (strfmt.UUID, error) {
 	}
 	changes = append(changes, c)
 
-	var language, languageVersion string
-	if params.Language != nil {
-		language = params.Language.Requirement()
-		languageVersion = params.LanguageVersion
-		if languageVersion == "" {
-			languageVersion = params.Language.RecommendedVersion()
-		}
-	}
-
-	if language != "" {
-		c := &mono_models.CommitChangeEditable{
-			Operation:         string(OperationAdded),
-			Namespace:         NewNamespaceLanguage().String(),
-			Requirement:       language,
-			VersionConstraint: languageVersion,
-		}
-		changes = append(changes, c)
-	}
-
-	if params.PackageName != "" {
-		c := &mono_models.CommitChangeEditable{
-			Operation:         string(OperationAdded),
-			Namespace:         params.PackageNamespace.String(),
-			Requirement:       params.PackageName,
-			VersionConstraint: params.PackageVersion,
-		}
-		changes = append(changes, c)
-	}
-
 	commit := &mono_models.CommitEditable{
 		Changeset: changes,
 		Message:   locale.T("commit_message_add_initial"),
-		AnonID:    params.AnonymousID,
 	}
+	params := vcsClient.NewAddCommitParams()
+	params.SetCommit(commit)
 
-	addCommitParams := vcsClient.NewAddCommitParams()
-	addCommitParams.SetCommit(commit)
-
-	res, err := mono.New().VersionControl.AddCommit(addCommitParams, authentication.ClientAuth())
+	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
