@@ -1,6 +1,7 @@
 package commit
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -19,16 +20,10 @@ type commitData struct {
 	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
 	Message string   `locale:"message,[HEADING]Commit Message[/RESET]"`
 	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
-	Locus   string   `locale:"locus,[HEADING]Locus[/RESET]"`
 }
 
-const (
-	local  = "Local Only"
-	remote = "Remote/Local"
-)
-
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
-	data, err := commitDataFromCommit(commit, orgs, remote)
+	data, err := commitDataFromCommit(commit, orgs, "")
 	if err != nil {
 		return err
 	}
@@ -43,14 +38,14 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
 	data := make([]commitData, 0, len(commits))
-	locus := local
+	localTxt := locale.Tl("commit_display_local", "local")
 
 	for _, c := range commits {
-		if lastRemoteID != nil && locus != remote && c.CommitID == *lastRemoteID {
-			locus = remote
+		if lastRemoteID != nil && localTxt != "" && c.CommitID == *lastRemoteID {
+			localTxt = ""
 		}
 
-		d, err := commitDataFromCommit(c, orgs, locus)
+		d, err := commitDataFromCommit(c, orgs, localTxt)
 		if err != nil {
 			return err
 		}
@@ -66,7 +61,11 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, locus string) (commitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, localTxt string) (commitData, error) {
+	if localTxt != "" {
+		localTxt = fmt.Sprintf(" (%s)", localTxt)
+	}
+
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
@@ -77,10 +76,9 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	}
 
 	commitData := commitData{
-		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
+		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}{{.V1}}[/RESET]", commit.CommitID.String(), localTxt),
 		Author:  username,
 		Changes: FormatChanges(commit),
-		Locus:   locus,
 	}
 
 	commitData.Date = commit.AtTime.String()
