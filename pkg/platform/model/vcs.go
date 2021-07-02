@@ -198,7 +198,6 @@ func NamespaceForPackage(name string) (Namespace, error) {
 		return ns, locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
 	}
 
-	// TODO: Do we want a ParsePackageNamespace func here?
 	re := regexp.MustCompile(NamespacePackageMatch)
 	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
 	if len(matches) < 2 {
@@ -539,16 +538,6 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 		return commitID, err
 	}
 	return commit.CommitID, nil
-}
-
-type CommitInitialParams struct {
-	HostPlatform     string
-	Language         *language.Supported
-	LanguageVersion  string
-	PackageName      string
-	PackageVersion   string
-	PackageNamespace Namespace
-	AnonymousID      string
 }
 
 // CommitInitial creates a root commit for a new branch
