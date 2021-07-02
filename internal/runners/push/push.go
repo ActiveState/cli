@@ -162,6 +162,26 @@ func (r *Push) Run(params PushParams) error {
 	// update the project at the given commit id.
 	err = model.UpdateProjectBranchCommitWithModel(pjm, branch.Label, commitID)
 	if err != nil {
+		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
+			var createFork bool
+			createFork, err = r.prompt.Confirm("", locale.T("push_prompt_auth"), &createFork)
+			if err != nil {
+				return locale.WrapError(err, "err_push_prompt_auth", "Failed to prompt after authorization check")
+			}
+			if !createFork {
+				return nil
+			}
+
+			namespace, err = r.getNamespace()
+			if err != nil {
+				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
+			}
+
+			_, err := model.CreateFork(owner, name, namespace.Owner, namespace.Project, false)
+			if err != nil {
+				return locale.WrapError(err, "err_fork_project", "Could not create fork")
+			}
+		}
 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 	}
 

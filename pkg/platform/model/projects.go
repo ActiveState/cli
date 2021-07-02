@@ -166,6 +166,37 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	return pj.Payload, nil
 }
 
+func CreateFork(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
+	// Retrieve the source project that we'll be forking
+	sourceProject, err := FetchProjectByName(sourceOwner, sourceName)
+	if err != nil {
+		return nil, locale.WrapInputError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}/{{.V1}}", sourceOwner, sourceName)
+	}
+
+	// Create the target project
+	targetProject, err := CreateEmptyProject(targetOwner, targetName, false)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_fork_createProject", "Could not create project: {{.V0}}/{{.V1}}", targetOwner, targetName)
+	}
+
+	// Set up the forked branch on the target project
+	if err := TrackBranch(sourceProject, targetProject); err != nil {
+		return nil, locale.WrapError(err, "err_fork_track", "Could not set up the forked branch for your new project.")
+	}
+
+	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
+	if makePrivate {
+		if err := MakeProjectPrivate(targetOwner, targetName); err != nil {
+			return nil, locale.WrapError(
+				err, "err_fork_private",
+				"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}}/{{.V2}} to manually update your privacy settings.",
+				constants.PlatformURL, targetOwner, targetName)
+		}
+	}
+
+	return targetProject, nil
+}
+
 // MakeProjectPrivate turns the given project private
 func MakeProjectPrivate(owner, name string) error {
 	editParams := projects.NewEditProjectParams()
