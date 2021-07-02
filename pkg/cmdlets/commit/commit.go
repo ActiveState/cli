@@ -19,10 +19,16 @@ type commitData struct {
 	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
 	Message string   `locale:"message,[HEADING]Commit Message[/RESET]"`
 	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
+	Locus   string   `locale:"locus,[HEADING]Locus[/RESET]"`
 }
 
+const (
+	local  = "Local Only"
+	remote = "Remote/Local"
+)
+
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
-	data, err := commitDataFromCommit(commit, orgs)
+	data, err := commitDataFromCommit(commit, orgs, remote)
 	if err != nil {
 		return err
 	}
@@ -35,10 +41,16 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	return nil
 }
 
-func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization) error {
-	var data []commitData
+func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
+	data := make([]commitData, 0, len(commits))
+	locus := local
+
 	for _, c := range commits {
-		d, err := commitDataFromCommit(c, orgs)
+		if lastRemoteID != nil && locus != remote && c.CommitID == *lastRemoteID {
+			locus = remote
+		}
+
+		d, err := commitDataFromCommit(c, orgs, locus)
 		if err != nil {
 			return err
 		}
@@ -54,7 +66,7 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization) (commitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, locus string) (commitData, error) {
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
@@ -68,6 +80,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]", commit.CommitID.String()),
 		Author:  username,
 		Changes: FormatChanges(commit),
+		Locus:   locus,
 	}
 
 	commitData.Date = commit.AtTime.String()

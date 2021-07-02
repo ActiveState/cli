@@ -1261,6 +1261,8 @@ field_id:
   other: ID
 field_changes:
   other: Changes
+field_locus:
+  other: Locus
 change_added:
   other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
 change_removed:
