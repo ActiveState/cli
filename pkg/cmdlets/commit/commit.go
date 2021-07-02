@@ -23,7 +23,7 @@ type commitData struct {
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
-	data, err := commitDataFromCommit(commit, orgs, "")
+	data, err := commitDataFromCommit(commit, orgs, false)
 	if err != nil {
 		return err
 	}
@@ -38,14 +38,14 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
 	data := make([]commitData, 0, len(commits))
-	localTxt := locale.Tl("commit_display_local", "local")
+	isLocal := true // recent (and, therefore, local) commits are first
 
 	for _, c := range commits {
-		if lastRemoteID != nil && localTxt != "" && c.CommitID == *lastRemoteID {
-			localTxt = ""
+		if lastRemoteID != nil && isLocal && c.CommitID == *lastRemoteID {
+			isLocal = false
 		}
 
-		d, err := commitDataFromCommit(c, orgs, localTxt)
+		d, err := commitDataFromCommit(c, orgs, isLocal)
 		if err != nil {
 			return err
 		}
@@ -61,9 +61,10 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, localTxt string) (commitData, error) {
-	if localTxt != "" {
-		localTxt = fmt.Sprintf(" (%s)", localTxt)
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (commitData, error) {
+	var localTxt string
+	if isLocal {
+		localTxt = fmt.Sprintf(" (%s)", locale.Tl("commit_display_local", "local"))
 	}
 
 	var username string
