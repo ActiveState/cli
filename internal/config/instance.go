@@ -1,7 +1,7 @@
 package config
 
 import (
-	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,12 +14,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 	"github.com/spf13/cast"
-	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/gofrs/flock"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -30,116 +29,41 @@ var (
 const ConfigKeyShell = "shell"
 const ConfigKeyTrayPid = "tray-pid"
 
-const lockRetryDelay = 50 * time.Millisecond
-
-type setparams struct {
-	key   string
-	value func(interface{}) (interface{}, error)
-}
-
 // Instance holds our main config logic
 type Instance struct {
 	configDir     *configdir.Config
 	cacheDir      *configdir.Config
 	configFile    string
-	lockFile      string
 	localPath     string
 	installSource string
-	lock          *flock.Flock
-	data          map[string]interface{}
-	setter        chan (setparams)
-	close         chan (struct{})
+	db            *sql.DB
 }
 
 func new(localPath string) (*Instance, error) {
 	instance := &Instance{
 		localPath: localPath,
-		data:      make(map[string]interface{}),
-		setter:    make(chan (setparams)),
-		close:     make(chan (struct{})),
 	}
-	err := instance.ensureConfigExists()
+	err := instance.ensureDirExists()
 	if err != nil {
 		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
 	}
-	instance.lock = flock.New(instance.getPidFile())
 
-	if err := instance.Reload(); err != nil {
-		return instance, errs.Wrap(err, "Failed to load configuration.")
+	path := instance.getDatabaseFile()
+	_, err = os.Stat(path)
+	isNew := err != nil
+	instance.db, err = sql.Open("sqlite3", path)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
+	}
+
+	if isNew {
+		_, err := instance.db.Exec(`create table keyval (key string not null primary key, value text)`)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not seed settings database")
+		}
 	}
 
 	return instance, nil
-}
-
-func (i *Instance) waitForSetters() {
-	for {
-		select {
-		case v := <-i.setter:
-			if err := i.setWithLock(v.key, v.value); err != nil {
-				fmt.Printf("setWithLock %s; failed: %v", v.key, err)
-			}
-		case <-i.close:
-			return
-		}
-	}
-}
-
-func (i *Instance) Close() {
-	i.close <- struct{}{}
-}
-
-func (i *Instance) GetLock() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
-	if err != nil {
-		return errs.Wrap(err, "Timed out waiting for exclusive lock")
-	}
-
-	if !locked {
-		return errs.New("Timeout out waiting for exclusive lock")
-	}
-	return nil
-}
-
-func (i *Instance) ReleaseLock() error {
-	if err := i.lock.Unlock(); err != nil {
-		return errs.Wrap(err, "Failed to release lock")
-	}
-
-	if runtime.GOOS == "windows" {
-		// On Windows, it is safe to remove the pid file after use.  And if we don't, the config directory cannot be removed by the State Tool, as likely a file handle to the pid file is kept open.
-		_ = os.Remove(i.getPidFile())
-	}
-
-	return nil
-}
-
-// Reload reloads the configuration data from the config file
-func (i *Instance) Reload() error {
-	err := i.ensureConfigExists()
-	if err != nil {
-		return err
-	}
-	err = i.ensureCacheExists()
-	if err != nil {
-		return err
-	}
-
-	if err = i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire config file lock")
-	}
-	defer i.ReleaseLock()
-
-	err = i.ReadInConfig()
-	if err != nil {
-		return err
-	}
-
-	i.readInstallSource()
-
-	return nil
 }
 
 func configPathInTest() (string, error) {
@@ -201,30 +125,20 @@ func GetSafer() (*Instance, error) {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
-	i.setter <- setparams{key, valueF}
-	return nil
-}
-
-func (i *Instance) setWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
-	if err := i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire configuration lock.")
-	}
-	defer i.ReleaseLock()
-
-	err := i.ReadInConfig()
+	v, err := valueF(i.get(key))
 	if err != nil {
-		return err
+		return errs.Wrap(err, "valueF failed")
 	}
 
-	value, err := valueF(i.data[key])
+	q, err := i.db.Prepare(`INSERT OR REPLACE INTO keyval(key, value) VALUES(?,?)`)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not modify settings")
 	}
+	defer q.Close()
 
-	i.data[strings.ToLower(key)] = value
-
-	if err := i.save(); err != nil {
-		return err
+	_, err = q.Exec(v)
+	if err != nil {
+		return errs.Wrap(err, "Could not store setting")
 	}
 
 	return nil
@@ -239,12 +153,18 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) IsSet(key string) bool {
-	_, ok := i.data[strings.ToLower(key)]
-	return ok
+	return i.get(key) != nil
 }
 
 func (i *Instance) get(key string) interface{} {
-	return i.data[strings.ToLower(key)]
+	row := i.db.QueryRow(`SELECT value FROM keyval WHERE key=?`, key)
+	if row.Err() != nil {
+		fmt.Printf(row.Err().Error()) // todo
+		return nil
+	}
+	var result interface{}
+	row.Scan(&result)
+	return result
 }
 
 // GetString retrieves a string for a given key
@@ -259,9 +179,17 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
+	rows, err := i.db.Query(`SELECT key FROM keyval`)
+	if err != nil {
+		fmt.Printf(err.Error()) // todo
+		return nil
+	}
 	var keys []string
-	for k := range i.data {
-		keys = append(keys, k)
+	defer rows.Close()
+	for rows.Next() {
+		var key string
+		rows.Scan(&key)
+		keys = append(keys, key)
 	}
 	return keys
 }
@@ -291,19 +219,9 @@ func (i *Instance) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(i.get(key))
 }
 
-// Type returns the config filetype
-func (i *Instance) Type() string {
-	return filepath.Ext(C.InternalConfigFileName)[1:]
-}
-
 // AppName returns the application name used for our config
 func (i *Instance) AppName() string {
 	return fmt.Sprintf("%s-%s", C.LibraryName, C.BranchName)
-}
-
-// Name returns the filename used for our config, minus the extension
-func (i *Instance) Name() string {
-	return strings.TrimSuffix(i.Filename(), "."+i.Type())
 }
 
 // Filename return the filename used for our config
@@ -331,55 +249,7 @@ func (i *Instance) InstallSource() string {
 	return i.installSource
 }
 
-func (i *Instance) ReadInConfig() error {
-	configFile := i.getConfigFile()
-
-	configData, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return errs.Wrap(err, "Could not read config file")
-	}
-
-	data := make(map[string]interface{})
-	err = yaml.Unmarshal(configData, data)
-	if err != nil {
-		baseMsg := "Your config file is currently malformed, please run [ACTIONABLE]state clean config[/RESET] to reset its contents, then try this command again."
-		return &LocLogError{
-			Err:       err,
-			Key:       "err_config_malformed",
-			BaseMsg:   baseMsg,
-			ReportMsg: baseMsg,
-		}
-	}
-
-	i.data = data
-	return nil
-}
-
-func (i *Instance) save() error {
-	f, err := os.Create(i.configFile)
-	if err != nil {
-		return errs.Wrap(err, "Could not create/open config file")
-	}
-	defer f.Close()
-
-	data, err := yaml.Marshal(i.data)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal config data")
-	}
-
-	_, err = f.Write(data)
-	if err != nil {
-		return errs.Wrap(err, "Could not write config file")
-	}
-
-	if err = f.Sync(); err != nil {
-		return errs.Wrap(err, "Failed to sync file contents")
-	}
-
-	return nil
-}
-
-func (i *Instance) ensureConfigExists() error {
+func (i *Instance) ensureDirExists() error {
 	// Prepare our config dir, eg. ~/.config/activestate/cli
 	configDirs := configdir.New(i.Namespace(), i.AppName())
 
@@ -403,18 +273,6 @@ func (i *Instance) ensureConfigExists() error {
 		i.configDir = configDirs.QueryFolders(configdir.Local)[0]
 	} else {
 		i.configDir = configDirs.QueryFolders(configdir.Global)[0]
-	}
-
-	if !i.configDir.Exists(i.Filename()) {
-		configFile, err := i.configDir.Create(i.Filename())
-		if err != nil {
-			return errs.Wrap(err, "Cannot create config")
-		}
-
-		err = configFile.Close()
-		if err != nil {
-			return errs.Wrap(err, "Cannot close config file")
-		}
 	}
 	return nil
 }
@@ -444,20 +302,12 @@ func (i *Instance) ensureCacheExists() error {
 	return nil
 }
 
-func (i *Instance) getConfigFile() string {
+func (i *Instance) getDatabaseFile() string {
 	if i.configFile == "" {
 		i.configFile = filepath.Join(i.configDir.Path, C.InternalConfigFileName)
 	}
 
 	return i.configFile
-}
-
-func (i *Instance) getPidFile() string {
-	if i.lockFile == "" {
-		i.lockFile = filepath.Join(i.configDir.Path, "state.pid")
-	}
-
-	return i.lockFile
 }
 
 // tempDir returns a temp directory path at the topmost directory possible

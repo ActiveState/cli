@@ -61,15 +61,6 @@ func (suite *ConfigTestSuite) TestFilesExist() {
 	suite.DirExists(filepath.Join(suite.config.CachePath()))
 }
 
-func (suite *ConfigTestSuite) TestCorruption() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
-	err := fileutils.WriteFile(path, []byte("&"))
-	suite.Require().NoError(err)
-
-	err = suite.config.ReadInConfig()
-	suite.Require().Error(err)
-}
-
 // testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
 // interprets the HOME env var at init time, so we cannot spoof it any other way besides when running the go test command
 // and we don't want tests that require special knowledge of how to invoke them
@@ -126,16 +117,6 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	suite.DirExists(filepath.Join(suite.config.CachePath()))
 }
 
-func (suite *ConfigTestSuite) TestReload() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
-	suite.config.Set("key_name", "initial_value")
-	suite.Equal("initial_value", suite.config.GetString("key_name"))
-	fileutils.WriteFile(path, []byte("key_name: new_value"))
-	suite.Equal("initial_value", suite.config.GetString("key_name"))
-	suite.config.Reload()
-	suite.Equal("new_value", suite.config.GetString("key_name"))
-}
-
 func (suite *ConfigTestSuite) TestSave() {
 	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
 
@@ -165,13 +146,11 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 func TestRace(t *testing.T) {
 	dir := filepath.Join(os.TempDir(), "StateConfigTestRace")
 	configReuse, err := config.NewWithDir(dir)
-	defer configReuse.Close()
 	require.NoError(t, err)
 	x := 0
 	for x < 1000 {
 		go func() {
 			config, err := config.NewWithDir(dir)
-			defer config.Close()
 			require.NoError(t, err)
 			require.NoError(t, config.Set("foo", "bar"))
 			require.NoError(t, configReuse.Set("foo", "bar"))

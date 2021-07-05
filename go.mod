@@ -30,7 +30,6 @@ require (
 	github.com/gammazero/workerpool v1.1.1
 	github.com/getlantern/systray v1.1.0
 	github.com/go-ole/go-ole v1.2.4
-	github.com/go-openapi/analysis v0.20.0 // indirect
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/runtime v0.19.29
@@ -38,7 +37,7 @@ require (
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-openapi/validate v0.20.2
 	github.com/gobuffalo/packr v1.10.7
-	github.com/gofrs/flock v0.8.0
+	github.com/gofrs/flock v0.8.0 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
@@ -60,6 +59,7 @@ require (
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.10
+	github.com/mattn/go-sqlite3 v1.14.7
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0

@@ -15,7 +15,7 @@ const LibraryLicense = "BSD 3"
 // CommandName holds the name of our command
 const CommandName = "state"
 
-// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileName
+// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
@@ -36,8 +36,11 @@ const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
-// InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
-const InternalConfigFileName = "config.yaml"
+// InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
+const InternalConfigFileNameLegacy = "config.yaml"
+
+// InternalConfigFileName is the filename used for our sqlite based settings db
+const InternalConfigFileName = "config.db"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"

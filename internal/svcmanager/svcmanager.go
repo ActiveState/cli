@@ -64,11 +64,6 @@ func (m *Manager) Ready() bool {
 		return true
 	}
 
-	if err := m.cfg.Reload(); err != nil {
-		logging.Error("Failed to reload config: %s", errs.JoinMessage(err))
-		return false
-	}
-
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
 		return false
 	}
