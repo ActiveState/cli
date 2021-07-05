@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -441,6 +443,34 @@ scripts:
       print(Word(alphas).parseString("TEST"))
 `
 	ts.PrepareActiveStateYAML(asyData)
+}
+
+func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("install", "JSON"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Installing Runtime")
+	cp.ExpectLongString("An activestate.yaml has been created")
+	cp.ExpectExitCode(0)
+
+	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	suite.Require().FileExists(configFilepath)
+
+	content, err := ioutil.ReadFile(configFilepath)
+	suite.Require().NoError(err)
+	if !suite.Contains(string(content), constants.DashboardCommitURL) {
+		suite.Fail("activestate.yaml does not contain dashboard commit URL")
+	}
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
