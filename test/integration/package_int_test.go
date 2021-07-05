@@ -251,8 +251,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.Expect("Authors")
 	cp.Expect(" - ")
 	cp.Expect(" - ")
-	cp.Expect("License")
-	cp.Expect("GPL")
 	cp.Expect("Version")
 	cp.Expect("Available")
 	cp.Expect("4.8.0")
