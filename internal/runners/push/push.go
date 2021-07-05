@@ -181,6 +181,11 @@ func (r *Push) Run(params PushParams) error {
 			if err != nil {
 				return locale.WrapError(err, "err_fork_project", "Could not create fork")
 			}
+
+			err = r.project.Source().SetNamespace(namespace.Owner, namespace.Project)
+			if err != nil {
+				return locale.WrapError(err, "err_push_update_namespace", "Could not set namespace in project file")
+			}
 		} else {
 			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 		}
