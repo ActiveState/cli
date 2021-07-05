@@ -172,7 +172,7 @@ func (r *Push) Run(params PushParams) error {
 				return nil
 			}
 
-			namespace, err = r.getNamespace()
+			namespace, err = r.promptNamespace()
 			if err != nil {
 				return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 			}
@@ -181,8 +181,9 @@ func (r *Push) Run(params PushParams) error {
 			if err != nil {
 				return locale.WrapError(err, "err_fork_project", "Could not create fork")
 			}
+		} else {
+			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 		}
-		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 	}
 
 	// Remove temporary language entry
@@ -223,25 +224,11 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 	}
 	namespace := projectfile.GetCachedProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
-		owner := authentication.Get().WhoAmI()
-		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
+		n, err := r.promptNamespace()
 		if err != nil {
-			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
+			return nil, locale.WrapError(err, "err_prompt_namespace", "Could not prompt for namespace")
 		}
-
-		var name string
-		lang, _, err := fetchLanguage(r.project.CommitUUID())
-		if err == nil {
-			name = lang.String()
-		} else {
-			logging.Error("Could not fetch language, got error: %v. Falling back to empty project name", err)
-		}
-
-		name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
-		}
-		namespace = project.NewNamespace(owner, name, "").String()
+		namespace = n.String()
 	}
 
 	ns, err := project.ParseNamespace(namespace)
@@ -250,6 +237,29 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 	}
 
 	return ns, nil
+}
+
+func (r *Push) promptNamespace() (*project.Namespaced, error) {
+	owner := authentication.Get().WhoAmI()
+	owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
+	}
+
+	var name string
+	lang, _, err := fetchLanguage(r.project.CommitUUID())
+	if err == nil {
+		name = lang.String()
+	} else {
+		logging.Error("Could not fetch language, got error: %v. Falling back to empty project name", err)
+	}
+
+	name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_push_get_name", "Could not determine project name")
+	}
+
+	return project.NewNamespace(owner, name, ""), nil
 }
 
 func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {

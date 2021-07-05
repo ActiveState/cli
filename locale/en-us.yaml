@@ -1222,7 +1222,7 @@ push_description:
 push_prompt_owner:
   other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
 push_prompt_auth:
-  other: "You are not authorized to push to this project.\nEither get the project owner to invite you, or create a new project with these changes.\nWould you like to create a new project with your changes now? [y/N]"
+  other: "You are not authorized to push to this project.\nEither get the project owner to invite you, or create a new project with these changes.\nWould you like to create a new project with your changes now?"
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
