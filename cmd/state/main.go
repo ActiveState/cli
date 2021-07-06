@@ -217,7 +217,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	if err != nil {
 		cmdName := ""
 		if childCmd != nil {
-			cmdName = childCmd.Use() + " "
+			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 	}
