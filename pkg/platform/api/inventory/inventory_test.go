@@ -16,7 +16,7 @@ func TestNew(t *testing.T) {
 	mock.MockPlatforms()
 	defer mock.Close()
 
-	client, _ := inventory.Init(authentication.Get())
+	client, _ := inventory.Init(authentication.LegacyGet())
 	_, err := client.GetPlatforms(inventory_operations.NewGetPlatformsParams())
 	assert.NoError(t, err)
 }

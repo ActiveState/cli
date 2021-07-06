@@ -27,7 +27,7 @@ func (j *JWT) Run(params *JWTParams) error {
 		return locale.NewError("User")
 	}
 
-	token := authentication.Get().BearerToken()
+	token := authentication.LegacyGet().BearerToken()
 	j.Outputer.Print(
 		output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
 	return nil

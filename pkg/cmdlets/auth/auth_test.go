@@ -77,8 +77,9 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	httpmock.Register("GET", "/renew")
 	secretsapiMock.Register("GET", "/keypair")
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
@@ -100,8 +101,9 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
 	var err error
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
@@ -139,8 +141,9 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
@@ -168,8 +171,9 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 		return nil
 	}
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)

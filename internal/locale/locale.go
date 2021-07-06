@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/thoas/go-funk"
@@ -34,14 +35,20 @@ func init() {
 	logging.Debug("Init")
 
 	locale := getLocaleFlag()
-	cfg, err := config.Get()
-	if err == nil {
-		setErr := cfg.Set("Locale", "en-US")
-		if err != nil {
-			logging.Error("Could not set locale entry in config, error: %v", setErr)
-		}
-		if locale == "" {
+	if locale == "" {
+		cfg, err := config.New()
+		if err == nil {
 			locale = cfg.GetString("Locale")
+			if locale == "" {
+				locale = "en-US"
+				setErr := cfg.Set("Locale", locale)
+				if setErr != nil {
+					logging.Error("Could not set locale entry in config, error: %v", setErr)
+				}
+			}
+		} else {
+			logging.Error("Could not load  config to check locale, error: %v", err)
+			locale = "en-US"
 		}
 	}
 
@@ -96,7 +103,7 @@ func getLocaleFlag() string {
 }
 
 // Set the active language to the given locale
-func Set(localeName string) error {
+func Set(localeName string) (rerr error) {
 	if !funk.Contains(Supported, localeName) {
 		return errs.New("Locale does not exist: %s", localeName)
 	}
@@ -104,10 +111,12 @@ func Set(localeName string) error {
 	translateFunction, _ = i18n.Tfunc(localeName)
 	_ = translateFunction
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get configuration to store updated locale")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+	
 	err = cfg.Set("Locale", localeName)
 	if err != nil {
 		return errs.Wrap(err, "Could not set locale in config")

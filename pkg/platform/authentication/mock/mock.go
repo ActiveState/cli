@@ -28,5 +28,5 @@ func (m *Mock) MockLogin() {
 
 func (m *Mock) MockLoggedin() {
 	m.MockLogin()
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 }

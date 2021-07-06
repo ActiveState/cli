@@ -49,7 +49,7 @@ func NewPush(prime primeable) *Push {
 }
 
 func (r *Push) Run(params PushParams) error {
-	if !authentication.Get().Authenticated() {
+	if !authentication.LegacyGet().Authenticated() {
 		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt)
 		if err != nil {
 			return locale.WrapError(err, "err_push_auth", "Failed to authenticate")
@@ -203,7 +203,7 @@ func (r *Push) getNamespace() (*project.Namespaced, error) {
 	}
 	namespace := projectfile.GetCachedProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
-		owner := authentication.Get().WhoAmI()
+		owner := authentication.LegacyGet().WhoAmI()
 		owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
 		if err != nil {
 			return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")

@@ -14,7 +14,6 @@ import (
 type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
-	CachePath() string
 	GetInt(string) int
 	Set(string, interface{}) error
 	IsSet(string) bool

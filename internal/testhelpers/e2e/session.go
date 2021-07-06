@@ -261,8 +261,9 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	require.NoError(s.t, err, msg)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(s.t, err)
+	defer require.NoError(s.t, cfg.Close())
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	err = projectFile.Save(cfg)

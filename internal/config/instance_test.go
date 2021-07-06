@@ -9,8 +9,12 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -47,7 +51,7 @@ func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *ConfigTestSuite) TestConfig() {
 	suite.NotEmpty(suite.config.ConfigPath())
-	suite.NotEmpty(suite.config.CachePath())
+	suite.NotEmpty(storage.CachePath())
 }
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
@@ -57,8 +61,8 @@ func (suite *ConfigTestSuite) TestIncludesBranch() {
 }
 
 func (suite *ConfigTestSuite) TestFilesExist() {
-	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
-	suite.DirExists(filepath.Join(suite.config.CachePath()))
+	suite.FileExists(filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName))
+	suite.DirExists(filepath.Join(storage.CachePath()))
 }
 
 // testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
@@ -113,12 +117,12 @@ func (suite *ConfigTestSuite) TestNoHome() {
 
 	suite.Contains(suite.config.ConfigPath(), os.TempDir())
 
-	suite.FileExists(filepath.Join(suite.config.ConfigPath(), suite.config.Filename()))
-	suite.DirExists(filepath.Join(suite.config.CachePath()))
+	suite.FileExists(filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName))
+	suite.DirExists(filepath.Join(storage.CachePath()))
 }
 
 func (suite *ConfigTestSuite) TestSave() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+	path := filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName)
 
 	suite.config.Set("Foo", "bar")
 
@@ -129,7 +133,7 @@ func (suite *ConfigTestSuite) TestSave() {
 }
 
 func (suite *ConfigTestSuite) TestSaveMerge() {
-	path := filepath.Join(suite.config.ConfigPath(), suite.config.Filename())
+	path := filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName)
 
 	err := fileutils.WriteFile(path, []byte("ishould: exist"))
 	suite.Require().NoError(err)
@@ -143,20 +147,59 @@ func (suite *ConfigTestSuite) TestSaveMerge() {
 	suite.Contains(string(dat), "ishould: exist", "Config should contain the pre-existing field")
 }
 
+func TestTypes(t *testing.T) {
+	cfg, err := config.New()
+	require.NoError(t, err)
+
+	require.NoError(t, cfg.Set("int", 1))
+	assert.Equal(t, 1, cfg.GetInt("int"))
+
+	require.NoError(t, cfg.Set("bool", true))
+	assert.Equal(t, true, cfg.GetBool("bool"))
+
+	require.NoError(t, cfg.Set("string", "value"))
+	assert.Equal(t, "value", cfg.GetString("string"))
+
+	require.NoError(t, cfg.Set("string-slice", []string{"a", "b", "c"}))
+	assert.Equal(t, []string{"a", "b", "c"}, cfg.GetStringSlice("string-slice"))
+
+	require.NoError(t, cfg.Set("string-map", map[string]interface{}{"a": "b"}))
+	assert.Equal(t, map[string]interface{}{"a": "b"}, cfg.GetStringMap("string-map"))
+
+	require.NoError(t, cfg.Set("string-map-slice", map[string][]string{"a": {"b"}}))
+	assert.Equal(t, map[string][]string{"a": {"b"}}, cfg.GetStringMapStringSlice("string-map-slice"))
+
+	timer := time.Now()
+	require.NoError(t, cfg.Set("time", timer))
+	assert.True(t, timer.Equal(cfg.GetTime("time")), "%v and %v should be equal", timer, cfg.GetTime("time"))
+
+	err = cfg.Close()
+	require.NoError(t, err)
+}
+
+// TestRace is meant to catch race conditions. Recommended to run with `-test.count <number> -race`
 func TestRace(t *testing.T) {
 	dir := filepath.Join(os.TempDir(), "StateConfigTestRace")
 	configReuse, err := config.NewWithDir(dir)
 	require.NoError(t, err)
 	x := 0
+	wg := sync.WaitGroup{}
 	for x < 1000 {
+		wg.Add(1)
 		go func() {
-			config, err := config.NewWithDir(dir)
+			defer wg.Done()
+			cfg, err := config.NewWithDir(dir)
 			require.NoError(t, err)
-			require.NoError(t, config.Set("foo", "bar"))
+			require.NoError(t, cfg.Set("foo", "bar"))
 			require.NoError(t, configReuse.Set("foo", "bar"))
+			err = cfg.Close()
+			require.NoError(t, err)
 		}()
 		x++
 	}
+	wg.Wait()
+	err = configReuse.Close()
+	require.NoError(t, err)
 }
 
 func TestConfigTestSuite(t *testing.T) {

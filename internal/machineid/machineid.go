@@ -25,10 +25,10 @@ func SetErrorLogger(l func(msg string, args ...interface{})) {
 
 // UniqID returns a unique ID for the current platform
 func UniqID() string {
-	return uniqID(machineid.ID, func() string { return uuid.New().String() })
+	return UniqIDCustom(machineid.ID, func() string { return uuid.New().String() })
 }
 
-func uniqID(machineIDGetter func() (string, error), uuidGetter func() string) string {
+func UniqIDCustom(machineIDGetter func() (string, error), uuidGetter func() string) string {
 	machID, err := machineIDGetter()
 	if err == nil {
 		return machID

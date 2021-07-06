@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -25,12 +26,16 @@ type deferredData struct {
 
 const deferrerFileName = "deferrer"
 
-func deferrerFilePath(cfg Configurable) string {
-	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
+func deferrerFilePath() string {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		logging.Error("Failed to get AppDataPath: %s", errs.JoinMessage(err))
+	}
+	return filepath.Join(appDataPath, deferrerFileName)
 }
 
-func isDeferralDayAgo(cfg Configurable) bool {
-	df := deferrerFilePath(cfg)
+func isDeferralDayAgo() bool {
+	df := deferrerFilePath()
 	stat, err := os.Stat(df)
 	if os.IsNotExist(err) {
 		return false
@@ -68,12 +73,12 @@ func runNonDeferredStateToolCommand() error {
 	return nil
 }
 
-func SetDeferred(cfg Configurable, da bool) {
+func SetDeferred(da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
 		// if we have not send deferred messages for a day, run a non-deferred
 		// state command in the background to flush these messages.
-		if isDeferralDayAgo(cfg) {
+		if isDeferralDayAgo() {
 			err := runNonDeferredStateToolCommand()
 			if err != nil {
 				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
@@ -86,7 +91,7 @@ func SetDeferred(cfg Configurable, da bool) {
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
-		if err := sendDeferred(cfg, sendEvent); err != nil {
+		if err := sendDeferred(sendEvent); err != nil {
 			logging.Errorf("Could not send deferred events: %v", err)
 		}
 	}()
@@ -98,10 +103,10 @@ type Configurable interface {
 	ConfigPath() string
 }
 
-func deferEvent(cfg Configurable, category, action, label string, dimensions map[string]string) error {
+func deferEvent(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
 
-	if err := saveDeferred(cfg, deferredData{category, action, label, dimensions}); err != nil {
+	if err := saveDeferred(deferredData{category, action, label, dimensions}); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
@@ -133,10 +138,15 @@ func loadDeferred(deferredDataPath string) ([]deferredData, error) {
 	return events, nil
 }
 
-func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
+func sendDeferred(sender func(string, string, string, map[string]string) error) error {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not retrieve AppDataPath")
+	}
+
 	// move deferred data file, so it is not being appended anymore
-	outboxFile := filepath.Join(cfg.ConfigPath(), fmt.Sprintf("deferred.%d", time.Now().Unix()))
-	if err := os.Rename(deferrerFilePath(cfg), outboxFile); err != nil {
+	outboxFile := filepath.Join(appDataPath, fmt.Sprintf("deferred.%d", time.Now().Unix()))
+	if err := os.Rename(deferrerFilePath(), outboxFile); err != nil {
 		if !os.IsNotExist(err) {
 			return errs.Wrap(err, "Could not rename deferred_data file")
 		}
@@ -157,12 +167,16 @@ func sendDeferred(cfg Configurable, sender func(string, string, string, map[stri
 	return nil
 }
 
-func saveDeferred(cfg Configurable, v deferredData) error {
+func saveDeferred(v deferredData) error {
 	vj, err := json.Marshal(v)
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal deferred data")
 	}
-	f, err := os.OpenFile(deferrerFilePath(cfg), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	path := deferrerFilePath()
+	if err := os.MkdirAll(filepath.Dir(path), os.ModeDir); err != nil {
+		return errs.Wrap(err, "Failed to create deferred file dir")
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errs.Wrap(err, "Failed to open deferred_data file for appending")
 	}

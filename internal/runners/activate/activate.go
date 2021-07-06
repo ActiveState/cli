@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -193,7 +194,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath(), nil))
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil))
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -212,7 +213,7 @@ func (r *Activate) run(params *ActivateParams) error {
 					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
 				}
 			}
-			if !authentication.Get().Authenticated() {
+			if !authentication.LegacyGet().Authenticated() {
 				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
 			}
 			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")

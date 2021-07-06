@@ -49,5 +49,5 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	return executePackageOperation(r.proj, r.cfg, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, ns)
+	return executePackageOperation(r.proj, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, ns)
 }

@@ -480,7 +480,7 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	analytics.SetDeferred(c.cfg, c.deferAnalytics)
+	analytics.SetDeferred(c.deferAnalytics)
 
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {

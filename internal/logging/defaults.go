@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -147,17 +147,13 @@ func init() {
 
 	log.SetOutput(&writer{})
 
-	cfg, err := config.Get()
+	// Clean up old log files
+	datadir, err := storage.AppDataPath()
 	if err != nil {
-		Error("Could not load configuration: %v", err)
-	}
-	if cfg == nil {
-		Error("Could not proceed setting up logging due to missing configuration.")
+		Error("Could not detect AppData dir: %v", err)
 		return
 	}
 
-	// Clean up old log files
-	datadir = cfg.ConfigPath()
 	files, err := ioutil.ReadDir(datadir)
 	if err != nil {
 		Error("Could not scan config dir to clean up stale logs: %v", err)

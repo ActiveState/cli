@@ -1,10 +1,11 @@
-package machineid
+package machineid_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,12 +36,13 @@ func Test_uniqID(t *testing.T) {
 			"bar",
 		},
 	}
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
-	SetConfiguration(cfg)
+	defer require.NoError(t, cfg.Close())
+	machineid.SetConfiguration(cfg)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := uniqID(tt.args.machineIDGetter, tt.args.uuidGetter); got != tt.want {
+			if got := machineid.UniqIDCustom(tt.args.machineIDGetter, tt.args.uuidGetter); got != tt.want {
 				t.Errorf("uniqID() = %v, want %v", got, tt.want)
 			}
 		})

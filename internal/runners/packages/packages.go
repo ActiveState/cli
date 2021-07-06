@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -34,12 +35,11 @@ func (pv *PackageVersion) Set(arg string) error {
 
 type configurable interface {
 	keypairs.Configurable
-	CachePath() string
 }
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
+func executePackageOperation(pj *project.Project, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
 	if strings.ToLower(version) == latestVersion {
 		version = ""
 	}
@@ -90,7 +90,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// refresh runtime
-	err = runbits.RefreshRuntime(authentication, out, pj, cfg.CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(authentication, out, pj, storage.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}

@@ -236,7 +236,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 
 	var res *vcsClient.GetCommitHistoryOK
 	var err error
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
@@ -677,7 +677,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 
 	var res *vcsClient.GetOrderOK
 	var err error
-	if auth.Get().Authenticated() {
+	if auth.LegacyGet().Authenticated() {
 		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
 		if err != nil {
 			return nil, errors.New(api.ErrorMessageFromPayload(err))
@@ -769,7 +769,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	params.SetCommitToID(to)
 
 	client := mono.New()
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		client = authentication.Client()
 	}
 	res, err := client.VersionControl.GetRevertCommit(params, authentication.ClientAuth())

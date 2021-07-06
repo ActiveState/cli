@@ -65,13 +65,14 @@ func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) 
 		_ = suite.server.ListenAndServe()
 	}()
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
 	err := suite.server.Shutdown(context.Background())
 	suite.Require().NoError(err)
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 // env prepares environment variables for the test

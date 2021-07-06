@@ -14,10 +14,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -27,7 +29,7 @@ func main() {
 		if panics.HandlePanics() {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting to close rollbar")
 		}
 		os.Exit(exitCode)
@@ -66,13 +68,15 @@ func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
 	return nil
 }
 
-func run() error {
+func run() (rerr error) {
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Failed to read configuration.")
+	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
 	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
 	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
-		cfg, err := config.Get()
-		if err != nil {
-			return errs.Wrap(err, "Failed to read configuration.")
-		}
 		fmt.Println(cfg.ConfigPath())
 		return nil
 	}
@@ -86,13 +90,8 @@ func run() error {
 		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		return errs.Wrap(err, "Failed to read configuration.")
-	}
 	machineid.SetConfiguration(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	logging.UpdateConfig(cfg)
 
 	oldInfo, err := os.Stat(appinfo.StateApp().Exec())
 	if err != nil {

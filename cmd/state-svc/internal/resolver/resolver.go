@@ -109,10 +109,6 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	if err := r.cfg.Reload(); err != nil {
-		return nil, errs.Wrap(err, "failed to reload configuration")
-	}
-
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
 	for ns, locations := range localConfigProjects {

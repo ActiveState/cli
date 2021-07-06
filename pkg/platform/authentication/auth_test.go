@@ -44,8 +44,9 @@ func TestAuth(t *testing.T) {
 		Username: user.Username,
 		Password: user.Password,
 	}
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	auth := New(cfg)
 	err = auth.AuthenticateWithModel(credentials)
 	assert.NoError(t, err, "Can Authenticate")
@@ -72,8 +73,9 @@ func TestAuthAPIKeyOverride(t *testing.T) {
 
 	os.Setenv(constants.APIKeyEnvVarName, "testSuccess")
 	defer os.Unsetenv(constants.APIKeyEnvVarName)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	auth := New(cfg)
 	err = auth.Authenticate()
 	assert.NoError(t, err, "Authentication by user-defined token should not error")
@@ -81,8 +83,8 @@ func TestAuthAPIKeyOverride(t *testing.T) {
 }
 
 func TestPersist(t *testing.T) {
-	auth := Get()
-	auth2 := Get()
+	auth := LegacyGet()
+	auth2 := LegacyGet()
 	assert.True(t, auth == auth2, "Should return same pointer")
 }
 
@@ -98,8 +100,9 @@ func TestAuthInvalidUser(t *testing.T) {
 		Username: "testFailure",
 		Password: "testFailure",
 	}
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	auth := New(cfg)
 	err = auth.AuthenticateWithModel(credentials)
 	require.Error(t, err)
@@ -114,8 +117,9 @@ func TestAuthInvalidToken(t *testing.T) {
 
 	httpmock.RegisterWithCode("POST", "/login", 401)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 
 	cfg.Set("apiToken", "testFailure")
 	auth := New(cfg)
@@ -127,8 +131,9 @@ func TestAuthInvalidToken(t *testing.T) {
 }
 
 func TestClientFailure(t *testing.T) {
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer require.NoError(t, cfg.Close())
 	auth := New(cfg)
 	var exitCode int
 	exit = func(code int) {
