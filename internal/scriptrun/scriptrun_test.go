@@ -64,7 +64,7 @@ scripts:
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
@@ -98,7 +98,7 @@ func TestEnvIsSet(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := capturer.CaptureOutput(func() {
 		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
@@ -140,7 +140,7 @@ scripts:
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
 	scriptRun := New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg)
@@ -167,7 +167,7 @@ scripts:
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(nil, nil)
@@ -193,7 +193,7 @@ scripts:
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
@@ -209,7 +209,7 @@ func TestRunActivatedCommand(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	datadir := cfg.ConfigPath()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
@@ -330,7 +330,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
 		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)

@@ -36,7 +36,7 @@ func (suite *KeypairLocalDeleteTestSuite) TestNoKeyFileFound() {
 func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", "custom-name.key", 0600)
 
 	err = keypairs.Delete(suite.cfg, "custom-name")
@@ -54,7 +54,7 @@ func (suite *KeypairLocalDeleteTestSuite) Test_Success() {
 func (suite *KeypairLocalDeleteTestSuite) TestWithDefaults_Success() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "test-keypair.key", constants.KeypairLocalFileName+".key", 0600)
 
 	err = keypairs.DeleteWithDefaults(suite.cfg)

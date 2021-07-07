@@ -280,7 +280,7 @@ func (suite *ProjectTestSuite) TestSecrets() {
 	suite.NoError(err, "Run without failure")
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	secrets := prj.Secrets(cfg)
 	suite.Len(secrets, 2)
 

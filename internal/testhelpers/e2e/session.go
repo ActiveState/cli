@@ -264,7 +264,7 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 
 	cfg, err := config.New()
 	require.NoError(s.t, err)
-	defer require.NoError(s.t, cfg.Close())
+	defer func() { require.NoError(s.t, cfg.Close()) }()
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	err = projectFile.Save(cfg)

@@ -87,6 +87,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	suite.Require().Equal(ts.Dirs.Work, cfg.GetString(constants.GlobalDefaultPrefname))
+	suite.Require().NoError(cfg.Close())
 
 	// Remove global executors
 	globalExecDir := filepath.Join(ts.Dirs.Cache, "bin")

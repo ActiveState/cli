@@ -67,7 +67,7 @@ func appDataPathInTest() (string, error) {
 	}
 
 	_appDataPathInTest = localPath
-	
+
 	return localPath, nil
 }
 

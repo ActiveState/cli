@@ -38,7 +38,7 @@ func Test_uniqID(t *testing.T) {
 	}
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := machineid.UniqIDCustom(tt.args.machineIDGetter, tt.args.uuidGetter, cfg); got != tt.want {

@@ -46,7 +46,7 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	suite.expander = NewSecretExpander(suite.secretsClient, nil, nil, cfg)
 	suite.expander.project = Get()
 }

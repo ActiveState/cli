@@ -92,7 +92,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg), "Executed without error")
 }
@@ -111,7 +111,7 @@ func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
@@ -142,7 +142,7 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg), "Executed without error")
 }
@@ -168,7 +168,7 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -204,7 +204,7 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -257,7 +257,7 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -291,7 +291,7 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -318,7 +318,7 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,
@@ -364,7 +364,7 @@ func TestExecuteSignup(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runSignup(pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -383,7 +383,7 @@ func TestExecuteSignup_DenyTOS(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runSignup(pmock, cfg)
 	assert.Error(t, err, "Executed with error")
 }
@@ -408,7 +408,7 @@ func TestExecuteToken(t *testing.T) {
 	})
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	token := cfg.GetString("apiToken")
 	authentication.Logout()
 	assert.NoError(t, err, "Executed without error")
@@ -416,7 +416,7 @@ func TestExecuteToken(t *testing.T) {
 
 	cfg, err = config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{Token: token}, nil, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -427,7 +427,7 @@ func TestExecuteLogout(t *testing.T) {
 	setup(t)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	defer osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
@@ -492,7 +492,7 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -544,7 +544,7 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -579,7 +579,7 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,

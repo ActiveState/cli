@@ -57,7 +57,7 @@ func (c *configMock) ConfigPath() string {
 	}
 	cfg, err := config.New()
 	require.NoError(c.t, err)
-	defer require.NoError(c.t, cfg.Close())
+	require.NoError(c.t, cfg.Close())
 	return cfg.ConfigPath()
 }
 

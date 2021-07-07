@@ -22,7 +22,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 type InstanceMock struct {
@@ -54,12 +53,6 @@ func (suite *ConfigTestSuite) AfterTest(suiteName, testName string) {
 func (suite *ConfigTestSuite) TestConfig() {
 	suite.NotEmpty(suite.config.ConfigPath())
 	suite.NotEmpty(storage.CachePath())
-}
-
-func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg, err := config.NewCustom("", singlethread.New(), true)
-	suite.Require().NoError(err)
-	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
 }
 
 func (suite *ConfigTestSuite) TestFilesExist() {
@@ -134,21 +127,6 @@ func (suite *ConfigTestSuite) TestSave() {
 	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
 }
 
-func (suite *ConfigTestSuite) TestSaveMerge() {
-	path := filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName)
-
-	err := fileutils.WriteFile(path, []byte("ishould: exist"))
-	suite.Require().NoError(err)
-
-	suite.config.Set("Foo", "bar")
-
-	dat, err := ioutil.ReadFile(path)
-	suite.Require().NoError(err)
-
-	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
-	suite.Contains(string(dat), "ishould: exist", "Config should contain the pre-existing field")
-}
-
 func TestTypes(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
@@ -188,7 +166,7 @@ func TestRace(t *testing.T) {
 	require.NoError(t, err)
 	x := 0
 	wg := sync.WaitGroup{}
-	for x < 1000 {
+	for x < 100 {
 		wg.Add(1)
 		go func(y int) {
 			defer wg.Done()
@@ -208,6 +186,19 @@ func TestRace(t *testing.T) {
 	wg.Wait()
 	err = configReuse.Close()
 	require.NoError(t, err)
+}
+
+func TestRaceReadWrite(t *testing.T) {
+	cfg1, err := config.New()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg1.Close()) }()
+
+	cfg2, err := config.New()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg2.Close()) }()
+
+	require.NoError(t, cfg1.Set("Foo", "bar"))
+	assert.Equal(t, "bar", cfg2.GetString("Foo"))
 }
 
 func TestConfigTestSuite(t *testing.T) {

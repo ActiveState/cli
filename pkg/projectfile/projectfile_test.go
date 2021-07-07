@@ -246,7 +246,7 @@ func TestSave(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	project.path = tmpfile.Name()
 	project.Save(cfg)
 
@@ -255,7 +255,7 @@ func TestSave(t *testing.T) {
 
 	cfg, err = config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	projectURL := project.Project
 	project.Project = "thisisnotatallaprojectURL"
@@ -312,7 +312,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Error(t, err, "GetProjectFilePath should fail")
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")

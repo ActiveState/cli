@@ -46,7 +46,7 @@ func TestAuth(t *testing.T) {
 	}
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	auth := New(cfg)
 	err = auth.AuthenticateWithModel(credentials)
 	assert.NoError(t, err, "Can Authenticate")
@@ -75,7 +75,7 @@ func TestAuthAPIKeyOverride(t *testing.T) {
 	defer os.Unsetenv(constants.APIKeyEnvVarName)
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	auth := New(cfg)
 	err = auth.Authenticate()
 	assert.NoError(t, err, "Authentication by user-defined token should not error")
@@ -102,7 +102,7 @@ func TestAuthInvalidUser(t *testing.T) {
 	}
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	auth := New(cfg)
 	err = auth.AuthenticateWithModel(credentials)
 	require.Error(t, err)
@@ -119,7 +119,7 @@ func TestAuthInvalidToken(t *testing.T) {
 
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	cfg.Set("apiToken", "testFailure")
 	auth := New(cfg)
@@ -133,7 +133,7 @@ func TestAuthInvalidToken(t *testing.T) {
 func TestClientFailure(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
-	defer require.NoError(t, cfg.Close())
+	defer func() { require.NoError(t, cfg.Close()) }()
 	auth := New(cfg)
 	var exitCode int
 	exit = func(code int) {

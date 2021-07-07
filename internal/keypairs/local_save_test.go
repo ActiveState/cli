@@ -77,7 +77,7 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	keyFileStat, err := osutil.StatConfigFile(cfg.ConfigPath(), keyFile)
 	suite.Require().NoError(err)
 	return keyFileStat

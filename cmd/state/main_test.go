@@ -25,7 +25,7 @@ type MainTestSuite struct {
 func (suite *MainTestSuite) cleanDeprecationFile() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	defer suite.Require().NoError(cfg.Close())
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	// force fetching of deprecation info
 	err = os.Remove(filepath.Join(cfg.ConfigPath(), "deprecation.json"))
 	if err != nil && !os.IsNotExist(err) {
