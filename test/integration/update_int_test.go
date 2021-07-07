@@ -180,7 +180,7 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 		if fileutils.FileExists(logpath) {
 			break
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 	}
 	suite.Require().FileExists(logpath, "Checked for file %s, full regex match: %v", logpath, resultLogfile)
 
