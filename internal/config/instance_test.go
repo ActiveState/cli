@@ -57,7 +57,6 @@ func (suite *ConfigTestSuite) TestConfig() {
 
 func (suite *ConfigTestSuite) TestFilesExist() {
 	suite.FileExists(filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName))
-	suite.DirExists(filepath.Join(storage.CachePath()))
 }
 
 // testNoHomeRunner will run the TestNoHome test in its own process, this is because the configdir package we use
