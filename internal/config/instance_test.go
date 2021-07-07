@@ -116,17 +116,6 @@ func (suite *ConfigTestSuite) TestNoHome() {
 	suite.DirExists(filepath.Join(storage.CachePath()))
 }
 
-func (suite *ConfigTestSuite) TestSave() {
-	path := filepath.Join(suite.config.ConfigPath(), constants.InternalConfigFileName)
-
-	suite.config.Set("Foo", "bar")
-
-	dat, err := ioutil.ReadFile(path)
-	suite.Require().NoError(err)
-
-	suite.Contains(string(dat), "foo: bar", "Config should contain our newly added field")
-}
-
 func TestTypes(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
