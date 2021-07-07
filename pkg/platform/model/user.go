@@ -12,11 +12,14 @@ import (
 type Role string
 
 const (
-	// RoleAdmin represents an organizaiton role that has admin rights
+	// RoleAdmin represents an organizaiton role that has admin rights:
+	// All permissions including inviting and removing members
 	RoleAdmin = Role(mono_models.RoleAdmin)
-	// RoleEditor represents an organizaiton role that has editor rights
+	// RoleEditor represents an organizaiton role that has editor rights:
+	// Create and modify runtimes
 	RoleEditor = Role(mono_models.RoleEditor)
-	// RoleReader represents an organizaiton role that has reader rights
+	// RoleReader represents an organizaiton role that has reader rights:
+	// Install and use runtimes
 	RoleReader = Role(mono_models.RoleReader)
 )
 
