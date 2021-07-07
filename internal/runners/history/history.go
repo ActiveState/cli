@@ -1,8 +1,6 @@
 package history
 
 import (
-	"fmt"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -61,26 +59,22 @@ func (h *History) Run(params *HistoryParams) error {
 			return locale.NewInputError("err_history_no_project", "A namespace was not provided and a project could not be found. Please use a project namespace or run this command in a project directory")
 		}
 
-		defBranch, err := model.DefaultBranchForProjectName(h.project.Owner(), h.project.Name())
+		remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
 		if err != nil {
-			return fmt.Errorf("branch: %w", err)
+			return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
 		}
 
-		if defBranch.Label != h.project.BranchName() {
-			return fmt.Errorf("remote branch not same as local")
-		}
-
-		remoteCommitID := defBranch.CommitID
+		remoteCommitID := remoteBranch.CommitID
 		localCommitID := h.project.CommitUUID()
 
 		lastRemoteID, err = model.CommonParent(remoteCommitID, &localCommitID)
 		if err != nil {
-			return fmt.Errorf("common parent %w", err)
+			return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
 		}
 
 		commits, err = model.CommitHistoryFromID(localCommitID)
 		if err != nil {
-			return locale.WrapError(err, "err_commit_hisotry_commit_id", "Could not get commit history from commit ID.")
+			return locale.WrapError(err, "err_commit_history_commit_id", "Could not get commit history from commit ID.")
 		}
 	}
 
