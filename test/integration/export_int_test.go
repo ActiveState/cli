@@ -74,7 +74,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	suite.PrepareActiveStateYAML(ts)
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
-	cp.Expect(ts.Dirs.Config, time.Second)
+	cp.ExpectLongString(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
 }
 

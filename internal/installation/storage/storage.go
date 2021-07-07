@@ -20,14 +20,15 @@ func AppDataPath() (string, error) {
 	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.BranchName))
 
 	localPath, envSet := os.LookupEnv(constants.ConfigEnvVarName)
-	if !envSet && condition.InTest() {
+	if envSet {
+		return AppDataPathWithParent(localPath)
+	} else if condition.InTest() {
 		var err error
 		localPath, err = appDataPathInTest()
 		if err != nil {
 			// panic as this only happening in tests
 			panic(err)
 		}
-		return AppDataPathWithParent(localPath)
 	}
 
 	// Account for HOME dir not being set, meaning querying global folders will fail
