@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -80,6 +81,9 @@ func run() (rerr error) {
 		return errs.Wrap(err, "Could not initialize config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
+	machineid.SetErrorLogger(logging.Error)
 
 	switch cmd {
 	case CmdStart:

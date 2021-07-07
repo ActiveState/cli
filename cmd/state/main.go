@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
@@ -107,7 +108,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) error {
+func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -124,11 +125,12 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	if err != nil {
 		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.SetConfiguration(cfg)
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	svcm := svcmanager.New(cfg)

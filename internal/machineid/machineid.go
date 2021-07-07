@@ -11,12 +11,13 @@ type Configurable interface {
 }
 
 // global configuration object
-var cfg Configurable
-
 var errorLogger func(msg string, args ...interface{})
 
-func SetConfiguration(c Configurable) {
-	cfg = c
+var id *string
+
+func Setup(c Configurable) {
+	_id := UniqIDCustom(machineid.ID, func() string { return uuid.New().String() }, c)
+	id = &_id
 }
 
 func SetErrorLogger(l func(msg string, args ...interface{})) {
@@ -25,27 +26,31 @@ func SetErrorLogger(l func(msg string, args ...interface{})) {
 
 // UniqID returns a unique ID for the current platform
 func UniqID() string {
-	return UniqIDCustom(machineid.ID, func() string { return uuid.New().String() })
+	if id == nil {
+		// We do not log here, as it may create a recursion
+		return "99999999-9999-9999-9999-999999999999"
+	}
+	return *id
 }
 
-func UniqIDCustom(machineIDGetter func() (string, error), uuidGetter func() string) string {
+func UniqIDCustom(machineIDGetter func() (string, error), uuidGetter func() string, c Configurable) string {
 	machID, err := machineIDGetter()
 	if err == nil {
 		return machID
 	}
 
-	if cfg == nil {
+	if c == nil {
 		// We do not log here, as it may create a recursion
 		return "11111111-1111-1111-1111-111111111111"
 	}
 
-	machineID := cfg.GetString("machineID")
+	machineID := c.GetString("machineID")
 	if machineID != "" {
 		return machineID
 	}
 
 	machineID = uuidGetter()
-	err = cfg.Set("machineID", machineID)
+	err = c.Set("machineID", machineID)
 	if err != nil {
 		errorLogger("Could not set machineID in config, error: %v", err)
 	}

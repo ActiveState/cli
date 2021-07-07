@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -74,6 +75,9 @@ func run() (rerr error) {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
+	machineid.SetErrorLogger(logging.Error)
 
 	running, err := isTrayRunning(cfg)
 	if err != nil {

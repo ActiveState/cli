@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -88,11 +89,11 @@ func run() error {
 }
 
 func runExport() error {
-	cfg, err := config.Get()
+	path, err := storage.AppDataPath()
 	if err != nil {
-		return errs.Wrap(err, "Failed to read configuration.")
+		return errs.Wrap(err, "Failed to read app data path.")
 	}
-	fmt.Println(cfg.ConfigPath())
+	fmt.Println(path)
 	return nil
 }
 
@@ -101,13 +102,19 @@ func runPrepare() error {
 	return nil
 }
 
-func runDefault() error {
+func runDefault() (rerr error) {
 	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
 	if err != nil {
 		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
-	machineid.SetConfiguration(cfg)
+	cfg, err := config.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize config")
+	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	oldInfo, err := os.Stat(appinfo.StateApp().Exec())

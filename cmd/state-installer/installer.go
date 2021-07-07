@@ -76,7 +76,7 @@ func run(out output.Outputer) (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.SetConfiguration(cfg)
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	var installPath string
