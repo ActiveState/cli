@@ -21,9 +21,8 @@ type Cache struct {
 }
 
 type CacheParams struct {
-	Force        bool
-	IgnoreErrors bool
-	Project      string
+	Force   bool
+	Project string
 }
 
 func NewCache(prime primeable) *Cache {
@@ -44,7 +43,7 @@ func (c *Cache) Run(params *CacheParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
-	if err := stopServices(c.config, c.output, params.IgnoreErrors); err != nil {
+	if err := stopServices(c.config, c.output, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 

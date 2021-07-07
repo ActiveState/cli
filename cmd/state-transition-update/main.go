@@ -68,23 +68,40 @@ func removeOldStateToolEnvironmentSettings(cfg *config.Instance) error {
 	return nil
 }
 
-func run() (rerr error) {
-	cfg, err := config.New()
+func run() error {
+	switch {
+	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
+	case len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir":
+		return runExport()
+
+	case len(os.Args) < 1 || os.Args[1] != "_prepare":
+		return runPrepare()
+
+	default:
+		if err := runDefault(); err != nil {
+			return err
+		}
+
+		fmt.Println("Please start a new shell to continue using the State Tool.")
+		return nil
+	}
+}
+
+func runExport() error {
+	cfg, err := config.Get()
 	if err != nil {
 		return errs.Wrap(err, "Failed to read configuration.")
 	}
-	defer rtutils.Closer(cfg.Close, &rerr)
+	fmt.Println(cfg.ConfigPath())
+	return nil
+}
 
-	// handle state export config --filter=dir (install scripts call this function to write the install-source file)
-	if len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir" {
-		fmt.Println(cfg.ConfigPath())
-		return nil
-	}
+func runPrepare() error {
+	fmt.Println("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now...")
+	return nil
+}
 
-	if len(os.Args) < 1 || os.Args[1] != "_prepare" {
-		fmt.Println("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now...")
-	}
-
+func runDefault() error {
 	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
 	if err != nil {
 		return errs.Wrap(err, "Failed to check for latest update.")

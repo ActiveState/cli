@@ -26,8 +26,7 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Force        bool
-	IgnoreErrors bool
+	Force bool
 }
 
 func NewConfig(prime primeable) *Config {
@@ -57,7 +56,7 @@ func (c *Config) Run(params *ConfigParams) error {
 		}
 	}
 
-	if err := stopServices(c.cfg, c.output, params.IgnoreErrors); err != nil {
+	if err := stopServices(c.cfg, c.output, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
