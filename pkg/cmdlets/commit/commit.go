@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/go-openapi/strfmt"
