@@ -3,6 +3,7 @@ package config
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
 
@@ -20,17 +22,21 @@ import (
 
 // Instance holds our main config logic
 type Instance struct {
-	appDataDir string
-	db         *sql.DB
+	appDataDir  string
+	thread      *singlethread.Thread
+	closeThread bool
+	db          *sql.DB
 }
 
 func New() (*Instance, error) {
-	return NewWithDir("")
+	return NewCustom("", singlethread.New(), true)
 }
 
-// NewWithDir is intended only to be used from tests or internally to this package
-func NewWithDir(localPath string) (*Instance, error) {
+// NewCustom is intended only to be used from tests or internally to this package
+func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) (*Instance, error) {
 	i := &Instance{}
+	i.thread = thread
+	i.closeThread = closeThread
 
 	var err error
 	if localPath != "" {
@@ -53,16 +59,16 @@ func NewWithDir(localPath string) (*Instance, error) {
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 	_, err = os.Stat(path)
 	isNew := err != nil
-	i.db, err = sql.Open("sqlite3", path)
+	i.db, err = sql.Open("sqlite3", fmt.Sprintf(`file:%s?_journal=WAL`, path))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
 
+	_, err = i.db.Exec(`CREATE TABLE IF NOT EXISTS config (key string NOT NULL PRIMARY KEY, value text)`)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not seed settings database")
+	}
 	if isNew {
-		_, err := i.db.Exec(`CREATE TABLE config (key string NOT NULL PRIMARY KEY, value text)`)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not seed settings database")
-		}
 		if err := i.importLegacyConfig(); err != nil {
 			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
 			logging.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
@@ -73,6 +79,9 @@ func NewWithDir(localPath string) (*Instance, error) {
 }
 
 func (i *Instance) Close() error {
+	if i.closeThread {
+		i.thread.Close()
+	}
 	return i.db.Close()
 }
 
@@ -81,6 +90,12 @@ func (i *Instance) Close() error {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+	return i.thread.Run(func() error {
+		return i.setWithCallback(key, valueF)
+	})
+}
+
+func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
 	v, err := valueF(i.get(key))
 	if err != nil {
 		return errs.Wrap(err, "valueF failed")

@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -55,7 +57,7 @@ func (suite *ConfigTestSuite) TestConfig() {
 }
 
 func (suite *ConfigTestSuite) TestIncludesBranch() {
-	cfg, err := config.NewWithDir("")
+	cfg, err := config.NewCustom("", singlethread.New(), true)
 	suite.Require().NoError(err)
 	suite.Contains(cfg.ConfigPath(), filepath.Clean(constants.BranchName))
 }
@@ -180,21 +182,27 @@ func TestTypes(t *testing.T) {
 // TestRace is meant to catch race conditions. Recommended to run with `-test.count <number> -race`
 func TestRace(t *testing.T) {
 	dir := filepath.Join(os.TempDir(), "StateConfigTestRace")
-	configReuse, err := config.NewWithDir(dir)
+	thread := singlethread.New()
+	defer thread.Close()
+	configReuse, err := config.NewCustom(dir, singlethread.New(), true)
 	require.NoError(t, err)
 	x := 0
 	wg := sync.WaitGroup{}
 	for x < 1000 {
 		wg.Add(1)
-		go func() {
+		go func(y int) {
 			defer wg.Done()
-			cfg, err := config.NewWithDir(dir)
-			require.NoError(t, err)
-			require.NoError(t, cfg.Set("foo", "bar"))
-			require.NoError(t, configReuse.Set("foo", "bar"))
-			err = cfg.Close()
-			require.NoError(t, err)
-		}()
+			cfg, err := config.NewCustom(dir, thread, false)
+			require.NoError(t, err, errs.JoinMessage(err))
+
+			err = cfg.Set("foo", "bar")
+			require.NoError(t, err, errs.JoinMessage(err)+fmt.Sprintf(" (iteration %d)", y))
+
+			err = configReuse.Set("foo", "bar")
+			require.NoError(t, err, errs.JoinMessage(err))
+
+			require.NoError(t, cfg.Close())
+		}(x)
 		x++
 	}
 	wg.Wait()

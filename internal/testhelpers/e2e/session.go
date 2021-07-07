@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -363,7 +364,7 @@ func (s *Session) Close() error {
 		cp.ExpectExitCode(0)
 	}
 
-	cfg, err := config.NewWithDir(s.Dirs.Config)
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
 	err = installation.StopTrayApp(cfg)
 	require.NoError(s.t, err, "Could not stop tray app")
