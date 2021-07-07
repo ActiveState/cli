@@ -366,7 +366,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) e
 				"err_update_branch_permissions",
 				"You do not have permission to modify the requirements for this project. You will either need to be invited to the project or you can fork it by running [ACTIONABLE]state fork <project namespace>[/RESET].",
 			)
-			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")ale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
+			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
