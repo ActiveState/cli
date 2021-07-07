@@ -64,7 +64,7 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (commitData, error) {
 	var localTxt string
 	if isLocal {
-		localTxt = fmt.Sprintf(" (%s)", locale.Tl("commit_display_local", "local"))
+		localTxt = locale.Tl("commit_display_local", "[NOTICE] (local)[/RESET]")
 	}
 
 	var username string
