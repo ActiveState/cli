@@ -85,13 +85,7 @@ func (r *Push) Run(params PushParams) error {
 	remoteExists := pjm != nil
 
 	var branch *mono_models.Branch
-	lang, langVersion, err := r.languageForProject(r.project)
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve project language.")
-	}
-
 	projectCreated := false
-
 	if remoteExists { // Remote project exists
 		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
 		if r.project.CommitID() == "" {
@@ -135,6 +129,30 @@ func (r *Push) Run(params PushParams) error {
 					locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
 			}
 		}
+		// Remote does not exist and passed in namespace does not match current project
+	} else if params.Namespace.String() != "" && r.project.Namespace().String() != namespace.String() {
+		var createFork bool
+		createFork, err = r.prompt.Confirm("", locale.Tr("push_prompt_fork", r.project.Namespace().String(), namespace.String()), &createFork)
+		if err != nil {
+			return locale.WrapError(err, "err_push_prompt_auth", "Failed to prompt after authorization check")
+		}
+		if !createFork {
+			return nil
+		}
+
+		pjm, err = r.createFork(namespace, false)
+		if err != nil {
+			return locale.WrapError(err, "err_push_create_fork", "Could not create fork")
+		}
+		owner = namespace.Owner
+		name = namespace.Project
+
+		branch, err = model.DefaultBranchForProject(pjm)
+		if err != nil {
+			return errs.Wrap(err, "Could not get default branch")
+		}
+
+		projectCreated = true
 	} else { // Remote project doesn't exist yet
 		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
@@ -152,22 +170,25 @@ func (r *Push) Run(params PushParams) error {
 
 	var commitID = r.project.CommitUUID()
 	if commitID.String() == "" {
-		var err error
+		lang, langVersion, err := r.languageForProject(r.project)
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve project language.")
+		}
+
 		commitID, err = model.CommitInitial(model.HostPlatform, lang, langVersion)
 		if err != nil {
 			return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", pjm.Name)
 		}
 	}
 
-	// update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitWithModel(pjm, branch.Label, commitID)
+	hasOrgPermission, err := model.UserOrgEditPermission(authentication.Get().WhoAmI(), owner)
 	if err != nil {
-		if !errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
-		}
+		return locale.WrapError(err, "err_push_check_org_permission", "Could not check user's permissions with organization")
+	}
 
+	if !hasOrgPermission {
 		var createFork bool
-		createFork, err = r.prompt.Confirm("", locale.T("push_prompt_auth"), &createFork)
+		createFork, err := r.prompt.Confirm("", locale.T("push_prompt_auth"), &createFork)
 		if err != nil {
 			return locale.WrapError(err, "err_push_prompt_auth", "Failed to prompt after authorization check")
 		}
@@ -175,17 +196,21 @@ func (r *Push) Run(params PushParams) error {
 			return nil
 		}
 
-		namespace, err = r.promptNamespace()
+		pjm, err = r.createFork(namespace, true)
 		if err != nil {
-			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
-		}
-
-		_, err := model.CreateFork(owner, name, namespace.Owner, namespace.Project, false)
-		if err != nil {
-			return locale.WrapError(err, "err_fork_project", "Could not create fork")
+			return locale.WrapError(err, "err_push_create_fork", "Could not create fork")
 		}
 		owner = namespace.Owner
 		name = namespace.Project
+
+		projectCreated = true
+	}
+
+	// update the project at the given commit id.
+	err = model.UpdateProjectBranchCommitWithModel(pjm, branch.Label, commitID)
+	if err != nil {
+		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
+
 	}
 
 	// Remove temporary language entry
@@ -195,7 +220,7 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
-	if r.project.IsHeadless() || r.project.Owner() != namespace.Owner || r.project.Name() != namespace.Project {
+	if r.project.IsHeadless() {
 		if err := r.project.Source().SetNamespace(owner, name); err != nil {
 			return errs.Wrap(err, "Could not set project namespace in project file")
 		}
@@ -262,6 +287,27 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	return project.NewNamespace(owner, name, ""), nil
+}
+
+func (r *Push) createFork(namespace *project.Namespaced, prompt bool) (*mono_models.Project, error) {
+	var err error
+	if prompt {
+		namespace, err = r.promptNamespace()
+		if err != nil {
+			return nil, locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
+		}
+	}
+
+	pjm, err := model.CreateFork(r.project.Owner(), r.project.Name(), namespace.Owner, namespace.Project, false)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_fork_project", "Could not create fork")
+	}
+
+	if err := r.project.Source().SetNamespace(namespace.Owner, namespace.Project); err != nil {
+		return nil, errs.Wrap(err, "Could not set project namespace in project file")
+	}
+
+	return pjm, nil
 }
 
 func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {

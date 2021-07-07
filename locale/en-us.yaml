@@ -1221,6 +1221,9 @@ push_description:
   other: Push your latest changes to the platform
 push_prompt_owner:
   other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
+push_prompt_fork:
+  other: |
+    You are about to fork your existing project {{.V0}} with a new namespace {{.V1}}. Continue?
 push_prompt_auth:
   other: |
     You are not authorized to push to this project.
