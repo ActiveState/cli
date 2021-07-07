@@ -131,15 +131,6 @@ func (r *Push) Run(params PushParams) error {
 		}
 		// Remote does not exist and passed in namespace does not match current project
 	} else if params.Namespace.String() != "" && r.project.Namespace().String() != namespace.String() {
-		var createFork bool
-		createFork, err = r.prompt.Confirm("", locale.Tr("push_prompt_fork", r.project.Namespace().String(), namespace.String()), &createFork)
-		if err != nil {
-			return locale.WrapError(err, "err_push_prompt_auth", "Failed to prompt after authorization check")
-		}
-		if !createFork {
-			return nil
-		}
-
 		pjm, err = r.createFork(namespace, false)
 		if err != nil {
 			return locale.WrapError(err, "err_push_create_fork", "Could not create fork")
