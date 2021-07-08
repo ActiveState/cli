@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -95,7 +94,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 		return &graph.DeferredUpdate{}, nil
 	}
 	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	proc, err := up.InstallDeferred(installTargetPath)
+	_, logPath, err := up.InstallDeferred(installTargetPath)
 	if err != nil {
 		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}
@@ -103,7 +102,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
+		Logfile: logPath,
 	}, nil
 }
 

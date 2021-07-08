@@ -27,6 +27,9 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
+// LogEnvVarName is the env var used to override the log file path
+const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
+
 // ExecEnvVarName is the env var used to find out if we are shimming recursively
 const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 

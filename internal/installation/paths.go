@@ -2,7 +2,6 @@ package installation
 
 import "C"
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,9 +26,5 @@ func LauncherInstallPath() (string, error) {
 		return path, nil
 	}
 	return defaultSystemInstallPath()
-}
-
-func LogfilePath(configPath string, pid int) string {
-	return filepath.Join(configPath, fmt.Sprintf("state-installer-%d.log", pid))
 }
 

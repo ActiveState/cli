@@ -24,6 +24,8 @@ import (
 // datadir is the base directory at which the log is saved
 var datadir string
 
+var filename string
+
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
 
@@ -63,6 +65,9 @@ func (l *fileHandler) Output() io.Writer {
 }
 
 func FileName() string {
+	if filename != "" {
+		return filename
+	}
 	return FileNameFor(os.Getpid())
 }
 
@@ -147,28 +152,35 @@ func init() {
 
 	log.SetOutput(&writer{})
 
-	// Clean up old log files
-	datadir, err := storage.AppDataPath()
-	if err != nil {
-		Error("Could not detect AppData dir: %v", err)
-		return
-	}
+	path, isset := os.LookupEnv(constants.LogEnvVarName)
+	if isset {
+		// Use log file provided by env var
+		datadir = filepath.Dir(path)
+		filename = filepath.Base(path)
+	} else {
+		// Clean up old log files
+		datadir, err := storage.AppDataPath()
+		if err != nil {
+			Error("Could not detect AppData dir: %v", err)
+			return
+		}
 
-	files, err := ioutil.ReadDir(datadir)
-	if err != nil {
-		Error("Could not scan config dir to clean up stale logs: %v", err)
-		return
-	}
+		files, err := ioutil.ReadDir(datadir)
+		if err != nil {
+			Error("Could not scan config dir to clean up stale logs: %v", err)
+			return
+		}
 
-	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
+		sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
 
-	c := 0
-	for _, file := range files {
-		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
-			c = c + 1
-			if c > 9 {
-				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
-					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
+		c := 0
+		for _, file := range files {
+			if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
+				c = c + 1
+				if c > 9 {
+					if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+						Error("Could not clean up old log: %s, error: %v", file.Name(), err)
+					}
 				}
 			}
 		}
@@ -176,3 +188,4 @@ func init() {
 
 	Debug("Args: %v", os.Args)
 }
+

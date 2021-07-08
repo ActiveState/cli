@@ -2,6 +2,7 @@ package updater
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -55,22 +56,35 @@ func (u *AvailableUpdate) prepare() (string, error) {
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
+func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, string, error) {
 	installerPath, err := u.prepare()
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+
+	logFile, err := ioutil.TempFile("", "state-installer.*.log")
+	if err != nil {
+		return nil, "", errs.Wrap(err, "Could not create log file")
+	}
+	logPath := logFile.Name()
+	if err := logFile.Close(); err != nil {
+		return nil, "", errs.Wrap(err, "Could not prepare log file")
 	}
 
 	var args []string
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, args)
+	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", constants.LogEnvVarName, logPath))
+		return nil
+	})
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not start installer")
+		return nil, "", errs.Wrap(err, "Could not start installer")
 	}
 
-	return proc, nil
+	return proc, logPath, nil
 }
 
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
