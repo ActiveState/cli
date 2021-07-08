@@ -342,8 +342,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
 			cp.ExpectExitCode(0)
 
-			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
-			suite.Assert().Contains(logs, "was successful")
+			if tt.TestUpdate {
+				logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+				suite.Assert().Contains(logs, "was successful")
+			}
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
 
