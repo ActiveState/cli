@@ -9,14 +9,12 @@ type callback struct {
 
 type Thread struct {
 	cbs    chan (callback)
-	close  chan (struct{})
 	closed bool
 }
 
 func New() *Thread {
 	t := &Thread{
 		make(chan (callback)),
-		make(chan (struct{}), 1),
 		false,
 	}
 	go t.run()
@@ -25,10 +23,10 @@ func New() *Thread {
 
 func (t *Thread) run() {
 	for {
-		select {
-		case cbs := <-t.cbs:
+		cbs, more := <-t.cbs
+		if more {
 			cbs.err <- cbs.cb()
-		case <-t.close:
+		} else {
 			return
 		}
 	}
@@ -44,6 +42,6 @@ func (t *Thread) Run(cb func() error) error {
 }
 
 func (t *Thread) Close() {
-	t.close <- struct{}{}
+	close(t.cbs)
 	t.closed = true
 }
