@@ -414,9 +414,9 @@ func TestExecuteToken(t *testing.T) {
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	cfg, err = config.New()
+	cfg2, err := config.New()
 	require.NoError(t, err)
-	defer func() { require.NoError(t, cfg.Close()) }()
+	defer func() { require.NoError(t, cfg2.Close()) }()
 	err = runAuth(&AuthParams{Token: token}, nil, cfg)
 
 	assert.NoError(t, err, "Executed without error")
