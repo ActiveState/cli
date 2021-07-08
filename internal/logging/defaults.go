@@ -157,6 +157,7 @@ func init() {
 		// Use log file provided by env var
 		datadir = filepath.Dir(path)
 		filename = filepath.Base(path)
+		os.Unsetenv(constants.LogEnvVarName) // Prevent leaking this into other commands
 	} else {
 		// Clean up old log files
 		datadir, err := storage.AppDataPath()

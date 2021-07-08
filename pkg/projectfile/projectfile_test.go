@@ -253,9 +253,9 @@ func TestSave(t *testing.T) {
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
 
-	cfg, err = config.New()
+	cfg2, err := config.New()
 	require.NoError(t, err)
-	defer func() { require.NoError(t, cfg.Close()) }()
+	defer func() { require.NoError(t, cfg2.Close()) }()
 
 	projectURL := project.Project
 	project.Project = "thisisnotatallaprojectURL"

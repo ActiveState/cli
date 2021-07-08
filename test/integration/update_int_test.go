@@ -181,11 +181,13 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
+	var logs []byte
 	// poll for successful auto-update
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Millisecond * 200)
 
-		logs, err := ioutil.ReadFile(logFile)
+		var err error
+		logs, err = ioutil.ReadFile(logFile)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
@@ -195,7 +197,7 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 		}
 	}
 
-	suite.T().Errorf("did not find logFile %s", logFile)
+	suite.T().Errorf("could not verify logFile contents at %s, contents:\n%s", logFile, string(logs))
 	return ""
 }
 
