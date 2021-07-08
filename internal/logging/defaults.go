@@ -119,6 +119,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	message = l.formatter.Format(ctx, message, args...)
+	if _, isset := os.LookupEnv(constants.LogEnvVarName); isset {
+		message = fmt.Sprintf("(%s:%d) %s", os.Args[0], os.Getpid(), message)
+	}
 	if l.verbose.value() {
 		fmt.Fprintln(os.Stderr, message)
 	}
@@ -127,7 +130,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 		appendMode := os.O_TRUNC
 		if _, isset := os.LookupEnv(constants.LogEnvVarName); isset {
 			appendMode = os.O_APPEND
-			message = fmt.Sprintf("(%s:%d) %s", os.Args[0], os.Getpid(), message)
 		}
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|appendMode, os.ModePerm)
 		if err != nil {
@@ -139,6 +141,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	_, err := l.file.WriteString(message + "\n")
 	if err != nil {
 		return err
+	}
+	if err := l.file.Sync(); err != nil {
+		return errs.Wrap(err, "Could not sync log file")
 	}
 
 	return nil
