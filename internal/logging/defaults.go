@@ -72,7 +72,11 @@ func FileName() string {
 }
 
 func FileNameFor(pid int) string {
-	return fmt.Sprintf("%s-%d%s", FileNamePrefix(), pid, FileNameSuffix)
+	return FileNameForCmd(FileNamePrefix(), pid)
+}
+
+func FileNameForCmd(cmd string, pid int) string {
+	return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
 }
 
 func FileNamePrefix() string {
@@ -90,6 +94,10 @@ func FilePath() string {
 
 func FilePathFor(filename string) string {
 	return filepath.Join(datadir, filename)
+}
+
+func FilePathForCmd(cmd string, pid int) string {
+	return FilePathFor(FileNameForCmd(cmd, pid))
 }
 
 const FileNameSuffix = ".log"
@@ -119,19 +127,12 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	message = l.formatter.Format(ctx, message, args...)
-	if _, isset := os.LookupEnv(constants.LogEnvVarName); isset {
-		message = fmt.Sprintf("(%s:%d) %s", os.Args[0], os.Getpid(), message)
-	}
 	if l.verbose.value() {
 		fmt.Fprintln(os.Stderr, message)
 	}
 
 	if l.file == nil {
-		appendMode := os.O_TRUNC
-		if _, isset := os.LookupEnv(constants.LogEnvVarName); isset {
-			appendMode = os.O_APPEND
-		}
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|appendMode, os.ModePerm)
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
 		}
@@ -162,35 +163,29 @@ func init() {
 
 	log.SetOutput(&writer{})
 
-	path, isset := os.LookupEnv(constants.LogEnvVarName)
-	if isset {
-		// Use log file provided by env var
-		datadir = filepath.Dir(path)
-		datafile = filepath.Base(path)
-	} else {
-		// Clean up old log files
-		datadir, err := storage.AppDataPath()
-		if err != nil {
-			Error("Could not detect AppData dir: %v", err)
-			return
-		}
+	// Clean up old log files
+	var err error
+	datadir, err = storage.AppDataPath()
+	if err != nil {
+		Error("Could not detect AppData dir: %v", err)
+		return
+	}
 
-		files, err := ioutil.ReadDir(datadir)
-		if err != nil {
-			Error("Could not scan config dir to clean up stale logs: %v", err)
-			return
-		}
+	files, err := ioutil.ReadDir(datadir)
+	if err != nil {
+		Error("Could not scan config dir to clean up stale logs: %v", err)
+		return
+	}
 
-		sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
+	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
 
-		c := 0
-		for _, file := range files {
-			if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
-				c = c + 1
-				if c > 9 {
-					if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
-						Error("Could not clean up old log: %s, error: %v", file.Name(), err)
-					}
+	c := 0
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
+			c = c + 1
+			if c > 9 {
+				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 				}
 			}
 		}

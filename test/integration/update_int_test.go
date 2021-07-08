@@ -175,7 +175,6 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 
 	suite.Require().Equal(len(resultLogfile), 2, "expected to have logfile in output %s", output)
 	logpath := strings.TrimSpace(resultLogfile[1])
-	suite.Require().FileExists(logpath, "Checked for file %s, full regex match: %v", logpath, resultLogfile)
 
 	return suite.pollForUpdateFromLogfile(logpath)
 }
@@ -199,9 +198,10 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 
 	if !fileutils.FileExists(logFile) {
 		suite.T().Errorf("logFile does not exist: %s", logFile)
+	} else {
+		suite.T().Errorf("could not verify logFile contents at %s, contents:\n%s", logFile, string(logs))
 	}
 
-	suite.T().Errorf("could not verify logFile contents at %s, contents:\n%s", logFile, string(logs))
 	return ""
 }
 

@@ -1,12 +1,9 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -79,27 +76,6 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	cp.Expect(`dir: `)
 	cp.ExpectLongString(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
-}
-
-func (suite *ExportIntegrationTestSuite) TestExport_Config_Override() {
-	suite.OnlyRunForTags(tagsuite.Export)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	tempFile := fileutils.TempFileUnsafe()
-	tempPath := tempFile.Name()
-	tempFile.Close()
-
-	suite.PrepareActiveStateYAML(ts)
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("export", "config"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.LogEnvVarName, tempPath)))
-	cp.Expect(`dir: `)
-	cp.ExpectLongString(ts.Dirs.Config, time.Second)
-	cp.ExpectExitCode(0)
-	suite.FileExists(tempPath)
-	contents := fileutils.ReadFileUnsafe(tempPath)
-	suite.NotEmpty(string(contents))
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {

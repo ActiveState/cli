@@ -94,7 +94,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 		return &graph.DeferredUpdate{}, nil
 	}
 	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	_, logPath, err := up.InstallDeferred(installTargetPath)
+	proc, err := up.InstallDeferred(installTargetPath)
 	if err != nil {
 		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
 	}
@@ -102,7 +102,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: logPath,
+		Logfile: logging.FilePathForCmd("state-installer", proc.Pid),
 	}, nil
 }
 
