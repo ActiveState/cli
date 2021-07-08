@@ -197,6 +197,10 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 		}
 	}
 
+	if !fileutils.FileExists(logFile) {
+		suite.T().Errorf("logFile does not exist: %s", logFile)
+	}
+
 	suite.T().Errorf("could not verify logFile contents at %s, contents:\n%s", logFile, string(logs))
 	return ""
 }

@@ -24,7 +24,7 @@ import (
 // datadir is the base directory at which the log is saved
 var datadir string
 
-var filename string
+var datafile string
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -65,8 +65,8 @@ func (l *fileHandler) Output() io.Writer {
 }
 
 func FileName() string {
-	if filename != "" {
-		return filename
+	if datafile != "" {
+		return datafile
 	}
 	return FileNameFor(os.Getpid())
 }
@@ -124,7 +124,12 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	if l.file == nil {
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+		appendMode := os.O_TRUNC
+		if _, isset := os.LookupEnv(constants.LogEnvVarName); isset {
+			appendMode = os.O_APPEND
+			message = fmt.Sprintf("(%s:%d) %s", os.Args[0], os.Getpid(), message)
+		}
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|appendMode, os.ModePerm)
 		if err != nil {
 			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
 		}
@@ -156,8 +161,7 @@ func init() {
 	if isset {
 		// Use log file provided by env var
 		datadir = filepath.Dir(path)
-		filename = filepath.Base(path)
-		os.Unsetenv(constants.LogEnvVarName) // Prevent leaking this into other commands
+		datafile = filepath.Base(path)
 	} else {
 		// Clean up old log files
 		datadir, err := storage.AppDataPath()
