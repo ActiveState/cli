@@ -281,21 +281,25 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 			cp.ExpectExitCode(0)
 
-			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+			var logs string
+			if tt.TestUpdate {
+				logs = suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+			}
 
 			// tell background process to stop...
 			close(stopBg)
 			// ...and wait for it
 			wg.Wait()
 
-			suite.Assert().Contains(logs, "was successful")
-			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
-
-			if tt.ExpectBackupCleaned {
-				suite.Assert().Contains(logs, "Removed all backup files.")
-			} else {
-				suite.Assert().Contains(logs, "Failed to remove backup files")
+			if tt.TestUpdate {
+				suite.Assert().Contains(logs, "was successful")
+				if tt.ExpectBackupCleaned {
+					suite.Assert().Contains(logs, "Removed all backup files.")
+				} else {
+					suite.Assert().Contains(logs, "Failed to remove backup files")
+				}
 			}
+			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
 		})
 	}
 }
