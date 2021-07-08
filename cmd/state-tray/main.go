@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"os"
 	"time"
-
-	_ "embed"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
@@ -17,11 +16,15 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
 	"github.com/rollbar/rollbar-go"
@@ -51,7 +54,9 @@ func onReady() {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
-		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failed to wait for rollbar to close")
+		}
 		os.Exit(exitCode)
 	}()
 
@@ -64,11 +69,15 @@ func onReady() {
 	}
 }
 
-func run() error {
-	cfg, err := config.Get()
+func run() (rerr error) {
+	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get new config instance")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
+	machineid.SetErrorLogger(logging.Error)
 
 	running, err := isTrayRunning(cfg)
 	if err != nil {
@@ -78,7 +87,7 @@ func run() error {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
-	if err := cfg.Set(config.ConfigKeyTrayPid, os.Getpid()); err != nil {
+	if err := cfg.Set(installation.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
@@ -240,11 +249,17 @@ func run() error {
 
 func onExit() {
 	logging.Debug("systray.OnExit() was called.")
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		logging.Error("Could not get configuration object on Systray exit")
+		return
 	}
-	err = cfg.SetWithLock(config.ConfigKeyTrayPid, func(setPidI interface{}) (interface{}, error) {
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+	}()
+	err = cfg.SetWithLock(installation.ConfigKeyTrayPid, func(setPidI interface{}) (interface{}, error) {
 		setPid := cast.ToInt(setPidI)
 		if setPid != os.Getpid() {
 			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
@@ -252,7 +267,7 @@ func onExit() {
 		return "", nil
 	})
 	if err != nil {
-		logging.Error("Failed to unset Systray PID in configuration file.")
+		logging.Error("Failed to unset Systray PID in configuration file: %w", err)
 	}
 }
 
@@ -269,7 +284,7 @@ func execute(exec string, args []string) error {
 }
 
 func isTrayRunning(cfg *config.Instance) (bool, error) {
-	pid := cfg.GetInt(config.ConfigKeyTrayPid)
+	pid := cfg.GetInt(installation.ConfigKeyTrayPid)
 	if pid <= 0 {
 		return false, nil
 	}

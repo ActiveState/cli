@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -103,16 +102,12 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: installation.LogfilePath(r.cfg.ConfigPath(), proc.Pid),
+		Logfile: logging.FilePathForCmd("state-installer", proc.Pid),
 	}, nil
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	logging.Debug("Projects resolver")
-	if err := r.cfg.Reload(); err != nil {
-		return nil, errs.Wrap(err, "failed to reload configuration")
-	}
-
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
 	for ns, locations := range localConfigProjects {

@@ -1,7 +1,7 @@
 package config
 
-// LocLogError conveys error info needed while avoiding a circular import.
-type LocLogError struct {
+// LocalizedError conveys error info needed while avoiding a circular import.
+type LocalizedError struct {
 	Err       error
 	Key       string
 	BaseMsg   string
@@ -9,21 +9,21 @@ type LocLogError struct {
 }
 
 // Error implements the error interface.
-func (e *LocLogError) Error() string {
+func (e *LocalizedError) Error() string {
 	return e.Err.Error()
 }
 
 // Unwrap facilitates error chain unwrapping.
-func (e *LocLogError) Unwrap() error {
+func (e *LocalizedError) Unwrap() error {
 	return e.Err
 }
 
 // Localization returns l10n info.
-func (e *LocLogError) Localization() (key, baseMsg string) {
+func (e *LocalizedError) Localization() (key, baseMsg string) {
 	return e.Key, e.BaseMsg
 }
 
 // ReportMessage is the message that should be tracked via remote logging.
-func (e *LocLogError) ReportMessage() string {
+func (e *LocalizedError) ReportMessage() string {
 	return e.ReportMsg
 }

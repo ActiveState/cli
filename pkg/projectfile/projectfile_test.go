@@ -244,16 +244,18 @@ func TestSave(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	require.NoError(t, err, errs.Join(err, "\n").Error())
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	project.path = tmpfile.Name()
 	project.Save(cfg)
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
 
-	cfg, err = config.Get()
+	cfg2, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg2.Close()) }()
 
 	projectURL := project.Project
 	project.Project = "thisisnotatallaprojectURL"
@@ -308,8 +310,9 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")

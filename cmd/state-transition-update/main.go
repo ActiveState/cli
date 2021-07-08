@@ -11,13 +11,16 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -27,7 +30,9 @@ func main() {
 		if panics.HandlePanics() {
 			exitCode = 1
 		}
-		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failed waiting to close rollbar")
+		}
 		os.Exit(exitCode)
 	}()
 
@@ -84,11 +89,11 @@ func run() error {
 }
 
 func runExport() error {
-	cfg, err := config.Get()
+	path, err := storage.AppDataPath()
 	if err != nil {
-		return errs.Wrap(err, "Failed to read configuration.")
+		return errs.Wrap(err, "Failed to read app data path.")
 	}
-	fmt.Println(cfg.ConfigPath())
+	fmt.Println(path)
 	return nil
 }
 
@@ -97,19 +102,20 @@ func runPrepare() error {
 	return nil
 }
 
-func runDefault() error {
+func runDefault() (rerr error) {
 	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
 	if err != nil {
 		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
-		return errs.Wrap(err, "Failed to read configuration.")
+		return errs.Wrap(err, "Could not initialize config")
 	}
-	machineid.SetConfiguration(cfg)
+	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	logging.UpdateConfig(cfg)
 
 	oldInfo, err := os.Stat(appinfo.StateApp().Exec())
 	if err != nil {

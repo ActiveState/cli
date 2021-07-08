@@ -49,5 +49,5 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
+	return executePackageOperation(a.proj, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
 }

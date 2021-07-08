@@ -38,7 +38,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	}
 
 	if len(response.Projects) == 0 {
-		if !authentication.Get().Authenticated() {
+		if !authentication.LegacyGet().Authenticated() {
 			return nil, locale.NewInputError("err_api_project_not_found_unauthenticated", "", orgName, projectName)
 		}
 		return nil, &ErrProjectNotFound{locale.NewInputError("err_api_project_not_found", "", projectName, orgName)}

@@ -675,13 +675,14 @@ func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName 
 		_ = suite.server.ListenAndServe()
 	}()
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) AfterTest(suiteName, testName string) {
 	err := suite.server.Shutdown(context.Background())
 	suite.Require().NoError(err)
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {

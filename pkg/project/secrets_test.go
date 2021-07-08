@@ -71,12 +71,12 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
@@ -85,6 +85,7 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	projectfile.Reset()
 	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
@@ -120,7 +121,7 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 }
 
 func (suite *SecretsExpanderTestSuite) TestNoAuth() {
-	authentication.Get().Logout()
+	authentication.LegacyGet().Logout()
 	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
 	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)

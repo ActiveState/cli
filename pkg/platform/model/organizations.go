@@ -50,7 +50,7 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
 func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	authClient, err := authentication.Get().ClientSafe()
+	authClient, err := authentication.LegacyGet().ClientSafe()
 	if err != nil {
 		return nil, err
 	}

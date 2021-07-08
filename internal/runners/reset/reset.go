@@ -1,6 +1,7 @@
 package reset
 
 import (
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -16,11 +17,6 @@ type Reset struct {
 	auth    *authentication.Auth
 	prompt  prompt.Prompter
 	project *project.Project
-	config  configurable
-}
-
-type configurable interface {
-	CachePath() string
 }
 
 type primeable interface {
@@ -37,7 +33,6 @@ func New(prime primeable) *Reset {
 		prime.Auth(),
 		prime.Prompt(),
 		prime.Project(),
-		prime.Config(),
 	}
 }
 
@@ -69,7 +64,7 @@ func (r *Reset) Run() error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, true)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.project, storage.CachePath(), *latestCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -47,7 +47,7 @@ func cleanUser(t *testing.T, username string) error {
 func getProjects(org string) ([]*mono_models.Project, error) {
 	params := projects.NewListProjectsParams()
 	params.SetOrganizationName(org)
-	listProjectsOK, err := authentication.Get().Client().Projects.ListProjects(params, authentication.ClientAuth())
+	listProjectsOK, err := authentication.LegacyGet().Client().Projects.ListProjects(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, err
 	}

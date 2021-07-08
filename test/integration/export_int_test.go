@@ -2,6 +2,7 @@ package integration
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -73,6 +74,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	suite.PrepareActiveStateYAML(ts)
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
+	cp.ExpectLongString(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
 }
 

@@ -30,12 +30,13 @@ func (suite *KeypairGenerateTestSuite) BeforeTest(suiteName, testName string) {
 
 	httpmock.Activate(secretsClient.BaseURI)
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *KeypairGenerateTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *KeypairGenerateTestSuite) TestGenerate_Fails_NotEnoughBits() {

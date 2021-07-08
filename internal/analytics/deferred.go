@@ -2,13 +2,16 @@ package analytics
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -22,15 +25,27 @@ type deferredData struct {
 	Dimensions map[string]string
 }
 
-const deferredCfgKey = "deferrer_analytics"
-const deferrerFileName = "deferrer"
+const deferrerFileName = "deferrer_data"
+const deferrerTimestampFileName = "deferrer"
 
-func deferrerFilePath(cfg Configurable) string {
-	return filepath.Join(cfg.ConfigPath(), deferrerFileName)
+func deferrerFilePath() string {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		logging.Error("Failed to get AppDataPath: %s", errs.JoinMessage(err))
+	}
+	return filepath.Join(appDataPath, deferrerFileName)
 }
 
-func isDeferralDayAgo(cfg Configurable) bool {
-	df := deferrerFilePath(cfg)
+func deferrerTimeFilePath() string {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		logging.Error("Failed to get AppDataPath: %s", errs.JoinMessage(err))
+	}
+	return filepath.Join(appDataPath, deferrerTimestampFileName)
+}
+
+func isDeferralDayAgo() bool {
+	df := deferrerTimeFilePath()
 	stat, err := os.Stat(df)
 	if os.IsNotExist(err) {
 		return false
@@ -44,7 +59,7 @@ func isDeferralDayAgo(cfg Configurable) bool {
 	return diff > 24*time.Hour
 }
 
-func runNonDeferredStateToolCommand(cfg Configurable) error {
+func runNonDeferredStateToolCommand() error {
 	exe, err := os.Executable()
 	if err != nil {
 		logging.Errorf("Could not determine State Tool executable: %v", err)
@@ -68,23 +83,25 @@ func runNonDeferredStateToolCommand(cfg Configurable) error {
 	return nil
 }
 
-func SetDeferred(cfg Configurable, da bool) {
+func SetDeferred(da bool) {
 	deferAnalytics = da
 	if deferAnalytics {
 		// if we have not send deferred messages for a day, run a non-deferred
 		// state command in the background to flush these messages.
-		if isDeferralDayAgo(cfg) {
-			err := runNonDeferredStateToolCommand(cfg)
+		if isDeferralDayAgo() {
+			err := runNonDeferredStateToolCommand()
 			if err != nil {
 				logging.Errorf("Failed to launch non-deferred State Tool command: %v", err)
 			}
 		}
 		return
 	}
+
+	// If we are not in a deferred state then we flush the deferred events that have been queued up
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
-		if err := sendDeferred(cfg, sendEvent); err != nil {
+		if err := sendDeferred(sendEvent); err != nil {
 			logging.Errorf("Could not send deferred events: %v", err)
 		}
 	}()
@@ -96,71 +113,102 @@ type Configurable interface {
 	ConfigPath() string
 }
 
-func deferEvent(cfg Configurable, category, action, label string, dimensions map[string]string) error {
+func deferEvent(category, action, label string, dimensions map[string]string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label)
-	deferred, err := loadDeferred(cfg)
-	if err != nil {
-		return errs.Wrap(err, "Could not load events on defer")
-	}
 
-	if !fileutils.FileExists(deferrerFilePath(cfg)) {
-		err = fileutils.Touch(deferrerFilePath(cfg))
-		if err != nil {
-			logging.Errorf("Failed to create deferrer time stamp file: %v", err)
-		}
-	}
-
-	deferred = append(deferred, deferredData{category, action, label, dimensions})
-	if err := saveDeferred(cfg, deferred); err != nil {
+	if err := saveDeferred(deferredData{category, action, label, dimensions}); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
 }
 
-func sendDeferred(cfg Configurable, sender func(string, string, string, map[string]string) error) error {
-	deferred, err := loadDeferred(cfg)
+func loadDeferred(deferredDataPath string) ([]deferredData, error) {
+	b, err := os.ReadFile(deferredDataPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not load events on send")
+		return nil, errs.Wrap(err, "Failed to read deferred_data")
 	}
-	if len(deferred) > 0 {
-		for n, event := range deferred {
-			if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
-				return errs.Wrap(err, "Could not send deferred event")
+	lines := strings.Split(string(b), "\n")
+	var events []deferredData
+	var unmarshalErrorReported bool
+	for _, line := range lines {
+		var event deferredData
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			if !unmarshalErrorReported {
+				logging.Error("Failed to unmarshal line in deferred_data file: %v", err)
+				unmarshalErrorReported = true
 			}
-			if err := saveDeferred(cfg, deferred[n+1:]); err != nil {
-				return errs.Wrap(err, "Could not save deferred event on send")
-			}
+			continue
+		}
+		events = append(events, event)
+	}
+
+	return events, nil
+}
+
+func sendDeferred(sender func(string, string, string, map[string]string) error) error {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not retrieve AppDataPath")
+	}
+
+	tsPath := deferrerTimeFilePath()
+	if fileutils.FileExists(tsPath) {
+		if err := os.Remove(tsPath); err != nil {
+			return errs.Wrap(err, "Could not remove timestamp file: %s", tsPath)
 		}
 	}
 
-	// remove deferrer time stamp file
-	err = os.Remove(deferrerFilePath(cfg))
-	if err != nil && !os.IsNotExist(err) {
-		logging.Errorf("Could not remove deferrer time stamp file: %v", err)
+	// move deferred data file, so it is not being appended anymore
+	outboxFile := filepath.Join(appDataPath, fmt.Sprintf("deferred.%d-%d", os.Getpid(), time.Now().Unix()))
+	if err := os.Rename(deferrerFilePath(), outboxFile); err != nil {
+		if !os.IsNotExist(err) {
+			return errs.Wrap(err, "Could not rename deferred_data file")
+		}
+		return nil // No deferred data to send
 	}
-	return nil
-}
+	defer os.Remove(outboxFile)
 
-func saveDeferred(cfg Configurable, v []deferredData) error {
-	s, err := json.Marshal(v)
+	events, err := loadDeferred(outboxFile)
 	if err != nil {
-		return errs.New("Could not serialize deferred analytics: %v, error: %v", v, err)
+		return errs.Wrap(err, "Failed to load deferred events")
 	}
-	err = cfg.Set(deferredCfgKey, string(s))
-	if err != nil {
-		return errs.Wrap(err, "Could not save deferred data in config")
-	}
-	return nil
-}
-
-func loadDeferred(cfg Configurable) ([]deferredData, error) {
-	v := cfg.GetString(deferredCfgKey)
-	d := []deferredData{}
-	if v != "" {
-		err := json.Unmarshal([]byte(v), &d)
-		if err != nil {
-			return d, errs.Wrap(err, "Could not deserialize deferred analytics: %v", v)
+	for _, event := range events {
+		if err := sender(event.Category, event.Action, event.Label, event.Dimensions); err != nil {
+			return errs.Wrap(err, "Could not send deferred event")
 		}
 	}
-	return d, nil
+
+	return nil
+}
+
+func saveDeferred(v deferredData) error {
+	vj, err := json.Marshal(v)
+	if err != nil {
+		return errs.Wrap(err, "Failed to marshal deferred data")
+	}
+	path := deferrerFilePath()
+	if err := os.MkdirAll(filepath.Dir(path), os.ModeDir); err != nil {
+		return errs.Wrap(err, "Failed to create deferred file dir")
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return errs.Wrap(err, "Failed to open deferred_data file for appending")
+	}
+	defer f.Close()
+
+	if _, err := f.WriteString(fmt.Sprintf("%s\n", string(vj))); err != nil {
+		return errs.Wrap(err, "Failed to append deferred data")
+	}
+
+	tsPath := deferrerTimeFilePath()
+	if !fileutils.FileExists(tsPath) {
+		if err := fileutils.Touch(tsPath); err != nil {
+			return errs.Wrap(err, "Could not touch deferred timestamp file")
+		}
+	}
+
+	return nil
 }

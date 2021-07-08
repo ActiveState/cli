@@ -183,7 +183,6 @@ github.com/getlantern/systray
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
 # github.com/go-openapi/analysis v0.20.0
-## explicit
 github.com/go-openapi/analysis
 github.com/go-openapi/analysis/internal
 # github.com/go-openapi/errors v0.20.0
@@ -225,9 +224,6 @@ github.com/go-stack/stack
 # github.com/gobuffalo/packr v1.10.7
 ## explicit
 github.com/gobuffalo/packr
-# github.com/gofrs/flock v0.8.0
-## explicit
-github.com/gofrs/flock
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.4.3
@@ -356,6 +352,9 @@ github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.10
 ## explicit
 github.com/mattn/go-runewidth
+# github.com/mattn/go-sqlite3 v1.14.7
+## explicit
+github.com/mattn/go-sqlite3
 # github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 ## explicit
 github.com/mgutz/ansi

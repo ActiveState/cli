@@ -28,8 +28,9 @@ func TestGetLocaleFlag(t *testing.T) {
 }
 
 func TestSet(t *testing.T) {
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = Set("nl-NL")
 	assert.NoError(t, err)
 	assert.Equal(t, "nl-NL", cfg.GetString("Locale"), "Locale should be set to nl-NL")

@@ -6,11 +6,11 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -134,12 +134,9 @@ func Wait() {
 }
 
 func setup() {
-	installSource := "unknown-due-to-config-error"
-	cfg, err := config.Get()
+	installSource, err := storage.InstallSource()
 	if err != nil {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
-	} else {
-		installSource = cfg.InstallSource()
 	}
 
 	id := machineid.UniqID()
@@ -159,7 +156,7 @@ func setup() {
 	}
 
 	var userIDString string
-	userID := authentication.Get().UserID()
+	userID := authentication.LegacyGet().UserID()
 	if userID != nil {
 		userIDString = userID.String()
 	}
@@ -172,9 +169,6 @@ func setup() {
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
-	}
-	if osVersion == "unknown" {
-		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
 	CustomDimensions = &customDimensions{
@@ -229,11 +223,7 @@ func sendEventAndLog(category, action, label string, dimensions map[string]strin
 
 func sendEvent(category, action, label string, dimensions map[string]string) error {
 	if deferAnalytics {
-		cfg, err := config.Get()
-		if err != nil {
-			return locale.WrapError(err, "config_get_error")
-		}
-		if err := deferEvent(cfg, category, action, label, dimensions); err != nil {
+		if err := deferEvent(category, action, label, dimensions); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		return nil

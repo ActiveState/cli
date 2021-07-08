@@ -1,184 +1,88 @@
 package config
 
 import (
-	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/shibukawa/configdir"
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/condition"
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/gofrs/flock"
+	_ "github.com/mattn/go-sqlite3"
 )
-
-var (
-	defaultMutex       *sync.Mutex = &sync.Mutex{}
-	defaultConfig      *Instance
-	defaultConfigError error
-)
-
-const ConfigKeyShell = "shell"
-const ConfigKeyTrayPid = "tray-pid"
-
-const lockRetryDelay = 50 * time.Millisecond
 
 // Instance holds our main config logic
 type Instance struct {
-	configDir     *configdir.Config
-	cacheDir      *configdir.Config
-	configFile    string
-	lockFile      string
-	localPath     string
-	installSource string
-	lock          *flock.Flock
-	data          map[string]interface{}
-	// lockMutex ensures that file lock can be held only once per process.  Theoretically, this should be ensured by the `flock` package, but it isn't.  So, we need this hack.
-	// https://www.pivotaltracker.com/story/show/178478669
-	lockMutex *sync.Mutex
+	appDataDir  string
+	thread      *singlethread.Thread
+	closeThread bool
+	db          *sql.DB
 }
 
-func new(localPath string) (*Instance, error) {
-	instance := &Instance{
-		localPath: localPath,
-		data:      make(map[string]interface{}),
-		lockMutex: &sync.Mutex{},
-	}
-	err := instance.ensureConfigExists()
-	if err != nil {
-		return instance, errs.Wrap(err, "Failed to ensure that config directory exists")
-	}
-	instance.lock = flock.New(instance.getLockFile())
-
-	if err := instance.Reload(); err != nil {
-		return instance, errs.Wrap(err, "Failed to load configuration.")
-	}
-
-	return instance, nil
-}
-
-func (i *Instance) GetLock() error {
-	i.lockMutex.Lock()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	locked, err := i.lock.TryLockContext(ctx, lockRetryDelay)
-	if err != nil {
-		i.lockMutex.Unlock()
-		return errs.Wrap(err, "Timed out waiting for exclusive lock")
-	}
-
-	if !locked {
-		i.lockMutex.Unlock()
-		return errs.New("Timeout out waiting for exclusive lock")
-
-	}
-	return nil
-}
-
-func (i *Instance) ReleaseLock() error {
-	defer i.lockMutex.Unlock()
-
-	if err := i.lock.Unlock(); err != nil {
-		return errs.Wrap(err, "Failed to release lock")
-	}
-
-	// Ignore the error, as there are legitimate cases where it will fail (when another processes has locked the file again)
-	_ = os.Remove(i.getLockFile())
-	return nil
-}
-
-// Reload reloads the configuration data from the config file
-func (i *Instance) Reload() error {
-	err := i.ensureConfigExists()
-	if err != nil {
-		return err
-	}
-	err = i.ensureCacheExists()
-	if err != nil {
-		return err
-	}
-
-	if err = i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire config file lock")
-	}
-	defer i.ReleaseLock()
-
-	err = i.ReadInConfig()
-	if err != nil {
-		return err
-	}
-
-	i.readInstallSource()
-
-	return nil
-}
-
-func configPathInTest() (string, error) {
-	localPath, err := ioutil.TempDir("", "cli-config")
-	if err != nil {
-		return "", fmt.Errorf("Could not create temp dir: %w", err)
-	}
-	err = os.RemoveAll(localPath)
-	if err != nil {
-		return "", fmt.Errorf("Could not remove generated config dir for tests: %w", err)
-	}
-	return localPath, nil
-}
-
-// New creates a new config instance
-// This should probably only be used in tests or you have to ensure that you have only one invocation of this function per process.
 func New() (*Instance, error) {
-	localPath, envSet := os.LookupEnv(C.ConfigEnvVarName)
+	return NewCustom("", singlethread.New(), true)
+}
 
-	if !envSet && condition.InTest() {
-		var err error
-		localPath, err = configPathInTest()
+// NewCustom is intended only to be used from tests or internally to this package
+func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) (*Instance, error) {
+	i := &Instance{}
+	i.thread = thread
+	i.closeThread = closeThread
+
+	var err error
+	if localPath != "" {
+		i.appDataDir, err = storage.AppDataPathWithParent(localPath)
+	} else {
+		i.appDataDir, err = storage.AppDataPath()
+	}
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect appdata dir")
+	}
+
+	// Ensure appdata dir exists, because the sqlite driver sure doesn't
+	if _, err := os.Stat(i.appDataDir); os.IsNotExist(err) {
+		err = os.MkdirAll(i.appDataDir, os.ModePerm)
 		if err != nil {
-			// panic as this only happening in tests
-			panic(err)
+			return nil, errs.Wrap(err, "Could not create config dir")
 		}
 	}
 
-	return new(localPath)
-}
+	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
+	_, err = os.Stat(path)
+	isNew := err != nil
+	i.db, err = sql.Open("sqlite3", fmt.Sprintf(`file:%s?_journal=WAL`, path))
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
+	}
 
-// NewWithDir creates a new instance at the given directory
-func NewWithDir(dir string) (*Instance, error) {
-	return new(dir)
-}
-
-// Get returns the default configuration instance
-func Get() (*Instance, error) {
-	defaultMutex.Lock()
-	defer defaultMutex.Unlock()
-	if defaultConfig == nil {
-		var err error
-		defaultConfig, err = New()
-		if err != nil {
-			defaultConfigError = err
-			return defaultConfig, err
+	_, err = i.db.Exec(`CREATE TABLE IF NOT EXISTS config (key string NOT NULL PRIMARY KEY, value text)`)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not seed settings database")
+	}
+	if isNew {
+		if err := i.importLegacyConfig(); err != nil {
+			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
+			logging.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
 		}
 	}
-	return defaultConfig, nil
+
+	return i, nil
 }
 
-func GetSafer() (*Instance, error) {
-	if defaultConfigError != nil {
-		return nil, defaultConfigError
+func (i *Instance) Close() error {
+	if i.closeThread {
+		i.thread.Close()
 	}
-	return Get()
+	return i.db.Close()
 }
 
 // SetWithLock updates a value at the given key. The valueF argument returns the
@@ -186,25 +90,31 @@ func GetSafer() (*Instance, error) {
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
 func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
-	if err := i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire configuration lock.")
-	}
-	defer i.ReleaseLock()
+	return i.thread.Run(func() error {
+		return i.setWithCallback(key, valueF)
+	})
+}
 
-	err := i.ReadInConfig()
+func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+	v, err := valueF(i.get(key))
 	if err != nil {
-		return err
+		return errs.Wrap(err, "valueF failed")
 	}
 
-	value, err := valueF(i.data[key])
+	q, err := i.db.Prepare(`INSERT OR REPLACE INTO config(key, value) VALUES(?,?)`)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not modify settings")
+	}
+	defer q.Close()
+
+	valueMarshaled, err := json.Marshal(v)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal config value: %v", v)
 	}
 
-	i.data[strings.ToLower(key)] = value
-
-	if err := i.save(); err != nil {
-		return err
+	_, err = q.Exec(key, valueMarshaled)
+	if err != nil {
+		return errs.Wrap(err, "Could not store setting")
 	}
 
 	return nil
@@ -212,31 +122,34 @@ func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (in
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	if err := i.GetLock(); err != nil {
-		return errs.Wrap(err, "Could not acquire config file lock")
-	}
-	defer i.ReleaseLock()
-
-	if err := i.ReadInConfig(); err != nil {
-		return err
-	}
-
-	i.data[strings.ToLower(key)] = value
-
-	if err := i.save(); err != nil {
-		return err
-	}
-
-	return nil
+	return i.SetWithLock(key, func(_ interface{}) (interface{}, error) {
+		return value, nil
+	})
 }
 
 func (i *Instance) IsSet(key string) bool {
-	_, ok := i.data[strings.ToLower(key)]
-	return ok
+	return i.get(key) != nil
 }
 
 func (i *Instance) get(key string) interface{} {
-	return i.data[strings.ToLower(key)]
+	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
+	if row.Err() != nil {
+		logging.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
+		return nil
+	}
+
+	var value string
+	if err := row.Scan(&value); err != nil {
+		return nil // No results
+	}
+
+	var result interface{}
+	if err := json.Unmarshal([]byte(value), &result); err != nil {
+		logging.Error("config:get unmarshal failed: %s", errs.JoinMessage(err))
+		return nil
+	}
+
+	return result
 }
 
 // GetString retrieves a string for a given key
@@ -251,9 +164,17 @@ func (i *Instance) GetInt(key string) int {
 
 // AllKeys returns all of the curent config keys
 func (i *Instance) AllKeys() []string {
+	rows, err := i.db.Query(`SELECT key FROM config`)
+	if err != nil {
+		logging.Error("config:AllKeys query failed: %s", errs.JoinMessage(err))
+		return nil
+	}
 	var keys []string
-	for k := range i.data {
-		keys = append(keys, k)
+	defer rows.Close()
+	for rows.Next() {
+		var key string
+		rows.Scan(&key)
+		keys = append(keys, key)
 	}
 	return keys
 }
@@ -283,188 +204,41 @@ func (i *Instance) GetStringMap(key string) map[string]interface{} {
 	return cast.ToStringMap(i.get(key))
 }
 
-// Type returns the config filetype
-func (i *Instance) Type() string {
-	return filepath.Ext(C.InternalConfigFileName)[1:]
-}
-
-// AppName returns the application name used for our config
-func (i *Instance) AppName() string {
-	return fmt.Sprintf("%s-%s", C.LibraryName, C.BranchName)
-}
-
-// Name returns the filename used for our config, minus the extension
-func (i *Instance) Name() string {
-	return strings.TrimSuffix(i.Filename(), "."+i.Type())
-}
-
-// Filename return the filename used for our config
-func (i *Instance) Filename() string {
-	return C.InternalConfigFileName
-}
-
-// Namespace returns the namespace under which to store our app config
-func (i *Instance) Namespace() string {
-	return C.InternalConfigNamespace
-}
-
 // ConfigPath returns the path at which our configuration is stored
 func (i *Instance) ConfigPath() string {
-	return i.configDir.Path
+	return i.appDataDir
 }
 
-// CachePath returns the path at which our cache is stored
-func (i *Instance) CachePath() string {
-	return i.cacheDir.Path
-}
-
-// InstallSource returns the installation source of the State Tool
-func (i *Instance) InstallSource() string {
-	return i.installSource
-}
-
-func (i *Instance) ReadInConfig() error {
-	configFile := i.getConfigFile()
-
-	configData, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return errs.Wrap(err, "Could not read config file")
-	}
-
-	data := make(map[string]interface{})
-	err = yaml.Unmarshal(configData, data)
-	if err != nil {
-		baseMsg := "Your config file is currently malformed, please run [ACTIONABLE]state clean config --force[/RESET] to reset its contents, then try this command again."
-		return &LocLogError{
-			Err:       err,
-			Key:       "err_config_malformed",
-			BaseMsg:   baseMsg,
-			ReportMsg: baseMsg,
+func (i *Instance) importLegacyConfig() (returnErr error) {
+	fpath := filepath.Join(i.appDataDir, C.InternalConfigFileNameLegacy)
+	defer func() {
+		if returnErr != nil {
+			os.Rename(fpath, fpath+".corrupted")
+		} else {
+			os.Remove(fpath)
 		}
+	}()
+
+	_, err := os.Stat(i.appDataDir)
+	if err != nil && os.IsNotExist(err) {
+		return nil
 	}
 
-	i.data = data
-	return nil
-}
-
-func (i *Instance) save() error {
-	f, err := os.Create(i.configFile)
+	b, err := ioutil.ReadFile(fpath)
 	if err != nil {
-		return errs.Wrap(err, "Could not create/open config file")
-	}
-	defer f.Close()
-
-	data, err := yaml.Marshal(i.data)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal config data")
+		return errs.Wrap(err, "Could not read legacy config file at %s", fpath)
 	}
 
-	_, err = f.Write(data)
-	if err != nil {
-		return errs.Wrap(err, "Could not write config file")
+	var data map[string]interface{}
+	if err := yaml.Unmarshal(b, &data); err != nil {
+		return errs.Wrap(err, "Could not unmarshal legacy config file at %s", fpath)
+	}
+
+	for k, v := range data {
+		if err := i.Set(k, v); err != nil {
+			return errs.Wrap(err, "Could not import config key/val: %s: %v", k, v)
+		}
 	}
 
 	return nil
-}
-
-func (i *Instance) ensureConfigExists() error {
-	// Prepare our config dir, eg. ~/.config/activestate/cli
-	configDirs := configdir.New(i.Namespace(), i.AppName())
-
-	// Account for HOME dir not being set, meaning querying global folders will fail
-	// This is a workaround for docker envs that don't usually have $HOME set
-	_, exists := os.LookupEnv("HOME")
-	if !exists && i.localPath == "" && runtime.GOOS != "windows" {
-		var err error
-		i.localPath, err = os.Getwd()
-		if err != nil || condition.InTest() {
-			// Use temp dir if we can't get the working directory OR we're in a test (we don't want to write to our src directory)
-			i.localPath, err = ioutil.TempDir("", "cli-config-test")
-		}
-		if err != nil {
-			return errs.Wrap(err, "Cannot establish a config directory, HOME environment variable is not set and fallbacks have failed")
-		}
-	}
-
-	if i.localPath != "" {
-		configDirs.LocalPath = i.localPath
-		i.configDir = configDirs.QueryFolders(configdir.Local)[0]
-	} else {
-		i.configDir = configDirs.QueryFolders(configdir.Global)[0]
-	}
-
-	if !i.configDir.Exists(i.Filename()) {
-		configFile, err := i.configDir.Create(i.Filename())
-		if err != nil {
-			return errs.Wrap(err, "Cannot create config")
-		}
-
-		err = configFile.Close()
-		if err != nil {
-			return errs.Wrap(err, "Cannot close config file")
-		}
-	}
-	return nil
-}
-
-func (i *Instance) ensureCacheExists() error {
-	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
-	if condition.InTest() {
-		path, err := tempDir("state-cache-tests")
-		if err != nil {
-			log.Panicf("Error while creating temp dir: %v", err)
-		}
-		i.cacheDir = &configdir.Config{
-			Path: path,
-			Type: configdir.Cache,
-		}
-	} else if path := os.Getenv(C.CacheEnvVarName); path != "" {
-		i.cacheDir = &configdir.Config{
-			Path: path,
-			Type: configdir.Cache,
-		}
-	} else {
-		i.cacheDir = configdir.New(i.Namespace(), "").QueryCacheFolder()
-	}
-	if err := i.cacheDir.MkdirAll(); err != nil {
-		return errs.Wrap(err, "Cannot create cache directory")
-	}
-	return nil
-}
-
-func (i *Instance) getConfigFile() string {
-	if i.configFile == "" {
-		i.configFile = filepath.Join(i.configDir.Path, C.InternalConfigFileName)
-	}
-
-	return i.configFile
-}
-
-func (i *Instance) getLockFile() string {
-	if i.lockFile == "" {
-		i.lockFile = filepath.Join(i.configDir.Path, "config.lock")
-	}
-
-	return i.lockFile
-}
-
-// tempDir returns a temp directory path at the topmost directory possible
-// can't use fileutils here as it would cause a cyclic dependency
-func tempDir(prefix string) (string, error) {
-	if runtime.GOOS == "windows" {
-		if drive, envExists := os.LookupEnv("SystemDrive"); envExists {
-			return filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8]), nil
-		}
-	}
-
-	return ioutil.TempDir("", prefix)
-}
-
-func (i *Instance) readInstallSource() {
-	installFilePath := filepath.Join(i.configDir.Path, "installsource.txt")
-	installFileData, err := ioutil.ReadFile(installFilePath)
-	i.installSource = strings.TrimSpace(string(installFileData))
-	if err != nil {
-		i.installSource = "unknown"
-	}
 }
