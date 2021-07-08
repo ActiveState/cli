@@ -305,6 +305,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
+	suite.T().Skip("This test is disabled while this bug is unresolved: https://www.pivotaltracker.com/story/show/178819606")
 	tests := []struct {
 		Name       string
 		TestUpdate bool
