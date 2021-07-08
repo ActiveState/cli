@@ -60,31 +60,27 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 	projectfile.Reset()
-	cfg, err := config.Get()
-	suite.Require().NoError(err)
-	osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
+	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
 	suite.platformMock.RegisterWithCode("GET", "/organizations/SecretOrg", 200)
 
-	cfg, err := config.Get()
-	suite.Require().NoError(err)
-
-	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
+	osutil.CopyTestFileToConfigDir(suite.cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"

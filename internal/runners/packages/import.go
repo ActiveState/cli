@@ -3,6 +3,7 @@ package packages
 import (
 	"io/ioutil"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -120,7 +121,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.proj, i.cfg.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.proj, storage.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {

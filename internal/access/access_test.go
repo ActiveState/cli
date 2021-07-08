@@ -43,8 +43,9 @@ func (suite *SecretsTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *SecretsTestSuite) AfterTest(suiteName, testName string) {
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	suite.Require().NoError(err)
+	defer cfg.Close()
 	osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	httpmock.DeActivate()
 	suite.authMock.Close()

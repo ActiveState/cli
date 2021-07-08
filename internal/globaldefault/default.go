@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -16,12 +17,11 @@ import (
 
 type DefaultConfigurer interface {
 	sscommon.Configurable
-	CachePath() string
 }
 
 // BinDir returns the global binary directory
 func BinDir(cfg DefaultConfigurer) string {
-	return filepath.Join(cfg.CachePath(), "bin")
+	return filepath.Join(storage.CachePath(), "bin")
 }
 
 func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {

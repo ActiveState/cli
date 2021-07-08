@@ -25,6 +25,8 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+const ConfigKeyShell = "shell"
+
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
@@ -142,7 +144,7 @@ func New(cfg *config.Instance) SubShell {
 }
 
 func DetectShellBinary(cfg *config.Instance) (binary string) {
-	configured := cfg.GetString(config.ConfigKeyShell)
+	configured := cfg.GetString(ConfigKeyShell)
 	defer func() {
 		// do not re-write shell binary to config, if the value did not change.
 		if configured == binary {
@@ -150,7 +152,7 @@ func DetectShellBinary(cfg *config.Instance) (binary string) {
 		}
 		// We save and use the detected shell to our config so that we can use it when running code through
 		// a non-interactive shell
-		if err := cfg.Set(config.ConfigKeyShell, binary); err != nil {
+		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
 			logging.Error("Could not save shell binary: %v", errs.Join(err, ": "))
 		}
 	}()

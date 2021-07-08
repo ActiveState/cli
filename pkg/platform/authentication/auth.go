@@ -44,12 +44,13 @@ type Auth struct {
 type Configurable interface {
 	Set(string, interface{}) error
 	GetString(string) string
+	Close() error
 }
 
-// Get returns a cached version of Auth
-func Get() *Auth {
+// LegacyGet returns a cached version of Auth
+func LegacyGet() *Auth {
 	if persist == nil {
-		cfg, err := config.Get()
+		cfg, err := config.New()
 		if err != nil {
 			// TODO: We need to get rid of this Get() function altogether...
 			logging.Error("Could not get configuration required by auth: %v", err)
@@ -60,14 +61,21 @@ func Get() *Auth {
 	return persist
 }
 
+func LegacyClose() {
+	if persist == nil {
+		return
+	}
+	persist.Close()
+}
+
 // Client is a shortcut for calling Client() on the persisted auth
 func Client() *mono_client.Mono {
-	return Get().Client()
+	return LegacyGet().Client()
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
 func ClientAuth() runtime.ClientAuthInfoWriter {
-	return Get().ClientAuth()
+	return LegacyGet().ClientAuth()
 }
 
 // Reset clears the cache
@@ -77,7 +85,7 @@ func Reset() {
 
 // Logout will remove the stored apiToken
 func Logout() {
-	Get().Logout()
+	LegacyGet().Logout()
 	Reset()
 }
 
@@ -93,6 +101,13 @@ func New(cfg Configurable) *Auth {
 	}
 
 	return auth
+}
+
+func (s *Auth) Close() error {
+	if err := s.cfg.Close(); err != nil {
+		return errs.Wrap(err, "Could not close cfg from Auth")
+	}
+	return nil
 }
 
 // Authenticated checks whether we are currently authenticated

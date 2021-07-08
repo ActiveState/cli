@@ -69,7 +69,7 @@ func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		checker.RunCommitsBehindNotifier(proj, out)
 	}
 

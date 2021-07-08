@@ -15,7 +15,7 @@ const LibraryLicense = "BSD 3"
 // CommandName holds the name of our command
 const CommandName = "state"
 
-// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileName
+// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
@@ -27,6 +27,9 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
+// LogEnvVarName is the env var used to override the log file path
+const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
+
 // ExecEnvVarName is the env var used to find out if we are shimming recursively
 const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
@@ -36,8 +39,11 @@ const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
-// InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
-const InternalConfigFileName = "config.yaml"
+// InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
+const InternalConfigFileNameLegacy = "config.yaml"
+
+// InternalConfigFileName is the filename used for our sqlite based settings db
+const InternalConfigFileName = "config.db"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
@@ -214,7 +220,7 @@ const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 // in the platform DB.
 const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
-	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
+	LinuxBit64UUID = "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
 	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
@@ -301,7 +307,7 @@ const SvcAppName = "State Service"
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
 
-// StateUpdateDialogName is the name we give our state-update-dialog executable
+// UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
@@ -311,7 +317,7 @@ const ToplevelInstallArchiveDir = "state-install"
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
 
-// OverwriteDefaultInstallationPath is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+// OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
 const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
 
 // OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY

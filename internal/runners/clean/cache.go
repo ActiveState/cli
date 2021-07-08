@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -20,9 +21,8 @@ type Cache struct {
 }
 
 type CacheParams struct {
-	Force        bool
-	IgnoreErrors bool
-	Project      string
+	Force   bool
+	Project string
 }
 
 func NewCache(prime primeable) *Cache {
@@ -34,7 +34,7 @@ func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Ca
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    cfg.CachePath(),
+		path:    storage.CachePath(),
 	}
 }
 
@@ -43,7 +43,7 @@ func (c *Cache) Run(params *CacheParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
-	if err := stopServices(c.config, c.output, params.IgnoreErrors); err != nil {
+	if err := stopServices(c.config, c.output, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
@@ -92,7 +92,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, c.config.CachePath())
+	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, storage.CachePath())
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)
 	if err != nil {

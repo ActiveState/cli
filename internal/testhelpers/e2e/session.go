@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -41,7 +42,7 @@ type Session struct {
 	// users created during session
 	users   []string
 	t       *testing.T
-	exe     string
+	Exe     string
 	SvcExe  string
 	TrayExe string
 }
@@ -91,7 +92,7 @@ func init() {
 
 // ExecutablePath returns the path to the state tool that we want to test
 func (s *Session) ExecutablePath() string {
-	return s.exe
+	return s.Exe
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
@@ -115,9 +116,20 @@ func (s *Session) copyExeToBinDir(executable string) string {
 	return binExe
 }
 
+// UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
+func (s *Session) UseDistinctStateExesLegacy() {
+	s.Exe = s.copyExeToBinDir(s.Exe)
+	if fileutils.FileExists(s.SvcExe) {
+		s.SvcExe = s.copyExeToBinDir(s.SvcExe)
+	}
+	if fileutils.FileExists(s.TrayExe) {
+		s.TrayExe = s.copyExeToBinDir(s.TrayExe)
+	}
+}
+
 // UniqueExe ensures the executable is unique to this instance
 func (s *Session) UseDistinctStateExes() {
-	s.exe = s.copyExeToBinDir(s.exe)
+	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
 }
@@ -168,7 +180,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	env = append(env, extraEnv...)
 	exe, svcExe, trayExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, exe: exe, SvcExe: svcExe, TrayExe: trayExe}
+	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe}
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -181,12 +193,12 @@ func (s *Session) ClearCache() error {
 
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.exe, WithArgs(args...))
+	return s.SpawnCmdWithOpts(s.Exe, WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.exe, opts...)
+	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
@@ -261,8 +273,9 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	err := yaml.Unmarshal([]byte(contents), projectFile)
 	require.NoError(s.t, err, msg)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(s.t, err)
+	defer func() { require.NoError(s.t, cfg.Close()) }()
 
 	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
 	err = projectFile.Save(cfg)
@@ -362,7 +375,7 @@ func (s *Session) Close() error {
 		cp.ExpectExitCode(0)
 	}
 
-	cfg, err := config.NewWithDir(s.Dirs.Config)
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
 	err = installation.StopTrayApp(cfg)
 	require.NoError(s.t, err, "Could not stop tray app")

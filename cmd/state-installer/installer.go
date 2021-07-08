@@ -19,9 +19,11 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 )
@@ -32,7 +34,9 @@ func main() {
 		if panics.HandlePanics() {
 			exitCode = 1
 		}
-		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failed to wait for rollbar to close: %v", err)
+		}
 		os.Exit(exitCode)
 	}()
 
@@ -63,16 +67,17 @@ func main() {
 	}
 }
 
-func run(out output.Outputer) error {
+func run(out output.Outputer) (rerr error) {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config.")
 	}
-	machineid.SetConfiguration(cfg)
+	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	logging.UpdateConfig(cfg)
 
 	var installPath string
 	if len(os.Args) > 1 {

@@ -76,7 +76,7 @@ func (e *SecretExpander) KeyPair() (keypairs.Keypair, error) {
 		return nil, locale.NewError("secrets_err_expand_noproject")
 	}
 
-	if !authentication.Get().Authenticated() {
+	if !authentication.LegacyGet().Authenticated() {
 		return nil, locale.NewInputError("secrets_err_not_authenticated")
 	}
 

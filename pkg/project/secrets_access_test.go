@@ -44,8 +44,9 @@ func (suite *SecretsAccessTestSuite) BeforeTest(suiteName, testName string) {
 	suite.authMock = authMock.Init()
 	suite.authMock.MockLoggedin()
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	suite.Require().NoError(err)
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	suite.expander = NewSecretExpander(suite.secretsClient, nil, nil, cfg)
 	suite.expander.project = Get()
 }

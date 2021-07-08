@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,16 +22,11 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type configurable interface {
-	CachePath() string
-}
-
 type Exec struct {
 	subshell subshell.SubShell
 	proj     *project.Project
 	auth     *authentication.Auth
 	out      output.Outputer
-	cfg      configurable
 }
 
 type primeable interface {
@@ -51,7 +47,6 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
-		prime.Config(),
 	}
 }
 
@@ -80,7 +75,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
-		rtTarget = runtime.NewProjectTarget(proj, s.cfg.CachePath(), nil)
+		rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil)
 	}
 
 	if len(args) == 0 {

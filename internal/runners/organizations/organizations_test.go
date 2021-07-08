@@ -30,7 +30,7 @@ func setupOrgTest(t *testing.T) *apiMock.Mock {
 
 	httpmock.Register("POST", "/login")
 	httpmock.Register("GET", "/tiers")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	amock := apiMock.Init()
 	amock.MockGetOrganizations()
@@ -92,7 +92,7 @@ func TestClientError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	err := run(&OrgParams{}, outputhelper.NewCatcher())
 	require.Error(t, err)
@@ -105,7 +105,7 @@ func TestAuthError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 

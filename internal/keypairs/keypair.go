@@ -103,7 +103,7 @@ func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encK
 		PublicKey:           &encKeypair.EncodedPublicKey,
 	})
 
-	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.Get().ClientAuth()); err != nil {
+	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.LegacyGet().ClientAuth()); err != nil {
 		logging.Error("Saving keypair failed with error: %v", err)
 		return locale.WrapError(err, "keypair_err_save")
 	}

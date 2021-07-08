@@ -32,7 +32,7 @@ func (suite *HeadchefTestSuite) AfterTest(suiteName, testName string) {
 func (suite *HeadchefTestSuite) SendRequest(rt headchefMock.ResponseType) *headchef.BuildStatus {
 	suite.mock.MockBuilds(rt)
 
-	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef), authentication.Get().ClientAuth())
+	client := headchef.NewClient(api.GetServiceURL(api.ServiceHeadChef), authentication.LegacyGet().ClientAuth())
 	buildRequest := &headchef_models.V1BuildRequest{
 		Requester: &headchef_models.V1Requester{},
 	}
