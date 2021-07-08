@@ -129,8 +129,18 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, erro
 	return nil, locale.NewError("err_no_default_branch")
 }
 
-// BranchForProjectByName retrieves the named branch for the given project, or
-// falls back to the default
+// BranchForProjectNameByName retrieves the named branch for the given project
+// org/name
+func BranchForProjectNameByName(owner, name, branch string) (*mono_models.Branch, error) {
+	proj, err := FetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return BranchForProjectByName(proj, branch)
+}
+
+// BranchForProjectByName retrieves the named branch for the given project
 func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.Branch, error) {
 	if name == "" {
 		return nil, locale.NewInputError("err_empty_branch", "Empty branch name provided.")
