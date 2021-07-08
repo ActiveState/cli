@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -24,7 +25,8 @@ type deferredData struct {
 	Dimensions map[string]string
 }
 
-const deferrerFileName = "deferrer"
+const deferrerFileName = "deferrer_data"
+const deferrerTimestampFileName = "deferrer"
 
 func deferrerFilePath() string {
 	appDataPath, err := storage.AppDataPath()
@@ -34,8 +36,16 @@ func deferrerFilePath() string {
 	return filepath.Join(appDataPath, deferrerFileName)
 }
 
+func deferrerTimeFilePath() string {
+	appDataPath, err := storage.AppDataPath()
+	if err != nil {
+		logging.Error("Failed to get AppDataPath: %s", errs.JoinMessage(err))
+	}
+	return filepath.Join(appDataPath, deferrerTimestampFileName)
+}
+
 func isDeferralDayAgo() bool {
-	df := deferrerFilePath()
+	df := deferrerTimeFilePath()
 	stat, err := os.Stat(df)
 	if os.IsNotExist(err) {
 		return false
@@ -144,8 +154,15 @@ func sendDeferred(sender func(string, string, string, map[string]string) error) 
 		return errs.Wrap(err, "Could not retrieve AppDataPath")
 	}
 
+	tsPath := deferrerTimeFilePath()
+	if fileutils.FileExists(tsPath) {
+		if err := os.Remove(tsPath); err != nil {
+			return errs.Wrap(err, "Could not remove timestamp file: %s", tsPath)
+		}
+	}
+
 	// move deferred data file, so it is not being appended anymore
-	outboxFile := filepath.Join(appDataPath, fmt.Sprintf("deferred.%d", time.Now().Unix()))
+	outboxFile := filepath.Join(appDataPath, fmt.Sprintf("deferred.%d-%d", os.Getpid(), time.Now().Unix()))
 	if err := os.Rename(deferrerFilePath(), outboxFile); err != nil {
 		if !os.IsNotExist(err) {
 			return errs.Wrap(err, "Could not rename deferred_data file")
@@ -185,5 +202,13 @@ func saveDeferred(v deferredData) error {
 	if _, err := f.WriteString(fmt.Sprintf("%s\n", string(vj))); err != nil {
 		return errs.Wrap(err, "Failed to append deferred data")
 	}
+
+	tsPath := deferrerTimeFilePath()
+	if !fileutils.FileExists(tsPath) {
+		if err := fileutils.Touch(tsPath); err != nil {
+			return errs.Wrap(err, "Could not touch deferred timestamp file")
+		}
+	}
+
 	return nil
 }
