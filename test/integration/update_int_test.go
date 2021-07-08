@@ -139,7 +139,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	}
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
+	ts.UseDistinctStateExesLegacy()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 	cp.ExpectExitCode(0, 30*time.Second)
@@ -329,6 +329,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
+			info, err := os.Stat(ts.Exe)
+			suite.Require().NoError(err)
+			modTime := info.ModTime()
+
 			updateArgs := []string{"update", "--set-channel", tt.Channel}
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
@@ -345,6 +349,15 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.TestUpdate {
 				logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
 				suite.Assert().Contains(logs, "was successful")
+			} else {
+				for x := 0; x < 30; x++ {
+					info, err := os.Stat(ts.Exe)
+					suite.Require().NoError(err)
+					if !info.ModTime().Equal(modTime) {
+						break
+					}
+					time.Sleep(200 * time.Millisecond)
+				}
 			}
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
