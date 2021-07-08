@@ -63,10 +63,8 @@ func trimEntry(entry string) string {
 		return entry
 	}
 
-	start := entryLength - maxEntryLength
-	end := start + maxEntryLength
 	e := []rune(entry)
-	return fmt.Sprintf("%s%s", ellipsis, string(e[start:end]))
+	return fmt.Sprintf("%s%s", ellipsis, string(e[entryLength-maxEntryLength:]))
 }
 
 func (u *LocalProjectsUpdater) removeItems() {
