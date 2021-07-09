@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -80,6 +81,10 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 }
 
 func (i *Instance) Close() error {
+	mutex := sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
+	
 	if i.closed {
 		return nil
 	}
