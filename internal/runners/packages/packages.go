@@ -13,15 +13,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -43,22 +42,14 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) error {
+func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) error {
 	var ns model.Namespace
 	var err error
+	pj := prime.Project()
 	if pj == nil {
-		if operation != model.OperationAdded {
-			return locale.NewInputError("err_install_no_project_operation", "Only package installation is supported without a project")
-		}
-
 		pj, err = initializeProject()
 		if err != nil {
-			return locale.WrapError(err, "err_package_get_project", "Could not get project from path: {{.V0}}", pj.Source().Path())
-		}
-
-		ns, err = model.NamespaceForPackage(packageName)
-		if err != nil {
-			return locale.WrapError(err, "err_install_get_langauge", "Could not get language for package: {{.V0}}", packageName)
+			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
 	} else {
 		language, err := model.LanguageForCommit(pj.CommitUUID())
@@ -66,6 +57,13 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 			return locale.WrapError(err, "err_fetch_languages")
 		}
 		ns = model.NewNamespacePkgOrBundle(language, nsType)
+	}
+
+	if !ns.IsValid() {
+		packageName, ns, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve pkg and namespace")
+		}
 	}
 
 	if strings.ToLower(packageVersion) == latestVersion {
@@ -132,12 +130,13 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(authentication, out, pj, cfg.CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), pj, prime.Config().CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}
 
 	// Print the result
+	out := prime.Output()
 	if parentCommitID == "" {
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 		return nil
@@ -152,6 +151,41 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	out.Print(locale.T("operation_success_local"))
 
 	return nil
+}
+
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
+	ns := model.NewBlankNamespace()
+
+	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false)
+	if err != nil {
+		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
+	}
+	if len(ingredients) == 0 {
+		return "", ns, locale.WrapError(err, "err_pkgop_search",
+			"Could not find any ingredients that match '[NOTICE]{{.V0}}[/RESET]'.", packageName)
+	}
+	if len(ingredients) == 1 {
+		language := funk.Last(strings.Split(ingredients[0].Namespace, "/")).(string)
+		return *ingredients[0].Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
+	}
+	choices := []string{}
+	values := map[string][]string{}
+	for _, ingredient := range ingredients {
+		language := funk.Last(strings.Split(ingredient.Namespace, "/")).(string)
+		name := fmt.Sprintf("%s (%s)", *ingredient.Ingredient.Name, language)
+		choices = append(choices, name)
+		values[name] = []string{*ingredient.Ingredient.Name, language}
+	}
+	choice, err := prompt.Select(
+		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
+		locale.Tl("prompt_pkgop_ingredient_msg", "Multiple ingredients matched your query, which one would you like to use?"),
+		choices, &choices[0],
+	)
+	if err != nil {
+		return "", ns, locale.WrapError(err, "err_pkgop_select", "Need a selection.")
+	}
+
+	return values[choice][0], model.NewNamespacePkgOrBundle(values[choice][1], nsType), nil
 }
 
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {

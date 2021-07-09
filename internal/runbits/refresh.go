@@ -15,7 +15,6 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, proj *projec
 	rtMessages := DefaultRuntimeEventHandler(out)
 	target := runtime.NewProjectTarget(proj, cachePath, &commitID)
 	isCached := true
-	isInitial := !fileutils.DirExists(target.Dir())
 	rt, err := runtime.New(target)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
@@ -31,7 +30,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, proj *projec
 	}
 
 	if !isCached {
-		if isInitial {
+		if !fileutils.DirExists(target.Dir()) {
 			out.Notice(output.Heading(locale.Tl("install_runtime", "Installing Runtime")))
 			out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
 		} else {

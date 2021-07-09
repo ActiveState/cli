@@ -41,15 +41,26 @@ func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersio
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
+func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool) ([]*IngredientAndVersion, error) {
 	results, err := searchIngredientsNamespace(50, namespace, name)
 	if err != nil {
 		return nil, err
 	}
 
+	if caseSensitive {
+		name = strings.ToLower(name)
+	}
+
 	ingredients := results[:0]
 	for _, ing := range results {
-		if ing.Ingredient.Name != nil && *ing.Ingredient.Name == name {
+		var ingName string
+		if ing.Ingredient.Name != nil {
+			ingName = *ing.Ingredient.Name
+		}
+		if caseSensitive {
+			ingName = strings.ToLower(ingName)
+		}
+		if ingName == name {
 			ingredients = append(ingredients, ing)
 		}
 	}
@@ -91,7 +102,10 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	namespace := ns.String()
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(&name)
-	params.SetNamespaces(&namespace)
+
+	if ns.Type() != NamespaceBlank {
+		params.SetNamespaces(&namespace)
+	}
 	params.SetLimit(&lim)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
