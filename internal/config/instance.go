@@ -26,6 +26,7 @@ type Instance struct {
 	thread      *singlethread.Thread
 	closeThread bool
 	db          *sql.DB
+	closed      bool
 }
 
 func New() (*Instance, error) {
@@ -79,6 +80,10 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 }
 
 func (i *Instance) Close() error {
+	if i.closed {
+		return nil
+	}
+	i.closed = true
 	if i.closeThread {
 		i.thread.Close()
 	}
