@@ -73,7 +73,7 @@ func removeInstall(logFile, configPath string) error {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
-			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: %s. Error: %v", info.Exec(), err)
+			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
 		}
 	}
 
