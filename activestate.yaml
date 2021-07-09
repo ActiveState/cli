@@ -133,6 +133,15 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+  - name: build-transitional-update
+    language: bash
+    description: Builds a transitional State Tool that just updates to a mult-file version
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      # Generate legacy update
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -151,6 +160,8 @@ scripts:
       $scripts.build-updlg-front.path._posix()
       echo "Building State Update Dialog"
       $scripts.build-updlg.path._posix()
+      echo "Building Transitional Update"
+      $scripts.build-transitional-update._posix()
   - name: build-installer
     language: bash
     description: Builds the state-installer
