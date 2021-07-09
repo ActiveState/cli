@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1 Ingredient Core
@@ -18,108 +17,65 @@ import (
 // A unique ingredient that can be used in a recipe. These properties are shared by all ingredient models.
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1
 type V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1 struct {
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0
 
-	// A concise summary of what this ingredient can be used for
-	// Required: true
-	Description *string `json:"description"`
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1
+}
 
-	// The name of the ingredient (excluding any version information)
-	// Required: true
-	Name *string `json:"name"`
+// UnmarshalJSON unmarshals this object from a JSON structure
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) UnmarshalJSON(raw []byte) error {
+	// AO0
+	var aO0 V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0
+	if err := swag.ReadJSON(raw, &aO0); err != nil {
+		return err
+	}
+	m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0 = aO0
 
-	// The UUID of the organization the ingredient belongs to, if it is private to a particular organization
-	// Format: uuid
-	OrganizationID strfmt.UUID `json:"organization_id,omitempty"`
+	// AO1
+	var aO1 V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1
+	if err := swag.ReadJSON(raw, &aO1); err != nil {
+		return err
+	}
+	m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1 = aO1
 
-	// The primary namespace to which this ingredient belongs
-	// Required: true
-	PrimaryNamespace *string `json:"primary_namespace"`
+	return nil
+}
 
-	// URL of the website about this ingredient (if any)
-	// Format: uri
-	Website strfmt.URI `json:"website,omitempty"`
+// MarshalJSON marshals this object to a JSON structure
+func (m V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) MarshalJSON() ([]byte, error) {
+	_parts := make([][]byte, 0, 2)
+
+	aO0, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO0)
+
+	aO1, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO1)
+
+	return swag.ConcatJSON(_parts...), nil
 }
 
 // Validate validates this v1 build request recipe resolved ingredients items ingredient all of1
 func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateDescription(formats); err != nil {
+	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0
+	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-
-	if err := m.validateName(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateOrganizationID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePrimaryNamespace(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateWebsite(formats); err != nil {
+	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1
+	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1AllOf1.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) validateDescription(formats strfmt.Registry) error {
-
-	if err := validate.Required("description", "body", m.Description); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) validateName(formats strfmt.Registry) error {
-
-	if err := validate.Required("name", "body", m.Name); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) validateOrganizationID(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.OrganizationID) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("organization_id", "body", "uuid", m.OrganizationID.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) validatePrimaryNamespace(formats strfmt.Registry) error {
-
-	if err := validate.Required("primary_namespace", "body", m.PrimaryNamespace); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientAllOf1) validateWebsite(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Website) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("website", "body", "uri", m.Website.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 

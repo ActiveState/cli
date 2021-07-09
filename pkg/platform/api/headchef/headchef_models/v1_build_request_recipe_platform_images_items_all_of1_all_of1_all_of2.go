@@ -6,12 +6,14 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"encoding/json"
 	"strconv"
 
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2 v1 build request recipe platform images items all of1 all of1 all of2
@@ -20,6 +22,10 @@ type V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2 struct {
 
 	// conditions
 	Conditions []*V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItems `json:"conditions"`
+
+	// The status of the revision. This can be one of stable, unstable, deleted, or deprecated.
+	// Enum: [deleted deprecated stable unstable]
+	Status string `json:"status,omitempty"`
 }
 
 // Validate validates this v1 build request recipe platform images items all of1 all of1 all of2
@@ -27,6 +33,10 @@ func (m *V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2) Validate(for
 	var res []error
 
 	if err := m.validateConditions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -56,6 +66,55 @@ func (m *V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2) validateCond
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2TypeStatusPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["deleted","deprecated","stable","unstable"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2TypeStatusPropEnum = append(v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2TypeStatusPropEnum, v)
+	}
+}
+
+const (
+
+	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusDeleted captures enum value "deleted"
+	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusDeleted string = "deleted"
+
+	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusDeprecated captures enum value "deprecated"
+	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusDeprecated string = "deprecated"
+
+	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusStable captures enum value "stable"
+	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusStable string = "stable"
+
+	// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusUnstable captures enum value "unstable"
+	V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2StatusUnstable string = "unstable"
+)
+
+// prop value enum
+func (m *V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2) validateStatusEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2TypeStatusPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2) validateStatus(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
+		return err
 	}
 
 	return nil
