@@ -17,7 +17,7 @@ import (
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Instance holds our main config logic
@@ -59,7 +59,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 	_, err = os.Stat(path)
 	isNew := err != nil
-	i.db, err = sql.Open("sqlite3", fmt.Sprintf(`file:%s?_journal=WAL`, path))
+	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}

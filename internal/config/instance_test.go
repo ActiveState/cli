@@ -151,7 +151,7 @@ func TestRace(t *testing.T) {
 	thread := singlethread.New()
 	defer thread.Close()
 	configReuse, err := config.NewCustom(dir, singlethread.New(), true)
-	require.NoError(t, err)
+	require.NoError(t, err, errs.JoinMessage(err))
 	x := 0
 	wg := sync.WaitGroup{}
 	for x < 100 {

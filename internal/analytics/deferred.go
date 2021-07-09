@@ -190,7 +190,7 @@ func saveDeferred(v deferredData) error {
 		return errs.Wrap(err, "Failed to marshal deferred data")
 	}
 	path := deferrerFilePath()
-	if err := os.MkdirAll(filepath.Dir(path), os.ModeDir); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
 		return errs.Wrap(err, "Failed to create deferred file dir")
 	}
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
