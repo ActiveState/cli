@@ -28,9 +28,9 @@ var (
 )
 
 type BuildStatus struct {
-	Started   chan *headchef_models.BuildStatusResponse
+	Started   chan *headchef_models.V1BuildStatusResponse
 	Failed    chan string
-	Completed chan *headchef_models.BuildStatusResponse
+	Completed chan *headchef_models.V1BuildStatusResponse
 	RunError  chan error
 }
 
@@ -42,9 +42,9 @@ type BuildAnnotations struct {
 
 func NewBuildStatus() *BuildStatus {
 	return &BuildStatus{
-		Started:   make(chan *headchef_models.BuildStatusResponse),
+		Started:   make(chan *headchef_models.V1BuildStatusResponse),
 		Failed:    make(chan string),
-		Completed: make(chan *headchef_models.BuildStatusResponse),
+		Completed: make(chan *headchef_models.V1BuildStatusResponse),
 		RunError:  make(chan error),
 	}
 }
@@ -57,7 +57,7 @@ func (s *BuildStatus) Close() {
 }
 
 type Client struct {
-	client    headchef_operations.ClientService
+	client    headchef_operations.Client
 	transport *httptransport.Runtime
 }
 
@@ -77,7 +77,7 @@ func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
 	}
 
 	return &Client{
-		client:    headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
+		client:    *headchef_client.New(transportRuntime, strfmt.Default).HeadchefOperations,
 		transport: transportRuntime,
 	}
 }
@@ -93,7 +93,7 @@ func (r *Client) RequestBuild(buildRequest *headchef_models.V1BuildRequest) *Bui
 	return buildStatus
 }
 
-func (r *Client) RequestBuildSync(buildRequest *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func (r *Client) RequestBuildSync(buildRequest *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	return r.reqBuildSync(buildRequest)
 }
 
@@ -101,7 +101,7 @@ func NewBuildRequest(recipeID, orgID, projID strfmt.UUID, annotations BuildAnnot
 	uid := strfmt.UUID("00010001-0001-0001-0001-000100010001")
 
 	br := &headchef_models.V1BuildRequest{
-		Requester: &headchef_models.V1Requester{
+		Requester: &headchef_models.V1BuildRequestRequester{
 			OrganizationID: &orgID,
 			ProjectID:      &projID,
 			UserID:         uid,
@@ -152,14 +152,14 @@ const (
 	Error
 )
 
-func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
 		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
-	created, accepted, err := r.client.StartBuildV1(&startParams)
+	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
 
 	switch {
 	case err != nil:
@@ -187,11 +187,11 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 		payloadType := *created.Payload.Type
 
 		switch payloadType {
-		case headchef_models.BuildStatusResponseTypeBuildCompleted:
+		case headchef_models.V1BuildStatusResponseTypeBuildCompleted:
 			return Completed, created.Payload, nil
-		case headchef_models.BuildStatusResponseTypeBuildFailed:
+		case headchef_models.V1BuildStatusResponseTypeBuildFailed:
 			return Failed, created.Payload, locale.WrapError(ErrBuildFailedResp, "headchef_build_failure", "Build Failed: {{.V0}}", created.Payload.Message)
-		case headchef_models.BuildStatusResponseTypeBuildStarted:
+		case headchef_models.V1BuildStatusResponseTypeBuildStarted:
 			return Started, created.Payload, nil
 		default:
 			msg := fmt.Sprintf(
@@ -212,7 +212,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
-	created, accepted, err := r.client.StartBuildV1(&startParams)
+	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
 
 	switch {
 	case err != nil:
@@ -241,11 +241,11 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 		payloadType := *created.Payload.Type
 
 		switch payloadType {
-		case headchef_models.BuildStatusResponseTypeBuildCompleted:
+		case headchef_models.V1BuildStatusResponseTypeBuildCompleted:
 			buildStatus.Completed <- created.Payload
-		case headchef_models.BuildStatusResponseTypeBuildFailed:
+		case headchef_models.V1BuildStatusResponseTypeBuildFailed:
 			buildStatus.Failed <- created.Payload.Message
-		case headchef_models.BuildStatusResponseTypeBuildStarted:
+		case headchef_models.V1BuildStatusResponseTypeBuildStarted:
 			buildStatus.Started <- created.Payload
 		default:
 			msg := fmt.Sprintf(
