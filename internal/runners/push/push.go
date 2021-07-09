@@ -186,6 +186,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 		owner = namespace.Owner
 		name = namespace.Project
+		projectCreated = true
 	}
 
 	// Remove temporary language entry
