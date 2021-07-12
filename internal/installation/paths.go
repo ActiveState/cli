@@ -1,6 +1,5 @@
 package installation
 
-import "C"
 import (
 	"os"
 	"path/filepath"

@@ -132,6 +132,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	if l.file == nil {
+		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+			return errs.Wrap(err, "Could not ensure dir exists")
+		}
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
@@ -172,7 +175,7 @@ func init() {
 	}
 
 	files, err := ioutil.ReadDir(datadir)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		Error("Could not scan config dir to clean up stale logs: %v", err)
 		return
 	}

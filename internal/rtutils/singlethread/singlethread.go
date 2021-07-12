@@ -1,6 +1,9 @@
 package singlethread
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type callback struct {
 	cb  func() error
@@ -42,6 +45,10 @@ func (t *Thread) Run(cb func() error) error {
 }
 
 func (t *Thread) Close() {
+	mutex := sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
+	
 	close(t.cbs)
 	t.closed = true
 }
