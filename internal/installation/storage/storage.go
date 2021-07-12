@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"C"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/google/uuid"
@@ -48,7 +46,12 @@ func AppDataPath() (string, error) {
 		return AppDataPathWithParent(localPath)
 	}
 
-	return configDirs.QueryFolders(configdir.Global)[0].Path, nil
+	dir := configDirs.QueryFolders(configdir.Global)[0].Path
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("could not create appdata dir: %s", dir)
+	}
+
+	return dir, nil
 }
 
 var _appDataPathInTest string
@@ -75,7 +78,13 @@ func appDataPathInTest() (string, error) {
 func AppDataPathWithParent(parentDir string) (string, error) {
 	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.BranchName))
 	configDirs.LocalPath = parentDir
-	return configDirs.QueryFolders(configdir.Local)[0].Path, nil
+	dir := configDirs.QueryFolders(configdir.Local)[0].Path
+
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("could not create appdata dir: %s", dir)
+	}
+
+	return dir, nil
 }
 
 // CachePath returns the path at which our cache is stored

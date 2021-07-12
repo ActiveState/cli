@@ -1,13 +1,11 @@
 package integration
 
 import (
-	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -23,9 +21,6 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	defer ts.Close()
 
 	ts.UseDistinctStateExes()
-
-	err := fileutils.Touch(filepath.Join(ts.Dirs.Config, "config.yaml"))
-	suite.Require().NoError(err, "Could not create config file")
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.ExpectExitCode(0)
@@ -53,7 +48,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 		suite.Fail("Config dir should not exist after uninstall")
 	}
 
-	if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state"+osutils.ExeExt)) {
+	if fileutils.FileExists(ts.Exe) {
 		suite.Fail("State tool executable should not exist after uninstall")
 	}
 

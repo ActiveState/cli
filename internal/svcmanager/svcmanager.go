@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -22,10 +21,14 @@ const MinimalTimeout = 500 * time.Millisecond
 
 type Manager struct {
 	ready bool
-	cfg   *config.Instance
+	cfg   configurable
 }
 
-func New(cfg *config.Instance) *Manager {
+type configurable interface {
+	GetInt(string) int
+}
+
+func New(cfg configurable) *Manager {
 	mgr := &Manager{false, cfg}
 	return mgr
 }

@@ -57,8 +57,9 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/matryer/is v1.2.0 // indirect
+	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.10
-	github.com/mattn/go-sqlite3 v1.14.7
+	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0
@@ -84,12 +85,13 @@ require (
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/wailsapp/wails v1.16.3
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	github.com/yuin/goldmark v1.1.32
+	github.com/yuin/goldmark v1.3.5
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	golang.org/x/text v0.3.6
+	golang.org/x/tools v0.1.4 // indirect
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.36.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
@@ -97,4 +99,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
+	modernc.org/ccgo/v3 v3.9.6 // indirect
+	modernc.org/memory v1.0.5 // indirect
+	modernc.org/sqlite v1.11.2
 )
