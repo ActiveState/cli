@@ -42,7 +42,7 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) error {
+func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var err error
 	pj := prime.Project()
@@ -51,6 +51,13 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
+		defer func() {
+			if rerr != nil {
+				if err := os.Remove(pj.Source().Path()); err != nil {
+					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
+				}
+			}
+		}()
 	} else {
 		language, err := model.LanguageForCommit(pj.CommitUUID())
 		if err != nil {
