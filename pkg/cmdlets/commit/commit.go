@@ -150,7 +150,7 @@ func formatConstraints(constraints []*mono_models.Constraint) string {
 		case "ne":
 			comparator = "!="
 		default:
-			result = append(result, "?")
+			comparator = "?"
 		}
 		result = append(result, fmt.Sprintf("%s%s", comparator, constraint.Version))
 	}
