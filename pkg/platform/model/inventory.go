@@ -22,7 +22,6 @@ type ErrNoMatchingPlatform struct{ *locale.LocalizedError }
 type IngredientAndVersion struct {
 	*inventory_models.SearchIngredientsResponseItem
 	Version   string
-	Namespace string
 }
 
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -35,19 +34,19 @@ var platformCache []*Platform
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace Namespace, name string) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(50, namespace, name)
+func SearchIngredients(namespace Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
+	return searchIngredientsNamespace(namespace, name, includeVersions)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(50, namespace, name)
+	results, err := searchIngredientsNamespace(namespace, name, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if caseSensitive {
+	if !caseSensitive {
 		name = strings.ToLower(name)
 	}
 
@@ -57,7 +56,7 @@ func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive boo
 		if ing.Ingredient.Name != nil {
 			ingName = *ing.Ingredient.Name
 		}
-		if caseSensitive {
+		if !caseSensitive {
 			ingName = strings.ToLower(ingName)
 		}
 		if ingName == name {
@@ -94,8 +93,9 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	return results.Payload.Authors, nil
 }
 
-func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*IngredientAndVersion, error) {
-	lim := int64(limit)
+func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
+	limit := int64(100)
+	offset := int64(0)
 
 	client := inventory.Get()
 
@@ -106,23 +106,43 @@ func searchIngredientsNamespace(limit int, ns Namespace, name string) ([]*Ingred
 	if ns.Type() != NamespaceBlank {
 		params.SetNamespaces(&namespace)
 	}
-	params.SetLimit(&lim)
+	params.SetLimit(&limit)
 	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
 
-	results, err := client.SearchIngredients(params, authentication.ClientAuth())
-	if err != nil {
-		if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-			return nil, locale.NewError(*sidErr.Payload.Message)
+	var ingredients []*IngredientAndVersion
+	var entries []*inventory_models.SearchIngredientsResponseItem
+	for offset == 0 || len(entries) == int(limit) {
+		if offset > (limit * 10) { // at most we will get 10 pages of ingredients (that's ONE THOUSAND ingredients)
+			// Guard against queries that match TOO MANY ingredients
+			return nil, locale.NewError("err_searchingredient_toomany", "Query matched too many ingredients. Please use a more specific query.")
 		}
-		return nil, errs.Wrap(err, "SearchIngredients failed")
+
+		params.SetOffset(&offset)
+		results, err := client.SearchIngredients(params, authentication.ClientAuth())
+		if err != nil {
+			if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
+				return nil, locale.NewError(*sidErr.Payload.Message)
+			}
+			return nil, errs.Wrap(err, "SearchIngredients failed")
+		}
+		entries = results.Payload.Ingredients
+
+		for _, res := range entries {
+			if res.Ingredient.PrimaryNamespace == nil {
+				continue // Shouldn't ever happen, but this at least guards around nil pointer panics
+			}
+			if includeVersions {
+				for _, v := range res.Versions {
+					ingredients = append(ingredients, &IngredientAndVersion{res, v.Version})
+				}
+			} else {
+				ingredients = append(ingredients, &IngredientAndVersion{res, ""})
+			}
+		}
+
+		offset += limit
 	}
 
-	ingredients := []*IngredientAndVersion{}
-	for _, res := range results.Payload.Ingredients {
-		for _, v := range res.Versions {
-			ingredients = append(ingredients, &IngredientAndVersion{res, v.Version, namespace})
-		}
-	}
 	return ingredients, nil
 }
 

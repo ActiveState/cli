@@ -15,12 +15,12 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -78,6 +78,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	parentCommitID := pj.CommitUUID()
+	hasParentCommit := parentCommitID != ""
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded && parentCommitID != "" {
@@ -90,50 +91,50 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
+	if !hasParentCommit {
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, nil, "")
+		if err != nil {
+			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
+		}
+	}
+
 	var commitID strfmt.UUID
-	if parentCommitID != "" {
-		commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns.String(), packageVersion, machineid.UniqID())
-		if err != nil {
-			return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
-		}
-	} else {
-		commitID, err = model.CommitPackageInitial(packageName, packageVersion, ns, machineid.UniqID())
-		if err != nil {
-			return locale.WrapError(err, "err_install_no_project_commit", "Could not create commit for new project")
-		}
-
-		err = pj.SetCommit(commitID.String())
-		if err != nil {
-			return locale.WrapError(err, "err_install_set_commit", "Could not set commit ID in project file")
-		}
-	}
-
-	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion, machineid.UniqID())
 	if err != nil {
-		return locale.WrapError(err, "err_revert_refresh")
-	}
-
-	orderChanged := len(revertCommit.Changeset) > 0
-
-	logging.Debug("Order changed: %v", orderChanged)
-	if orderChanged {
-		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
+		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil {
+	if err != nil && !inventory.IsPlatformError(err) {
 		rerr := &inventory_operations.ResolveRecipesBadRequest{}
 		if errors.As(err, &rerr) {
 			suggestions, serr := getSuggestions(ns, packageName)
 			if serr != nil {
 				logging.Error("Failed to retrieve suggestions: %v", err)
 			}
+			if len(suggestions) == 0 {
+				return locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
+			}
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
 		}
 		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", packageName)
+	}
+
+	orderChanged := !hasParentCommit
+	if hasParentCommit {
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_revert_refresh")
+		}
+		orderChanged = len(revertCommit.Changeset) > 0
+	}
+
+	logging.Debug("Order changed: %v", orderChanged)
+	if orderChanged {
+		if err := pj.SetCommit(commitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_pjfile")
+		}
 	}
 
 	// refresh or install runtime
@@ -168,20 +169,28 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 	if len(ingredients) == 0 {
+		suggestions, serr := getSuggestions(ns, packageName)
+		if serr != nil {
+			logging.Error("Failed to retrieve suggestions: %v", err)
+		}
+		if len(suggestions) == 0 {
+			return "", ns, locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
+		}
 		return "", ns, locale.WrapError(err, "err_pkgop_search",
-			"Could not find any ingredients that match '[NOTICE]{{.V0}}[/RESET]'.", packageName)
-	}
-	if len(ingredients) == 1 {
-		language := funk.Last(strings.Split(ingredients[0].Namespace, "/")).(string)
-		return *ingredients[0].Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
+			"Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
 	}
 	choices := []string{}
 	values := map[string][]string{}
-	for _, ingredient := range ingredients {
-		language := funk.Last(strings.Split(ingredient.Namespace, "/")).(string)
-		name := fmt.Sprintf("%s (%s)", *ingredient.Ingredient.Name, language)
+	for _, i := range ingredients {
+		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+
+		if len(ingredients) == 1 {
+			return *ingredients[0].Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
+		}
+
+		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
 		choices = append(choices, name)
-		values[name] = []string{*ingredient.Ingredient.Name, language}
+		values[name] = []string{*i.Ingredient.Name, language}
 	}
 	choice, err := prompt.Select(
 		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
@@ -196,7 +205,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {
-	results, err := model.SearchIngredients(ns, name)
+	results, err := model.SearchIngredients(ns, name, false)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}

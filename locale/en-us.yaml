@@ -1624,10 +1624,8 @@ err_read_projectfile:
   other: The activestate.yaml at {{.V0}} could not be read.
 err_auth_fail_totp:
   other: A two-factor authentication code is required.
-package_ingredient_alternatives_more:
+ingredient_alternatives_more:
   other: " - .. (to see more results run `state search {{.V0}}`)"
-bundle_ingredient_alternatives_more:
-  other: " - .. (to see more results run `state bundles search {{.V0}}`)"
 err_lock_version_invalid:
   other: "The locked version '{{.V0}}' could not be verified, are you sure it's valid?"
 config_get_error:
