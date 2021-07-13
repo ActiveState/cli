@@ -20,7 +20,7 @@ const InstallerTestsSubstr = "-tests."
 func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for _, a := range buildStatus.Artifacts {
-		if a.BuildState != nil && *a.BuildState == headchef_models.ArtifactBuildStateSucceeded && a.URI != "" {
+		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
 			if strings.HasPrefix(a.URI.String(), "s3://as-builds/noop/") {
 				continue
 			}
@@ -34,7 +34,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 
 func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
 	for _, a := range buildStatus.Artifacts {
-		if a.BuildState != nil && *a.BuildState == headchef_models.ArtifactBuildStateSucceeded && a.URI != "" {
+		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
 			if strings.Contains(a.URI.String(), InstallerTestsSubstr) {
 				continue
 			}
