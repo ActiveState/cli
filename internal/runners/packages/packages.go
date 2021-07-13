@@ -201,16 +201,20 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
+	moreResults := false
 	maxResults := 5
 	if len(results) > maxResults {
 		results = results[:maxResults]
+		moreResults = true
 	}
 
 	suggestions := make([]string, 0, maxResults+1)
 	for _, result := range results {
 		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
 	}
-	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
+	if moreResults {
+		suggestions = append(suggestions, locale.Tr("ingredient_alternatives_more", name))
+	}
 
 	return suggestions, nil
 }
