@@ -24,7 +24,6 @@ package events
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -184,14 +183,14 @@ func (ase ArtifactStartEvent) Total() int {
 type ArtifactBuildProgressEvent struct {
 	artifactBaseEvent
 
-	timeStamp time.Time
+	timeStamp string
 	message   string
 	facility  string
 	pipeName  string
 	source    string
 }
 
-func (ae ArtifactBuildProgressEvent) TimeStamp() time.Time {
+func (ae ArtifactBuildProgressEvent) TimeStamp() string {
 	return ae.timeStamp
 }
 
@@ -211,7 +210,7 @@ func (ae ArtifactBuildProgressEvent) Source() string {
 	return ae.source
 }
 
-func newArtifactBuildProgressEvent(artifactID artifact.ArtifactID, timeStamp time.Time, msg, facility, pipeName, source string) ArtifactBuildProgressEvent {
+func newArtifactBuildProgressEvent(artifactID artifact.ArtifactID, timeStamp string, msg, facility, pipeName, source string) ArtifactBuildProgressEvent {
 	return ArtifactBuildProgressEvent{newArtifactBaseEvent("progress", Build, artifactID), timeStamp, msg, facility, pipeName, source}
 }
 
@@ -252,6 +251,24 @@ func (fe ArtifactFailureEvent) Failure() string {
 
 func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, logURI, errorMessage string) ArtifactFailureEvent {
 	return ArtifactFailureEvent{newArtifactBuildEvent("failure", step, artifactID, logURI), errorMessage}
+}
+
+type AlreadyFailedBuildEvent struct {
+	baseEvent
+	artifactIDs []artifact.ArtifactID
+	errMsg      string
+}
+
+func (ae AlreadyFailedBuildEvent) ArtifactIDs() []artifact.ArtifactID {
+	return ae.artifactIDs
+}
+
+func (ae AlreadyFailedBuildEvent) Failure() string {
+	return ae.errMsg
+}
+
+func newAlreadyFailedBuildEvent(artifactIDs []artifact.ArtifactID, errMsg string) AlreadyFailedBuildEvent {
+	return AlreadyFailedBuildEvent{newBaseEvent("already_failed_build", Build), artifactIDs, errMsg}
 }
 
 // ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available

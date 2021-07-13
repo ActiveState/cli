@@ -87,7 +87,7 @@ type artifactFailedMessage struct {
 type artifactProgressMessage struct {
 	baseMessage
 	ArtifactID artifact.ArtifactID  `json:"artifact_id"`
-	Timestamp  time.Time            `json:"timestamp"`
+	Timestamp  string               `json:"timestamp"`
 	Source     string               `json:"source"`
 	PipeName   string               `json:"pipe_name"`
 	Body       artifactProgressBody `json:"body"`
@@ -102,34 +102,28 @@ func unmarshalSpecialMessage(baseMsg baseMessage, b []byte) (messager, error) {
 	switch baseMsg.MessageType() {
 	case BuildSucceeded:
 		var bm buildMessage
-		if err := json.Unmarshal(b, bm); err != nil {
-			return bm, err
-		}
+		err := json.Unmarshal(b, &bm)
+		return bm, err
 	case BuildFailed:
 		var fm buildFailedMessage
-		if err := json.Unmarshal(b, &fm); err != nil {
-			return fm, err
-		}
+		err := json.Unmarshal(b, &fm)
+		return fm, err
 	case ArtifactStarted:
 		var am artifactMessage
-		if err := json.Unmarshal(b, &am); err != nil {
-			return am, err
-		}
+		err := json.Unmarshal(b, &am)
+		return am, err
 	case ArtifactSucceeded:
 		var am artifactSucceededMessage
-		if err := json.Unmarshal(b, &am); err != nil {
-			return am, err
-		}
+		err := json.Unmarshal(b, &am)
+		return am, err
 	case ArtifactFailed:
 		var am artifactFailedMessage
-		if err := json.Unmarshal(b, &am); err != nil {
-			return am, err
-		}
+		err := json.Unmarshal(b, &am)
+		return am, err
 	case ArtifactProgress:
 		var am artifactProgressMessage
-		if err := json.Unmarshal(b, &am); err != nil {
-			return am, err
-		}
+		err := json.Unmarshal(b, &am)
+		return am, err
 	}
 	return baseMsg, nil
 }
@@ -148,6 +142,6 @@ func (m *message) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	m = &message{mm}
+	*m = message{mm}
 	return nil
 }

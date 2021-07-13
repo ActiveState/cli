@@ -16,6 +16,7 @@ type ChangeSummaryDigester interface {
 
 // ProgressDigester provides actions to display progress information during the setup of the runtime.
 type ProgressDigester interface {
+	BuildFailedInPast(artifactIDs []artifact.ArtifactID, errMsg string) error
 	BuildStarted(totalArtifacts int64) error
 	BuildCompleted(withFailures bool) error
 
@@ -25,6 +26,7 @@ type ProgressDigester interface {
 	BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error
 	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string) error
 	BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string) error
+	BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error
 
 	ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, step string, counter int64, counterCountsBytes bool) error
 	ArtifactStepIncrement(artifactID artifact.ArtifactID, artifactName, step string, increment int64) error
@@ -58,6 +60,8 @@ func (eh *TerminalOutputConsumer) Consume(ev SetupEventer) error {
 	switch t := ev.(type) {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
+	case AlreadyFailedBuildEvent:
+		return eh.progress.BuildFailedInPast(t.ArtifactIDs(), t.Failure())
 	case ArtifactResolverEvent:
 		eh.artifactNames = t.Resolver()
 	case TotalArtifactEvent:
@@ -80,14 +84,17 @@ func (eh *TerminalOutputConsumer) Consume(ev SetupEventer) error {
 }
 
 func (eh *TerminalOutputConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer) error {
+	artifactName := eh.artifactNames(ev.ArtifactID())
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
-		return eh.progress.BuildArtifactStarted(t.artifactID, eh.ResolveArtifactName(t.ArtifactID()))
+		return eh.progress.BuildArtifactStarted(t.artifactID, artifactName)
 	case ArtifactCompleteEvent:
-		return eh.progress.BuildArtifactCompleted(t.artifactID, eh.ResolveArtifactName(t.ArtifactID()), t.logURI)
+		return eh.progress.BuildArtifactCompleted(t.artifactID, artifactName, t.logURI)
 	case ArtifactFailureEvent:
 		eh.numBuildFailures++
-		return eh.progress.BuildArtifactFailure(t.artifactID, eh.ResolveArtifactName(t.ArtifactID()), t.logURI, t.errorMessage)
+		return eh.progress.BuildArtifactFailure(t.artifactID, artifactName, t.logURI, t.errorMessage)
+	case ArtifactBuildProgressEvent:
+		return eh.progress.BuildArtifactProgress(t.artifactID, artifactName, t.TimeStamp(), t.Message(), t.Facility(), t.PipeName(), t.Source())
 	default:
 		logging.Debug("unhandled build artifact event: %s", t.String())
 	}

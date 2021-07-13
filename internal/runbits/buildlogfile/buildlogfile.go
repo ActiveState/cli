@@ -3,7 +3,6 @@ package buildlogfile
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -35,7 +34,7 @@ func (bl *BuildLogFile) Path() string {
 }
 
 func (bl *BuildLogFile) writeMessage(msg string, values ...interface{}) error {
-	_, err := bl.logFile.WriteString(fmt.Sprintf(msg+"\n", values))
+	_, err := bl.logFile.WriteString(fmt.Sprintf(msg+"\n", values...))
 	if err != nil {
 		return errs.Wrap(err, "Failed to write message to log file.")
 	}
@@ -43,10 +42,14 @@ func (bl *BuildLogFile) writeMessage(msg string, values ...interface{}) error {
 }
 
 func (bl *BuildLogFile) writeArtifactMessage(artifactID artifact.ArtifactID, artifactName string, msg string, values ...interface{}) error {
-	_, err := bl.logFile.WriteString(fmt.Sprintf("[%s (%s)]", artifactName, artifactID.String()) + fmt.Sprintf(msg+"\n", values))
+	_, err := bl.logFile.WriteString(fmt.Sprintf("[%s (%s)] ", artifactName, artifactID.String()) + fmt.Sprintf(msg+"\n", values...))
 	if err != nil {
 		return errs.Wrap(err, "Failed to write message to log file.")
 	}
+	return nil
+}
+
+func (bl *BuildLogFile) BuildFailedInPast(artifactIDs []artifact.ArtifactID, errMsg string) error {
 	return nil
 }
 
@@ -70,8 +73,8 @@ func (bl *BuildLogFile) BuildArtifactCompleted(artifactID artifact.ArtifactID, a
 	return bl.writeArtifactMessage(artifactID, artifactName, "Build completed successfully")
 }
 
-func (bl *BuildLogFile) LogLine(artifactID artifact.ArtifactID, artifactName string, timeStamp time.Time, msg string) error {
-	return bl.writeArtifactMessage(artifactID, artifactName, fmt.Sprintf("%s: %s", timeStamp.String(), msg))
+func (bl *BuildLogFile) BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName string, timeStamp, message, _, _, _ string) error {
+	return bl.writeArtifactMessage(artifactID, artifactName, "%s: %s", timeStamp, message)
 }
 
 func (bl *BuildLogFile) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, unsignedLogURI string, errMsg string) error {

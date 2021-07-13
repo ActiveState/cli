@@ -93,6 +93,11 @@ func (rp *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *ar
 	return bar
 }
 
+// BuildFailedInPast is called when a build failed in the past
+func (rp *RuntimeProgress) BuildFailedInPast(_ []artifact.ArtifactID, _ string) error {
+	return nil
+}
+
 // BuildStarted adds a build progress bar
 func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	if rp.buildBar == nil {
@@ -118,6 +123,10 @@ func (rp *RuntimeProgress) BuildArtifactStarted(_ artifact.ArtifactID, _ string)
 
 // BuildArtifactFailure has no effect on the progress bar output
 func (rp *RuntimeProgress) BuildArtifactFailure(_ artifact.ArtifactID, _ string, _ string, _ string) error {
+	return nil
+}
+
+func (bl *RuntimeProgress) BuildArtifactProgress(_ artifact.ArtifactID, _ string, timeStamp, message, _, _, _ string) error {
 	return nil
 }
 

@@ -88,6 +88,7 @@ type Events interface {
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
 
 	ParsedArtifacts(artifactResolver events.ArtifactResolver)
+	RequestedAlreadyFailedBuild(artifactMap artifact.ArtifactRecipeMap, errMsg string)
 }
 
 type Targeter interface {
@@ -183,6 +184,7 @@ func (s *Setup) update() error {
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
+		s.events.RequestedAlreadyFailedBuild(artifacts, buildResult.BuildStatusResponse.Message)
 		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 

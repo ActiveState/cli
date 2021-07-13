@@ -1,8 +1,6 @@
 package buildlog
 
 import (
-	"time"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,7 +30,7 @@ type Events interface {
 	ArtifactBuildCached(artifactID artifact.ArtifactID, logURI string)
 	ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string)
 	ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI string, errorMessage string)
-	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp time.Time, message string, facility, pipeName, source string)
+	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp string, message string, facility, pipeName, source string)
 }
 
 // BuildLog is an implementation of a build log

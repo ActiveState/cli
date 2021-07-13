@@ -1,8 +1,6 @@
 package events
 
 import (
-	"time"
-
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -64,7 +62,7 @@ func (r *RuntimeEventProducer) ArtifactBuildFailed(artifactID artifact.ArtifactI
 	r.event(newArtifactFailureEvent(Build, artifactID, logURI, errorMessage))
 }
 
-func (r *RuntimeEventProducer) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp time.Time, message, facility, pipeName, source string) {
+func (r *RuntimeEventProducer) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp string, message, facility, pipeName, source string) {
 	r.event(newArtifactBuildProgressEvent(artifactID, timeStamp, message, facility, pipeName, source))
 }
 
@@ -86,4 +84,12 @@ func (r *RuntimeEventProducer) ArtifactStepCompleted(step SetupStep, artifactID 
 
 func (r *RuntimeEventProducer) ArtifactStepFailed(step SetupStep, artifactID strfmt.UUID, errorMsg string) {
 	r.event(newArtifactFailureEvent(step, artifactID, "", errorMsg))
+}
+
+func (r *RuntimeEventProducer) RequestedAlreadyFailedBuild(artifactMap artifact.ArtifactRecipeMap, errMessage string) {
+	artifactIDs := make([]artifact.ArtifactID, 0, len(artifactMap))
+	for id := range artifactMap {
+		artifactIDs = append(artifactIDs, id)
+	}
+	r.event(newAlreadyFailedBuildEvent(artifactIDs, errMessage))
 }
