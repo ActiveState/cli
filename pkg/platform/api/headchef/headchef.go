@@ -190,7 +190,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 		case headchef_models.V1BuildStatusResponseTypeBuildCompleted:
 			return Completed, created.Payload, nil
 		case headchef_models.V1BuildStatusResponseTypeBuildFailed:
-			return Failed, created.Payload, locale.WrapError(ErrBuildFailedResp, "headchef_build_failure", "Build Failed: {{.V0}}", created.Payload.Message)
+			return Failed, created.Payload, nil
 		case headchef_models.V1BuildStatusResponseTypeBuildStarted:
 			return Started, created.Payload, nil
 		default:
