@@ -164,10 +164,13 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
 	ns := model.NewBlankNamespace()
 
+	// Find ingredients that match the input query
 	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false)
 	if err != nil {
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
+
+	// If no ingredients matched we give the user an error that provides some alternative suggestions
 	if len(ingredients) == 0 {
 		suggestions, serr := getSuggestions(ns, packageName)
 		if serr != nil {
@@ -179,19 +182,26 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_search",
 			"Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
 	}
+
+	//
 	choices := []string{}
 	values := map[string][]string{}
 	for _, i := range ingredients {
 		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
 
+		// If we only have one ingredient match we're done; return it.
+		// This is inside the loop just to make use of the language variable
 		if len(ingredients) == 1 {
-			return *ingredients[0].Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
+			return *i.Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
 		}
 
+		// Generate ingredient choices to present to the user
 		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
 		choices = append(choices, name)
 		values[name] = []string{*i.Ingredient.Name, language}
 	}
+
+	// Prompt the user with the ingredient choices
 	choice, err := prompt.Select(
 		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
 		locale.Tl("prompt_pkgop_ingredient_msg", "Multiple ingredients matched your query, which one would you like to use?"),
@@ -201,6 +211,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_select", "Need a selection.")
 	}
 
+	// Return the user selected ingredient
 	return values[choice][0], model.NewNamespacePkgOrBundle(values[choice][1], nsType), nil
 }
 
