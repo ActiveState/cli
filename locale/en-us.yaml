@@ -1659,13 +1659,6 @@ err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
   other: "Failed to update runtime"
-headless_notify_title:
-  other: Detached State
-headless_notify:
-  other: |
-    Any changes you make are local only and will not be saved the platform. Visit: [ACTIONABLE]{{.V0}}[/RESET] to create a platform project from this commit.
-
-    For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
 err_svcmanager_wait:
