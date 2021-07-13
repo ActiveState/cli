@@ -1,6 +1,8 @@
 package buildlog
 
 import (
+	"time"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -9,25 +11,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
-type message struct {
-	Type             string       `json:"type"`
-	CacheHit         bool         `json:"cache_hit"`
-	ErrorMessage     *string      `json:"error_message,omitempty"`
-	ArtifactID       *strfmt.UUID `json:"artifact_id,omitempty"`
-	ArtifactURI      *string      `json:"artifact_uri,omitempty"`
-	ArtifactChecksum *string      `json:"artifact_checksum,omitempty"`
-	LogURI           *string      `json:"log_uri,omitempty"`
-}
-
-type logRequest struct {
+type recipeRequest struct {
 	RecipeID string `json:"recipeID"`
 }
 
-func (m message) Err() string {
-	if m.ErrorMessage == nil {
-		return ""
-	}
-	return *m.ErrorMessage
+type artifactRequest struct {
+	ArtifactID string `json:"artifactID"`
 }
 
 // BuildLogConnector describes how to interact with a build log connection
@@ -39,10 +28,11 @@ type BuildLogConnector interface {
 type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
-	ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string)
-	ArtifactBuildCached(artifactID artifact.ArtifactID)
-	ArtifactBuildCompleted(artifactID artifact.ArtifactID)
-	ArtifactBuildFailed(artifactID artifact.ArtifactID, errorMessage string)
+	ArtifactBuildStarting(artifactID artifact.ArtifactID)
+	ArtifactBuildCached(artifactID artifact.ArtifactID, logURI string)
+	ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string)
+	ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI string, errorMessage string)
+	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp time.Time, message string, facility, pipeName, source string)
 }
 
 // BuildLog is an implementation of a build log
@@ -73,65 +63,63 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				errCh <- err
 				return
 			}
-			logging.Debug("Received response: " + msg.Type)
+			logging.Debug("Received response: %d", msg.MessageType())
 
-			var artf artifact.ArtifactRecipe
-			var artifactMapped bool
-			if msg.ArtifactID != nil {
-				artf, artifactMapped = artifactMap[*msg.ArtifactID]
-			}
-			var artifactName string
-			if artifactMapped {
-				artifactName = artf.NameWithVersion()
-			}
-
-			switch msg.Type {
-			case "build_failed":
-				errCh <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", msg.Err())
+			switch msg.MessageType() {
+			case BuildFailed:
+				m := msg.messager.(buildFailedMessage)
+				errCh <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)
 				return
-			case "build_succeeded":
+			case BuildSucceeded:
 				return
-			case "artifact_started":
-				if !artifactMapped {
-					logging.Debug("build log streamer started unmapped artifact ID %s", msg.ArtifactID)
-					continue
-				}
+			case ArtifactStarted:
+				m := msg.messager.(artifactMessage)
 				// NOTE: fix to ignore current noop "final pkg artifact"
-				if msg.ArtifactID != nil && *msg.ArtifactID == recipeID {
+				if artifact.ArtifactID(m.ArtifactID) == recipeID {
 					break
 				}
-				if msg.CacheHit {
-					events.ArtifactBuildCached(*msg.ArtifactID)
+				if m.CacheHit {
+					continue
+				}
+				events.ArtifactBuildStarting(m.ArtifactID)
+			case ArtifactSucceeded:
+				m := msg.messager.(artifactSucceededMessage)
+
+				// NOTE: fix to ignore current noop "final pkg artifact"
+				if m.ArtifactID == recipeID {
+					break
+				}
+				if m.CacheHit {
+					events.ArtifactBuildCached(m.ArtifactID, m.LogURI)
 				} else {
-					events.ArtifactBuildStarting(*msg.ArtifactID, artifactName)
+					events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
 				}
-			case "artifact_succeeded":
-				if !artifactMapped {
-					logging.Debug("build log streamer finished unmapped artifact ID %s", msg.ArtifactID)
-					continue
-				}
+				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+			case ArtifactFailed:
+				m := msg.messager.(artifactFailedMessage)
+				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
-				// NOTE: fix to ignore current noop "final pkg artifact"
-				if msg.ArtifactID != nil && *msg.ArtifactID == recipeID {
-					break
-				}
-				events.ArtifactBuildCompleted(*msg.ArtifactID)
-				if msg.ArtifactID == nil || msg.ArtifactURI == nil || msg.ArtifactChecksum == nil {
-					errCh <- errs.New("artifact_succeeded message was incomplete")
-					return
-				}
-				ch <- artifact.ArtifactDownload{ArtifactID: *msg.ArtifactID, UnsignedURI: *msg.ArtifactURI, Checksum: *msg.ArtifactChecksum}
-			case "artifact_failed":
-				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, msg.Err())
-				events.ArtifactBuildFailed(*msg.ArtifactID, msg.Err())
+				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
+				events.ArtifactBuildFailed(m.ArtifactID, m.LogURI, m.ErrorMessage)
+			case ArtifactProgress:
+				m := msg.messager.(artifactProgressMessage)
+				events.ArtifactBuildProgress(m.ArtifactID, m.Timestamp, m.Body.Message, m.Body.Facility, m.PipeName, m.Source)
 			}
 		}
 	}()
 
 	logging.Debug("sending websocket request for %s", recipeID.String())
-	request := logRequest{RecipeID: recipeID.String()}
+	request := recipeRequest{RecipeID: recipeID.String()}
 	if err := conn.WriteJSON(request); err != nil {
 		return nil, errs.Wrap(err, "Could not write websocket request")
+	}
+
+	// Also subscribe to log messages for all artifacts
+	for artfID := range artifactMap {
+		request := artifactRequest{ArtifactID: artfID.String()}
+		if err := conn.WriteJSON(request); err != nil {
+			return nil, errs.Wrap(err, "Could not write websocket request")
+		}
 	}
 
 	return &BuildLog{
@@ -155,4 +143,13 @@ func (bl *BuildLog) Wait() error {
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
 func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
 	return bl.ch
+}
+
+func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactRecipeMap) (name string, ok bool) {
+	artf, ok := artifactMap[artifactID]
+	if !ok {
+		return locale.Tl("unknown_artifact_name", "unknown"), false
+	}
+
+	return artf.NameWithVersion(), true
 }

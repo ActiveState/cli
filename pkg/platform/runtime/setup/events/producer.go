@@ -1,9 +1,13 @@
 package events
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
+
+type ArtifactResolver func(a artifact.ArtifactID) string
 
 // RuntimeEventProducer implements a setup.MessageHandler, and translates the
 // runtime messages into events communicated over a wrapped events channel.
@@ -28,6 +32,10 @@ func (r *RuntimeEventProducer) event(be SetupEventer) {
 	r.events <- be
 }
 
+func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver) {
+	r.event(newArtifactResolverEvent(artifactResolver))
+}
+
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
 	r.event(newTotalArtifactEvent(total))
 }
@@ -40,20 +48,24 @@ func (r *RuntimeEventProducer) BuildFinished() {
 	r.event(newBuildCompleteEvent())
 }
 
-func (r *RuntimeEventProducer) ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string) {
-	r.event(newArtifactStartEvent(Build, artifactID, artifactName, 1))
+func (r *RuntimeEventProducer) ArtifactBuildStarting(artifactID artifact.ArtifactID) {
+	r.event(newArtifactStartEvent(Build, artifactID, 1))
 }
 
-func (r *RuntimeEventProducer) ArtifactBuildCached(artifactID artifact.ArtifactID) {
-	r.event(newArtifactCompleteEvent(Build, artifactID))
+func (r *RuntimeEventProducer) ArtifactBuildCached(artifactID artifact.ArtifactID, logURI string) {
+	r.event(newArtifactCompleteEvent(Build, artifactID, logURI))
 }
 
-func (r *RuntimeEventProducer) ArtifactBuildCompleted(artifactID artifact.ArtifactID) {
-	r.event(newArtifactCompleteEvent(Build, artifactID))
+func (r *RuntimeEventProducer) ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string) {
+	r.event(newArtifactCompleteEvent(Build, artifactID, logURI))
 }
 
-func (r *RuntimeEventProducer) ArtifactBuildFailed(artifactID artifact.ArtifactID, errorMessage string) {
-	r.event(newArtifactFailureEvent(Build, artifactID, errorMessage))
+func (r *RuntimeEventProducer) ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI, errorMessage string) {
+	r.event(newArtifactFailureEvent(Build, artifactID, logURI, errorMessage))
+}
+
+func (r *RuntimeEventProducer) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp time.Time, message, facility, pipeName, source string) {
+	r.event(newArtifactBuildProgressEvent(artifactID, timeStamp, message, facility, pipeName, source))
 }
 
 func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) {
@@ -61,7 +73,7 @@ func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]a
 }
 
 func (r *RuntimeEventProducer) ArtifactStepStarting(step SetupStep, artifactID artifact.ArtifactID, artifactName string, total int) {
-	r.event(newArtifactStartEvent(step, artifactID, artifactName, total))
+	r.event(newArtifactStartEvent(step, artifactID, total))
 }
 
 func (r *RuntimeEventProducer) ArtifactStepProgress(step SetupStep, artifactID artifact.ArtifactID, update int) {
@@ -69,9 +81,9 @@ func (r *RuntimeEventProducer) ArtifactStepProgress(step SetupStep, artifactID a
 }
 
 func (r *RuntimeEventProducer) ArtifactStepCompleted(step SetupStep, artifactID strfmt.UUID) {
-	r.event(newArtifactCompleteEvent(step, artifactID))
+	r.event(newArtifactCompleteEvent(step, artifactID, ""))
 }
 
 func (r *RuntimeEventProducer) ArtifactStepFailed(step SetupStep, artifactID strfmt.UUID, errorMsg string) {
-	r.event(newArtifactFailureEvent(step, artifactID, errorMsg))
+	r.event(newArtifactFailureEvent(step, artifactID, "", errorMsg))
 }

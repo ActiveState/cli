@@ -86,6 +86,8 @@ type Events interface {
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
+
+	ParsedArtifacts(artifactResolver events.ArtifactResolver)
 }
 
 type Targeter interface {
@@ -161,6 +163,16 @@ func (s *Setup) update() error {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
+	// Compute and handle the change summary
+	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
+	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
+	if err != nil {
+		return errs.Wrap(err, "Failed to select setup implementation")
+	}
+
+	s.events.ParsedArtifacts(setup.ResolveArtifactName)
+
+	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
 		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
 		ns := project.Namespaced{
@@ -170,8 +182,9 @@ func (s *Setup) update() error {
 		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
-	// Compute and handle the change summary
-	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
+	if buildResult.BuildStatus == headchef.Failed {
+		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+	}
 
 	s.store = store.New(s.target.Dir())
 	oldRecipe, err := s.store.Recipe()
@@ -181,11 +194,6 @@ func (s *Setup) update() error {
 	requestedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, true)
 	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
 	s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
-
-	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
-	if err != nil {
-		return errs.Wrap(err, "Failed to select setup implementation")
-	}
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {

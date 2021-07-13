@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
-func DefaultRuntimeEventHandler(out output.Outputer) *events.RuntimeEventHandler {
+func DefaultRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
 	var w io.Writer = os.Stdout
 	if out.Type() != output.PlainFormatName {
 		w = nil

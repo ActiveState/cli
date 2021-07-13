@@ -65,7 +65,7 @@ func NewRuntimeProgress(w io.Writer) *RuntimeProgress {
 // Close ensures that the mpb.Progress instance has finished all its work
 // Afterwards it is safe to write to the writer again.
 // Note: Note: This function will be obsolete if we do our own progress bar implementation provided it does not have to create go-routines.
-func (rp *RuntimeProgress) Close() {
+func (rp *RuntimeProgress) Close() error {
 	defer rp.cancel()   // clean up context
 	defer rp.prg.Wait() // Note: This closes the prgShutdownCh
 
@@ -75,6 +75,7 @@ func (rp *RuntimeProgress) Close() {
 		rp.cancel()
 	case <-rp.shutdownNotifier:
 	}
+	return nil
 }
 
 // artifactBar is a helper function that returns the progress bar for a given artifact and sub-step (identified by the steps title)
@@ -100,13 +101,23 @@ func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	return nil
 }
 
-// BuildIncrement increments the build progress bar counter
-func (rp *RuntimeProgress) BuildIncrement() error {
+// BuildArtifactCompleted increments the build progress bar counter
+func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string) error {
 	if rp.buildBar == nil {
 		return errs.New("Build bar has not been initialized yet.")
 	}
 
 	rp.buildBar.Increment()
+	return nil
+}
+
+// BuildArtifactStarted has no effect on the progress bar output
+func (rp *RuntimeProgress) BuildArtifactStarted(_ artifact.ArtifactID, _ string) error {
+	return nil
+}
+
+// BuildArtifactFailure has no effect on the progress bar output
+func (rp *RuntimeProgress) BuildArtifactFailure(_ artifact.ArtifactID, _ string, _ string, _ string) error {
 	return nil
 }
 
@@ -160,19 +171,19 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 }
 
 // ArtifactStepStarted adds a new progress bar for an artifact progress
-func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, title string, name string, total int64, countsBytes bool) error {
+func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, title string, total int64, countsBytes bool) error {
 	as := rp.artifactBar(artifactID, title)
 	if as.bar != nil {
 		return errs.New("Progress bar can be initialized only once.")
 	}
-	as.bar = rp.addArtifactStepBar(fmt.Sprintf("%s %s", title, name), total, countsBytes)
+	as.bar = rp.addArtifactStepBar(fmt.Sprintf("%s %s", title, artifactName), total, countsBytes)
 	as.started = time.Now()
 
 	return nil
 }
 
 // ArtifactStepIncrement increments the progress bar count for a specific step and artifact
-func (rp *RuntimeProgress) ArtifactStepIncrement(artifactID artifact.ArtifactID, title string, incr int64) error {
+func (rp *RuntimeProgress) ArtifactStepIncrement(artifactID artifact.ArtifactID, _, title string, incr int64) error {
 	as := rp.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")
@@ -184,7 +195,7 @@ func (rp *RuntimeProgress) ArtifactStepIncrement(artifactID artifact.ArtifactID,
 }
 
 // ArtifactStepCompleted ensures that the artifact progress bar is in a completed state
-func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID, title string) error {
+func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID, _, title string) error {
 	as := rp.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")
@@ -195,7 +206,7 @@ func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID,
 }
 
 // ArtifactStepFailure aborts display of an artifact progress bar
-func (rp *RuntimeProgress) ArtifactStepFailure(artifactID artifact.ArtifactID, title string) error {
+func (rp *RuntimeProgress) ArtifactStepFailure(artifactID artifact.ArtifactID, _, title, _ string) error {
 	as := rp.artifactBar(artifactID, title)
 	if as.bar == nil {
 		return errs.New("Progress bar needs to be initialized.")
