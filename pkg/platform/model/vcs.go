@@ -76,6 +76,9 @@ const (
 
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
+
+	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
+	NamespaceSharedMatch = `^shared$`
 )
 
 type TrackingType string
