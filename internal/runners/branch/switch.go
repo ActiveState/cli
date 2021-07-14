@@ -1,6 +1,7 @@
 package branch
 
 import (
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -10,15 +11,10 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type configurable interface {
-	CachePath() string
-}
-
 type Switch struct {
 	auth    *authentication.Auth
 	out     output.Outputer
 	project *project.Project
-	config  configurable
 }
 
 type SwitchParams struct {
@@ -30,7 +26,6 @@ func NewSwitch(prime primeable) *Switch {
 		auth:    prime.Auth(),
 		out:     prime.Output(),
 		project: prime.Project(),
-		config:  prime.Config(),
 	}
 }
 
@@ -61,7 +56,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.project, s.config.CachePath(), *branch.CommitID, false)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.project, storage.CachePath(), *branch.CommitID, false)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

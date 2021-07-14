@@ -13,9 +13,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -23,6 +23,8 @@ import (
 
 // datadir is the base directory at which the log is saved
 var datadir string
+
+var datafile string
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -63,11 +65,18 @@ func (l *fileHandler) Output() io.Writer {
 }
 
 func FileName() string {
+	if datafile != "" {
+		return datafile
+	}
 	return FileNameFor(os.Getpid())
 }
 
 func FileNameFor(pid int) string {
-	return fmt.Sprintf("%s-%d%s", FileNamePrefix(), pid, FileNameSuffix)
+	return FileNameForCmd(FileNamePrefix(), pid)
+}
+
+func FileNameForCmd(cmd string, pid int) string {
+	return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
 }
 
 func FileNamePrefix() string {
@@ -85,6 +94,10 @@ func FilePath() string {
 
 func FilePathFor(filename string) string {
 	return filepath.Join(datadir, filename)
+}
+
+func FilePathForCmd(cmd string, pid int) string {
+	return FilePathFor(FileNameForCmd(cmd, pid))
 }
 
 const FileNameSuffix = ".log"
@@ -119,6 +132,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	if l.file == nil {
+		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+			return errs.Wrap(err, "Could not ensure dir exists")
+		}
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
@@ -129,6 +145,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	_, err := l.file.WriteString(message + "\n")
 	if err != nil {
 		return err
+	}
+	if err := l.file.Sync(); err != nil {
+		return errs.Wrap(err, "Could not sync log file")
 	}
 
 	return nil
@@ -147,19 +166,16 @@ func init() {
 
 	log.SetOutput(&writer{})
 
-	cfg, err := config.Get()
+	// Clean up old log files
+	var err error
+	datadir, err = storage.AppDataPath()
 	if err != nil {
-		Error("Could not load configuration: %v", err)
-	}
-	if cfg == nil {
-		Error("Could not proceed setting up logging due to missing configuration.")
+		Error("Could not detect AppData dir: %v", err)
 		return
 	}
 
-	// Clean up old log files
-	datadir = cfg.ConfigPath()
 	files, err := ioutil.ReadDir(datadir)
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		Error("Could not scan config dir to clean up stale logs: %v", err)
 		return
 	}
@@ -180,3 +196,4 @@ func init() {
 
 	Debug("Args: %v", os.Args)
 }
+

@@ -3,7 +3,6 @@ package installation
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/shirou/gopsutil/process"
 )
@@ -12,8 +11,10 @@ type Configurable interface {
 	GetInt(string) int
 }
 
+const ConfigKeyTrayPid = "tray-pid"
+
 func StopTrayApp(cfg Configurable) error {
-	trayPid := cfg.GetInt(config.ConfigKeyTrayPid)
+	trayPid := cfg.GetInt(ConfigKeyTrayPid)
 	if trayPid <= 0 {
 		return nil
 	}

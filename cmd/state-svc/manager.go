@@ -62,10 +62,6 @@ func (s *serviceManager) Start(args ...string) error {
 }
 
 func (s *serviceManager) Stop() error {
-	err := s.cfg.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload configuration")
-	}
 	pid, err := s.CheckPid(s.cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")

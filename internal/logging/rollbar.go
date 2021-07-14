@@ -5,23 +5,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/machineid"
 )
-
-type Configurable interface {
-	InstallSource() string
-}
-
-type delayedLog struct {
-	level string
-	msg   interface{}
-}
-
-var delayedLogs []delayedLog
-var cfg Configurable
 
 func SetupRollbar(token string) {
 	// set user to unknown (if it has not been set yet)
@@ -50,27 +39,13 @@ func SetupRollbar(token string) {
 		data["platform_os"] = runtime.GOOS
 	})
 
-	for _, l := range delayedLogs {
-		rollbar.Log(l.level, l.msg)
-	}
-}
-
-// SendToRollbarWhenReady sends a rollbar message after the client has been set up
-// This function can be used to report problems that happen early on during the state tool set-up process
-func SendToRollbarWhenReady(level string, msg interface{}) {
-	delayedLogs = append(delayedLogs, delayedLog{level, msg})
-}
-
-func UpdateConfig(c Configurable) {
-	cfg = c
-	// update machine-id if user is still unknown
-	if rollbar.Custom()["UserID"] == "unknown" {
-		machID := machineid.UniqID()
-		rollbar.SetPerson(machID, "unknown", "unknown")
+	source, err := storage.InstallSource()
+	if err != nil {
+		rollbar.Log("error", err.Error())
 	}
 
 	rollbar.SetCustom(map[string]interface{}{
-		"install_source": cfg.InstallSource(),
+		"install_source": source,
 	})
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -37,7 +38,6 @@ func (pv *PackageVersion) Set(arg string) error {
 
 type configurable interface {
 	keypairs.Configurable
-	CachePath() string
 }
 
 const latestVersion = "latest"
@@ -138,7 +138,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), pj, prime.Config().CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), pj, storage.CachePath(), commitID, orderChanged)
 	if err != nil {
 		return err
 	}

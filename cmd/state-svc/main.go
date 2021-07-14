@@ -15,7 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -41,7 +44,9 @@ func main() {
 		if panics.HandlePanics() {
 			exitCode = 1
 		}
-		events.WaitForEvents(1*time.Second, rollbar.Close)
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failing to wait for rollbar to close")
+		}
 		os.Exit(exitCode)
 	}()
 
@@ -65,16 +70,20 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (rerr error) {
 	var cmd command = ""
 	if len(os.Args) > 1 {
 		cmd = command(os.Args[1])
 	}
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
+	machineid.Setup(cfg)
+	machineid.SetErrorLogger(logging.Error)
 
 	switch cmd {
 	case CmdStart:
@@ -158,9 +167,6 @@ func runStop(cfg *config.Instance) error {
 }
 
 func runStatus(cfg *config.Instance) error {
-	if err := cfg.Reload(); err != nil {
-		return errs.Wrap(err, "Could not reload configuration.")
-	}
 	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")

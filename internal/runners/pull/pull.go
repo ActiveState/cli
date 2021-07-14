@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -154,7 +155,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.project, p.cfg.CachePath(), *resultingCommit, true)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.project, storage.CachePath(), *resultingCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

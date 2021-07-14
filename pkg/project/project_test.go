@@ -278,8 +278,9 @@ func (suite *ProjectTestSuite) TestConstants() {
 func (suite *ProjectTestSuite) TestSecrets() {
 	prj, err := project.GetSafe()
 	suite.NoError(err, "Run without failure")
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	suite.Require().NoError(err)
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	secrets := prj.Secrets(cfg)
 	suite.Len(secrets, 2)
 

@@ -34,7 +34,7 @@ type LoginWithKeypairTestSuite struct {
 
 func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 
@@ -51,6 +51,7 @@ func (suite *LoginWithKeypairTestSuite) BeforeTest(suiteName, testName string) {
 
 func (suite *LoginWithKeypairTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *LoginWithKeypairTestSuite) mockSuccessfulLogin() {

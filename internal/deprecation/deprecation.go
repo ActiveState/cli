@@ -53,6 +53,7 @@ type Configurable interface {
 	ConfigPath() string
 	GetTime(key string) time.Time
 	Set(key string, value interface{}) error
+	Close() error
 }
 
 // NewChecker returns a new instance of the Checker struct

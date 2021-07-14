@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -21,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/promptable"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
@@ -170,8 +172,8 @@ func (r *Activate) run(params *ActivateParams) error {
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
 	setDefault := params.Default
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
-	promptable := r.out.Type() == output.PlainFormatName
-	if !setDefault && firstActivate && promptable {
+	isPromptable, promptableKey := promptable.IsPromptableOnce, promptable.DefaultProject
+	if !setDefault && firstActivate && isPromptable(r.prompt, r.config, promptableKey) {
 		var err error
 		setDefault, err = r.prompt.Confirm(
 			locale.Tl("activate_default_prompt_title", "Default Project"),
@@ -181,6 +183,11 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
 		}
+
+		r.out.Notice(locale.Tl(
+			"global_default_modify_note",
+			"You can switch your default project at any time by passing the `[ACTIONABLE]--default[/RESET]` flag to `[ACTIONABLE]state activate[/RESET]`.",
+		))
 	}
 
 	if params.Command != "" {
@@ -193,7 +200,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, r.config.CachePath(), nil))
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil))
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -212,7 +219,7 @@ func (r *Activate) run(params *ActivateParams) error {
 					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
 				}
 			}
-			if !authentication.Get().Authenticated() {
+			if !authentication.LegacyGet().Authenticated() {
 				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
 			}
 			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")

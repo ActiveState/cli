@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/sysinfo"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
@@ -445,7 +446,7 @@ type Jobs []Job
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(configFilepath string) (*Project, error) {
+func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
@@ -486,10 +487,11 @@ func Parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read configuration required by projectfile parser.")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
 	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
@@ -851,11 +853,13 @@ func getProjectFilePathFromWd() (string, error) {
 	return path, nil
 }
 
-func getProjectFilePathFromDefault() (string, error) {
-	cfg, err := config.Get()
+func getProjectFilePathFromDefault() (_ string, rerr error) {
+	cfg, err := config.New()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
 	defaultProjectPath := cfg.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
@@ -1210,6 +1214,7 @@ type ConfigGetter interface {
 	GetStringSlice(string) []string
 	Set(string, interface{}) error
 	SetWithLock(string, func(interface{}) (interface{}, error)) error
+	Close() error
 }
 
 func GetProjectMapping(config ConfigGetter) map[string][]string {

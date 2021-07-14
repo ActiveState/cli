@@ -480,7 +480,7 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	analytics.SetDeferred(c.cfg, c.deferAnalytics)
+	analytics.SetDeferred(c.deferAnalytics)
 
 	outputFlag := cobraCmd.Flag("output")
 	if outputFlag != nil && outputFlag.Changed {
@@ -541,7 +541,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Wait)
+	if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Wait); err != nil {
+		logging.Warning("Failed to wait closing rollbar")
+	}
 
 	return err
 }

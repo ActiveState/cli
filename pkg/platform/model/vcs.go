@@ -253,7 +253,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 
 	var res *vcsClient.GetCommitHistoryOK
 	var err error
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
@@ -263,6 +263,59 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	}
 
 	return res.Payload, nil
+}
+
+// CommonParent returns the first commit id which both provided commit id
+// histories have in common.
+func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
+	if commit1 == nil || commit2 == nil {
+		return nil, nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1, nil
+	}
+
+	history1, err := CommitHistoryFromID(*commit1)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit1.String())
+	}
+
+	history2, err := CommitHistoryFromID(*commit2)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit2.String())
+	}
+
+	return commonParentWithHistory(commit1, commit2, history1, history2), nil
+}
+
+func commonParentWithHistory(commit1, commit2 *strfmt.UUID, history1, history2 []*mono_models.Commit) *strfmt.UUID {
+	if commit1 == nil || commit2 == nil {
+		return nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1
+	}
+
+	for _, c := range history1 {
+		if c.CommitID == *commit2 {
+			return commit2 // commit1 history contains commit2
+		}
+		for _, c2 := range history2 {
+			if c.CommitID == c2.CommitID {
+				return &c.CommitID // commit1 and commit2 have a common parent
+			}
+		}
+	}
+
+	for _, c2 := range history2 {
+		if c2.CommitID == *commit1 {
+			return commit1 // commit2 history contains commit1
+		}
+	}
+
+	return nil
 }
 
 // CommitsBehind compares the provided commit id with the latest commit
@@ -679,7 +732,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 
 	var res *vcsClient.GetOrderOK
 	var err error
-	if auth.Get().Authenticated() {
+	if auth.LegacyGet().Authenticated() {
 		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
 		if err != nil {
 			return nil, errors.New(api.ErrorMessageFromPayload(err))
@@ -771,7 +824,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	params.SetCommitToID(to)
 
 	client := mono.New()
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		client = authentication.Client()
 	}
 	res, err := client.VersionControl.GetRevertCommit(params, authentication.ClientAuth())

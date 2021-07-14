@@ -52,7 +52,7 @@ func setupUser() *mono_models.UserEditable {
 }
 
 func runAuth(params *AuthParams, prompter prompt.Prompter, cfg keypairs.Configurable) error {
-	auth := &Auth{outputhelper.NewCatcher(), authentication.Get(), prompter, cfg}
+	auth := &Auth{outputhelper.NewCatcher(), authentication.LegacyGet(), prompter, cfg}
 	return auth.Run(params)
 }
 
@@ -62,7 +62,7 @@ func runSignup(prompter prompt.Prompter, cfg keypairs.Configurable) error {
 }
 
 func runLogout(cfg keypairs.Configurable) error {
-	signup := &Logout{outputhelper.NewCatcher(), authentication.Get(), cfg}
+	signup := &Logout{outputhelper.NewCatcher(), authentication.LegacyGet(), cfg}
 	return signup.Run()
 }
 
@@ -83,15 +83,16 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.LegacyGet().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg), "Executed without error")
 }
@@ -108,8 +109,9 @@ func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return("badpass", nil)
 	pmock.OnMethod("Input").Once().Return("foo", nil)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
@@ -131,15 +133,16 @@ func TestExecuteNoArgsAuthenticated_WithExistingKeypair(t *testing.T) {
 	httpmock.Register("GET", "/tiers")
 	httpmock.Register("GET", "/organizations/test")
 
-	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.LegacyGet().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg), "Executed without error")
 }
@@ -163,8 +166,9 @@ func TestExecuteNoArgsLoginByPrompt_WithExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -198,8 +202,9 @@ func TestExecuteNoArgsLoginByPrompt_NoExistingKeypair(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -250,8 +255,9 @@ func TestExecuteNoArgsLoginThenSignupByPrompt(t *testing.T) {
 	pmock.OnMethod("Confirm").Once().Return(true, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -283,8 +289,9 @@ func TestExecuteAuthenticatedByPrompts(t *testing.T) {
 
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -309,8 +316,9 @@ func TestExecuteAuthenticatedByFlags(t *testing.T) {
 	secretMock := httpmock.Activate(api.GetServiceURL(api.ServiceSecrets).String())
 	secretMock.Register("GET", "/keypair")
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,
@@ -354,8 +362,9 @@ func TestExecuteSignup(t *testing.T) {
 	pmock.OnMethod("InputSecret").Twice().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return(user.Name, nil)
 	pmock.OnMethod("Input").Once().Return(user.Email, nil)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runSignup(pmock, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -372,8 +381,9 @@ func TestExecuteSignup_DenyTOS(t *testing.T) {
 
 	pmock.OnMethod("Select").Once().Return(locale.T("tos_not_accept"), nil)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runSignup(pmock, cfg)
 	assert.Error(t, err, "Executed with error")
 }
@@ -392,19 +402,21 @@ func TestExecuteToken(t *testing.T) {
 	httpmock.Register("GET", "/tiers")
 	httpmock.Register("GET", "/organizations/test")
 
-	err := authentication.Get().AuthenticateWithModel(&mono_models.Credentials{
+	err := authentication.LegacyGet().AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
 	})
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	token := cfg.GetString("apiToken")
 	authentication.Logout()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 
-	cfg, err = config.Get()
+	cfg2, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg2.Close()) }()
 	err = runAuth(&AuthParams{Token: token}, nil, cfg)
 
 	assert.NoError(t, err, "Executed without error")
@@ -413,8 +425,9 @@ func TestExecuteToken(t *testing.T) {
 
 func TestExecuteLogout(t *testing.T) {
 	setup(t)
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	defer osutil.RemoveConfigFile(cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	osutil.CopyTestFileToConfigDir(cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
@@ -427,7 +440,7 @@ func TestExecuteLogout(t *testing.T) {
 	httpmock.Register("GET", "/apikeys")
 	httpmock.Register("POST", "/apikeys")
 
-	auth := authentication.Get()
+	auth := authentication.LegacyGet()
 	err = auth.AuthenticateWithModel(&mono_models.Credentials{
 		Username: user.Username,
 		Password: user.Password,
@@ -477,8 +490,9 @@ func TestExecuteAuthWithTOTP_WithExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -528,8 +542,9 @@ func TestExecuteAuthWithTOTP_NoExistingKeypair(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	pmock.OnMethod("Input").Once().Return("", nil)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{}, pmock, cfg)
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
@@ -562,8 +577,9 @@ func TestExecuteWithTOTPFlag(t *testing.T) {
 	httpmock.Register("GET", "/apikeys")
 	httpmock.Register("POST", "/apikeys")
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	err = runAuth(&AuthParams{
 		Username: user.Username,
 		Password: user.Password,

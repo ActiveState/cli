@@ -36,7 +36,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	params.UserSecrets = append(params.UserSecrets, secretChange)
 
-	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.Get().ClientAuth())
+	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		logging.Error("error saving user secret: %v", err)
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())
