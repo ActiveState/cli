@@ -833,33 +833,17 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
-func RevertCommit(pj ProjectInfo, to strfmt.UUID) error {
-	revertCommit, err := GetRevertCommit(pj.CommitUUID(), to)
+func RevertCommit(from strfmt.UUID, to strfmt.UUID) (*mono_models.Commit, error) {
+	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
-	}
-
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
-	}
-
-	err = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return addCommit, nil
 }
 
 func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.MergeStrategies, error) {
