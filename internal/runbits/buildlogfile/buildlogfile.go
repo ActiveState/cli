@@ -13,7 +13,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -22,6 +24,7 @@ import (
 const maxConcurrency = 5
 
 type BuildLogFile struct {
+	out              output.Outputer
 	logFile          *os.File
 	numInstalled     int
 	numToBeInstalled int
@@ -76,8 +79,8 @@ func (bl *BuildLogFile) handleLog(ul artifactLog, ctx context.Context) error {
 	return nil
 }
 
-func New() (*BuildLogFile, error) {
-	logFile, err := os.CreateTemp("", "build-log*")
+func New(out output.Outputer) (*BuildLogFile, error) {
+	logFile, err := os.CreateTemp("", fmt.Sprintf("build-log-%s", time.Now().Format("060102030405")))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to create temporary build log file")
 	}
@@ -103,6 +106,10 @@ func New() (*BuildLogFile, error) {
 	bl.cancel = cancel
 	bl.wg = &wg
 
+	if !verboseLogging() {
+		bl.writeMessage("To increase the verbosity of these log files use the %s=true environment variable", constants.LogBuildVerboseEnvVarName)
+	}
+
 	return bl, nil
 }
 
@@ -127,6 +134,7 @@ func (bl *BuildLogFile) writeArtifactMessage(artifactID artifact.ArtifactID, art
 }
 
 func (bl *BuildLogFile) BuildStarted(totalArtifacts int64) error {
+	bl.out.Print(locale.Tl("view_build_logfile_info", "View the Build Log to follow the build progress in detail: [ACTIONABLE]{{.V0}}[/RESET]", bl.logFile.Name()))
 	return bl.writeMessage("== Scheduled building of %d artifacts ==", totalArtifacts)
 }
 

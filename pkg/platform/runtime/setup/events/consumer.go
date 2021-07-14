@@ -36,9 +36,9 @@ type ProgressDigester interface {
 	Close() error
 }
 
-// TerminalOutputConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progress or summary digester.
+// RuntimeEventConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progress or summary digester.
 // State-ful operations should be handled in this struct rather than in the digesters in order to keep the calls to the digesters as simple as possible.
-type TerminalOutputConsumer struct {
+type RuntimeEventConsumer struct {
 	progress            ProgressDigester
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
@@ -49,15 +49,15 @@ type TerminalOutputConsumer struct {
 	installationStarted bool
 }
 
-func NewTerminalOutputConsumer(progress ProgressDigester, summary ChangeSummaryDigester) *TerminalOutputConsumer {
-	return &TerminalOutputConsumer{
+func NewRuntimeEventConsumer(progress ProgressDigester, summary ChangeSummaryDigester) *RuntimeEventConsumer {
+	return &RuntimeEventConsumer{
 		progress: progress,
 		summary:  summary,
 	}
 }
 
 // Consume consumes an setup event
-func (eh *TerminalOutputConsumer) Consume(ev SetupEventer) error {
+func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 	switch t := ev.(type) {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
@@ -91,7 +91,7 @@ func (eh *TerminalOutputConsumer) Consume(ev SetupEventer) error {
 	return nil
 }
 
-func (eh *TerminalOutputConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer) error {
+func (eh *RuntimeEventConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer) error {
 	artifactName := eh.artifactNames(ev.ArtifactID())
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
@@ -109,7 +109,7 @@ func (eh *TerminalOutputConsumer) handleBuildArtifactEvent(ev ArtifactSetupEvent
 	return nil
 }
 
-func (eh *TerminalOutputConsumer) handleArtifactEvent(ev ArtifactSetupEventer) error {
+func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) error {
 	// Build updates do not have progress event, so we handle them separately.
 	if ev.Step() == Build {
 		return eh.handleBuildArtifactEvent(ev)
@@ -148,7 +148,7 @@ func (eh *TerminalOutputConsumer) handleArtifactEvent(ev ArtifactSetupEventer) e
 	return nil
 }
 
-func (eh *TerminalOutputConsumer) ensureInstallationStarted() error {
+func (eh *RuntimeEventConsumer) ensureInstallationStarted() error {
 	if eh.installationStarted {
 		return nil
 	}
@@ -168,7 +168,7 @@ func stepTitle(step SetupStep) string {
 	return locale.T(fmt.Sprintf("artifact_progress_step_%s", step.String()))
 }
 
-func (eh *TerminalOutputConsumer) ResolveArtifactName(id artifact.ArtifactID) string {
+func (eh *RuntimeEventConsumer) ResolveArtifactName(id artifact.ArtifactID) string {
 	if eh.artifactNames == nil {
 		logging.Error("artifactNames resolver function has not been initialized")
 		return ""

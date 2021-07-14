@@ -12,13 +12,8 @@ type RuntimeEventHandler struct {
 	summary          ChangeSummaryDigester
 }
 
-func NewRuntimeEventHandler(terminalProgress ProgressDigester, summary ChangeSummaryDigester) (*RuntimeEventHandler, error) {
-	lc, err := buildlogfile.New()
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to initialize the build log file writer")
-	}
-
-	return &RuntimeEventHandler{terminalProgress, lc, summary}, nil
+func NewRuntimeEventHandler(terminalProgress ProgressDigester, summary ChangeSummaryDigester, logFileProgress *buildlogfile.BuildLogFile) *RuntimeEventHandler {
+	return &RuntimeEventHandler{terminalProgress, logFileProgress, summary}
 }
 
 // WaitForAllEvents prints output based on runtime events received on the events channel
@@ -26,8 +21,8 @@ func (rmh *RuntimeEventHandler) WaitForAllEvents(events <-chan SetupEventer) err
 	// Asynchronous progress digester may need to be closed after
 	defer rmh.terminalProgress.Close()
 
-	prg := NewMultiPlexedProgress(rmh.terminalProgress, rmh.logFileProgress)
-	rec := NewTerminalOutputConsumer(prg, rmh.summary)
+	prg := NewMultiPlexedProgress(rmh.logFileProgress, rmh.terminalProgress)
+	rec := NewRuntimeEventConsumer(prg, rmh.summary)
 
 	var aggErr error
 	for ev := range events {
@@ -44,6 +39,9 @@ func (rmh *RuntimeEventHandler) AddHints(err error) error {
 	if err == nil {
 		return nil
 	}
+	if rmh.logFileProgress == nil {
+		return nil
+	}
 
-	return errs.AddTips(err, locale.Tl("build_log_file_hint", "View {{.V0}} for details on build errors.", rmh.logFileProgress.Path()))
+	return errs.AddTips(err, locale.Tl("build_log_file_hint", "Check the Build Log to find out more: {{.V0}}", rmh.logFileProgress.Path()))
 }
