@@ -74,9 +74,10 @@ func (r *Revert) Run(params *Params) error {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
+	r.out.Print(locale.Tl("revert_info", "You are about to revert to the following commit:"))
 	commit.PrintCommit(r.out, revertToCommit, orgs)
 
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), new(bool))
+	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
