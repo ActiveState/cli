@@ -42,12 +42,12 @@ func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error
 		return locale.NewInputError("err_no_project")
 	}
 
-	language, err := model.LanguageForCommit(a.proj.CommitUUID())
+	language, err := model.LanguageByCommit(a.proj.CommitUUID())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_languages")
 	}
 
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	ns := model.NewNamespacePkgOrBundle(language.Name, nstype)
 
 	return executePackageOperation(a.proj, a.cfg, a.out, a.auth, a.Prompter, params.Package.Name(), params.Package.Version(), model.OperationAdded, ns)
 }

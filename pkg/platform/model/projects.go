@@ -71,20 +71,6 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	return languages[0], nil
 }
 
-// LanguageForCommit fetches the name of the language belonging to the given commit
-func LanguageForCommit(commitID strfmt.UUID) (string, error) {
-	languages, err := FetchLanguagesForCommit(commitID)
-	if err != nil {
-		return "", err
-	}
-
-	if len(languages) == 0 {
-		return "", locale.NewInputError("err_no_languages")
-	}
-
-	return languages[0].Name, nil
-}
-
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
 	proj, err := FetchProjectByName(owner, name)
@@ -166,7 +152,7 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	return pj.Payload, nil
 }
 
-func CreateFork(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
+func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
 	// Retrieve the source project that we'll be forking
 	sourceProject, err := FetchProjectByName(sourceOwner, sourceName)
 	if err != nil {
@@ -179,9 +165,18 @@ func CreateFork(sourceOwner, sourceName, targetOwner, targetName string, makePri
 		return nil, locale.WrapError(err, "err_fork_createProject", "Could not create project: {{.V0}}/{{.V1}}", targetOwner, targetName)
 	}
 
-	// Set up the forked branch on the target project
-	if err := TrackBranch(sourceProject, targetProject); err != nil {
-		return nil, locale.WrapError(err, "err_fork_track", "Could not set up the forked branch for your new project.")
+	sourceBranch, err := DefaultBranchForProject(sourceProject)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_branch_nodefault", "Project has no default branch.")
+	}
+	if sourceBranch.CommitID != nil {
+		targetBranch, err := DefaultBranchForProject(targetProject)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_branch_nodefault", "Project has no default branch.")
+		}
+		if err := UpdateBranchCommit(targetBranch.BranchID, *sourceBranch.CommitID); err != nil {
+			return nil, locale.WrapError(err, "err_fork_branchupdate", "Failed to update branch.")
+		}
 	}
 
 	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)

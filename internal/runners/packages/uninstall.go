@@ -43,11 +43,11 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 	}
 
 	// Commit the package
-	language, err := model.LanguageForCommit(r.proj.CommitUUID())
+	language, err := model.LanguageByCommit(r.proj.CommitUUID())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_languages")
 	}
 
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	ns := model.NewNamespacePkgOrBundle(language.Name, nstype)
 	return executePackageOperation(r.proj, r.cfg, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, ns)
 }

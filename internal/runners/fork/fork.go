@@ -89,7 +89,7 @@ func (f *Fork) run(params *Params) error {
 
 	f.out.Notice(locale.Tl("fork_forking", "Creating fork of {{.V0}} at https://{{.V1}}/{{.V2}}..", params.Namespace.String(), constants.PlatformURL, target.String()))
 
-	_, err := model.CreateFork(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private)
+	_, err := model.CreateCopy(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private)
 	if err != nil {
 		return locale.WrapError(err, "err_fork_project", "Could not create fork")
 	}

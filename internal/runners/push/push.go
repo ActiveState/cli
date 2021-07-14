@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -56,6 +55,7 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	// Check if as.yaml exists
 	if r.project == nil {
 		return errs.AddTips(locale.NewInputError(
 			"err_push_headless",
@@ -64,129 +64,105 @@ func (r *Push) Run(params PushParams) error {
 		)
 	}
 
-	namespace := params.Namespace
-	if !namespace.IsValid() {
+	// Get target namespace from command flag
+	ns := params.Namespace
+
+	// If command flag is not set, get it from the current project instead
+	if !ns.IsValid() {
 		var err error
-		namespace, err = r.getNamespace()
+		ns, err = r.namespaceFromProject()
 		if err != nil {
 			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
 		}
 	}
-	owner := namespace.Owner
-	name := namespace.Project
 
 	// Get the project remotely if it already exists
-	pjm, err := model.FetchProjectByName(owner, name)
+	pjm, err := model.FetchProjectByName(ns.Owner, ns.Project)
 	if err != nil {
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
 	}
-	remoteExists := pjm != nil
 
-	var branch *mono_models.Branch
-	lang, langVersion, err := r.languageForProject(r.project)
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve project language.")
-	}
+	commitID := r.project.CommitUUID() // The commit we want to push
+	remoteExists := pjm != nil         // Whether the remote project exists already
+	projectCreated := false            // Whether we created a new project
 
-	projectCreated := false
-
-	if remoteExists { // Remote project exists
-		// return error if we expected to create a new project initialized with `state init` (it has no commitID yet)
-		if r.project.CommitID() == "" {
-			return locale.NewError("push_already_exists", "The project [NOTICE]{{.V0}}/{{.V1}}[/RESET] already exists on the platform. To start using the latest version please run [ACTIONABLE]`state pull`[/RESET].", owner, name)
-		}
-		r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", owner, name))
-
-		if r.project.BranchName() == "" {
-			// https://www.pivotaltracker.com/story/show/176806415
-			branch, err = model.DefaultBranchForProject(pjm)
-			if err != nil {
-				return locale.NewInputError("err_no_default_branch")
-			}
-		} else {
-			branch, err = model.BranchForProjectByName(pjm, r.project.BranchName())
-			if err != nil {
-				return locale.WrapError(err, "err_fetch_branch", "", r.project.BranchName())
-			}
-		}
-
-		if branch.CommitID != nil && branch.CommitID.String() == r.project.CommitID() {
-			r.out.Notice(locale.T("push_no_changes"))
-			return nil
-		}
-
-		pcid := r.project.CommitUUID()
-		if branch.CommitID != nil && pcid != "" {
-			mergeStrategy, err := model.MergeCommit(*branch.CommitID, pcid)
-			if err != nil {
-				if errors.Is(err, model.ErrMergeCommitInHistory) {
-					r.out.Notice(locale.T("push_no_changes"))
-					return nil
-				}
-				if !errors.Is(err, model.ErrMergeFastForward) {
-					return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
-				}
-			}
-			if mergeStrategy != nil {
-				return errs.AddTips(
-					locale.NewInputError("err_push_outdated"),
-					locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
-			}
-		}
-	} else { // Remote project doesn't exist yet
-		// Note: We only get here when no commit ID is set yet ie., the activestate.yaml file has been created with `state init`.
-		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", owner, name))
-		pjm, err = model.CreateEmptyProject(owner, name, r.project.Private())
+	// Create remote project if it doesn't already exist
+	if !remoteExists {
+		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", ns.Owner, ns.Project))
+		pjm, err = model.CreateEmptyProject(ns.Owner, ns.Project, r.project.Private())
 		if err != nil {
 			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
 		}
+
+		projectCreated = true
+
+		// If the current project has no commitID set create an initial commit with host platform information
+		// (eg. used `state init` but didn't make any commits)
+		if commitID.String() == "" {
+			commitID, err = model.CommitInitial(model.HostPlatform, nil, "")
+			if err != nil {
+				return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", pjm.Name)
+			}
+		}
+	}
+
+	// if the commitID isn't set at this point then we don't have anything TO push
+	if commitID == "" {
+		return locale.NewError("push_no_commit", "You have nothing to push. Start installing packages with [ACTIONABLE]`state install`[/RESET].")
+	}
+
+	r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", ns.Owner, ns.Project))
+
+	// Detect the target branch
+	var branch *mono_models.Branch
+	if r.project.BranchName() == "" {
+		// https://www.pivotaltracker.com/story/show/176806415
 		branch, err = model.DefaultBranchForProject(pjm)
 		if err != nil {
-			return errs.Wrap(err, "Could not get default branch")
+			return locale.NewInputError("err_no_default_branch")
 		}
-
-		projectCreated = true
-	}
-
-	var commitID = r.project.CommitUUID()
-	if commitID.String() == "" {
-		var err error
-		commitID, err = model.CommitInitial(model.HostPlatform, lang, langVersion)
+	} else {
+		branch, err = model.BranchForProjectByName(pjm, r.project.BranchName())
 		if err != nil {
-			return locale.WrapError(err, "push_project_init_err", "Failed to initialize project {{.V0}}", pjm.Name)
+			return locale.WrapError(err, "err_fetch_branch", "", r.project.BranchName())
 		}
 	}
 
-	// update the project at the given commit id.
+	// Check if branch is already up to date
+	if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
+		r.out.Notice(locale.T("push_no_changes"))
+		return nil
+	}
+
+	// Check whether there is a conflict
+	if branch.CommitID != nil {
+		mergeStrategy, err := model.MergeCommit(*branch.CommitID, commitID)
+		if err != nil {
+			if errors.Is(err, model.ErrMergeCommitInHistory) {
+				r.out.Notice(locale.T("push_no_changes"))
+				return nil
+			}
+			if !errors.Is(err, model.ErrMergeFastForward) {
+				return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
+			}
+		}
+		if mergeStrategy != nil {
+			return errs.AddTips(
+				locale.NewInputError("err_push_outdated"),
+				locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
+		}
+	}
+
+	// Update the project at the given commit id.
 	err = model.UpdateProjectBranchCommitWithModel(pjm, branch.Label, commitID)
 	if err != nil {
-		if !errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
+		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
+			return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", pjm.Name)
+		} else {
 			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", pjm.Name)
 		}
-
-		var createFork bool
-		createFork, err = r.prompt.Confirm("", locale.T("push_prompt_auth"), &createFork)
-		if err != nil {
-			return locale.WrapError(err, "err_push_prompt_auth", "Failed to prompt after authorization check")
-		}
-		if !createFork {
-			return nil
-		}
-
-		namespace, err = r.promptNamespace()
-		if err != nil {
-			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace")
-		}
-
-		_, err := model.CreateFork(owner, name, namespace.Owner, namespace.Project, false)
-		if err != nil {
-			return locale.WrapError(err, "err_fork_project", "Could not create fork")
-		}
-		owner = namespace.Owner
-		name = namespace.Project
-		projectCreated = true
 	}
 
 	// Remove temporary language entry
@@ -196,16 +172,19 @@ func (r *Push) Run(params PushParams) error {
 		return locale.WrapInputError(err, "push_remove_lang_err", "Failed to remove temporary language field from activestate.yaml.")
 	}
 
-	if r.project.IsHeadless() || r.project.Owner() != namespace.Owner || r.project.Name() != namespace.Project {
-		if err := r.project.Source().SetNamespace(owner, name); err != nil {
+	// Write the project namespace to the as.yaml, if it changed
+	if r.project.Owner() != ns.Owner || r.project.Name() != ns.Project {
+		if err := r.project.Source().SetNamespace(ns.Owner, ns.Project); err != nil {
 			return errs.Wrap(err, "Could not set project namespace in project file")
 		}
 	}
 
+	// Write the commit to the as.yaml
 	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
 		return errs.Wrap(err, "Could not set commit")
 	}
 
+	// Write the branch to the as.yaml, if it changed
 	if branch.Label != r.project.BranchName() {
 		if err := r.project.Source().SetBranch(branch.Label); err != nil {
 			return errs.Wrap(err, "Could not set branch")
@@ -221,7 +200,7 @@ func (r *Push) Run(params PushParams) error {
 	return nil
 }
 
-func (r *Push) getNamespace() (*project.Namespaced, error) {
+func (r *Push) namespaceFromProject() (*project.Namespaced, error) {
 	if !r.project.IsHeadless() {
 		return r.project.Namespace(), nil
 	}
@@ -253,8 +232,6 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	lang, _, err := fetchLanguage(r.project.CommitUUID())
 	if err == nil {
 		name = lang.String()
-	} else {
-		logging.Error("Could not fetch language, got error: %v. Falling back to empty project name", err)
 	}
 
 	name, err = r.prompt.Input("", locale.Tl("push_prompt_name", "What would you like the name of this project to be?"), &name)
@@ -263,31 +240,6 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	return project.NewNamespace(owner, name, ""), nil
-}
-
-func (r *Push) languageForProject(pj *project.Project) (*language.Supported, string, error) {
-	if pj.CommitID() != "" {
-		return fetchLanguage(pj.CommitUUID())
-	}
-
-	langs := pj.Languages()
-	if len(langs) == 0 {
-		return nil, "", locale.NewError("err_push_nolang",
-			"Your project has not specified any languages, did you remove it from the activestate.yaml? Try deleting activestate.yaml and running 'state init' again.",
-		)
-	}
-	if len(langs) > 1 {
-		return nil, "", locale.NewError("err_push_toomanylang",
-			"Your project has specified multiple languages, however the platform currently only supports one language per project. Please edit your activestate.yaml to only have one language specified.",
-		)
-	}
-
-	lang := language.Supported{Language: language.MakeByName(langs[0].Name())}
-	if !lang.Recognized() {
-		return nil, langs[0].Version(), locale.NewInputError("err_push_invalid_language", langs[0].Name())
-	}
-
-	return &lang, langs[0].Version(), nil
 }
 
 func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {

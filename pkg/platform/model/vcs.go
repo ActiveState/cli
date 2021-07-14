@@ -465,9 +465,9 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 
 // CommitInitial creates a root commit for a new branch
 func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
-	var language string
+	var langName string
 	if lang != nil {
-		language = lang.Requirement()
+		langName = lang.Requirement()
 		if langVersion == "" {
 			langVersion = lang.RecommendedVersion()
 		}
@@ -480,11 +480,11 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 
 	var changes []*mono_models.CommitChangeEditable
 
-	if language != "" {
+	if langName != "" {
 		c := &mono_models.CommitChangeEditable{
 			Operation:         string(OperationAdded),
 			Namespace:         NewNamespaceLanguage().String(),
-			Requirement:       language,
+			Requirement:       langName,
 			VersionConstraint: langVersion,
 		}
 		changes = append(changes, c)
