@@ -130,7 +130,7 @@ func FormatChanges(commit *mono_models.Commit) []string {
 
 func formatConstraints(constraints []*mono_models.Constraint) string {
 	if len(constraints) == 0 {
-		return "Auto"
+		return locale.Tl("constraint_auto", "Auto")
 	}
 
 	var result []string
