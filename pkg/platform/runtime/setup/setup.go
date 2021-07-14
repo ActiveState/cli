@@ -139,7 +139,7 @@ func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
 func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setup {
-	return &Setup{model, target, msgHandler, nil}
+	return &Setup{model, target, msgHandler, store.New(target.Dir())}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -191,7 +191,6 @@ func (s *Setup) update() error {
 		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
-	s.store = store.New(s.target.Dir())
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
