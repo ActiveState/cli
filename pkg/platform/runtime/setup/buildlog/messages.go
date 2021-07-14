@@ -10,7 +10,8 @@ import (
 type MessageEnum int
 
 const (
-	BuildSucceeded MessageEnum = iota
+	BuildStarted MessageEnum = iota
+	BuildSucceeded
 	BuildFailed
 	ArtifactStarted
 	ArtifactSucceeded
@@ -33,6 +34,8 @@ type BaseMessage struct {
 
 func (bm BaseMessage) MessageType() MessageEnum {
 	switch bm.Type {
+	case "build_started":
+		return BuildStarted
 	case "build_succeeded":
 		return BuildSucceeded
 	case "build_failed":
