@@ -67,7 +67,7 @@ type AddKernelVersionRevisionParams struct {
 	/*KernelVersionID*/
 	KernelVersionID strfmt.UUID
 	/*KernelVersionRevision*/
-	KernelVersionRevision *inventory_models.Revision
+	KernelVersionRevision *inventory_models.RevisionedFeatureProvider
 
 	timeout    time.Duration
 	Context    context.Context
@@ -130,13 +130,13 @@ func (o *AddKernelVersionRevisionParams) SetKernelVersionID(kernelVersionID strf
 }
 
 // WithKernelVersionRevision adds the kernelVersionRevision to the add kernel version revision params
-func (o *AddKernelVersionRevisionParams) WithKernelVersionRevision(kernelVersionRevision *inventory_models.Revision) *AddKernelVersionRevisionParams {
+func (o *AddKernelVersionRevisionParams) WithKernelVersionRevision(kernelVersionRevision *inventory_models.RevisionedFeatureProvider) *AddKernelVersionRevisionParams {
 	o.SetKernelVersionRevision(kernelVersionRevision)
 	return o
 }
 
 // SetKernelVersionRevision adds the kernelVersionRevision to the add kernel version revision params
-func (o *AddKernelVersionRevisionParams) SetKernelVersionRevision(kernelVersionRevision *inventory_models.Revision) {
+func (o *AddKernelVersionRevisionParams) SetKernelVersionRevision(kernelVersionRevision *inventory_models.RevisionedFeatureProvider) {
 	o.KernelVersionRevision = kernelVersionRevision
 }
 

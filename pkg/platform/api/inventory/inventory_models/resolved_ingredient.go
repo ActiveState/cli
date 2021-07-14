@@ -31,8 +31,8 @@ type ResolvedIngredient struct {
 	// The custom build scripts for building this ingredient, if any
 	BuildScripts []*BuildScript `json:"build_scripts"`
 
-	// This dependencies in the recipe for this ingredient version. Each item contains an ingredient version UUID which maps to an ingredient version in this recipe.
-	Dependencies []*ResolvedIngredientDependenciesItems `json:"dependencies"`
+	// The dependencies in the recipe for this ingredient version. Each item contains an ingredient version UUID which maps to an ingredient version in this recipe.
+	Dependencies []*ResolvedIngredientDependency `json:"dependencies"`
 
 	// ingredient
 	// Required: true

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -17,7 +18,7 @@ import (
 
 	C "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // Instance holds our main config logic
@@ -26,6 +27,7 @@ type Instance struct {
 	thread      *singlethread.Thread
 	closeThread bool
 	db          *sql.DB
+	closed      bool
 }
 
 func New() (*Instance, error) {
@@ -59,7 +61,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 	_, err = os.Stat(path)
 	isNew := err != nil
-	i.db, err = sql.Open("sqlite3", fmt.Sprintf(`file:%s?_journal=WAL`, path))
+	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
@@ -79,6 +81,14 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 }
 
 func (i *Instance) Close() error {
+	mutex := sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
+	
+	if i.closed {
+		return nil
+	}
+	i.closed = true
 	if i.closeThread {
 		i.thread.Close()
 	}

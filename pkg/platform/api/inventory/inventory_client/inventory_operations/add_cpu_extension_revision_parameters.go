@@ -65,7 +65,7 @@ type AddCPUExtensionRevisionParams struct {
 	/*CPUExtensionID*/
 	CPUExtensionID strfmt.UUID
 	/*CPUExtensionRevision*/
-	CPUExtensionRevision *inventory_models.Revision
+	CPUExtensionRevision *inventory_models.RevisionedFeatureProvider
 
 	timeout    time.Duration
 	Context    context.Context
@@ -117,13 +117,13 @@ func (o *AddCPUExtensionRevisionParams) SetCPUExtensionID(cPUExtensionID strfmt.
 }
 
 // WithCPUExtensionRevision adds the cPUExtensionRevision to the add Cpu extension revision params
-func (o *AddCPUExtensionRevisionParams) WithCPUExtensionRevision(cPUExtensionRevision *inventory_models.Revision) *AddCPUExtensionRevisionParams {
+func (o *AddCPUExtensionRevisionParams) WithCPUExtensionRevision(cPUExtensionRevision *inventory_models.RevisionedFeatureProvider) *AddCPUExtensionRevisionParams {
 	o.SetCPUExtensionRevision(cPUExtensionRevision)
 	return o
 }
 
 // SetCPUExtensionRevision adds the cpuExtensionRevision to the add Cpu extension revision params
-func (o *AddCPUExtensionRevisionParams) SetCPUExtensionRevision(cPUExtensionRevision *inventory_models.Revision) {
+func (o *AddCPUExtensionRevisionParams) SetCPUExtensionRevision(cPUExtensionRevision *inventory_models.RevisionedFeatureProvider) {
 	o.CPUExtensionRevision = cPUExtensionRevision
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
@@ -16,8 +15,12 @@ type Client struct {
 	baseUrl string
 }
 
+type configurable interface {
+	GetInt(string) int
+}
+
 // New will create a new API client using default settings (for an authenticated version use the NewWithAuth version)
-func New(cfg *config.Instance) (*Client, error) {
+func New(cfg configurable) (*Client, error) {
 	port := cfg.GetInt(constants.SvcConfigPort)
 	if port <= 0 {
 		return nil, locale.NewError("err_svc_no_port", "The State Tool service does not appear to be running (no local port was configured).")
@@ -30,7 +33,7 @@ func New(cfg *config.Instance) (*Client, error) {
 }
 
 // NewWithoutRetry returns a client based on an HTTP client that does not retry on failure
-func NewWithoutRetry(cfg *config.Instance) (*Client, error) {
+func NewWithoutRetry(cfg configurable) (*Client, error) {
 	port := cfg.GetInt(constants.SvcConfigPort)
 	if port <= 0 {
 		return nil, locale.NewError("err_svc_no_port", "The State Tool service does not appear to be running (no local port was configured).")

@@ -23,6 +23,7 @@ package logging
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -228,7 +229,16 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", err)
+		errMsg := err.Error()
+		errw := err
+		for {
+			errw = errors.Unwrap(errw)
+			if errw == nil {
+				break
+			}
+			errMsg += ": " + errw.Error()
+		}
+		fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
 		fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 	}
 

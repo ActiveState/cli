@@ -1,6 +1,8 @@
 package clean
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -8,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/svcmanager"
 )
 
 func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) error {
@@ -30,14 +33,41 @@ func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) erro
 
 	// Stop state-svc before accessing its files
 	if fileutils.FileExists(svcInfo.Exec()) {
-		_, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
+		code, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
 		if err != nil {
 			if !ignoreErrors {
 				return errs.AddTips(
 					locale.WrapError(err, "clean_stop_svc_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", svcInfo.Name()),
 					cleanForceTip)
 			}
-			out.Error(locale.Tl("clean_stop_svc_warning", "Failed to stop running {{.V0}} process. Continuing anyways, because --force flag was provided.", svcInfo.Name()))
+			out.Error(locale.Tl("clean_stop_svc_warning", "Failed to stop running {{.V0}} process. Continuing anyway because --force flag was provided.", svcInfo.Name()))
+		}
+		if code != 0 {
+			if !ignoreErrors {
+				return errs.AddTips(
+					locale.WrapError(err, "clean_stop_svc_failure_code", "Cleanup interrupted, because a running {{.V0}} process could not be stopped (invalid exit code).", svcInfo.Name()),
+					cleanForceTip)
+			}
+			out.Error(locale.Tl("clean_stop_svc_warning_code", "Failed to stop running {{.V0}} process (invalid exit code). Continuing anyway because --force flag was provided.", svcInfo.Name()))
+		}
+
+		// Wait for service to be stopped
+		var isStopped bool
+		m := svcmanager.New(cfg)
+		for x := 0; x < 30; x++ {
+			isStopped = !m.Ready()
+			if isStopped {
+				break
+			}
+			time.Sleep(200 * time.Millisecond)
+		}
+		if !isStopped {
+			if !ignoreErrors {
+				return errs.AddTips(
+					locale.WrapError(err, "clean_stop_svc_failure_wait", "Cleanup interrupted, because a running {{.V0}} process failed to stop due to a timeout.", svcInfo.Name()),
+					cleanForceTip)
+			}
+			out.Error(locale.Tl("clean_stop_svc_warning_code", "Failed to stop running {{.V0}} process due to a timeout. Continuing anyway because --force flag was provided.", svcInfo.Name()))
 		}
 	}
 	return nil

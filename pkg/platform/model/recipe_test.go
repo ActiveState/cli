@@ -42,11 +42,11 @@ func depGraphsToResolvedIngredients(dgs depGraph) []*inventory_models.ResolvedIn
 	res := make([]*inventory_models.ResolvedIngredient, 0, len(dgs))
 	for d, dchildren := range dgs {
 		uuid := intToUUID(d)
-		deps := make([]*inventory_models.ResolvedIngredientDependenciesItems, 0, len(dchildren))
+		deps := make([]*inventory_models.ResolvedIngredientDependency, 0, len(dchildren))
 		for _, dc := range dchildren {
 			duuid := intToUUID(dc)
 
-			deps = append(deps, &inventory_models.ResolvedIngredientDependenciesItems{
+			deps = append(deps, &inventory_models.ResolvedIngredientDependency{
 				IngredientVersionID: &duuid,
 			})
 		}

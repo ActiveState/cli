@@ -30,15 +30,20 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
-	err = removeConfig(u.cfg.ConfigPath(), u.out)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
-
-	}
-
 	err = undoPrepare(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+	}
+
+	path := u.cfg.ConfigPath()
+	if err := u.cfg.Close(); err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
+	}
+
+	err = removeConfig(path, u.out)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+
 	}
 
 	if aggErr != nil {
