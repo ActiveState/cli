@@ -85,7 +85,7 @@ func New(out output.Outputer) (*BuildLogFile, error) {
 		return nil, errs.Wrap(err, "Failed to create temporary build log file")
 	}
 
-	bl := &BuildLogFile{logFile: logFile}
+	bl := &BuildLogFile{out: out, logFile: logFile}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup

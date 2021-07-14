@@ -43,5 +43,5 @@ func (rmh *RuntimeEventHandler) AddHints(err error) error {
 		return nil
 	}
 
-	return errs.AddTips(err, locale.Tl("build_log_file_hint", "Check the Build Log to find out more: {{.V0}}", rmh.logFileProgress.Path()))
+	return errs.AddTips(err, locale.Tl("build_log_file_hint", "Check the Build Log to find out more: [ACTIONABLE]{{.V0}}[/RESET]", rmh.logFileProgress.Path()))
 }

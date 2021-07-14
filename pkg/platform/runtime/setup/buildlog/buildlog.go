@@ -2,6 +2,7 @@ package buildlog
 
 import (
 	"os"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -44,7 +45,7 @@ type BuildLog struct {
 
 // New creates a new instance that allows us to wait for incoming build log information
 // TODO: Decide if we maybe want a fail-fast option where we return on the first artifact_failed message
-func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -79,7 +80,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				if artifact.ArtifactID(m.ArtifactID) == recipeID {
 					continue
 				}
-				if m.CacheHit {
+				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
 				events.ArtifactBuildStarting(m.ArtifactID)
@@ -100,12 +101,16 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, conn Build
 				if m.ArtifactID == recipeID {
 					break
 				}
-				// cached artifacts are already registered as completed before we started the build log
-				if m.CacheHit {
+				// only send artifact download event for artifacts with noop download uris
+				if !strings.HasPrefix(m.ArtifactURI, "s3://as-builds/noop/") {
+					ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+				}
+
+				// already built artifacts are already registered as completed before we started the build log
+				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
-				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
 			case ArtifactFailed:
 				m := msg.messager.(artifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)

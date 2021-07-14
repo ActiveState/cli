@@ -306,10 +306,10 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
 	var err error
-	if buildResult.BuildReady {
+	if !buildResult.BuildReady {
 		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup)
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, alreadyInstalled, setup)
+		err = s.installFromBuildLog(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	}
 
 	return err
@@ -348,7 +348,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -360,7 +360,11 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	}
 	defer conn.Close()
 
-	buildLog, err := buildlog.New(artifacts, conn, s.events, *buildResult.Recipe.RecipeID)
+	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
+	for _, d := range downloads {
+		alreadyBuilt[d.ArtifactID] = struct{}{}
+	}
+	buildLog, err := buildlog.New(artifacts, alreadyBuilt, conn, s.events, *buildResult.Recipe.RecipeID)
 
 	errs, aggregatedErr := aggregateErrors()
 

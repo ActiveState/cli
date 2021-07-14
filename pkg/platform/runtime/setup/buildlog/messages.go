@@ -67,7 +67,8 @@ type artifactMessage struct {
 	RecipeID   string              `json:"recipe_id"`
 	ArtifactID artifact.ArtifactID `json:"artifact_id"`
 	Timestamp  time.Time           `json:"timestamp"`
-	CacheHit   bool                `json:"cache_hit"`
+	// CacheHit indicates if an artifact has been originally built for a different recipe
+	CacheHit bool `json:"cache_hit"`
 }
 
 type artifactSucceededMessage struct {
