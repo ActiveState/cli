@@ -13,17 +13,6 @@ func NewMultiPlexedProgress(digesters ...ProgressDigester) *MultiPlexedProgress 
 	return &MultiPlexedProgress{digesters}
 }
 
-func (mp *MultiPlexedProgress) BuildFailedInPast(artifactIDs []artifact.ArtifactID, errMsg string) error {
-	var aggErr error
-	for _, d := range mp.digesters {
-		err := d.BuildFailedInPast(artifactIDs, errMsg)
-		if err != nil {
-			aggErr = errs.Wrap(aggErr, "BuildStarted event error: %v", err)
-		}
-	}
-	return aggErr
-}
-
 func (mp *MultiPlexedProgress) BuildStarted(totalArtifacts int64) error {
 	var aggErr error
 	for _, d := range mp.digesters {
@@ -76,20 +65,20 @@ func (mp *MultiPlexedProgress) BuildArtifactStarted(artifactID artifact.Artifact
 	}
 	return aggErr
 }
-func (mp *MultiPlexedProgress) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string) error {
+func (mp *MultiPlexedProgress) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, isCached bool) error {
 	var aggErr error
 	for _, d := range mp.digesters {
-		err := d.BuildArtifactCompleted(artifactID, artifactName, logURI)
+		err := d.BuildArtifactCompleted(artifactID, artifactName, logURI, isCached)
 		if err != nil {
 			aggErr = errs.Wrap(aggErr, "BuildArtifactCompleted event error: %v", err)
 		}
 	}
 	return aggErr
 }
-func (mp *MultiPlexedProgress) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errMsg string) error {
+func (mp *MultiPlexedProgress) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errMsg string, isCached bool) error {
 	var aggErr error
 	for _, d := range mp.digesters {
-		err := d.BuildArtifactFailure(artifactID, artifactName, logURI, errMsg)
+		err := d.BuildArtifactFailure(artifactID, artifactName, logURI, errMsg, isCached)
 		if err != nil {
 			aggErr = errs.Wrap(aggErr, "BuildArtifactFailure event error: %v", err)
 		}

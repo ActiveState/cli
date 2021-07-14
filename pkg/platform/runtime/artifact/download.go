@@ -8,9 +8,12 @@ import (
 )
 
 type ArtifactDownload struct {
-	ArtifactID  ArtifactID
-	UnsignedURI string
-	Checksum    string
+	ArtifactID     ArtifactID
+	UnsignedURI    string
+	UnsignedLogURI string
+	Checksum       string
+	BuildState     string
+	Error          string
 }
 
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
@@ -25,7 +28,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 				continue
 			}
 
-			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String()})
+			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum, BuildState: *a.BuildState, Error: a.Error})
 		}
 	}
 
@@ -39,7 +42,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 				continue
 			}
 			if strings.HasSuffix(a.URI.String(), ".tar.gz") || strings.HasSuffix(a.URI.String(), ".zip") {
-				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String()}}, nil
+				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum, BuildState: *a.BuildState, Error: a.Error}}, nil
 			}
 
 		}

@@ -23,15 +23,15 @@ type messager interface {
 	MessageType() MessageEnum
 }
 
-type message struct {
+type Message struct {
 	messager
 }
 
-type baseMessage struct {
+type BaseMessage struct {
 	Type string `json:"type"`
 }
 
-func (bm baseMessage) MessageType() MessageEnum {
+func (bm BaseMessage) MessageType() MessageEnum {
 	switch bm.Type {
 	case "build_succeeded":
 		return BuildSucceeded
@@ -51,7 +51,7 @@ func (bm baseMessage) MessageType() MessageEnum {
 }
 
 type buildMessage struct {
-	baseMessage
+	BaseMessage
 	RecipeID  string    `json:"recipe_id"`
 	Timestamp time.Time `json:"timestamp"`
 	CacheHit  bool      `json:"cache_hit"`
@@ -63,7 +63,7 @@ type buildFailedMessage struct {
 }
 
 type artifactMessage struct {
-	baseMessage
+	BaseMessage
 	RecipeID   string              `json:"recipe_id"`
 	ArtifactID artifact.ArtifactID `json:"artifact_id"`
 	Timestamp  time.Time           `json:"timestamp"`
@@ -84,21 +84,21 @@ type artifactFailedMessage struct {
 	LogURI       string `json:"log_uri"`
 }
 
-type artifactProgressMessage struct {
-	baseMessage
+type ArtifactProgressMessage struct {
+	BaseMessage
 	ArtifactID artifact.ArtifactID  `json:"artifact_id"`
 	Timestamp  string               `json:"timestamp"`
 	Source     string               `json:"source"`
 	PipeName   string               `json:"pipe_name"`
-	Body       artifactProgressBody `json:"body"`
+	Body       ArtifactProgressBody `json:"body"`
 }
 
-type artifactProgressBody struct {
+type ArtifactProgressBody struct {
 	Facility string `json:"facility"`
 	Message  string `json:"msg"`
 }
 
-func unmarshalSpecialMessage(baseMsg baseMessage, b []byte) (messager, error) {
+func unmarshalSpecialMessage(baseMsg BaseMessage, b []byte) (messager, error) {
 	switch baseMsg.MessageType() {
 	case BuildSucceeded:
 		var bm buildMessage
@@ -121,7 +121,7 @@ func unmarshalSpecialMessage(baseMsg baseMessage, b []byte) (messager, error) {
 		err := json.Unmarshal(b, &am)
 		return am, err
 	case ArtifactProgress:
-		var am artifactProgressMessage
+		var am ArtifactProgressMessage
 		err := json.Unmarshal(b, &am)
 		return am, err
 	}
@@ -129,7 +129,7 @@ func unmarshalSpecialMessage(baseMsg baseMessage, b []byte) (messager, error) {
 }
 
 func UnmarshalJSON(b []byte) (messager, error) {
-	var bm baseMessage
+	var bm BaseMessage
 	if err := json.Unmarshal(b, &bm); err != nil {
 		return nil, err
 	}
@@ -137,11 +137,11 @@ func UnmarshalJSON(b []byte) (messager, error) {
 	return unmarshalSpecialMessage(bm, b)
 }
 
-func (m *message) UnmarshalJSON(b []byte) error {
+func (m *Message) UnmarshalJSON(b []byte) error {
 	mm, err := UnmarshalJSON(b)
 	if err != nil {
 		return err
 	}
-	*m = message{mm}
+	*m = Message{mm}
 	return nil
 }

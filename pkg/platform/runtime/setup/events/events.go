@@ -109,20 +109,26 @@ func newArtifactBuildEvent(suffix string, step SetupStep, artifactID artifact.Ar
 
 // ArtifactResolverEvents forwards a function to resolve artifact names (as soon as that information becomes available)
 type ArtifactResolverEvent struct {
-	resolver ArtifactResolver
+	resolver     ArtifactResolver
+	downloadable []artifact.ArtifactDownload
 }
 
-// Total returns the number of artifacts that we are dealing with
+// Resolver returns a function that resolves artifact names
 func (ae ArtifactResolverEvent) Resolver() ArtifactResolver {
 	return ae.resolver
+}
+
+// Resolver returns a function that resolves artifact names
+func (ae ArtifactResolverEvent) DownloadableArtifacts() []artifact.ArtifactDownload {
+	return ae.downloadable
 }
 
 func (ae ArtifactResolverEvent) String() string {
 	return "artifact_resolver"
 }
 
-func newArtifactResolverEvent(resolver ArtifactResolver) ArtifactResolverEvent {
-	return ArtifactResolverEvent{resolver}
+func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload) ArtifactResolverEvent {
+	return ArtifactResolverEvent{resolver, downloadable}
 }
 
 // TotalArtifactEvent reports the number of total artifacts as soon as they are known
@@ -251,24 +257,6 @@ func (fe ArtifactFailureEvent) Failure() string {
 
 func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, logURI, errorMessage string) ArtifactFailureEvent {
 	return ArtifactFailureEvent{newArtifactBuildEvent("failure", step, artifactID, logURI), errorMessage}
-}
-
-type AlreadyFailedBuildEvent struct {
-	baseEvent
-	artifactIDs []artifact.ArtifactID
-	errMsg      string
-}
-
-func (ae AlreadyFailedBuildEvent) ArtifactIDs() []artifact.ArtifactID {
-	return ae.artifactIDs
-}
-
-func (ae AlreadyFailedBuildEvent) Failure() string {
-	return ae.errMsg
-}
-
-func newAlreadyFailedBuildEvent(artifactIDs []artifact.ArtifactID, errMsg string) AlreadyFailedBuildEvent {
-	return AlreadyFailedBuildEvent{newBaseEvent("already_failed_build", Build), artifactIDs, errMsg}
 }
 
 // ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available

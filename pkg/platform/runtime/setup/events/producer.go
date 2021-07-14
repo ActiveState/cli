@@ -30,8 +30,8 @@ func (r *RuntimeEventProducer) event(be SetupEventer) {
 	r.events <- be
 }
 
-func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver) {
-	r.event(newArtifactResolverEvent(artifactResolver))
+func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver, downloadable []artifact.ArtifactDownload) {
+	r.event(newArtifactResolverEvent(artifactResolver, downloadable))
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
@@ -84,12 +84,4 @@ func (r *RuntimeEventProducer) ArtifactStepCompleted(step SetupStep, artifactID 
 
 func (r *RuntimeEventProducer) ArtifactStepFailed(step SetupStep, artifactID strfmt.UUID, errorMsg string) {
 	r.event(newArtifactFailureEvent(step, artifactID, "", errorMsg))
-}
-
-func (r *RuntimeEventProducer) RequestedAlreadyFailedBuild(artifactMap artifact.ArtifactRecipeMap, errMessage string) {
-	artifactIDs := make([]artifact.ArtifactID, 0, len(artifactMap))
-	for id := range artifactMap {
-		artifactIDs = append(artifactIDs, id)
-	}
-	r.event(newAlreadyFailedBuildEvent(artifactIDs, errMessage))
 }

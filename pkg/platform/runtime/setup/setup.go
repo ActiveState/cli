@@ -87,8 +87,7 @@ type Events interface {
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
 
-	ParsedArtifacts(artifactResolver events.ArtifactResolver)
-	RequestedAlreadyFailedBuild(artifactMap artifact.ArtifactRecipeMap, errMsg string)
+	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload)
 }
 
 type Targeter interface {
@@ -170,8 +169,12 @@ func (s *Setup) update() error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to select setup implementation")
 	}
+	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
+	if err != nil {
+		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
+	}
 
-	s.events.ParsedArtifacts(setup.ResolveArtifactName)
+	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads)
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
@@ -184,7 +187,7 @@ func (s *Setup) update() error {
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
-		s.events.RequestedAlreadyFailedBuild(artifacts, buildResult.BuildStatusResponse.Message)
+		s.events.BuildFinished()
 		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
@@ -219,7 +222,7 @@ func (s *Setup) update() error {
 		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 	}
 
-	err = s.installArtifacts(buildResult, artifacts, alreadyInstalled, setup)
+	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	if err != nil {
 		return err
 	}
@@ -290,7 +293,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
 		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
 		if s.target.Owner() == "" && s.target.Name() == "" {
@@ -304,7 +307,7 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromBuildResult(buildResult, alreadyInstalled, setup)
+		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup)
 	} else {
 		err = s.installFromBuildLog(buildResult, artifacts, alreadyInstalled, setup)
 	}
@@ -325,11 +328,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch artifacts to download.")
-	}
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()

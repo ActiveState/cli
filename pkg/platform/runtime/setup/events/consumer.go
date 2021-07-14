@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -16,7 +17,6 @@ type ChangeSummaryDigester interface {
 
 // ProgressDigester provides actions to display progress information during the setup of the runtime.
 type ProgressDigester interface {
-	BuildFailedInPast(artifactIDs []artifact.ArtifactID, errMsg string) error
 	BuildStarted(totalArtifacts int64) error
 	BuildCompleted(withFailures bool) error
 
@@ -24,8 +24,8 @@ type ProgressDigester interface {
 	InstallationIncrement() error
 
 	BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error
-	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string) error
-	BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string) error
+	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error
+	BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string, cachedBuild bool) error
 	BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error
 
 	ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, step string, counter int64, counterCountsBytes bool) error
@@ -42,6 +42,7 @@ type TerminalOutputConsumer struct {
 	progress            ProgressDigester
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
+	downloadable        []artifact.ArtifactDownload
 	totalArtifacts      int64
 	numBuildFailures    int64
 	numInstallFailures  int64
@@ -60,10 +61,17 @@ func (eh *TerminalOutputConsumer) Consume(ev SetupEventer) error {
 	switch t := ev.(type) {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
-	case AlreadyFailedBuildEvent:
-		return eh.progress.BuildFailedInPast(t.ArtifactIDs(), t.Failure())
 	case ArtifactResolverEvent:
 		eh.artifactNames = t.Resolver()
+		for _, download := range t.DownloadableArtifacts() {
+			artifactName := eh.artifactNames(download.ArtifactID)
+			if download.BuildState == headchef_models.V1ArtifactBuildStateSucceeded {
+				eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
+			} else if download.BuildState == headchef_models.V1ArtifactBuildStateFailed {
+				eh.numBuildFailures++
+				eh.progress.BuildArtifactFailure(download.ArtifactID, artifactName, download.UnsignedLogURI, download.Error, true)
+			}
+		}
 	case TotalArtifactEvent:
 		eh.totalArtifacts = int64(t.Total())
 		return nil
@@ -89,10 +97,10 @@ func (eh *TerminalOutputConsumer) handleBuildArtifactEvent(ev ArtifactSetupEvent
 	case ArtifactStartEvent:
 		return eh.progress.BuildArtifactStarted(t.artifactID, artifactName)
 	case ArtifactCompleteEvent:
-		return eh.progress.BuildArtifactCompleted(t.artifactID, artifactName, t.logURI)
+		return eh.progress.BuildArtifactCompleted(t.artifactID, artifactName, t.logURI, false)
 	case ArtifactFailureEvent:
 		eh.numBuildFailures++
-		return eh.progress.BuildArtifactFailure(t.artifactID, artifactName, t.logURI, t.errorMessage)
+		return eh.progress.BuildArtifactFailure(t.artifactID, artifactName, t.logURI, t.errorMessage, false)
 	case ArtifactBuildProgressEvent:
 		return eh.progress.BuildArtifactProgress(t.artifactID, artifactName, t.TimeStamp(), t.Message(), t.Facility(), t.PipeName(), t.Source())
 	default:

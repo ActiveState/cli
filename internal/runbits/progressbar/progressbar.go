@@ -93,11 +93,6 @@ func (rp *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *ar
 	return bar
 }
 
-// BuildFailedInPast is called when a build failed in the past
-func (rp *RuntimeProgress) BuildFailedInPast(_ []artifact.ArtifactID, _ string) error {
-	return nil
-}
-
 // BuildStarted adds a build progress bar
 func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	if rp.buildBar == nil {
@@ -107,7 +102,7 @@ func (rp *RuntimeProgress) BuildStarted(total int64) error {
 }
 
 // BuildArtifactCompleted increments the build progress bar counter
-func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string) error {
+func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string, _ bool) error {
 	if rp.buildBar == nil {
 		return errs.New("Build bar has not been initialized yet.")
 	}
@@ -122,7 +117,7 @@ func (rp *RuntimeProgress) BuildArtifactStarted(_ artifact.ArtifactID, _ string)
 }
 
 // BuildArtifactFailure has no effect on the progress bar output
-func (rp *RuntimeProgress) BuildArtifactFailure(_ artifact.ArtifactID, _ string, _ string, _ string) error {
+func (rp *RuntimeProgress) BuildArtifactFailure(_ artifact.ArtifactID, _ string, _ string, _ string, _ bool) error {
 	return nil
 }
 
