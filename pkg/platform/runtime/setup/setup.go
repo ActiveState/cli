@@ -305,7 +305,7 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
 	var err error
-	if !buildResult.BuildReady {
+	if buildResult.BuildReady {
 		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup)
 	} else {
 		err = s.installFromBuildLog(buildResult, artifacts, downloads, alreadyInstalled, setup)
