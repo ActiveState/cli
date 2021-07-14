@@ -3,11 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // UninstallRunParams tracks the info required for running Uninstall.
@@ -17,30 +13,20 @@ type UninstallRunParams struct {
 
 // Uninstall manages the uninstalling execution context.
 type Uninstall struct {
-	cfg  configurable
-	out  output.Outputer
-	proj *project.Project
-	prompt.Prompter
-	auth *authentication.Auth
+	prime primeable
 }
 
 // NewUninstall prepares an uninstallation execution context for use.
 func NewUninstall(prime primeable) *Uninstall {
-	return &Uninstall{
-		prime.Config(),
-		prime.Output(),
-		prime.Project(),
-		prime.Prompt(),
-		prime.Auth(),
-	}
+	return &Uninstall{prime}
 }
 
 // Run executes the uninstall behavior.
 func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteUninstall")
-	if r.proj == nil {
+	if r.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	return executePackageOperation(r.proj, r.cfg, r.out, r.auth, r.Prompter, params.Name, "", model.OperationRemoved, nstype)
+	return executePackageOperation(r.prime, params.Name, "", model.OperationRemoved, nstype)
 }

@@ -139,6 +139,10 @@ type Namespace struct {
 	value  string
 }
 
+func (n Namespace) IsValid() bool {
+	return n.nsType.name != "" && n.nsType != NamespaceBlank && n.value != ""
+}
+
 func (n Namespace) Type() NamespaceType {
 	return n.nsType
 }
@@ -178,33 +182,12 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-func NamespaceForPackage(name string) (Namespace, error) {
-	ns := NewBlankNamespace()
-	packages, err := SearchIngredientsStrict(ns, name)
-	if err != nil {
-		return ns, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
+func LanguageFromNamespace(ns string) string {
+	values := strings.Split(ns, "/")
+	if len(values) != 2 {
+		return ""
 	}
-
-	if len(packages) == 0 {
-		return ns, errs.AddTips(
-			locale.NewInputError("err_package_info_no_packages", "", name),
-			locale.T("info_try_search"),
-			locale.T("info_request"),
-		)
-	}
-
-	pkg := *packages[0]
-	if !NamespaceMatch(*pkg.Ingredient.PrimaryNamespace, NamespacePackageMatch) {
-		return ns, locale.NewError("err_install_invalid_namespace", "Retrieved namespace does not match package namespace")
-	}
-
-	re := regexp.MustCompile(NamespacePackageMatch)
-	matches := re.FindStringSubmatch(*pkg.Ingredient.PrimaryNamespace)
-	if len(matches) < 2 {
-		return ns, locale.NewError("err_install_match_language", "Could not determine language from package namespace")
-	}
-
-	return NewNamespacePackage(matches[1]), nil
+	return values[1]
 }
 
 // BranchCommitID returns the latest commit id by owner and project names. It
@@ -420,17 +403,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
-	var commitID strfmt.UUID
-	languages, err := FetchLanguagesForCommit(parentCommitID)
-	if err != nil {
-		return commitID, err
-	}
-
-	if len(languages) == 0 {
-		return commitID, locale.NewError("err_project_no_languages")
-	}
-
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
 	var message string
 	switch operation {
 	case OperationAdded:
@@ -441,60 +414,15 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		message = "commit_message_removed_package"
 	}
 
-	namespace := NewNamespacePackage(languages[0].Name)
-	if strings.HasPrefix(packageNamespace, NamespaceBundle.Prefix()) {
-		namespace = NewNamespaceBundle(languages[0].Name)
-	}
-
 	commit, err := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
 		packageName, packageVersion, anonymousID,
 	)
 	if err != nil {
-		return commitID, err
-	}
-	return commit.CommitID, nil
-}
-
-func CommitPackageInitial(packageName, packageVersion string, packageNamespace Namespace, anonymousID string) (strfmt.UUID, error) {
-	var changes []*mono_models.CommitChangeEditable
-
-	platformID, err := hostPlatformToPlatformID(HostPlatform)
-	if err != nil {
 		return "", err
 	}
-
-	changes = append(changes, &mono_models.CommitChangeEditable{
-		Operation:         string(OperationAdded),
-		Namespace:         NewNamespacePlatform().String(),
-		Requirement:       platformID,
-		VersionConstraint: "",
-	})
-
-	changes = append(changes, &mono_models.CommitChangeEditable{
-		Operation:         string(OperationAdded),
-		Namespace:         packageNamespace.String(),
-		Requirement:       packageName,
-		VersionConstraint: packageVersion,
-	})
-
-	commit := &mono_models.CommitEditable{
-		Changeset: changes,
-		Message:   locale.T("commit_message_add_initial"),
-		AnonID:    anonymousID,
-	}
-
-	addCommitParams := vcsClient.NewAddCommitParams()
-	addCommitParams.SetCommit(commit)
-
-	res, err := mono.New().VersionControl.AddCommit(addCommitParams, authentication.ClientAuth())
-	if err != nil {
-		logging.Error("AddCommit Error: %s", err.Error())
-		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
-	}
-
-	return res.Payload.CommitID, nil
+	return commit.CommitID, nil
 }
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
@@ -582,7 +510,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(commit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))

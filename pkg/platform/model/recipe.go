@@ -95,19 +95,10 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		if err2 != nil {
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
-		switch rrErr := err.(type) {
-		case *iop.ResolveRecipesDefault:
-			msg := *rrErr.Payload.Message
-			logging.Error("Could not resolve order, error: %s, order: %s", msg, string(orderBody))
-			return "", locale.WrapInputError(err, "err_solve_order", "", msg)
-		case *iop.ResolveRecipesBadRequest:
-			msg := *rrErr.Payload.Message
-			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", locale.WrapError(err, "err_order_bad_request", "", commitID.String(), msg)
-		default:
-			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return "", locale.WrapError(err, "err_order_unknown")
-		}
+		
+		serr := resolveSolverError(err)
+		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		return "", serr
 	}
 
 	return recipe, nil
@@ -158,19 +149,9 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		}
 
 		orderBody, _ := json.Marshal(params.Order)
-		switch rrErr := err.(type) {
-		case *iop.ResolveRecipesDefault:
-			msg := *rrErr.Payload.Message
-			logging.Error("Could not solve order, error: %s, order: %s", msg, string(orderBody))
-			return nil, locale.WrapInputError(err, "err_solve_order", "", msg)
-		case *iop.ResolveRecipesBadRequest:
-			msg := *rrErr.Payload.Message
-			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, locale.WrapError(err, "err_order_bad_request", "", commitID.String(), msg)
-		default:
-			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return nil, locale.WrapError(err, "err_order_unknown")
-		}
+		serr := resolveSolverError(err)
+		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		return nil, serr
 	}
 
 	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
@@ -191,6 +172,24 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	}
 
 	return nil, locale.NewInputError("err_recipe_not_found")
+}
+
+func resolveSolverError(err error) error {
+	switch serr := err.(type) {
+	case *iop.ResolveRecipesDefault:
+		return locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", *serr.Payload.Message)
+	case *iop.ResolveRecipesBadRequest:
+		err = locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", *serr.Payload.SolverError.Message)
+		for _, verr := range serr.Payload.ValidationErrors {
+			if verr.Error == nil {
+				continue
+			}
+			err = locale.WrapError(err, "", *verr.Error)
+		}
+		return err
+	default:
+		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")
+	}
 }
 
 func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
