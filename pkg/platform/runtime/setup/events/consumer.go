@@ -42,7 +42,6 @@ type RuntimeEventConsumer struct {
 	progress            ProgressDigester
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
-	downloadable        []artifact.ArtifactDownload
 	totalArtifacts      int64
 	numBuildFailures    int64
 	numInstallFailures  int64
@@ -64,7 +63,7 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 	case ArtifactResolverEvent:
 		eh.artifactNames = t.Resolver()
 		for _, download := range t.DownloadableArtifacts() {
-			artifactName := eh.artifactNames(download.ArtifactID)
+			artifactName := eh.ResolveArtifactName(download.ArtifactID)
 			if download.BuildState == headchef_models.V1ArtifactBuildStateSucceeded {
 				eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
 			} else if download.BuildState == headchef_models.V1ArtifactBuildStateFailed {
@@ -92,7 +91,7 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 }
 
 func (eh *RuntimeEventConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer) error {
-	artifactName := eh.artifactNames(ev.ArtifactID())
+	artifactName := eh.ResolveArtifactName(ev.ArtifactID())
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
 		return eh.progress.BuildArtifactStarted(t.artifactID, artifactName)
