@@ -204,7 +204,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	// Prompt the user with the ingredient choices
 	choice, err := prompt.Select(
 		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
-		locale.Tl("prompt_pkgop_ingredient_msg", "Multiple ingredients matched your query, which one would you like to use?"),
+		locale.Tl("prompt_pkgop_ingredient_msg", "Your query has multiple matches, which one would you like to use?"),
 		choices, &choices[0],
 	)
 	if err != nil {
