@@ -40,8 +40,8 @@ func SearchIngredients(namespace Namespace, name string, includeVersions bool) (
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, false)
+func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool, includeVersions bool) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions)
 	if err != nil {
 		return nil, err
 	}

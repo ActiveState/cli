@@ -165,7 +165,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
-	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false)
+	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false, false)
 	if err != nil {
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
