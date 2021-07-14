@@ -30,7 +30,7 @@ type ImageCoreAllOf0 struct {
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker Mac MacChroot WindowsDocker WindowsInstance]
+	// Enum: [Docker Mac MacSandbox WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -82,7 +82,7 @@ var imageCoreAllOf0TypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","Mac","MacChroot","WindowsDocker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","MacSandbox","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -98,8 +98,8 @@ const (
 	// ImageCoreAllOf0TypeMac captures enum value "Mac"
 	ImageCoreAllOf0TypeMac string = "Mac"
 
-	// ImageCoreAllOf0TypeMacChroot captures enum value "MacChroot"
-	ImageCoreAllOf0TypeMacChroot string = "MacChroot"
+	// ImageCoreAllOf0TypeMacSandbox captures enum value "MacSandbox"
+	ImageCoreAllOf0TypeMacSandbox string = "MacSandbox"
 
 	// ImageCoreAllOf0TypeWindowsDocker captures enum value "WindowsDocker"
 	ImageCoreAllOf0TypeWindowsDocker string = "WindowsDocker"

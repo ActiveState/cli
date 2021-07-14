@@ -29,7 +29,7 @@ type OrderRequirement struct {
 	// Format: uuid
 	IngredientVersionID strfmt.UUID `json:"ingredient_version_id,omitempty"`
 
-	// The namespace for the required feature. For now, this can be empty as it is only used to request pre-platform installer ingredients.
+	// The namespace for the required feature.
 	// Required: true
 	Namespace *string `json:"namespace"`
 

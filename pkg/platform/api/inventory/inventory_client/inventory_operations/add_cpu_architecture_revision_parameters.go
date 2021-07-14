@@ -65,7 +65,7 @@ type AddCPUArchitectureRevisionParams struct {
 	/*CPUArchitectureID*/
 	CPUArchitectureID strfmt.UUID
 	/*CPUArchitectureRevision*/
-	CPUArchitectureRevision *inventory_models.Revision
+	CPUArchitectureRevision *inventory_models.RevisionedFeatureProvider
 
 	timeout    time.Duration
 	Context    context.Context
@@ -117,13 +117,13 @@ func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureID(cPUArchitectureI
 }
 
 // WithCPUArchitectureRevision adds the cPUArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) *AddCPUArchitectureRevisionParams {
+func (o *AddCPUArchitectureRevisionParams) WithCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.RevisionedFeatureProvider) *AddCPUArchitectureRevisionParams {
 	o.SetCPUArchitectureRevision(cPUArchitectureRevision)
 	return o
 }
 
 // SetCPUArchitectureRevision adds the cpuArchitectureRevision to the add Cpu architecture revision params
-func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.Revision) {
+func (o *AddCPUArchitectureRevisionParams) SetCPUArchitectureRevision(cPUArchitectureRevision *inventory_models.RevisionedFeatureProvider) {
 	o.CPUArchitectureRevision = cPUArchitectureRevision
 }
 
