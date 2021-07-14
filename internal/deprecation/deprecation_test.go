@@ -20,12 +20,13 @@ type DeprecationTestSuite struct {
 func (suite *DeprecationTestSuite) BeforeTest(suiteName, testName string) {
 	suite.mock = depMock.Init()
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *DeprecationTestSuite) AfterTest(suiteName, testName string) {
 	suite.mock.Close()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *DeprecationTestSuite) xTestDeprecation() {

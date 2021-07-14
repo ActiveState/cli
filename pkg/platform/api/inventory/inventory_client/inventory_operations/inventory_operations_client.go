@@ -43,9 +43,9 @@ type ClientService interface {
 
 	AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddCPUExtensionRevisionOK, error)
 
-	AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error)
+	AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGPUArchitectureCreated, error)
 
-	AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error)
+	AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGPUArchitectureRevisionOK, error)
 
 	AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter) (*AddImageCreated, error)
 
@@ -67,7 +67,7 @@ type ClientService interface {
 
 	AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelCPUArchitectureOK, error)
 
-	AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error)
+	AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGPUArchitectureOK, error)
 
 	AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelVersionCreated, error)
 
@@ -95,6 +95,8 @@ type ClientService interface {
 
 	AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter) (*AddPlatformCreated, error)
 
+	DeleteImage(params *DeleteImageParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteImageNoContent, error)
+
 	DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIngredientVersionNoContent, error)
 
 	GetAuthor(params *GetAuthorParams) (*GetAuthorOK, error)
@@ -119,9 +121,9 @@ type ClientService interface {
 
 	GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtensionsOK, error)
 
-	GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error)
+	GetGPUArchitecture(params *GetGPUArchitectureParams) (*GetGPUArchitectureOK, error)
 
-	GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error)
+	GetGPUArchitectures(params *GetGPUArchitecturesParams) (*GetGPUArchitecturesOK, error)
 
 	GetImage(params *GetImageParams) (*GetImageOK, error)
 
@@ -131,6 +133,8 @@ type ClientService interface {
 
 	GetIngredientOptionSet(params *GetIngredientOptionSetParams) (*GetIngredientOptionSetOK, error)
 
+	GetIngredientOptionSetIngredientVersions(params *GetIngredientOptionSetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOptionSetIngredientVersionsOK, error)
+
 	GetIngredientOptionSets(params *GetIngredientOptionSetsParams) (*GetIngredientOptionSetsOK, error)
 
 	GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionOK, error)
@@ -138,6 +142,8 @@ type ClientService interface {
 	GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionAuthorsOK, error)
 
 	GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionBuildScriptsOK, error)
+
+	GetIngredientVersionIngredientOptionSets(params *GetIngredientVersionIngredientOptionSetsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionIngredientOptionSetsOK, error)
 
 	GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionPatchesOK, error)
 
@@ -153,7 +159,7 @@ type ClientService interface {
 
 	GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams) (*GetKernelCPUArchitecturesOK, error)
 
-	GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error)
+	GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesParams) (*GetKernelGPUArchitecturesOK, error)
 
 	GetKernelVersion(params *GetKernelVersionParams) (*GetKernelVersionOK, error)
 
@@ -535,23 +541,23 @@ func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, 
 }
 
 /*
-  AddGpuArchitecture Add a new GPU architecture
+  AddGPUArchitecture Add a new GPU architecture
 */
-func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureCreated, error) {
+func (a *Client) AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddGPUArchitectureCreated, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddGpuArchitectureParams()
+		params = NewAddGPUArchitectureParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "addGpuArchitecture",
+		ID:                 "addGPUArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddGpuArchitectureReader{formats: a.formats},
+		Reader:             &AddGPUArchitectureReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -559,33 +565,33 @@ func (a *Client) AddGpuArchitecture(params *AddGpuArchitectureParams, authInfo r
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGpuArchitectureCreated)
+	success, ok := result.(*AddGPUArchitectureCreated)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddGpuArchitectureDefault)
+	unexpectedSuccess := result.(*AddGPUArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  AddGpuArchitectureRevision Add a new revision of this GPU architecture
+  AddGPUArchitectureRevision Add a new revision of this GPU architecture
 */
-func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGpuArchitectureRevisionOK, error) {
+func (a *Client) AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter) (*AddGPUArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddGpuArchitectureRevisionParams()
+		params = NewAddGPUArchitectureRevisionParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "addGpuArchitectureRevision",
+		ID:                 "addGPUArchitectureRevision",
 		Method:             "POST",
 		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}/revisions",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddGpuArchitectureRevisionReader{formats: a.formats},
+		Reader:             &AddGPUArchitectureRevisionReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -593,12 +599,12 @@ func (a *Client) AddGpuArchitectureRevision(params *AddGpuArchitectureRevisionPa
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddGpuArchitectureRevisionOK)
+	success, ok := result.(*AddGPUArchitectureRevisionOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddGpuArchitectureRevisionDefault)
+	unexpectedSuccess := result.(*AddGPUArchitectureRevisionDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -943,23 +949,23 @@ func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams
 }
 
 /*
-  AddKernelGpuArchitecture Add a GPU architecture that can be used with this kernel
+  AddKernelGPUArchitecture Add a GPU architecture that can be used with this kernel
 */
-func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGpuArchitectureOK, error) {
+func (a *Client) AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter) (*AddKernelGPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewAddKernelGpuArchitectureParams()
+		params = NewAddKernelGPUArchitectureParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "addKernelGpuArchitecture",
+		ID:                 "addKernelGPUArchitecture",
 		Method:             "POST",
 		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &AddKernelGpuArchitectureReader{formats: a.formats},
+		Reader:             &AddKernelGPUArchitectureReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -967,12 +973,12 @@ func (a *Client) AddKernelGpuArchitecture(params *AddKernelGpuArchitectureParams
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*AddKernelGpuArchitectureOK)
+	success, ok := result.(*AddKernelGPUArchitectureOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*AddKernelGpuArchitectureDefault)
+	unexpectedSuccess := result.(*AddKernelGPUArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1419,6 +1425,40 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 }
 
 /*
+  DeleteImage Delete this image
+*/
+func (a *Client) DeleteImage(params *DeleteImageParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteImageNoContent, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteImageParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteImage",
+		Method:             "DELETE",
+		PathPattern:        "/v1/images/{image_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &DeleteImageReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteImageNoContent)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteImageDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   DeleteIngredientVersion Delete this ingredient version
 */
 func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteIngredientVersionNoContent, error) {
@@ -1816,68 +1856,68 @@ func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams) (*GetCPUExtens
 }
 
 /*
-  GetGpuArchitecture Retrieve a single GPU architecture
+  GetGPUArchitecture Retrieve a single GPU architecture
 */
-func (a *Client) GetGpuArchitecture(params *GetGpuArchitectureParams) (*GetGpuArchitectureOK, error) {
+func (a *Client) GetGPUArchitecture(params *GetGPUArchitectureParams) (*GetGPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetGpuArchitectureParams()
+		params = NewGetGPUArchitectureParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getGpuArchitecture",
+		ID:                 "getGPUArchitecture",
 		Method:             "GET",
 		PathPattern:        "/v1/gpu-architectures/{gpu_architecture_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetGpuArchitectureReader{formats: a.formats},
+		Reader:             &GetGPUArchitectureReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGpuArchitectureOK)
+	success, ok := result.(*GetGPUArchitectureOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetGpuArchitectureDefault)
+	unexpectedSuccess := result.(*GetGPUArchitectureDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
-  GetGpuArchitectures Retrieve all GPU architectures
+  GetGPUArchitectures Retrieve all GPU architectures
 */
-func (a *Client) GetGpuArchitectures(params *GetGpuArchitecturesParams) (*GetGpuArchitecturesOK, error) {
+func (a *Client) GetGPUArchitectures(params *GetGPUArchitecturesParams) (*GetGPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetGpuArchitecturesParams()
+		params = NewGetGPUArchitecturesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getGpuArchitectures",
+		ID:                 "getGPUArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetGpuArchitecturesReader{formats: a.formats},
+		Reader:             &GetGPUArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetGpuArchitecturesOK)
+	success, ok := result.(*GetGPUArchitecturesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetGpuArchitecturesDefault)
+	unexpectedSuccess := result.(*GetGPUArchitecturesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -2015,6 +2055,40 @@ func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams) (*
 }
 
 /*
+  GetIngredientOptionSetIngredientVersions Retrieve all ingredient versions which use this ingredient option set
+*/
+func (a *Client) GetIngredientOptionSetIngredientVersions(params *GetIngredientOptionSetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientOptionSetIngredientVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientOptionSetIngredientVersionsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientOptionSetIngredientVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredient-option-sets/{ingredient_option_set_id}/ingredient-versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientOptionSetIngredientVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetIngredientOptionSetIngredientVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetIngredientOptionSetIngredientVersionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetIngredientOptionSets Iterate over all matching ingredient option sets
 */
 func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams) (*GetIngredientOptionSetsOK, error) {
@@ -2146,6 +2220,40 @@ func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBu
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetIngredientVersionBuildScriptsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetIngredientVersionIngredientOptionSets Retrieve all ingredient option sets used by the ingredient version
+*/
+func (a *Client) GetIngredientVersionIngredientOptionSets(params *GetIngredientVersionIngredientOptionSetsParams, authInfo runtime.ClientAuthInfoWriter) (*GetIngredientVersionIngredientOptionSetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetIngredientVersionIngredientOptionSetsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getIngredientVersionIngredientOptionSets",
+		Method:             "GET",
+		PathPattern:        "/v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/ingredient-option-sets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetIngredientVersionIngredientOptionSetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetIngredientVersionIngredientOptionSetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetIngredientVersionIngredientOptionSetsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -2386,35 +2494,35 @@ func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesPara
 }
 
 /*
-  GetKernelGpuArchitectures Retrieve all GPU architectures that can be used with this kernel
+  GetKernelGPUArchitectures Retrieve all GPU architectures that can be used with this kernel
 */
-func (a *Client) GetKernelGpuArchitectures(params *GetKernelGpuArchitecturesParams) (*GetKernelGpuArchitecturesOK, error) {
+func (a *Client) GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesParams) (*GetKernelGPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewGetKernelGpuArchitecturesParams()
+		params = NewGetKernelGPUArchitecturesParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "getKernelGpuArchitectures",
+		ID:                 "getKernelGPUArchitectures",
 		Method:             "GET",
 		PathPattern:        "/v1/kernels/{kernel_id}/gpu-architectures",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},
 		Params:             params,
-		Reader:             &GetKernelGpuArchitecturesReader{formats: a.formats},
+		Reader:             &GetKernelGPUArchitecturesReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*GetKernelGpuArchitecturesOK)
+	success, ok := result.(*GetKernelGPUArchitecturesOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*GetKernelGpuArchitecturesDefault)
+	unexpectedSuccess := result.(*GetKernelGPUArchitecturesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

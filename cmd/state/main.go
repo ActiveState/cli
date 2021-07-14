@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
-	"github.com/thoas/go-funk"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
@@ -50,7 +51,9 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		events.WaitForEvents(time.Second, rollbar.Close)
+		if err := events.WaitForEvents(time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failed waiting for events: %v", err)
+		}
 
 		// exit with exitCode
 		os.Exit(exitCode)
@@ -105,7 +108,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) error {
+func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -118,22 +121,17 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	configGetter := config.GetSafer
-	if funk.Contains(args, "clean") && funk.Contains(args, "config") {
-		configGetter = config.Get
-	}
-
-	cfg, err := configGetter()
+	cfg, err := config.New()
 	if err != nil {
 		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
-	logging.Debug("CachePath: %s", cfg.CachePath())
+	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.SetConfiguration(cfg)
+	machineid.Setup(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	logging.UpdateConfig(cfg)
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
@@ -182,7 +180,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
-	auth := authentication.Get()
+	auth := authentication.LegacyGet()
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
@@ -217,7 +215,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	if err != nil {
 		cmdName := ""
 		if childCmd != nil {
-			cmdName = childCmd.Use() + " "
+			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 	}

@@ -23,7 +23,7 @@ type NormalizedNames struct {
 
 	// The normalized name mappings
 	// Required: true
-	NormalizedNames []*NormalizedNameMapping `json:"normalized_names"`
+	NormalizedNames []*NormalizedName `json:"normalized_names"`
 }
 
 // Validate validates this normalized names

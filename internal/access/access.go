@@ -18,7 +18,7 @@ func Secrets(orgName string) (bool, error) {
 }
 
 func isProjectOwner(orgName string) bool {
-	auth := authentication.Get()
+	auth := authentication.LegacyGet()
 	if orgName != auth.WhoAmI() {
 		return false
 	}
@@ -26,7 +26,7 @@ func isProjectOwner(orgName string) bool {
 }
 
 func isOrgMember(orgName string) (bool, error) {
-	auth := authentication.Get()
+	auth := authentication.LegacyGet()
 	_, err := model.FetchOrgMember(orgName, auth.WhoAmI())
 	if err != nil {
 		if errors.Is(err, model.ErrMemberNotFound) {

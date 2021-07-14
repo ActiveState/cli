@@ -1,6 +1,7 @@
 package reset
 
 import (
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -16,11 +17,6 @@ type Reset struct {
 	auth    *authentication.Auth
 	prompt  prompt.Prompter
 	project *project.Project
-	config  configurable
-}
-
-type configurable interface {
-	CachePath() string
 }
 
 type primeable interface {
@@ -37,7 +33,6 @@ func New(prime primeable) *Reset {
 		prime.Auth(),
 		prime.Prompt(),
 		prime.Project(),
-		prime.Config(),
 	}
 }
 
@@ -56,7 +51,7 @@ func (r *Reset) Run() error {
 
 	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
 
-	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will loose any changes that were not pushed. Are you sure you want to do this?"), new(bool))
+	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
 	}
@@ -69,7 +64,7 @@ func (r *Reset) Run() error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.project, r.config.CachePath(), *latestCommit, true)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.project, storage.CachePath(), *latestCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

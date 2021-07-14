@@ -86,7 +86,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 			params := secretsapiClient.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID
-			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.Get().ClientAuth())
+			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.LegacyGet().ClientAuth())
 
 			if err != nil {
 				switch statusCode := api.ErrorCode(err); statusCode {

@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,9 +13,6 @@ func Test_sendEvent(t *testing.T) {
 	defer func() {
 		deferAnalytics = deferValue
 	}()
-
-	cfg, err := config.Get()
-	require.NoError(t, err)
 
 	tests := []struct {
 		name       string
@@ -40,9 +37,9 @@ func Test_sendEvent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			deferAnalytics = tt.deferValue
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
-				t.Errorf("sendEvent() error = %v", err)
+				t.Errorf("sendEvent() error = %s", errs.JoinMessage(err))
 			}
-			got, _ := loadDeferred(cfg)
+			got, _ := loadDeferred(deferrerFilePath())
 			gotSlice := []string{}
 			if len(got) > 0 {
 				gotSlice = []string{got[0].Category, got[0].Action, got[0].Label}
@@ -52,7 +49,7 @@ func Test_sendEvent(t *testing.T) {
 			}
 			if len(got) > 0 {
 				called := false
-				sendDeferred(cfg, func(category string, action string, label string, _ map[string]string) error {
+				sendDeferred(func(category string, action string, label string, _ map[string]string) error {
 					called = true
 					gotSlice := []string{category, action, label}
 					if !reflect.DeepEqual(gotSlice, tt.want) {
@@ -63,12 +60,12 @@ func Test_sendEvent(t *testing.T) {
 				if !called {
 					t.Errorf("sendDeferred not called")
 				}
-				got, _ = loadDeferred(cfg)
+				got, _ = loadDeferred(deferrerFilePath())
 				if len(got) > 0 {
 					t.Errorf("Deferred events not cleared after sending, got: %v", got)
 				}
 			}
-			saveDeferred(cfg, []deferredData{}) // Ensure cleanup
+			require.NoFileExists(t, deferrerFilePath(), "deferrer file should have been cleaned up")
 		})
 	}
 }

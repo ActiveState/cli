@@ -62,9 +62,10 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
-	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	defer func() { require.NoError(t, cfg.Close()) }()
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -95,11 +96,12 @@ func TestEnvIsSet(t *testing.T) {
 		os.Unsetenv(constants.DisableRuntime)
 	}()
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 	})
@@ -136,11 +138,12 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
-	scriptRun := New(authentication.Get(), out, subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg)
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -162,10 +165,11 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -187,10 +191,11 @@ scripts:
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -202,8 +207,9 @@ func TestRunActivatedCommand(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 	os.Chdir(filepath.Join(root, "test"))
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	datadir := cfg.ConfigPath()
 	os.RemoveAll(filepath.Join(datadir, "virtual"))
@@ -237,7 +243,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -322,11 +328,12 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	proj, err := project.New(pjfile, nil)
 	require.NoError(t, err)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := New(authentication.Get(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
+		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg)
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")

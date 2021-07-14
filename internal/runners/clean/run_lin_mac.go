@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -19,9 +20,9 @@ func (u *Uninstall) runUninstall() error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	err := removeCache(u.cfg.CachePath())
+	err := removeCache(storage.CachePath())
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
 	}
 
 	err = removeInstall(u.cfg)
@@ -29,15 +30,20 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
-	err = removeConfig(u.cfg.ConfigPath(), u.out)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
-
-	}
-
 	err = undoPrepare(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+	}
+
+	path := u.cfg.ConfigPath()
+	if err := u.cfg.Close(); err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
+	}
+
+	err = removeConfig(path, u.out)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+
 	}
 
 	if aggErr != nil {

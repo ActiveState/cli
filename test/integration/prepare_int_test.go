@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -83,9 +84,10 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cfg, err := config.NewWithDir(ts.Dirs.Config)
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	suite.Require().Equal(ts.Dirs.Work, cfg.GetString(constants.GlobalDefaultPrefname))
+	suite.Require().NoError(cfg.Close())
 
 	// Remove global executors
 	globalExecDir := filepath.Join(ts.Dirs.Cache, "bin")

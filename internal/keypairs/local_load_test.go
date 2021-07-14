@@ -21,8 +21,12 @@ type KeypairLocalLoadTestSuite struct {
 
 func (suite *KeypairLocalLoadTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
+}
+
+func (suite *KeypairLocalLoadTestSuite) AfterTest(suiteName, testName string) {
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *KeypairLocalLoadTestSuite) TestNoKeyFileFound() {

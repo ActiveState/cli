@@ -35,18 +35,20 @@ func (c *configMock) SetWithLock(_ string, fn func(interface{}) (interface{}, er
 	return err
 }
 
+func (c *configMock) Close() error { return nil }
+
 func TestProjects(t *testing.T) {
 	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	httpmock.Register("GET", "/organizations")
 	httpmock.Register("GET", "/organizations/organizationName/projects")
 
 	catcher := outputhelper.NewCatcher()
-	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
+	pjs := newProjects(authentication.LegacyGet(), catcher.Outputer, &configMock{})
 
 	projects, err := pjs.fetchProjects(false)
 	assert.NoError(t, err, "Fetched projects")
@@ -64,14 +66,14 @@ func TestProjectsEmpty(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	httpmock.RegisterWithResponder("GET", "/organizations", func(req *http.Request) (int, string) {
 		return 200, "organizations-empty"
 	})
 
 	catcher := outputhelper.NewCatcher()
-	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
+	pjs := newProjects(authentication.LegacyGet(), catcher.Outputer, &configMock{})
 
 	projects, err := pjs.fetchProjects(false)
 	assert.NoError(t, err, "Fetched projects")
@@ -86,10 +88,10 @@ func TestClientError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	catcher := outputhelper.NewCatcher()
-	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
+	pjs := newProjects(authentication.LegacyGet(), catcher.Outputer, &configMock{})
 
 	_, err := pjs.fetchProjects(false)
 	assert.Error(t, err, "Should not be able to fetch organizations without mock")
@@ -104,12 +106,12 @@ func TestAuthError(t *testing.T) {
 	defer httpmock.DeActivate()
 
 	httpmock.Register("POST", "/login")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	httpmock.RegisterWithCode("GET", "/organizations", 401)
 
 	catcher := outputhelper.NewCatcher()
-	pjs := newProjects(authentication.Get(), catcher.Outputer, &configMock{})
+	pjs := newProjects(authentication.LegacyGet(), catcher.Outputer, &configMock{})
 
 	_, err := pjs.fetchProjects(false)
 	assert.Error(t, err, "Should not be able to fetch projects without being authenticated")

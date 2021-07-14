@@ -96,7 +96,7 @@ func unwrapError(err error) (int, error) {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
-	var llerr *config.LocLogError // workaround type used to avoid circular import in config pkg
+	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
 	if errors.As(err, &llerr) {
 		key, base := llerr.Localization()
 		if key != "" && base != "" {

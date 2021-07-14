@@ -12,9 +12,11 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// RecipeValidationErrorItem A single validation error
+// RecipeValidationErrorItem Recipe Validation Error Item
 //
-// swagger:model RecipeValidationErrorItem
+// A single validation error
+//
+// swagger:model recipeValidationErrorItem
 type RecipeValidationErrorItem struct {
 
 	// Human-readable message describing the error

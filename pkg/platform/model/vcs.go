@@ -68,10 +68,10 @@ const (
 	NamespaceLanguageMatch = `^language$`
 
 	// NamespacePackageMatch is the namespace used for language package requirements
-	NamespacePackageMatch = `^language\/\w+$`
+	NamespacePackageMatch = `^language\/(\w+)$`
 
 	// NamespaceBundlesMatch is the namespace used for bundle package requirements
-	NamespaceBundlesMatch = `^bundles\/\w+$`
+	NamespaceBundlesMatch = `^bundles\/(\w+)$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
@@ -124,6 +124,7 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
 	NamespaceLanguage = NamespaceType{"language", ""}
 	NamespacePlatform = NamespaceType{"platform", ""}
+	NamespaceBlank    = NamespaceType{"", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -138,6 +139,10 @@ func (t NamespaceType) Prefix() string {
 type Namespace struct {
 	nsType NamespaceType
 	value  string
+}
+
+func (n Namespace) IsValid() bool {
+	return n.nsType.name != "" && n.nsType != NamespaceBlank && n.value != ""
 }
 
 func (n Namespace) Type() NamespaceType {
@@ -160,6 +165,10 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
+func NewBlankNamespace() Namespace {
+	return Namespace{NamespaceBlank, ""}
+}
+
 // NewNamespaceBundle creates a new bundles namespace
 func NewNamespaceBundle(language string) Namespace {
 	return Namespace{NamespaceBundle, fmt.Sprintf("bundles/%s", language)}
@@ -173,6 +182,14 @@ func NewNamespaceLanguage() Namespace {
 // NewNamespacePlatform provides the base platform namespace.
 func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
+}
+
+func LanguageFromNamespace(ns string) string {
+	values := strings.Split(ns, "/")
+	if len(values) != 2 {
+		return ""
+	}
+	return values[1]
 }
 
 // BranchCommitID returns the latest commit id by owner and project names. It
@@ -238,7 +255,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 
 	var res *vcsClient.GetCommitHistoryOK
 	var err error
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
@@ -248,6 +265,59 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	}
 
 	return res.Payload, nil
+}
+
+// CommonParent returns the first commit id which both provided commit id
+// histories have in common.
+func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
+	if commit1 == nil || commit2 == nil {
+		return nil, nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1, nil
+	}
+
+	history1, err := CommitHistoryFromID(*commit1)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit1.String())
+	}
+
+	history2, err := CommitHistoryFromID(*commit2)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit2.String())
+	}
+
+	return commonParentWithHistory(commit1, commit2, history1, history2), nil
+}
+
+func commonParentWithHistory(commit1, commit2 *strfmt.UUID, history1, history2 []*mono_models.Commit) *strfmt.UUID {
+	if commit1 == nil || commit2 == nil {
+		return nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1
+	}
+
+	for _, c := range history1 {
+		if c.CommitID == *commit2 {
+			return commit2 // commit1 history contains commit2
+		}
+		for _, c2 := range history2 {
+			if c.CommitID == c2.CommitID {
+				return &c.CommitID // commit1 and commit2 have a common parent
+			}
+		}
+	}
+
+	for _, c2 := range history2 {
+		if c2.CommitID == *commit1 {
+			return commit1 // commit2 history contains commit1
+		}
+	}
+
+	return nil
 }
 
 // CommitsBehind compares the provided commit id with the latest commit
@@ -383,17 +453,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
-	var commitID strfmt.UUID
-	languages, err := FetchLanguagesForCommit(parentCommitID)
-	if err != nil {
-		return commitID, err
-	}
-
-	if len(languages) == 0 {
-		return commitID, locale.NewError("err_project_no_languages")
-	}
-
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
 	var message string
 	switch operation {
 	case OperationAdded:
@@ -404,18 +464,13 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		message = "commit_message_removed_package"
 	}
 
-	namespace := NewNamespacePackage(languages[0].Name)
-	if strings.HasPrefix(packageNamespace, NamespaceBundle.Prefix()) {
-		namespace = NewNamespaceBundle(languages[0].Name)
-	}
-
 	commit, err := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
 		packageName, packageVersion, anonymousID,
 	)
 	if err != nil {
-		return commitID, err
+		return "", err
 	}
 	return commit.CommitID, nil
 }
@@ -505,7 +560,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(commit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
@@ -674,7 +729,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 
 	var res *vcsClient.GetOrderOK
 	var err error
-	if auth.Get().Authenticated() {
+	if auth.LegacyGet().Authenticated() {
 		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
 		if err != nil {
 			return nil, errors.New(api.ErrorMessageFromPayload(err))
@@ -766,7 +821,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	params.SetCommitToID(to)
 
 	client := mono.New()
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		client = authentication.Client()
 	}
 	res, err := client.VersionControl.GetRevertCommit(params, authentication.ClientAuth())

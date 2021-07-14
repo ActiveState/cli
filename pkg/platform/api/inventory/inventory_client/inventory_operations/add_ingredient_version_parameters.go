@@ -66,11 +66,6 @@ type AddIngredientVersionParams struct {
 	IngredientID strfmt.UUID
 	/*IngredientVersion*/
 	IngredientVersion *inventory_models.IngredientVersionCreate
-	/*IsDefaultProviderBehavior
-	  How setting of is_default_provider should be handled for the features provided by the thing being created. The options are: 'override' - if is_default_provider is set to true for a provided feature then replace the existing default provider of that feature (if one exists); 'if-new' - set is_default_provider to true if this is an entirely new feature, otherwise false
-
-	*/
-	IsDefaultProviderBehavior *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -132,17 +127,6 @@ func (o *AddIngredientVersionParams) SetIngredientVersion(ingredientVersion *inv
 	o.IngredientVersion = ingredientVersion
 }
 
-// WithIsDefaultProviderBehavior adds the isDefaultProviderBehavior to the add ingredient version params
-func (o *AddIngredientVersionParams) WithIsDefaultProviderBehavior(isDefaultProviderBehavior *string) *AddIngredientVersionParams {
-	o.SetIsDefaultProviderBehavior(isDefaultProviderBehavior)
-	return o
-}
-
-// SetIsDefaultProviderBehavior adds the isDefaultProviderBehavior to the add ingredient version params
-func (o *AddIngredientVersionParams) SetIsDefaultProviderBehavior(isDefaultProviderBehavior *string) {
-	o.IsDefaultProviderBehavior = isDefaultProviderBehavior
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *AddIngredientVersionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -160,22 +144,6 @@ func (o *AddIngredientVersionParams) WriteToRequest(r runtime.ClientRequest, reg
 		if err := r.SetBodyParam(o.IngredientVersion); err != nil {
 			return err
 		}
-	}
-
-	if o.IsDefaultProviderBehavior != nil {
-
-		// query param is_default_provider_behavior
-		var qrIsDefaultProviderBehavior string
-		if o.IsDefaultProviderBehavior != nil {
-			qrIsDefaultProviderBehavior = *o.IsDefaultProviderBehavior
-		}
-		qIsDefaultProviderBehavior := qrIsDefaultProviderBehavior
-		if qIsDefaultProviderBehavior != "" {
-			if err := r.SetQueryParam("is_default_provider_behavior", qIsDefaultProviderBehavior); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	if len(res) > 0 {

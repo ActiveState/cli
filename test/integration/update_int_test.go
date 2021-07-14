@@ -65,13 +65,14 @@ func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) 
 		_ = suite.server.ListenAndServe()
 	}()
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
 	err := suite.server.Shutdown(context.Background())
 	suite.Require().NoError(err)
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 // env prepares environment variables for the test
@@ -138,7 +139,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	}
 
 	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
+	ts.UseDistinctStateExesLegacy()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 	cp.ExpectExitCode(0, 30*time.Second)
@@ -173,16 +174,19 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 	resultLogfile := regex.FindStringSubmatch(output)
 
 	suite.Require().Equal(len(resultLogfile), 2, "expected to have logfile in output %s", output)
+	logpath := strings.TrimSpace(resultLogfile[1])
 
-	return suite.pollForUpdateFromLogfile(strings.TrimSpace(resultLogfile[1]))
+	return suite.pollForUpdateFromLogfile(logpath)
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
+	var logs []byte
 	// poll for successful auto-update
 	for i := 0; i < 30; i++ {
 		time.Sleep(time.Millisecond * 200)
 
-		logs, err := ioutil.ReadFile(logFile)
+		var err error
+		logs, err = ioutil.ReadFile(logFile)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
@@ -192,7 +196,12 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 		}
 	}
 
-	suite.T().Errorf("did not find logFile %s", logFile)
+	if !fileutils.FileExists(logFile) {
+		suite.T().Errorf("logFile does not exist: %s", logFile)
+	} else {
+		suite.T().Errorf("could not verify logFile contents at %s, contents:\n%s", logFile, string(logs))
+	}
+
 	return ""
 }
 
@@ -272,26 +281,31 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 			cp.ExpectExitCode(0)
 
-			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+			var logs string
+			if tt.TestUpdate {
+				logs = suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+			}
 
 			// tell background process to stop...
 			close(stopBg)
 			// ...and wait for it
 			wg.Wait()
 
-			suite.Assert().Contains(logs, "was successful")
-			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
-
-			if tt.ExpectBackupCleaned {
-				suite.Assert().Contains(logs, "Removed all backup files.")
-			} else {
-				suite.Assert().Contains(logs, "Failed to remove backup files")
+			if tt.TestUpdate {
+				suite.Assert().Contains(logs, "was successful")
+				if tt.ExpectBackupCleaned {
+					suite.Assert().Contains(logs, "Removed all backup files.")
+				} else {
+					suite.Assert().Contains(logs, "Failed to remove backup files")
+				}
 			}
+			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
 		})
 	}
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
+	suite.T().Skip("This test is disabled while this bug is unresolved: https://www.pivotaltracker.com/story/show/178819606")
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -316,6 +330,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
+			info, err := os.Stat(ts.Exe)
+			suite.Require().NoError(err)
+			modTime := info.ModTime()
+
 			updateArgs := []string{"update", "--set-channel", tt.Channel}
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
@@ -329,8 +347,19 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
 			cp.ExpectExitCode(0)
 
-			logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
-			suite.Assert().Contains(logs, "was successful")
+			if tt.TestUpdate {
+				logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+				suite.Assert().Contains(logs, "was successful")
+			} else {
+				for x := 0; x < 30; x++ {
+					info, err := os.Stat(ts.Exe)
+					suite.Require().NoError(err)
+					if !info.ModTime().Equal(modTime) {
+						break
+					}
+					time.Sleep(200 * time.Millisecond)
+				}
+			}
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
 

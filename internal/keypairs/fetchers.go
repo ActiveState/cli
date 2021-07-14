@@ -16,7 +16,7 @@ type ErrKeypairNotFound struct{ *locale.LocalizedError }
 
 // FetchRaw fetchs the current user keypair or returns a failure.
 func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
-	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.Get().ClientAuth())
+	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
@@ -47,7 +47,7 @@ func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, error)
 func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, error) {
 	params := keys.NewGetPublicKeyParams()
 	params.UserID = user.UserID
-	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.Get().ClientAuth())
+	pubKeyOk, err := secretsClient.Keys.GetPublicKey(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_publickey_not_found", "", user.Username, user.UserID.String())}

@@ -67,7 +67,7 @@ type AddLibcVersionRevisionParams struct {
 	/*LibcVersionID*/
 	LibcVersionID strfmt.UUID
 	/*LibcVersionRevision*/
-	LibcVersionRevision *inventory_models.Revision
+	LibcVersionRevision *inventory_models.RevisionedFeatureProvider
 
 	timeout    time.Duration
 	Context    context.Context
@@ -130,13 +130,13 @@ func (o *AddLibcVersionRevisionParams) SetLibcVersionID(libcVersionID strfmt.UUI
 }
 
 // WithLibcVersionRevision adds the libcVersionRevision to the add libc version revision params
-func (o *AddLibcVersionRevisionParams) WithLibcVersionRevision(libcVersionRevision *inventory_models.Revision) *AddLibcVersionRevisionParams {
+func (o *AddLibcVersionRevisionParams) WithLibcVersionRevision(libcVersionRevision *inventory_models.RevisionedFeatureProvider) *AddLibcVersionRevisionParams {
 	o.SetLibcVersionRevision(libcVersionRevision)
 	return o
 }
 
 // SetLibcVersionRevision adds the libcVersionRevision to the add libc version revision params
-func (o *AddLibcVersionRevisionParams) SetLibcVersionRevision(libcVersionRevision *inventory_models.Revision) {
+func (o *AddLibcVersionRevisionParams) SetLibcVersionRevision(libcVersionRevision *inventory_models.RevisionedFeatureProvider) {
 	o.LibcVersionRevision = libcVersionRevision
 }
 

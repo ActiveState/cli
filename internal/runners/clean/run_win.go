@@ -12,8 +12,8 @@ import (
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -27,26 +27,19 @@ func (u *Uninstall) runUninstall() error {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	// we aggregate installation errors, such that we can display all installation problems in the end
-	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
-	var aggErr error
 	err = removeInstall(logFile.Name(), u.cfg.ConfigPath())
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
+		return locale.WrapError(err, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
-	err = removeCache(u.cfg.CachePath())
+	err = removeCache(storage.CachePath())
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", u.cfg.CachePath())
+		return locale.WrapError(err, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
 	}
 
 	err = undoPrepare(u.cfg)
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
-	}
-
-	if aggErr != nil {
-		return aggErr
+		return locale.WrapError(err, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
 
 	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
@@ -73,7 +66,7 @@ func removeInstall(logFile, configPath string) error {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
-			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
+			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
 		}
 	}
 

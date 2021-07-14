@@ -24,10 +24,6 @@ type ProvidedFeatureAllOf0 struct {
 	// If this is true then it means that we assigned a version to this feature ourselves rather than getting it directly from metadata in the source ingredient.
 	IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
 
-	// Whether the provider of this feature is the default provider. There can only be one default provider per feature namespace, name, and version.
-	// Required: true
-	IsDefaultProvider *bool `json:"is_default_provider"`
-
 	// namespace
 	// Required: true
 	Namespace *string `json:"namespace"`
@@ -38,10 +34,6 @@ func (m *ProvidedFeatureAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFeature(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateIsDefaultProvider(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -58,15 +50,6 @@ func (m *ProvidedFeatureAllOf0) Validate(formats strfmt.Registry) error {
 func (m *ProvidedFeatureAllOf0) validateFeature(formats strfmt.Registry) error {
 
 	if err := validate.Required("feature", "body", m.Feature); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ProvidedFeatureAllOf0) validateIsDefaultProvider(formats strfmt.Registry) error {
-
-	if err := validate.Required("is_default_provider", "body", m.IsDefaultProvider); err != nil {
 		return err
 	}
 

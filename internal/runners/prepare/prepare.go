@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
@@ -50,7 +51,7 @@ func (r *Prepare) resetExecutors() error {
 	}
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
-	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, r.cfg.CachePath())
+	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
 	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir))
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")

@@ -51,25 +51,21 @@ func (c *configMock) SetWithLock(_ string, fn func(interface{}) (interface{}, er
 	return err
 }
 
-func (c *configMock) CachePath() string {
-	if c.cachePath != "" {
-		return c.cachePath
-	}
-	cfg, err := config.Get()
-	require.NoError(c.t, err)
-	return cfg.CachePath()
-}
-
 func (c *configMock) ConfigPath() string {
 	if c.configPath != "" {
 		return c.configPath
 	}
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(c.t, err)
+	require.NoError(c.t, cfg.Close())
 	return cfg.ConfigPath()
 }
 
 func (c *configMock) SkipSave(bool) {
+}
+
+func (c *configMock) Close() error {
+	return nil
 }
 
 func (suite *CleanTestSuite) TestCache() {

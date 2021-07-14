@@ -183,7 +183,6 @@ github.com/getlantern/systray
 github.com/go-ole/go-ole
 github.com/go-ole/go-ole/oleutil
 # github.com/go-openapi/analysis v0.20.0
-## explicit
 github.com/go-openapi/analysis
 github.com/go-openapi/analysis/internal
 # github.com/go-openapi/errors v0.20.0
@@ -225,9 +224,6 @@ github.com/go-stack/stack
 # github.com/gobuffalo/packr v1.10.7
 ## explicit
 github.com/gobuffalo/packr
-# github.com/gofrs/flock v0.8.0
-## explicit
-github.com/gofrs/flock
 # github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.4.3
@@ -241,7 +237,7 @@ github.com/golang/protobuf/ptypes/empty
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/golang/snappy v0.0.1
 github.com/golang/snappy
-# github.com/google/go-cmp v0.5.2
+# github.com/google/go-cmp v0.5.3
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -351,11 +347,14 @@ github.com/mash/go-tempfile-suffix
 ## explicit
 # github.com/mattn/go-colorable v0.1.8
 github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.12
+# github.com/mattn/go-isatty v0.0.13
+## explicit
 github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.10
 ## explicit
 github.com/mattn/go-runewidth
+# github.com/mattn/go-sqlite3 v1.14.7
+## explicit
 # github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d
 ## explicit
 github.com/mgutz/ansi
@@ -408,6 +407,8 @@ github.com/pmezard/go-difflib/difflib
 # github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 ## explicit
 github.com/posener/wstest
+# github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0
+github.com/remyoudompheng/bigfft
 # github.com/rivo/uniseg v0.2.0
 github.com/rivo/uniseg
 # github.com/rollbar/rollbar-go v1.1.0
@@ -502,7 +503,7 @@ github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 ## explicit
 github.com/xi2/xz
-# github.com/yuin/goldmark v1.1.32
+# github.com/yuin/goldmark v1.3.5
 ## explicit
 github.com/yuin/goldmark
 github.com/yuin/goldmark/ast
@@ -562,6 +563,8 @@ golang.org/x/crypto/ssh/terminal
 # golang.org/x/image v0.0.0-20200430140353-33d19683fad8
 golang.org/x/image/draw
 golang.org/x/image/math/f64
+# golang.org/x/mod v0.4.2
+golang.org/x/mod/semver
 # golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 ## explicit
 golang.org/x/net/context
@@ -583,9 +586,10 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+# golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 ## explicit
 golang.org/x/sys/cpu
+golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -605,6 +609,22 @@ golang.org/x/text/unicode/norm
 golang.org/x/text/width
 # golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 golang.org/x/time/rate
+# golang.org/x/tools v0.1.4
+## explicit
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/go/packages
+golang.org/x/tools/internal/event
+golang.org/x/tools/internal/event/core
+golang.org/x/tools/internal/event/keys
+golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/typesinternal
+# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
 # google.golang.org/api v0.30.0
 google.golang.org/api/internal
 google.golang.org/api/iterator
@@ -788,4 +808,50 @@ gopkg.in/warnings.v0
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 gopkg.in/yaml.v3
+# lukechampine.com/uint128 v1.1.1
+lukechampine.com/uint128
+# modernc.org/cc/v3 v3.33.7
+modernc.org/cc/v3
+# modernc.org/ccgo/v3 v3.9.6
+## explicit
+modernc.org/ccgo/v3/lib
+# modernc.org/libc v1.9.11
+modernc.org/libc
+modernc.org/libc/errno
+modernc.org/libc/fcntl
+modernc.org/libc/fts
+modernc.org/libc/grp
+modernc.org/libc/honnef.co/go/netdb
+modernc.org/libc/langinfo
+modernc.org/libc/limits
+modernc.org/libc/netdb
+modernc.org/libc/netinet/in
+modernc.org/libc/poll
+modernc.org/libc/pthread
+modernc.org/libc/pwd
+modernc.org/libc/signal
+modernc.org/libc/stdio
+modernc.org/libc/sys/socket
+modernc.org/libc/sys/stat
+modernc.org/libc/sys/types
+modernc.org/libc/termios
+modernc.org/libc/time
+modernc.org/libc/unistd
+modernc.org/libc/utime
+modernc.org/libc/uuid/uuid
+# modernc.org/mathutil v1.4.1
+modernc.org/mathutil
+# modernc.org/memory v1.0.5
+## explicit
+modernc.org/memory
+# modernc.org/opt v0.1.1
+modernc.org/opt
+# modernc.org/sqlite v1.11.2
+## explicit
+modernc.org/sqlite
+modernc.org/sqlite/lib
+# modernc.org/strutil v1.1.1
+modernc.org/strutil
+# modernc.org/token v1.0.0
+modernc.org/token
 # github.com/ActiveState/cli => ./

@@ -18,15 +18,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-type configurable interface {
-	Reload() error
-}
-
 type Tutorial struct {
 	outputer output.Outputer
 	auth     *authentication.Auth
 	prompt   prompt.Prompter
-	cfg      configurable
 }
 
 type primeable interface {
@@ -37,7 +32,7 @@ type primeable interface {
 }
 
 func New(primer primeable) *Tutorial {
-	return &Tutorial{primer.Output(), primer.Auth(), primer.Prompt(), primer.Config()}
+	return &Tutorial{primer.Output(), primer.Auth(), primer.Prompt()}
 }
 
 type NewProjectParams struct {
@@ -167,12 +162,6 @@ func (t *Tutorial) authFlow() error {
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
-	}
-
-	// Reload authentication info
-	err = t.cfg.Reload()
-	if err != nil {
-		return locale.WrapError(err, "err_tutorial_cfg_reload", "Failed to reload configuration.")
 	}
 
 	if err := t.auth.Authenticate(); err != nil {

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
@@ -44,7 +45,7 @@ func New(serviceURL *url.URL, auth runtime.ClientAuthInfoWriter) (inventory_oper
 // Get returns a cached version of the default api client
 func Get() inventory_operations.ClientService {
 	if persist == nil {
-		persist, _ = Init(authentication.Get())
+		persist, _ = Init(authentication.LegacyGet())
 	}
 	return persist
 }
@@ -98,4 +99,9 @@ func (r *RawResponder) ReadResponse(res runtime.ClientResponse, cons runtime.Con
 	}
 
 	return json.Marshal(umRecipe.Recipes[0])
+}
+
+func IsPlatformError(err error) bool {
+	// todo: replace with error codes once we have a solution -- https://www.pivotaltracker.com/story/show/178865201
+	return strings.Contains(err.Error(), "build image for platform")
 }

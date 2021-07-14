@@ -14,7 +14,6 @@ import (
 type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
-	CachePath() string
 	GetInt(string) int
 	Set(string, interface{}) error
 	IsSet(string) bool
@@ -61,6 +60,9 @@ func (c *Config) Run(params *ConfigParams) error {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
-	logging.Debug("Removing config directory: %s", c.cfg.ConfigPath())
-	return removeConfig(c.cfg.ConfigPath(), c.output)
+	dir := c.cfg.ConfigPath()
+	c.cfg.Close()
+	
+	logging.Debug("Removing config directory: %s", dir)
+	return removeConfig(dir, c.output)
 }

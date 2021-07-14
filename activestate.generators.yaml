@@ -51,15 +51,6 @@ scripts:
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
-  - name: build-transitional-update
-    language: bash
-    description: Builds a transitional State Tool that just updates to a mult-file version
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      # Generate legacy update
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
   - name: generate-update
     language: bash
     description: Generate update files
