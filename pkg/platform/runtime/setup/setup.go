@@ -117,8 +117,6 @@ type ModelProvider interface {
 }
 
 type Setuper interface {
-	// ReusableArtifact returns artifact stores for the artifacts that are already installed and can be re-used for this setup.
-	ReusableArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) store.StoredArtifactMap
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
@@ -206,7 +204,7 @@ func (s *Setup) update() error {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled := setup.ReusableArtifacts(changedArtifacts, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
@@ -551,4 +549,15 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 
 func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
+}
+
+func reusableArtifacts(requestedArtifacts []*headchef_models.V1Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+	keep := make(store.StoredArtifactMap)
+
+	for _, a := range requestedArtifacts {
+		if v, ok := storedArtifacts[*a.ArtifactID]; ok {
+			keep[*a.ArtifactID] = v
+		}
+	}
+	return keep
 }
