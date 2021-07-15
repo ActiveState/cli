@@ -40,8 +40,8 @@ func (r *RuntimeEventProducer) TotalArtifacts(total int) {
 	r.event(newTotalArtifactEvent(total))
 }
 
-func (r *RuntimeEventProducer) BuildStarting(_ int) {
-	r.event(newBuildStartEvent())
+func (r *RuntimeEventProducer) BuildStarting(totalBuilds int) {
+	r.event(newBuildStartEvent(totalBuilds))
 }
 
 func (r *RuntimeEventProducer) BuildFinished() {

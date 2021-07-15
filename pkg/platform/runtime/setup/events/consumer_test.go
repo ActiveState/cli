@@ -70,6 +70,9 @@ func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, 
 	mpo.artifactFailureCalled++
 	return nil
 }
+func (mpo *mockProgressOutput) StillBuilding(numCompleted, numTotal int) error {
+	return nil
+}
 func (mpo *mockProgressOutput) Close() error { return nil }
 
 func TestRuntimeEventConsumer(t *testing.T) {
@@ -98,14 +101,14 @@ func TestRuntimeEventConsumer(t *testing.T) {
 	)
 	withBuildSuccessEvents := append([]SetupEventer{
 		newTotalArtifactEvent(2),
-		newBuildStartEvent(),
+		newBuildStartEvent(2),
 		newArtifactCompleteEvent(Build, ids[0], "logURI"),
 		newArtifactCompleteEvent(Build, ids[1], "logURI"),
 		newBuildCompleteEvent(),
 	}, successEvents...)
 	buildFailureEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
-		newBuildStartEvent(),
+		newBuildStartEvent(2),
 		newArtifactFailureEvent(Build, ids[0], "logURI", "error"),
 		newArtifactFailureEvent(Build, ids[1], "logURI", "error"),
 		newBuildCompleteEvent(),

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
@@ -125,8 +126,8 @@ func (mh *mockMessageHandler) ArtifactBuildFailed(artifactID artifact.ArtifactID
 	mh.ArtifactBuildFailedCalls = append(mh.ArtifactBuildFailedCalls, artifactFailedArg{artifactID, errorMessage})
 }
 func (mh *mockMessageHandler) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp, message, facility, pipeName, source string) {
-
 }
+func (mh *mockMessageHandler) Heartbeat(time.Time) {}
 
 func TestBuildLog(t *testing.T) {
 	recipeID := strfmt.UUID("10000000-0000-0000-0000-000000000001")
