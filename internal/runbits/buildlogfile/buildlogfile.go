@@ -146,6 +146,10 @@ func (bl *BuildLogFile) BuildCompleted(withFailures bool) error {
 	return bl.writeMessage("== Build completed %s. ==", outcome)
 }
 
+func (bl *BuildLogFile) StillBuilding(numCompleted, numTotal int) error {
+	return bl.writeMessage("== Still building [%d/%d] ==", numCompleted, numTotal)
+}
+
 func (bl *BuildLogFile) BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error {
 	return bl.writeArtifactMessage(artifactID, artifactName, "Build started")
 }

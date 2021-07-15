@@ -1,6 +1,8 @@
 package events
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -84,4 +86,8 @@ func (r *RuntimeEventProducer) ArtifactStepCompleted(step SetupStep, artifactID 
 
 func (r *RuntimeEventProducer) ArtifactStepFailed(step SetupStep, artifactID strfmt.UUID, errorMsg string) {
 	r.event(newArtifactFailureEvent(step, artifactID, "", errorMsg))
+}
+
+func (r *RuntimeEventProducer) Heartbeat(timestamp time.Time) {
+	r.event(newHeartbeatEvent(timestamp))
 }

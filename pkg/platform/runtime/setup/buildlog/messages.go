@@ -17,6 +17,7 @@ const (
 	ArtifactSucceeded
 	ArtifactFailed
 	ArtifactProgress
+	Heartbeat
 	UnknownMessage
 )
 
@@ -48,24 +49,28 @@ func (bm BaseMessage) MessageType() MessageEnum {
 		return ArtifactFailed
 	case "artifact_progress":
 		return ArtifactProgress
+	case "heartbeat":
+		return Heartbeat
 	default:
 		return UnknownMessage
 	}
 }
 
-type buildMessage struct {
+// BuildMessage comprises status information about a build
+type BuildMessage struct {
 	BaseMessage
 	RecipeID  string    `json:"recipe_id"`
 	Timestamp time.Time `json:"timestamp"`
-	CacheHit  bool      `json:"cache_hit"`
 }
 
-type buildFailedMessage struct {
-	buildMessage
+// BuildFailedMessage extends a BuildMessage with an error message
+type BuildFailedMessage struct {
+	BuildMessage
 	ErrorMessage string `json:"error_message"`
 }
 
-type artifactMessage struct {
+// ArtifactMessage holds status information for an individual artifact
+type ArtifactMessage struct {
 	BaseMessage
 	RecipeID   string              `json:"recipe_id"`
 	ArtifactID artifact.ArtifactID `json:"artifact_id"`
@@ -112,6 +117,10 @@ func unmarshalSpecialMessage(baseMsg BaseMessage, b []byte) (messager, error) {
 		var fm buildFailedMessage
 		err := json.Unmarshal(b, &fm)
 		return fm, err
+	case Heartbeat:
+		var bm BuildMessage
+		err := json.Unmarshal(b, &bm)
+		return bm, err
 	case ArtifactStarted:
 		var am artifactMessage
 		err := json.Unmarshal(b, &am)

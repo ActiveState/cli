@@ -24,6 +24,7 @@ package events
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -152,10 +153,15 @@ func newTotalArtifactEvent(total int) TotalArtifactEvent {
 // BuildStartEvent reports the beginning of the remote build process
 type BuildStartEvent struct {
 	baseEvent
+	totalBuilds int
 }
 
-func newBuildStartEvent() BuildStartEvent {
-	return BuildStartEvent{newBaseEvent("build_start", Build)}
+func (be BuildStartEvent) Total() int {
+	return be.totalBuilds
+}
+
+func newBuildStartEvent(totalBuilds int) BuildStartEvent {
+	return BuildStartEvent{newBaseEvent("build_start", Build), totalBuilds}
 }
 
 // BuildCompleteEvent reports the successful completion of a build
@@ -289,4 +295,17 @@ func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRe
 	return ChangeSummaryEvent{
 		artifacts, requested, changed,
 	}
+}
+
+type HeartbeatEvent struct {
+	baseEvent
+	timeStamp time.Time
+}
+
+func (he HeartbeatEvent) TimeStamp() time.Time {
+	return he.timeStamp
+}
+
+func newHeartbeatEvent(timeStamp time.Time) HeartbeatEvent {
+	return HeartbeatEvent{newBaseEvent("heartbeat", Build), timeStamp}
 }

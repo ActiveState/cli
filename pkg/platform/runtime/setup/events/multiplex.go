@@ -35,6 +35,17 @@ func (mp *MultiPlexedProgress) BuildCompleted(withFailures bool) error {
 	return aggErr
 }
 
+func (mp *MultiPlexedProgress) StillBuilding(numCompleted, numTotal int) error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.StillBuilding(numCompleted, numTotal)
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "StillBuilding event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
 func (mp *MultiPlexedProgress) InstallationStarted(totalArtifacts int64) error {
 	var aggErr error
 	for _, d := range mp.digesters {

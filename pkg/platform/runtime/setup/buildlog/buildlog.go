@@ -3,6 +3,7 @@ package buildlog
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -35,6 +36,7 @@ type Events interface {
 	ArtifactBuildCompleted(artifactID artifact.ArtifactID, logURI string)
 	ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI string, errorMessage string)
 	ArtifactBuildProgress(artifact artifact.ArtifactID, timestamp string, message string, facility, pipeName, source string)
+	Heartbeat(time.Time)
 }
 
 // BuildLog is an implementation of a build log
@@ -44,7 +46,7 @@ type BuildLog struct {
 }
 
 // New creates a new instance that allows us to wait for incoming build log information
-// TODO: Decide if we maybe want a fail-fast option where we return on the first artifact_failed message
+// artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
 func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
@@ -120,6 +122,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
 				events.ArtifactBuildProgress(m.ArtifactID, m.Timestamp, m.Body.Message, m.Body.Facility, m.PipeName, m.Source)
+			case Heartbeat:
+				m := msg.messager.(BuildMessage)
+				events.Heartbeat(m.Timestamp)
 			}
 		}
 	}()

@@ -141,6 +141,11 @@ func (rp *RuntimeProgress) BuildCompleted(anyFailures bool) error {
 	return nil
 }
 
+// StillBuilding has no effect on the progress bar output
+func (rp *RuntimeProgress) StillBuilding(numCompleted, numTotal int) error {
+	return nil
+}
+
 // InstallationStarted adds a progress bar for the overall installation progress
 func (rp *RuntimeProgress) InstallationStarted(total int64) error {
 	if rp.installBar == nil {

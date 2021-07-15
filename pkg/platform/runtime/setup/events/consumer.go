@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -27,6 +28,7 @@ type ProgressDigester interface {
 	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error
 	BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string, cachedBuild bool) error
 	BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error
+	StillBuilding(numCompleted, numTotal int) error
 
 	ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, step string, counter int64, counterCountsBytes bool) error
 	ArtifactStepIncrement(artifactID artifact.ArtifactID, artifactName, step string, increment int64) error
@@ -43,6 +45,10 @@ type RuntimeEventConsumer struct {
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
 	totalArtifacts      int64
+	isBuilding          bool
+	buildsTotal         int64
+	lastBuildEventRcvd  time.Time
+	numBuildCompleted   int64
 	numBuildFailures    int64
 	numInstallFailures  int64
 	installationStarted bool
@@ -61,6 +67,7 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
 	case ArtifactResolverEvent:
+		eh.lastBuildEventRcvd = time.Now()
 		eh.artifactNames = t.Resolver()
 		for _, download := range t.DownloadableArtifacts() {
 			artifactName := eh.ResolveArtifactName(download.ArtifactID)
@@ -75,14 +82,20 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 		eh.totalArtifacts = int64(t.Total())
 		return nil
 	case BuildStartEvent:
-		if eh.totalArtifacts == 0 {
-			return errs.New("total number of artifacts has not been set yet.")
-		}
-		return eh.progress.BuildStarted(eh.totalArtifacts)
+		eh.buildsTotal = int64(t.Total())
+		eh.lastBuildEventRcvd = time.Now()
+		eh.isBuilding = true
+		return eh.progress.BuildStarted(eh.buildsTotal)
 	case BuildCompleteEvent:
+		eh.isBuilding = false
 		return eh.progress.BuildCompleted(eh.numBuildFailures > 0)
 	case ArtifactSetupEventer:
 		return eh.handleArtifactEvent(t)
+	case HeartbeatEvent:
+		if time.Now().Sub(eh.lastBuildEventRcvd) > time.Second*15 {
+			eh.lastBuildEventRcvd = time.Now()
+			return eh.progress.StillBuilding(int(eh.numBuildCompleted), int(eh.buildsTotal))
+		}
 	default:
 		logging.Debug("Received unhandled event: %s", ev.String())
 	}
@@ -91,11 +104,13 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 }
 
 func (eh *RuntimeEventConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer) error {
+	eh.lastBuildEventRcvd = time.Now()
 	artifactName := eh.ResolveArtifactName(ev.ArtifactID())
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
 		return eh.progress.BuildArtifactStarted(t.artifactID, artifactName)
 	case ArtifactCompleteEvent:
+		eh.numBuildCompleted++
 		return eh.progress.BuildArtifactCompleted(t.artifactID, artifactName, t.logURI, false)
 	case ArtifactFailureEvent:
 		eh.numBuildFailures++
