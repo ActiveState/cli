@@ -319,6 +319,13 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 	return func() {
 		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
 		name := setup.ResolveArtifactName(a.ArtifactID)
+		// If artifact has no valid download, just count it as completed and return
+		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") {
+			s.events.ArtifactStepStarting(events.Install, a.ArtifactID, 0)
+			s.events.ArtifactStepCompleted(events.Install, a.ArtifactID)
+			return
+		}
+
 		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
 			if err != nil {
 				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())

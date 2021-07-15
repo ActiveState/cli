@@ -2,7 +2,6 @@ package buildlog
 
 import (
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -108,11 +107,8 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				if m.ArtifactID == recipeID {
 					break
 				}
-				// only send artifact download event for artifacts with valid download uris
-				if !strings.HasPrefix(m.ArtifactURI, "s3://as-builds/noop/") {
-					ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
-					// TODO: send a skip event so we can adjust the installation counter...
-				}
+
+				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
 
 				// already built artifacts are registered as completed before we started the build log
 				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
