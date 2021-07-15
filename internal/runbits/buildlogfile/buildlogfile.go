@@ -181,8 +181,8 @@ func (bl *BuildLogFile) BuildArtifactProgress(artifactID artifact.ArtifactID, ar
 
 // BuildArtifactFailure writes a message that an artifact build has completed with a failure
 func (bl *BuildLogFile) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, unsignedLogURI string, errMsg string, isCached bool) error {
-	// if the build is cached (ie., built in the past), we have to download its logs
-	if isCached {
+	// If the build is cached (ie., built in the past), we have to download its logs. This also applies if verbose logging is deactivated (ie., log files are not written in real-time).
+	if isCached || !verboseLogging() {
 		bl.addBuildLogs(artifactID, artifactName, unsignedLogURI)
 	}
 	return bl.writeArtifactMessage(artifactID, "Build failed with error: %s", errMsg)
