@@ -249,7 +249,7 @@ func initializeProject() (*project.Project, error) {
 		Directory:  target,
 	}
 
-	err = projectfile.Create(createParams)
+	_, err = projectfile.Create(createParams)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
 	}

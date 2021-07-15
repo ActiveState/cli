@@ -46,7 +46,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 

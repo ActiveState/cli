@@ -53,23 +53,27 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	username := "cli-integration-tests"
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
+	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
 		namespace,
 		suite.languageFull,
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
+		"--path", wd,
 		"--skeleton", "editor",
 	)
 	cp.ExpectExitCode(0)
 
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
+	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	suite.Require().FileExists(pjfilepath)
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.Expect("continue?")
+	cp.Send("y")
 	cp.ExpectLongString("Creating project")
 	cp.ExpectLongString("Project created")
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
 	if pjfile.Languages != nil {
@@ -109,7 +113,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
+// Test pushing to a new project from a headless commit
+func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -150,7 +155,8 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 	}
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_Fork() {
+// Test pushing without permission, and choosing to create a new project
+func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -181,7 +187,9 @@ func (suite *PushIntegrationTestSuite) TestPush_Fork() {
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, suite.baseProject)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.AppendEnv("VERBOSE=true"))
+	cp.Expect("not authorized")
+	cp.Send("y")
 	cp.ExpectLongString("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
@@ -202,10 +210,11 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
 
+	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
 			"activate", suite.baseProject,
-			"--path", filepath.Join(ts.Dirs.Work, namespace)),
+			"--path", wd),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
@@ -224,11 +233,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs(
 		"install", suite.extraPackage),
 		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"))
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -245,6 +253,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString("You are about to create the project")
+	cp.Send("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 }
@@ -265,27 +275,6 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString("Your project has new changes available")
-	cp.ExpectExitCode(1)
-}
-
-func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
-	suite.OnlyRunForTags(tagsuite.Push)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-	username := "cli-integration-tests"
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-	cp := ts.Spawn(
-		"init",
-		namespace,
-		"python3",
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
-		"--skeleton", "editor",
-	)
-	cp.ExpectExitCode(0)
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("The project %s/%s already exists", username, "Python3"))
 	cp.ExpectExitCode(1)
 }
 

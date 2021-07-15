@@ -41,7 +41,7 @@ var commands = []command{
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {

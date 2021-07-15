@@ -674,51 +674,6 @@ func parseURL(rawURL string) (projectURL, error) {
 	return p, nil
 }
 
-func removeTemporaryLanguage(data []byte) ([]byte, error) {
-	languageLine := regexp.MustCompile("(?m)^languages:")
-	firstNonIndentedLine := regexp.MustCompile("(?m)^[^ \t]")
-
-	startLoc := languageLine.FindIndex(data)
-	if startLoc == nil {
-		return data, nil // language is already gone
-	}
-	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
-	if endLoc == nil {
-		return data[:startLoc[0]], nil
-	}
-
-	end := startLoc[1] + endLoc[0]
-	return append(data[:startLoc[0]], data[end:]...), nil
-}
-
-// RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
-func (p *Project) RemoveTemporaryLanguage() error {
-	fp, err := GetProjectFilePath()
-	if err != nil {
-		return errs.Wrap(err, "Could not find the project file location.")
-	}
-
-	data, err := ioutil.ReadFile(fp)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file.")
-	}
-
-	out, err := removeTemporaryLanguage(data)
-	if err != nil {
-		return errs.Wrap(err, "Failed to remove language field from project file.")
-	}
-
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write update project file.")
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload project file.")
-	}
-	return nil
-}
-
 // Save the project to its activestate.yaml file
 func (p *Project) save(cfg ConfigGetter, path string) error {
 	dat, err := yaml.Marshal(p)
@@ -975,7 +930,6 @@ type CreateParams struct {
 	Directory       string
 	Content         string
 	Language        string
-	LanguageVersion string
 	Private         bool
 	path            string
 	ProjectURL      string
@@ -990,19 +944,14 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) error {
+func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
 	err := validateCreateParams(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = createCustom(params, lang)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return createCustom(params, lang)
 }
 
 func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
@@ -1067,8 +1016,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 	data := map[string]interface{}{
 		"Project":         params.ProjectURL,
-		"LanguageName":    params.Language,
-		"LanguageVersion": params.LanguageVersion,
 		"CommitID":        commitID,
 		"Content":         content,
 		"Private":         params.Private,
