@@ -5,6 +5,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
+// MultiPlexedProgress implements a ProgressDigester interface and forwards the calls to a slice of ProgressDigesters
+// All errors are aggregated in a wrapped error message
 type MultiPlexedProgress struct {
 	digesters []ProgressDigester
 }
