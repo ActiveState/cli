@@ -111,7 +111,6 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				// only send artifact download event for artifacts with valid download uris
 				if !strings.HasPrefix(m.ArtifactURI, "s3://as-builds/noop/") {
 					ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
-					// TODO: send a skip event so we can adjust the installation counter...
 				}
 
 				// already built artifacts are registered as completed before we started the build log

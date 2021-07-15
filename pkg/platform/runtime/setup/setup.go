@@ -206,6 +206,9 @@ func (s *Setup) update() error {
 
 	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
 
+	// send the number of total artifacts that are going to be installed
+	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
+
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
 		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
@@ -328,8 +331,6 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 }
 
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
-
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
 		defer close(errs)
@@ -348,8 +349,6 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
