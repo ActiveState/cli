@@ -47,7 +47,7 @@ type BuildLog struct {
 
 // New creates a new instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr *ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -90,9 +90,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts
 				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
-					request := artifactRequest{ArtifactID: m.ArtifactID.String()}
-					if err := conn.WriteJSON(request); err != nil {
-						errCh <- errs.Wrap(err, "Could not write websocket request")
+					logging.Debug("requesting updates for %s", m.ArtifactID.String())
+					if err := artifactLogMgr.Start(m.ArtifactID); err != nil {
+						errCh <- errs.Wrap(err, "Could not start artifact log request")
 						return
 					}
 				}
@@ -113,14 +113,33 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 					continue
 				}
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
+
+				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
+						errCh <- errs.Wrap(err, "Could not stop artifact log request")
+						return
+					}
+				}
 			case ArtifactFailed:
 				m := msg.messager.(ArtifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
 				events.ArtifactBuildFailed(m.ArtifactID, m.LogURI, m.ErrorMessage)
+
+				// already built artifacts are registered as completed before we started the build log
+				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
+					continue
+				}
+				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
+						errCh <- errs.Wrap(err, "Could not stop artifact log request")
+						return
+					}
+				}
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
+				logging.Debug("received artifact progress message: %s %s", m.ArtifactID, m.Body.Message)
 				events.ArtifactBuildProgress(m.ArtifactID, m.Timestamp, m.Body.Message, m.Body.Facility, m.PipeName, m.Source)
 			case Heartbeat:
 				m := msg.messager.(BuildMessage)

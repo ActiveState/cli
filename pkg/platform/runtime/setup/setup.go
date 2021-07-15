@@ -363,7 +363,8 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	for _, d := range downloads {
 		alreadyBuilt[d.ArtifactID] = struct{}{}
 	}
-	buildLog, err := buildlog.New(artifacts, alreadyBuilt, conn, s.events, *buildResult.Recipe.RecipeID)
+	artifactLogManager := buildlog.NewArtifactLogManager(ctx, s.events)
+	buildLog, err := buildlog.New(artifacts, alreadyBuilt, conn, artifactLogManager, s.events, *buildResult.Recipe.RecipeID)
 
 	errs, aggregatedErr := aggregateErrors()
 
