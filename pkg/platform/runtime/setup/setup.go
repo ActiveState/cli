@@ -82,7 +82,7 @@ type Events interface {
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
 	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
-	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, string, int)
+	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
@@ -317,8 +317,6 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
 func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, setup Setuper, errors chan<- error) func() {
 	return func() {
-		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
-		name := setup.ResolveArtifactName(a.ArtifactID)
 		// If artifact has no valid download, just count it as completed and return
 		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") {
 			s.events.ArtifactStepStarting(events.Install, a.ArtifactID, 0)
@@ -326,8 +324,9 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 			return
 		}
 
-		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 			if err != nil {
+				name := setup.ResolveArtifactName(a.ArtifactID)
 				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
 			}
 		}
@@ -405,7 +404,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
 	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
 	if err != nil {
 		return errs.Wrap(err, "Failed to select artifact setup implementation")
@@ -418,7 +417,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unarchiver := as.Unarchiver()
 	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a, artifactName)
+	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a)
 	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 		s.events.ArtifactStepFailed(events.Download, a, err.Error())
@@ -435,7 +434,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 	}
 
-	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a, artifactName)
+	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a)
 	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
 		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
@@ -457,10 +456,10 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	// move files to installation path in main thread, such that file operations are synchronized
-	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) })
+	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, unpackedDir, envDef, numFiles) })
 }
 
-func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
+func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
@@ -474,7 +473,7 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, un
 		}
 		s.events.ArtifactStepProgress(events.Install, a, 1)
 	}
-	s.events.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
+	s.events.ArtifactStepStarting(events.Install, a, numFiles)
 	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,

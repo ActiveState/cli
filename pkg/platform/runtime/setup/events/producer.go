@@ -72,7 +72,7 @@ func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]a
 	r.event(newChangeSummaryEvent(artifacts, requested, changed))
 }
 
-func (r *RuntimeEventProducer) ArtifactStepStarting(step SetupStep, artifactID artifact.ArtifactID, artifactName string, total int) {
+func (r *RuntimeEventProducer) ArtifactStepStarting(step SetupStep, artifactID artifact.ArtifactID, total int) {
 	r.event(newArtifactStartEvent(step, artifactID, total))
 }
 
