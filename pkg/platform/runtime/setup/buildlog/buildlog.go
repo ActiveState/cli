@@ -71,50 +71,50 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 
 			switch msg.MessageType() {
 			case BuildFailed:
-				m := msg.messager.(buildFailedMessage)
+				m := msg.messager.(BuildFailedMessage)
 				errCh <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)
 				return
 			case BuildSucceeded:
 				return
 			case ArtifactStarted:
-				m := msg.messager.(artifactMessage)
+				m := msg.messager.(ArtifactMessage)
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if artifact.ArtifactID(m.ArtifactID) == recipeID {
 					continue
 				}
+				// ignore already built artifacts (they have been counted already)
 				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
 				events.ArtifactBuildStarting(m.ArtifactID)
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts
-				if os.Getenv(constants.LogBuildVerboseEnvVarName) != "true" {
-					continue
-				}
-				request := artifactRequest{ArtifactID: m.ArtifactID.String()}
-				if err := conn.WriteJSON(request); err != nil {
-					errCh <- errs.Wrap(err, "Could not write websocket request")
-					return
+				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+					request := artifactRequest{ArtifactID: m.ArtifactID.String()}
+					if err := conn.WriteJSON(request); err != nil {
+						errCh <- errs.Wrap(err, "Could not write websocket request")
+						return
+					}
 				}
 			case ArtifactSucceeded:
-				m := msg.messager.(artifactSucceededMessage)
+				m := msg.messager.(ArtifactSucceededMessage)
 
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if m.ArtifactID == recipeID {
 					break
 				}
-				// only send artifact download event for artifacts with noop download uris
+				// only send artifact download event for artifacts with valid download uris
 				if !strings.HasPrefix(m.ArtifactURI, "s3://as-builds/noop/") {
 					ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
 				}
 
-				// already built artifacts are already registered as completed before we started the build log
+				// already built artifacts are registered as completed before we started the build log
 				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
 			case ArtifactFailed:
-				m := msg.messager.(artifactFailedMessage)
+				m := msg.messager.(ArtifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)

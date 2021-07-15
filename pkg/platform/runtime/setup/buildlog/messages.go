@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
+// MessageEnum enumerates the build events that can be expected on the buildlog websocket connection
 type MessageEnum int
 
 const (
@@ -79,20 +80,23 @@ type ArtifactMessage struct {
 	CacheHit bool `json:"cache_hit"`
 }
 
-type artifactSucceededMessage struct {
-	artifactMessage
+// ArtifactSucceededMessage extends an ArtifactMessage with information that becomes available after an artifact built successfully
+type ArtifactSucceededMessage struct {
+	ArtifactMessage
 	ArtifactURI      string `json:"artifact_uri"`
 	ArtifactChecksum string `json:"artifact_checksum"`
 	ArtifactMIMEType string `json:"artifact_mime_type"`
 	LogURI           string `json:"log_uri"`
 }
 
-type artifactFailedMessage struct {
-	artifactMessage
+// ArtifactFailedMessage extends an ArtifactMessage with error information
+type ArtifactFailedMessage struct {
+	ArtifactMessage
 	ErrorMessage string `json:"error_message"`
 	LogURI       string `json:"log_uri"`
 }
 
+// ArtifactProgressMessage forwards detailed logging information send for an artifact
 type ArtifactProgressMessage struct {
 	BaseMessage
 	ArtifactID artifact.ArtifactID  `json:"artifact_id"`
@@ -110,11 +114,11 @@ type ArtifactProgressBody struct {
 func unmarshalSpecialMessage(baseMsg BaseMessage, b []byte) (messager, error) {
 	switch baseMsg.MessageType() {
 	case BuildSucceeded:
-		var bm buildMessage
+		var bm BuildMessage
 		err := json.Unmarshal(b, &bm)
 		return bm, err
 	case BuildFailed:
-		var fm buildFailedMessage
+		var fm BuildFailedMessage
 		err := json.Unmarshal(b, &fm)
 		return fm, err
 	case Heartbeat:
@@ -122,15 +126,15 @@ func unmarshalSpecialMessage(baseMsg BaseMessage, b []byte) (messager, error) {
 		err := json.Unmarshal(b, &bm)
 		return bm, err
 	case ArtifactStarted:
-		var am artifactMessage
+		var am ArtifactMessage
 		err := json.Unmarshal(b, &am)
 		return am, err
 	case ArtifactSucceeded:
-		var am artifactSucceededMessage
+		var am ArtifactSucceededMessage
 		err := json.Unmarshal(b, &am)
 		return am, err
 	case ArtifactFailed:
-		var am artifactFailedMessage
+		var am ArtifactFailedMessage
 		err := json.Unmarshal(b, &am)
 		return am, err
 	case ArtifactProgress:
