@@ -24,7 +24,6 @@ import (
 var (
 	ErrBuildResp        = errs.New("Build responded with error")
 	ErrBuildUnknownType = errs.New("Unknown build type")
-	ErrBuildFailedResp  = errs.New("Build failed remotely")
 )
 
 type BuildStatus struct {

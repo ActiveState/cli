@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -66,7 +65,7 @@ func saveResponses(baseName string, commitID strfmt.UUID, projectName string, ex
 	testhelper.SaveRecipe(baseName, r)
 
 	be, b, err := d.RequestBuild(*r.RecipeID, commitID, "ActiveState-CLI", projectName)
-	if err != nil && !(expectedBuildResult == headchef.Failed && errors.Is(err, headchef.ErrBuildFailedResp)) {
+	if err != nil {
 		return fmt.Errorf("failed to get build '%s': %w", baseName, err)
 	}
 	if be != expectedBuildResult {
