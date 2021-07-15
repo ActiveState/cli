@@ -6,7 +6,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
 )
 
@@ -320,7 +319,7 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl-alternative-base",
 			false,
 			[]ArtifactDownload{
-				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", BuildState: headchef_models.V1ArtifactBuildStateSucceeded},
+				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz"},
 			},
 		},
 		{
@@ -328,8 +327,8 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl-alternative-one-update",
 			false,
 			[]ArtifactDownload{
-				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", BuildState: headchef_models.V1ArtifactBuildStateSucceeded},
-				{ArtifactID: "f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b", UnsignedURI: "s3://as-builds/production/language/perl/JSON/4.02/4/f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b/artifact.tar.gz", BuildState: headchef_models.V1ArtifactBuildStateSucceeded},
+				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz"},
+				{ArtifactID: "f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b", UnsignedURI: "s3://as-builds/production/language/perl/JSON/4.02/4/f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b/artifact.tar.gz"},
 			},
 		},
 		{
@@ -337,7 +336,7 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl",
 			true,
 			[]ArtifactDownload{
-				{ArtifactID: "e88f6f1f-74c9-512e-9c9b-8c921a80c6fb", UnsignedURI: "https://s3.amazonaws.com/camel-builds/ActivePerl/x86_64-linux-glibc-2.17/20200424T172842Z/ActivePerl-5.28.1.0000-x86_64-linux-glibc-2.17-2a0758c3.tar.gz", BuildState: headchef_models.V1ArtifactBuildStateSucceeded},
+				{ArtifactID: "e88f6f1f-74c9-512e-9c9b-8c921a80c6fb", UnsignedURI: "https://s3.amazonaws.com/camel-builds/ActivePerl/x86_64-linux-glibc-2.17/20200424T172842Z/ActivePerl-5.28.1.0000-x86_64-linux-glibc-2.17-2a0758c3.tar.gz"},
 			},
 		},
 	}
