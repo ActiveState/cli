@@ -15,19 +15,19 @@ type logConnection struct {
 	log  *ArtifactLog
 }
 
-type ArtifactLogManager struct {
+type ArtifactLogs struct {
 	ctx    context.Context
 	events Events
 	logs   map[artifact.ArtifactID]logConnection
 }
 
-func NewArtifactLogManager(ctx context.Context, events Events) *ArtifactLogManager {
-	return &ArtifactLogManager{ctx, events, make(map[artifact.ArtifactID]logConnection)}
+func NewArtifactLogs(ctx context.Context, events Events) *ArtifactLogs {
+	return &ArtifactLogs{ctx, events, make(map[artifact.ArtifactID]logConnection)}
 }
 
-func (alm *ArtifactLogManager) Start(artifactID artifact.ArtifactID) error {
+func (alm *ArtifactLogs) Start(artifactID artifact.ArtifactID) error {
 	if _, started := alm.logs[artifactID]; started {
-		return errs.New("An artifact build log for %s is already active")
+		return errs.New("An artifact build log for %s is already active", artifactID)
 	}
 
 	conn, err := buildlogstream.Connect(alm.ctx)
@@ -44,7 +44,7 @@ func (alm *ArtifactLogManager) Start(artifactID artifact.ArtifactID) error {
 	return nil
 }
 
-func (alm *ArtifactLogManager) Stop(artifactID artifact.ArtifactID) error {
+func (alm *ArtifactLogs) Stop(artifactID artifact.ArtifactID) error {
 	lc, ok := alm.logs[artifactID]
 	if !ok {
 		return errs.New("Artifact log for %s is not running", artifactID)

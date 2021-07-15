@@ -28,6 +28,11 @@ type BuildLogConnector interface {
 	WriteJSON(interface{}) error
 }
 
+type ArtifactLogManager interface {
+	Start(artifact.ArtifactID) error
+	Stop(artifact.ArtifactID) error
+}
+
 type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
@@ -47,7 +52,7 @@ type BuildLog struct {
 
 // New creates a new instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr *ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -106,6 +111,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				// only send artifact download event for artifacts with valid download uris
 				if !strings.HasPrefix(m.ArtifactURI, "s3://as-builds/noop/") {
 					ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+					// TODO: send a skip event so we can adjust the installation counter...
 				}
 
 				// already built artifacts are registered as completed before we started the build log

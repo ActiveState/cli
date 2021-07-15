@@ -94,6 +94,16 @@ func (cm *connectionMock) ReadError(errMsg string) {
 	cm.messages = append(cm.messages, errors.New(errMsg))
 }
 
+type artifactLogsMock struct{}
+
+func (cm *artifactLogsMock) Start(artifact.ArtifactID) error {
+	return nil
+}
+
+func (cm *artifactLogsMock) Stop(artifact.ArtifactID) error {
+	return nil
+}
+
 type artifactFailedArg struct {
 	ArtifactID artifact.ArtifactID
 	ErrMessage string
@@ -212,9 +222,10 @@ func TestBuildLog(t *testing.T) {
 
 			mmh := &mockMessageHandler{}
 			cm := &connectionMock{}
+			alm := &artifactLogsMock{}
 			tt.ConnectionMock(t, cm)
 
-			bl, err := New(artifactMap, tt.AlreadyBuiltArtifacts, cm, mmh, recipeID)
+			bl, err := New(artifactMap, tt.AlreadyBuiltArtifacts, cm, alm, mmh, recipeID)
 			require.NoError(t, err)
 
 			var downloads []artifact.ArtifactDownload
