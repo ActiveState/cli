@@ -15,16 +15,20 @@ type logConnection struct {
 	log  *ArtifactLog
 }
 
+// ArtifactLogs manages websocket connections to the build-log-streamer for artifact specific logs
+// Unfortunately, we need to spawn a new connection for every artifactID that prints its loglines in real-time. If artifact logs for builds that happened in the past are requested, the information can be streamed in a single connection.
 type ArtifactLogs struct {
 	ctx    context.Context
 	events Events
 	logs   map[artifact.ArtifactID]logConnection
 }
 
+// NewArtifactLogs initializes the ArtifactLogs instance managing websocket connections
 func NewArtifactLogs(ctx context.Context, events Events) *ArtifactLogs {
 	return &ArtifactLogs{ctx, events, make(map[artifact.ArtifactID]logConnection)}
 }
 
+// Start starts listening for build logs for the specified artifact ID, The log events will be streamed via the events handler
 func (alm *ArtifactLogs) Start(artifactID artifact.ArtifactID) error {
 	if _, started := alm.logs[artifactID]; started {
 		return errs.New("An artifact build log for %s is already active", artifactID)
@@ -44,6 +48,7 @@ func (alm *ArtifactLogs) Start(artifactID artifact.ArtifactID) error {
 	return nil
 }
 
+// Stop stops listening for build logs for a specific artifact ID
 func (alm *ArtifactLogs) Stop(artifactID artifact.ArtifactID) error {
 	lc, ok := alm.logs[artifactID]
 	if !ok {
@@ -51,7 +56,7 @@ func (alm *ArtifactLogs) Stop(artifactID artifact.ArtifactID) error {
 	}
 
 	err1 := lc.conn.Close()
-	err2 := lc.log.Close()
+	err2 := lc.log.Wait()
 	delete(alm.logs, artifactID)
 	if err1 != nil {
 		return errs.Wrap(err1, "Failed to close websocket connection")

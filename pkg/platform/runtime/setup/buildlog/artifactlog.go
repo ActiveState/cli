@@ -6,10 +6,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
+// ArtifactLog wraps a handler to listen for real-time build log messages for a specific artifact
 type ArtifactLog struct {
 	errCh chan error
 }
 
+// NewArtifactLog subscribes to events on the connection, and forwards build log events via the events handler
 func NewArtifactLog(artifactID artifact.ArtifactID, conn BuildLogConnector, events Events) (*ArtifactLog, error) {
 	errCh := make(chan error)
 
@@ -46,7 +48,8 @@ func NewArtifactLog(artifactID artifact.ArtifactID, conn BuildLogConnector, even
 	return &ArtifactLog{errCh}, nil
 }
 
-func (al *ArtifactLog) Close() error {
+// Wait waits for the event handler to stop producing build log events for a specific artifact
+func (al *ArtifactLog) Wait() error {
 	err := <-al.errCh
 	return err
 }
