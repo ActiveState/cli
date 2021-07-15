@@ -48,7 +48,8 @@ func NewPush(prime primeable) *Push {
 }
 
 func (r *Push) Run(params PushParams) error {
-	if !authentication.LegacyGet().Authenticated() {
+	auth := authentication.LegacyGet()
+	if !auth.Authenticated() {
 		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt)
 		if err != nil {
 			return locale.WrapError(err, "err_push_auth", "Failed to authenticate")
@@ -76,20 +77,59 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	// Check if user has permission to write to target org
+	hasProjectPerms := false
+	if ns.IsValid() {
+		hasProjectPerms = auth.CanWrite(ns.Owner)
+	}
+
+	// Ask to create a copy if the user does not have org permissions
+	createCopy := false
+	if !hasProjectPerms {
+		var err error
+		createCopy, err = r.prompt.Confirm("", locale.T("push_prompt_auth"), &createCopy)
+		if err != nil {
+			return err
+		}
+		if !createCopy {
+			return nil
+		}
+	}
+
+	isNewNamespace := false
+	// If namespace could not be detected then we want to create a project
+	if !ns.IsValid() || createCopy {
+		var err error
+		ns, err = r.promptNamespace()
+		if err != nil {
+			return locale.WrapError(err, "err_prompt_namespace", "Could not prompt for namespace")
+		}
+		isNewNamespace = true
+	}
+
 	// Get the project remotely if it already exists
-	pjm, err := model.FetchProjectByName(ns.Owner, ns.Project)
+	var pjm *mono_models.Project
+	var err error
+	pjm, err = model.FetchProjectByName(ns.Owner, ns.Project)
 	if err != nil {
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
 		}
 	}
 
+	// Fail if this is a new project but it already exists
+	if pjm != nil && (isNewNamespace || createCopy) {
+		return locale.NewInputError(
+			"err_push_create_nonunique",
+			"The project [NOTICE]{{.V0}}[/RESET] is already in use.", ns.String())
+	}
+	remoteExists := pjm != nil // Whether the remote project exists already
+
 	commitID := r.project.CommitUUID() // The commit we want to push
-	remoteExists := pjm != nil         // Whether the remote project exists already
 	projectCreated := false            // Whether we created a new project
 
 	// Create remote project if it doesn't already exist
-	if !remoteExists {
+	if !remoteExists || createCopy {
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", ns.Owner, ns.Project))
 		pjm, err = model.CreateEmptyProject(ns.Owner, ns.Project, r.project.Private())
 		if err != nil {
@@ -204,13 +244,11 @@ func (r *Push) namespaceFromProject() (*project.Namespaced, error) {
 	if !r.project.IsHeadless() {
 		return r.project.Namespace(), nil
 	}
+
+	var ns *project.Namespaced
 	namespace := projectfile.GetCachedProjectNameForPath(r.config, r.project.Source().Path())
 	if namespace == "" {
-		n, err := r.promptNamespace()
-		if err != nil {
-			return nil, locale.WrapError(err, "err_prompt_namespace", "Could not prompt for namespace")
-		}
-		namespace = n.String()
+		return nil, nil
 	}
 
 	ns, err := project.ParseNamespace(namespace)

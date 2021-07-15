@@ -220,6 +220,19 @@ func (s *Auth) WhoAmI() string {
 	return ""
 }
 
+func (s *Auth) CanWrite(organization string) bool {
+	if s.user == nil {
+		return false
+	}
+	for _, org := range s.user.Organizations {
+		if org.URLname != organization {
+			continue
+		}
+		return org.Role == string(mono_models.RoleAdmin) || org.Role == string(mono_models.RoleEditor)
+	}
+	return false
+}
+
 // Email return the email of the authenticated user
 func (s *Auth) Email() string {
 	if s.user != nil {
