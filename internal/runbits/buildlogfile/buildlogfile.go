@@ -208,7 +208,7 @@ func (bl *BuildLogFile) InstallationIncrement() error {
 
 // ArtifactStepStarted writes a message that artifact update step has begun (download, unpack, install)
 func (bl *BuildLogFile) ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, title string, _ int64, _ bool) error {
-	return bl.writeArtifactMessage(artifactID, artifactName, "%s step started", title)
+	return bl.writeArtifactMessage(artifactID, artifactName, "%s started", title)
 }
 
 // ArtifactStepIncrement is ignored
@@ -218,12 +218,12 @@ func (bl *BuildLogFile) ArtifactStepIncrement(_ artifact.ArtifactID, _, _ string
 
 // ArtifactStepCompleted writes a message that an artifact update step has completed successfully
 func (bl *BuildLogFile) ArtifactStepCompleted(artifactID artifact.ArtifactID, artifactName, title string) error {
-	return bl.writeArtifactMessage(artifactID, artifactName, "%s step completed SUCCESSFULLY", title)
+	return bl.writeArtifactMessage(artifactID, artifactName, "%s completed SUCCESSFULLY", title)
 }
 
 // ArtifactStepFailure writes a message that an artifact update step has completed with a failure
 func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, artifactName, title, errorMessage string) error {
-	return bl.writeArtifactMessage(artifactID, artifactName, "%s step completed with FAILURE: %s", title, errorMessage)
+	return bl.writeArtifactMessage(artifactID, artifactName, "%s completed with FAILURE: %s", title, errorMessage)
 }
 
 // Close closes the log file after waiting for up to 5 seconds to finish up downloading all the remote log files
