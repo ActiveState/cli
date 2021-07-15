@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -45,6 +44,7 @@ type RuntimeEventConsumer struct {
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
 	totalArtifacts      int64
+	alreadyBuilt        int
 	isBuilding          bool      // are we currently building packages
 	buildsTotal         int64     // total number of artifacts that need to be built
 	lastBuildEventRcvd  time.Time // timestamp when the last build event was received
@@ -74,18 +74,19 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 		for _, download := range t.DownloadableArtifacts() {
 			artifactName := eh.ResolveArtifactName(download.ArtifactID)
 			// Advance the progress with the status for the artifacts
-			if download.BuildState == headchef_models.V1ArtifactBuildStateSucceeded {
-				eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
-			} else if download.BuildState == headchef_models.V1ArtifactBuildStateFailed {
-				eh.numBuildFailures++
-				eh.progress.BuildArtifactFailure(download.ArtifactID, artifactName, download.UnsignedLogURI, download.Error, true)
-			}
+			eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
+		}
+		eh.alreadyBuilt = len(t.DownloadableArtifacts())
+		for _, failed := range t.FailedArtifacts() {
+			artifactName := eh.ResolveArtifactName(failed.ArtifactID)
+			eh.numBuildFailures++
+			eh.progress.BuildArtifactFailure(failed.ArtifactID, artifactName, failed.UnsignedLogURI, failed.ErrorMsg, true)
 		}
 	case TotalArtifactEvent:
 		eh.totalArtifacts = int64(t.Total())
 		return nil
 	case BuildStartEvent:
-		eh.buildsTotal = int64(t.Total())
+		eh.buildsTotal = int64(t.Total() - eh.alreadyBuilt)
 		eh.lastBuildEventRcvd = time.Now()
 		eh.isBuilding = true
 		return eh.progress.BuildStarted(eh.buildsTotal)

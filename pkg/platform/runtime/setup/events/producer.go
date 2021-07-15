@@ -32,8 +32,8 @@ func (r *RuntimeEventProducer) event(be SetupEventer) {
 	r.events <- be
 }
 
-func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver, downloadable []artifact.ArtifactDownload) {
-	r.event(newArtifactResolverEvent(artifactResolver, downloadable))
+func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifactIDs []artifact.FailedArtifact) {
+	r.event(newArtifactResolverEvent(artifactResolver, downloadable, failedArtifactIDs))
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {

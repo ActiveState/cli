@@ -19,10 +19,9 @@ func NewRuntimeEventHandler(terminalProgress ProgressDigester, summary ChangeSum
 // WaitForAllEvents prints output based on runtime events received on the events channel
 func (rmh *RuntimeEventHandler) WaitForAllEvents(events <-chan SetupEventer) error {
 	// Asynchronous progress digester may need to be closed after
-	defer rmh.terminalProgress.Close()
-
 	prg := NewMultiPlexedProgress(rmh.logFileProgress, rmh.terminalProgress)
 	rec := NewRuntimeEventConsumer(prg, rmh.summary)
+	defer prg.Close()
 
 	var aggErr error
 	for ev := range events {

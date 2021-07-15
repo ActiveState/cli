@@ -102,7 +102,10 @@ func (rp *RuntimeProgress) BuildStarted(total int64) error {
 }
 
 // BuildArtifactCompleted increments the build progress bar counter
-func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string, _ bool) error {
+func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string, isCached bool) error {
+	if isCached {
+		return nil
+	}
 	if rp.buildBar == nil {
 		return errs.New("Build bar has not been initialized yet.")
 	}

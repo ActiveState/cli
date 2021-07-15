@@ -110,8 +110,9 @@ func newArtifactBuildEvent(suffix string, step SetupStep, artifactID artifact.Ar
 
 // ArtifactResolverEvents forwards a function to resolve artifact names (as soon as that information becomes available)
 type ArtifactResolverEvent struct {
-	resolver     ArtifactResolver
-	downloadable []artifact.ArtifactDownload
+	resolver        ArtifactResolver
+	downloadable    []artifact.ArtifactDownload
+	failedArtifacts []artifact.FailedArtifact
 }
 
 // Resolver returns a function that resolves artifact names
@@ -124,12 +125,17 @@ func (ae ArtifactResolverEvent) DownloadableArtifacts() []artifact.ArtifactDownl
 	return ae.downloadable
 }
 
+// Resolver returns a function that resolves artifact names
+func (ae ArtifactResolverEvent) FailedArtifacts() []artifact.FailedArtifact {
+	return ae.failedArtifacts
+}
+
 func (ae ArtifactResolverEvent) String() string {
 	return "artifact_resolver"
 }
 
-func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload) ArtifactResolverEvent {
-	return ArtifactResolverEvent{resolver, downloadable}
+func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifacts []artifact.FailedArtifact) ArtifactResolverEvent {
+	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
 }
 
 // TotalArtifactEvent reports the number of total artifacts as soon as they are known

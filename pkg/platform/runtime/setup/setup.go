@@ -87,7 +87,7 @@ type Events interface {
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
 
-	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload)
+	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload, artifactIDs []artifact.FailedArtifact)
 }
 
 type Targeter interface {
@@ -174,7 +174,9 @@ func (s *Setup) update() error {
 		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
-	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads)
+	failedArtifacts := artifact.NewFailedArtifactsFromBuild(buildResult.BuildStatusResponse)
+
+	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {

@@ -29,7 +29,6 @@ type BuildLogFile struct {
 	logFile          *os.File
 	numInstalled     int
 	numToBeInstalled int
-	wg               *sync.WaitGroup
 	ctx              context.Context
 	cancel           context.CancelFunc
 	logsCh           chan artifactLog
@@ -58,6 +57,7 @@ func (bl *BuildLogFile) downloadAndAddArtifactLog(ul artifactLog, ctx context.Co
 	}
 
 	// download the log and stream it line-by-line
+	logging.Debug("downloading logURI: %s", logURL.String())
 	req, err := http.NewRequestWithContext(ctx, "GET", logURL.String(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to create GET request for logURL.")
@@ -100,15 +100,20 @@ func New(out output.Outputer) (*BuildLogFile, error) {
 			defer wg.Done()
 			for ul := range bl.logsCh {
 				if err := bl.downloadAndAddArtifactLog(ul, ctx); err != nil {
-					logging.Error("Failed to add build log details to log file for %s: %v", ul.artifactName)
+					logging.Error("Failed to add build log details to log file for %s: %v", ul.artifactName, errs.JoinMessage(err))
 				}
 			}
 		}()
 	}
 
+	// cancel context after all wait group returns
+	go func() {
+		defer cancel()
+		wg.Wait()
+	}()
+
 	bl.ctx = ctx
 	bl.cancel = cancel
-	bl.wg = &wg
 
 	// add info on how to activate verbose logging to first line of logfile
 	if !verboseLogging() {
@@ -185,7 +190,7 @@ func (bl *BuildLogFile) BuildArtifactFailure(artifactID artifact.ArtifactID, art
 	if isCached || !verboseLogging() {
 		bl.addBuildLogs(artifactID, artifactName, unsignedLogURI)
 	}
-	return bl.writeArtifactMessage(artifactID, "Build failed with error: %s", errMsg)
+	return bl.writeArtifactMessage(artifactID, artifactName, "Build failed with error: %s", errMsg)
 }
 
 // InstallationStarted notifies the user that the process of installing the artifacts on the user's machine has started
@@ -221,16 +226,16 @@ func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, arti
 	return bl.writeArtifactMessage(artifactID, artifactName, "%s step completed with FAILURE: %s", title, errorMessage)
 }
 
-// Close closes the log file after waiting for 1 second to finish up downloading all the remote log files
+// Close closes the log file after waiting for up to 5 seconds to finish up downloading all the remote log files
 func (bl *BuildLogFile) Close() error {
-	// wait 1 more second before we cancel the background thread
+	// wait u to 5 more second before we cancel the background thread
+	close(bl.logsCh)
 	select {
 	case <-bl.ctx.Done():
-	case <-time.After(time.Second):
+	case <-time.After(time.Second * 5):
+		bl.cancel()
+		<-bl.ctx.Done()
 	}
-	bl.cancel()
-	close(bl.logsCh)
-	bl.wg.Wait()
 
 	return bl.logFile.Close()
 }
