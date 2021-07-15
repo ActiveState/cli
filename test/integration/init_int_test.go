@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -12,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type InitIntegrationTestSuite struct {
@@ -58,15 +56,6 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, 
 	content, err := ioutil.ReadFile(configFilepath)
 	suite.Require().NoError(err)
 	suite.Contains(string(content), config)
-
-	// Check that language was written to yaml
-	langData := strings.Split(language, "@")
-	pjfile, err := projectfile.Parse(configFilepath)
-	suite.Require().NoError(err)
-	if len(pjfile.Languages) != 1 {
-		suite.FailNow("Expected one language, but got: %v", pjfile.Languages)
-	}
-	suite.Require().Equal(langData[0], pjfile.Languages[0].Name)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
