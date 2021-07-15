@@ -77,7 +77,7 @@ func FileNameFor(pid int) string {
 }
 
 func FileNameForCmd(cmd string, pid int) string {
-	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, time.Now().Unix(), FileNameSuffix)
+	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, time.Now().UnixNano(), FileNameSuffix)
 }
 
 func FileNamePrefix() string {
