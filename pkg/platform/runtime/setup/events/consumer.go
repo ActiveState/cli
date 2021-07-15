@@ -45,11 +45,11 @@ type RuntimeEventConsumer struct {
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
 	totalArtifacts      int64
-	isBuilding          bool
-	buildsTotal         int64
-	lastBuildEventRcvd  time.Time
-	numBuildCompleted   int64
-	numBuildFailures    int64
+	isBuilding          bool      // are we currently building packages
+	buildsTotal         int64     // total number of artifacts that need to be built
+	lastBuildEventRcvd  time.Time // timestamp when the last build event was received
+	numBuildCompleted   int64     // number of completed builds
+	numBuildFailures    int64     // number of failed builds
 	numInstallFailures  int64
 	installationStarted bool
 }
@@ -66,11 +66,14 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 	switch t := ev.(type) {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
-	case ArtifactResolverEvent:
+	case ArtifactResolverEvent: // called when the recipes has been downloaded, allowing us to resolve meta information about artifacts
 		eh.lastBuildEventRcvd = time.Now()
 		eh.artifactNames = t.Resolver()
+
+		// iterate over all artifacts that can already be downloaded (because they are already built)
 		for _, download := range t.DownloadableArtifacts() {
 			artifactName := eh.ResolveArtifactName(download.ArtifactID)
+			// Advance the progress with the status for the artifacts
 			if download.BuildState == headchef_models.V1ArtifactBuildStateSucceeded {
 				eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
 			} else if download.BuildState == headchef_models.V1ArtifactBuildStateFailed {
@@ -92,7 +95,7 @@ func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
 	case ArtifactSetupEventer:
 		return eh.handleArtifactEvent(t)
 	case HeartbeatEvent:
-		if time.Now().Sub(eh.lastBuildEventRcvd) > time.Second*15 {
+		if eh.isBuilding && time.Since(eh.lastBuildEventRcvd) > time.Second*15 {
 			eh.lastBuildEventRcvd = time.Now()
 			return eh.progress.StillBuilding(int(eh.numBuildCompleted), int(eh.buildsTotal))
 		}
