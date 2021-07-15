@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
@@ -76,7 +77,7 @@ func FileNameFor(pid int) string {
 }
 
 func FileNameForCmd(cmd string, pid int) string {
-	return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
+	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, time.Now().Unix(), FileNameSuffix)
 }
 
 func FileNamePrefix() string {
@@ -146,9 +147,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if err != nil {
 		return err
 	}
-	if err := l.file.Sync(); err != nil {
-		return errs.Wrap(err, "Could not sync log file")
-	}
+	// if err := l.file.Sync(); err != nil {
+	// 	return errs.Wrap(err, "Could not sync log file")
+	// }
 
 	return nil
 }
@@ -196,4 +197,3 @@ func init() {
 
 	Debug("Args: %v", os.Args)
 }
-
