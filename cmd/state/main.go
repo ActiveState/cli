@@ -86,7 +86,9 @@ func main() {
 
 	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
 		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd()))
+		terminal.IsTerminal(int(os.Stdin.Fd())) &&
+		out.Type() != output.EditorV0FormatName &&
+		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
