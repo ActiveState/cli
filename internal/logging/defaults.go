@@ -147,9 +147,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if err != nil {
 		return err
 	}
-	// if err := l.file.Sync(); err != nil {
-	// 	return errs.Wrap(err, "Could not sync log file")
-	// }
 
 	return nil
 }
