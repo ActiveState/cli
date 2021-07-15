@@ -156,6 +156,7 @@ type BuildStartEvent struct {
 	totalBuilds int
 }
 
+// Total number of artifacts that we have to build
 func (be BuildStartEvent) Total() int {
 	return be.totalBuilds
 }
@@ -192,6 +193,7 @@ func (ase ArtifactStartEvent) Total() int {
 	return ase.total
 }
 
+// ArtifactBuildProgressEvent serializes a log line in a build log file
 type ArtifactBuildProgressEvent struct {
 	artifactBaseEvent
 
@@ -202,22 +204,27 @@ type ArtifactBuildProgressEvent struct {
 	source    string
 }
 
+// TimeStamp resturns the timestamp when the logline was generated
 func (ae ArtifactBuildProgressEvent) TimeStamp() string {
 	return ae.timeStamp
 }
 
+// Message returns the log message
 func (ae ArtifactBuildProgressEvent) Message() string {
 	return ae.message
 }
 
+// Facility returns the log facility (INFO/ERROR/...)
 func (ae ArtifactBuildProgressEvent) Facility() string {
 	return ae.facility
 }
 
+// PipeName returns the pipe through which this log line was generated (stdout/stderr/...)
 func (ae ArtifactBuildProgressEvent) PipeName() string {
 	return ae.pipeName
 }
 
+// Source is a descriptor for the source of this log (eg., builder/build-wrapper/...)
 func (ae ArtifactBuildProgressEvent) Source() string {
 	return ae.source
 }
@@ -297,11 +304,13 @@ func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRe
 	}
 }
 
+// HeartbeatEvent is produced when nothing else is written to the websocket connection
 type HeartbeatEvent struct {
 	baseEvent
 	timeStamp time.Time
 }
 
+// TimeStamp returns the time of the heart beat
 func (he HeartbeatEvent) TimeStamp() time.Time {
 	return he.timeStamp
 }
