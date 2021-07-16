@@ -307,6 +307,9 @@ const SvcAppName = "State Service"
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
 
+// StateInstallerCmd is the name of the state installer binary
+const StateInstallerCmd = "state-installer"
+
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
 

@@ -77,6 +77,9 @@ func FileNameFor(pid int) string {
 }
 
 func FileNameForCmd(cmd string, pid int) string {
+	if cmd == constants.StateInstallerCmd {
+		return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
+	}
 	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, time.Now().UnixNano(), FileNameSuffix)
 }
 

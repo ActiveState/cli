@@ -102,7 +102,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	return &graph.DeferredUpdate{
 		Channel: up.Channel,
 		Version: up.Version,
-		Logfile: logging.FilePathForCmd("state-installer", proc.Pid),
+		Logfile: logging.FilePathForCmd(constants.StateInstallerCmd, proc.Pid),
 	}, nil
 }
 
