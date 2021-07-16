@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/google/uuid"
 )
@@ -35,12 +36,12 @@ type UniqID struct {
 func New(in DirLocation) (*UniqID, error) {
 	dir, err := storageDirectory(in)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "cannot determine uniqid storage directory")
 	}
 
 	id, err := uniqueID(filepath.Join(dir, fileName))
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "cannot obtain uniqid")
 	}
 
 	return &UniqID{ID: id}, nil
@@ -65,18 +66,18 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 		id := uuid.New()
 
 		if err := fileutils.WriteFile(filepath, id[:]); err != nil {
-			return uuid.UUID{}, err
+			return uuid.UUID{}, errs.Wrap(err, "cannot write uniqid file")
 		}
 
 		return id, nil
 	}
 
-	return uuid.UUID{}, err
+	return uuid.UUID{}, errs.Wrap(err, "cannot get existing, nor create new, uniqid")
 }
 
 // ErrUnsupportedOS indicates that an unsupported OS tried to store a uniqid as
 // a file.
-var ErrUnsupportedOS = errors.New("unsupported os")
+var ErrUnsupportedOS = errors.New("unsupported uniqid os")
 
 func storageDirectory(location DirLocation) (string, error) {
 	var dir string
@@ -87,7 +88,7 @@ func storageDirectory(location DirLocation) (string, error) {
 	default:
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return "", err
+			return "", errs.Wrap(err, "cannot get home dir for uniqid file")
 		}
 		dir = home
 	}
