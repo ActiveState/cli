@@ -2,6 +2,7 @@ package updater
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -55,7 +56,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
 
-	if info.Channel == u.currentChannel && info.Version == u.currentVersion {
+	if info == nil || (info.Channel == u.currentChannel && info.Version == u.currentVersion) {
 		return nil, nil
 	}
 
@@ -78,7 +79,12 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	url := fmt.Sprintf("%s/%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
 	res, err := u.httpreq.Get(url)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch update info from %s", url)
+		if httpErr := (&httpreq.HTTPError{}); errors.As(err, &httpErr) {
+			if httpErr.HTTPStatusCode() < 400 || httpErr.HTTPStatusCode() > 499 {
+				return nil, errs.Wrap(httpErr, "Could not fetch update info from %s", url)
+			}
+			return nil, nil
+		}
 	}
 
 	info := &AvailableUpdate{}
