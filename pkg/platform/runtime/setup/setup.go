@@ -158,6 +158,11 @@ func (s *Setup) update() error {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
+		serr := &apimodel.SolverError{}
+		if errors.As(err, &serr) {
+			s.events.SolverError(serr)
+			return formatSolverError(serr)
+		}
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
@@ -567,4 +572,16 @@ func reusableArtifacts(requestedArtifacts []*headchef_models.V1Artifact, storedA
 		}
 	}
 	return keep
+}
+
+func formatSolverError(serr *apimodel.SolverError) error {
+	var err error = serr
+	if serr.IsTransient() {
+		err = errs.AddTips(serr, locale.Tl("transient_solver_tip", "You may want to retry this command, as it can lead to a different result."))
+	}
+	// Append last five lines to error message
+	for i := range serr.ValidationErrors()[-5:] {
+		err = 
+	}
+	return err
 }

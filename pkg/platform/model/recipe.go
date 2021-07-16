@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -20,6 +21,28 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
+
+type SolverError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *SolverError) Error() string {
+	return "solver_error"
+}
+
+func (e *SolverError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *SolverError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *SolverError) IsTransient() bool {
+	return e.isTransient
+}
 
 // HostPlatform stores a reference to current platform
 var HostPlatform string
@@ -95,7 +118,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		if err2 != nil {
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
-		
+
 		serr := resolveSolverError(err)
 		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
 		return "", serr
@@ -177,14 +200,23 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
-		return locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", *serr.Payload.Message)
+		return &SolverError{
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", *serr.Payload.Message),
+			isTransient: *serr.GetPayload().IsTransient,
+		}
 	case *iop.ResolveRecipesBadRequest:
-		err = locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", *serr.Payload.SolverError.Message)
+		var validationErrors []string
 		for _, verr := range serr.Payload.ValidationErrors {
 			if verr.Error == nil {
 				continue
 			}
-			err = locale.WrapError(err, "", *verr.Error)
+			lines := strings.Split(*verr.Error, "\n")
+			validationErrors = append(validationErrors, lines...)
+		}
+		err = &SolverError{
+			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", *serr.Payload.SolverError.Message),
+			validationErrors: validationErrors,
+			isTransient:      *serr.GetPayload().IsTransient,
 		}
 		return err
 	default:
