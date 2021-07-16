@@ -144,7 +144,14 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.ExpectLongString("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
-	cp.Send(pname.String())
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	if runtime.GOOS != "darwin" {
+		// https://www.pivotaltracker.com/story/show/178916236
+		cp.Expect("> Other")
+		cp.Send("")
+	}
+	cp.Expect(">")
+	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
@@ -192,14 +199,21 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.ExpectLongString("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
-	cp.Send(pname.String())
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	if runtime.GOOS != "darwin" {
+		// https://www.pivotaltracker.com/story/show/178916236
+		cp.Expect("> Other")
+		cp.Send("")
+	}
+	cp.Expect(">")
+	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, username)
-	suite.Require().Contains(pjfile.Project, pname)
+	suite.Require().Contains(pjfile.Project, pname.String())
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
