@@ -45,12 +45,14 @@ type primeable interface {
 	primer.Auther
 }
 
+// RuntimeDetails encapsulates the details of a project's runtime
 type RuntimeDetails struct {
 	Name         string `locale:"state_show_details_name,Name"`
 	Organization string `locale:"state_show_details_organization,Organization"`
 	NameSpace    string `locale:"state_show_details_namespace,Namespace"`
 	Visibility   string `locale:"state_show_details_visibility,Visibility"`
 	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+	ProjectPath  string `locale:"state_show_details_project_path,Path"`
 }
 
 type outputDataPrinter struct {
@@ -139,6 +141,7 @@ func (s *Show) Run(params Params) error {
 		events      []string
 		scripts     map[string]string
 		err         error
+		projectPath string
 	)
 
 	if params.Remote != "" {
@@ -186,6 +189,8 @@ func (s *Show) Run(params Params) error {
 		commitID = strfmt.UUID(s.project.CommitID())
 	}
 
+	projectPath = owner + "/" + projectName + "#" + commitID.String()
+
 	remoteProject, err := model.FetchProjectByName(owner, projectName)
 	if err != nil && errs.Matches(err, &model.ErrProjectNotFound{}) {
 		return locale.WrapError(err, "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
@@ -223,6 +228,7 @@ func (s *Show) Run(params Params) error {
 		Organization: owner,
 		Visibility:   visibilityData(owner, projectName, remoteProject),
 		LastCommit:   commit,
+		ProjectPath:  projectPath,
 	}
 
 	outputData := outputData{
