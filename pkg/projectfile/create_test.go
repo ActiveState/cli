@@ -40,7 +40,7 @@ func Test_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Create(&CreateParams{
+			if _, got := Create(&CreateParams{
 				Owner:     tt.args.org,
 				Project:   tt.args.project,
 				CommitID:  tt.args.commitID,

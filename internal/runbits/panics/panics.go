@@ -9,14 +9,15 @@ import (
 )
 
 // HandlePanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled
-func HandlePanics() bool {
-	if r := recover(); r != nil {
-		logging.Error("Panic: %v", r)
+func HandlePanics(recovered interface{}) bool {
+	if recovered != nil {
+		logging.Error("Panic: %v", recovered)
 		logging.Debug("Stack: %s", string(debug.Stack()))
 
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
+Error: %v
 Check the error log for more information.
-Your error log is located at: %s`, logging.FilePath()))
+Your error log is located at: %s`, recovered, logging.FilePath()))
 		return true
 	}
 	return false
