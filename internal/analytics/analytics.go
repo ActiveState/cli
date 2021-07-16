@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 
@@ -93,6 +94,7 @@ type customDimensions struct {
 	installSource string
 	machineID     string
 	projectName   string
+	uniqID        string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -117,6 +119,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"8":  d.installSource,
 		"9":  d.machineID,
 		"10": d.projectName,
+		"11": d.uniqID,
 	}
 }
 
@@ -180,6 +183,7 @@ func setup() {
 		installSource: installSource,
 		machineID:     machineid.UniqID(),
 		output:        string(output.PlainFormatName),
+		uniqID:        uniqid.Text(),
 	}
 
 	if id == "unknown" {
