@@ -93,8 +93,17 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				events.ArtifactBuildStarting(m.ArtifactID)
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts
-				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "real-time" {
 					logging.Debug("requesting updates for %s", m.ArtifactID.String())
+					/*  This does *not* work:
+					request := artifactRequest{ArtifactID: m.ArtifactID.String()}
+					if err := conn.WriteJSON(request); err != nil {
+						errCh <- errs.Wrap(err, "Could not start artifact log request")
+						return
+					}
+					*/
+
+					// This does work:
 					if err := artifactLogMgr.Start(m.ArtifactID); err != nil {
 						errCh <- errs.Wrap(err, "Could not start artifact log request")
 						return
