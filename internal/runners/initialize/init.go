@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/gobuffalo/packr"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -135,12 +136,11 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		}
 
 		createParams := &projectfile.CreateParams{
-			Owner:           params.Namespace.Owner,
-			Project:         params.Namespace.Project,
-			Language:        params.language.String(),
-			LanguageVersion: params.version,
-			Directory:       params.Path,
-			Private:         params.Private,
+			Owner:     params.Namespace.Owner,
+			Project:   params.Namespace.Project,
+			Language:  params.language.String(),
+			Directory: params.Path,
+			Private:   params.Private,
 		}
 
 		if params.Style == SkeletonEditor {
@@ -148,15 +148,27 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 			createParams.Content = box.String("activestate.yaml.editor.tpl")
 		}
 
-		err = params.language.Validate()
+		pjfile, err := projectfile.Create(createParams)
 		if err != nil {
-			return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
+			return "", locale.WrapError(err, "err_init_pjfile", "Could not create project file")
 		}
-
-		err = projectfile.Create(createParams)
-		if err != nil {
+		if proj, err = project.New(pjfile, out); err != nil {
 			return "", err
 		}
+	}
+
+	err = params.language.Validate()
+	if err != nil {
+		return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
+	}
+
+	commitID, err := model.CommitInitial(model.HostPlatform, &params.language, params.version)
+	if err != nil {
+		return "", locale.WrapError(err, "err_init_commit", "Could not create initial commit")
+	}
+
+	if err := proj.SetCommit(commitID.String()); err != nil {
+		return "", locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
 	}
 
 	out.Notice(locale.Tr(

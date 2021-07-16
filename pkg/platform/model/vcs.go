@@ -35,6 +35,8 @@ var (
 
 type ErrOrderAuth struct{ *locale.LocalizedError }
 
+type ErrUpdateBranchAuth struct{ *locale.LocalizedError }
+
 type ProjectInfo interface {
 	Owner() string
 	Name() string
@@ -431,12 +433,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) e
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
 		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			err = locale.WrapError(
-				err,
-				"err_update_branch_permissions",
-				"You do not have permission to modify the requirements for this project. You will either need to be invited to the project or you can fork it by running [ACTIONABLE]state fork <project namespace>[/RESET].",
-			)
-			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
+			return &ErrUpdateBranchAuth{locale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
@@ -523,9 +520,9 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 
 // CommitInitial creates a root commit for a new branch
 func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
-	var language string
+	var langName string
 	if lang != nil {
-		language = lang.Requirement()
+		langName = lang.Requirement()
 		if langVersion == "" {
 			langVersion = lang.RecommendedVersion()
 		}
@@ -538,11 +535,11 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 
 	var changes []*mono_models.CommitChangeEditable
 
-	if language != "" {
+	if langName != "" {
 		c := &mono_models.CommitChangeEditable{
 			Operation:         string(OperationAdded),
 			Namespace:         NewNamespaceLanguage().String(),
-			Requirement:       language,
+			Requirement:       langName,
 			VersionConstraint: langVersion,
 		}
 		changes = append(changes, c)

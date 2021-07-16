@@ -50,7 +50,7 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
