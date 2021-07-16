@@ -162,7 +162,6 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	defer ts.Close()
 	username := ts.CreateNewUser()
 	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", username, pname)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
 	cp.ExpectLongString("default project?")
@@ -199,7 +198,8 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace))
+	suite.Require().Contains(pjfile.Project, username)
+	suite.Require().Contains(pjfile.Project, pname)
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
