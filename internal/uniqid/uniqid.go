@@ -4,37 +4,44 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 )
 
-// TODO: wrap errors
+// DirLocation represents tokens to indicate where uniqid file should be
+// located.
+type DirLocation int
+
+// DirLocation enums.
+const (
+	InHome DirLocation = iota
+	InTmp
+)
 
 const (
-	fileName = "activestate.dat"
+	fileName = "uniqid"
+	asDir    = "activestate_dat"
+	tmpSub   = "activestate_uniqid"
 )
 
 // UniqID manages the storage and retrieval of a unique id.
 type UniqID struct {
-	ID strfmt.UUID
+	ID uuid.UUID
 }
 
 // New retrieves or creates a new unique id.
-func New() (*UniqID, error) {
-	dir, err := os.UserHomeDir()
+func New(in DirLocation) (*UniqID, error) {
+	dir, err := storageDirectory(in)
 	if err != nil {
 		return nil, err
 	}
 
-	idText, err := uniqIDText(filepath.Join(dir, fileName))
+	id, err := uniqueID(filepath.Join(dir, fileName))
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO: convert to uuid or err
-	_ = idText
-	var id strfmt.UUID
 
 	return &UniqID{ID: id}, nil
 }
@@ -44,22 +51,58 @@ func (u *UniqID) String() string {
 	return u.ID.String()
 }
 
-func uniqIDText(filepath string) (string, error) {
+func uniqueID(filepath string) (uuid.UUID, error) {
 	data, err := fileutils.ReadFile(filepath)
 	if err == nil {
-		return string(data), nil
+		id, err := uuid.FromBytes(data)
+		if err == nil {
+			return id, nil
+		}
+		err = os.ErrNotExist // signal to clobber existing file
 	}
 
 	if errors.Is(err, os.ErrNotExist) {
-		// TODO: create new uuid
-		uniqID := "test"
+		id := uuid.New()
 
-		if err := fileutils.WriteFile(filepath, []byte(uniqID)); err != nil {
-			return "", err
+		if err := fileutils.WriteFile(filepath, id[:]); err != nil {
+			return uuid.UUID{}, err
 		}
 
-		return uniqID, nil
+		return id, nil
 	}
 
-	return "", err
+	return uuid.UUID{}, err
+}
+
+// ErrUnsupportedOS indicates that an unsupported OS tried to store a uniqid as
+// a file.
+var ErrUnsupportedOS = errors.New("unsupported os")
+
+func storageDirectory(location DirLocation) (string, error) {
+	var dir string
+	switch location {
+	case InTmp:
+		dir = filepath.Join(os.TempDir(), tmpSub)
+
+	default:
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		dir = home
+	}
+
+	var subdir string
+	switch runtime.GOOS {
+	case "darwin":
+		subdir = "Library/Application Support"
+	case "linux":
+		subdir = ".local/share"
+	case "windows":
+		subdir = "AppData"
+	default:
+		return "", ErrUnsupportedOS
+	}
+
+	return filepath.Join(dir, subdir, asDir), nil
 }
