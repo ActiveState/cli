@@ -11,7 +11,8 @@ import (
 type MessageEnum int
 
 const (
-	BuildStarted MessageEnum = iota
+	UnknownMessage MessageEnum = iota
+	BuildStarted
 	BuildSucceeded
 	BuildFailed
 	ArtifactStarted
@@ -19,7 +20,6 @@ const (
 	ArtifactFailed
 	ArtifactProgress
 	Heartbeat
-	UnknownMessage
 )
 
 type messager interface {
