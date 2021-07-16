@@ -207,9 +207,9 @@ func (r *Push) Run(params PushParams) error {
 	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
 	if err != nil {
 		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", targetPjm.Name)
+			return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", targetNamespace.String())
 		} else {
-			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", targetPjm.Name)
+			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", targetNamespace.String())
 		}
 	}
 
