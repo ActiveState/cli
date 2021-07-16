@@ -23,15 +23,7 @@ func (rmh *RuntimeEventHandler) WaitForAllEvents(events <-chan SetupEventer) err
 	rec := NewRuntimeEventConsumer(prg, rmh.summary)
 	defer prg.Close()
 
-	var aggErr error
-	for ev := range events {
-		err := rec.Consume(ev)
-		if err != nil {
-			aggErr = errs.Wrap(aggErr, "Event handling error in output consumer: %v", err)
-		}
-	}
-
-	return aggErr
+	return rec.Consume(events)
 }
 
 func (rmh *RuntimeEventHandler) AddHints(err error) error {

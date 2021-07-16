@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockProgressOutput struct {
@@ -204,10 +205,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 				}
 			}()
 
-			for ev := range evCh {
-				err := consumer.Consume(ev)
-				assert.NoError(t, err)
-			}
+			err := consumer.Consume(evCh)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.expectedBuildStarted, mock.buildStarted)
 			assert.Equal(t, tc.expectedBuildCompleted, mock.buildCompleted)

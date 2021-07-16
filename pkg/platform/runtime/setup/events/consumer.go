@@ -61,8 +61,20 @@ func NewRuntimeEventConsumer(progress ProgressDigester, summary ChangeSummaryDig
 	}
 }
 
+func (eh *RuntimeEventConsumer) Consume(events <-chan SetupEventer) error {
+	var aggErr error
+	for ev := range events {
+		err := eh.handle(ev)
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "Event handling error in RuntimeEventConsumer: %v", err)
+		}
+	}
+
+	return aggErr
+}
+
 // Consume consumes an setup event
-func (eh *RuntimeEventConsumer) Consume(ev SetupEventer) error {
+func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 	switch t := ev.(type) {
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
