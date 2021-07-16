@@ -285,7 +285,7 @@ func (r *Push) namespaceFromProject() (*project.Namespaced, error) {
 }
 
 func (r *Push) promptNamespace() (*project.Namespaced, error) {
-	owner := authentication.LegacyGet().WhoAmI()
+	owner := r.auth.WhoAmI()
 	owner, err := r.prompt.Input("", locale.T("push_prompt_owner"), &owner)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_push_get_owner", "Could not deterimine project owner")
