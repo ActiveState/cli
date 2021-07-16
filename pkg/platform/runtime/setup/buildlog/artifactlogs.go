@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/gorilla/websocket"
@@ -55,16 +54,23 @@ func (alm *ArtifactLogs) Stop(artifactID artifact.ArtifactID) error {
 		return errs.New("Artifact log for %s is not running", artifactID)
 	}
 
-	err1 := lc.conn.Close()
-	err2 := lc.log.Wait()
-	delete(alm.logs, artifactID)
-	if err1 != nil {
-		return errs.Wrap(err1, "Failed to close websocket connection")
-	}
-	if err2 != nil {
-		// we just log this error, as it is probably just a "closed connection error"
-		logging.Debug("artifact log returned with error: %v", err2)
+	defer delete(alm.logs, artifactID)
+	defer lc.log.Wait()
+
+	err := lc.conn.Close()
+	if err != nil {
+		return errs.Wrap(err, "Failed to close websocket connection")
 	}
 
 	return nil
+}
+
+func (alm *ArtifactLogs) Close() error {
+	var aggErr error
+	for artID := range alm.logs {
+		if err := alm.Stop(artID); err != nil {
+			aggErr = errs.Wrap(aggErr, "Failed to stop artifact-log")
+		}
+	}
+	return aggErr
 }

@@ -8,29 +8,28 @@ import (
 
 // ArtifactLog wraps a handler to listen for real-time build log messages for a specific artifact
 type ArtifactLog struct {
-	errCh chan error
+	done chan struct{}
 }
 
 // NewArtifactLog subscribes to events on the connection, and forwards build log events via the events handler
 func NewArtifactLog(artifactID artifact.ArtifactID, conn BuildLogConnector, events Events) (*ArtifactLog, error) {
-	errCh := make(chan error)
+	done := make(chan struct{})
 
 	go func() {
-		defer close(errCh)
+		defer close(done)
 
 		for {
 			var msg Message
 			err := conn.ReadJSON(&msg)
 			if err != nil {
-				errCh <- err
+				// Note: We expect a closed connection - error here.  But it is not clear how to filter that error, so we just log it and return nil
+				logging.Debug("conn.ReadJSON returned with err=%v", err)
 				return
 			}
-			logging.Debug("Received response: %d", msg.MessageType())
 
 			switch msg.MessageType() {
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
-				logging.Debug("received artifact progress message: %s %s", m.ArtifactID, m.Body.Message)
 				events.ArtifactBuildProgress(m.ArtifactID, m.Timestamp, m.Body.Message, m.Body.Facility, m.PipeName, m.Source)
 			case Heartbeat:
 				m := msg.messager.(BuildMessage)
@@ -45,11 +44,10 @@ func NewArtifactLog(artifactID artifact.ArtifactID, conn BuildLogConnector, even
 		return nil, errs.Wrap(err, "Could not write websocket request")
 	}
 
-	return &ArtifactLog{errCh}, nil
+	return &ArtifactLog{done}, nil
 }
 
 // Wait waits for the event handler to stop producing build log events for a specific artifact
-func (al *ArtifactLog) Wait() error {
-	err := <-al.errCh
-	return err
+func (al *ArtifactLog) Wait() {
+	<-al.done
 }

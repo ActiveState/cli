@@ -30,6 +30,7 @@ type BuildLogConnector interface {
 type ArtifactLogManager interface {
 	Start(artifact.ArtifactID) error
 	Stop(artifact.ArtifactID) error
+	Close() error
 }
 
 type Events interface {
@@ -59,6 +60,8 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 	events.BuildStarting(total)
 
 	go func() {
+		// stop and wait for all artifact logs that have not been stopped yet
+		defer artifactLogMgr.Close()
 		defer close(ch)
 		defer close(errCh)
 		defer events.BuildFinished()
