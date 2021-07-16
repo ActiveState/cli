@@ -193,7 +193,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, suite.baseProject)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.AppendEnv("VERBOSE=true"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
 	cp.Expect("not authorized")
 	cp.Send("y")
 	cp.ExpectLongString("Who would you like the owner of this project to be?")
