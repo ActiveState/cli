@@ -10,7 +10,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	var platProj *mono_models.Project
 	if owner != "" && project != "" {
 		var err error
@@ -36,7 +36,7 @@ func RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, own
 	return requestBuild(auth, recipeID, orgID, projectID, buildAnnotations)
 }
 
-func requestBuild(auth *authentication.Auth, recipeID, orgID, projID strfmt.UUID, annotations headchef.BuildAnnotations) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func requestBuild(auth *authentication.Auth, recipeID, orgID, projID strfmt.UUID, annotations headchef.BuildAnnotations) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	buildRequest, err := headchef.NewBuildRequest(recipeID, orgID, projID, annotations)
 	if err != nil {
 		return headchef.Error, nil, err

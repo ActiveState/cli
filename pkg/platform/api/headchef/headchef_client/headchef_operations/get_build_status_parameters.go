@@ -6,14 +6,16 @@ package headchef_operations
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
+
+	strfmt "github.com/go-openapi/strfmt"
 )
 
 // NewGetBuildStatusParams creates a new GetBuildStatusParams object
@@ -60,8 +62,16 @@ for the get build status operation typically these are written to a http.Request
 */
 type GetBuildStatusParams struct {
 
-	/*BuildRequestID*/
-	BuildRequestID strfmt.UUID
+	/*IDType
+	  Optionally specify whether the provided ID is a recipe ID or a build request ID. If specified, this parameter causes the endpoint to override the default behavior and only treat the ID as the specified type when attempting to resolve a build.
+
+	*/
+	IDType *string
+	/*RecipeOrBuildRequestID
+	  Either the recipe ID or the build request ID of the build. This endpoint will try to find the build requested by treating the ID first as a build request ID. Only if no build is found with a matching build request ID will it fall back to treating it as a recipe ID. This behavior can be overridden using the id_type parameter.
+
+	*/
+	RecipeOrBuildRequestID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
@@ -101,15 +111,26 @@ func (o *GetBuildStatusParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
-// WithBuildRequestID adds the buildRequestID to the get build status params
-func (o *GetBuildStatusParams) WithBuildRequestID(buildRequestID strfmt.UUID) *GetBuildStatusParams {
-	o.SetBuildRequestID(buildRequestID)
+// WithIDType adds the iDType to the get build status params
+func (o *GetBuildStatusParams) WithIDType(iDType *string) *GetBuildStatusParams {
+	o.SetIDType(iDType)
 	return o
 }
 
-// SetBuildRequestID adds the buildRequestId to the get build status params
-func (o *GetBuildStatusParams) SetBuildRequestID(buildRequestID strfmt.UUID) {
-	o.BuildRequestID = buildRequestID
+// SetIDType adds the idType to the get build status params
+func (o *GetBuildStatusParams) SetIDType(iDType *string) {
+	o.IDType = iDType
+}
+
+// WithRecipeOrBuildRequestID adds the recipeOrBuildRequestID to the get build status params
+func (o *GetBuildStatusParams) WithRecipeOrBuildRequestID(recipeOrBuildRequestID strfmt.UUID) *GetBuildStatusParams {
+	o.SetRecipeOrBuildRequestID(recipeOrBuildRequestID)
+	return o
+}
+
+// SetRecipeOrBuildRequestID adds the recipeOrBuildRequestId to the get build status params
+func (o *GetBuildStatusParams) SetRecipeOrBuildRequestID(recipeOrBuildRequestID strfmt.UUID) {
+	o.RecipeOrBuildRequestID = recipeOrBuildRequestID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -120,8 +141,24 @@ func (o *GetBuildStatusParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	}
 	var res []error
 
-	// path param build_request_id
-	if err := r.SetPathParam("build_request_id", o.BuildRequestID.String()); err != nil {
+	if o.IDType != nil {
+
+		// query param id_type
+		var qrIDType string
+		if o.IDType != nil {
+			qrIDType = *o.IDType
+		}
+		qIDType := qrIDType
+		if qIDType != "" {
+			if err := r.SetQueryParam("id_type", qIDType); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	// path param recipe_or_build_request_id
+	if err := r.SetPathParam("recipe_or_build_request_id", o.RecipeOrBuildRequestID.String()); err != nil {
 		return err
 	}
 

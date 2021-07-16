@@ -9,8 +9,9 @@ import (
 	"encoding/json"
 	"strconv"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -18,7 +19,6 @@ import (
 // V1BuildRequest Build Request V1
 //
 // A build request (v1) which is submitted to the Head Chef REST API. A build request may contain either a full recipe or just the ID of a recipe stored in the inventory API.
-//
 // swagger:model v1BuildRequest
 type V1BuildRequest struct {
 
@@ -37,14 +37,14 @@ type V1BuildRequest struct {
 	Format *string `json:"format,omitempty"`
 
 	// recipe
-	Recipe *V1Recipe `json:"recipe,omitempty"`
+	Recipe *V1BuildRequestRecipe `json:"recipe,omitempty"`
 
 	// The ID of a recipe solved using the inventory API solutions endpoint
 	// Format: uuid
 	RecipeID strfmt.UUID `json:"recipe_id,omitempty"`
 
 	// requester
-	Requester *V1Requester `json:"requester,omitempty"`
+	Requester *V1BuildRequestRequester `json:"requester,omitempty"`
 }
 
 // Validate validates this v1 build request

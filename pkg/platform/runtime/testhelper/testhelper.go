@@ -57,17 +57,17 @@ func save(dir, name string, m interface{}) error {
 	return ioutil.WriteFile(fn, d, 0666)
 }
 
-func LoadBuildResponse(t *testing.T, name string) *headchef_models.BuildStatusResponse {
+func LoadBuildResponse(t *testing.T, name string) *headchef_models.V1BuildStatusResponse {
 	d, err := ioutil.ReadFile(filepath.Join(dataPath(t), "builds", fmt.Sprintf("%s.json", name)))
 	require.NoError(t, err)
 
-	var status headchef_models.BuildStatusResponse
+	var status headchef_models.V1BuildStatusResponse
 	err = json.Unmarshal(d, &status)
 	require.NoError(t, err)
 
 	return &status
 }
 
-func SaveBuildResponse(name string, m *headchef_models.BuildStatusResponse) error {
+func SaveBuildResponse(name string, m *headchef_models.V1BuildStatusResponse) error {
 	return save("builds", name, m)
 }

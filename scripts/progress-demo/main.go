@@ -105,7 +105,10 @@ func run() error {
 	}
 
 	prod := events.NewRuntimeEventProducer()
-	handler := runbits.DefaultRuntimeEventHandler(outputhelper.NewCatcher())
+	handler, err := runbits.DefaultRuntimeEventHandler(outputhelper.NewCatcher())
+	if err != nil {
+		return fmt.Errorf("failed to create default runtime event handler: %w", err)
+	}
 
 	mock := newMockProducer(prod, failedSteps)
 

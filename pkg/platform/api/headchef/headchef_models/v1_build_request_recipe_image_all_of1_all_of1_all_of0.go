@@ -22,8 +22,6 @@ import (
 type V1BuildRequestRecipeImageAllOf1AllOf1AllOf0 struct {
 
 	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
-	// Required: true
-	// Min Length: 1
 	SortableVersion []string `json:"sortable_version"`
 
 	// The canonical version string for the resource. Should be as specific as possible (e.g. '10.9.6' of macOS instead of just '10.9'). May contain non-numeric version segments and other formatting characters if necessary.
@@ -51,8 +49,8 @@ func (m *V1BuildRequestRecipeImageAllOf1AllOf1AllOf0) Validate(formats strfmt.Re
 
 func (m *V1BuildRequestRecipeImageAllOf1AllOf1AllOf0) validateSortableVersion(formats strfmt.Registry) error {
 
-	if err := validate.Required("sortable_version", "body", m.SortableVersion); err != nil {
-		return err
+	if swag.IsZero(m.SortableVersion) { // not required
+		return nil
 	}
 
 	for i := 0; i < len(m.SortableVersion); i++ {

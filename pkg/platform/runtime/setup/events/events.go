@@ -24,6 +24,7 @@ package events
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -98,6 +99,45 @@ func newArtifactBaseEvent(suffix string, step SetupStep, artifactID artifact.Art
 	return artifactBaseEvent{newBaseEvent(fmt.Sprintf("artifact_%s_%s", step.String(), suffix), step), artifactID}
 }
 
+type artifactBuildEvent struct {
+	artifactBaseEvent
+	logURI string
+}
+
+func newArtifactBuildEvent(suffix string, step SetupStep, artifactID artifact.ArtifactID, logURI string) artifactBuildEvent {
+	return artifactBuildEvent{newArtifactBaseEvent(suffix, step, artifactID), logURI}
+}
+
+// ArtifactResolverEvents forwards a function to resolve artifact names (as soon as that information becomes available)
+type ArtifactResolverEvent struct {
+	resolver        ArtifactResolver
+	downloadable    []artifact.ArtifactDownload
+	failedArtifacts []artifact.FailedArtifact
+}
+
+// Resolver returns a function that resolves artifact names
+func (ae ArtifactResolverEvent) Resolver() ArtifactResolver {
+	return ae.resolver
+}
+
+// Resolver returns a function that resolves artifact names
+func (ae ArtifactResolverEvent) DownloadableArtifacts() []artifact.ArtifactDownload {
+	return ae.downloadable
+}
+
+// Resolver returns a function that resolves artifact names
+func (ae ArtifactResolverEvent) FailedArtifacts() []artifact.FailedArtifact {
+	return ae.failedArtifacts
+}
+
+func (ae ArtifactResolverEvent) String() string {
+	return "artifact_resolver"
+}
+
+func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifacts []artifact.FailedArtifact) ArtifactResolverEvent {
+	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
+}
+
 // TotalArtifactEvent reports the number of total artifacts as soon as they are known
 type TotalArtifactEvent struct {
 	total int
@@ -119,10 +159,16 @@ func newTotalArtifactEvent(total int) TotalArtifactEvent {
 // BuildStartEvent reports the beginning of the remote build process
 type BuildStartEvent struct {
 	baseEvent
+	totalBuilds int
 }
 
-func newBuildStartEvent() BuildStartEvent {
-	return BuildStartEvent{newBaseEvent("build_start", Build)}
+// Total number of artifacts that we have to build
+func (be BuildStartEvent) Total() int {
+	return be.totalBuilds
+}
+
+func newBuildStartEvent(totalBuilds int) BuildStartEvent {
+	return BuildStartEvent{newBaseEvent("build_start", Build), totalBuilds}
 }
 
 // BuildCompleteEvent reports the successful completion of a build
@@ -141,22 +187,56 @@ func (be artifactBaseEvent) ArtifactID() artifact.ArtifactID {
 // ArtifactStartEvent is sent when an artifact enters a new processing step
 type ArtifactStartEvent struct {
 	artifactBaseEvent
-	artifactName string
-	total        int
+	total int
 }
 
-func newArtifactStartEvent(step SetupStep, artifactID artifact.ArtifactID, artifactName string, total int) ArtifactStartEvent {
-	return ArtifactStartEvent{newArtifactBaseEvent("start", step, artifactID), artifactName, total}
-}
-
-// ArtifactName returns the name of the artifact that entered the new step
-func (ase ArtifactStartEvent) ArtifactName() string {
-	return ase.artifactName
+func newArtifactStartEvent(step SetupStep, artifactID artifact.ArtifactID, total int) ArtifactStartEvent {
+	return ArtifactStartEvent{newArtifactBaseEvent("start", step, artifactID), total}
 }
 
 // Total returns the total number of elements (usually bytes) that we expect for this artifact in the given step
 func (ase ArtifactStartEvent) Total() int {
 	return ase.total
+}
+
+// ArtifactBuildProgressEvent serializes a log line in a build log file
+type ArtifactBuildProgressEvent struct {
+	artifactBaseEvent
+
+	timeStamp string
+	message   string
+	facility  string
+	pipeName  string
+	source    string
+}
+
+// TimeStamp resturns the timestamp when the logline was generated
+func (ae ArtifactBuildProgressEvent) TimeStamp() string {
+	return ae.timeStamp
+}
+
+// Message returns the log message
+func (ae ArtifactBuildProgressEvent) Message() string {
+	return ae.message
+}
+
+// Facility returns the log facility (INFO/ERROR/...)
+func (ae ArtifactBuildProgressEvent) Facility() string {
+	return ae.facility
+}
+
+// PipeName returns the pipe through which this log line was generated (stdout/stderr/...)
+func (ae ArtifactBuildProgressEvent) PipeName() string {
+	return ae.pipeName
+}
+
+// Source is a descriptor for the source of this log (eg., builder/build-wrapper/...)
+func (ae ArtifactBuildProgressEvent) Source() string {
+	return ae.source
+}
+
+func newArtifactBuildProgressEvent(artifactID artifact.ArtifactID, timeStamp string, msg, facility, pipeName, source string) ArtifactBuildProgressEvent {
+	return ArtifactBuildProgressEvent{newArtifactBaseEvent("progress", Build, artifactID), timeStamp, msg, facility, pipeName, source}
 }
 
 // ArtifactProgressEvent is sent when the artifact has progressed in the given step
@@ -176,16 +256,16 @@ func newArtifactProgressEvent(step SetupStep, artifactID artifact.ArtifactID, in
 
 // ArtifactCompleteEvent is sent when an artifact step completed
 type ArtifactCompleteEvent struct {
-	artifactBaseEvent
+	artifactBuildEvent
 }
 
-func newArtifactCompleteEvent(step SetupStep, artifactID artifact.ArtifactID) ArtifactCompleteEvent {
-	return ArtifactCompleteEvent{newArtifactBaseEvent("complete", step, artifactID)}
+func newArtifactCompleteEvent(step SetupStep, artifactID artifact.ArtifactID, logURI string) ArtifactCompleteEvent {
+	return ArtifactCompleteEvent{newArtifactBuildEvent("complete", step, artifactID, logURI)}
 }
 
 // ArtifactFailureEvent is sent when an artifact failed to process through the given step
 type ArtifactFailureEvent struct {
-	artifactBaseEvent
+	artifactBuildEvent
 	errorMessage string
 }
 
@@ -194,8 +274,8 @@ func (fe ArtifactFailureEvent) Failure() string {
 	return fe.errorMessage
 }
 
-func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, errorMessage string) ArtifactFailureEvent {
-	return ArtifactFailureEvent{newArtifactBaseEvent("failure", step, artifactID), errorMessage}
+func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, logURI, errorMessage string) ArtifactFailureEvent {
+	return ArtifactFailureEvent{newArtifactBuildEvent("failure", step, artifactID, logURI), errorMessage}
 }
 
 // ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available
@@ -228,4 +308,19 @@ func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRe
 	return ChangeSummaryEvent{
 		artifacts, requested, changed,
 	}
+}
+
+// HeartbeatEvent is produced when nothing else is written to the websocket connection
+type HeartbeatEvent struct {
+	baseEvent
+	timeStamp time.Time
+}
+
+// TimeStamp returns the time of the heart beat
+func (he HeartbeatEvent) TimeStamp() time.Time {
+	return he.timeStamp
+}
+
+func newHeartbeatEvent(timeStamp time.Time) HeartbeatEvent {
+	return HeartbeatEvent{newBaseEvent("heartbeat", Build), timeStamp}
 }

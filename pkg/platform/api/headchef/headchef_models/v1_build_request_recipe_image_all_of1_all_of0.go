@@ -30,7 +30,7 @@ type V1BuildRequestRecipeImageAllOf1AllOf0 struct {
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker Mac WindowsDocker WindowsInstance]
+	// Enum: [Docker Mac MacSandbox WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -82,7 +82,7 @@ var v1BuildRequestRecipeImageAllOf1AllOf0TypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","Mac","WindowsDocker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","MacSandbox","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -97,6 +97,9 @@ const (
 
 	// V1BuildRequestRecipeImageAllOf1AllOf0TypeMac captures enum value "Mac"
 	V1BuildRequestRecipeImageAllOf1AllOf0TypeMac string = "Mac"
+
+	// V1BuildRequestRecipeImageAllOf1AllOf0TypeMacSandbox captures enum value "MacSandbox"
+	V1BuildRequestRecipeImageAllOf1AllOf0TypeMacSandbox string = "MacSandbox"
 
 	// V1BuildRequestRecipeImageAllOf1AllOf0TypeWindowsDocker captures enum value "WindowsDocker"
 	V1BuildRequestRecipeImageAllOf1AllOf0TypeWindowsDocker string = "WindowsDocker"

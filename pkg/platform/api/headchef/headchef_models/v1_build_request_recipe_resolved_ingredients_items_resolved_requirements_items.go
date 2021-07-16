@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems Requirement Sub Schema
+// V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems Requirement
 //
 // An order requirement is a single package name and version specifier requested in an order.
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems
@@ -29,7 +29,7 @@ type V1BuildRequestRecipeResolvedIngredientsItemsResolvedRequirementsItems struc
 	// Format: uuid
 	IngredientVersionID strfmt.UUID `json:"ingredient_version_id,omitempty"`
 
-	// The namespace for the required feature. For now, this can be empty as it is only used to request pre-platform installer ingredients.
+	// The namespace for the required feature.
 	// Required: true
 	Namespace *string `json:"namespace"`
 

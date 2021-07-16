@@ -6,10 +6,14 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"encoding/json"
+	"strconv"
+
 	strfmt "github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3 Ingredient Version Revision Core
@@ -17,65 +21,288 @@ import (
 // The fields of an ingredient version that can be updated by creating a new revision
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3
 type V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3 struct {
-	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0
 
-	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1
-}
+	// The SPDX license expression based on ActiveState's analysis of the package's licensing
+	ActivestateLicenseExpression string `json:"activestate_license_expression,omitempty"`
 
-// UnmarshalJSON unmarshals this object from a JSON structure
-func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) UnmarshalJSON(raw []byte) error {
-	// AO0
-	var aO0 V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0
-	if err := swag.ReadJSON(raw, &aO0); err != nil {
-		return err
-	}
-	m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0 = aO0
+	// The platform user_id for the author of the revision. This will be automatically populated for writes based on the credentials you provide to the API.
+	// Format: uuid
+	AuthorPlatformUserID strfmt.UUID `json:"author_platform_user_id,omitempty"`
 
-	// AO1
-	var aO1 V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1
-	if err := swag.ReadJSON(raw, &aO1); err != nil {
-		return err
-	}
-	m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1 = aO1
+	// Camel-specific metadata needed to build this ingredient version revision in camel, if there is any.
+	CamelExtras interface{} `json:"camel_extras,omitempty"`
 
-	return nil
-}
+	// A comment describing the revision.
+	// Required: true
+	Comment *string `json:"comment"`
 
-// MarshalJSON marshals this object to a JSON structure
-func (m V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) MarshalJSON() ([]byte, error) {
-	_parts := make([][]byte, 0, 2)
+	// dependencies
+	Dependencies []V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3DependenciesItems `json:"dependencies"`
 
-	aO0, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0)
-	if err != nil {
-		return nil, err
-	}
-	_parts = append(_parts, aO0)
+	// Whether or not this revision is indemnified for customers paying for indemnification. If set to null, then this will use the is_indemnified value of the previous revision or false if this is the first revision.
+	IsIndemnified *bool `json:"is_indemnified,omitempty"`
 
-	aO1, err := swag.WriteJSON(m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1)
-	if err != nil {
-		return nil, err
-	}
-	_parts = append(_parts, aO1)
+	// Whether or not this is a stable release of the package
+	IsStableRelease *bool `json:"is_stable_release,omitempty"`
 
-	return swag.ConcatJSON(_parts...), nil
+	// Whether this revision should be considered 'stable'. When a new stable revision is created, it supercedes any existing stable revision and becomes the default revision of the revisioned resource going forward.
+	IsStableRevision *bool `json:"is_stable_revision,omitempty"`
+
+	// An S3 URI to a JSON manifest mapping files in the package to licenses for that file
+	// Format: uri
+	LicenseManifestURI *strfmt.URI `json:"license_manifest_uri,omitempty"`
+
+	// S3 URL where the source distribution is stored for our platform
+	// Format: uri
+	PlatformSourceURI *strfmt.URI `json:"platform_source_uri,omitempty"`
+
+	// provided features
+	// Required: true
+	ProvidedFeatures []*V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ProvidedFeaturesItems `json:"provided_features"`
+
+	// The reason this revision exists.
+	// Required: true
+	// Enum: [import manual_change smart_import]
+	Reason *string `json:"reason"`
+
+	// The SPDX license expression based on running an automated scanner to determine the package's licensing
+	ScannerLicenseExpression string `json:"scanner_license_expression,omitempty"`
+
+	// A checksum of the source distribution. The actual type of the checksum (MD5, S3 Etag, etc.) is not specified. It's assumed that the system that populates and uses this data will know how to work with these checksums.
+	SourceChecksum *string `json:"source_checksum,omitempty"`
+
+	// The status of the revision. This can be one of stable, unstable, deleted, or deprecated.
+	// Enum: [deleted deprecated stable unstable]
+	Status string `json:"status,omitempty"`
 }
 
 // Validate validates this v1 build request recipe resolved ingredients items ingredient version all of3
 func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0
-	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf0.Validate(formats); err != nil {
+	if err := m.validateAuthorPlatformUserID(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1
-	if err := m.V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3AllOf1.Validate(formats); err != nil {
+
+	if err := m.validateComment(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDependencies(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLicenseManifestURI(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePlatformSourceURI(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProvidedFeatures(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateReason(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateAuthorPlatformUserID(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.AuthorPlatformUserID) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("author_platform_user_id", "body", "uuid", m.AuthorPlatformUserID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateComment(formats strfmt.Registry) error {
+
+	if err := validate.Required("comment", "body", m.Comment); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateDependencies(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Dependencies) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Dependencies); i++ {
+
+		if err := m.Dependencies[i].Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
+			}
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateLicenseManifestURI(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.LicenseManifestURI) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("license_manifest_uri", "body", "uri", m.LicenseManifestURI.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validatePlatformSourceURI(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.PlatformSourceURI) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("platform_source_uri", "body", "uri", m.PlatformSourceURI.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateProvidedFeatures(formats strfmt.Registry) error {
+
+	if err := validate.Required("provided_features", "body", m.ProvidedFeatures); err != nil {
+		return err
+	}
+
+	for i := 0; i < len(m.ProvidedFeatures); i++ {
+		if swag.IsZero(m.ProvidedFeatures[i]) { // not required
+			continue
+		}
+
+		if m.ProvidedFeatures[i] != nil {
+			if err := m.ProvidedFeatures[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("provided_features" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+var v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeReasonPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["import","manual_change","smart_import"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeReasonPropEnum = append(v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeReasonPropEnum, v)
+	}
+}
+
+const (
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonImport captures enum value "import"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonImport string = "import"
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonManualChange captures enum value "manual_change"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonManualChange string = "manual_change"
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonSmartImport captures enum value "smart_import"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3ReasonSmartImport string = "smart_import"
+)
+
+// prop value enum
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateReasonEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeReasonPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateReason(formats strfmt.Registry) error {
+
+	if err := validate.Required("reason", "body", m.Reason); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateReasonEnum("reason", "body", *m.Reason); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeStatusPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["deleted","deprecated","stable","unstable"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeStatusPropEnum = append(v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeStatusPropEnum, v)
+	}
+}
+
+const (
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusDeleted captures enum value "deleted"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusDeleted string = "deleted"
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusDeprecated captures enum value "deprecated"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusDeprecated string = "deprecated"
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusStable captures enum value "stable"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusStable string = "stable"
+
+	// V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusUnstable captures enum value "unstable"
+	V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3StatusUnstable string = "unstable"
+)
+
+// prop value enum
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateStatusEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, v1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3TypeStatusPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *V1BuildRequestRecipeResolvedIngredientsItemsIngredientVersionAllOf3) validateStatus(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
+		return err
+	}
+
 	return nil
 }
 

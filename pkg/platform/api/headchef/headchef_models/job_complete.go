@@ -8,8 +8,9 @@ package headchef_models
 import (
 	"encoding/json"
 
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -17,7 +18,6 @@ import (
 // JobComplete JobComplete
 //
 // A Job reports status details from the scheduler API.
-//
 // swagger:model jobComplete
 type JobComplete struct {
 
@@ -26,14 +26,18 @@ type JobComplete struct {
 	// Format: uuid
 	JobID *strfmt.UUID `json:"job_id"`
 
+	// The tail of task logs.
+	Logs string `json:"logs,omitempty"`
+
 	// The state of the job at time of completion.
 	// Required: true
 	// Enum: [Completed Error Failed Pending Running]
 	State *string `json:"state"`
 
 	// The timestamp for when this job completed.
+	// Required: true
 	// Format: date-time
-	Timestamp strfmt.DateTime `json:"timestamp,omitempty"`
+	Timestamp *strfmt.DateTime `json:"timestamp"`
 }
 
 // Validate validates this job complete
@@ -125,8 +129,8 @@ func (m *JobComplete) validateState(formats strfmt.Registry) error {
 
 func (m *JobComplete) validateTimestamp(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Timestamp) { // not required
-		return nil
+	if err := validate.Required("timestamp", "body", m.Timestamp); err != nil {
+		return err
 	}
 
 	if err := validate.FormatOf("timestamp", "body", "date-time", m.Timestamp.String(), formats); err != nil {

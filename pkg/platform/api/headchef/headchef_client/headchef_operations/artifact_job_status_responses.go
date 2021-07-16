@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // ArtifactJobStatusReader is a Reader for the ArtifactJobStatus structure.
@@ -23,18 +24,21 @@ type ArtifactJobStatusReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *ArtifactJobStatusReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewArtifactJobStatusOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 404:
 		result := NewArtifactJobStatusNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewArtifactJobStatusDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -85,10 +89,6 @@ func (o *ArtifactJobStatusNotFound) Error() string {
 	return fmt.Sprintf("[POST /artifacts/{artifact_id}/job-status][%d] artifactJobStatusNotFound  %+v", 404, o.Payload)
 }
 
-func (o *ArtifactJobStatusNotFound) GetPayload() *headchef_models.RestAPIError {
-	return o.Payload
-}
-
 func (o *ArtifactJobStatusNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.RestAPIError)
@@ -125,10 +125,6 @@ func (o *ArtifactJobStatusDefault) Code() int {
 
 func (o *ArtifactJobStatusDefault) Error() string {
 	return fmt.Sprintf("[POST /artifacts/{artifact_id}/job-status][%d] artifactJobStatus default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *ArtifactJobStatusDefault) GetPayload() *headchef_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *ArtifactJobStatusDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1ConditionsItems Condition Sub Schema
+// V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1ConditionsItems Condition
 //
 // A feature that must be present in a recipe for the containing entity to apply. If nothing in the recipe matches this condition, the containing entity is disable/cannot be used.
 // swagger:model v1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1ConditionsItems
@@ -29,11 +29,11 @@ type V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1Conditio
 	// Required: true
 	Namespace *string `json:"namespace"`
 
-	// Requirements Sub Schema
+	// Requirements
 	//
 	// The version constraints that an ingredient version's requirement or condition puts on a feature
 	// Required: true
-	// Min Length: 1
+	// Min Items: 1
 	Requirements []*V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1ConditionsItemsRequirementsItems `json:"requirements"`
 }
 
@@ -80,6 +80,12 @@ func (m *V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1Cond
 func (m *V1BuildRequestRecipeResolvedIngredientsItemsBuildScriptsItemsAllOf1ConditionsItems) validateRequirements(formats strfmt.Registry) error {
 
 	if err := validate.Required("requirements", "body", m.Requirements); err != nil {
+		return err
+	}
+
+	iRequirementsSize := int64(len(m.Requirements))
+
+	if err := validate.MinItems("requirements", "body", iRequirementsSize, 1); err != nil {
 		return err
 	}
 

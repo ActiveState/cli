@@ -25,24 +25,6 @@ func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
 }
 
-func (s *Setup) ReusableArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted store.StoredArtifactMap) store.StoredArtifactMap {
-	keep := make(store.StoredArtifactMap)
-	// copy store
-	for k, v := range storedArtifacted {
-		keep[k] = v
-	}
-
-	// remove all updated and removed artifacts
-	for _, upd := range changeset.Updated {
-		delete(keep, upd.FromID)
-	}
-	for _, id := range changeset.Removed {
-		delete(keep, id)
-	}
-
-	return keep
-}
-
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {
 	del := map[artifact.ArtifactID]struct{}{}
 	for _, upd := range changeset.Updated {
@@ -163,6 +145,6 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
+func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
 	return artifact.NewDownloadsFromBuild(buildStatus)
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItemsRequirementsItems v1 build request recipe platform images items all of1 all of1 all of2 conditions items requirements items
+// V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItemsRequirementsItems Requirement
 // swagger:model v1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItemsRequirementsItems
 type V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItemsRequirementsItems struct {
 
@@ -26,7 +26,6 @@ type V1BuildRequestRecipePlatformImagesItemsAllOf1AllOf1AllOf2ConditionsItemsReq
 	Comparator *string `json:"comparator"`
 
 	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
-	// Min Length: 1
 	SortableVersion []string `json:"sortable_version"`
 
 	// The required version in its original form.

@@ -95,8 +95,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	}
 
 	// when the msg handler returns, *r and setupErr are updated.
-
-	return setupErr
+	return msgHandler.AddHints(setupErr)
 }
 
 // Env returns a key-value map of the environment variables that need to be set for this runtime
