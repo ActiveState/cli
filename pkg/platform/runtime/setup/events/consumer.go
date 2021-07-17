@@ -21,7 +21,7 @@ type ProgressDigester interface {
 	BuildCompleted(withFailures bool) error
 
 	InstallationStarted(totalArtifacts int64) error
-	InstallationIncrement() error
+	InstallationStatusUpdate(current, total int64) error
 
 	BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error
 	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error
@@ -43,14 +43,15 @@ type RuntimeEventConsumer struct {
 	progress            ProgressDigester
 	summary             ChangeSummaryDigester
 	artifactNames       func(artifactID artifact.ArtifactID) string
-	totalArtifacts      int64
 	alreadyBuilt        int
 	isBuilding          bool      // are we currently building packages
 	buildsTotal         int64     // total number of artifacts that need to be built
+	installTotal        int64     // total number of artifacts that need to be installed
 	lastBuildEventRcvd  time.Time // timestamp when the last build event was received
 	numBuildCompleted   int64     // number of completed builds
 	numBuildFailures    int64     // number of failed builds
 	numInstallFailures  int64
+	numInstallCompleted int64
 	installationStarted bool
 }
 
@@ -82,20 +83,10 @@ func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 		eh.lastBuildEventRcvd = time.Now()
 		eh.artifactNames = t.Resolver()
 
-		// iterate over all artifacts that can already be downloaded (because they are already built)
-		for _, download := range t.DownloadableArtifacts() {
-			artifactName := eh.ResolveArtifactName(download.ArtifactID)
-			// Advance the progress with the status for the artifacts
-			eh.progress.BuildArtifactCompleted(download.ArtifactID, artifactName, download.UnsignedLogURI, true)
-		}
 		eh.alreadyBuilt = len(t.DownloadableArtifacts())
-		for _, failed := range t.FailedArtifacts() {
-			artifactName := eh.ResolveArtifactName(failed.ArtifactID)
-			eh.numBuildFailures++
-			eh.progress.BuildArtifactFailure(failed.ArtifactID, artifactName, failed.UnsignedLogURI, failed.ErrorMsg, true)
-		}
+		eh.numBuildFailures = int64(len(t.FailedArtifacts()))
 	case TotalArtifactEvent:
-		eh.totalArtifacts = int64(t.Total())
+		eh.installTotal = int64(t.Total())
 		return nil
 	case BuildStartEvent:
 		eh.buildsTotal = int64(t.Total() - eh.alreadyBuilt)
@@ -110,7 +101,7 @@ func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 	case HeartbeatEvent:
 		if eh.isBuilding && time.Since(eh.lastBuildEventRcvd) > time.Second*15 {
 			eh.lastBuildEventRcvd = time.Now()
-			return eh.progress.StillBuilding(int(eh.numBuildCompleted), int(eh.buildsTotal))
+			return eh.progress.StillBuilding(int(eh.numBuildCompleted)-eh.alreadyBuilt, int(eh.buildsTotal))
 		}
 	default:
 		logging.Debug("Received unhandled event: %s", ev.String())
@@ -162,7 +153,8 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 	case ArtifactCompleteEvent:
 		// a completed installation event translates to a completed artifact
 		if t.Step() == Install {
-			err := eh.progress.InstallationIncrement()
+			eh.numInstallCompleted++
+			err := eh.progress.InstallationStatusUpdate(eh.numInstallCompleted, eh.installTotal)
 			if err != nil {
 				return err
 			}
@@ -182,10 +174,10 @@ func (eh *RuntimeEventConsumer) ensureInstallationStarted() error {
 	if eh.installationStarted {
 		return nil
 	}
-	if eh.totalArtifacts == 0 {
+	if eh.installTotal == 0 {
 		return errs.New("total number of artifacts has not been set yet.")
 	}
-	err := eh.progress.InstallationStarted(eh.totalArtifacts)
+	err := eh.progress.InstallationStarted(eh.installTotal)
 	if err != nil {
 		return err
 	}

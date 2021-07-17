@@ -397,6 +397,9 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 		if err = buildLog.Wait(); err != nil {
 			errs <- err
 		}
+		if err = artifactLogManager.Close(); err != nil {
+			errs <- err
+		}
 	})
 
 	return <-aggregatedErr

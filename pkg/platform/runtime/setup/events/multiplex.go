@@ -58,16 +58,18 @@ func (mp *MultiPlexedProgress) InstallationStarted(totalArtifacts int64) error {
 	}
 	return aggErr
 }
-func (mp *MultiPlexedProgress) InstallationIncrement() error {
+
+func (mp *MultiPlexedProgress) InstallationStatusUpdate(current, total int64) error {
 	var aggErr error
 	for _, d := range mp.digesters {
-		err := d.InstallationIncrement()
+		err := d.InstallationStatusUpdate(current, total)
 		if err != nil {
 			aggErr = errs.Wrap(aggErr, "InstallationIncrement event error: %v", err)
 		}
 	}
 	return aggErr
 }
+
 func (mp *MultiPlexedProgress) BuildArtifactStarted(artifactID artifact.ArtifactID, name string) error {
 	var aggErr error
 	for _, d := range mp.digesters {
@@ -78,6 +80,7 @@ func (mp *MultiPlexedProgress) BuildArtifactStarted(artifactID artifact.Artifact
 	}
 	return aggErr
 }
+
 func (mp *MultiPlexedProgress) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, isCached bool) error {
 	var aggErr error
 	for _, d := range mp.digesters {
@@ -88,6 +91,7 @@ func (mp *MultiPlexedProgress) BuildArtifactCompleted(artifactID artifact.Artifa
 	}
 	return aggErr
 }
+
 func (mp *MultiPlexedProgress) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errMsg string, isCached bool) error {
 	var aggErr error
 	for _, d := range mp.digesters {

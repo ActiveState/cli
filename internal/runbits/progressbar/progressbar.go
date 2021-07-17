@@ -157,8 +157,8 @@ func (rp *RuntimeProgress) InstallationStarted(total int64) error {
 	return nil
 }
 
-// InstallationIncrement increments the overall installation progress count
-func (rp *RuntimeProgress) InstallationIncrement() error {
+// InstallationStatusUpdate increments the overall installation progress count
+func (rp *RuntimeProgress) InstallationStatusUpdate(_, _ int64) error {
 	if rp.installBar == nil {
 		return errs.New("Installation bar has not been initialized yet.")
 	}

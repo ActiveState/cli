@@ -1,11 +1,15 @@
 package events
 
 import (
+	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
+
+var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
 
 type ArtifactResolver func(a artifact.ArtifactID) string
 
@@ -13,12 +17,14 @@ type ArtifactResolver func(a artifact.ArtifactID) string
 // runtime messages into events communicated over a wrapped events channel.
 // The events need to be consumed by the RuntimeEventConsumer.
 type RuntimeEventProducer struct {
-	events chan SetupEventer
+	events  chan SetupEventer
+	artLogs *ArtifactLogDownload
 }
 
 func NewRuntimeEventProducer() *RuntimeEventProducer {
 	eventCh := make(chan SetupEventer)
-	return &RuntimeEventProducer{eventCh}
+	artLogs := NewArtifactLogDownload(eventCh)
+	return &RuntimeEventProducer{eventCh, artLogs}
 }
 
 func (r *RuntimeEventProducer) Events() <-chan SetupEventer {
@@ -26,6 +32,7 @@ func (r *RuntimeEventProducer) Events() <-chan SetupEventer {
 }
 
 func (r *RuntimeEventProducer) Close() {
+	r.artLogs.Close()
 	close(r.events)
 }
 func (r *RuntimeEventProducer) event(be SetupEventer) {
@@ -34,6 +41,18 @@ func (r *RuntimeEventProducer) event(be SetupEventer) {
 
 func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifactIDs []artifact.FailedArtifact) {
 	r.event(newArtifactResolverEvent(artifactResolver, downloadable, failedArtifactIDs))
+
+	for _, download := range downloadable {
+		r.event(newArtifactCompleteEvent(Build, download.ArtifactID, download.UnsignedLogURI))
+		if verboseLogging {
+			r.artLogs.RequestArtifactLog(download.ArtifactID, download.UnsignedLogURI)
+		}
+	}
+
+	for _, failed := range failedArtifactIDs {
+		r.event(newArtifactFailureEvent(Build, failed.ArtifactID, failed.UnsignedLogURI, failed.ErrorMsg))
+		r.artLogs.RequestArtifactLog(failed.ArtifactID, failed.UnsignedLogURI)
+	}
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
@@ -62,6 +81,9 @@ func (r *RuntimeEventProducer) ArtifactBuildCompleted(artifactID artifact.Artifa
 
 func (r *RuntimeEventProducer) ArtifactBuildFailed(artifactID artifact.ArtifactID, logURI, errorMessage string) {
 	r.event(newArtifactFailureEvent(Build, artifactID, logURI, errorMessage))
+	if !verboseLogging {
+		r.artLogs.RequestArtifactLog(artifactID, logURI)
+	}
 }
 
 func (r *RuntimeEventProducer) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp string, message, facility, pipeName, source string) {

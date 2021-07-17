@@ -13,6 +13,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
+// verboseLogging is true if the user provided an environment variable for it
+var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
+
 type recipeRequest struct {
 	RecipeID string `json:"recipeID"`
 }
@@ -96,17 +99,9 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				events.ArtifactBuildStarting(m.ArtifactID)
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts
-				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "real-time" {
+				if verboseLogging {
 					logging.Debug("requesting updates for %s", m.ArtifactID.String())
-					/*  This does *not* work:
-					request := artifactRequest{ArtifactID: m.ArtifactID.String()}
-					if err := conn.WriteJSON(request); err != nil {
-						errCh <- errs.Wrap(err, "Could not start artifact log request")
-						return
-					}
-					*/
 
-					// This does work:
 					if err := artifactLogMgr.Start(m.ArtifactID); err != nil {
 						errCh <- errs.Wrap(err, "Could not start artifact log request")
 						return
@@ -128,7 +123,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				}
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
 
-				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+				if verboseLogging {
 					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
 						errCh <- errs.Wrap(err, "Could not stop artifact log request")
 						return
@@ -145,7 +140,7 @@ func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBui
 				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
-				if os.Getenv(constants.LogBuildVerboseEnvVarName) == "true" {
+				if verboseLogging {
 					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
 						errCh <- errs.Wrap(err, "Could not stop artifact log request")
 						return
