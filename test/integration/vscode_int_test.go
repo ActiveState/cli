@@ -91,29 +91,19 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 
 	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
 	// https://www.pivotaltracker.com/story/show/178544144
-	type org struct {
+	org := struct {
 		Name            string `json:"name,omitempty"`
 		URLName         string `json:"URLName,omitempty"`
 		Tier            string `json:"tier,omitempty"`
 		PrivateProjects bool   `json:"privateProjects"`
+	}{
+		"Test-Organization",
+		"Test-Organization",
+		"Community Tier (Free)",
+		false,
 	}
 
-	orgs := []org{
-		{
-			"Test-Organization",
-			"Test-Organization",
-			"Community Tier (Free)",
-			false,
-		},
-		{
-			"ActiveState-CLI",
-			"ActiveState-CLI",
-			"Team Tier",
-			true,
-		},
-	}
-
-	expected, err := json.Marshal(orgs)
+	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
 	suite.Contains(cp.TrimmedSnapshot(), string(expected))
