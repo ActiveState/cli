@@ -3,7 +3,6 @@ package buildlogfile
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -21,7 +20,7 @@ type BuildLogFile struct {
 var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
 
 func New(out output.Outputer) (*BuildLogFile, error) {
-	logFile, err := os.CreateTemp("", fmt.Sprintf("build-log-%s", time.Now().Format("060102030405")))
+	logFile, err := os.CreateTemp("", "build-log-*")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to create temporary build log file")
 	}
