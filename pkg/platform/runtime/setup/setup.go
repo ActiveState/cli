@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -356,21 +355,20 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	conn, err := buildlogstream.Connect(ctx)
-	if err != nil {
-		return errs.Wrap(err, "Could not get build updates")
-	}
-	defer conn.Close()
-
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
 	for _, d := range downloads {
 		alreadyBuilt[d.ArtifactID] = struct{}{}
 	}
-	artifactLogManager := buildlog.NewArtifactLogs(ctx, s.events)
-	buildLog, err := buildlog.New(artifacts, alreadyBuilt, conn, artifactLogManager, s.events, *buildResult.Recipe.RecipeID)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, *buildResult.Recipe.RecipeID)
+	defer func() {
+		if err := buildLog.Close(); err != nil {
+			logging.Debug("Failed to close build log: %v", errs.JoinMessage(err))
+		}
+	}()
 
 	errs, aggregatedErr := aggregateErrors()
 
@@ -395,9 +393,6 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 		}()
 
 		if err = buildLog.Wait(); err != nil {
-			errs <- err
-		}
-		if err = artifactLogManager.Close(); err != nil {
 			errs <- err
 		}
 	})

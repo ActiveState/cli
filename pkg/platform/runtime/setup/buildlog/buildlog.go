@@ -1,15 +1,18 @@
 package buildlog
 
 import (
+	"context"
 	"os"
 	"time"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/gorilla/websocket"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -49,13 +52,33 @@ type Events interface {
 
 // BuildLog is an implementation of a build log
 type BuildLog struct {
-	ch    chan artifact.ArtifactDownload
-	errCh chan error
+	ch                 chan artifact.ArtifactDownload
+	errCh              chan error
+	artifactLogManager *ArtifactLogs
+	conn               *websocket.Conn
 }
 
-// New creates a new instance that allows us to wait for incoming build log information
+func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+	conn, err := buildlogstream.Connect(ctx)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
+	}
+	artifactLogManager := NewArtifactLogs(ctx, events)
+	bl, err := NewWithArtifactLogManager(artifactMap, alreadyBuilt, conn, artifactLogManager, events, recipeID)
+	if err != nil {
+		conn.Close()
+		artifactLogManager.Close()
+
+		return nil, err
+	}
+	bl.conn = conn
+	bl.artifactLogManager = artifactLogManager
+	return bl, nil
+}
+
+// NewWithArtifactLogmanager creates a new instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func NewWithArtifactLogManager(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -179,6 +202,21 @@ func (bl *BuildLog) Wait() error {
 		return errs[0]
 	}
 	return nil
+}
+
+func (bl *BuildLog) Close() error {
+	var aggErr error
+	if bl.artifactLogManager != nil {
+		if err := bl.artifactLogManager.Close(); err != nil {
+			aggErr = errs.Wrap(err, "Failed to close artifact log manager")
+		}
+	}
+	if bl.conn != nil {
+		if err := bl.conn.Close(); err != nil {
+			aggErr = errs.Wrap(aggErr, "Failed to close websocket connection: %v", err)
+		}
+	}
+	return aggErr
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
