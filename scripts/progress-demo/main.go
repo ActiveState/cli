@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 )
@@ -45,7 +46,7 @@ func main() {
 
 type mockProducer struct {
 	IDs      []strfmt.UUID
-	Names    []string
+	Names    map[artifact.ArtifactID]string
 	Prod     *events.RuntimeEventProducer
 	Failures string
 }
@@ -57,14 +58,14 @@ func (mp *mockProducer) NumArtifacts() int {
 func newMockProducer(prod *events.RuntimeEventProducer, failures string) *mockProducer {
 	return &mockProducer{
 		IDs:      []strfmt.UUID{"1", "2", "3", "4", "5"},
-		Names:    []string{"pkg 1", "pkg 2", "pkg 3", "pkg 4", "a very long pkg name (5)"},
+		Names:    map[artifact.ArtifactID]string{"1": "pkg 1", "2": "pkg 2", "3": "pkg 3", "4": "pkg 4", "5": "a very long pkg name (5)"},
 		Prod:     prod,
 		Failures: failures,
 	}
 }
 
 func (mp *mockProducer) mockStepProgress(index int, step events.SetupStep) bool {
-	mp.Prod.ArtifactStepStarting(step, mp.IDs[index], mp.Names[index], 100)
+	mp.Prod.ArtifactStepStarting(step, mp.IDs[index], 100)
 	wait()
 	for i := 0; i < 10; i++ {
 		mp.Prod.ArtifactStepProgress(step, mp.IDs[index], 10)
@@ -120,6 +121,12 @@ func run() error {
 		go func() {
 			defer wg.Done()
 			prod.TotalArtifacts(mock.NumArtifacts())
+			prod.ParsedArtifacts(func(id artifact.ArtifactID) string {
+				if n, ok := mock.Names[id]; ok {
+					return n
+				}
+				return "unknown"
+			}, nil, nil)
 			if withBuildEvents {
 				prod.BuildStarting(mock.NumArtifacts())
 			}
