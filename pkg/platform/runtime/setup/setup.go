@@ -166,6 +166,15 @@ func (s *Setup) update() error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to select setup implementation")
 	}
+
+	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
+		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
+		if s.target.Owner() == "" && s.target.Name() == "" {
+			messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
+		}
+		return locale.NewInputError("build_status_in_progress", "", messageURL)
+	}
+
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
@@ -292,13 +301,6 @@ func aggregateErrors() (chan<- error, <-chan error) {
 }
 
 func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
-		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
-		if s.target.Owner() == "" && s.target.Name() == "" {
-			messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
-		}
-		return locale.NewInputError("build_status_in_progress", "", messageURL)
-	}
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
