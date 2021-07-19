@@ -225,7 +225,7 @@ func TestBuildLog(t *testing.T) {
 			alm := &artifactLogsMock{}
 			tt.ConnectionMock(t, cm)
 
-			bl, err := New(artifactMap, tt.AlreadyBuiltArtifacts, cm, alm, mmh, recipeID)
+			bl, err := NewWithCustomConnections(artifactMap, tt.AlreadyBuiltArtifacts, cm, alm, mmh, recipeID)
 			require.NoError(t, err)
 
 			var downloads []artifact.ArtifactDownload

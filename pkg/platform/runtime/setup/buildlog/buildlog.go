@@ -36,7 +36,6 @@ type BuildLogConnector interface {
 type ArtifactLogManager interface {
 	Start(artifact.ArtifactID) error
 	Stop(artifact.ArtifactID) error
-	Close() error
 }
 
 type Events interface {
@@ -58,13 +57,15 @@ type BuildLog struct {
 	conn               *websocket.Conn
 }
 
+// New creates a new BuildLog instance that allows us to wait for incoming build log information
+// artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
 func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
 	}
 	artifactLogManager := NewArtifactLogs(ctx, events)
-	bl, err := NewWithArtifactLogManager(artifactMap, alreadyBuilt, conn, artifactLogManager, events, recipeID)
+	bl, err := NewWithCustomConnections(artifactMap, alreadyBuilt, conn, artifactLogManager, events, recipeID)
 	if err != nil {
 		conn.Close()
 		artifactLogManager.Close()
@@ -72,13 +73,11 @@ func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.Artif
 		return nil, err
 	}
 	bl.conn = conn
-	bl.artifactLogManager = artifactLogManager
 	return bl, nil
 }
 
-// NewWithArtifactLogmanager creates a new instance that allows us to wait for incoming build log information
-// artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func NewWithArtifactLogManager(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+// NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
+func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -86,8 +85,6 @@ func NewWithArtifactLogManager(artifactMap map[artifact.ArtifactID]artifact.Arti
 	events.BuildStarting(total)
 
 	go func() {
-		// stop and wait for all artifact logs that have not been stopped yet
-		defer artifactLogMgr.Close()
 		defer close(ch)
 		defer close(errCh)
 		defer events.BuildFinished()
