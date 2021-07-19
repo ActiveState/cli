@@ -51,8 +51,8 @@ func (mpo *mockProgressOutput) InstallationStarted(total int64) error {
 	mpo.installationTotal = total
 	return nil
 }
-func (mpo *mockProgressOutput) InstallationIncrement() error {
-	mpo.installationCurrent++
+func (mpo *mockProgressOutput) InstallationStatusUpdate(current, total int64) error {
+	mpo.installationCurrent = int(current)
 	return nil
 }
 func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
