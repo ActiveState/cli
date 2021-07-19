@@ -12,6 +12,7 @@ type ArtifactLog struct {
 }
 
 // NewArtifactLog subscribes to events on the connection, and forwards build log events via the events handler
+// This is just a stripped-down version of the BuildLog.  Ideally the BuildLog can handle these messages on the websocket-connection that is given to it. My hope is that once https://www.pivotaltracker.com/story/show/178901762 is resolved, that we can get rid of this struct completely.
 func NewArtifactLog(artifactID artifact.ArtifactID, conn BuildLogConnector, events Events) (*ArtifactLog, error) {
 	done := make(chan struct{})
 
