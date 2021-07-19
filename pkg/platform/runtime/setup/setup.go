@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -167,16 +168,15 @@ func (s *Setup) update() error {
 		return errs.Wrap(err, "Failed to select setup implementation")
 	}
 
-	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
-		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
-		if s.target.Owner() == "" && s.target.Name() == "" {
-			messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
-		}
-		return locale.NewInputError("build_status_in_progress", "", messageURL)
-	}
-
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
+		if errors.Is(err, artifact.CamelRuntimeBuilding) {
+			messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
+			if s.target.Owner() == "" && s.target.Name() == "" {
+				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
+			}
+			return locale.WrapInputError(err, "build_status_in_progress", "", messageURL)
+		}
 		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 

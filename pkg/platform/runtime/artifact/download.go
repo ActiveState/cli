@@ -14,6 +14,8 @@ type ArtifactDownload struct {
 	Checksum       string
 }
 
+var CamelRuntimeBuilding error = errs.New("camel runtime is currently building")
+
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."
 
@@ -46,5 +48,9 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 		}
 	}
 
-	return nil, errs.New("No download found in build response.")
+	if buildStatus.Type != nil && *buildStatus.Type == headchef_models.V1BuildStatusResponseTypeBuildStarted {
+		return nil, CamelRuntimeBuilding
+	}
+
+	return nil, errs.New("No download found in build response: %+v", buildStatus)
 }
