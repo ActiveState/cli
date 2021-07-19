@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -14,27 +13,24 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
+	"github.com/gammazero/workerpool"
 )
 
 // maxConcurrency is the maximum number of artifact-build-logs that we download in parallel in order to add the information to the build log file.
 const maxConcurrency = 5
 
-type artifactLog struct {
-	artifactID     artifact.ArtifactID
-	unsignedLogURI string
-}
-
 type ArtifactLogDownload struct {
-	logfiles chan artifactLog
-	events   chan<- SetupEventer
-	close    func()
+	wp     *workerpool.WorkerPool
+	events chan<- SetupEventer
+	close  func()
+	ctx    context.Context
 }
 
 // downloadAndArtifactLog downloads an artifact build log and adds it to the build log file
-func (d *ArtifactLogDownload) downloadArtifactLog(ul artifactLog, ctx context.Context) error {
-	unsignedURL, err := url.Parse(ul.unsignedLogURI)
+func (d *ArtifactLogDownload) downloadArtifactLog(ctx context.Context, artifactID artifact.ArtifactID, unsignedLogURI string) error {
+	unsignedURL, err := url.Parse(unsignedLogURI)
 	if err != nil {
-		return errs.Wrap(err, "Could not parse log URL %s", ul.unsignedLogURI)
+		return errs.Wrap(err, "Could not parse log URL %s", unsignedLogURI)
 	}
 	logURL, err := model.SignS3URL(unsignedURL)
 	if err != nil {
@@ -61,56 +57,45 @@ func (d *ArtifactLogDownload) downloadArtifactLog(ul artifactLog, ctx context.Co
 		if err := json.Unmarshal(line, &am); err != nil {
 			return errs.Wrap(err, "Failed to unmarshal build log line")
 		}
-		d.events <- newArtifactBuildProgressEvent(ul.artifactID, am.Timestamp, am.Body.Message, am.Body.Facility, am.PipeName, am.Source)
+		d.events <- newArtifactBuildProgressEvent(artifactID, am.Timestamp, am.Body.Message, am.Body.Facility, am.PipeName, am.Source)
 	}
 	return nil
 }
 
 func NewArtifactLogDownload(events chan<- SetupEventer) *ArtifactLogDownload {
-	d := &ArtifactLogDownload{events: events}
 	ctx, cancel := context.WithCancel(context.Background())
-	var wg sync.WaitGroup
-	logfiles := make(chan artifactLog)
-	for i := 0; i < maxConcurrency; i++ {
-		wg.Add(1)
+
+	wp := workerpool.New(maxConcurrency)
+
+	close := func() {
+		logging.Debug("closing artifact log download instance")
+		done := make(chan struct{})
+		// cancel context after worker pool is done processing all events
 		go func() {
-			defer wg.Done()
-			for ul := range logfiles {
-				if err := d.downloadArtifactLog(ul, ctx); err != nil {
-					logging.Error("Failed to add build log details to log file for %s: %v", ul.artifactID, errs.JoinMessage(err))
-				}
-			}
-		}()
-	}
-
-	// cancel context after ALL wait groups return -> this indicates "done"-ness
-	go func() {
-		defer cancel()
-		wg.Wait()
-	}()
-
-	d.logfiles = logfiles
-	d.close = func() {
-		// close the input channel which should drain the go routines we started
-		close(logfiles)
-		// check if we are done (in which case the context is done)
-		select {
-		case <-ctx.Done():
-		case <-time.After(time.Second * 5): // If it takes more than 5 seconds, cancel the context manually (which cancels current downloads)
+			wp.StopWait()
 			cancel()
-			<-ctx.Done()
+			close(done)
+		}()
+
+		// check if we are done OR if shut-down takes more than 5 minutes, cancel all HTTP requests
+		select {
+		case <-done:
+		case <-time.After(time.Second * 5):
+			logging.Error("Failed to process all artifact log downloads.")
+			cancel()
+			<-done
 		}
 	}
-	return d
+	return &ArtifactLogDownload{events: events, ctx: ctx, wp: wp, close: close}
 }
 
-func (d *ArtifactLogDownload) RequestArtifactLog(artifactID artifact.ArtifactID, unsignedLogURI string) error {
-	select {
-	case d.logfiles <- artifactLog{artifactID, unsignedLogURI}:
-	case <-time.After(1 * time.Second):
-		return errs.New("Failed to request artifact logs due to timeout.")
-	}
-	return nil
+func (d *ArtifactLogDownload) RequestArtifactLog(artifactID artifact.ArtifactID, unsignedLogURI string) {
+	logging.Debug("submitting artifact log message for artifact %s to be added to log", artifactID)
+	d.wp.Submit(func() {
+		if err := d.downloadArtifactLog(d.ctx, artifactID, unsignedLogURI); err != nil {
+			logging.Error("Failed to add build log details to log file for %s: %v", artifactID, errs.JoinMessage(err))
+		}
+	})
 }
 
 func (d *ArtifactLogDownload) Close() {
