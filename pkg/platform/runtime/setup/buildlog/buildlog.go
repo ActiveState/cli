@@ -33,11 +33,6 @@ type BuildLogConnector interface {
 	WriteJSON(interface{}) error
 }
 
-type ArtifactLogManager interface {
-	Start(artifact.ArtifactID) error
-	Stop(artifact.ArtifactID) error
-}
-
 type Events interface {
 	BuildStarting(total int)
 	BuildFinished()
@@ -51,10 +46,9 @@ type Events interface {
 
 // BuildLog is an implementation of a build log
 type BuildLog struct {
-	ch                 chan artifact.ArtifactDownload
-	errCh              chan error
-	artifactLogManager *ArtifactLogs
-	conn               *websocket.Conn
+	ch    chan artifact.ArtifactDownload
+	errCh chan error
+	conn  *websocket.Conn
 }
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
@@ -64,11 +58,9 @@ func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.Artif
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
 	}
-	artifactLogManager := NewArtifactLogs(ctx, events)
-	bl, err := NewWithCustomConnections(artifactMap, alreadyBuilt, conn, artifactLogManager, events, recipeID)
+	bl, err := NewWithCustomConnections(artifactMap, alreadyBuilt, conn, events, recipeID)
 	if err != nil {
 		conn.Close()
-		artifactLogManager.Close()
 
 		return nil, err
 	}
@@ -77,7 +69,7 @@ func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.Artif
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, artifactLogMgr ArtifactLogManager, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -120,9 +112,9 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts
 				if verboseLogging {
-					logging.Debug("requesting updates for %s", m.ArtifactID.String())
-
-					if err := artifactLogMgr.Start(m.ArtifactID); err != nil {
+					logging.Debug("requesting updates for artifact %s", m.ArtifactID.String())
+					request := artifactRequest{ArtifactID: m.ArtifactID.String()}
+					if err := conn.WriteJSON(request); err != nil {
 						errCh <- errs.Wrap(err, "Could not start artifact log request")
 						return
 					}
@@ -142,30 +134,18 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 					continue
 				}
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
-
-				if verboseLogging {
-					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
-						errCh <- errs.Wrap(err, "Could not stop artifact log request")
-						return
-					}
-				}
 			case ArtifactFailed:
 				m := msg.messager.(ArtifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
-				events.ArtifactBuildFailed(m.ArtifactID, m.LogURI, m.ErrorMessage)
 
 				// already built artifacts are registered as completed before we started the build log
 				if _, ok := alreadyBuilt[m.ArtifactID]; ok {
 					continue
 				}
-				if verboseLogging {
-					if err := artifactLogMgr.Stop(m.ArtifactID); err != nil {
-						errCh <- errs.Wrap(err, "Could not stop artifact log request")
-						return
-					}
-				}
+
+				events.ArtifactBuildFailed(m.ArtifactID, m.LogURI, m.ErrorMessage)
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
 				logging.Debug("received artifact progress message: %s %s", m.ArtifactID, m.Body.Message)
@@ -202,18 +182,12 @@ func (bl *BuildLog) Wait() error {
 }
 
 func (bl *BuildLog) Close() error {
-	var aggErr error
-	if bl.artifactLogManager != nil {
-		if err := bl.artifactLogManager.Close(); err != nil {
-			aggErr = errs.Wrap(err, "Failed to close artifact log manager")
-		}
-	}
 	if bl.conn != nil {
 		if err := bl.conn.Close(); err != nil {
-			aggErr = errs.Wrap(aggErr, "Failed to close websocket connection: %v", err)
+			return errs.Wrap(err, "Failed to close websocket connection")
 		}
 	}
-	return aggErr
+	return nil
 }
 
 // BuiltArtifactsChannel returns the channel to listen for downloadable artifacts on
