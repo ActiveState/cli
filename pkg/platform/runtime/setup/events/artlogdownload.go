@@ -26,42 +26,6 @@ type ArtifactLogDownload struct {
 	ctx    context.Context
 }
 
-// downloadAndArtifactLog downloads an artifact build log and adds it to the build log file
-func (d *ArtifactLogDownload) downloadArtifactLog(ctx context.Context, artifactID artifact.ArtifactID, unsignedLogURI string) error {
-	unsignedURL, err := url.Parse(unsignedLogURI)
-	if err != nil {
-		return errs.Wrap(err, "Could not parse log URL %s", unsignedLogURI)
-	}
-	logURL, err := model.SignS3URL(unsignedURL)
-	if err != nil {
-		return errs.Wrap(err, "Could not sign log url %s", unsignedURL)
-	}
-
-	// download the log and stream it line-by-line
-	logging.Debug("downloading logURI: %s", logURL.String())
-	req, err := http.NewRequestWithContext(ctx, "GET", logURL.String(), nil)
-	if err != nil {
-		return errs.Wrap(err, "Failed to create GET request for logURL.")
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return errs.Wrap(err, "Failed to execute HTTP GET request for logURL.")
-	}
-
-	defer resp.Body.Close()
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		// we need to unmarshal every line
-		var am buildlog.ArtifactProgressMessage
-		if err := json.Unmarshal(line, &am); err != nil {
-			return errs.Wrap(err, "Failed to unmarshal build log line")
-		}
-		d.events <- newArtifactBuildProgressEvent(artifactID, am.Timestamp, am.Body.Message, am.Body.Facility, am.PipeName, am.Source)
-	}
-	return nil
-}
-
 func NewArtifactLogDownload(events chan<- SetupEventer) *ArtifactLogDownload {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -100,4 +64,40 @@ func (d *ArtifactLogDownload) RequestArtifactLog(artifactID artifact.ArtifactID,
 
 func (d *ArtifactLogDownload) Close() {
 	d.close()
+}
+
+// downloadAndArtifactLog downloads an artifact build log and adds it to the build log file
+func (d *ArtifactLogDownload) downloadArtifactLog(ctx context.Context, artifactID artifact.ArtifactID, unsignedLogURI string) error {
+	unsignedURL, err := url.Parse(unsignedLogURI)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse log URL %s", unsignedLogURI)
+	}
+	logURL, err := model.SignS3URL(unsignedURL)
+	if err != nil {
+		return errs.Wrap(err, "Could not sign log url %s", unsignedURL)
+	}
+
+	// download the log and stream it line-by-line
+	logging.Debug("downloading logURI: %s", logURL.String())
+	req, err := http.NewRequestWithContext(ctx, "GET", logURL.String(), nil)
+	if err != nil {
+		return errs.Wrap(err, "Failed to create GET request for logURL.")
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errs.Wrap(err, "Failed to execute HTTP GET request for logURL.")
+	}
+
+	defer resp.Body.Close()
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		// we need to unmarshal every line
+		var am buildlog.ArtifactProgressMessage
+		if err := json.Unmarshal(line, &am); err != nil {
+			return errs.Wrap(err, "Failed to unmarshal build log line")
+		}
+		d.events <- newArtifactBuildProgressEvent(artifactID, am.Timestamp, am.Body.Message, am.Body.Facility, am.PipeName, am.Source)
+	}
+	return nil
 }
