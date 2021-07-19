@@ -45,6 +45,7 @@ func NewArtifactLogDownload(events chan<- SetupEventer) *ArtifactLogDownload {
 		select {
 		case <-done:
 		case <-time.After(time.Second * 5):
+			// NOTE: If this message appears on rollbar, it means that we were unable to download and process all artifact downloads with a 5 seconds delay.  If that happens often enough, we might want to consider increasing the `maxConcurrency` value or ultimately this timeout.
 			logging.Error("Failed to process all artifact log downloads.")
 			cancel()
 			<-done
