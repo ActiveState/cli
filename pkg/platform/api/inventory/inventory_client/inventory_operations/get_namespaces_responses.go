@@ -46,7 +46,7 @@ func NewGetNamespacesOK() *GetNamespacesOK {
 	return &GetNamespacesOK{}
 }
 
-/*GetNamespacesOK handles this case with default header values.
+/* GetNamespacesOK describes a response with status code 200, with default header values.
 
 A paginated list of namespaces
 */
@@ -57,7 +57,6 @@ type GetNamespacesOK struct {
 func (o *GetNamespacesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces][%d] getNamespacesOK  %+v", 200, o.Payload)
 }
-
 func (o *GetNamespacesOK) GetPayload() *inventory_models.NamespacePagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetNamespacesDefault(code int) *GetNamespacesDefault {
 	}
 }
 
-/*GetNamespacesDefault handles this case with default header values.
+/* GetNamespacesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetNamespacesDefault) Code() int {
 func (o *GetNamespacesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces][%d] getNamespaces default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetNamespacesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

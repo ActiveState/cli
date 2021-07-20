@@ -52,7 +52,7 @@ func NewUpdateBuildScriptOK() *UpdateBuildScriptOK {
 	return &UpdateBuildScriptOK{}
 }
 
-/*UpdateBuildScriptOK handles this case with default header values.
+/* UpdateBuildScriptOK describes a response with status code 200, with default header values.
 
 The updated build script
 */
@@ -63,7 +63,6 @@ type UpdateBuildScriptOK struct {
 func (o *UpdateBuildScriptOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScriptOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateBuildScriptOK) GetPayload() *inventory_models.BuildScript {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewUpdateBuildScriptBadRequest() *UpdateBuildScriptBadRequest {
 	return &UpdateBuildScriptBadRequest{}
 }
 
-/*UpdateBuildScriptBadRequest handles this case with default header values.
+/* UpdateBuildScriptBadRequest describes a response with status code 400, with default header values.
 
 If the build script update is invalid or the build script cannot be updated because it is in use by a stable ingredient version revision
 */
@@ -96,7 +95,6 @@ type UpdateBuildScriptBadRequest struct {
 func (o *UpdateBuildScriptBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScriptBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UpdateBuildScriptBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewUpdateBuildScriptDefault(code int) *UpdateBuildScriptDefault {
 	}
 }
 
-/*UpdateBuildScriptDefault handles this case with default header values.
+/* UpdateBuildScriptDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *UpdateBuildScriptDefault) Code() int {
 func (o *UpdateBuildScriptDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/build-scripts/{build_script_id}][%d] updateBuildScript default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateBuildScriptDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

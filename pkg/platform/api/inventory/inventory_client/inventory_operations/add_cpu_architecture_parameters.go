@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddCPUArchitectureParams creates a new AddCPUArchitectureParams object
-// with the default values initialized.
+// NewAddCPUArchitectureParams creates a new AddCPUArchitectureParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddCPUArchitectureParams() *AddCPUArchitectureParams {
-	var ()
 	return &AddCPUArchitectureParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddCPUArchitectureParamsWithTimeout creates a new AddCPUArchitectureParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddCPUArchitectureParamsWithTimeout(timeout time.Duration) *AddCPUArchitectureParams {
-	var ()
 	return &AddCPUArchitectureParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddCPUArchitectureParamsWithContext creates a new AddCPUArchitectureParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddCPUArchitectureParamsWithContext(ctx context.Context) *AddCPUArchitectureParams {
-	var ()
 	return &AddCPUArchitectureParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddCPUArchitectureParamsWithHTTPClient creates a new AddCPUArchitectureParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddCPUArchitectureParamsWithHTTPClient(client *http.Client) *AddCPUArchitectureParams {
-	var ()
 	return &AddCPUArchitectureParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddCPUArchitectureParams contains all the parameters to send to the API endpoint
-for the add Cpu architecture operation typically these are written to a http.Request
+/* AddCPUArchitectureParams contains all the parameters to send to the API endpoint
+   for the add Cpu architecture operation.
+
+   Typically these are written to a http.Request.
 */
 type AddCPUArchitectureParams struct {
 
-	/*CPUArchitecture*/
+	// CPUArchitecture.
 	CPUArchitecture *inventory_models.CPUArchitectureCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add Cpu architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCPUArchitectureParams) WithDefaults() *AddCPUArchitectureParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add Cpu architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCPUArchitectureParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add Cpu architecture params
@@ -121,7 +135,6 @@ func (o *AddCPUArchitectureParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-
 	if o.CPUArchitecture != nil {
 		if err := r.SetBodyParam(o.CPUArchitecture); err != nil {
 			return err

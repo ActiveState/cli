@@ -19,73 +19,89 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewSolveOrderParams creates a new SolveOrderParams object
-// with the default values initialized.
+// NewSolveOrderParams creates a new SolveOrderParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewSolveOrderParams() *SolveOrderParams {
-	var (
-		useRecipeStoreDefault = bool(true)
-	)
 	return &SolveOrderParams{
-		UseRecipeStore: &useRecipeStoreDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewSolveOrderParamsWithTimeout creates a new SolveOrderParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewSolveOrderParamsWithTimeout(timeout time.Duration) *SolveOrderParams {
-	var (
-		useRecipeStoreDefault = bool(true)
-	)
 	return &SolveOrderParams{
-		UseRecipeStore: &useRecipeStoreDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewSolveOrderParamsWithContext creates a new SolveOrderParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewSolveOrderParamsWithContext(ctx context.Context) *SolveOrderParams {
-	var (
-		useRecipeStoreDefault = bool(true)
-	)
 	return &SolveOrderParams{
-		UseRecipeStore: &useRecipeStoreDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewSolveOrderParamsWithHTTPClient creates a new SolveOrderParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewSolveOrderParamsWithHTTPClient(client *http.Client) *SolveOrderParams {
-	var (
-		useRecipeStoreDefault = bool(true)
-	)
 	return &SolveOrderParams{
-		UseRecipeStore: &useRecipeStoreDefault,
-		HTTPClient:     client,
+		HTTPClient: client,
 	}
 }
 
-/*SolveOrderParams contains all the parameters to send to the API endpoint
-for the solve order operation typically these are written to a http.Request
+/* SolveOrderParams contains all the parameters to send to the API endpoint
+   for the solve order operation.
+
+   Typically these are written to a http.Request.
 */
 type SolveOrderParams struct {
 
-	/*Order*/
+	// Order.
 	Order *inventory_models.Order
-	/*UseRecipeStore
-	  Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
 
+	/* UseRecipeStore.
+
+	   Whether to check if this order has already been solved and retrieve the result from the recipe store or, if false, to force the order to be solved anew
+
+	   Default: true
 	*/
 	UseRecipeStore *bool
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the solve order params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SolveOrderParams) WithDefaults() *SolveOrderParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the solve order params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SolveOrderParams) SetDefaults() {
+	var (
+		useRecipeStoreDefault = bool(true)
+	)
+
+	val := SolveOrderParams{
+		UseRecipeStore: &useRecipeStoreDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the solve order params
@@ -150,7 +166,6 @@ func (o *SolveOrderParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 		return err
 	}
 	var res []error
-
 	if o.Order != nil {
 		if err := r.SetBodyParam(o.Order); err != nil {
 			return err
@@ -161,16 +176,17 @@ func (o *SolveOrderParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 
 		// query param use_recipe_store
 		var qrUseRecipeStore bool
+
 		if o.UseRecipeStore != nil {
 			qrUseRecipeStore = *o.UseRecipeStore
 		}
 		qUseRecipeStore := swag.FormatBool(qrUseRecipeStore)
 		if qUseRecipeStore != "" {
+
 			if err := r.SetQueryParam("use_recipe_store", qUseRecipeStore); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

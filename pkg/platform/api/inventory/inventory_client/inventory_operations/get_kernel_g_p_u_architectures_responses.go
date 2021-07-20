@@ -46,7 +46,7 @@ func NewGetKernelGPUArchitecturesOK() *GetKernelGPUArchitecturesOK {
 	return &GetKernelGPUArchitecturesOK{}
 }
 
-/*GetKernelGPUArchitecturesOK handles this case with default header values.
+/* GetKernelGPUArchitecturesOK describes a response with status code 200, with default header values.
 
 A paginated list of GPU architectures
 */
@@ -57,7 +57,6 @@ type GetKernelGPUArchitecturesOK struct {
 func (o *GetKernelGPUArchitecturesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/gpu-architectures][%d] getKernelGPUArchitecturesOK  %+v", 200, o.Payload)
 }
-
 func (o *GetKernelGPUArchitecturesOK) GetPayload() *inventory_models.GpuArchitecturePagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetKernelGPUArchitecturesDefault(code int) *GetKernelGPUArchitecturesDef
 	}
 }
 
-/*GetKernelGPUArchitecturesDefault handles this case with default header values.
+/* GetKernelGPUArchitecturesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetKernelGPUArchitecturesDefault) Code() int {
 func (o *GetKernelGPUArchitecturesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/kernels/{kernel_id}/gpu-architectures][%d] getKernelGPUArchitectures default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetKernelGPUArchitecturesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -46,7 +46,7 @@ func NewGetIngredientVersionOK() *GetIngredientVersionOK {
 	return &GetIngredientVersionOK{}
 }
 
-/*GetIngredientVersionOK handles this case with default header values.
+/* GetIngredientVersionOK describes a response with status code 200, with default header values.
 
 The retrieved ingredient version
 */
@@ -57,7 +57,6 @@ type GetIngredientVersionOK struct {
 func (o *GetIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersionOK  %+v", 200, o.Payload)
 }
-
 func (o *GetIngredientVersionOK) GetPayload() *inventory_models.IngredientVersion {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetIngredientVersionDefault(code int) *GetIngredientVersionDefault {
 	}
 }
 
-/*GetIngredientVersionDefault handles this case with default header values.
+/* GetIngredientVersionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetIngredientVersionDefault) Code() int {
 func (o *GetIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

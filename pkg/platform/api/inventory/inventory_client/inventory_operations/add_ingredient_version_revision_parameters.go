@@ -18,60 +18,80 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddIngredientVersionRevisionParams creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized.
+// NewAddIngredientVersionRevisionParams creates a new AddIngredientVersionRevisionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddIngredientVersionRevisionParams() *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithTimeout creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddIngredientVersionRevisionParamsWithTimeout(timeout time.Duration) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithContext creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddIngredientVersionRevisionParamsWithContext(ctx context.Context) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithHTTPClient creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddIngredientVersionRevisionParamsWithHTTPClient(client *http.Client) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddIngredientVersionRevisionParams contains all the parameters to send to the API endpoint
-for the add ingredient version revision operation typically these are written to a http.Request
+/* AddIngredientVersionRevisionParams contains all the parameters to send to the API endpoint
+   for the add ingredient version revision operation.
+
+   Typically these are written to a http.Request.
 */
 type AddIngredientVersionRevisionParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
-	/*IngredientVersionID*/
+
+	// IngredientVersionID.
+	//
+	// Format: uuid
 	IngredientVersionID strfmt.UUID
-	/*IngredientVersionRevision*/
+
+	// IngredientVersionRevision.
 	IngredientVersionRevision *inventory_models.IngredientVersionRevisionCreate
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add ingredient version revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddIngredientVersionRevisionParams) WithDefaults() *AddIngredientVersionRevisionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add ingredient version revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddIngredientVersionRevisionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add ingredient version revision params
@@ -157,7 +177,6 @@ func (o *AddIngredientVersionRevisionParams) WriteToRequest(r runtime.ClientRequ
 	if err := r.SetPathParam("ingredient_version_id", o.IngredientVersionID.String()); err != nil {
 		return err
 	}
-
 	if o.IngredientVersionRevision != nil {
 		if err := r.SetBodyParam(o.IngredientVersionRevision); err != nil {
 			return err

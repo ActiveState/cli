@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -54,7 +56,7 @@ func (m *RevisionedResource) validateRevision(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MinimumInt("revision", "body", int64(*m.Revision), 1, false); err != nil {
+	if err := validate.MinimumInt("revision", "body", *m.Revision, 1, false); err != nil {
 		return err
 	}
 
@@ -71,6 +73,11 @@ func (m *RevisionedResource) validateRevisionTimestamp(formats strfmt.Registry) 
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this revisioned resource based on context it is used
+func (m *RevisionedResource) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
