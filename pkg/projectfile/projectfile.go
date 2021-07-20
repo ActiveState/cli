@@ -674,51 +674,6 @@ func parseURL(rawURL string) (projectURL, error) {
 	return p, nil
 }
 
-func removeTemporaryLanguage(data []byte) ([]byte, error) {
-	languageLine := regexp.MustCompile("(?m)^languages:")
-	firstNonIndentedLine := regexp.MustCompile("(?m)^[^ \t]")
-
-	startLoc := languageLine.FindIndex(data)
-	if startLoc == nil {
-		return data, nil // language is already gone
-	}
-	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
-	if endLoc == nil {
-		return data[:startLoc[0]], nil
-	}
-
-	end := startLoc[1] + endLoc[0]
-	return append(data[:startLoc[0]], data[end:]...), nil
-}
-
-// RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
-func (p *Project) RemoveTemporaryLanguage() error {
-	fp, err := GetProjectFilePath()
-	if err != nil {
-		return errs.Wrap(err, "Could not find the project file location.")
-	}
-
-	data, err := ioutil.ReadFile(fp)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file.")
-	}
-
-	out, err := removeTemporaryLanguage(data)
-	if err != nil {
-		return errs.Wrap(err, "Failed to remove language field from project file.")
-	}
-
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write update project file.")
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload project file.")
-	}
-	return nil
-}
-
 // Save the project to its activestate.yaml file
 func (p *Project) save(cfg ConfigGetter, path string) error {
 	dat, err := yaml.Marshal(p)
@@ -975,34 +930,28 @@ type CreateParams struct {
 	Directory       string
 	Content         string
 	Language        string
-	LanguageVersion string
 	Private         bool
 	path            string
-	projectURL      string
+	ProjectURL      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
 func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 	return createCustom(&CreateParams{
-		projectURL: projectURL,
+		ProjectURL: projectURL,
 		Directory:  path,
 	}, language.Python3)
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) error {
+func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
 	err := validateCreateParams(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = createCustom(params, lang)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return createCustom(params, lang)
 }
 
 func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
@@ -1012,7 +961,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	var commitID string
-	if params.projectURL == "" {
+	if params.ProjectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
@@ -1028,7 +977,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 
 		u.RawQuery = q.Encode()
-		params.projectURL = u.String()
+		params.ProjectURL = u.String()
 	}
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)
@@ -1036,11 +985,11 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, locale.NewInputError("err_projectfile_exists")
 	}
 
-	err = ValidateProjectURL(params.projectURL)
+	err = ValidateProjectURL(params.ProjectURL)
 	if err != nil {
 		return nil, err
 	}
-	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
+	match := ProjectURLRe.FindStringSubmatch(params.ProjectURL)
 	if len(match) < 3 {
 		return nil, locale.NewInputError("err_projectfile_invalid_url")
 	}
@@ -1066,9 +1015,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":         params.projectURL,
-		"LanguageName":    params.Language,
-		"LanguageVersion": params.LanguageVersion,
+		"Project":         params.ProjectURL,
 		"CommitID":        commitID,
 		"Content":         content,
 		"Private":         params.Private,
@@ -1092,7 +1039,7 @@ func validateCreateParams(params *CreateParams) error {
 	switch {
 	case params.Directory == "":
 		return locale.NewInputError("err_project_require_path")
-	case params.projectURL != "":
+	case params.ProjectURL != "":
 		return nil // Owner and Project not required when projectURL is set
 	case params.Owner == "":
 		return locale.NewInputError("err_project_require_owner")

@@ -1,6 +1,8 @@
 package commit
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -27,9 +29,9 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 		return err
 	}
 	out.Print(struct {
-		commitData `opts:"verticalTable" locale:","`
+		Data commitData `opts:"verticalTable" locale:","`
 	}{
-		data,
+		Data: data,
 	})
 
 	return nil
@@ -101,20 +103,58 @@ func FormatChanges(commit *mono_models.Commit) []string {
 
 	for _, change := range commit.Changeset {
 		requirement := change.Requirement
+		versionConstraints := formatConstraints(change.VersionConstraints)
 		if model.NamespaceMatch(change.Namespace, model.NamespacePlatformMatch) {
 			requirement = locale.T("namespace_label_platform")
+			versionConstraints = ""
 		}
 		if model.NamespaceMatch(change.Namespace, model.NamespacePrePlatformMatch) {
 			requirement = locale.T("namespace_label_preplatform")
+			versionConstraints = ""
 		}
-		results = append(results,
-			locale.Tr("change_"+change.Operation,
-				requirement, change.VersionConstraint, change.VersionConstraintOld,
-			),
-		)
+
+		var result string
+		switch change.Operation {
+		case string(model.OperationAdded):
+			result = locale.Tr("change_added", requirement, versionConstraints)
+		case string(model.OperationRemoved):
+			result = locale.Tr("change_removed", requirement)
+		case string(model.OperationUpdated):
+			result = locale.Tr("change_updated", requirement, formatConstraints(change.VersionConstraintsOld), versionConstraints)
+		}
+		results = append(results, result)
 	}
 
 	return results
+}
+
+func formatConstraints(constraints []*mono_models.Constraint) string {
+	if len(constraints) == 0 {
+		return locale.Tl("constraint_auto", "Auto")
+	}
+
+	var result []string
+	for _, constraint := range constraints {
+		var comparator string
+		switch constraint.Comparator {
+		case "eq":
+			return constraint.Version
+		case "gt":
+			comparator = ">"
+		case "gte":
+			comparator = ">="
+		case "lt":
+			comparator = "<"
+		case "lte":
+			comparator = "<="
+		case "ne":
+			comparator = "!="
+		default:
+			comparator = "?"
+		}
+		result = append(result, fmt.Sprintf("%s%s", comparator, constraint.Version))
+	}
+	return strings.Join(result, ",")
 }
 
 func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) (string, error) {

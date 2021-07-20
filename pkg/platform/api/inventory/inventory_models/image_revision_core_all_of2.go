@@ -6,11 +6,13 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ImageRevisionCoreAllOf2 image revision core all of2
@@ -20,6 +22,10 @@ type ImageRevisionCoreAllOf2 struct {
 
 	// conditions
 	Conditions []*Condition `json:"conditions"`
+
+	// The status of the revision. This can be one of stable, unstable, deleted, or deprecated.
+	// Enum: [deleted deprecated stable unstable]
+	Status string `json:"status,omitempty"`
 }
 
 // Validate validates this image revision core all of2
@@ -27,6 +33,10 @@ func (m *ImageRevisionCoreAllOf2) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateConditions(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -56,6 +66,55 @@ func (m *ImageRevisionCoreAllOf2) validateConditions(formats strfmt.Registry) er
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var imageRevisionCoreAllOf2TypeStatusPropEnum []interface{}
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["deleted","deprecated","stable","unstable"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		imageRevisionCoreAllOf2TypeStatusPropEnum = append(imageRevisionCoreAllOf2TypeStatusPropEnum, v)
+	}
+}
+
+const (
+
+	// ImageRevisionCoreAllOf2StatusDeleted captures enum value "deleted"
+	ImageRevisionCoreAllOf2StatusDeleted string = "deleted"
+
+	// ImageRevisionCoreAllOf2StatusDeprecated captures enum value "deprecated"
+	ImageRevisionCoreAllOf2StatusDeprecated string = "deprecated"
+
+	// ImageRevisionCoreAllOf2StatusStable captures enum value "stable"
+	ImageRevisionCoreAllOf2StatusStable string = "stable"
+
+	// ImageRevisionCoreAllOf2StatusUnstable captures enum value "unstable"
+	ImageRevisionCoreAllOf2StatusUnstable string = "unstable"
+)
+
+// prop value enum
+func (m *ImageRevisionCoreAllOf2) validateStatusEnum(path, location string, value string) error {
+	if err := validate.Enum(path, location, value, imageRevisionCoreAllOf2TypeStatusPropEnum); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ImageRevisionCoreAllOf2) validateStatus(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
+		return err
 	}
 
 	return nil

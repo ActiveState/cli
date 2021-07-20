@@ -45,12 +45,12 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	searchIngredients := model.SearchIngredients
+	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		searchIngredients = model.SearchIngredientsStrict
+		packages, err = model.SearchIngredientsStrict(ns, params.Name, false, true)
+	} else {
+		packages, err = model.SearchIngredients(ns, params.Name, true)
 	}
-
-	packages, err := searchIngredients(ns, params.Name)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -78,7 +78,11 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		)
 	}
 
-	return model.LanguageForCommit(proj.CommitUUID())
+	lang, err := model.LanguageByCommit(proj.CommitUUID())
+	if err != nil {
+		return "", errs.Wrap(err, "LanguageByCommit failed")
+	}
+	return lang.Name, nil
 }
 
 type modules []string

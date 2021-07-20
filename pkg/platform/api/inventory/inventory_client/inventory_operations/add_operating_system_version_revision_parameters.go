@@ -67,7 +67,7 @@ type AddOperatingSystemVersionRevisionParams struct {
 	/*OperatingSystemVersionID*/
 	OperatingSystemVersionID strfmt.UUID
 	/*OperatingSystemVersionRevision*/
-	OperatingSystemVersionRevision *inventory_models.Revision
+	OperatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider
 
 	timeout    time.Duration
 	Context    context.Context
@@ -130,13 +130,13 @@ func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionID(op
 }
 
 // WithOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) *AddOperatingSystemVersionRevisionParams {
+func (o *AddOperatingSystemVersionRevisionParams) WithOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider) *AddOperatingSystemVersionRevisionParams {
 	o.SetOperatingSystemVersionRevision(operatingSystemVersionRevision)
 	return o
 }
 
 // SetOperatingSystemVersionRevision adds the operatingSystemVersionRevision to the add operating system version revision params
-func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.Revision) {
+func (o *AddOperatingSystemVersionRevisionParams) SetOperatingSystemVersionRevision(operatingSystemVersionRevision *inventory_models.RevisionedFeatureProvider) {
 	o.OperatingSystemVersionRevision = operatingSystemVersionRevision
 }
 

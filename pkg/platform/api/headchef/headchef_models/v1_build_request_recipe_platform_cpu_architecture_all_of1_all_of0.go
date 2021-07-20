@@ -20,8 +20,9 @@ import (
 type V1BuildRequestRecipePlatformCPUArchitectureAllOf1AllOf0 struct {
 
 	// bit width
+	// Required: true
 	// Enum: [32 64]
-	BitWidth string `json:"bit_width,omitempty"`
+	BitWidth *string `json:"bit_width"`
 
 	// The name of the CPU architecture
 	// Required: true
@@ -77,12 +78,12 @@ func (m *V1BuildRequestRecipePlatformCPUArchitectureAllOf1AllOf0) validateBitWid
 
 func (m *V1BuildRequestRecipePlatformCPUArchitectureAllOf1AllOf0) validateBitWidth(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.BitWidth) { // not required
-		return nil
+	if err := validate.Required("bit_width", "body", m.BitWidth); err != nil {
+		return err
 	}
 
 	// value enum
-	if err := m.validateBitWidthEnum("bit_width", "body", m.BitWidth); err != nil {
+	if err := m.validateBitWidthEnum("bit_width", "body", *m.BitWidth); err != nil {
 		return err
 	}
 

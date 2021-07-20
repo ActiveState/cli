@@ -708,8 +708,6 @@ developer_err_project_match:
 
 err_version_parse:
   other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
-err_invalid_version:
-  other: "Invalid version specified in your activestate.yaml, should be in the format of: [NOTICE]{number}.{number}.{number}-{hash}[/RESET]"
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -1219,8 +1217,15 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+push_first_new_project:
+  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform."
 push_prompt_owner:
-  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
+  other: "Who would you like the owner of this project to be?"
+push_prompt_not_authorized:
+  other: |
+    You are not authorized to push to this project.
+    Either get the project owner to invite you, or create a new project with these changes.
+    Would you like to create a new project with your changes now?
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
@@ -1624,10 +1629,8 @@ err_read_projectfile:
   other: The activestate.yaml at {{.V0}} could not be read.
 err_auth_fail_totp:
   other: A two-factor authentication code is required.
-package_ingredient_alternatives_more:
+ingredient_alternatives_more:
   other: " - .. (to see more results run `state search {{.V0}}`)"
-bundle_ingredient_alternatives_more:
-  other: " - .. (to see more results run `state bundles search {{.V0}}`)"
 err_lock_version_invalid:
   other: "The locked version '{{.V0}}' could not be verified, are you sure it's valid?"
 config_get_error:
@@ -1659,13 +1662,6 @@ err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
   other: "Failed to update runtime"
-headless_notify_title:
-  other: Detached State
-headless_notify:
-  other: |
-    Any changes you make are local only and will not be saved the platform. Visit: [ACTIONABLE]{{.V0}}[/RESET] to create a platform project from this commit.
-
-    For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
 err_svcmanager_wait:
@@ -1676,6 +1672,14 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
+install_initial_success:
+  other: "An activestate.yaml has been created at: {{.V0}}. Run [ACTIONABLE]state push[/RESET] at any time to save your changes to the platform"
+err_package_no_packages:
+  other: No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].
+package_try_search:
+  other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
+package_info_request:
+  other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
 err_push_outdated:
   other: |
     Your project has new changes available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
@@ -1694,3 +1698,6 @@ operation_success_local:
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
     Run [ACTIONABLE]state history[/RESET] to review your local changes.
+err_initialize_runtime_event_handler:
+  other: |
+    Could not determine how to display progress of runtime installation.

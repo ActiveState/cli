@@ -19,7 +19,7 @@ import (
 type IngredientVersionRevisionCore struct {
 	IngredientVersionRevisionCoreAllOf0
 
-	Revision
+	RevisionedFeatureProvider
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -32,11 +32,11 @@ func (m *IngredientVersionRevisionCore) UnmarshalJSON(raw []byte) error {
 	m.IngredientVersionRevisionCoreAllOf0 = aO0
 
 	// AO1
-	var aO1 Revision
+	var aO1 RevisionedFeatureProvider
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.Revision = aO1
+	m.RevisionedFeatureProvider = aO1
 
 	return nil
 }
@@ -51,7 +51,7 @@ func (m IngredientVersionRevisionCore) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.Revision)
+	aO1, err := swag.WriteJSON(m.RevisionedFeatureProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func (m *IngredientVersionRevisionCore) Validate(formats strfmt.Registry) error 
 	if err := m.IngredientVersionRevisionCoreAllOf0.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with Revision
-	if err := m.Revision.Validate(formats); err != nil {
+	// validation for a type composition with RevisionedFeatureProvider
+	if err := m.RevisionedFeatureProvider.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 

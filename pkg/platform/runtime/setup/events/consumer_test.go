@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockProgressOutput struct {
@@ -26,78 +27,91 @@ func (mpo *mockProgressOutput) BuildStarted(total int64) error {
 	mpo.buildTotal = total
 	return nil
 }
-func (mpo *mockProgressOutput) BuildIncrement() error {
-	mpo.buildCurrent++
-	return nil
-}
 func (mpo *mockProgressOutput) BuildCompleted(bool) error {
 	mpo.buildCompleted = true
 	return nil
 }
+
+func (mpo *mockProgressOutput) BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error {
+	return nil
+}
+func (mpo *mockProgressOutput) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error {
+	mpo.buildCurrent++
+	return nil
+}
+func (mpo *mockProgressOutput) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string, cachedBuild bool) error {
+	return nil
+}
+func (mpo *mockProgressOutput) BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error {
+	return nil
+}
+
 func (mpo *mockProgressOutput) InstallationStarted(total int64) error {
 	mpo.installationStarted++
 	mpo.installationTotal = total
 	return nil
 }
-func (mpo *mockProgressOutput) InstallationIncrement() error {
-	mpo.installationCurrent++
+func (mpo *mockProgressOutput) InstallationStatusUpdate(current, total int64) error {
+	mpo.installationCurrent = int(current)
 	return nil
 }
 func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
 	mpo.artifactStartedCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, string, int64) error {
+func (mpo *mockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, string, string, int64) error {
 	mpo.artifactIncrementCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, string) error {
+func (mpo *mockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, string, string) error {
 	mpo.artifactCompletedCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string) error {
+func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, string, string) error {
 	mpo.artifactFailureCalled++
 	return nil
 }
-func (mpo *mockProgressOutput) Close() {}
+func (mpo *mockProgressOutput) StillBuilding(numCompleted, numTotal int) error {
+	return nil
+}
+func (mpo *mockProgressOutput) Close() error { return nil }
 
 func TestRuntimeEventConsumer(t *testing.T) {
 	ids := []artifact.ArtifactID{"1", "2"}
-	names := []string{"artifact 1", "artifact 2"}
 
 	baseEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
-		newArtifactStartEvent(Download, ids[0], names[0], 100),
+		newArtifactStartEvent(Download, ids[0], 100),
 		newArtifactProgressEvent(Download, ids[0], 100),
-		newArtifactCompleteEvent(Download, ids[0]),
-		newArtifactStartEvent(Download, ids[1], names[1], 100),
+		newArtifactCompleteEvent(Download, ids[0], "logURI"),
+		newArtifactStartEvent(Download, ids[1], 100),
 		newArtifactProgressEvent(Download, ids[1], 100),
-		newArtifactCompleteEvent(Download, ids[1]),
-		newArtifactStartEvent(Install, ids[0], names[0], 100),
+		newArtifactCompleteEvent(Download, ids[1], "logURI"),
+		newArtifactStartEvent(Install, ids[0], 100),
 		newArtifactProgressEvent(Install, ids[0], 100),
-		newArtifactStartEvent(Install, ids[1], names[1], 100),
+		newArtifactStartEvent(Install, ids[1], 100),
 		newArtifactProgressEvent(Install, ids[1], 100),
 	}
 	successEvents := append(baseEvents,
-		newArtifactCompleteEvent(Install, ids[0]),
-		newArtifactCompleteEvent(Install, ids[1]),
+		newArtifactCompleteEvent(Install, ids[0], "logURI"),
+		newArtifactCompleteEvent(Install, ids[1], "logURI"),
 	)
 	failedEvents := append(baseEvents,
-		newArtifactFailureEvent(Install, ids[0], "error"),
-		newArtifactFailureEvent(Install, ids[1], "error"),
+		newArtifactFailureEvent(Install, ids[0], "logURI", "error"),
+		newArtifactFailureEvent(Install, ids[1], "logURI", "error"),
 	)
 	withBuildSuccessEvents := append([]SetupEventer{
 		newTotalArtifactEvent(2),
-		newBuildStartEvent(),
-		newArtifactCompleteEvent(Build, ids[0]),
-		newArtifactCompleteEvent(Build, ids[1]),
+		newBuildStartEvent(2),
+		newArtifactCompleteEvent(Build, ids[0], "logURI"),
+		newArtifactCompleteEvent(Build, ids[1], "logURI"),
 		newBuildCompleteEvent(),
 	}, successEvents...)
 	buildFailureEvents := []SetupEventer{
 		newTotalArtifactEvent(2),
-		newBuildStartEvent(),
-		newArtifactFailureEvent(Build, ids[0], "error"),
-		newArtifactFailureEvent(Build, ids[1], "error"),
+		newBuildStartEvent(2),
+		newArtifactFailureEvent(Build, ids[0], "logURI", "error"),
+		newArtifactFailureEvent(Build, ids[1], "logURI", "error"),
 		newBuildCompleteEvent(),
 	}
 
@@ -190,8 +204,9 @@ func TestRuntimeEventConsumer(t *testing.T) {
 					evCh <- ev
 				}
 			}()
+
 			err := consumer.Consume(evCh)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.expectedBuildStarted, mock.buildStarted)
 			assert.Equal(t, tc.expectedBuildCompleted, mock.buildCompleted)
