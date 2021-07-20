@@ -299,11 +299,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 
-	suite.Run("uninstalled import fails", func() {
-		cp := ts.Spawn("run", "test-pyparsing")
-		cp.ExpectNotExitCode(0, time.Second*60)
-	})
-
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
@@ -316,11 +311,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 		cp := ts.Spawn("import", "requirements.txt")
 		cp.ExpectExitCode(0, time.Second*60)
-
-		suite.Run("uninstalled import fails", func() {
-			cp := ts.Spawn("run", "test-pyparsing")
-			cp.ExpectExitCode(0, time.Second*60)
-		})
 
 		suite.Run("already added", func() {
 			cp := ts.Spawn("import", "requirements.txt")
