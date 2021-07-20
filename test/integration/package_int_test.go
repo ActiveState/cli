@@ -315,7 +315,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
 		suite.Run("uninstalled import fails", func() {
