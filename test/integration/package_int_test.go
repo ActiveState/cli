@@ -269,10 +269,10 @@ Flask-Cors==3.0.8
 itsdangerous==1.1.0
 Jinja2==2.10.3
 MarkupSafe==1.1.1
-packaging==20.1
+packaging==20.3
 pyparsing==2.4.6
 six==1.14.0
-Werkzeug==0.16.0
+Werkzeug==0.15.6
 `
 	badReqsData = `Click==7.0
 garbage---<<001.X
