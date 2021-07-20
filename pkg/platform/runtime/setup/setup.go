@@ -576,12 +576,22 @@ func reusableArtifacts(requestedArtifacts []*headchef_models.V1Artifact, storedA
 
 func formatSolverError(serr *apimodel.SolverError) error {
 	var err error = serr
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(serr.ValidationErrors())
+	if numLines > 5 {
+		offset = numLines - 5
+	}
+	errorLines := strings.Join(serr.ValidationErrors()[offset:], "\n")
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last five lines of the error message:")
+	}
+
+	err = locale.WrapError(err, "solver_err", "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}", croppedMessage, errorLines)
 	if serr.IsTransient() {
 		err = errs.AddTips(serr, locale.Tl("transient_solver_tip", "You may want to retry this command, as it can lead to a different result."))
-	}
-	// Append last five lines to error message
-	for i := range serr.ValidationErrors()[-5:] {
-		err = 
 	}
 	return err
 }
