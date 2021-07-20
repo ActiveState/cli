@@ -292,7 +292,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
-	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	cp.ExpectLongString("You are about to create the project")
+	cp.Send("y")
+	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
