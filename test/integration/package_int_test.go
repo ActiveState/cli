@@ -166,7 +166,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.25.0",
+		"2.26.0",
 		"+ 8 older versions",
 	}
 	for _, expectation := range expectations {
