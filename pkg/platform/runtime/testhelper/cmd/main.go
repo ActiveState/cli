@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -31,6 +30,9 @@ const Perl5_28CamelCommit = strfmt.UUID("bdd07a41-1e71-4042-b666-33c17164c9d9")
 // Perl5_32AlternativeProject is a project name in the ActiveState-CLI organization for an alternative build
 const Perl5_32AlternativeProject = "Perl-5.32.1-Alternative"
 
+// Python3_9_6AlternativeBaseProject is a project name in the ActiveState-CLI organization for an alternative build
+const Python3_9_6AlternativeBaseProject = "Python-3.9.6"
+
 // Perl5_32AlternativeBaseCommit only comprises the bare Perl language
 const Perl5_32AlternativeBaseCommit = strfmt.UUID("a5075f1a-053f-4cb7-b1fd-e8c09b8371f3")
 
@@ -49,22 +51,25 @@ const Perl5_32AlternativeOneBundleCommit = strfmt.UUID("d0118507-f60e-4602-9355-
 // Perl5_32AlternativeFailedCommit has a package that makes the build fail
 const Perl5_32AlternativeFailedCommit = strfmt.UUID("adeabd0f-cf90-4b65-8f0b-924ae15c9338")
 
+// Python3_9_6AlternativeBaseCommit is the base commit for an alternative Python build
+const Python3_9_6AlternativeBaseCommit = strfmt.UUID("19a45add-a689-4b4c-95ff-5f77f3b93e84")
+
 func saveResponses(baseName string, commitID strfmt.UUID, projectName string, expectedBuildResult headchef.BuildStatusEnum) error {
 	fmt.Printf("Downloading build for %s\n", baseName)
 	d := model.NewDefault(authentication.LegacyGet())
 
 	r, err := d.ResolveRecipe(commitID, "ActiveState-CLI", projectName)
 	if err != nil {
-		return fmt.Errorf("Failed to get recipe '%s': %w", baseName, err)
+		return fmt.Errorf("failed to get recipe '%s': %w", baseName, err)
 	}
 	testhelper.SaveRecipe(baseName, r)
 
 	be, b, err := d.RequestBuild(*r.RecipeID, commitID, "ActiveState-CLI", projectName)
-	if err != nil && !(expectedBuildResult == headchef.Failed && errors.Is(err, headchef.ErrBuildFailedResp)) {
-		return fmt.Errorf("Failed to get build '%s': %w", baseName, err)
+	if err != nil {
+		return fmt.Errorf("failed to get build '%s': %w", baseName, err)
 	}
 	if be != expectedBuildResult {
-		return fmt.Errorf("Expected build to be %v", expectedBuildResult)
+		return fmt.Errorf("expected build to be %v", expectedBuildResult)
 	}
 	testhelper.SaveBuildResponse(baseName, b)
 	return nil
@@ -90,6 +95,9 @@ func run() error {
 		return err
 	}
 	if err := saveResponses("perl-alternative-failure", Perl5_32AlternativeFailedCommit, Perl5_32AlternativeProject, headchef.Failed); err != nil {
+		return err
+	}
+	if err := saveResponses("python-alternative-base", Python3_9_6AlternativeBaseCommit, string(Python3_9_6AlternativeBaseProject), headchef.Completed); err != nil {
 		return err
 	}
 	return nil
