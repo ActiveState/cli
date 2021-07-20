@@ -314,9 +314,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 		suite.Run("already added", func() {
 			cp := ts.Spawn("import", "requirements.txt")
-			cp.Expect("Are you sure you want to do this")
-			cp.Send("n")
-			cp.ExpectNotExitCode(0, time.Second*60)
+			cp.ExpectLongString("The following requirement was added, but it already exists in the previous commit. Namespace: language/python, Requirement: Click")
+			cp.ExpectNotExitCode(1, time.Second*60)
 		})
 	})
 }
