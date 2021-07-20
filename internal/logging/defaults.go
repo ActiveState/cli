@@ -25,9 +25,7 @@ import (
 // datadir is the base directory at which the log is saved
 var datadir string
 
-var dataFileName string
-
-var dataFilePath string
+var timestamp int64
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -68,9 +66,6 @@ func (l *fileHandler) Output() io.Writer {
 }
 
 func FileName() string {
-	if dataFileName != "" {
-		return dataFileName
-	}
 	return FileNameFor(os.Getpid())
 }
 
@@ -82,7 +77,7 @@ func FileNameForCmd(cmd string, pid int) string {
 	if cmd == constants.StateInstallerCmd {
 		return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
 	}
-	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, time.Now().UnixNano(), FileNameSuffix)
+	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, timestamp, FileNameSuffix)
 }
 
 func FileNamePrefix() string {
@@ -109,6 +104,8 @@ func FilePathForCmd(cmd string, pid int) string {
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
+	filename := filepath.Join(datadir, FileName())
+
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
 		data := map[string]interface{}{}
@@ -117,7 +114,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 			if err := l.file.Close(); err != nil {
 				data["log_file_close_error"] = err.Error()
 			} else {
-				logData, err := ioutil.ReadFile(dataFileName)
+				logData, err := ioutil.ReadFile(filename)
 				if err != nil {
 					data["log_file_read_error"] = err.Error()
 				} else {
@@ -136,12 +133,12 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	if l.file == nil {
-		if err := os.MkdirAll(filepath.Dir(dataFilePath), os.ModePerm); err != nil {
+		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
 			return errs.Wrap(err, "Could not ensure dir exists")
 		}
-		f, err := os.OpenFile(dataFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			return errs.Wrap(err, "Could not open log file for writing: %s", dataFilePath)
+			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
 		}
 		l.file = f
 	}
@@ -162,6 +159,7 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 }
 
 func init() {
+	timestamp = time.Now().UnixNano()
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
 
@@ -174,8 +172,6 @@ func init() {
 		Error("Could not detect AppData dir: %v", err)
 		return
 	}
-	dataFileName = FileName()
-	dataFilePath = filepath.Join(datadir, dataFileName)
 
 	files, err := ioutil.ReadDir(datadir)
 	if err != nil && !os.IsNotExist(err) {
