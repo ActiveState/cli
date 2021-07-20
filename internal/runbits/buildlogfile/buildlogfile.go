@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -129,4 +130,12 @@ func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, arti
 
 func (bl *BuildLogFile) Close() error {
 	return nil
+}
+
+func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {
+	tryAgain := ""
+	if serr.IsTransient() {
+		tryAgain = "Re-trying the command may lead to different results."
+	}
+	return bl.writeMessage("The Platform could not resolve the dependencies for this build.  The returned error message is\n%s\n%s", serr.Error(), tryAgain)
 }
