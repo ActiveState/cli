@@ -6,8 +6,9 @@ package headchef_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	strfmt "github.com/go-openapi/strfmt"
+
 	"github.com/go-openapi/errors"
-	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
@@ -15,9 +16,12 @@ import (
 // RestAPIError REST API error body
 //
 // A shared generic error response body for REST APIs.
-//
 // swagger:model restApiError
 type RestAPIError struct {
+
+	// Link to an existing conflicting resource
+	// Format: uri
+	Existing strfmt.URI `json:"existing,omitempty"`
 
 	// message
 	// Required: true
@@ -28,6 +32,10 @@ type RestAPIError struct {
 func (m *RestAPIError) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateExisting(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMessage(formats); err != nil {
 		res = append(res, err)
 	}
@@ -35,6 +43,19 @@ func (m *RestAPIError) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *RestAPIError) validateExisting(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Existing) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("existing", "body", "uri", m.Existing.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

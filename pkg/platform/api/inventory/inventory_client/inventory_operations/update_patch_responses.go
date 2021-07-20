@@ -52,7 +52,7 @@ func NewUpdatePatchOK() *UpdatePatchOK {
 	return &UpdatePatchOK{}
 }
 
-/*UpdatePatchOK handles this case with default header values.
+/* UpdatePatchOK describes a response with status code 200, with default header values.
 
 The updated patch
 */
@@ -63,7 +63,6 @@ type UpdatePatchOK struct {
 func (o *UpdatePatchOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatchOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdatePatchOK) GetPayload() *inventory_models.Patch {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewUpdatePatchBadRequest() *UpdatePatchBadRequest {
 	return &UpdatePatchBadRequest{}
 }
 
-/*UpdatePatchBadRequest handles this case with default header values.
+/* UpdatePatchBadRequest describes a response with status code 400, with default header values.
 
 If the patch update is invalid or the patch cannot be updated because it is in use by a stable ingredient version revision
 */
@@ -96,7 +95,6 @@ type UpdatePatchBadRequest struct {
 func (o *UpdatePatchBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatchBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UpdatePatchBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewUpdatePatchDefault(code int) *UpdatePatchDefault {
 	}
 }
 
-/*UpdatePatchDefault handles this case with default header values.
+/* UpdatePatchDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *UpdatePatchDefault) Code() int {
 func (o *UpdatePatchDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/patches/{patch_id}][%d] updatePatch default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdatePatchDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

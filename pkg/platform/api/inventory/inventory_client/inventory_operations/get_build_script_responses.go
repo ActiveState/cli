@@ -46,7 +46,7 @@ func NewGetBuildScriptOK() *GetBuildScriptOK {
 	return &GetBuildScriptOK{}
 }
 
-/*GetBuildScriptOK handles this case with default header values.
+/* GetBuildScriptOK describes a response with status code 200, with default header values.
 
 The retrieved build script
 */
@@ -57,7 +57,6 @@ type GetBuildScriptOK struct {
 func (o *GetBuildScriptOK) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts/{build_script_id}][%d] getBuildScriptOK  %+v", 200, o.Payload)
 }
-
 func (o *GetBuildScriptOK) GetPayload() *inventory_models.BuildScript {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetBuildScriptDefault(code int) *GetBuildScriptDefault {
 	}
 }
 
-/*GetBuildScriptDefault handles this case with default header values.
+/* GetBuildScriptDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetBuildScriptDefault) Code() int {
 func (o *GetBuildScriptDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/build-scripts/{build_script_id}][%d] getBuildScript default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetBuildScriptDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

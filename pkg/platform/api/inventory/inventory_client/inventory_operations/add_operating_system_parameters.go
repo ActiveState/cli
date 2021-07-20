@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddOperatingSystemParams creates a new AddOperatingSystemParams object
-// with the default values initialized.
+// NewAddOperatingSystemParams creates a new AddOperatingSystemParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddOperatingSystemParams() *AddOperatingSystemParams {
-	var ()
 	return &AddOperatingSystemParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddOperatingSystemParamsWithTimeout creates a new AddOperatingSystemParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddOperatingSystemParamsWithTimeout(timeout time.Duration) *AddOperatingSystemParams {
-	var ()
 	return &AddOperatingSystemParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddOperatingSystemParamsWithContext creates a new AddOperatingSystemParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddOperatingSystemParamsWithContext(ctx context.Context) *AddOperatingSystemParams {
-	var ()
 	return &AddOperatingSystemParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddOperatingSystemParamsWithHTTPClient creates a new AddOperatingSystemParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddOperatingSystemParamsWithHTTPClient(client *http.Client) *AddOperatingSystemParams {
-	var ()
 	return &AddOperatingSystemParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddOperatingSystemParams contains all the parameters to send to the API endpoint
-for the add operating system operation typically these are written to a http.Request
+/* AddOperatingSystemParams contains all the parameters to send to the API endpoint
+   for the add operating system operation.
+
+   Typically these are written to a http.Request.
 */
 type AddOperatingSystemParams struct {
 
-	/*OperatingSystem*/
+	// OperatingSystem.
 	OperatingSystem *inventory_models.OperatingSystemCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add operating system params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemParams) WithDefaults() *AddOperatingSystemParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add operating system params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddOperatingSystemParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add operating system params
@@ -121,7 +135,6 @@ func (o *AddOperatingSystemParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-
 	if o.OperatingSystem != nil {
 		if err := r.SetBodyParam(o.OperatingSystem); err != nil {
 			return err

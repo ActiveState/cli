@@ -10,9 +10,10 @@ import (
 	"io"
 
 	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	strfmt "github.com/go-openapi/strfmt"
+
+	headchef_models "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
 // JobStatusReader is a Reader for the JobStatus structure.
@@ -23,18 +24,21 @@ type JobStatusReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *JobStatusReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
+
 	case 200:
 		result := NewJobStatusOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return result, nil
+
 	case 404:
 		result := NewJobStatusNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
 		return nil, result
+
 	default:
 		result := NewJobStatusDefault(response.Code())
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -85,10 +89,6 @@ func (o *JobStatusNotFound) Error() string {
 	return fmt.Sprintf("[POST /builds/{build_request_id}/job-status][%d] jobStatusNotFound  %+v", 404, o.Payload)
 }
 
-func (o *JobStatusNotFound) GetPayload() *headchef_models.RestAPIError {
-	return o.Payload
-}
-
 func (o *JobStatusNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(headchef_models.RestAPIError)
@@ -125,10 +125,6 @@ func (o *JobStatusDefault) Code() int {
 
 func (o *JobStatusDefault) Error() string {
 	return fmt.Sprintf("[POST /builds/{build_request_id}/job-status][%d] jobStatus default  %+v", o._statusCode, o.Payload)
-}
-
-func (o *JobStatusDefault) GetPayload() *headchef_models.RestAPIError {
-	return o.Payload
 }
 
 func (o *JobStatusDefault) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

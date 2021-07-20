@@ -15,14 +15,11 @@ const (
 
 	// Alternative is the new alternative build orchestration framework
 	Alternative
-
-	// Hybrid wraps Camel.
-	Hybrid
 )
 
 // buildEngineFromResponse handles a headchef build status response and returns
 // the relevant engine.
-func buildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEngine {
+func buildEngineFromResponse(resp *headchef_models.V1BuildStatusResponse) BuildEngine {
 	if resp == nil || resp.BuildEngine == nil {
 		return UnknownEngine
 	}
@@ -33,11 +30,9 @@ func buildEngineFromResponse(resp *headchef_models.BuildStatusResponse) BuildEng
 func (be BuildEngine) String() string {
 	switch be {
 	case Camel:
-		return headchef_models.BuildStatusResponseBuildEngineCamel
+		return headchef_models.V1BuildStatusResponseBuildEngineCamel
 	case Alternative:
-		return headchef_models.BuildStatusResponseBuildEngineAlternative
-	case Hybrid:
-		return headchef_models.BuildStatusResponseBuildEngineHybrid
+		return headchef_models.V1BuildStatusResponseBuildEngineAlternative
 	default:
 		return "unknown"
 	}
@@ -45,12 +40,10 @@ func (be BuildEngine) String() string {
 
 func ParseBuildEngine(be string) BuildEngine {
 	switch be {
-	case headchef_models.BuildStatusResponseBuildEngineAlternative:
+	case headchef_models.V1BuildStatusResponseBuildEngineAlternative:
 		return Alternative
-	case headchef_models.BuildStatusResponseBuildEngineCamel:
+	case headchef_models.V1BuildStatusResponseBuildEngineCamel:
 		return Camel
-	case headchef_models.BuildStatusResponseBuildEngineHybrid:
-		return Hybrid
 	default:
 		return UnknownEngine
 	}

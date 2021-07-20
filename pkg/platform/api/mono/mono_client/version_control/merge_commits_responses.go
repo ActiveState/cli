@@ -237,7 +237,7 @@ func NewMergeCommitsConflict() *MergeCommitsConflict {
 
 /* MergeCommitsConflict describes a response with status code 409, with default header values.
 
-Conflict
+Conflict. Specifically due to commitWithChanges being in the history of commitReceivingChanges.
 */
 type MergeCommitsConflict struct {
 	Payload *mono_models.Message
