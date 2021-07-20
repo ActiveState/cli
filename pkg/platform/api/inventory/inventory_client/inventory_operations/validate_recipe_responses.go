@@ -52,7 +52,7 @@ func NewValidateRecipeOK() *ValidateRecipeOK {
 	return &ValidateRecipeOK{}
 }
 
-/*ValidateRecipeOK handles this case with default header values.
+/* ValidateRecipeOK describes a response with status code 200, with default header values.
 
 If there are no errors, then there is no body in the response.
 */
@@ -73,7 +73,7 @@ func NewValidateRecipeBadRequest() *ValidateRecipeBadRequest {
 	return &ValidateRecipeBadRequest{}
 }
 
-/*ValidateRecipeBadRequest handles this case with default header values.
+/* ValidateRecipeBadRequest describes a response with status code 400, with default header values.
 
 If the recipe is invalid, this contains information about its errors.
 */
@@ -84,7 +84,6 @@ type ValidateRecipeBadRequest struct {
 func (o *ValidateRecipeBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes/validation][%d] validateRecipeBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *ValidateRecipeBadRequest) GetPayload() *inventory_models.RecipeValidationError {
 	return o.Payload
 }
@@ -108,7 +107,7 @@ func NewValidateRecipeDefault(code int) *ValidateRecipeDefault {
 	}
 }
 
-/*ValidateRecipeDefault handles this case with default header values.
+/* ValidateRecipeDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */
@@ -126,7 +125,6 @@ func (o *ValidateRecipeDefault) Code() int {
 func (o *ValidateRecipeDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/recipes/validation][%d] validateRecipe default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ValidateRecipeDefault) GetPayload() *inventory_models.SolverError {
 	return o.Payload
 }

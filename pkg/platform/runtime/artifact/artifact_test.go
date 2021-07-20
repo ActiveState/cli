@@ -31,6 +31,69 @@ func TestArtifactsFromRecipe(t *testing.T) {
 					Name: "json2", Namespace: "language/python", ArtifactID: strfmt.UUID("decfc04f-5770-5663-8d00-e029402e6917"), Dependencies: []ArtifactID{"bdd5642b-928c-5770-9e12-5816c9676960"}, RequestedByOrder: true, Version: version("0.4.0")},
 				strfmt.UUID("e6997088-7854-5498-8c57-afbe4343036a"): ArtifactRecipe{
 					Name: "wheel", Namespace: "language/python", ArtifactID: strfmt.UUID("e6997088-7854-5498-8c57-afbe4343036a"), Dependencies: []ArtifactID{"bdd5642b-928c-5770-9e12-5816c9676960"}, RequestedByOrder: false, Version: version("0.35.1")},
+				strfmt.UUID("060cc2b8-01e4-5afe-8618-c44ccb25a592"): ArtifactRecipe{
+					ArtifactID:       "060cc2b8-01e4-5afe-8618-c44ccb25a592",
+					Name:             "tix",
+					Namespace:        "shared",
+					Version:          version("8.4.3.6"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("06e6c26f-7645-5971-a6ad-277497bdec0c"): ArtifactRecipe{
+					ArtifactID:       "06e6c26f-7645-5971-a6ad-277497bdec0c",
+					Name:             "tcl",
+					Namespace:        "shared",
+					Version:          version("8.6.8"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3"): ArtifactRecipe{
+					ArtifactID:       "1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3",
+					Name:             "expat",
+					Namespace:        "shared",
+					Version:          version("2.2.9"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("2a2dc52f-8324-59bf-ae5e-082ea2468a28"): ArtifactRecipe{
+					ArtifactID:       "2a2dc52f-8324-59bf-ae5e-082ea2468a28",
+					Name:             "bsddb",
+					Namespace:        "shared",
+					Version:          version("4.4.20"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("2c8a61b6-995c-5e59-8d52-fac8604c3e88"): ArtifactRecipe{
+					ArtifactID:       "2c8a61b6-995c-5e59-8d52-fac8604c3e88",
+					Name:             "tk",
+					Namespace:        "shared",
+					Version:          version("8.6.8"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("7b923ae1-94a9-574c-bb9e-a89163f0ccb8"): ArtifactRecipe{
+					ArtifactID:       "7b923ae1-94a9-574c-bb9e-a89163f0ccb8",
+					Name:             "zlib",
+					Namespace:        "shared",
+					Version:          version("1.2.11"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd"): ArtifactRecipe{
+					ArtifactID:       "7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd",
+					Name:             "sqlite3",
+					Namespace:        "shared",
+					Version:          version("3.15.2"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("f6f7099a-2a86-5a30-8098-a111661cfbc5"): ArtifactRecipe{
+					ArtifactID:       "f6f7099a-2a86-5a30-8098-a111661cfbc5",
+					Name:             "bzip2",
+					Namespace:        "shared",
+					Version:          version("1.0.6"),
+					RequestedByOrder: false,
+				},
+				strfmt.UUID("fb916bb5-73f9-55f8-9a01-ad79a876e00c"): ArtifactRecipe{
+					ArtifactID:       "fb916bb5-73f9-55f8-9a01-ad79a876e00c",
+					Name:             "openssl",
+					Namespace:        "shared",
+					Version:          version("1.11.0.7"),
+					RequestedByOrder: false,
+				},
 			},
 		},
 		{
@@ -256,7 +319,7 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl-alternative-base",
 			false,
 			[]ArtifactDownload{
-				{"b30ab2e5-4074-572c-8146-da692b1c9e45", "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", ""},
+				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz"},
 			},
 		},
 		{
@@ -264,8 +327,8 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl-alternative-one-update",
 			false,
 			[]ArtifactDownload{
-				{"b30ab2e5-4074-572c-8146-da692b1c9e45", "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz", ""},
-				{"f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b", "s3://as-builds/production/language/perl/JSON/4.02/4/f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b/artifact.tar.gz", ""},
+				{ArtifactID: "b30ab2e5-4074-572c-8146-da692b1c9e45", UnsignedURI: "s3://as-builds/production/language/perl/5.32.1/3/b30ab2e5-4074-572c-8146-da692b1c9e45/artifact.tar.gz"},
+				{ArtifactID: "f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b", UnsignedURI: "s3://as-builds/production/language/perl/JSON/4.02/4/f56acc9c-dd02-5cf8-97f9-a5cd015f4c7b/artifact.tar.gz"},
 			},
 		},
 		{
@@ -273,7 +336,7 @@ func TestArtifactDownloads(t *testing.T) {
 			"perl",
 			true,
 			[]ArtifactDownload{
-				{"e88f6f1f-74c9-512e-9c9b-8c921a80c6fb", "https://s3.amazonaws.com/camel-builds/ActivePerl/x86_64-linux-glibc-2.17/20200424T172842Z/ActivePerl-5.28.1.0000-x86_64-linux-glibc-2.17-2a0758c3.tar.gz", ""},
+				{ArtifactID: "e88f6f1f-74c9-512e-9c9b-8c921a80c6fb", UnsignedURI: "https://s3.amazonaws.com/camel-builds/ActivePerl/x86_64-linux-glibc-2.17/20200424T172842Z/ActivePerl-5.28.1.0000-x86_64-linux-glibc-2.17-2a0758c3.tar.gz"},
 			},
 		},
 	}

@@ -106,7 +106,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.TrimmedSnapshot())
+	suite.Contains(cp.TrimmedSnapshot(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {

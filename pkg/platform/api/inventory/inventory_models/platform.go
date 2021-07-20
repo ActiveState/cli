@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -172,7 +173,6 @@ func (m *Platform) validateCPUArchitecture(formats strfmt.Registry) error {
 }
 
 func (m *Platform) validateCPUExtensions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CPUExtensions) { // not required
 		return nil
 	}
@@ -219,7 +219,6 @@ func (m *Platform) validateDisplayName(formats strfmt.Registry) error {
 }
 
 func (m *Platform) validateEndOfSupportDate(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.EndOfSupportDate) { // not required
 		return nil
 	}
@@ -232,7 +231,6 @@ func (m *Platform) validateEndOfSupportDate(formats strfmt.Registry) error {
 }
 
 func (m *Platform) validateGpuArchitecture(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.GpuArchitecture) { // not required
 		return nil
 	}
@@ -311,7 +309,6 @@ func (m *Platform) validateKernelVersion(formats strfmt.Registry) error {
 }
 
 func (m *Platform) validateLibc(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Libc) { // not required
 		return nil
 	}
@@ -329,7 +326,6 @@ func (m *Platform) validateLibc(formats strfmt.Registry) error {
 }
 
 func (m *Platform) validateLibcVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.LibcVersion) { // not required
 		return nil
 	}
@@ -408,6 +404,222 @@ func (m *Platform) validatePlatformID(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("platform_id", "body", "uuid", m.PlatformID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this platform based on the context it is used
+func (m *Platform) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCPUArchitecture(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCPUExtensions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateGpuArchitecture(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateImages(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKernel(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateKernelVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLibc(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLibcVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLinks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOperatingSystem(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOperatingSystemVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Platform) contextValidateCPUArchitecture(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CPUArchitecture != nil {
+		if err := m.CPUArchitecture.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("cpu_architecture")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateCPUExtensions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CPUExtensions); i++ {
+
+		if m.CPUExtensions[i] != nil {
+			if err := m.CPUExtensions[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("cpu_extensions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateGpuArchitecture(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.GpuArchitecture != nil {
+		if err := m.GpuArchitecture.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("gpu_architecture")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateImages(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Images); i++ {
+
+		if m.Images[i] != nil {
+			if err := m.Images[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("images" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateKernel(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Kernel != nil {
+		if err := m.Kernel.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kernel")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateKernelVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KernelVersion != nil {
+		if err := m.KernelVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kernel_version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateLibc(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Libc != nil {
+		if err := m.Libc.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("libc")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateLibcVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LibcVersion != nil {
+		if err := m.LibcVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("libc_version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Links != nil {
+		if err := m.Links.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("links")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateOperatingSystem(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OperatingSystem != nil {
+		if err := m.OperatingSystem.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("operating_system")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Platform) contextValidateOperatingSystemVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OperatingSystemVersion != nil {
+		if err := m.OperatingSystemVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("operating_system_version")
+			}
+			return err
+		}
 	}
 
 	return nil

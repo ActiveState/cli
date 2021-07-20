@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -82,10 +82,12 @@ type Events interface {
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
 	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
-	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, string, int)
+	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
+
+	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload, artifactIDs []artifact.FailedArtifact)
 }
 
 type Targeter interface {
@@ -109,18 +111,16 @@ type Setup struct {
 // ModelProvider is the interface for all functions that involve backend communication
 type ModelProvider interface {
 	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
-	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error)
+	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error)
 	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
 	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
 type Setuper interface {
-	// ReusableArtifact returns artifact stores for the artifacts that are already installed and can be re-used for this setup.
-	ReusableArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap) store.StoredArtifactMap
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -137,7 +137,7 @@ func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
 func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setup {
-	return &Setup{model, target, msgHandler, nil}
+	return &Setup{model, target, msgHandler, store.New(target.Dir())}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -161,6 +161,30 @@ func (s *Setup) update() error {
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
+	// Compute and handle the change summary
+	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
+	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
+	if err != nil {
+		return errs.Wrap(err, "Failed to select setup implementation")
+	}
+
+	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
+	if err != nil {
+		if errors.Is(err, artifact.CamelRuntimeBuilding) {
+			messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
+			if s.target.Owner() == "" && s.target.Name() == "" {
+				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
+			}
+			return locale.WrapInputError(err, "build_status_in_progress", "", messageURL)
+		}
+		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
+	}
+
+	failedArtifacts := artifact.NewFailedArtifactsFromBuild(buildResult.BuildStatusResponse)
+
+	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
+
+	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
 		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
 		ns := project.Namespaced{
@@ -170,10 +194,11 @@ func (s *Setup) update() error {
 		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
-	// Compute and handle the change summary
-	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
+	if buildResult.BuildStatus == headchef.Failed {
+		s.events.BuildFinished()
+		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+	}
 
-	s.store = store.New(s.target.Dir())
 	oldRecipe, err := s.store.Recipe()
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
@@ -182,17 +207,12 @@ func (s *Setup) update() error {
 	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
 	s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
-	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
-	if err != nil {
-		return errs.Wrap(err, "Failed to select setup implementation")
-	}
-
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
 		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled := setup.ReusableArtifacts(changedArtifacts, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
@@ -209,7 +229,7 @@ func (s *Setup) update() error {
 		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 	}
 
-	err = s.installArtifacts(buildResult, artifacts, alreadyInstalled, setup)
+	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	if err != nil {
 		return err
 	}
@@ -280,23 +300,16 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	if !buildResult.BuildReady && buildResult.BuildEngine == model.Camel {
-		messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
-		if s.target.Owner() == "" && s.target.Name() == "" {
-			messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
-		}
-		return locale.NewInputError("build_status_in_progress", "", messageURL)
-	}
+func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromBuildResult(buildResult, alreadyInstalled, setup)
+		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup)
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, alreadyInstalled, setup)
+		err = s.installFromBuildLog(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	}
 
 	return err
@@ -305,21 +318,23 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
 func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, setup Setuper, errors chan<- error) func() {
 	return func() {
-		// This is the name used to describe the artifact.  As camel bundles all artifacts in one tarball, we call it 'bundle'
-		name := setup.ResolveArtifactName(a.ArtifactID)
-		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI, name); err != nil {
+		// If artifact has no valid download, just count it as completed and return
+		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") {
+			s.events.ArtifactStepStarting(events.Install, a.ArtifactID, 0)
+			s.events.ArtifactStepCompleted(events.Install, a.ArtifactID)
+			return
+		}
+
+		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 			if err != nil {
+				name := setup.ResolveArtifactName(a.ArtifactID)
 				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
 			}
 		}
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
-	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch artifacts to download.")
-	}
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()
@@ -339,19 +354,23 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, alreadyIn
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
+
+	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
+	for _, d := range downloads {
+		alreadyBuilt[d.ArtifactID] = struct{}{}
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	conn, err := buildlogstream.Connect(ctx)
-	if err != nil {
-		return errs.Wrap(err, "Could not get build updates")
-	}
-	defer conn.Close()
-
-	buildLog, err := buildlog.New(artifacts, conn, s.events, *buildResult.Recipe.RecipeID)
+	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, *buildResult.Recipe.RecipeID)
+	defer func() {
+		if err := buildLog.Close(); err != nil {
+			logging.Debug("Failed to close build log: %v", errs.JoinMessage(err))
+		}
+	}()
 
 	errs, aggregatedErr := aggregateErrors()
 
@@ -385,7 +404,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI, artifactName string) error {
+func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.ArtifactID, unsignedURI string) error {
 	as, err := s.selectArtifactSetupImplementation(buildEngine, a)
 	if err != nil {
 		return errs.Wrap(err, "Failed to select artifact setup implementation")
@@ -398,7 +417,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 
 	unarchiver := as.Unarchiver()
 	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a, artifactName)
+	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a)
 	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
 		s.events.ArtifactStepFailed(events.Download, a, err.Error())
@@ -415,7 +434,7 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 	}
 
-	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a, artifactName)
+	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a)
 	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
 	if err != nil {
 		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
@@ -437,10 +456,10 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	// move files to installation path in main thread, such that file operations are synchronized
-	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, artifactName, unpackedDir, envDef, numFiles) })
+	return mainthread.CallErr(func() error { return s.moveToInstallPath(a, unpackedDir, envDef, numFiles) })
 }
 
-func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
+func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, envDef *envdef.EnvironmentDefinition, numFiles int) error {
 	// clean up the unpacked dir
 	defer os.RemoveAll(unpackedDir)
 
@@ -454,7 +473,7 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, artifactName string, un
 		}
 		s.events.ArtifactStepProgress(events.Install, a, 1)
 	}
-	s.events.ArtifactStepStarting(events.Install, a, artifactName, numFiles)
+	s.events.ArtifactStepStarting(events.Install, a, numFiles)
 	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
@@ -537,4 +556,15 @@ func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine,
 
 func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
+}
+
+func reusableArtifacts(requestedArtifacts []*headchef_models.V1Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+	keep := make(store.StoredArtifactMap)
+
+	for _, a := range requestedArtifacts {
+		if v, ok := storedArtifacts[*a.ArtifactID]; ok {
+			keep[*a.ArtifactID] = v
+		}
+	}
+	return keep
 }

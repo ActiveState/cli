@@ -29,9 +29,9 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 		return err
 	}
 	out.Print(struct {
-		commitData `opts:"verticalTable" locale:","`
+		Data commitData `opts:"verticalTable" locale:","`
 	}{
-		data,
+		Data: data,
 	})
 
 	return nil

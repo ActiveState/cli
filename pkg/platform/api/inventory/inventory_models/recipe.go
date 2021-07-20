@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -34,6 +35,11 @@ type Recipe struct {
 
 	// If all of the resolved ingredients resolved to indemnified versions, then this will be true.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
+
+	// The timestamp of the order that produced this recipe. This field is for internal use only, and may be removed in the future.
+	// Required: true
+	// Format: date-time
+	OrderTimestamp *strfmt.DateTime `json:"order_timestamp"`
 
 	// platform
 	// Required: true
@@ -68,6 +74,10 @@ func (m *Recipe) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateImage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOrderTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -124,6 +134,19 @@ func (m *Recipe) validateImage(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Recipe) validateOrderTimestamp(formats strfmt.Registry) error {
+
+	if err := validate.Required("order_timestamp", "body", m.OrderTimestamp); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("order_timestamp", "body", "date-time", m.OrderTimestamp.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Recipe) validatePlatform(formats strfmt.Registry) error {
 
 	if err := validate.Required("platform", "body", m.Platform); err != nil {
@@ -156,7 +179,6 @@ func (m *Recipe) validateRecipeID(formats strfmt.Registry) error {
 }
 
 func (m *Recipe) validateRecipeStoreTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.RecipeStoreTimestamp) { // not required
 		return nil
 	}
@@ -207,6 +229,74 @@ func (m *Recipe) validateSolverVersion(formats strfmt.Registry) error {
 
 	if err := validate.Required("solver_version", "body", m.SolverVersion); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this recipe based on the context it is used
+func (m *Recipe) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateImage(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePlatform(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateResolvedIngredients(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Recipe) contextValidateImage(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Image != nil {
+		if err := m.Image.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("image")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Recipe) contextValidatePlatform(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Platform != nil {
+		if err := m.Platform.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("platform")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Recipe) contextValidateResolvedIngredients(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ResolvedIngredients); i++ {
+
+		if m.ResolvedIngredients[i] != nil {
+			if err := m.ResolvedIngredients[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("resolved_ingredients" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

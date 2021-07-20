@@ -18,60 +18,80 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewUpdateIngredientVersionParams creates a new UpdateIngredientVersionParams object
-// with the default values initialized.
+// NewUpdateIngredientVersionParams creates a new UpdateIngredientVersionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateIngredientVersionParams() *UpdateIngredientVersionParams {
-	var ()
 	return &UpdateIngredientVersionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateIngredientVersionParamsWithTimeout creates a new UpdateIngredientVersionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateIngredientVersionParamsWithTimeout(timeout time.Duration) *UpdateIngredientVersionParams {
-	var ()
 	return &UpdateIngredientVersionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateIngredientVersionParamsWithContext creates a new UpdateIngredientVersionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateIngredientVersionParamsWithContext(ctx context.Context) *UpdateIngredientVersionParams {
-	var ()
 	return &UpdateIngredientVersionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateIngredientVersionParamsWithHTTPClient creates a new UpdateIngredientVersionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateIngredientVersionParamsWithHTTPClient(client *http.Client) *UpdateIngredientVersionParams {
-	var ()
 	return &UpdateIngredientVersionParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateIngredientVersionParams contains all the parameters to send to the API endpoint
-for the update ingredient version operation typically these are written to a http.Request
+/* UpdateIngredientVersionParams contains all the parameters to send to the API endpoint
+   for the update ingredient version operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateIngredientVersionParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
-	/*IngredientVersion*/
+
+	// IngredientVersion.
 	IngredientVersion *inventory_models.IngredientVersionUpdate
-	/*IngredientVersionID*/
+
+	// IngredientVersionID.
+	//
+	// Format: uuid
 	IngredientVersionID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateIngredientVersionParams) WithDefaults() *UpdateIngredientVersionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update ingredient version params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateIngredientVersionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update ingredient version params
@@ -152,7 +172,6 @@ func (o *UpdateIngredientVersionParams) WriteToRequest(r runtime.ClientRequest, 
 	if err := r.SetPathParam("ingredient_id", o.IngredientID.String()); err != nil {
 		return err
 	}
-
 	if o.IngredientVersion != nil {
 		if err := r.SetBodyParam(o.IngredientVersion); err != nil {
 			return err

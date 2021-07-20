@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewUpdatePlatformParams creates a new UpdatePlatformParams object
-// with the default values initialized.
+// NewUpdatePlatformParams creates a new UpdatePlatformParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdatePlatformParams() *UpdatePlatformParams {
-	var ()
 	return &UpdatePlatformParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdatePlatformParamsWithTimeout creates a new UpdatePlatformParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdatePlatformParamsWithTimeout(timeout time.Duration) *UpdatePlatformParams {
-	var ()
 	return &UpdatePlatformParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdatePlatformParamsWithContext creates a new UpdatePlatformParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdatePlatformParamsWithContext(ctx context.Context) *UpdatePlatformParams {
-	var ()
 	return &UpdatePlatformParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdatePlatformParamsWithHTTPClient creates a new UpdatePlatformParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdatePlatformParamsWithHTTPClient(client *http.Client) *UpdatePlatformParams {
-	var ()
 	return &UpdatePlatformParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdatePlatformParams contains all the parameters to send to the API endpoint
-for the update platform operation typically these are written to a http.Request
+/* UpdatePlatformParams contains all the parameters to send to the API endpoint
+   for the update platform operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdatePlatformParams struct {
 
-	/*PlatformID*/
+	// PlatformID.
+	//
+	// Format: uuid
 	PlatformID strfmt.UUID
-	/*PlatformUpdate*/
+
+	// PlatformUpdate.
 	PlatformUpdate *inventory_models.UpdatePlatformParamsBody
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update platform params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdatePlatformParams) WithDefaults() *UpdatePlatformParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update platform params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdatePlatformParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update platform params
@@ -139,7 +156,6 @@ func (o *UpdatePlatformParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 	if err := r.SetPathParam("platform_id", o.PlatformID.String()); err != nil {
 		return err
 	}
-
 	if o.PlatformUpdate != nil {
 		if err := r.SetBodyParam(o.PlatformUpdate); err != nil {
 			return err

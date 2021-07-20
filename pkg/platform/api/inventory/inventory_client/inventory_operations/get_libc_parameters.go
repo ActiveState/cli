@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetLibcParams creates a new GetLibcParams object
-// with the default values initialized.
+// NewGetLibcParams creates a new GetLibcParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetLibcParams() *GetLibcParams {
-	var ()
 	return &GetLibcParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetLibcParamsWithTimeout creates a new GetLibcParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetLibcParamsWithTimeout(timeout time.Duration) *GetLibcParams {
-	var ()
 	return &GetLibcParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetLibcParamsWithContext creates a new GetLibcParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetLibcParamsWithContext(ctx context.Context) *GetLibcParams {
-	var ()
 	return &GetLibcParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetLibcParamsWithHTTPClient creates a new GetLibcParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetLibcParamsWithHTTPClient(client *http.Client) *GetLibcParams {
-	var ()
 	return &GetLibcParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetLibcParams contains all the parameters to send to the API endpoint
-for the get libc operation typically these are written to a http.Request
+/* GetLibcParams contains all the parameters to send to the API endpoint
+   for the get libc operation.
+
+   Typically these are written to a http.Request.
 */
 type GetLibcParams struct {
 
-	/*LibcID*/
+	// LibcID.
+	//
+	// Format: uuid
 	LibcID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLibcParams) WithDefaults() *GetLibcParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetLibcParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get libc params

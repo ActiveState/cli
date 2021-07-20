@@ -33,7 +33,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 	cp.ExpectExitCode(0)
 
 	// Check if we error out on conflicts properly
-	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
+	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
 	cp.Expect(`Could not create project`)
 	cp.ExpectExitCode(1)
 }

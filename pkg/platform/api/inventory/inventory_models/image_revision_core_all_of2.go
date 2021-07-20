@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
@@ -47,7 +48,6 @@ func (m *ImageRevisionCoreAllOf2) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ImageRevisionCoreAllOf2) validateConditions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Conditions) { // not required
 		return nil
 	}
@@ -100,14 +100,13 @@ const (
 
 // prop value enum
 func (m *ImageRevisionCoreAllOf2) validateStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageRevisionCoreAllOf2TypeStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageRevisionCoreAllOf2TypeStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *ImageRevisionCoreAllOf2) validateStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -115,6 +114,38 @@ func (m *ImageRevisionCoreAllOf2) validateStatus(formats strfmt.Registry) error 
 	// value enum
 	if err := m.validateStatusEnum("status", "body", m.Status); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this image revision core all of2 based on the context it is used
+func (m *ImageRevisionCoreAllOf2) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateConditions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ImageRevisionCoreAllOf2) contextValidateConditions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Conditions); i++ {
+
+		if m.Conditions[i] != nil {
+			if err := m.Conditions[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

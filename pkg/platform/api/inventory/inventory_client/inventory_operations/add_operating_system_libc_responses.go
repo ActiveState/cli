@@ -52,7 +52,7 @@ func NewAddOperatingSystemLibcOK() *AddOperatingSystemLibcOK {
 	return &AddOperatingSystemLibcOK{}
 }
 
-/*AddOperatingSystemLibcOK handles this case with default header values.
+/* AddOperatingSystemLibcOK describes a response with status code 200, with default header values.
 
 The libc added to the operating system
 */
@@ -63,7 +63,6 @@ type AddOperatingSystemLibcOK struct {
 func (o *AddOperatingSystemLibcOK) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibcOK  %+v", 200, o.Payload)
 }
-
 func (o *AddOperatingSystemLibcOK) GetPayload() *inventory_models.Libc {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddOperatingSystemLibcBadRequest() *AddOperatingSystemLibcBadRequest {
 	return &AddOperatingSystemLibcBadRequest{}
 }
 
-/*AddOperatingSystemLibcBadRequest handles this case with default header values.
+/* AddOperatingSystemLibcBadRequest describes a response with status code 400, with default header values.
 
 If the libc ID doesn't exist
 */
@@ -96,7 +95,6 @@ type AddOperatingSystemLibcBadRequest struct {
 func (o *AddOperatingSystemLibcBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibcBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddOperatingSystemLibcBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddOperatingSystemLibcDefault(code int) *AddOperatingSystemLibcDefault {
 	}
 }
 
-/*AddOperatingSystemLibcDefault handles this case with default header values.
+/* AddOperatingSystemLibcDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -138,7 +136,6 @@ func (o *AddOperatingSystemLibcDefault) Code() int {
 func (o *AddOperatingSystemLibcDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/operating-systems/{operating_system_id}/libcs][%d] addOperatingSystemLibc default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddOperatingSystemLibcDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

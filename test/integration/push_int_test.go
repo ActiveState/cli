@@ -26,17 +26,20 @@ type PushIntegrationTestSuite struct {
 	// some variables re-used between tests
 	baseProject   string
 	language      string
+	languageFull  string
 	extraPackage  string
 	extraPackage2 string
 }
 
 func (suite *PushIntegrationTestSuite) SetupSuite() {
-	suite.language = "perl@5.32.0"
-	suite.baseProject = "ActiveState/Perl-5.32"
+	suite.language = "perl"
+	suite.languageFull = "perl@5.32.0"
+	suite.baseProject = "ActiveState-CLI/Perl-5.32"
 	suite.extraPackage = "JSON"
 	suite.extraPackage2 = "DateTime"
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
+		suite.languageFull = suite.language
 		suite.baseProject = "ActiveState-CLI/small-python"
 		suite.extraPackage = "six@1.10.0"
 	}
@@ -50,23 +53,27 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	username := "cli-integration-tests"
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
+	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
 		namespace,
-		suite.language,
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
+		suite.languageFull,
+		"--path", wd,
 		"--skeleton", "editor",
 	)
 	cp.ExpectExitCode(0)
 
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
+	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	suite.Require().FileExists(pjfilepath)
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.Expect("continue?")
+	cp.Send("y")
 	cp.ExpectLongString("Creating project")
 	cp.ExpectLongString("Project created")
 	cp.ExpectExitCode(0)
 
 	// Check that languages were reset
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
 	if pjfile.Languages != nil {
@@ -106,54 +113,17 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
+// Test pushing to a new project from a headless commit
+func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	// TODO: Re-enable and tweak test once https://www.pivotaltracker.com/story/show/178223554 is ready
-	suite.T().Skip("This test is currently not relevant due to local environment mangement")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 	username := "cli-integration-tests"
 	pname := strutils.UUID()
-	pname2 := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
-	namespace2 := fmt.Sprintf("%s/%s", username, pname2)
-	cp := ts.Spawn(
-		"init",
-		namespace,
-		suite.language,
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
-		"--skeleton", "editor",
-	)
-	cp.ExpectExitCode(0)
 
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Project created at https://%s/%s/%s", constants.PlatformURL, username, pname))
-	cp.ExpectExitCode(0)
-
-	// Check that languages were reset
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
-	pjfile, err := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if pjfile.Languages != nil {
-		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
-	}
-	if pjfile.CommitID() == "" {
-		suite.FailNow("commitID was not set after running push for project creation")
-	}
-	if pjfile.BranchName() == "" {
-		suite.FailNow("branch was not set after running push for project creation")
-	}
-
-	// ensure that we are logged out
-	cp = ts.Spawn("auth", "logout")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
-	cp.Expect("You're about to add packages as an anonymous user")
-	cp.Expect("(Y/n)")
-	cp.Send("y")
+	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -163,31 +133,87 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert() {
 		cp.ExpectExitCode(0)
 	}
 
-	pjfile, err = projectfile.Parse(pjfilepath)
+	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
 	if !strings.Contains(pjfile.Project, "/commit/") {
 		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
 	}
 
-	ts.LoginAsPersistentUser()
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
 	cp.ExpectLongString("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect("> Other")
-	cp.Send("")
+	if runtime.GOOS != "darwin" {
+		// https://www.pivotaltracker.com/story/show/178916236
+		cp.Expect("> Other")
+		cp.Send("")
+	}
 	cp.Expect(">")
-	cp.Send(pname2.String())
+	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace2)) {
+	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
 		suite.FailNow("project field should include project again: " + pjfile.Project)
 	}
+}
+
+// Test pushing without permission, and choosing to create a new project
+func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
+	suite.OnlyRunForTags(tagsuite.Push)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	username := ts.CreateNewUser()
+	pname := strutils.UUID()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
+	cp.Expect("You're Activated", 20*time.Second)
+	cp.WaitForInput(10 * time.Second)
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
+	switch runtime.GOOS {
+	case "darwin":
+		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.Wait()
+	default:
+		cp.Expect("added", 60*time.Second)
+		cp.ExpectExitCode(0)
+	}
+
+	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	pjfile, err := projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	suite.Require().Contains(pjfile.Project, suite.baseProject)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
+	cp.Expect("not authorized")
+	cp.Send("y")
+	cp.ExpectLongString("Who would you like the owner of this project to be?")
+	cp.Send("")
+	cp.ExpectLongString("What would you like the name of this project to be?")
+	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	if runtime.GOOS != "darwin" {
+		// https://www.pivotaltracker.com/story/show/178916236
+		cp.Expect("> Other")
+		cp.Send("")
+	}
+	cp.Expect(">")
+	cp.SendLine(pname.String())
+	cp.Expect("Project created")
+	cp.ExpectExitCode(0)
+
+	pjfile, err = projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	suite.Require().Contains(pjfile.Project, username)
+	suite.Require().Contains(pjfile.Project, pname.String())
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
@@ -198,10 +224,11 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", username, pname)
 
+	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
 			"activate", suite.baseProject,
-			"--path", filepath.Join(ts.Dirs.Work, namespace)),
+			"--path", wd),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("default project?")
@@ -220,11 +247,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(e2e.WithArgs(
 		"install", suite.extraPackage),
 		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"))
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
@@ -241,6 +267,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString("You are about to create the project")
+	cp.Send("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 }
@@ -261,27 +289,6 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
 	cp.ExpectLongString("Your project has new changes available")
-	cp.ExpectExitCode(1)
-}
-
-func (suite *PushIntegrationTestSuite) TestPush_AlreadyExists() {
-	suite.OnlyRunForTags(tagsuite.Push)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-	username := "cli-integration-tests"
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-	cp := ts.Spawn(
-		"init",
-		namespace,
-		"python3",
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
-		"--skeleton", "editor",
-	)
-	cp.ExpectExitCode(0)
-	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("The project %s/%s already exists", username, "Python3"))
 	cp.ExpectExitCode(1)
 }
 

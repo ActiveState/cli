@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddLibcParams creates a new AddLibcParams object
-// with the default values initialized.
+// NewAddLibcParams creates a new AddLibcParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddLibcParams() *AddLibcParams {
-	var ()
 	return &AddLibcParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddLibcParamsWithTimeout creates a new AddLibcParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddLibcParamsWithTimeout(timeout time.Duration) *AddLibcParams {
-	var ()
 	return &AddLibcParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddLibcParamsWithContext creates a new AddLibcParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddLibcParamsWithContext(ctx context.Context) *AddLibcParams {
-	var ()
 	return &AddLibcParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddLibcParamsWithHTTPClient creates a new AddLibcParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddLibcParamsWithHTTPClient(client *http.Client) *AddLibcParams {
-	var ()
 	return &AddLibcParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddLibcParams contains all the parameters to send to the API endpoint
-for the add libc operation typically these are written to a http.Request
+/* AddLibcParams contains all the parameters to send to the API endpoint
+   for the add libc operation.
+
+   Typically these are written to a http.Request.
 */
 type AddLibcParams struct {
 
-	/*Libc*/
+	// Libc.
 	Libc *inventory_models.LibcCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddLibcParams) WithDefaults() *AddLibcParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add libc params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddLibcParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add libc params
@@ -121,7 +135,6 @@ func (o *AddLibcParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regis
 		return err
 	}
 	var res []error
-
 	if o.Libc != nil {
 		if err := r.SetBodyParam(o.Libc); err != nil {
 			return err

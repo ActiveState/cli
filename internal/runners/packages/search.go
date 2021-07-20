@@ -78,7 +78,11 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		)
 	}
 
-	return model.LanguageForCommit(proj.CommitUUID())
+	lang, err := model.LanguageByCommit(proj.CommitUUID())
+	if err != nil {
+		return "", errs.Wrap(err, "LanguageByCommit failed")
+	}
+	return lang.Name, nil
 }
 
 type modules []string

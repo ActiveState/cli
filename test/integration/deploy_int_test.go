@@ -199,14 +199,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	}
 
 	cp.SendLine("python3 -m pytest --version")
-	cp.ExpectRe(`pytest \d+\.\d+\.\d+`)
-
-	if runtime.GOOS != "windows" {
-		// AzureCI has multiple representations for the work directory that
-		// may not agree when running tests
-		cp.Expect("imported from")
-		cp.Expect(filepath.Join(ts.Dirs.Work, "target"))
-	}
+	cp.Expect("pytest")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
