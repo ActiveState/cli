@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
-	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
 )
 
@@ -100,8 +99,16 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 func wordWrap(text string) string {
-	termWidth := termutils.GetWidth()
-	return wordwrap.WrapString(text, uint(termWidth))
+	var result []string
+	cropped := colorize.GetCroppedText(text, termutils.GetWidth())
+	for _, crop := range cropped {
+		result = append(result, crop.Line)
+	}
+	suffix := ""
+	if strings.HasSuffix(text, "\n") {
+		suffix = "\n"
+	}
+	return strings.Join(result, "\n") + suffix
 }
 
 const nilText = "<nil>"
