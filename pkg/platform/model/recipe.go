@@ -95,7 +95,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		if err2 != nil {
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
-		
+
 		serr := resolveSolverError(err)
 		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
 		return "", serr
