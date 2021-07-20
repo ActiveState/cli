@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -20,9 +22,6 @@ type ProvidedFeatureAllOf0 struct {
 	// feature
 	// Required: true
 	Feature *string `json:"feature"`
-
-	// If this is true then it means that we assigned a version to this feature ourselves rather than getting it directly from metadata in the source ingredient.
-	IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
 
 	// namespace
 	// Required: true
@@ -62,6 +61,11 @@ func (m *ProvidedFeatureAllOf0) validateNamespace(formats strfmt.Registry) error
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this provided feature all of0 based on context it is used
+func (m *ProvidedFeatureAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

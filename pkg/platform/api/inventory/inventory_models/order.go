@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -91,7 +92,6 @@ func (m *Order) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateBuildFlags(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BuildFlags) { // not required
 		return nil
 	}
@@ -181,16 +181,15 @@ func (m *Order) validateRequirements(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateSolverVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SolverVersion) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("solver_version", "body", int64(*m.SolverVersion), 0, false); err != nil {
+	if err := validate.MinimumInt("solver_version", "body", *m.SolverVersion, 0, false); err != nil {
 		return err
 	}
 
-	if err := validate.MaximumInt("solver_version", "body", int64(*m.SolverVersion), 1, false); err != nil {
+	if err := validate.MaximumInt("solver_version", "body", *m.SolverVersion, 1, false); err != nil {
 		return err
 	}
 
@@ -205,6 +204,60 @@ func (m *Order) validateTimestamp(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("timestamp", "body", "date-time", m.Timestamp.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this order based on the context it is used
+func (m *Order) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBuildFlags(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Order) contextValidateBuildFlags(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.BuildFlags); i++ {
+
+		if m.BuildFlags[i] != nil {
+			if err := m.BuildFlags[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flags" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Order) contextValidateRequirements(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Requirements); i++ {
+
+		if m.Requirements[i] != nil {
+			if err := m.Requirements[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("requirements" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

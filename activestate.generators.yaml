@@ -3,6 +3,7 @@ scripts:
     language: bash
     description: Generates the mono-api client files
     value: |
+      echo "IMPORTANT!!! mono API and inventory API have to be in sync.  Consider running state run generate-inventory-client"
       WD=$(pwd)
       pushd pkg/platform/api/mono
       swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
@@ -35,6 +36,7 @@ scripts:
     language: bash
     description: Generates the inventory-api client files
     value: |
+      echo "IMPORTANT!!! mono API and inventory API have to be in sync.  Consider running state run generate-api-client"
       WD=$(pwd)
       pushd pkg/platform/api/inventory
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client

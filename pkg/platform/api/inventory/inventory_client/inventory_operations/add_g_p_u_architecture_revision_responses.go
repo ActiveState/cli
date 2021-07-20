@@ -52,7 +52,7 @@ func NewAddGPUArchitectureRevisionOK() *AddGPUArchitectureRevisionOK {
 	return &AddGPUArchitectureRevisionOK{}
 }
 
-/*AddGPUArchitectureRevisionOK handles this case with default header values.
+/* AddGPUArchitectureRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the GPU architecture
 */
@@ -63,7 +63,6 @@ type AddGPUArchitectureRevisionOK struct {
 func (o *AddGPUArchitectureRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures/{gpu_architecture_id}/revisions][%d] addGPUArchitectureRevisionOK  %+v", 200, o.Payload)
 }
-
 func (o *AddGPUArchitectureRevisionOK) GetPayload() *inventory_models.GpuArchitecture {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddGPUArchitectureRevisionBadRequest() *AddGPUArchitectureRevisionBadReq
 	return &AddGPUArchitectureRevisionBadRequest{}
 }
 
-/*AddGPUArchitectureRevisionBadRequest handles this case with default header values.
+/* AddGPUArchitectureRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the GPU architecture revision is invalid
 */
@@ -96,7 +95,6 @@ type AddGPUArchitectureRevisionBadRequest struct {
 func (o *AddGPUArchitectureRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures/{gpu_architecture_id}/revisions][%d] addGPUArchitectureRevisionBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddGPUArchitectureRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddGPUArchitectureRevisionDefault(code int) *AddGPUArchitectureRevisionD
 	}
 }
 
-/*AddGPUArchitectureRevisionDefault handles this case with default header values.
+/* AddGPUArchitectureRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *AddGPUArchitectureRevisionDefault) Code() int {
 func (o *AddGPUArchitectureRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures/{gpu_architecture_id}/revisions][%d] addGPUArchitectureRevision default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddGPUArchitectureRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

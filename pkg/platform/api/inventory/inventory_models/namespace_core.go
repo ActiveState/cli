@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -119,7 +120,7 @@ const (
 
 // prop value enum
 func (m *NamespaceCore) validateNameNormalizationAlgorithmEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, namespaceCoreTypeNameNormalizationAlgorithmPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, namespaceCoreTypeNameNormalizationAlgorithmPropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -184,22 +185,22 @@ const (
 	// NamespaceCoreTypeInternal captures enum value "internal"
 	NamespaceCoreTypeInternal string = "internal"
 
-	// NamespaceCoreTypeLanguageCore captures enum value "language-core"
-	NamespaceCoreTypeLanguageCore string = "language-core"
+	// NamespaceCoreTypeLanguageDashCore captures enum value "language-core"
+	NamespaceCoreTypeLanguageDashCore string = "language-core"
 
-	// NamespaceCoreTypeLanguageIngredient captures enum value "language-ingredient"
-	NamespaceCoreTypeLanguageIngredient string = "language-ingredient"
+	// NamespaceCoreTypeLanguageDashIngredient captures enum value "language-ingredient"
+	NamespaceCoreTypeLanguageDashIngredient string = "language-ingredient"
 
-	// NamespaceCoreTypePlatformComponent captures enum value "platform-component"
-	NamespaceCoreTypePlatformComponent string = "platform-component"
+	// NamespaceCoreTypePlatformDashComponent captures enum value "platform-component"
+	NamespaceCoreTypePlatformDashComponent string = "platform-component"
 
-	// NamespaceCoreTypeSharedIngredient captures enum value "shared-ingredient"
-	NamespaceCoreTypeSharedIngredient string = "shared-ingredient"
+	// NamespaceCoreTypeSharedDashIngredient captures enum value "shared-ingredient"
+	NamespaceCoreTypeSharedDashIngredient string = "shared-ingredient"
 )
 
 // prop value enum
 func (m *NamespaceCore) validateTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, namespaceCoreTypeTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, namespaceCoreTypeTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -257,7 +258,7 @@ const (
 
 // prop value enum
 func (m *NamespaceCore) validateVersionParsingAlgorithmEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, namespaceCoreTypeVersionParsingAlgorithmPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, namespaceCoreTypeVersionParsingAlgorithmPropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -274,6 +275,11 @@ func (m *NamespaceCore) validateVersionParsingAlgorithm(formats strfmt.Registry)
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this namespace core based on context it is used
+func (m *NamespaceCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
