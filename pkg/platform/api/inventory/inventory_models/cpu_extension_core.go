@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -69,6 +71,25 @@ func (m *CPUExtensionCore) Validate(formats strfmt.Registry) error {
 	}
 	// validation for a type composition with RevisionedFeatureProvider
 	if err := m.RevisionedFeatureProvider.Validate(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+// ContextValidate validate this cpu extension core based on the context it is used
+func (m *CPUExtensionCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	// validation for a type composition with CPUExtensionCoreAllOf0
+	if err := m.CPUExtensionCoreAllOf0.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with RevisionedFeatureProvider
+	if err := m.RevisionedFeatureProvider.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

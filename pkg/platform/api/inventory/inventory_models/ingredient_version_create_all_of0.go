@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -21,7 +22,7 @@ type IngredientVersionCreateAllOf0 struct {
 
 	// The author(s) of this ingredient version, referenced by their author ID.
 	// Required: true
-	// Min Length: 1
+	// Min Items: 1
 	Authors []strfmt.UUID `json:"authors"`
 }
 
@@ -45,6 +46,12 @@ func (m *IngredientVersionCreateAllOf0) validateAuthors(formats strfmt.Registry)
 		return err
 	}
 
+	iAuthorsSize := int64(len(m.Authors))
+
+	if err := validate.MinItems("authors", "body", iAuthorsSize, 1); err != nil {
+		return err
+	}
+
 	for i := 0; i < len(m.Authors); i++ {
 
 		if err := validate.FormatOf("authors"+"."+strconv.Itoa(i), "body", "uuid", m.Authors[i].String(), formats); err != nil {
@@ -53,6 +60,11 @@ func (m *IngredientVersionCreateAllOf0) validateAuthors(formats strfmt.Registry)
 
 	}
 
+	return nil
+}
+
+// ContextValidate validates this ingredient version create all of0 based on context it is used
+func (m *IngredientVersionCreateAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

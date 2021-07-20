@@ -52,7 +52,7 @@ func NewSolveOrderCreated() *SolveOrderCreated {
 	return &SolveOrderCreated{}
 }
 
-/*SolveOrderCreated handles this case with default header values.
+/* SolveOrderCreated describes a response with status code 201, with default header values.
 
 Returns the ids of and links to the created recipes
 */
@@ -63,7 +63,6 @@ type SolveOrderCreated struct {
 func (o *SolveOrderCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrderCreated  %+v", 201, o.Payload)
 }
-
 func (o *SolveOrderCreated) GetPayload() inventory_models.SolutionResponse {
 	return o.Payload
 }
@@ -83,7 +82,7 @@ func NewSolveOrderBadRequest() *SolveOrderBadRequest {
 	return &SolveOrderBadRequest{}
 }
 
-/*SolveOrderBadRequest handles this case with default header values.
+/* SolveOrderBadRequest describes a response with status code 400, with default header values.
 
 If the order is invalid
 */
@@ -94,7 +93,6 @@ type SolveOrderBadRequest struct {
 func (o *SolveOrderBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrderBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *SolveOrderBadRequest) GetPayload() *inventory_models.SolverValidationError {
 	return o.Payload
 }
@@ -118,7 +116,7 @@ func NewSolveOrderDefault(code int) *SolveOrderDefault {
 	}
 }
 
-/*SolveOrderDefault handles this case with default header values.
+/* SolveOrderDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */
@@ -136,7 +134,6 @@ func (o *SolveOrderDefault) Code() int {
 func (o *SolveOrderDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/solutions][%d] solveOrder default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *SolveOrderDefault) GetPayload() *inventory_models.SolverError {
 	return o.Payload
 }

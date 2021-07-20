@@ -131,8 +131,8 @@ func FilterCheckpointPackages(chkPt []*gqlModel.Requirement) []*gqlModel.Require
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
-func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
-	result := []*inventory_models.V1OrderRequirementsItems{}
+func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRequirement {
+	result := []*inventory_models.OrderRequirement{}
 
 	for _, req := range checkpoint {
 		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
@@ -142,7 +142,7 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1Order
 			continue
 		}
 
-		result = append(result, &inventory_models.V1OrderRequirementsItems{
+		result = append(result, &inventory_models.OrderRequirement{
 			Feature:             &req.Requirement,
 			Namespace:           &req.Namespace,
 			VersionRequirements: versionRequirement(req.VersionConstraint),
@@ -170,13 +170,13 @@ func CheckpointToCamelFlags(checkpoint Checkpoint) []string {
 // versionRequirement returns nil if the version constraint is empty otherwise it will return a valid
 // list for a V1OrderRequirements' VersionRequirements. The VersionRequirements can be omitted however
 // if it is present then the Version string must be populated with at least one character.
-func versionRequirement(versionConstraint string) []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems {
+func versionRequirement(versionConstraint string) []*inventory_models.VersionRequirement {
 	if versionConstraint == "" {
 		return nil
 	}
 
 	var eq = "eq"
-	return []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
+	return []*inventory_models.VersionRequirement{{
 		Comparator: &eq,
 		Version:    &versionConstraint,
 	}}

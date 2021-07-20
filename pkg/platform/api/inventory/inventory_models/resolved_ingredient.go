@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -99,7 +100,6 @@ func (m *ResolvedIngredient) Validate(formats strfmt.Registry) error {
 }
 
 func (m *ResolvedIngredient) validateAlternatives(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Alternatives) { // not required
 		return nil
 	}
@@ -116,7 +116,6 @@ func (m *ResolvedIngredient) validateAlternatives(formats strfmt.Registry) error
 }
 
 func (m *ResolvedIngredient) validateArtifactID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ArtifactID) { // not required
 		return nil
 	}
@@ -129,7 +128,6 @@ func (m *ResolvedIngredient) validateArtifactID(formats strfmt.Registry) error {
 }
 
 func (m *ResolvedIngredient) validateBuildScripts(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BuildScripts) { // not required
 		return nil
 	}
@@ -154,7 +152,6 @@ func (m *ResolvedIngredient) validateBuildScripts(formats strfmt.Registry) error
 }
 
 func (m *ResolvedIngredient) validateDependencies(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Dependencies) { // not required
 		return nil
 	}
@@ -197,7 +194,6 @@ func (m *ResolvedIngredient) validateIngredient(formats strfmt.Registry) error {
 }
 
 func (m *ResolvedIngredient) validateIngredientOptions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientOptions) { // not required
 		return nil
 	}
@@ -240,7 +236,6 @@ func (m *ResolvedIngredient) validateIngredientVersion(formats strfmt.Registry) 
 }
 
 func (m *ResolvedIngredient) validatePatches(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Patches) { // not required
 		return nil
 	}
@@ -265,7 +260,6 @@ func (m *ResolvedIngredient) validatePatches(formats strfmt.Registry) error {
 }
 
 func (m *ResolvedIngredient) validateResolvedRequirements(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ResolvedRequirements) { // not required
 		return nil
 	}
@@ -277,6 +271,162 @@ func (m *ResolvedIngredient) validateResolvedRequirements(formats strfmt.Registr
 
 		if m.ResolvedRequirements[i] != nil {
 			if err := m.ResolvedRequirements[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("resolved_requirements" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this resolved ingredient based on the context it is used
+func (m *ResolvedIngredient) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBuildScripts(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDependencies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateIngredient(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateIngredientOptions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateIngredientVersion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePatches(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateResolvedRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateBuildScripts(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.BuildScripts); i++ {
+
+		if m.BuildScripts[i] != nil {
+			if err := m.BuildScripts[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_scripts" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateDependencies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Dependencies); i++ {
+
+		if m.Dependencies[i] != nil {
+			if err := m.Dependencies[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("dependencies" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateIngredient(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Ingredient != nil {
+		if err := m.Ingredient.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ingredient")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateIngredientOptions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.IngredientOptions); i++ {
+
+		if m.IngredientOptions[i] != nil {
+			if err := m.IngredientOptions[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateIngredientVersion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.IngredientVersion != nil {
+		if err := m.IngredientVersion.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ingredient_version")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidatePatches(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Patches); i++ {
+
+		if m.Patches[i] != nil {
+			if err := m.Patches[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("patches" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ResolvedIngredient) contextValidateResolvedRequirements(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ResolvedRequirements); i++ {
+
+		if m.ResolvedRequirements[i] != nil {
+			if err := m.ResolvedRequirements[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("resolved_requirements" + "." + strconv.Itoa(i))
 				}

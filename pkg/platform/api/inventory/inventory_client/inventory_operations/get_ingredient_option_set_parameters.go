@@ -17,78 +17,97 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetIngredientOptionSetParams creates a new GetIngredientOptionSetParams object
-// with the default values initialized.
+// NewGetIngredientOptionSetParams creates a new GetIngredientOptionSetParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetIngredientOptionSetParams() *GetIngredientOptionSetParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetIngredientOptionSetParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetIngredientOptionSetParamsWithTimeout creates a new GetIngredientOptionSetParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetIngredientOptionSetParamsWithTimeout(timeout time.Duration) *GetIngredientOptionSetParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetIngredientOptionSetParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetIngredientOptionSetParamsWithContext creates a new GetIngredientOptionSetParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetIngredientOptionSetParamsWithContext(ctx context.Context) *GetIngredientOptionSetParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetIngredientOptionSetParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetIngredientOptionSetParamsWithHTTPClient creates a new GetIngredientOptionSetParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetIngredientOptionSetParamsWithHTTPClient(client *http.Client) *GetIngredientOptionSetParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetIngredientOptionSetParams{
-		AllowUnstable: &allowUnstableDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetIngredientOptionSetParams contains all the parameters to send to the API endpoint
-for the get ingredient option set operation typically these are written to a http.Request
+/* GetIngredientOptionSetParams contains all the parameters to send to the API endpoint
+   for the get ingredient option set operation.
+
+   Typically these are written to a http.Request.
 */
 type GetIngredientOptionSetParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*IngredientOptionSetID*/
-	IngredientOptionSetID strfmt.UUID
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	// IngredientOptionSetID.
+	//
+	// Format: uuid
+	IngredientOptionSetID strfmt.UUID
+
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get ingredient option set params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientOptionSetParams) WithDefaults() *GetIngredientOptionSetParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get ingredient option set params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetIngredientOptionSetParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+	)
+
+	val := GetIngredientOptionSetParams{
+		AllowUnstable: &allowUnstableDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get ingredient option set params
@@ -169,16 +188,17 @@ func (o *GetIngredientOptionSetParams) WriteToRequest(r runtime.ClientRequest, r
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param ingredient_option_set_id
@@ -190,16 +210,17 @@ func (o *GetIngredientOptionSetParams) WriteToRequest(r runtime.ClientRequest, r
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

@@ -46,7 +46,7 @@ func NewGetIngredientVersionPatchesOK() *GetIngredientVersionPatchesOK {
 	return &GetIngredientVersionPatchesOK{}
 }
 
-/*GetIngredientVersionPatchesOK handles this case with default header values.
+/* GetIngredientVersionPatchesOK describes a response with status code 200, with default header values.
 
 A paginated list of patches for this ingredient version
 */
@@ -57,7 +57,6 @@ type GetIngredientVersionPatchesOK struct {
 func (o *GetIngredientVersionPatchesOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/patches][%d] getIngredientVersionPatchesOK  %+v", 200, o.Payload)
 }
-
 func (o *GetIngredientVersionPatchesOK) GetPayload() *inventory_models.IngredientVersionPatchPagedList {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetIngredientVersionPatchesDefault(code int) *GetIngredientVersionPatche
 	}
 }
 
-/*GetIngredientVersionPatchesDefault handles this case with default header values.
+/* GetIngredientVersionPatchesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetIngredientVersionPatchesDefault) Code() int {
 func (o *GetIngredientVersionPatchesDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}/patches][%d] getIngredientVersionPatches default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetIngredientVersionPatchesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

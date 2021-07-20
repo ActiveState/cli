@@ -1,9 +1,11 @@
 package buildlog
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +26,7 @@ func (cm *connectionMock) WriteJSON(interface{}) error {
 }
 
 func (cm *connectionMock) ReadJSON(a interface{}) error {
-	am, ok := a.(*message)
+	am, ok := a.(*Message)
 	if !ok {
 		panic("cannot convert to message pointer")
 	}
@@ -33,51 +35,59 @@ func (cm *connectionMock) ReadJSON(a interface{}) error {
 	if err, ok := lv.(interface{ Error() string }); ok {
 		return err
 	}
-	*am = lv.(message)
+	*am = lv.(Message)
 
 	return nil
 }
 
-func (cm *connectionMock) SendBuildStartedMessage() {
-	cm.messages = append(cm.messages, message{Type: "build_started"})
+func parseMessage(t *testing.T, msg string) Message {
+	var m Message
+	err := json.Unmarshal([]byte(msg), &m)
+	require.NoError(t, err)
+	require.NotEqual(t, UnknownMessage, m.MessageType(), "parsed msg %s as unknown", msg)
+
+	return m
 }
 
-func (cm *connectionMock) SendBuildSucceededMessage() {
-	cm.messages = append(cm.messages, message{Type: "build_succeeded"})
+func (cm *connectionMock) SendBuildStartedMessage(t *testing.T) {
+	cm.messages = append(cm.messages, parseMessage(t, `{"type": "build_started"}`))
 }
 
-func (cm *connectionMock) SendBuildFailedMessage(errMsg string) {
-	cm.messages = append(cm.messages, message{Type: "build_failed", ErrorMessage: &errMsg})
+func (cm *connectionMock) SendBuildSucceededMessage(t *testing.T) {
+	cm.messages = append(cm.messages, parseMessage(t, `{"type": "build_succeeded"}`))
 }
 
-func (cm *connectionMock) SendArtifactStartedMessage(a artifact.ArtifactRecipe, isCacheHit bool) {
+func (cm *connectionMock) SendBuildFailedMessage(t *testing.T, errMsg string) {
+	cm.messages = append(cm.messages, parseMessage(t, fmt.Sprintf(`{"type": "build_failed", "error_message": "%s"}`, errMsg)))
+}
+
+func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.ArtifactRecipe) {
 	cm.messages = append(
-		cm.messages, message{
-			Type:       "artifact_started",
-			ArtifactID: &a.ArtifactID,
-			CacheHit:   isCacheHit,
-		})
+		cm.messages, parseMessage(t, fmt.Sprintf(`{
+			"type": "artifact_started",
+			"artifact_id": "%s"
+		}`, a.ArtifactID)))
 }
 
-func (cm *connectionMock) SendArtifactSucceededMessage(a artifact.ArtifactRecipe) {
+func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.ArtifactRecipe) {
 	chksum := "123"
 	uri := fmt.Sprintf("uri://%s", a.Name)
 	cm.messages = append(
-		cm.messages, message{
-			Type:             "artifact_succeeded",
-			ArtifactID:       &a.ArtifactID,
-			ArtifactChecksum: &chksum,
-			ArtifactURI:      &uri,
-		})
+		cm.messages, parseMessage(t, fmt.Sprintf(`{
+			"type":             "artifact_succeeded",
+			"artifact_id":       "%s",
+			"artifact_checksum": "%s",
+			"artifact_uri":      "%s"
+		}`, a.ArtifactID, chksum, uri)))
 }
 
-func (cm *connectionMock) SendArtifactFailedMessage(a artifact.ArtifactRecipe, errMsg string) {
+func (cm *connectionMock) SendArtifactFailedMessage(t *testing.T, a artifact.ArtifactRecipe, errMsg string) {
 	cm.messages = append(
-		cm.messages, message{
-			Type:         "artifact_failed",
-			ArtifactID:   &a.ArtifactID,
-			ErrorMessage: &errMsg,
-		})
+		cm.messages, parseMessage(t, fmt.Sprintf(`{
+			"type":         "artifact_failed",
+			"artifact_id":   "%s",
+			"error_message": "%s"
+		}`, a.ArtifactID, errMsg)))
 }
 
 func (cm *connectionMock) ReadError(errMsg string) {
@@ -103,18 +113,21 @@ func (mh *mockMessageHandler) BuildStarting(total int) {
 func (mh *mockMessageHandler) BuildFinished() {
 	mh.BuildFinishedCallCount++
 }
-func (mh *mockMessageHandler) ArtifactBuildStarting(artifactID artifact.ArtifactID, artifactName string) {
+func (mh *mockMessageHandler) ArtifactBuildStarting(artifactID artifact.ArtifactID) {
 	mh.ArtifactBuildStartingCalls = append(mh.ArtifactBuildStartingCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildCached(artifactID artifact.ArtifactID) {
+func (mh *mockMessageHandler) ArtifactBuildCached(artifactID artifact.ArtifactID, _ string) {
 	mh.ArtifactBuildCachedCalls = append(mh.ArtifactBuildCachedCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildCompleted(artifactID artifact.ArtifactID) {
+func (mh *mockMessageHandler) ArtifactBuildCompleted(artifactID artifact.ArtifactID, _ string) {
 	mh.ArtifactBuildSucceededCalls = append(mh.ArtifactBuildSucceededCalls, artifactID)
 }
-func (mh *mockMessageHandler) ArtifactBuildFailed(artifactID artifact.ArtifactID, errorMessage string) {
+func (mh *mockMessageHandler) ArtifactBuildFailed(artifactID artifact.ArtifactID, _ string, errorMessage string) {
 	mh.ArtifactBuildFailedCalls = append(mh.ArtifactBuildFailedCalls, artifactFailedArg{artifactID, errorMessage})
 }
+func (mh *mockMessageHandler) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp, message, facility, pipeName, source string) {
+}
+func (mh *mockMessageHandler) Heartbeat(time.Time) {}
 
 func TestBuildLog(t *testing.T) {
 	recipeID := strfmt.UUID("10000000-0000-0000-0000-000000000001")
@@ -138,7 +151,8 @@ func TestBuildLog(t *testing.T) {
 
 	tests := []struct {
 		Name                      string
-		ConnectionMock            func(cm *connectionMock)
+		ConnectionMock            func(t *testing.T, cm *connectionMock)
+		AlreadyBuiltArtifacts     map[artifact.ArtifactID]struct{}
 		ExpectError               bool
 		ExpectedDownloads         int
 		ExpectedArtifactStarting  []artifact.ArtifactID
@@ -148,31 +162,33 @@ func TestBuildLog(t *testing.T) {
 	}{
 		{
 			Name: "successful",
-			ConnectionMock: func(cm *connectionMock) {
-				cm.SendBuildStartedMessage()
-				cm.SendArtifactStartedMessage(artifacts[0], false)
-				cm.SendArtifactStartedMessage(artifacts[1], true)
-				cm.SendArtifactStartedMessage(artifacts[2], false)
-				cm.SendArtifactSucceededMessage(artifacts[0])
-				cm.SendArtifactSucceededMessage(artifacts[1])
-				cm.SendArtifactSucceededMessage(artifacts[2])
-				cm.SendBuildSucceededMessage()
+			ConnectionMock: func(t *testing.T, cm *connectionMock) {
+				cm.SendBuildStartedMessage(t)
+				cm.SendArtifactStartedMessage(t, artifacts[0])
+				cm.SendArtifactStartedMessage(t, artifacts[1])
+				cm.SendArtifactStartedMessage(t, artifacts[2])
+				cm.SendArtifactSucceededMessage(t, artifacts[0])
+				cm.SendArtifactSucceededMessage(t, artifacts[1])
+				cm.SendArtifactSucceededMessage(t, artifacts[2])
+				cm.SendBuildSucceededMessage(t)
+			},
+			AlreadyBuiltArtifacts: map[artifact.ArtifactID]struct{}{
+				ids[1]: {},
 			},
 			ExpectError:               false,
 			ExpectedDownloads:         2,
 			ExpectedArtifactStarting:  []artifact.ArtifactID{ids[0]},
-			ExpectedArtifactCached:    []artifact.ArtifactID{ids[1]},
-			ExpectedArtifactSucceeded: ids,
+			ExpectedArtifactSucceeded: []artifact.ArtifactID{ids[0]},
 		},
 		{
 			Name: "failed",
-			ConnectionMock: func(cm *connectionMock) {
-				cm.SendBuildStartedMessage()
-				cm.SendArtifactStartedMessage(artifacts[0], false)
-				cm.SendArtifactStartedMessage(artifacts[1], false)
-				cm.SendArtifactSucceededMessage(artifacts[0])
-				cm.SendArtifactFailedMessage(artifacts[1], "oh no")
-				cm.SendBuildFailedMessage("what a shame")
+			ConnectionMock: func(t *testing.T, cm *connectionMock) {
+				cm.SendBuildStartedMessage(t)
+				cm.SendArtifactStartedMessage(t, artifacts[0])
+				cm.SendArtifactStartedMessage(t, artifacts[1])
+				cm.SendArtifactSucceededMessage(t, artifacts[0])
+				cm.SendArtifactFailedMessage(t, artifacts[1], "oh no")
+				cm.SendBuildFailedMessage(t, "what a shame")
 			},
 			ExpectError:               true,
 			ExpectedDownloads:         1,
@@ -182,8 +198,8 @@ func TestBuildLog(t *testing.T) {
 		},
 		{
 			Name: "connection read error",
-			ConnectionMock: func(cm *connectionMock) {
-				cm.SendBuildStartedMessage()
+			ConnectionMock: func(t *testing.T, cm *connectionMock) {
+				cm.SendBuildStartedMessage(t)
 				cm.ReadError("connection failure")
 			},
 			ExpectError:       true,
@@ -196,9 +212,9 @@ func TestBuildLog(t *testing.T) {
 
 			mmh := &mockMessageHandler{}
 			cm := &connectionMock{}
-			tt.ConnectionMock(cm)
+			tt.ConnectionMock(t, cm)
 
-			bl, err := New(artifactMap, cm, mmh, recipeID)
+			bl, err := NewWithCustomConnections(artifactMap, tt.AlreadyBuiltArtifacts, cm, mmh, recipeID)
 			require.NoError(t, err)
 
 			var downloads []artifact.ArtifactDownload
@@ -219,9 +235,9 @@ func TestBuildLog(t *testing.T) {
 			assert.Equal(t, 1, cm.CalledWrite)
 			assert.Equal(t, []int{2}, mmh.BuildStartingCalls)
 			assert.Equal(t, 1, mmh.BuildFinishedCallCount)
-			assert.Equal(t, tt.ExpectedArtifactStarting, mmh.ArtifactBuildStartingCalls)
-			assert.Equal(t, tt.ExpectedArtifactCached, mmh.ArtifactBuildCachedCalls)
-			assert.Equal(t, tt.ExpectedArtifactSucceeded, mmh.ArtifactBuildSucceededCalls)
+			assert.Equal(t, tt.ExpectedArtifactStarting, mmh.ArtifactBuildStartingCalls, "expected these artifact starting calls")
+			assert.Equal(t, tt.ExpectedArtifactCached, mmh.ArtifactBuildCachedCalls, "expected these artifact cached calls")
+			assert.Equal(t, tt.ExpectedArtifactSucceeded, mmh.ArtifactBuildSucceededCalls, "expected these artifact succeeded calls")
 			assert.Equal(t, tt.ExpectedArtifactFailed, mmh.ArtifactBuildFailedCalls)
 		})
 	}

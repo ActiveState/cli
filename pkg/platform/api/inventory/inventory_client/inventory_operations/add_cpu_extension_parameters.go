@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddCPUExtensionParams creates a new AddCPUExtensionParams object
-// with the default values initialized.
+// NewAddCPUExtensionParams creates a new AddCPUExtensionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddCPUExtensionParams() *AddCPUExtensionParams {
-	var ()
 	return &AddCPUExtensionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddCPUExtensionParamsWithTimeout creates a new AddCPUExtensionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddCPUExtensionParamsWithTimeout(timeout time.Duration) *AddCPUExtensionParams {
-	var ()
 	return &AddCPUExtensionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddCPUExtensionParamsWithContext creates a new AddCPUExtensionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddCPUExtensionParamsWithContext(ctx context.Context) *AddCPUExtensionParams {
-	var ()
 	return &AddCPUExtensionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddCPUExtensionParamsWithHTTPClient creates a new AddCPUExtensionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddCPUExtensionParamsWithHTTPClient(client *http.Client) *AddCPUExtensionParams {
-	var ()
 	return &AddCPUExtensionParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddCPUExtensionParams contains all the parameters to send to the API endpoint
-for the add Cpu extension operation typically these are written to a http.Request
+/* AddCPUExtensionParams contains all the parameters to send to the API endpoint
+   for the add Cpu extension operation.
+
+   Typically these are written to a http.Request.
 */
 type AddCPUExtensionParams struct {
 
-	/*CPUExtension*/
+	// CPUExtension.
 	CPUExtension *inventory_models.CPUExtensionCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add Cpu extension params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCPUExtensionParams) WithDefaults() *AddCPUExtensionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add Cpu extension params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddCPUExtensionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add Cpu extension params
@@ -121,7 +135,6 @@ func (o *AddCPUExtensionParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 	var res []error
-
 	if o.CPUExtension != nil {
 		if err := r.SetBodyParam(o.CPUExtension); err != nil {
 			return err

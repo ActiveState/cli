@@ -52,7 +52,7 @@ func NewAddGPUArchitectureCreated() *AddGPUArchitectureCreated {
 	return &AddGPUArchitectureCreated{}
 }
 
-/*AddGPUArchitectureCreated handles this case with default header values.
+/* AddGPUArchitectureCreated describes a response with status code 201, with default header values.
 
 The added GPU architecture
 */
@@ -63,7 +63,6 @@ type AddGPUArchitectureCreated struct {
 func (o *AddGPUArchitectureCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGPUArchitectureCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddGPUArchitectureCreated) GetPayload() *inventory_models.GpuArchitecture {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddGPUArchitectureBadRequest() *AddGPUArchitectureBadRequest {
 	return &AddGPUArchitectureBadRequest{}
 }
 
-/*AddGPUArchitectureBadRequest handles this case with default header values.
+/* AddGPUArchitectureBadRequest describes a response with status code 400, with default header values.
 
 If the GPU architecture is invalid
 */
@@ -96,7 +95,6 @@ type AddGPUArchitectureBadRequest struct {
 func (o *AddGPUArchitectureBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGPUArchitectureBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddGPUArchitectureBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddGPUArchitectureDefault(code int) *AddGPUArchitectureDefault {
 	}
 }
 
-/*AddGPUArchitectureDefault handles this case with default header values.
+/* AddGPUArchitectureDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *AddGPUArchitectureDefault) Code() int {
 func (o *AddGPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/gpu-architectures][%d] addGPUArchitecture default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddGPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

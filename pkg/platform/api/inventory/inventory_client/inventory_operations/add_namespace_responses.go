@@ -52,7 +52,7 @@ func NewAddNamespaceCreated() *AddNamespaceCreated {
 	return &AddNamespaceCreated{}
 }
 
-/*AddNamespaceCreated handles this case with default header values.
+/* AddNamespaceCreated describes a response with status code 201, with default header values.
 
 Returns the created namespace
 */
@@ -63,7 +63,6 @@ type AddNamespaceCreated struct {
 func (o *AddNamespaceCreated) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespaceCreated  %+v", 201, o.Payload)
 }
-
 func (o *AddNamespaceCreated) GetPayload() *inventory_models.Namespace {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddNamespaceBadRequest() *AddNamespaceBadRequest {
 	return &AddNamespaceBadRequest{}
 }
 
-/*AddNamespaceBadRequest handles this case with default header values.
+/* AddNamespaceBadRequest describes a response with status code 400, with default header values.
 
 If the namespace is invalid
 */
@@ -96,7 +95,6 @@ type AddNamespaceBadRequest struct {
 func (o *AddNamespaceBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespaceBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddNamespaceBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddNamespaceDefault(code int) *AddNamespaceDefault {
 	}
 }
 
-/*AddNamespaceDefault handles this case with default header values.
+/* AddNamespaceDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the namespace
 */
@@ -138,7 +136,6 @@ func (o *AddNamespaceDefault) Code() int {
 func (o *AddNamespaceDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces][%d] addNamespace default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddNamespaceDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }
