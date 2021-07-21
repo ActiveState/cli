@@ -380,6 +380,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
