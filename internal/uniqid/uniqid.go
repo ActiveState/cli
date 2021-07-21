@@ -12,13 +12,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// DirLocation represents tokens to indicate where uniqid file should be
-// located.
-type DirLocation int
+// BaseDirLocation facilitates base directory location option enums.
+type BaseDirLocation int
 
-// DirLocation enums.
+// BaseDirLocation enums define the base directory location options.
 const (
-	InHome DirLocation = iota
+	InHome BaseDirLocation = iota
 	InTmp
 )
 
@@ -34,8 +33,8 @@ type UniqID struct {
 }
 
 // New retrieves or creates a new unique id.
-func New(in DirLocation) (*UniqID, error) {
-	dir, err := storageDirectory(in)
+func New(base BaseDirLocation) (*UniqID, error) {
+	dir, err := storageDirectory(base)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot determine uniqid storage directory")
 	}
@@ -80,9 +79,9 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 // a file.
 var ErrUnsupportedOS = errors.New("unsupported uniqid os")
 
-func storageDirectory(location DirLocation) (string, error) {
+func storageDirectory(base BaseDirLocation) (string, error) {
 	var dir string
-	switch location {
+	switch base {
 	case InTmp:
 		dir = filepath.Join(os.TempDir(), tmpSubDir)
 
