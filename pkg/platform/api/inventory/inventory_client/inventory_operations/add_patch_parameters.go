@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddPatchParams creates a new AddPatchParams object
-// with the default values initialized.
+// NewAddPatchParams creates a new AddPatchParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddPatchParams() *AddPatchParams {
-	var ()
 	return &AddPatchParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddPatchParamsWithTimeout creates a new AddPatchParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddPatchParamsWithTimeout(timeout time.Duration) *AddPatchParams {
-	var ()
 	return &AddPatchParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddPatchParamsWithContext creates a new AddPatchParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddPatchParamsWithContext(ctx context.Context) *AddPatchParams {
-	var ()
 	return &AddPatchParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddPatchParamsWithHTTPClient creates a new AddPatchParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddPatchParamsWithHTTPClient(client *http.Client) *AddPatchParams {
-	var ()
 	return &AddPatchParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddPatchParams contains all the parameters to send to the API endpoint
-for the add patch operation typically these are written to a http.Request
+/* AddPatchParams contains all the parameters to send to the API endpoint
+   for the add patch operation.
+
+   Typically these are written to a http.Request.
 */
 type AddPatchParams struct {
 
-	/*Patch*/
+	// Patch.
 	Patch *inventory_models.PatchCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add patch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddPatchParams) WithDefaults() *AddPatchParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add patch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddPatchParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add patch params
@@ -121,7 +135,6 @@ func (o *AddPatchParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
-
 	if o.Patch != nil {
 		if err := r.SetBodyParam(o.Patch); err != nil {
 			return err

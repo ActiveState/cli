@@ -30,7 +30,7 @@ func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (
 	return model.ResolveRecipe(commitID, owner, projectName)
 }
 
-func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
+func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	return model.RequestBuild(m.auth, recipeID, commitID, owner, project)
 }
 
@@ -42,7 +42,7 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
-	BuildStatusResponse *headchef_models.BuildStatusResponse
+	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }

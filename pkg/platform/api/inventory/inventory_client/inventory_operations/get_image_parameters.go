@@ -17,78 +17,97 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetImageParams creates a new GetImageParams object
-// with the default values initialized.
+// NewGetImageParams creates a new GetImageParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetImageParams() *GetImageParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetImageParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetImageParamsWithTimeout creates a new GetImageParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetImageParamsWithTimeout(timeout time.Duration) *GetImageParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetImageParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetImageParamsWithContext creates a new GetImageParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetImageParamsWithContext(ctx context.Context) *GetImageParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetImageParams{
-		AllowUnstable: &allowUnstableDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetImageParamsWithHTTPClient creates a new GetImageParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetImageParamsWithHTTPClient(client *http.Client) *GetImageParams {
-	var (
-		allowUnstableDefault = bool(false)
-	)
 	return &GetImageParams{
-		AllowUnstable: &allowUnstableDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetImageParams contains all the parameters to send to the API endpoint
-for the get image operation typically these are written to a http.Request
+/* GetImageParams contains all the parameters to send to the API endpoint
+   for the get image operation.
+
+   Typically these are written to a http.Request.
 */
 type GetImageParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*ImageID*/
-	ImageID strfmt.UUID
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	// ImageID.
+	//
+	// Format: uuid
+	ImageID strfmt.UUID
+
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get image params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetImageParams) WithDefaults() *GetImageParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get image params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetImageParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+	)
+
+	val := GetImageParams{
+		AllowUnstable: &allowUnstableDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get image params
@@ -169,16 +188,17 @@ func (o *GetImageParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param image_id
@@ -190,16 +210,17 @@ func (o *GetImageParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

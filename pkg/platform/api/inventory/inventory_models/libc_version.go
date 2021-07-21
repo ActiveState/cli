@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -88,6 +90,29 @@ func (m *LibcVersion) Validate(formats strfmt.Registry) error {
 	}
 	// validation for a type composition with RevisionedResource
 	if err := m.RevisionedResource.Validate(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+// ContextValidate validate this libc version based on the context it is used
+func (m *LibcVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	// validation for a type composition with LibcVersionAllOf0
+	if err := m.LibcVersionAllOf0.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with LibcVersionCore
+	if err := m.LibcVersionCore.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with RevisionedResource
+	if err := m.RevisionedResource.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

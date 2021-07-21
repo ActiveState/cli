@@ -46,7 +46,7 @@ func NewDeleteImageNoContent() *DeleteImageNoContent {
 	return &DeleteImageNoContent{}
 }
 
-/*DeleteImageNoContent handles this case with default header values.
+/* DeleteImageNoContent describes a response with status code 204, with default header values.
 
 The image has been deleted
 */
@@ -69,7 +69,7 @@ func NewDeleteImageDefault(code int) *DeleteImageDefault {
 	}
 }
 
-/*DeleteImageDefault handles this case with default header values.
+/* DeleteImageDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -87,7 +87,6 @@ func (o *DeleteImageDefault) Code() int {
 func (o *DeleteImageDefault) Error() string {
 	return fmt.Sprintf("[DELETE /v1/images/{image_id}][%d] deleteImage default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteImageDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -17,104 +17,119 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetKernelGPUArchitecturesParams creates a new GetKernelGPUArchitecturesParams object
-// with the default values initialized.
+// NewGetKernelGPUArchitecturesParams creates a new GetKernelGPUArchitecturesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetKernelGPUArchitecturesParams() *GetKernelGPUArchitecturesParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetKernelGPUArchitecturesParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetKernelGPUArchitecturesParamsWithTimeout creates a new GetKernelGPUArchitecturesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetKernelGPUArchitecturesParamsWithTimeout(timeout time.Duration) *GetKernelGPUArchitecturesParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetKernelGPUArchitecturesParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetKernelGPUArchitecturesParamsWithContext creates a new GetKernelGPUArchitecturesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetKernelGPUArchitecturesParamsWithContext(ctx context.Context) *GetKernelGPUArchitecturesParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetKernelGPUArchitecturesParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetKernelGPUArchitecturesParamsWithHTTPClient creates a new GetKernelGPUArchitecturesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetKernelGPUArchitecturesParamsWithHTTPClient(client *http.Client) *GetKernelGPUArchitecturesParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetKernelGPUArchitecturesParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetKernelGPUArchitecturesParams contains all the parameters to send to the API endpoint
-for the get kernel g p u architectures operation typically these are written to a http.Request
+/* GetKernelGPUArchitecturesParams contains all the parameters to send to the API endpoint
+   for the get kernel g p u architectures operation.
+
+   Typically these are written to a http.Request.
 */
 type GetKernelGPUArchitecturesParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*KernelID*/
-	KernelID strfmt.UUID
-	/*Limit
-	  The maximum number of items returned per page
 
+	// KernelID.
+	//
+	// Format: uuid
+	KernelID strfmt.UUID
+
+	/* Limit.
+
+	   The maximum number of items returned per page
+
+	   Default: 50
 	*/
 	Limit *int64
-	/*Page
-	  The page number returned
 
+	/* Page.
+
+	   The page number returned
+
+	   Default: 1
 	*/
 	Page *int64
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get kernel g p u architectures params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKernelGPUArchitecturesParams) WithDefaults() *GetKernelGPUArchitecturesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get kernel g p u architectures params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetKernelGPUArchitecturesParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+
+		limitDefault = int64(50)
+
+		pageDefault = int64(1)
+	)
+
+	val := GetKernelGPUArchitecturesParams{
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get kernel g p u architectures params
@@ -217,16 +232,17 @@ func (o *GetKernelGPUArchitecturesParams) WriteToRequest(r runtime.ClientRequest
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// path param kernel_id
@@ -238,48 +254,51 @@ func (o *GetKernelGPUArchitecturesParams) WriteToRequest(r runtime.ClientRequest
 
 		// query param limit
 		var qrLimit int64
+
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
+
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Page != nil {
 
 		// query param page
 		var qrPage int64
+
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
+
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.StateAt != nil {
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

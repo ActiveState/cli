@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
@@ -26,7 +27,6 @@ type Requirement struct {
 	Comparator *string `json:"comparator"`
 
 	// An array of decimal values representing all segments of a version, ordered from most to least significant. How a version string is rendered into a list of decimals will vary depending on the format of the source string and is therefore left up to the caller, but it must be done consistently across all versions of the same resource for sorting to work properly. This is represented as a string to avoid losing precision when converting to a floating point number.
-	// Min Length: 1
 	SortableVersion []string `json:"sortable_version"`
 
 	// The required version in its original form.
@@ -91,7 +91,7 @@ const (
 
 // prop value enum
 func (m *Requirement) validateComparatorEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, requirementTypeComparatorPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, requirementTypeComparatorPropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -112,14 +112,13 @@ func (m *Requirement) validateComparator(formats strfmt.Registry) error {
 }
 
 func (m *Requirement) validateSortableVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SortableVersion) { // not required
 		return nil
 	}
 
 	for i := 0; i < len(m.SortableVersion); i++ {
 
-		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", string(m.SortableVersion[i]), 1); err != nil {
+		if err := validate.MinLength("sortable_version"+"."+strconv.Itoa(i), "body", m.SortableVersion[i], 1); err != nil {
 			return err
 		}
 
@@ -129,15 +128,19 @@ func (m *Requirement) validateSortableVersion(formats strfmt.Registry) error {
 }
 
 func (m *Requirement) validateVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Version) { // not required
 		return nil
 	}
 
-	if err := validate.MinLength("version", "body", string(*m.Version), 1); err != nil {
+	if err := validate.MinLength("version", "body", *m.Version, 1); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this requirement based on context it is used
+func (m *Requirement) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

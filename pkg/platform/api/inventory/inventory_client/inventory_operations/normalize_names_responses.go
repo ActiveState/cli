@@ -46,7 +46,7 @@ func NewNormalizeNamesOK() *NormalizeNamesOK {
 	return &NormalizeNamesOK{}
 }
 
-/*NormalizeNamesOK handles this case with default header values.
+/* NormalizeNamesOK describes a response with status code 200, with default header values.
 
 A list of mappings from requested name to normalized name.
 */
@@ -57,7 +57,6 @@ type NormalizeNamesOK struct {
 func (o *NormalizeNamesOK) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces/normalized-names][%d] normalizeNamesOK  %+v", 200, o.Payload)
 }
-
 func (o *NormalizeNamesOK) GetPayload() *inventory_models.NormalizedNames {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewNormalizeNamesDefault(code int) *NormalizeNamesDefault {
 	}
 }
 
-/*NormalizeNamesDefault handles this case with default header values.
+/* NormalizeNamesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *NormalizeNamesDefault) Code() int {
 func (o *NormalizeNamesDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/namespaces/normalized-names][%d] normalizeNames default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *NormalizeNamesDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

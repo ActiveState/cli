@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -13,12 +14,17 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// DependencyType Recipe
+// DependencyType Dependency type
 //
 // The different types of dependencies supported by the platform.
 //
 // swagger:model dependencyType
 type DependencyType string
+
+func NewDependencyType(value DependencyType) *DependencyType {
+	v := value
+	return &v
+}
 
 const (
 
@@ -46,7 +52,7 @@ func init() {
 }
 
 func (m DependencyType) validateDependencyTypeEnum(path, location string, value DependencyType) error {
-	if err := validate.Enum(path, location, value, dependencyTypeEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, dependencyTypeEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -64,5 +70,10 @@ func (m DependencyType) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// ContextValidate validates this dependency type based on context it is used
+func (m DependencyType) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

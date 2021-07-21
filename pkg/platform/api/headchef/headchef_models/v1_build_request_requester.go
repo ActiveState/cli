@@ -29,6 +29,9 @@ type V1BuildRequestRequester struct {
 	// Format: uuid
 	ProjectID *strfmt.UUID `json:"project_id"`
 
+	// An optional string describing the service for non user initiated requests
+	Service string `json:"service,omitempty"`
+
 	// The UUID of the platform user who initiated the build request
 	// Format: uuid
 	UserID strfmt.UUID `json:"user_id,omitempty"`

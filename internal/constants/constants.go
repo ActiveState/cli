@@ -30,6 +30,9 @@ const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 // LogEnvVarName is the env var used to override the log file path
 const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 
+// LogBuildVerboseEnvVarName is the env var used to enable verbose build logging
+const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
+
 // ExecEnvVarName is the env var used to find out if we are shimming recursively
 const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 
@@ -306,6 +309,9 @@ const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// StateInstallerCmd is the name of the state installer binary
+const StateInstallerCmd = "state-installer"
 
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"

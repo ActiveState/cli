@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -51,6 +52,38 @@ func (m *RevisionedFeatureProviderAllOf0) validateProvidedFeatures(formats strfm
 
 		if m.ProvidedFeatures[i] != nil {
 			if err := m.ProvidedFeatures[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("provided_features" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this revisioned feature provider all of0 based on the context it is used
+func (m *RevisionedFeatureProviderAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateProvidedFeatures(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *RevisionedFeatureProviderAllOf0) contextValidateProvidedFeatures(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ProvidedFeatures); i++ {
+
+		if m.ProvidedFeatures[i] != nil {
+			if err := m.ProvidedFeatures[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("provided_features" + "." + strconv.Itoa(i))
 				}

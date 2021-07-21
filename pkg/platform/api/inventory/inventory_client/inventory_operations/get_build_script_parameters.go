@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetBuildScriptParams creates a new GetBuildScriptParams object
-// with the default values initialized.
+// NewGetBuildScriptParams creates a new GetBuildScriptParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetBuildScriptParams() *GetBuildScriptParams {
-	var ()
 	return &GetBuildScriptParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetBuildScriptParamsWithTimeout creates a new GetBuildScriptParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetBuildScriptParamsWithTimeout(timeout time.Duration) *GetBuildScriptParams {
-	var ()
 	return &GetBuildScriptParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetBuildScriptParamsWithContext creates a new GetBuildScriptParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetBuildScriptParamsWithContext(ctx context.Context) *GetBuildScriptParams {
-	var ()
 	return &GetBuildScriptParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetBuildScriptParamsWithHTTPClient creates a new GetBuildScriptParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetBuildScriptParamsWithHTTPClient(client *http.Client) *GetBuildScriptParams {
-	var ()
 	return &GetBuildScriptParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetBuildScriptParams contains all the parameters to send to the API endpoint
-for the get build script operation typically these are written to a http.Request
+/* GetBuildScriptParams contains all the parameters to send to the API endpoint
+   for the get build script operation.
+
+   Typically these are written to a http.Request.
 */
 type GetBuildScriptParams struct {
 
-	/*BuildScriptID*/
+	// BuildScriptID.
+	//
+	// Format: uuid
 	BuildScriptID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get build script params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetBuildScriptParams) WithDefaults() *GetBuildScriptParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get build script params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetBuildScriptParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get build script params

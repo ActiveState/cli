@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -84,7 +86,6 @@ func (m *IngredientVersionUpdate) validateCopyrightText(formats strfmt.Registry)
 }
 
 func (m *IngredientVersionUpdate) validateDocumentationURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.DocumentationURI) { // not required
 		return nil
 	}
@@ -119,7 +120,6 @@ func (m *IngredientVersionUpdate) validateReleaseTimestamp(formats strfmt.Regist
 }
 
 func (m *IngredientVersionUpdate) validateSourceURI(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SourceURI) { // not required
 		return nil
 	}
@@ -128,6 +128,11 @@ func (m *IngredientVersionUpdate) validateSourceURI(formats strfmt.Registry) err
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this ingredient version update based on context it is used
+func (m *IngredientVersionUpdate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

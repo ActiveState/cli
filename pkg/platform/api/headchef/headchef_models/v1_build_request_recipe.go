@@ -24,12 +24,21 @@ type V1BuildRequestRecipe struct {
 	// Camel-specific flags for controlling the build.
 	CamelFlags []string `json:"camel_flags"`
 
+	// Indicates whether this recipe came from the recipe store or not
+	// Required: true
+	FromRecipeStore *bool `json:"from_recipe_store"`
+
 	// image
 	// Required: true
 	Image *V1BuildRequestRecipeImage `json:"image"`
 
 	// If all of the resolved ingredients resolved to indemnified versions, then this will be true.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
+
+	// The timestamp of the order that produced this recipe. This field is for internal use only, and may be removed in the future.
+	// Required: true
+	// Format: date-time
+	OrderTimestamp *strfmt.DateTime `json:"order_timestamp"`
 
 	// platform
 	// Required: true
@@ -39,6 +48,10 @@ type V1BuildRequestRecipe struct {
 	// Required: true
 	// Format: uuid
 	RecipeID *strfmt.UUID `json:"recipe_id"`
+
+	// If the recipe came from the recipe store, this will contain the recipe's timestamp. Otherwise this field will be omitted
+	// Format: date-time
+	RecipeStoreTimestamp *strfmt.DateTime `json:"recipe_store_timestamp,omitempty"`
 
 	// The resolved ingredients that comprise this recipe.
 	// Required: true
@@ -55,7 +68,15 @@ type V1BuildRequestRecipe struct {
 func (m *V1BuildRequestRecipe) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateFromRecipeStore(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateImage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOrderTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -64,6 +85,10 @@ func (m *V1BuildRequestRecipe) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRecipeID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRecipeStoreTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -81,6 +106,15 @@ func (m *V1BuildRequestRecipe) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *V1BuildRequestRecipe) validateFromRecipeStore(formats strfmt.Registry) error {
+
+	if err := validate.Required("from_recipe_store", "body", m.FromRecipeStore); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *V1BuildRequestRecipe) validateImage(formats strfmt.Registry) error {
 
 	if err := validate.Required("image", "body", m.Image); err != nil {
@@ -94,6 +128,19 @@ func (m *V1BuildRequestRecipe) validateImage(formats strfmt.Registry) error {
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipe) validateOrderTimestamp(formats strfmt.Registry) error {
+
+	if err := validate.Required("order_timestamp", "body", m.OrderTimestamp); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("order_timestamp", "body", "date-time", m.OrderTimestamp.String(), formats); err != nil {
+		return err
 	}
 
 	return nil
@@ -124,6 +171,19 @@ func (m *V1BuildRequestRecipe) validateRecipeID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("recipe_id", "body", "uuid", m.RecipeID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *V1BuildRequestRecipe) validateRecipeStoreTimestamp(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RecipeStoreTimestamp) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("recipe_store_timestamp", "body", "date-time", m.RecipeStoreTimestamp.String(), formats); err != nil {
 		return err
 	}
 

@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddKernelCPUArchitectureParams creates a new AddKernelCPUArchitectureParams object
-// with the default values initialized.
+// NewAddKernelCPUArchitectureParams creates a new AddKernelCPUArchitectureParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddKernelCPUArchitectureParams() *AddKernelCPUArchitectureParams {
-	var ()
 	return &AddKernelCPUArchitectureParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddKernelCPUArchitectureParamsWithTimeout creates a new AddKernelCPUArchitectureParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddKernelCPUArchitectureParamsWithTimeout(timeout time.Duration) *AddKernelCPUArchitectureParams {
-	var ()
 	return &AddKernelCPUArchitectureParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddKernelCPUArchitectureParamsWithContext creates a new AddKernelCPUArchitectureParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddKernelCPUArchitectureParamsWithContext(ctx context.Context) *AddKernelCPUArchitectureParams {
-	var ()
 	return &AddKernelCPUArchitectureParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddKernelCPUArchitectureParamsWithHTTPClient creates a new AddKernelCPUArchitectureParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddKernelCPUArchitectureParamsWithHTTPClient(client *http.Client) *AddKernelCPUArchitectureParams {
-	var ()
 	return &AddKernelCPUArchitectureParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddKernelCPUArchitectureParams contains all the parameters to send to the API endpoint
-for the add kernel Cpu architecture operation typically these are written to a http.Request
+/* AddKernelCPUArchitectureParams contains all the parameters to send to the API endpoint
+   for the add kernel Cpu architecture operation.
+
+   Typically these are written to a http.Request.
 */
 type AddKernelCPUArchitectureParams struct {
 
-	/*CPUArchitectureID*/
+	// CPUArchitectureID.
 	CPUArchitectureID *inventory_models.AddKernelCPUArchitectureParamsBody
-	/*KernelID*/
+
+	// KernelID.
+	//
+	// Format: uuid
 	KernelID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add kernel Cpu architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelCPUArchitectureParams) WithDefaults() *AddKernelCPUArchitectureParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add kernel Cpu architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelCPUArchitectureParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add kernel Cpu architecture params
@@ -134,7 +151,6 @@ func (o *AddKernelCPUArchitectureParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
 	if o.CPUArchitectureID != nil {
 		if err := r.SetBodyParam(o.CPUArchitectureID); err != nil {
 			return err

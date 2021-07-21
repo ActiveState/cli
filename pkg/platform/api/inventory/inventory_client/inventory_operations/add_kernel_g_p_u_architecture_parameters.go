@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddKernelGPUArchitectureParams creates a new AddKernelGPUArchitectureParams object
-// with the default values initialized.
+// NewAddKernelGPUArchitectureParams creates a new AddKernelGPUArchitectureParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddKernelGPUArchitectureParams() *AddKernelGPUArchitectureParams {
-	var ()
 	return &AddKernelGPUArchitectureParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddKernelGPUArchitectureParamsWithTimeout creates a new AddKernelGPUArchitectureParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddKernelGPUArchitectureParamsWithTimeout(timeout time.Duration) *AddKernelGPUArchitectureParams {
-	var ()
 	return &AddKernelGPUArchitectureParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddKernelGPUArchitectureParamsWithContext creates a new AddKernelGPUArchitectureParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddKernelGPUArchitectureParamsWithContext(ctx context.Context) *AddKernelGPUArchitectureParams {
-	var ()
 	return &AddKernelGPUArchitectureParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddKernelGPUArchitectureParamsWithHTTPClient creates a new AddKernelGPUArchitectureParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddKernelGPUArchitectureParamsWithHTTPClient(client *http.Client) *AddKernelGPUArchitectureParams {
-	var ()
 	return &AddKernelGPUArchitectureParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddKernelGPUArchitectureParams contains all the parameters to send to the API endpoint
-for the add kernel g p u architecture operation typically these are written to a http.Request
+/* AddKernelGPUArchitectureParams contains all the parameters to send to the API endpoint
+   for the add kernel g p u architecture operation.
+
+   Typically these are written to a http.Request.
 */
 type AddKernelGPUArchitectureParams struct {
 
-	/*GpuArchitectureID*/
+	// GpuArchitectureID.
 	GpuArchitectureID *inventory_models.AddKernelGPUArchitectureParamsBody
-	/*KernelID*/
+
+	// KernelID.
+	//
+	// Format: uuid
 	KernelID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add kernel g p u architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelGPUArchitectureParams) WithDefaults() *AddKernelGPUArchitectureParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add kernel g p u architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelGPUArchitectureParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add kernel g p u architecture params
@@ -134,7 +151,6 @@ func (o *AddKernelGPUArchitectureParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
-
 	if o.GpuArchitectureID != nil {
 		if err := r.SetBodyParam(o.GpuArchitectureID); err != nil {
 			return err

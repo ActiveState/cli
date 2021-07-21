@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -47,16 +49,15 @@ func (m *IngredientOptionResources) Validate(formats strfmt.Registry) error {
 }
 
 func (m *IngredientOptionResources) validateCpus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Cpus) { // not required
 		return nil
 	}
 
-	if err := validate.Minimum("cpus", "body", float64(m.Cpus), 0.1, false); err != nil {
+	if err := validate.Minimum("cpus", "body", m.Cpus, 0.1, false); err != nil {
 		return err
 	}
 
-	if err := validate.Maximum("cpus", "body", float64(m.Cpus), 16, false); err != nil {
+	if err := validate.Maximum("cpus", "body", m.Cpus, 16, false); err != nil {
 		return err
 	}
 
@@ -64,19 +65,23 @@ func (m *IngredientOptionResources) validateCpus(formats strfmt.Registry) error 
 }
 
 func (m *IngredientOptionResources) validateMemoryMb(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.MemoryMb) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("memory_mb", "body", int64(m.MemoryMb), 1, false); err != nil {
+	if err := validate.MinimumInt("memory_mb", "body", m.MemoryMb, 1, false); err != nil {
 		return err
 	}
 
-	if err := validate.MaximumInt("memory_mb", "body", int64(m.MemoryMb), 131072, false); err != nil {
+	if err := validate.MaximumInt("memory_mb", "body", m.MemoryMb, 131072, false); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this ingredient option resources based on context it is used
+func (m *IngredientOptionResources) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
