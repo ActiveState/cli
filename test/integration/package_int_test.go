@@ -332,6 +332,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
