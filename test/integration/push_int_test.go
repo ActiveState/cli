@@ -145,11 +145,8 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	if runtime.GOOS != "darwin" {
-		// https://www.pivotaltracker.com/story/show/178916236
-		cp.Expect("> Other")
-		cp.Send("")
-	}
+	cp.Expect("> Other")
+	cp.Send("")
 	cp.Expect(">")
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
@@ -200,11 +197,8 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.Send("")
 	cp.ExpectLongString("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	if runtime.GOOS != "darwin" {
-		// https://www.pivotaltracker.com/story/show/178916236
-		cp.Expect("> Other")
-		cp.Send("")
-	}
+	cp.Expect("> Other")
+	cp.Send("")
 	cp.Expect(">")
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
