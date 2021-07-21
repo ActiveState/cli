@@ -107,7 +107,8 @@ func CachePath() string {
 	} else if path := os.Getenv(constants.CacheEnvVarName); path != "" {
 		cachePath = path
 	} else if runtime.GOOS == "windows" {
-		cachePath = filepath.Join(configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path, "cache", "activestate")
+		// <UserDir>/AppData/Local/activestate/cache
+		cachePath = filepath.Join(configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path, "cache")
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 	}
