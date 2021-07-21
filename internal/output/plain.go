@@ -105,8 +105,14 @@ func wordWrap(text string) string {
 		result = append(result, crop.Line)
 	}
 	suffix := ""
-	if strings.HasSuffix(text, "\n") {
-		suffix = "\n"
+
+	// Check for line endings at the end of the string
+	// We don't care about runes here since we are only looking at line endings
+	for x := len(text) - 1; x >= 0; x-- {
+		if string(text[x]) != "\n" {
+			break
+		}
+		suffix += "\n"
 	}
 	return strings.Join(result, "\n") + suffix
 }
