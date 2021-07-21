@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -132,7 +133,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	svcm := svcmanager.New(cfg)

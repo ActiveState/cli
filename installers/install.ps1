@@ -37,6 +37,14 @@ $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
+$script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
+$script:SESSION_TOKEN = "{TOKEN}"
+$script:SESSION_TOKEN_ARGS = "--session-token=\`"\`""
+
+if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
+  $script:SESSION_TOKEN_ARGS = " --session-token=\`"${script:SESSION_TOKEN}\`""
+}
+
 # For recipe installation without prompts we need to be able to disable
 # prompts through an environment variable.
 if ($Env:NOPROMPT_INSTALL -eq "true") {
@@ -347,9 +355,9 @@ function install() {
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
     if ($script:TARGET) {
-        & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
+        & "$InstallerPath" "$script:TARGET" $script:SESSION_TOKEN_ARGS 2>&1 | Tee-Object -Variable output | Write-Host
     } else {
-        & "$InstallerPath" 2>&1 | Tee-Object -Variable output | Write-Host
+        & "$InstallerPath" $script:SESSION_TOKEN_ARGS 2>&1 | Tee-Object -Variable output | Write-Host
     }
 
     $outputString = $output | Out-String

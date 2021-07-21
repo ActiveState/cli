@@ -114,7 +114,7 @@ func runDefault() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	oldInfo, err := os.Stat(appinfo.StateApp().Exec())

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -76,7 +77,8 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	running, err := isTrayRunning(cfg)

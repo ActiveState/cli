@@ -83,6 +83,8 @@ const CatActivationFlow = "activation"
 // CatPrompt is for prompt events
 const CatPrompt = "prompt"
 
+const CfgSessionToken = "sessionToken"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -93,6 +95,11 @@ type customDimensions struct {
 	installSource string
 	machineID     string
 	projectName   string
+	sessionToken  string
+}
+
+type configurable interface {
+	GetString(string) string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -117,6 +124,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"8":  d.installSource,
 		"9":  d.machineID,
 		"10": d.projectName,
+		"11": d.sessionToken,
 	}
 }
 
@@ -185,6 +193,10 @@ func setup() {
 	if id == "unknown" {
 		logging.Error("unknown machine id")
 	}
+}
+
+func Configure(cfg configurable) {
+	CustomDimensions.sessionToken = cfg.GetString(CfgSessionToken)
 }
 
 // Event logs an event to google analytics
