@@ -352,7 +352,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Any changes you make are local only")
 		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
 		cp.Wait()
 	})
