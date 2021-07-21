@@ -113,7 +113,7 @@ func unwrapError(err error) (int, error) {
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
 		if !rtutils.BuiltViaCI {
-			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", err.Error(), stack))
+			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
 
