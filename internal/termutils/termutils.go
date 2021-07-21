@@ -17,6 +17,9 @@ func GetWidth() int {
 		logging.Debug("Cannot get terminal size: %v", err)
 		termWidth = fallbackWidth
 	}
+	if termWidth == 0 {
+		termWidth = fallbackWidth
+	}
 	if termWidth > maxWidth {
 		termWidth = maxWidth
 	}
