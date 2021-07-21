@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -107,6 +108,74 @@ func (m *IngredientPagedList) validatePaging(formats strfmt.Registry) error {
 
 	if m.Paging != nil {
 		if err := m.Paging.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("paging")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient paged list based on the context it is used
+func (m *IngredientPagedList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIngredients(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLinks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePaging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientPagedList) contextValidateIngredients(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Ingredients); i++ {
+
+		if m.Ingredients[i] != nil {
+			if err := m.Ingredients[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredients" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *IngredientPagedList) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Links != nil {
+		if err := m.Links.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("links")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *IngredientPagedList) contextValidatePaging(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Paging != nil {
+		if err := m.Paging.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("paging")
 			}

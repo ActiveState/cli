@@ -17,106 +17,120 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NewGetNamespaceIngredientVersionsParams creates a new GetNamespaceIngredientVersionsParams object
-// with the default values initialized.
+// NewGetNamespaceIngredientVersionsParams creates a new GetNamespaceIngredientVersionsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetNamespaceIngredientVersionsParams() *GetNamespaceIngredientVersionsParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientVersionsParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetNamespaceIngredientVersionsParamsWithTimeout creates a new GetNamespaceIngredientVersionsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetNamespaceIngredientVersionsParamsWithTimeout(timeout time.Duration) *GetNamespaceIngredientVersionsParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientVersionsParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewGetNamespaceIngredientVersionsParamsWithContext creates a new GetNamespaceIngredientVersionsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetNamespaceIngredientVersionsParamsWithContext(ctx context.Context) *GetNamespaceIngredientVersionsParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientVersionsParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewGetNamespaceIngredientVersionsParamsWithHTTPClient creates a new GetNamespaceIngredientVersionsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetNamespaceIngredientVersionsParamsWithHTTPClient(client *http.Client) *GetNamespaceIngredientVersionsParams {
-	var (
-		allowUnstableDefault = bool(false)
-		limitDefault         = int64(50)
-		pageDefault          = int64(1)
-	)
 	return &GetNamespaceIngredientVersionsParams{
-		AllowUnstable: &allowUnstableDefault,
-		Limit:         &limitDefault,
-		Page:          &pageDefault,
-		HTTPClient:    client,
+		HTTPClient: client,
 	}
 }
 
-/*GetNamespaceIngredientVersionsParams contains all the parameters to send to the API endpoint
-for the get namespace ingredient versions operation typically these are written to a http.Request
+/* GetNamespaceIngredientVersionsParams contains all the parameters to send to the API endpoint
+   for the get namespace ingredient versions operation.
+
+   Typically these are written to a http.Request.
 */
 type GetNamespaceIngredientVersionsParams struct {
 
-	/*AllowUnstable
-	  Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
+	/* AllowUnstable.
 
+	   Whether to show an unstable revision of a resource if there is an available unstable version newer than the newest available stable version
 	*/
 	AllowUnstable *bool
-	/*Limit
-	  The maximum number of items returned per page
 
+	/* Limit.
+
+	   The maximum number of items returned per page
+
+	   Default: 50
 	*/
 	Limit *int64
-	/*Name*/
-	Name string
-	/*Namespace*/
-	Namespace string
-	/*Page
-	  The page number returned
 
+	// Name.
+	Name string
+
+	// Namespace.
+	Namespace string
+
+	/* Page.
+
+	   The page number returned
+
+	   Default: 1
 	*/
 	Page *int64
-	/*StateAt
-	  Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
 
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
 	*/
 	StateAt *strfmt.DateTime
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get namespace ingredient versions params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetNamespaceIngredientVersionsParams) WithDefaults() *GetNamespaceIngredientVersionsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get namespace ingredient versions params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetNamespaceIngredientVersionsParams) SetDefaults() {
+	var (
+		allowUnstableDefault = bool(false)
+
+		limitDefault = int64(50)
+
+		pageDefault = int64(1)
+	)
+
+	val := GetNamespaceIngredientVersionsParams{
+		AllowUnstable: &allowUnstableDefault,
+		Limit:         &limitDefault,
+		Page:          &pageDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the get namespace ingredient versions params
@@ -230,38 +244,41 @@ func (o *GetNamespaceIngredientVersionsParams) WriteToRequest(r runtime.ClientRe
 
 		// query param allow_unstable
 		var qrAllowUnstable bool
+
 		if o.AllowUnstable != nil {
 			qrAllowUnstable = *o.AllowUnstable
 		}
 		qAllowUnstable := swag.FormatBool(qrAllowUnstable)
 		if qAllowUnstable != "" {
+
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.Limit != nil {
 
 		// query param limit
 		var qrLimit int64
+
 		if o.Limit != nil {
 			qrLimit = *o.Limit
 		}
 		qLimit := swag.FormatInt64(qrLimit)
 		if qLimit != "" {
+
 			if err := r.SetQueryParam("limit", qLimit); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	// query param name
 	qrName := o.Name
 	qName := qrName
 	if qName != "" {
+
 		if err := r.SetQueryParam("name", qName); err != nil {
 			return err
 		}
@@ -271,6 +288,7 @@ func (o *GetNamespaceIngredientVersionsParams) WriteToRequest(r runtime.ClientRe
 	qrNamespace := o.Namespace
 	qNamespace := qrNamespace
 	if qNamespace != "" {
+
 		if err := r.SetQueryParam("namespace", qNamespace); err != nil {
 			return err
 		}
@@ -280,32 +298,34 @@ func (o *GetNamespaceIngredientVersionsParams) WriteToRequest(r runtime.ClientRe
 
 		// query param page
 		var qrPage int64
+
 		if o.Page != nil {
 			qrPage = *o.Page
 		}
 		qPage := swag.FormatInt64(qrPage)
 		if qPage != "" {
+
 			if err := r.SetQueryParam("page", qPage); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if o.StateAt != nil {
 
 		// query param state_at
 		var qrStateAt strfmt.DateTime
+
 		if o.StateAt != nil {
 			qrStateAt = *o.StateAt
 		}
 		qStateAt := qrStateAt.String()
 		if qStateAt != "" {
+
 			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
-
 	}
 
 	if len(res) > 0 {

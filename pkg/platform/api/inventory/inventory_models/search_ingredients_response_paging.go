@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -53,12 +55,11 @@ func (m *SearchIngredientsResponsePaging) Validate(formats strfmt.Registry) erro
 }
 
 func (m *SearchIngredientsResponsePaging) validateItemCount(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ItemCount) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("item_count", "body", int64(*m.ItemCount), 0, false); err != nil {
+	if err := validate.MinimumInt("item_count", "body", *m.ItemCount, 0, false); err != nil {
 		return err
 	}
 
@@ -66,12 +67,11 @@ func (m *SearchIngredientsResponsePaging) validateItemCount(formats strfmt.Regis
 }
 
 func (m *SearchIngredientsResponsePaging) validateLimit(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Limit) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("limit", "body", int64(m.Limit), 1, false); err != nil {
+	if err := validate.MinimumInt("limit", "body", m.Limit, 1, false); err != nil {
 		return err
 	}
 
@@ -79,15 +79,19 @@ func (m *SearchIngredientsResponsePaging) validateLimit(formats strfmt.Registry)
 }
 
 func (m *SearchIngredientsResponsePaging) validateOffset(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Offset) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("offset", "body", int64(*m.Offset), 0, false); err != nil {
+	if err := validate.MinimumInt("offset", "body", *m.Offset, 0, false); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this search ingredients response paging based on context it is used
+func (m *SearchIngredientsResponsePaging) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

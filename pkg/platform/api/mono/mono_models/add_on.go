@@ -17,11 +17,17 @@ import (
 // swagger:model AddOn
 type AddOn struct {
 
+	// category
+	Category *string `json:"category,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// is default
+	IsDefault *bool `json:"isDefault,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`

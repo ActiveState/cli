@@ -52,7 +52,7 @@ func NewAddKernelVersionRevisionOK() *AddKernelVersionRevisionOK {
 	return &AddKernelVersionRevisionOK{}
 }
 
-/*AddKernelVersionRevisionOK handles this case with default header values.
+/* AddKernelVersionRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the kernel version
 */
@@ -63,7 +63,6 @@ type AddKernelVersionRevisionOK struct {
 func (o *AddKernelVersionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevisionOK  %+v", 200, o.Payload)
 }
-
 func (o *AddKernelVersionRevisionOK) GetPayload() *inventory_models.KernelVersion {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddKernelVersionRevisionBadRequest() *AddKernelVersionRevisionBadRequest
 	return &AddKernelVersionRevisionBadRequest{}
 }
 
-/*AddKernelVersionRevisionBadRequest handles this case with default header values.
+/* AddKernelVersionRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the kernel version revision is invalid
 */
@@ -96,7 +95,6 @@ type AddKernelVersionRevisionBadRequest struct {
 func (o *AddKernelVersionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevisionBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddKernelVersionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddKernelVersionRevisionDefault(code int) *AddKernelVersionRevisionDefau
 	}
 }
 
-/*AddKernelVersionRevisionDefault handles this case with default header values.
+/* AddKernelVersionRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *AddKernelVersionRevisionDefault) Code() int {
 func (o *AddKernelVersionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/kernels/{kernel_id}/versions/{kernel_version_id}/revisions][%d] addKernelVersionRevision default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddKernelVersionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

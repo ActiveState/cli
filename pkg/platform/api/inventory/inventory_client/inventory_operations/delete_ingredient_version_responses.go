@@ -46,7 +46,7 @@ func NewDeleteIngredientVersionNoContent() *DeleteIngredientVersionNoContent {
 	return &DeleteIngredientVersionNoContent{}
 }
 
-/*DeleteIngredientVersionNoContent handles this case with default header values.
+/* DeleteIngredientVersionNoContent describes a response with status code 204, with default header values.
 
 The ingredient version has been deleted
 */
@@ -69,7 +69,7 @@ func NewDeleteIngredientVersionDefault(code int) *DeleteIngredientVersionDefault
 	}
 }
 
-/*DeleteIngredientVersionDefault handles this case with default header values.
+/* DeleteIngredientVersionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -87,7 +87,6 @@ func (o *DeleteIngredientVersionDefault) Code() int {
 func (o *DeleteIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[DELETE /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] deleteIngredientVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *DeleteIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }
