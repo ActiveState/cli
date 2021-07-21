@@ -144,7 +144,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 
 	// Print the result
 	out := prime.Output()
-	if parentCommitID == "" {
+	if !hasParentCommit {
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 		return nil
 	}
