@@ -23,9 +23,9 @@ const (
 )
 
 const (
-	fileName = "uniqid"
-	asDir    = "activestate_dat"
-	tmpSub   = "activestate_uniqid"
+	fileName   = "uniqid"
+	persistDir = "activestate/persist"
+	tmpSubDir  = "activestate_persist"
 )
 
 // UniqID manages the storage and retrieval of a unique id.
@@ -84,7 +84,7 @@ func storageDirectory(location DirLocation) (string, error) {
 	var dir string
 	switch location {
 	case InTmp:
-		dir = filepath.Join(os.TempDir(), tmpSub)
+		dir = filepath.Join(os.TempDir(), tmpSubDir)
 
 	default:
 		home, err := os.UserHomeDir()
@@ -106,7 +106,7 @@ func storageDirectory(location DirLocation) (string, error) {
 		return "", ErrUnsupportedOS
 	}
 
-	return filepath.Join(dir, subdir, asDir), nil
+	return filepath.Join(dir, subdir, persistDir), nil
 }
 
 // The following is copied from fileutils to avoid cyclical importing. As
