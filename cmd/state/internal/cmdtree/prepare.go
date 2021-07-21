@@ -9,6 +9,7 @@ import (
 
 func newPrepareCommand(prime *primer.Values) *captain.Command {
 	runner := prepare.New(prime)
+	params := &prepare.Params{}
 
 	cmd := captain.NewCommand(
 		"_prepare",
@@ -16,10 +17,15 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("prepare_description", "Prepare environment for use with the State Tool."),
 		prime.Output(),
 		prime.Config(),
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:  "session-token",
+				Value: &params.SessionToken,
+			},
+		},
 		[]*captain.Argument{},
 		func(c *captain.Command, _ []string) error {
-			return runner.Run(c)
+			return runner.Run(c, params)
 		},
 	)
 

@@ -83,6 +83,8 @@ const CatActivationFlow = "activation"
 // CatPrompt is for prompt events
 const CatPrompt = "prompt"
 
+const CfgSessionToken = "sessionToken"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -93,6 +95,7 @@ type customDimensions struct {
 	installSource string
 	machineID     string
 	projectName   string
+	sessionToken  string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -117,6 +120,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"8":  d.installSource,
 		"9":  d.machineID,
 		"10": d.projectName,
+		"11": d.sessionToken,
 	}
 }
 
@@ -186,6 +190,7 @@ func setup() {
 		installSource: installSource,
 		machineID:     machineid.UniqID(),
 		output:        string(output.PlainFormatName),
+		sessionToken:  cfg.GetString(CfgSessionToken),
 	}
 
 	if id == "unknown" {
