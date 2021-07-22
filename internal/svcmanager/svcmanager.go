@@ -46,6 +46,21 @@ func (m *Manager) Start() error {
 	return nil
 }
 
+func (m *Manager) WaitWithContext(ctx context.Context) error {
+	waitDone := make(chan struct{})
+	var err error
+	go func() {
+		err = m.Wait()
+		waitDone <- struct{}{}
+	}()
+	select {
+	case <-waitDone:
+	case <-ctx.Done():
+		break
+	}
+	return err
+}
+
 func (m *Manager) Wait() error {
 	logging.Debug("Waiting for state-svc")
 	try := 1

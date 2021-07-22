@@ -63,7 +63,7 @@ func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out
 		logging.Error("Could not init svc model when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
-	up, err := svc.CheckUpdate()
+	up, err := svc.CheckUpdate(context.Background())
 	if err != nil {
 		var timeoutErr net.Error
 		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {
