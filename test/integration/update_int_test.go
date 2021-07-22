@@ -182,7 +182,7 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
 	var logs []byte
 	// poll for successful auto-update
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 60; i++ {
 		time.Sleep(time.Millisecond * 200)
 
 		var err error
@@ -305,7 +305,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
-	suite.T().Skip("This test is disabled while this bug is unresolved: https://www.pivotaltracker.com/story/show/178819606")
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -351,14 +350,19 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
 				suite.Assert().Contains(logs, "was successful")
 			} else {
-				for x := 0; x < 30; x++ {
+				updated := false
+				for x := 0; x < 90; x++ {
 					info, err := os.Stat(ts.Exe)
-					suite.Require().NoError(err)
+					if errors.Is(err, os.ErrNotExist) {
+						continue
+					}
 					if !info.ModTime().Equal(modTime) {
+						updated = true
 						break
 					}
-					time.Sleep(200 * time.Millisecond)
+					time.Sleep(300 * time.Millisecond)
 				}
+				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified.")
 			}
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
