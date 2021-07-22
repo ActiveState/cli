@@ -541,9 +541,6 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	} else {
 		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
 	}
-	if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Wait); err != nil {
-		logging.Warning("Failed to wait closing rollbar")
-	}
 
 	return err
 }
