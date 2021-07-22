@@ -2,6 +2,7 @@ package run
 
 import (
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/language"
@@ -57,7 +58,9 @@ func (r *Run) Run(name string, args []string) error {
 func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
+	start := time.Now()
 	checker.RunUpdateNotifier(svcMgr, cfg, out)
+	out.Notice(locale.Tl("", time.Since(start).String()+" to run update notifier"))
 
 	if proj == nil {
 		return locale.NewInputError("err_no_project")
@@ -69,16 +72,26 @@ func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 
 	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
-	if authentication.Get().Authenticated() {
+	start = time.Now()
+	isAuth := authentication.Get().Authenticated()
+	out.Notice(locale.Tl("", time.Since(start).String()+" to check authenticated"))
+
+	if isAuth {
+		start = time.Now()
 		checker.RunCommitsBehindNotifier(proj, out)
+		out.Notice(locale.Tl("", time.Since(start).String()+" to check commits behind"))
 	}
 
+	start = time.Now()
 	script := proj.ScriptByName(name)
+	out.Notice(locale.Tl("", time.Since(start).String()+" to get script by name"))
 	if script == nil {
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
+	start = time.Now()
 	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg)
+	out.Notice(locale.Tl("", time.Since(start).String()+" to create scriptrunner"))
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
@@ -94,5 +107,8 @@ func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 	}
 
 	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
-	return scriptrunner.Run(script, args)
+	start = time.Now()
+	result := scriptrunner.Run(script, args)
+	out.Notice(locale.Tl("", time.Since(start).String()+" to run script"))
+	return result
 }
