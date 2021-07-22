@@ -12,14 +12,13 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gobuffalo/packr"
-	"github.com/rollbar/rollbar-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -229,6 +228,7 @@ func (c *Command) ShortDescription() string {
 }
 
 func (c *Command) Execute(args []string) error {
+	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -307,11 +307,14 @@ func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
 
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
+		defer profile.Measure("captain:intercepter", time.Now())
 		for i := len(c.interceptChain) - 1; i >= 0; i-- {
 			if c.interceptChain[i] == nil {
 				continue
 			}
+			start := time.Now()
 			fn = c.interceptChain[i](fn)
+			profile.Measure(fmt.Sprintf("captain:intercepter:%d", i), start)
 		}
 		return fn
 	}
@@ -480,6 +483,7 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 	analytics.SetDeferred(c.deferAnalytics)
 
 	outputFlag := cobraCmd.Flag("output")
@@ -529,6 +533,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer sighandler.Pop()
 
 	err := as.WaitForFunc(func() error {
+		defer profile.Measure("captain:cmd:execute", time.Now())
 		return execute(c, args)
 	})
 

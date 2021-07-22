@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
@@ -23,6 +25,7 @@ type SvcModel struct {
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
 func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Manager) (*SvcModel, error) {
+	defer profile.Measure("NewSvcModel", time.Now())
 
 	if err := svcm.WaitWithContext(ctx); err != nil {
 		return nil, errs.Wrap(err, "Failed to wait for svc connection to be ready")
@@ -68,6 +71,7 @@ func (m *SvcModel) InitiateDeferredUpdate(ctx context.Context, channel, version 
 }
 
 func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	defer profile.Measure("svc:CheckUpdate", time.Now())
 	r := request.NewAvailableUpdate()
 	u := graph.AvailableUpdateResponse{}
 	if err := m.client.RunWithContext(ctx, r, &u); err != nil {

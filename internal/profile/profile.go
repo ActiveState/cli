@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/felixge/fgprof"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -24,4 +25,10 @@ func CPU() (cleanUp func() error, err error) {
 	}
 
 	return fgprof.Start(f, fgprof.FormatPprof), nil
+}
+
+func Measure(name string, start time.Time) {
+	if os.Getenv(constants.ProfileEnvVarName) == "true" {
+		fmt.Printf("%s took %s\n", name, time.Since(start))
+	}
 }

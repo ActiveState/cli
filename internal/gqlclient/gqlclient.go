@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
 
 	"github.com/ActiveState/cli/internal/logging"
@@ -76,6 +78,8 @@ func (c *Client) Run(request Request, response interface{}) error {
 }
 
 func (c *Client) RunWithContext(ctx context.Context, request Request, response interface{}) error {
+	name := strutils.Summarize(request.Query(), 25)
+	defer profile.Measure(fmt.Sprintf("gqlclient:RunWithContext:(%s)", name), time.Now())
 	graphRequest := graphql.NewRequest(request.Query())
 	for key, value := range request.Vars() {
 		graphRequest.Var(key, value)

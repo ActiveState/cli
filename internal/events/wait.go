@@ -2,6 +2,8 @@ package events
 
 import (
 	"time"
+
+	"github.com/ActiveState/cli/internal/profile"
 )
 
 type EventsTimedOutError struct {
@@ -16,6 +18,7 @@ func (et *EventsTimedOutError) Error() string {
 }
 
 func WaitForEvents(t time.Duration, events ...func()) error {
+	defer profile.Measure("event:WaitForEvents", time.Now())
 	wg := make(chan struct{})
 	go func() {
 		for _, event := range events {

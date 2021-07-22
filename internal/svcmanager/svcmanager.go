@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -34,6 +35,7 @@ func New(cfg configurable) *Manager {
 }
 
 func (m *Manager) Start() error {
+	defer profile.Measure("svcmanager:Start", time.Now())
 	svcInfo := appinfo.SvcApp()
 	if !fileutils.FileExists(svcInfo.Exec()) {
 		return errs.New("Could not find: %s", svcInfo.Exec())
@@ -62,6 +64,7 @@ func (m *Manager) WaitWithContext(ctx context.Context) error {
 }
 
 func (m *Manager) Wait() error {
+	defer profile.Measure("svcmanager:Wait", time.Now())
 	logging.Debug("Waiting for state-svc")
 	try := 1
 	for {
