@@ -12,6 +12,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 )
 
+var profilingEnabled = false
+
+func init() {
+	profilingEnabled = os.Getenv(constants.ProfileEnvVarName) == "true"
+}
 
 // CPU runs the CPU profiler. Be sure to run the cleanup func.
 func CPU() (cleanUp func() error, err error) {
@@ -28,7 +33,7 @@ func CPU() (cleanUp func() error, err error) {
 }
 
 func Measure(name string, start time.Time) {
-	if os.Getenv(constants.ProfileEnvVarName) == "true" {
+	if profilingEnabled {
 		fmt.Printf("%s took %s\n", name, time.Since(start))
 	}
 }
