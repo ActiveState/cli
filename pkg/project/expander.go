@@ -1,6 +1,7 @@
 package project
 
 import (
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -250,7 +251,11 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, project *
 	case "namespace":
 		return project.Namespace().String(), nil
 	case "path":
-		return project.Source().Path(), nil
+		path := project.Source().Path()
+		if path == "" {
+			return path, nil
+		}
+		return filepath.Dir(path), nil
 	}
 
 	return "", nil

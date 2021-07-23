@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -87,6 +88,9 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjCommit = pj.CommitID()
 		pjBranch = pj.BranchName()
 		pjPath = pj.Path()
+		if pjPath != "" {
+			pjPath = filepath.Dir(pjPath)
+		}
 	}
 
 	c := NewConditional(auth)
