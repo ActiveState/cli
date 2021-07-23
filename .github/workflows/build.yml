@@ -284,7 +284,7 @@ jobs:
       run: |
         export SHELL=''
         set +e
-        go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite$"
+        go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
         testCode=$?
         exit ${testCode}
       env:

@@ -112,6 +112,8 @@ func main() {
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+	defer profile.Measure("main:run", time.Now())
+
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()

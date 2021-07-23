@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/profile"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 
@@ -133,6 +135,7 @@ var (
 )
 
 func init() {
+	defer profile.Measure("analytics:Init", time.Now())
 	CustomDimensions = &customDimensions{}
 	setup()
 }

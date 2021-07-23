@@ -11,7 +11,9 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/sysinfo"
 	"github.com/gobuffalo/packr"
@@ -765,6 +767,7 @@ func (p *Project) SetBranch(branch string) error {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, error) {
+	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
@@ -880,6 +883,7 @@ func GetOnce() (*Project, error) {
 
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
+	defer profile.Measure("projectfile:FromPath", time.Now())
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
