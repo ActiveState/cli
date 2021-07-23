@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -113,6 +115,17 @@ func runDefault() (rerr error) {
 		return errs.Wrap(err, "Could not initialize config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
+
+	var sessionToken string
+	flag.StringVar(&sessionToken, "session-token", "", "")
+	flag.Parse()
+
+	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
+		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
+		}
+		analytics.Configure(cfg)
+	}
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)

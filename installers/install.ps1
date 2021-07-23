@@ -39,10 +39,10 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
-$script:SESSION_TOKEN_ARGS = "--session-token=\`"\`""
+$script:SESSION_TOKEN_ARGS = "-session-token=\`"\`""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
-  $script:SESSION_TOKEN_ARGS = " --session-token=\`"${script:SESSION_TOKEN}\`""
+  $script:SESSION_TOKEN_ARGS = " -session-token=\`"${script:SESSION_TOKEN}\`""
 }
 
 # For recipe installation without prompts we need to be able to disable
