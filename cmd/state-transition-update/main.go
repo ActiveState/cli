@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -116,10 +115,7 @@ func runDefault() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	var sessionToken string
-	flag.StringVar(&sessionToken, "session-token", "", "")
-	flag.Parse()
-
+	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
 	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))

@@ -30,10 +30,6 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-type Flags struct {
-	sessionToken string
-}
-
 func main() {
 	var exitCode int
 	defer func() {
@@ -45,10 +41,6 @@ func main() {
 		}
 		os.Exit(exitCode)
 	}()
-
-	flags := &Flags{}
-	flag.StringVar(&flags.sessionToken, "session-token", "", "")
-	flag.Parse()
 
 	// init logging and rollbar
 	verbose := os.Getenv("VERBOSE") != ""
@@ -66,7 +58,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	if err := run(out, flag.Arg(0), flags.sessionToken); err != nil {
+	if err := run(out, flag.Arg(0), os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
