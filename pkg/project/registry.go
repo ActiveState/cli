@@ -22,6 +22,7 @@ func init() {
 		"events":             EventExpander,
 		"scripts":            ScriptExpander,
 		"constants":          ConstantExpander,
+		"project":            ProjectExpander,
 		TopLevelExpanderName: TopLevelExpander,
 	}
 }

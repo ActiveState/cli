@@ -175,19 +175,11 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	if forward != nil {
 		return forward()
 	}
-
-	pjOwner := ""
-	pjNamespace := ""
-	pjName := ""
-	if pj != nil {
-		pjOwner = pj.Owner()
-		pjNamespace = pj.Namespace().String()
-		pjName = pj.Name()
-	}
+	
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 	auth := authentication.LegacyGet()
-	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
+	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))

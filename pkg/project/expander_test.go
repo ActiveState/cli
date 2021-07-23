@@ -23,7 +23,7 @@ func loadProject(t *testing.T) *project.Project {
 
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/Expander/general?branch=main&commitID=00010001-0001-0001-0001-000100010001"
 lock: branchname@0.0.0-SHA123abcd
 platforms:
   - name: Linux
@@ -59,9 +59,44 @@ scripts:
 	err := yaml.Unmarshal([]byte(contents), pjFile)
 	assert.Nil(t, err, "Unmarshalled YAML")
 
+	require.NoError(t, pjFile.Init())
+
 	pjFile.Persist()
 
 	return project.Get()
+}
+
+func TestExpandProject(t *testing.T) {
+	prj := loadProject(t)
+	prj.Source().SetPath("spoofed path")
+
+	expanded, err := project.ExpandFromProject("$project.url()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, prj.URL(), expanded)
+
+	expanded, err = project.ExpandFromProject("$project.commit()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "00010001-0001-0001-0001-000100010001", expanded)
+
+	expanded, err = project.ExpandFromProject("$project.branch()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "main", expanded)
+
+	expanded, err = project.ExpandFromProject("$project.owner()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "Expander", expanded)
+
+	expanded, err = project.ExpandFromProject("$project.name()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "general", expanded)
+
+	expanded, err = project.ExpandFromProject("$project.namespace()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "Expander/general", expanded)
+
+	expanded, err = project.ExpandFromProject("$project.path()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "spoofed path", expanded)
 }
 
 func TestExpandTopLevel(t *testing.T) {
@@ -70,7 +105,7 @@ func TestExpandTopLevel(t *testing.T) {
 	expanded, err := project.ExpandFromProject("$project", prj)
 	assert.NoError(t, err, "Ran without failure")
 
-	assert.Equal(t, "https://platform.activestate.com/Expander/general?commitID=00010001-0001-0001-0001-000100010001", expanded)
+	assert.Equal(t, "https://platform.activestate.com/Expander/general?branch=main&commitID=00010001-0001-0001-0001-000100010001", expanded)
 
 	expanded, err = project.ExpandFromProject("$lock", prj)
 	assert.NoError(t, err, "Ran without failure")
