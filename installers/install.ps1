@@ -42,10 +42,10 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
-$script:SESSION_TOKEN_ARGS = "-session-token=\`"\`""
+$script:SESSION_TOKEN_VALUE = ""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
-  $script:SESSION_TOKEN_ARGS = " -session-token=\`"${script:SESSION_TOKEN}\`""
+  $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
 # For recipe installation without prompts we need to be able to disable
@@ -184,7 +184,9 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare $script:SESSION_TOKEN_ARGS | Write-Host
+    $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+    &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
     return $LASTEXITCODE
 }
 

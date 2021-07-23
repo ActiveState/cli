@@ -46,10 +46,10 @@ FORCEOVERWRITE=false
 
 SESSION_TOKEN_VERIFY="{TOKEN""}"
 SESSION_TOKEN="{TOKEN}"
-SESSION_TOKEN_ARGS="-session-token=\"\""
+SESSION_TOKEN_VALUE=""
 
 if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
-  SESSION_TOKEN_ARGS=" -session-token=\"${SESSION_TOKEN}\""
+  SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
@@ -422,7 +422,7 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-$STATEPATH _prepare $SESSION_TOKEN_ARGS || exit $?
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $STATEPATH _prepare || exit $?
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project
