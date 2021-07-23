@@ -46,10 +46,10 @@ FORCEOVERWRITE=false
 
 SESSION_TOKEN_VERIFY="{TOKEN""}"
 SESSION_TOKEN="{TOKEN}"
-SESSION_TOKEN_ARGS="--session-token=\"\""
+SESSION_TOKEN_ARGS="-session-token=\"\""
 
 if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
-  SESSION_TOKEN_ARGS=" --session-token=\"${SESSION_TOKEN}\""
+  SESSION_TOKEN_ARGS=" -session-token=\"${SESSION_TOKEN}\""
 fi
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
