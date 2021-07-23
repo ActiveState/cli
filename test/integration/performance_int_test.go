@@ -11,7 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-var StateVersionMaxTime = 250 * time.Millisecond
+// The max time is based on the average execution times across platforms at the time that this was configured
+// Increasing this should be a LAST RESORT
+var StateVersionMaxTime = 350 * time.Millisecond // DO NOT CHANGE WITHOUT DISCUSSION WITH THE TEAM
 var StateVersionTotalSamples = 10
 
 type PerformanceIntegrationTestSuite struct {
