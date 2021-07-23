@@ -24,7 +24,7 @@ func GetCroppedText(text string, maxLen int) CroppedLines {
 		}
 
 		// Ensure the next position is not within a color tag and check conditions that would end this entry
-		if !inRange(pos+1, colorCodes) && (entry.Length == maxLen || lineEnd || pos == len(text)-1) {
+		if lineEnd || (!inRange(pos+1, colorCodes) && (entry.Length == maxLen || lineEnd || pos == len(text)-1)) {
 			entries = append(entries, entry)
 			entry = CroppedLine{}
 		}

@@ -45,6 +45,14 @@ ARCH="amd64"
 NOPROMPT=false
 FORCEOVERWRITE=false
 
+SESSION_TOKEN_VERIFY="{TOKEN""}"
+SESSION_TOKEN="{TOKEN}"
+SESSION_TOKEN_ARGS="--session-token=\"\""
+
+if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
+  SESSION_TOKEN_ARGS=" --session-token=\"${SESSION_TOKEN}\""
+fi
+
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
   OUTPUT_WARN=""
@@ -318,9 +326,9 @@ case "$RESPONSE" in
     fetchArtifact
     OUTPUT_FILE=$TMPDIR/install_output.txt
     if [ ! -z "$TARGET" ]; then
-      "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
+      "$TMPDIR/$TMPEXE" "$TARGET" $SESSION_TOKEN_ARGS 2>&1 | tee $OUTPUT_FILE
     else
-      "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
+      "$TMPDIR/$TMPEXE" $SESSION_TOKEN_ARGS 2>&1 | tee $OUTPUT_FILE
     fi
     INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
     rm -f $OUTPUT_FILE

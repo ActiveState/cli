@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -51,6 +52,38 @@ func (m *IngredientOptionSetRevisionCoreAllOf0) validateIngredientOptions(format
 
 		if m.IngredientOptions[i] != nil {
 			if err := m.IngredientOptions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient option set revision core all of0 based on the context it is used
+func (m *IngredientOptionSetRevisionCoreAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIngredientOptions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientOptionSetRevisionCoreAllOf0) contextValidateIngredientOptions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.IngredientOptions); i++ {
+
+		if m.IngredientOptions[i] != nil {
+			if err := m.IngredientOptions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("ingredient_options" + "." + strconv.Itoa(i))
 				}

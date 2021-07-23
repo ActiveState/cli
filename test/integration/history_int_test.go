@@ -22,7 +22,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("Commit")
 	cp.Expect("Author")
 	cp.Expect("Date")
-	cp.Expect("Commit Message")
+	cp.Expect("Message")
 	cp.ExpectLongString("• requests (2.26.0 → 2.7.0)")
 	cp.ExpectLongString("• autopip (1.6.0 → Auto)")
 	cp.Expect("+ autopip 1.6.0")

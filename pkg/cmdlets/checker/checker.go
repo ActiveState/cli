@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -56,6 +58,7 @@ func CommitsBehind(p *project.Project) (int, error) {
 }
 
 func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out output.Outputer) {
+	defer profile.Measure("RunUpdateNotifier", time.Now())
 	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
 	defer cancel()
 	svc, err := model.NewSvcModel(ctx, cfg, svcManager)
@@ -63,7 +66,7 @@ func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out
 		logging.Error("Could not init svc model when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
-	up, err := svc.CheckUpdate()
+	up, err := svc.CheckUpdate(context.Background())
 	if err != nil {
 		var timeoutErr net.Error
 		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {

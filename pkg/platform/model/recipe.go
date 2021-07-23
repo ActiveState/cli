@@ -25,7 +25,7 @@ import (
 var HostPlatform string
 
 // Recipe aliases recipe model
-type Recipe = inventory_models.V1RecipeResponseRecipesItems
+type Recipe = inventory_models.Recipe
 
 // OrderAnnotations are sent with every order for analytical purposes described here:
 // https://docs.google.com/document/d/1nXeNCRWX-4ULtk20t3C7kTZDCSBJchJJHhzz-lQuVsU/edit#heading=h.o93wm4bt5ul9
@@ -95,7 +95,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		if err2 != nil {
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
-		
+
 		serr := resolveSolverError(err)
 		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
 		return "", serr

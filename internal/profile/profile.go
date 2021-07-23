@@ -6,11 +6,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/felixge/fgprof"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
 
+var profilingEnabled = false
+
+func init() {
+	profilingEnabled = os.Getenv(constants.ProfileEnvVarName) == "true"
+}
 
 // CPU runs the CPU profiler. Be sure to run the cleanup func.
 func CPU() (cleanUp func() error, err error) {
@@ -24,4 +30,10 @@ func CPU() (cleanUp func() error, err error) {
 	}
 
 	return fgprof.Start(f, fgprof.FormatPprof), nil
+}
+
+func Measure(name string, start time.Time) {
+	if profilingEnabled {
+		fmt.Printf("%s took %s\n", name, time.Since(start))
+	}
 }

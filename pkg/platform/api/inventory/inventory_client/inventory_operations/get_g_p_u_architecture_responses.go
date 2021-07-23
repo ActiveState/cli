@@ -46,7 +46,7 @@ func NewGetGPUArchitectureOK() *GetGPUArchitectureOK {
 	return &GetGPUArchitectureOK{}
 }
 
-/*GetGPUArchitectureOK handles this case with default header values.
+/* GetGPUArchitectureOK describes a response with status code 200, with default header values.
 
 The retrieved GPU architecture
 */
@@ -57,7 +57,6 @@ type GetGPUArchitectureOK struct {
 func (o *GetGPUArchitectureOK) Error() string {
 	return fmt.Sprintf("[GET /v1/gpu-architectures/{gpu_architecture_id}][%d] getGPUArchitectureOK  %+v", 200, o.Payload)
 }
-
 func (o *GetGPUArchitectureOK) GetPayload() *inventory_models.GpuArchitecture {
 	return o.Payload
 }
@@ -81,7 +80,7 @@ func NewGetGPUArchitectureDefault(code int) *GetGPUArchitectureDefault {
 	}
 }
 
-/*GetGPUArchitectureDefault handles this case with default header values.
+/* GetGPUArchitectureDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetGPUArchitectureDefault) Code() int {
 func (o *GetGPUArchitectureDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/gpu-architectures/{gpu_architecture_id}][%d] getGPUArchitecture default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetGPUArchitectureDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

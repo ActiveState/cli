@@ -78,6 +78,9 @@ const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
+// ProfileEnvVarName is the name of the environment variable that specifies whether profiling should be run.
+const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
+
 // NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
@@ -309,6 +312,9 @@ const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// StateInstallerCmd is the name of the state installer binary
+const StateInstallerCmd = "state-installer"
 
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"

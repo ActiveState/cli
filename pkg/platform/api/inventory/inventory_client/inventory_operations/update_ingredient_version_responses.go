@@ -52,7 +52,7 @@ func NewUpdateIngredientVersionOK() *UpdateIngredientVersionOK {
 	return &UpdateIngredientVersionOK{}
 }
 
-/*UpdateIngredientVersionOK handles this case with default header values.
+/* UpdateIngredientVersionOK describes a response with status code 200, with default header values.
 
 The updated state of the ingredient version
 */
@@ -63,7 +63,6 @@ type UpdateIngredientVersionOK struct {
 func (o *UpdateIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersionOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateIngredientVersionOK) GetPayload() *inventory_models.IngredientVersion {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewUpdateIngredientVersionBadRequest() *UpdateIngredientVersionBadRequest {
 	return &UpdateIngredientVersionBadRequest{}
 }
 
-/*UpdateIngredientVersionBadRequest handles this case with default header values.
+/* UpdateIngredientVersionBadRequest describes a response with status code 400, with default header values.
 
 If the ingredient version is invalid
 */
@@ -96,7 +95,6 @@ type UpdateIngredientVersionBadRequest struct {
 func (o *UpdateIngredientVersionBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersionBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UpdateIngredientVersionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewUpdateIngredientVersionDefault(code int) *UpdateIngredientVersionDefault
 	}
 }
 
-/*UpdateIngredientVersionDefault handles this case with default header values.
+/* UpdateIngredientVersionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *UpdateIngredientVersionDefault) Code() int {
 func (o *UpdateIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[PUT /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] updateIngredientVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *UpdateIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

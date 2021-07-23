@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
@@ -24,7 +25,7 @@ import (
 // datadir is the base directory at which the log is saved
 var datadir string
 
-var datafile string
+var timestamp int64
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -65,9 +66,6 @@ func (l *fileHandler) Output() io.Writer {
 }
 
 func FileName() string {
-	if datafile != "" {
-		return datafile
-	}
 	return FileNameFor(os.Getpid())
 }
 
@@ -76,7 +74,10 @@ func FileNameFor(pid int) string {
 }
 
 func FileNameForCmd(cmd string, pid int) string {
-	return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
+	if cmd == constants.StateInstallerCmd {
+		return fmt.Sprintf("%s-%d%s", cmd, pid, FileNameSuffix)
+	}
+	return fmt.Sprintf("%s-%d-%d%s", cmd, pid, timestamp, FileNameSuffix)
 }
 
 func FileNamePrefix() string {
@@ -146,9 +147,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if err != nil {
 		return err
 	}
-	if err := l.file.Sync(); err != nil {
-		return errs.Wrap(err, "Could not sync log file")
-	}
 
 	return nil
 }
@@ -161,6 +159,7 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 }
 
 func init() {
+	timestamp = time.Now().UnixNano()
 	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
 	SetHandler(handler)
 
@@ -196,4 +195,3 @@ func init() {
 
 	Debug("Args: %v", os.Args)
 }
-
