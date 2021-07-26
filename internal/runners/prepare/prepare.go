@@ -2,9 +2,12 @@ package prepare
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,11 +23,20 @@ type primeable interface {
 	primer.Configurer
 }
 
+type Configurable interface {
+	GetString(string) string
+	globaldefault.DefaultConfigurer
+}
+
 // Prepare manages the prepare execution context.
 type Prepare struct {
 	out      output.Outputer
 	subshell subshell.SubShell
-	cfg      globaldefault.DefaultConfigurer
+	cfg      Configurable
+}
+
+type Params struct {
+	SessionToken string
 }
 
 // New prepares a prepare execution context for use.
@@ -39,6 +51,13 @@ func New(prime primeable) *Prepare {
 // Run executes the prepare behavior.
 func (r *Prepare) Run(cmd *captain.Command) error {
 	logging.Debug("ExecutePrepare")
+
+	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
+	if sessionToken != "" && r.cfg.GetString(analytics.CfgSessionToken) != "" {
+		if err := r.cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+			logging.Error("Failed to set session token: %s", errs.Join(err, ": ").Error())
+		}
+	}
 
 	if err := globaldefault.Prepare(r.cfg, r.subshell); err != nil {
 		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)

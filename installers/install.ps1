@@ -40,6 +40,14 @@ $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
+$script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
+$script:SESSION_TOKEN = "{TOKEN}"
+$script:SESSION_TOKEN_VALUE = ""
+
+if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
+  $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
+}
+
 # For recipe installation without prompts we need to be able to disable
 # prompots through an environment variable.
 if ($Env:NOPROMPT_INSTALL -eq "true") {
@@ -176,7 +184,9 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
+    $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
     &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
     return $LASTEXITCODE
 }
 
