@@ -134,7 +134,6 @@ func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	cmd := exec.Command(os.Args[0], "_prepare")
 	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
