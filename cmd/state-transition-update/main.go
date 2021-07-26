@@ -83,7 +83,6 @@ func run() error {
 			return err
 		}
 
-		fmt.Println("Please start a new shell to continue using the State Tool.")
 		return nil
 	}
 }
