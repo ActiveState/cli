@@ -161,7 +161,7 @@ func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching version info")
-	cp.Expect("Installation Complete")
+	cp.Expect("State Tool successfully installed to")
 }
 
 func expectDefaultActivation(cp *termtest.ConsoleProcess) {
