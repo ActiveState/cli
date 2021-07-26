@@ -11,7 +11,6 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -104,5 +103,5 @@ func (r *RawResponder) ReadResponse(res runtime.ClientResponse, cons runtime.Con
 
 func IsPlatformError(err error) bool {
 	// todo: replace with error codes once we have a solution -- https://www.pivotaltracker.com/story/show/178865201
-	return strings.Contains(errs.JoinMessage(err), "build image for platform")
+	return strings.Contains(err.Error(), "build image for platform")
 }
