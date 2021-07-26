@@ -133,9 +133,11 @@ func (bl *BuildLogFile) Close() error {
 }
 
 func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {
-	tryAgain := ""
-	if serr.IsTransient() {
-		tryAgain = "Re-trying the command may lead to different results."
+	if err := bl.writeMessage(locale.Tr("solver_err", "", serr.Error())); err != nil {
+		return err
 	}
-	return bl.writeMessage("The Platform could not resolve the dependencies for this build.  The returned error message is\n%s\n%s", serr.Error(), tryAgain)
+	if !serr.IsTransient() {
+		return nil
+	}
+	return bl.writeMessage(locale.Tr("transient_solver_tip"))
 }

@@ -590,9 +590,9 @@ func formatSolverError(serr *apimodel.SolverError) error {
 		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last five lines of the error message:")
 	}
 
-	err = locale.WrapError(err, "solver_err", "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}", croppedMessage, errorLines)
+	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
 	if serr.IsTransient() {
-		err = errs.AddTips(serr, locale.Tl("transient_solver_tip", "You may want to retry this command, as it can lead to a different result."))
+		err = errs.AddTips(serr, locale.Tr("transient_solver_tip"))
 	}
 	return err
 }

@@ -1701,3 +1701,7 @@ operation_success_local:
 err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
+solver_err:
+  other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
+transient_solver_tip:
+  other: You may want to retry this command, as it can lead to a different result. 
