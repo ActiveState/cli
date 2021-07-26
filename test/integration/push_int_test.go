@@ -116,6 +116,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 // Test pushing to a new project from a headless commit
 func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
+	suite.T().Skip("Skipping mac for now, as alternative Python builds are not available yet.")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
