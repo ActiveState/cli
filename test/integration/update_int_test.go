@@ -373,6 +373,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified.")
 			}
 
+			// wait half a second for the State Tool to be written to disk completely
+			time.Sleep(500 * time.Millisecond)
+
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
 
 			if tt.Version != "" {
