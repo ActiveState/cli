@@ -276,6 +276,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			err := fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+
 			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
 			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
@@ -283,7 +285,13 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 			var logs string
 			if tt.TestUpdate {
-				logs = suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+				time.Sleep(500 * time.Millisecond)
+				after := fileutils.ListDir(ts.Dirs.Config, false)
+				onlyAfter, _ := funk.Difference(after, before)
+				logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
+				if ok {
+					logs = suite.pollForUpdateFromLogfile(logFile)
+				}
 			}
 
 			// tell background process to stop...
