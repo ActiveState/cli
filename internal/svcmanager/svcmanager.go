@@ -51,40 +51,21 @@ func (m *Manager) Start() error {
 func (m *Manager) WaitWithContext(ctx context.Context) error {
 	defer profile.Measure("svcmanager:WaitWithContext", time.Now())
 
-	interrupt := false
-	waitDone := make(chan struct{})
-	var err error
-	
-	go func() {
-		defer func() { waitDone <- struct{}{} }()
-
-		logging.Debug("Waiting for state-svc")
-		for try := 1; try <= 10; try++ {
-			if interrupt {
-				return
-			}
-
-			logging.Debug("Attempt %d", try)
+	logging.Debug("Waiting for state-svc")
+	for try := 1; try <= 10; try++ {
+		logging.Debug("Attempt %d", try)
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
 			if m.Ready() {
-				return
+				return nil
 			}
-			if try == 10 {
-				err = locale.NewError("err_svcmanager_wait")
-				return
-			}
-
-			time.Sleep(250 * time.Millisecond)
 		}
-	}()
-
-	select {
-	case <-waitDone:
-		break
-	case <-ctx.Done():
-		interrupt = true
-		break
+		time.Sleep(250 * time.Millisecond)
 	}
-	return err
+
+	return locale.NewError("err_svcmanager_wait")
 }
 
 func (m *Manager) Wait() error {
