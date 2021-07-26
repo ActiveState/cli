@@ -177,7 +177,10 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string
 	suite.Require().Equal(len(resultLogfile), 2, "expected to have logfile in output %s", output)
 	logpath := strings.TrimSpace(resultLogfile[1])
 
-	return suite.pollForUpdateFromLogfile(logpath)
+	fmt.Println("Logpath:", logpath)
+	trimmed := strings.TrimSpace(logpath)
+	fmt.Println("Trimmed logpath:", trimmed)
+	return suite.pollForUpdateFromLogfile(trimmed)
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
