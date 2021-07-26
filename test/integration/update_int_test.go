@@ -280,12 +280,12 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			err := fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+
 			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
 			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 			cp.ExpectExitCode(0)
-
-			before := fileutils.ListDir(ts.Dirs.Config, false)
 
 			var logs string
 			if tt.TestUpdate {
