@@ -351,7 +351,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				suite.Assert().Contains(logs, "was successful")
 			} else {
 				updated := false
-				for x := 0; x < 90; x++ {
+				// wait for up to a minute for the State Tool to get modified
+				for x := 0; x < 300; x++ {
 					info, err := os.Stat(ts.Exe)
 					if errors.Is(err, os.ErrNotExist) {
 						continue
@@ -360,7 +361,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 						updated = true
 						break
 					}
-					time.Sleep(300 * time.Millisecond)
+					time.Sleep(200 * time.Millisecond)
 				}
 				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified.")
 			}
