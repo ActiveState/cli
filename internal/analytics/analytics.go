@@ -115,7 +115,7 @@ func (d *customDimensions) toMap() map[string]string {
 	if pj != nil {
 		d.projectName = pj.Owner() + "/" + pj.Name()
 	}
-	m := map[string]string{
+	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
 		"2":  d.version,
@@ -130,9 +130,6 @@ func (d *customDimensions) toMap() map[string]string {
 		"11": d.sessionToken,
 		"12": d.uniqID,
 	}
-	logging.Debug("Custom dimensions analytics map formed as: %v", m)
-
-	return m
 }
 
 var (
