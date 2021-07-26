@@ -59,11 +59,10 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			}
 		}()
 	} else {
-		language, err := model.LanguageForCommit(pj.CommitUUID())
-		if err != nil {
-			return locale.WrapError(err, "err_fetch_languages")
+		language, err := model.LanguageByCommit(pj.CommitUUID())
+		if err == nil {
+			ns = model.NewNamespacePkgOrBundle(language.Name, nsType)
 		}
-		ns = model.NewNamespacePkgOrBundle(language, nsType)
 	}
 
 	if !ns.IsValid() {
@@ -145,9 +144,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 
 	// Print the result
 	out := prime.Output()
-	if parentCommitID == "" {
+	if !hasParentCommit {
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
-		return nil
 	}
 
 	if packageVersion != "" {
@@ -250,7 +248,7 @@ func initializeProject() (*project.Project, error) {
 		Directory:  target,
 	}
 
-	err = projectfile.Create(createParams)
+	_, err = projectfile.Create(createParams)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
 	}

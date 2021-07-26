@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -50,7 +51,7 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
@@ -76,7 +77,8 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	running, err := isTrayRunning(cfg)
@@ -162,7 +164,7 @@ func run() (rerr error) {
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
 	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
 
-	localProjects, err := model.LocalProjects()
+	localProjects, err := model.LocalProjects(context.Background())
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
 	}
@@ -206,7 +208,7 @@ func run() (rerr error) {
 			}
 		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
-			localProjects, err = model.LocalProjects()
+			localProjects, err = model.LocalProjects(context.Background())
 			if err != nil {
 				logging.Error("Could not get local projects listing: %v", err)
 			}

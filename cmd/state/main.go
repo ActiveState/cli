@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -46,7 +47,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 
@@ -86,7 +87,9 @@ func main() {
 
 	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
 		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd()))
+		terminal.IsTerminal(int(os.Stdin.Fd())) &&
+		out.Type() != output.EditorV0FormatName &&
+		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
@@ -109,6 +112,8 @@ func main() {
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+	defer profile.Measure("main:run", time.Now())
+
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -130,7 +135,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	svcm := svcmanager.New(cfg)

@@ -73,6 +73,7 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 			return member, nil
 		}
 	}
+
 	return nil, locale.WrapError(ErrMemberNotFound, "err_api_member_not_found")
 }
 

@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -41,7 +42,7 @@ var commands = []command{
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics() {
+		if panics.HandlePanics(recover()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
@@ -82,7 +83,8 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	switch cmd {

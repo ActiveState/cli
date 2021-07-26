@@ -5,21 +5,22 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/singleton/uniqid"
-	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
+	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -84,6 +85,8 @@ const CatActivationFlow = "activation"
 // CatPrompt is for prompt events
 const CatPrompt = "prompt"
 
+const CfgSessionToken = "sessionToken"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -95,6 +98,11 @@ type customDimensions struct {
 	machineID     string
 	projectName   string
 	uniqID        string
+	sessionToken  string
+}
+
+type configurable interface {
+	GetString(string) string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -119,7 +127,8 @@ func (d *customDimensions) toMap() map[string]string {
 		"8":  d.installSource,
 		"9":  d.machineID,
 		"10": d.projectName,
-		"11": d.uniqID,
+		"11": d.sessionToken,
+		"12": d.uniqID,
 	}
 }
 
@@ -128,6 +137,7 @@ var (
 )
 
 func init() {
+	defer profile.Measure("analytics:Init", time.Now())
 	CustomDimensions = &customDimensions{}
 	setup()
 }
@@ -189,6 +199,10 @@ func setup() {
 	if id == "unknown" {
 		logging.Error("unknown machine id")
 	}
+}
+
+func Configure(cfg configurable) {
+	CustomDimensions.sessionToken = cfg.GetString(CfgSessionToken)
 }
 
 // Event logs an event to google analytics

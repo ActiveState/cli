@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/hashicorp/go-version"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -67,6 +68,7 @@ func NewChecker(timeout time.Duration, configuration Configurable) *Checker {
 
 // Check will run a Checker.Check with defaults
 func Check(cfg Configurable) (*Info, error) {
+	defer profile.Measure("deprecation:Check", time.Now())
 	return CheckVersionNumber(cfg, constants.VersionNumber)
 }
 

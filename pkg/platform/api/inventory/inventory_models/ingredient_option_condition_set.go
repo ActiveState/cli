@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -46,7 +47,6 @@ func (m *IngredientOptionConditionSet) Validate(formats strfmt.Registry) error {
 }
 
 func (m *IngredientOptionConditionSet) validateBuildFlagConditions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.BuildFlagConditions) { // not required
 		return nil
 	}
@@ -71,7 +71,6 @@ func (m *IngredientOptionConditionSet) validateBuildFlagConditions(formats strfm
 }
 
 func (m *IngredientOptionConditionSet) validateConditions(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Conditions) { // not required
 		return nil
 	}
@@ -83,6 +82,60 @@ func (m *IngredientOptionConditionSet) validateConditions(formats strfmt.Registr
 
 		if m.Conditions[i] != nil {
 			if err := m.Conditions[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient option condition set based on the context it is used
+func (m *IngredientOptionConditionSet) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBuildFlagConditions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateConditions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientOptionConditionSet) contextValidateBuildFlagConditions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.BuildFlagConditions); i++ {
+
+		if m.BuildFlagConditions[i] != nil {
+			if err := m.BuildFlagConditions[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flag_conditions" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *IngredientOptionConditionSet) contextValidateConditions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Conditions); i++ {
+
+		if m.Conditions[i] != nil {
+			if err := m.Conditions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
 				}

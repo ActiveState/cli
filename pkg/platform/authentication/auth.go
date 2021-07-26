@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -91,6 +93,7 @@ func Logout() {
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
+	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
 	}
@@ -218,6 +221,19 @@ func (s *Auth) WhoAmI() string {
 		return s.user.Username
 	}
 	return ""
+}
+
+func (s *Auth) CanWrite(organization string) bool {
+	if s.user == nil {
+		return false
+	}
+	for _, org := range s.user.Organizations {
+		if org.URLname != organization {
+			continue
+		}
+		return org.Role == string(mono_models.RoleAdmin) || org.Role == string(mono_models.RoleEditor)
+	}
+	return false
 }
 
 // Email return the email of the authenticated user

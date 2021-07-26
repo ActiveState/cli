@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -56,7 +57,6 @@ func (m *IngredientOptionSetWithUsageTypePagedList) Validate(formats strfmt.Regi
 }
 
 func (m *IngredientOptionSetWithUsageTypePagedList) validateIngredientOptionSetsWithUsageType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.IngredientOptionSetsWithUsageType) { // not required
 		return nil
 	}
@@ -106,6 +106,74 @@ func (m *IngredientOptionSetWithUsageTypePagedList) validatePaging(formats strfm
 
 	if m.Paging != nil {
 		if err := m.Paging.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("paging")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this ingredient option set with usage type paged list based on the context it is used
+func (m *IngredientOptionSetWithUsageTypePagedList) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateIngredientOptionSetsWithUsageType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateLinks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePaging(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *IngredientOptionSetWithUsageTypePagedList) contextValidateIngredientOptionSetsWithUsageType(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.IngredientOptionSetsWithUsageType); i++ {
+
+		if m.IngredientOptionSetsWithUsageType[i] != nil {
+			if err := m.IngredientOptionSetsWithUsageType[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("ingredient_option_sets_with_usage_type" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *IngredientOptionSetWithUsageTypePagedList) contextValidateLinks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Links != nil {
+		if err := m.Links.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("links")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *IngredientOptionSetWithUsageTypePagedList) contextValidatePaging(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Paging != nil {
+		if err := m.Paging.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("paging")
 			}

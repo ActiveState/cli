@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddGPUArchitectureParams creates a new AddGPUArchitectureParams object
-// with the default values initialized.
+// NewAddGPUArchitectureParams creates a new AddGPUArchitectureParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddGPUArchitectureParams() *AddGPUArchitectureParams {
-	var ()
 	return &AddGPUArchitectureParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddGPUArchitectureParamsWithTimeout creates a new AddGPUArchitectureParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddGPUArchitectureParamsWithTimeout(timeout time.Duration) *AddGPUArchitectureParams {
-	var ()
 	return &AddGPUArchitectureParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddGPUArchitectureParamsWithContext creates a new AddGPUArchitectureParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddGPUArchitectureParamsWithContext(ctx context.Context) *AddGPUArchitectureParams {
-	var ()
 	return &AddGPUArchitectureParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddGPUArchitectureParamsWithHTTPClient creates a new AddGPUArchitectureParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddGPUArchitectureParamsWithHTTPClient(client *http.Client) *AddGPUArchitectureParams {
-	var ()
 	return &AddGPUArchitectureParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddGPUArchitectureParams contains all the parameters to send to the API endpoint
-for the add g p u architecture operation typically these are written to a http.Request
+/* AddGPUArchitectureParams contains all the parameters to send to the API endpoint
+   for the add g p u architecture operation.
+
+   Typically these are written to a http.Request.
 */
 type AddGPUArchitectureParams struct {
 
-	/*GpuArchitecture*/
+	// GpuArchitecture.
 	GpuArchitecture *inventory_models.GpuArchitectureCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add g p u architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddGPUArchitectureParams) WithDefaults() *AddGPUArchitectureParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add g p u architecture params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddGPUArchitectureParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add g p u architecture params
@@ -121,7 +135,6 @@ func (o *AddGPUArchitectureParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
-
 	if o.GpuArchitecture != nil {
 		if err := r.SetBodyParam(o.GpuArchitecture); err != nil {
 			return err

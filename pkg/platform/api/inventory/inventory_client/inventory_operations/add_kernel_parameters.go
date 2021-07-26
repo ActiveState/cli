@@ -18,56 +18,70 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddKernelParams creates a new AddKernelParams object
-// with the default values initialized.
+// NewAddKernelParams creates a new AddKernelParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddKernelParams() *AddKernelParams {
-	var ()
 	return &AddKernelParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddKernelParamsWithTimeout creates a new AddKernelParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddKernelParamsWithTimeout(timeout time.Duration) *AddKernelParams {
-	var ()
 	return &AddKernelParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddKernelParamsWithContext creates a new AddKernelParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddKernelParamsWithContext(ctx context.Context) *AddKernelParams {
-	var ()
 	return &AddKernelParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddKernelParamsWithHTTPClient creates a new AddKernelParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddKernelParamsWithHTTPClient(client *http.Client) *AddKernelParams {
-	var ()
 	return &AddKernelParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddKernelParams contains all the parameters to send to the API endpoint
-for the add kernel operation typically these are written to a http.Request
+/* AddKernelParams contains all the parameters to send to the API endpoint
+   for the add kernel operation.
+
+   Typically these are written to a http.Request.
 */
 type AddKernelParams struct {
 
-	/*Kernel*/
+	// Kernel.
 	Kernel *inventory_models.KernelCore
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add kernel params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelParams) WithDefaults() *AddKernelParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add kernel params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddKernelParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add kernel params
@@ -121,7 +135,6 @@ func (o *AddKernelParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return err
 	}
 	var res []error
-
 	if o.Kernel != nil {
 		if err := r.SetBodyParam(o.Kernel); err != nil {
 			return err

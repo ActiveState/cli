@@ -708,8 +708,6 @@ developer_err_project_match:
 
 err_version_parse:
   other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
-err_invalid_version:
-  other: "Invalid version specified in your activestate.yaml, should be in the format of: [NOTICE]{number}.{number}.{number}-{hash}[/RESET]"
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -1219,8 +1217,15 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
+push_first_new_project:
+  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform."
 push_prompt_owner:
-  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform.\nWho would you like the owner of this project to be?"
+  other: "Who would you like the owner of this project to be?"
+push_prompt_not_authorized:
+  other: |
+    You are not authorized to push to this project.
+    Either get the project owner to invite you, or create a new project with these changes.
+    Would you like to create a new project with your changes now?
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
 err_read_privkey:
@@ -1668,7 +1673,7 @@ err_user_network_solution:
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
 install_initial_success:
-  other: "An activestate.yaml has been created at: {{.V0}}. Run [ACTIONABLE]state push[/RESET] at any time to save your changes to the platform"
+  other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_no_packages:
   other: No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
@@ -1693,3 +1698,6 @@ operation_success_local:
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
     Run [ACTIONABLE]state history[/RESET] to review your local changes.
+err_initialize_runtime_event_handler:
+  other: |
+    Could not determine how to display progress of runtime installation.

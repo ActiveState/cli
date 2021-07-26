@@ -52,7 +52,7 @@ func NewAddCPUExtensionRevisionOK() *AddCPUExtensionRevisionOK {
 	return &AddCPUExtensionRevisionOK{}
 }
 
-/*AddCPUExtensionRevisionOK handles this case with default header values.
+/* AddCPUExtensionRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the CPU extension
 */
@@ -63,7 +63,6 @@ type AddCPUExtensionRevisionOK struct {
 func (o *AddCPUExtensionRevisionOK) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevisionOK  %+v", 200, o.Payload)
 }
-
 func (o *AddCPUExtensionRevisionOK) GetPayload() *inventory_models.CPUExtension {
 	return o.Payload
 }
@@ -85,7 +84,7 @@ func NewAddCPUExtensionRevisionBadRequest() *AddCPUExtensionRevisionBadRequest {
 	return &AddCPUExtensionRevisionBadRequest{}
 }
 
-/*AddCPUExtensionRevisionBadRequest handles this case with default header values.
+/* AddCPUExtensionRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the CPU extension revision is invalid
 */
@@ -96,7 +95,6 @@ type AddCPUExtensionRevisionBadRequest struct {
 func (o *AddCPUExtensionRevisionBadRequest) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevisionBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddCPUExtensionRevisionBadRequest) GetPayload() *inventory_models.RestAPIValidationError {
 	return o.Payload
 }
@@ -120,7 +118,7 @@ func NewAddCPUExtensionRevisionDefault(code int) *AddCPUExtensionRevisionDefault
 	}
 }
 
-/*AddCPUExtensionRevisionDefault handles this case with default header values.
+/* AddCPUExtensionRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */
@@ -138,7 +136,6 @@ func (o *AddCPUExtensionRevisionDefault) Code() int {
 func (o *AddCPUExtensionRevisionDefault) Error() string {
 	return fmt.Sprintf("[POST /v1/cpu-extensions/{cpu_extension_id}/revisions][%d] addCpuExtensionRevision default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *AddCPUExtensionRevisionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

@@ -71,20 +71,6 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	return languages[0], nil
 }
 
-// LanguageForCommit fetches the name of the language belonging to the given commit
-func LanguageForCommit(commitID strfmt.UUID) (string, error) {
-	languages, err := FetchLanguagesForCommit(commitID)
-	if err != nil {
-		return "", err
-	}
-
-	if len(languages) == 0 {
-		return "", locale.NewInputError("err_no_languages")
-	}
-
-	return languages[0].Name, nil
-}
-
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
 	proj, err := FetchProjectByName(owner, name)
@@ -174,6 +160,46 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 	}
 
 	return pj.Payload, nil
+}
+
+func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
+	// Retrieve the source project that we'll be forking
+	sourceProject, err := FetchProjectByName(sourceOwner, sourceName)
+	if err != nil {
+		return nil, locale.WrapInputError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}/{{.V1}}", sourceOwner, sourceName)
+	}
+
+	// Create the target project
+	targetProject, err := CreateEmptyProject(targetOwner, targetName, false)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_fork_createProject", "Could not create project: {{.V0}}/{{.V1}}", targetOwner, targetName)
+	}
+
+	sourceBranch, err := DefaultBranchForProject(sourceProject)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_branch_nodefault", "Project has no default branch.")
+	}
+	if sourceBranch.CommitID != nil {
+		targetBranch, err := DefaultBranchForProject(targetProject)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_branch_nodefault", "Project has no default branch.")
+		}
+		if err := UpdateBranchCommit(targetBranch.BranchID, *sourceBranch.CommitID); err != nil {
+			return nil, locale.WrapError(err, "err_fork_branchupdate", "Failed to update branch.")
+		}
+	}
+
+	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
+	if makePrivate {
+		if err := MakeProjectPrivate(targetOwner, targetName); err != nil {
+			return nil, locale.WrapError(
+				err, "err_fork_private",
+				"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}}/{{.V2}} to manually update your privacy settings.",
+				constants.PlatformURL, targetOwner, targetName)
+		}
+	}
+
+	return targetProject, nil
 }
 
 // MakeProjectPrivate turns the given project private

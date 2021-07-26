@@ -11,7 +11,9 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/sysinfo"
 	"github.com/gobuffalo/packr"
@@ -674,51 +676,6 @@ func parseURL(rawURL string) (projectURL, error) {
 	return p, nil
 }
 
-func removeTemporaryLanguage(data []byte) ([]byte, error) {
-	languageLine := regexp.MustCompile("(?m)^languages:")
-	firstNonIndentedLine := regexp.MustCompile("(?m)^[^ \t]")
-
-	startLoc := languageLine.FindIndex(data)
-	if startLoc == nil {
-		return data, nil // language is already gone
-	}
-	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
-	if endLoc == nil {
-		return data[:startLoc[0]], nil
-	}
-
-	end := startLoc[1] + endLoc[0]
-	return append(data[:startLoc[0]], data[end:]...), nil
-}
-
-// RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
-func (p *Project) RemoveTemporaryLanguage() error {
-	fp, err := GetProjectFilePath()
-	if err != nil {
-		return errs.Wrap(err, "Could not find the project file location.")
-	}
-
-	data, err := ioutil.ReadFile(fp)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file.")
-	}
-
-	out, err := removeTemporaryLanguage(data)
-	if err != nil {
-		return errs.Wrap(err, "Failed to remove language field from project file.")
-	}
-
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write update project file.")
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload project file.")
-	}
-	return nil
-}
-
 // Save the project to its activestate.yaml file
 func (p *Project) save(cfg ConfigGetter, path string) error {
 	dat, err := yaml.Marshal(p)
@@ -810,6 +767,7 @@ func (p *Project) SetBranch(branch string) error {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, error) {
+	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
@@ -925,6 +883,7 @@ func GetOnce() (*Project, error) {
 
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
+	defer profile.Measure("projectfile:FromPath", time.Now())
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
@@ -975,7 +934,6 @@ type CreateParams struct {
 	Directory       string
 	Content         string
 	Language        string
-	LanguageVersion string
 	Private         bool
 	path            string
 	ProjectURL      string
@@ -990,19 +948,14 @@ func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) error {
+func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
 	err := validateCreateParams(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = createCustom(params, lang)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return createCustom(params, lang)
 }
 
 func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
@@ -1067,8 +1020,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 	data := map[string]interface{}{
 		"Project":         params.ProjectURL,
-		"LanguageName":    params.Language,
-		"LanguageVersion": params.LanguageVersion,
 		"CommitID":        commitID,
 		"Content":         content,
 		"Private":         params.Private,

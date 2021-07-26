@@ -25,23 +25,11 @@ func New(cfg configurable) (*Client, error) {
 	if port <= 0 {
 		return nil, locale.NewError("err_svc_no_port", "The State Tool service does not appear to be running (no local port was configured).")
 	}
-	baseUrl := fmt.Sprintf("http://127.0.0.1:%d", port)
-	return &Client{
-		Client:  gqlclient.New(fmt.Sprintf("%s/query", baseUrl), 0),
-		baseUrl: baseUrl,
-	}, nil
-}
-
-// NewWithoutRetry returns a client based on an HTTP client that does not retry on failure
-func NewWithoutRetry(cfg configurable) (*Client, error) {
-	port := cfg.GetInt(constants.SvcConfigPort)
-	if port <= 0 {
-		return nil, locale.NewError("err_svc_no_port", "The State Tool service does not appear to be running (no local port was configured).")
-	}
 
 	baseUrl := fmt.Sprintf("http://127.0.0.1:%d", port)
 	return &Client{
-		Client:  gqlclient.NewWithOpts(fmt.Sprintf("%s/query", baseUrl), 0, graphql.WithHTTPClient(http.DefaultClient)),
+		// The custom client bypasses http-retry, which we don't need for doing local requests
+		Client:  gqlclient.NewWithOpts(fmt.Sprintf("%s/query", baseUrl), 0, graphql.WithHTTPClient(&http.Client{})),
 		baseUrl: baseUrl,
 	}, nil
 }

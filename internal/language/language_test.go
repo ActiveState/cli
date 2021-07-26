@@ -152,10 +152,10 @@ func TestMakeByNameAndVersion(t *testing.T) {
 			false,
 		},
 		{
-			"Invalid version",
+			"Missing version",
 			args{"python", ""},
-			Unknown,
-			true,
+			Python3,
+			false,
 		},
 		{
 			"Valid Perl version",
