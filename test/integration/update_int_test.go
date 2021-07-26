@@ -170,6 +170,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string) string {
+	fmt.Println("Output:", output)
 	regex := regexp.MustCompile(`Refer to log *file *(.*) *for *progress.`)
 	resultLogfile := regex.FindStringSubmatch(output)
 
