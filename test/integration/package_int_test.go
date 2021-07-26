@@ -166,8 +166,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.25.0",
-		"+ 8 older versions",
+		"2.26.0",
+		"+ 9 older versions",
 	}
 	for _, expectation := range expectations {
 		cp.ExpectLongString(expectation)
@@ -269,10 +269,10 @@ Flask-Cors==3.0.8
 itsdangerous==1.1.0
 Jinja2==2.10.3
 MarkupSafe==1.1.1
-packaging==20.1
+packaging==20.3
 pyparsing==2.4.6
 six==1.14.0
-Werkzeug==0.16.0
+Werkzeug==0.15.6
 `
 	badReqsData = `Click==7.0
 garbage---<<001.X
@@ -292,15 +292,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
-	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	cp.ExpectLongString("You are about to create the project")
+	cp.Send("y")
+	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
-
-	suite.Run("uninstalled import fails", func() {
-		cp := ts.Spawn("run", "test-pyparsing")
-		cp.ExpectNotExitCode(0, time.Second*60)
-	})
 
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
@@ -313,20 +310,15 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
-		suite.Run("uninstalled import fails", func() {
-			cp := ts.Spawn("run", "test-pyparsing")
-			cp.ExpectExitCode(0, time.Second*60)
-		})
+		cp = ts.Spawn("push")
+		cp.ExpectExitCode(0, time.Second*60)
 
-		suite.Run("already added", func() {
-			cp := ts.Spawn("import", "requirements.txt")
-			cp.Expect("Are you sure you want to do this")
-			cp.Send("n")
-			cp.ExpectNotExitCode(0, time.Second*60)
-		})
+		cp = ts.Spawn("import", "requirements.txt")
+		cp.Expect("Are you sure you want to do this")
+		cp.Send("n")
+		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 }
 
@@ -340,6 +332,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
@@ -358,7 +352,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Any changes you make are local only")
 		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
 		cp.Wait()
 	})
@@ -386,6 +379,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp.ExpectLongString("default project?")
+	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")

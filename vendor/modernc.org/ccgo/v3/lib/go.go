@@ -5261,7 +5261,7 @@ func (p *project) assignmentExpressionVoid(f *function, n *cc.AssignmentExpressi
 			}
 		case opBitfield:
 			if p.task.cfg.ABI.ByteOrder == binary.BigEndian {
-				panic(todo("", n.Position()))
+				p.todo(n, t)
 				break
 			}
 

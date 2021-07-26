@@ -15,7 +15,7 @@ var errorLogger func(msg string, args ...interface{})
 
 var id *string
 
-func Setup(c Configurable) {
+func Configure(c Configurable) {
 	_id := UniqIDCustom(machineid.ID, func() string { return uuid.New().String() }, c)
 	id = &_id
 }
