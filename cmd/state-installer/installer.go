@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,7 +57,11 @@ func main() {
 		exitCode = 1
 		return
 	}
-	if err := run(out, flag.Arg(0), os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
+	installPath := ""
+	if len(os.Args) > 1 {
+		installPath = os.Args[1]
+	}
+	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
