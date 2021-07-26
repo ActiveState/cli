@@ -107,7 +107,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	filename := filepath.Join(datadir, FileName())
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	defer func() { // defer so that we can ensure errors are logged to the rollbar even if rollbar panics (which HAS happened!)
+	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
 		if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
 			data := map[string]interface{}{}
 
