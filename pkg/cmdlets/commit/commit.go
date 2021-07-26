@@ -19,7 +19,7 @@ type commitData struct {
 	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
 	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
 	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
-	Message string   `locale:"message,[HEADING]Commit Message[/RESET]"`
+	Message string   `locale:"message,[HEADING]Message[/RESET]"`
 	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
 }
 
@@ -78,7 +78,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	}
 
 	commitData := commitData{
-		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}{{.V1}}[/RESET]", commit.CommitID.String(), localTxt),
+		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]{{.V1}}", commit.CommitID.String(), localTxt),
 		Author:  username,
 		Changes: FormatChanges(commit),
 	}

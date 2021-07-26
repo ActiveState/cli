@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -56,7 +57,11 @@ func main() {
 		exitCode = 1
 		return
 	}
-	if err := run(out); err != nil {
+	installPath := ""
+	if len(os.Args) > 1 {
+		installPath = os.Args[1]
+	}
+	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
@@ -67,7 +72,7 @@ func main() {
 	}
 }
 
-func run(out output.Outputer) (rerr error) {
+func run(out output.Outputer, installPath, sessionToken string) (rerr error) {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
 	cfg, err := config.New()
@@ -76,12 +81,18 @@ func run(out output.Outputer) (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	var installPath string
-	if len(os.Args) > 1 {
-		installPath, err = filepath.Abs(os.Args[1])
+	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
+		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
+		}
+		analytics.Configure(cfg)
+	}
+
+	if installPath != "" {
+		installPath, err = filepath.Abs(installPath)
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve absolute installPath")
 		}

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -111,6 +112,8 @@ func main() {
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+	defer profile.Measure("main:run", time.Now())
+
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -132,7 +135,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.Setup(cfg)
+	analytics.Configure(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	svcm := svcmanager.New(cfg)

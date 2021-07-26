@@ -1,12 +1,15 @@
 package state
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 )
@@ -58,6 +61,7 @@ type versionData struct {
 
 func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr *svcmanager.Manager, out output.Outputer) error {
 	logging.Debug("Execute")
+	defer profile.Measure("runners:state:execute", time.Now())
 
 	if opts.Version {
 		checker.RunUpdateNotifier(svcMgr, cfg, out)

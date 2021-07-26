@@ -11,7 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
@@ -32,6 +34,7 @@ var args = os.Args[1:]
 var exit = os.Exit
 
 func init() {
+	defer profile.Measure("locale:init", time.Now())
 	logging.Debug("Init")
 
 	locale := getLocaleFlag()

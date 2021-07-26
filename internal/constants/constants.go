@@ -78,6 +78,12 @@ const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
+// ProfileEnvVarName is the name of the environment variable that specifies whether profiling should be run.
+const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
+
+// SessionTokenEnvVarName records the session token
+const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
+
 // NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 

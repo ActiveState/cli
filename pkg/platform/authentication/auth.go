@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -91,6 +93,7 @@ func Logout() {
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
+	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
 	}

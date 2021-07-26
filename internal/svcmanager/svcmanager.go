@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -34,6 +35,7 @@ func New(cfg configurable) *Manager {
 }
 
 func (m *Manager) Start() error {
+	defer profile.Measure("svcmanager:Start", time.Now())
 	svcInfo := appinfo.SvcApp()
 	if !fileutils.FileExists(svcInfo.Exec()) {
 		return errs.New("Could not find: %s", svcInfo.Exec())
@@ -46,20 +48,28 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) Wait() error {
+func (m *Manager) WaitWithContext(ctx context.Context) error {
+	defer profile.Measure("svcmanager:WaitWithContext", time.Now())
+
 	logging.Debug("Waiting for state-svc")
-	try := 1
-	for {
+	for try := 1; try <= 10; try++ {
 		logging.Debug("Attempt %d", try)
-		if m.Ready() {
+		select {
+		case <-ctx.Done():
 			return nil
+		default:
+			if m.Ready() {
+				return nil
+			}
 		}
-		if try == 10 {
-			return locale.NewError("err_svcmanager_wait")
-		}
-		time.Sleep(time.Duration(try*100) * time.Millisecond)
-		try = try + 1
+		time.Sleep(250 * time.Millisecond)
 	}
+
+	return locale.NewError("err_svcmanager_wait")
+}
+
+func (m *Manager) Wait() error {
+	return m.WaitWithContext(context.Background())
 }
 
 func (m *Manager) Ready() bool {
@@ -82,7 +92,7 @@ func (m *Manager) Ready() bool {
 }
 
 func (m *Manager) ping(ctx context.Context) error {
-	client, err := svc.NewWithoutRetry(m.cfg)
+	client, err := svc.New(m.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize non-retrying svc client")
 	}

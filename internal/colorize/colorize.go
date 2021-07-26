@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output/colorstyle"
+	"github.com/ActiveState/cli/internal/profile"
 )
 
 var colorRx *regexp.Regexp
 
 func init() {
+	defer profile.Measure("colorize:init", time.Now())
 	var err error
 	colorRx, err = regexp.Compile(`\[(HEADING|NOTICE|SUCCESS|ERROR|DISABLED|ACTIONABLE|/RESET)!?\]`)
 	if err != nil {

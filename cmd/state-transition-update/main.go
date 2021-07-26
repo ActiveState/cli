@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -83,7 +84,6 @@ func run() error {
 			return err
 		}
 
-		fmt.Println("Please start a new shell to continue using the State Tool.")
 		return nil
 	}
 }
@@ -114,7 +114,15 @@ func runDefault() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	machineid.Setup(cfg)
+	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
+	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
+		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
+		}
+		analytics.Configure(cfg)
+	}
+
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
 	oldInfo, err := os.Stat(appinfo.StateApp().Exec())

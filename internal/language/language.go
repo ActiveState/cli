@@ -21,8 +21,8 @@ const (
 	Batch
 	PowerShell
 	Perl
-	Python2
 	Python3
+	Python2
 )
 
 // UnrecognizedLanguageError contains info related to the usage of an
@@ -90,12 +90,12 @@ var lookup = [...]languageData{
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python2", "Python 2", ".py", true, "python", "2.7.14",
-		Executable{constants.ActivePython2Executable, false},
-	},
-	{
 		"python3", "Python 3", ".py", true, "python", "3.6.6",
 		Executable{constants.ActivePython3Executable, false},
+	},
+	{
+		"python2", "Python 2", ".py", true, "python", "2.7.14",
+		Executable{constants.ActivePython2Executable, false},
 	},
 }
 
@@ -126,12 +126,16 @@ func MakeByName(name string) Language {
 
 // MakeByNameAndVersion will retrieve a language by a given name and version.
 func MakeByNameAndVersion(name, version string) (Language, error) {
-	if strings.ToLower(name) == Python2.Requirement() {
+	if version != "" && strings.ToLower(name) == Python3.Requirement() {
 		parts := strings.Split(version, ".")
 		if len(parts) == 0 || parts[0] == "" {
 			return Unknown, locale.NewError("err_invalid_language_version", "Invalid language version number: {{.V0}}", version)
 		}
 		name = name + parts[0]
+	}
+	if version == "" && strings.ToLower(name) == Python3.Requirement() {
+		// This addressed the language only specifying "python", in this case we default to python3
+		name = Python3.String()
 	}
 	return MakeByName(name), nil
 }
