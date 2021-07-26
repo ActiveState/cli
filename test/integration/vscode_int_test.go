@@ -89,7 +89,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	cp := ts.Spawn("orgs", "--output", "editor")
 	cp.ExpectExitCode(0)
 
-	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
+	// TODO: Response change from "free" to "free_legacy".  Check that vs code extension is okay with that.
 	// https://www.pivotaltracker.com/story/show/178544144
 	org := struct {
 		Name            string `json:"name,omitempty"`
@@ -99,7 +99,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"Community Tier (Free)",
+		"free_legacy",
 		false,
 	}
 
