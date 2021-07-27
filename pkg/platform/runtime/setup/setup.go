@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -86,6 +87,7 @@ type Events interface {
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
+	SolverError(*apimodel.SolverError)
 
 	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload, artifactIDs []artifact.FailedArtifact)
 }
@@ -158,6 +160,11 @@ func (s *Setup) update() error {
 	// Request build
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
+		serr := &apimodel.SolverError{}
+		if errors.As(err, &serr) {
+			s.events.SolverError(serr)
+			return formatSolverError(serr)
+		}
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
 
@@ -567,4 +574,32 @@ func reusableArtifacts(requestedArtifacts []*headchef_models.V1Artifact, storedA
 		}
 	}
 	return keep
+}
+
+func formatSolverError(serr *apimodel.SolverError) error {
+	var err error = serr
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(serr.ValidationErrors())
+	if numLines > 5 {
+		offset = numLines - 5
+	}
+
+	errorLines := strings.Join(serr.ValidationErrors()[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last lines of the error message:")
+	}
+
+	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
+	if serr.IsTransient() {
+		err = errs.AddTips(serr, locale.Tr("transient_solver_tip"))
+	}
+	return err
 }

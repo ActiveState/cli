@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -17,6 +18,8 @@ type ChangeSummaryDigester interface {
 
 // ProgressDigester provides actions to display progress information during the setup of the runtime.
 type ProgressDigester interface {
+	SolverError(serr *model.SolverError) error
+
 	BuildStarted(totalArtifacts int64) error
 	BuildCompleted(withFailures bool) error
 
@@ -85,6 +88,8 @@ func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 
 		eh.alreadyBuilt = len(t.DownloadableArtifacts())
 		eh.numBuildFailures = int64(len(t.FailedArtifacts()))
+	case SolverErrorEvent:
+		return eh.progress.SolverError(t.Error())
 	case TotalArtifactEvent:
 		eh.installTotal = int64(t.Total())
 		return nil
