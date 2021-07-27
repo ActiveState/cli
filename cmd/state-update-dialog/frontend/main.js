@@ -5,7 +5,6 @@ function start() {
     let showContextMenu = document.oncontextmenu;
     document.oncontextmenu = () => false;
     backend.Bindings.DebugMode().then(debugMode => {
-        console.log(debugMode);
         if (debugMode) document.oncontextmenu = showContextMenu; // Enable context menu if we're running in debug mode
     })
 
@@ -18,10 +17,9 @@ function start() {
     })
 
     backend.Bindings.Warning().then(result => {
-        console.log(result);
         if (result === "") return;
         let projects = JSON.parse(result);
-        if (projects.length === 0) return;
+        if (!projects || projects.length === 0) return;
 
         for (let project of projects) {
             let li = document.createElement("li");
@@ -82,6 +80,13 @@ function populateChangelog(tries) {
         } else {
             let changelog = el("changelog-content");
             changelog.innerHTML = result;
+            document.querySelectorAll("a").forEach((a) => {
+                a.addEventListener("click", () => {
+                    let href = a.getAttribute("href");
+                    if (!href || href === "") return;
+                    backend.Bindings.OpenURL(href);
+                })
+            })
         }
     })
 }

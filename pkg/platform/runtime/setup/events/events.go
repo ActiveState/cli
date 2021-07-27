@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -136,6 +137,24 @@ func (ae ArtifactResolverEvent) String() string {
 
 func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifacts []artifact.FailedArtifact) ArtifactResolverEvent {
 	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
+}
+
+// SolverErrorEvent is triggered when the solver returns an error
+type SolverErrorEvent struct {
+	serr *model.SolverError
+}
+
+// Error returns the SolverError
+func (se SolverErrorEvent) Error() *model.SolverError {
+	return se.serr
+}
+
+func (se SolverErrorEvent) String() string {
+	return "solver_error"
+}
+
+func newSolverErrorEvent(serr *model.SolverError) SolverErrorEvent {
+	return SolverErrorEvent{serr}
 }
 
 // TotalArtifactEvent reports the number of total artifacts as soon as they are known

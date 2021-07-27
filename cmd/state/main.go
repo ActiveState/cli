@@ -85,7 +85,7 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
 		!outFlags.NonInteractive &&
 		terminal.IsTerminal(int(os.Stdin.Fd())) &&
 		out.Type() != output.EditorV0FormatName &&
