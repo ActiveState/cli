@@ -1704,4 +1704,4 @@ err_initialize_runtime_event_handler:
 solver_err:
   other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
 transient_solver_tip:
-  other: You may want to retry this command, as it can lead to a different result. 
+  other: You may want to retry this command if the failure was related to a resourcing or networking issue.
