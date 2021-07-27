@@ -360,7 +360,9 @@ function install() {
     } else {
         & "$InstallerPath" 2>&1 | Tee-Object -Variable output | Write-Host
     }
-    Remove-Item Env:ACTIVESTATE_SESSION_TOKEN -ErrorAction 'SilentlyContinue'
+    if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
+        Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    }
 
     $outputString = $output | Out-String
     $match = $outputString -match "Install Location: (?<content>[^\s]+)"

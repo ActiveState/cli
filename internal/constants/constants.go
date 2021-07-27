@@ -84,8 +84,17 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
 
-// NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
-const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
+// NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
+const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
+
+// OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
+
+// OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
+const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
+
+// OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
+const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
@@ -188,8 +197,8 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
-// DocumentationURLCreateProject is the documentation URL for creating projects
-const DocumentationURLCreateProject = DocumentationURL + "create-project/"
+// DocumentationURLGetStarted is the documentation URL for creating projects
+const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
@@ -328,9 +337,3 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
-
-// OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
-const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
-
-// OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
-const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"

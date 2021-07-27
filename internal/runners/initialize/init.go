@@ -162,7 +162,11 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
 	}
 
-	commitID, err := model.CommitInitial(model.HostPlatform, &params.language, params.version)
+	version := params.version
+	if version == "" {
+		version = params.language.RecommendedVersion()
+	}
+	commitID, err := model.CommitInitial(model.HostPlatform, params.language.String(), version)
 	if err != nil {
 		return "", locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
