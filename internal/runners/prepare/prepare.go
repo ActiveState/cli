@@ -53,7 +53,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	logging.Debug("ExecutePrepare")
 
 	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
-	if sessionToken != "" && r.cfg.GetString(analytics.CfgSessionToken) != "" {
+	if sessionToken != "" && r.cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := r.cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.Join(err, ": ").Error())
 		}
