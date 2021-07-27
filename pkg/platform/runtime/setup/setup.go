@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -583,11 +584,17 @@ func formatSolverError(serr *apimodel.SolverError) error {
 	if numLines > 5 {
 		offset = numLines - 5
 	}
+
 	errorLines := strings.Join(serr.ValidationErrors()[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
 	isCropped := offset > 0
 	croppedMessage := ""
 	if isCropped {
-		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last five lines of the error message:")
+		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last lines of the error message:")
 	}
 
 	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
