@@ -186,7 +186,7 @@ function warningIfadmin() {
 function runPreparationStep($installDirectory) {
     $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
     &$installDirectory\$script:STATEEXE _prepare | Write-Host
-    Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN -ErrorAction 'silentlycontinue'
     return $LASTEXITCODE
 }
 
