@@ -112,9 +112,10 @@ func expectDefaultActivation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Choose Destination")
 	cp.Send("")
 	cp.Expect("Cloning Repository")
-	cp.Expect("Installing")
+	cp.Expect("Downloading missing artifacts")
+	cp.Expect("Updating missing artifacts", 20*time.Second)
 	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")
-	cp.Expect("Running Activation Events")
+	cp.Expect("activated state")
 	cp.SendLine("exit")
 }
 

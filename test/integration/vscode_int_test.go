@@ -89,8 +89,6 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	cp := ts.Spawn("orgs", "--output", "editor")
 	cp.ExpectExitCode(0)
 
-	// TODO: Response change from "free" to "free_legacy".  Check that vs code extension is okay with that.
-	// https://www.pivotaltracker.com/story/show/178544144
 	org := struct {
 		Name            string `json:"name,omitempty"`
 		URLName         string `json:"URLName,omitempty"`
@@ -99,14 +97,14 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free_legacy",
+		"free",
 		false,
 	}
 
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Contains(cp.TrimmedSnapshot(), string(expected))
+	suite.Contains(fmt.Sprintf("[%s]", string(expected)), cp.TrimmedSnapshot())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
