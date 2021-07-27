@@ -1,11 +1,14 @@
 package cmdtree
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 )
@@ -17,6 +20,8 @@ type CmdTree struct {
 
 // New prepares a CmdTree.
 func New(prime *primer.Values, args ...string) *CmdTree {
+	defer profile.Measure("cmdtree:New", time.Now())
+
 	globals := newGlobalOptions()
 
 	authCmd := newAuthCommand(prime)
@@ -271,6 +276,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 // Execute runs the CmdTree using the provided CLI arguments.
 func (ct *CmdTree) Execute(args []string) error {
+	defer profile.Measure("cmdtree:Execute", time.Now())
 	return ct.cmd.Execute(args)
 }
 

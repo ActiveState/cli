@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/phayes/permbits"
 	"github.com/thoas/go-funk"
 
@@ -33,6 +34,7 @@ const LatestVersion = "latest"
 type forwardFunc func() error
 
 func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
+	defer profile.Measure("forwarder", time.Now())
 	if pj == nil {
 		return nil, nil
 	}

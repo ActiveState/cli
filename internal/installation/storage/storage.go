@@ -108,6 +108,10 @@ func CachePath() string {
 		cachePath = path
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
+		if runtime.GOOS == "windows" {
+		    // Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
+		    cachePath = filepath.Join(cachePath, "cache")
+		}
 	}
 
 	return cachePath
