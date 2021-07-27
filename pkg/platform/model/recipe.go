@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -61,6 +63,9 @@ type OrderAnnotations struct {
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
+	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
+		HostPlatform = osName
+	}
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID

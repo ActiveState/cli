@@ -7,20 +7,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/profile"
-	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -97,6 +97,7 @@ type customDimensions struct {
 	installSource string
 	machineID     string
 	projectName   string
+	uniqID        string
 	sessionToken  string
 }
 
@@ -127,6 +128,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"9":  d.machineID,
 		"10": d.projectName,
 		"11": d.sessionToken,
+		"12": d.uniqID,
 	}
 }
 
@@ -191,6 +193,7 @@ func setup() {
 		installSource: installSource,
 		machineID:     machineid.UniqID(),
 		output:        string(output.PlainFormatName),
+		uniqID:        uniqid.Text(),
 	}
 
 	if id == "unknown" {
