@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -105,7 +104,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil && !inventory.IsPlatformError(err) {
+	if err != nil && !model.IsPlatformError(err) {
 		rerr := &inventory_operations.ResolveRecipesBadRequest{}
 		if errors.As(err, &rerr) {
 			suggestions, serr := getSuggestions(ns, packageName)

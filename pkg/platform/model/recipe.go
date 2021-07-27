@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -325,4 +326,14 @@ func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UU
 	}
 
 	return deps
+}
+
+// IsPlatformError returns true if the error is a solver error due to a missing build image for the requested platform
+func IsPlatformError(err error) bool {
+	// todo: replace with error codes once we have a solution -- https://www.pivotaltracker.com/story/show/178865201
+	serr := &SolverError{}
+	if !errors.As(err, &serr) {
+		return false
+	}
+	return strings.Contains(strings.Join(serr.ValidationErrors(), ""), "build image for platform")
 }
