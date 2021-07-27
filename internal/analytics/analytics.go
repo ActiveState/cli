@@ -6,9 +6,6 @@ import (
 	"net/url"
 	"sync"
 
-	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -17,8 +14,11 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/ActiveState/sysinfo"
 )
 
 var client *ga.Client
@@ -96,6 +96,7 @@ type customDimensions struct {
 	machineID     string
 	projectName   string
 	sessionToken  string
+	uniqID        string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -121,6 +122,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"9":  d.machineID,
 		"10": d.projectName,
 		"11": d.sessionToken,
+		"12": d.uniqID,
 	}
 }
 
@@ -191,6 +193,7 @@ func setup() {
 		machineID:     machineid.UniqID(),
 		output:        string(output.PlainFormatName),
 		sessionToken:  cfg.GetString(CfgSessionToken),
+		uniqID:        uniqid.Text(),
 	}
 
 	if id == "unknown" {
