@@ -357,8 +357,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				suite.Assert().Contains(logs, "was successful")
 			} else {
 				updated := false
-				// wait for up to a minute for the State Tool to get modified
-				for x := 0; x < 300; x++ {
+				// wait for up to two minutes for the State Tool to get modified
+				for x := 0; x < 600; x++ {
 					info, err := os.Stat(ts.Exe)
 					if errors.Is(err, os.ErrNotExist) {
 						continue
