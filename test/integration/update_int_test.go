@@ -287,7 +287,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 			var logs string
 			if tt.TestUpdate {
-				fmt.Println(cp.TrimmedSnapshot())
 				logs = suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 			}
 
