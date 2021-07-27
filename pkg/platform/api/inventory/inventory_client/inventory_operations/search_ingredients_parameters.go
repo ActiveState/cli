@@ -72,6 +72,9 @@ type SearchIngredientsParams struct {
 	*/
 	AllowUnstable *bool
 
+	// ExactOnly.
+	ExactOnly *bool
+
 	/* Limit.
 
 	   The maximum number of ingredients returned per page
@@ -117,6 +120,8 @@ func (o *SearchIngredientsParams) SetDefaults() {
 
 		allowUnstableDefault = bool(false)
 
+		exactOnlyDefault = bool(false)
+
 		limitDefault = int64(50)
 
 		offsetDefault = int64(0)
@@ -127,6 +132,7 @@ func (o *SearchIngredientsParams) SetDefaults() {
 	val := SearchIngredientsParams{
 		AllowDeleted:  &allowDeletedDefault,
 		AllowUnstable: &allowUnstableDefault,
+		ExactOnly:     &exactOnlyDefault,
 		Limit:         &limitDefault,
 		Offset:        &offsetDefault,
 		Q:             &qDefault,
@@ -191,6 +197,17 @@ func (o *SearchIngredientsParams) WithAllowUnstable(allowUnstable *bool) *Search
 // SetAllowUnstable adds the allowUnstable to the search ingredients params
 func (o *SearchIngredientsParams) SetAllowUnstable(allowUnstable *bool) {
 	o.AllowUnstable = allowUnstable
+}
+
+// WithExactOnly adds the exactOnly to the search ingredients params
+func (o *SearchIngredientsParams) WithExactOnly(exactOnly *bool) *SearchIngredientsParams {
+	o.SetExactOnly(exactOnly)
+	return o
+}
+
+// SetExactOnly adds the exactOnly to the search ingredients params
+func (o *SearchIngredientsParams) SetExactOnly(exactOnly *bool) {
+	o.ExactOnly = exactOnly
 }
 
 // WithLimit adds the limit to the search ingredients params
@@ -274,6 +291,23 @@ func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qAllowUnstable != "" {
 
 			if err := r.SetQueryParam("allow_unstable", qAllowUnstable); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ExactOnly != nil {
+
+		// query param exact_only
+		var qrExactOnly bool
+
+		if o.ExactOnly != nil {
+			qrExactOnly = *o.ExactOnly
+		}
+		qExactOnly := swag.FormatBool(qrExactOnly)
+		if qExactOnly != "" {
+
+			if err := r.SetQueryParam("exact_only", qExactOnly); err != nil {
 				return err
 			}
 		}
