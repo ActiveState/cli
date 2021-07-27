@@ -166,7 +166,7 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	if version == "" {
 		version = params.language.RecommendedVersion()
 	}
-	commitID, err := model.CommitInitial(model.HostPlatform, params.language.String(), version)
+	commitID, err := model.CommitInitial(model.HostPlatform, params.language.Requirement(), version)
 	if err != nil {
 		return "", locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
