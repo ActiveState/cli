@@ -91,7 +91,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !hasParentCommit {
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, nil, "")
+		languageFromNs := model.LanguageFromNamespace(ns.String())
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, "")
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
