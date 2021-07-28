@@ -18,6 +18,8 @@ import (
 
 var escaper *osutils.ShellEscape
 
+var rcFileName = ".bashrc"
+
 func init() {
 	escaper = osutils.NewBashEscaper()
 }
@@ -33,6 +35,12 @@ type SubShell struct {
 }
 
 const Name string = "bash"
+
+func init() {
+	if runtime.GOOS == "darwin" {
+		rcFileName = ".profile" // .bashrc is often not respected on macOS
+	}
+}
 
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
@@ -104,7 +112,7 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, ".bashrc"), nil
+	return filepath.Join(homeDir, rcFileName), nil
 }
 
 // SetupShellRcFile - subshell.SubShell
