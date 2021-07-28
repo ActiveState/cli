@@ -124,6 +124,12 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	namespace := fmt.Sprintf("%s/%s", username, pname)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
+
+	cp.Expect("Multiple Matches")
+	cp.Expect(fmt.Sprintf("> %s", pname))
+	// pick the current default selection
+	cp.Send("")
+
 	cp.ExpectLongString("An activestate.yaml has been created")
 	switch runtime.GOOS {
 	case "darwin":
