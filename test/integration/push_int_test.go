@@ -126,7 +126,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 
 	cp.Expect("Multiple Matches")
-	cp.Expect(fmt.Sprintf("> %s", pname))
+	cp.Expect(fmt.Sprintf("> %s", suite.extraPackage))
 	// pick the current default selection
 	cp.Send("")
 
