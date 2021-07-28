@@ -157,7 +157,7 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg pr
 				)
 				return
 			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 				err := updateProjectFile(cfg, proj, sw.scriptFile, scriptName)
 				if err != nil {
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
