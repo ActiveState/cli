@@ -153,6 +153,11 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	cp.Expect("]")
 	cp.ExpectExitCode(0)
 
+	testFile.Close()
+	contents, err := os.ReadFile(testFile.Name())
+	suite.Require().NoError(err)
+
+	fmt.Printf("Parsed output:\n\n%+q\n\n", contents)
 	type PackageOutput struct {
 		Package string `json:"package"`
 		Version string `json:"version"`
@@ -161,12 +166,6 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	var po []PackageOutput
 	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
 	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
-
-	testFile.Close()
-	contents, err := os.ReadFile(testFile.Name())
-	suite.Require().NoError(err)
-
-	fmt.Printf("Parsed output:\n\n%+q\n\n", contents)
 
 	suite.Len(po, 2)
 }
