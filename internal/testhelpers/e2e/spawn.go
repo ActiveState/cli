@@ -1,5 +1,11 @@
 package e2e
 
+import (
+	"os"
+
+	"github.com/ActiveState/termtest/expect"
+)
+
 type SpawnOptions func(*Options) error
 
 func WithArgs(args ...string) SpawnOptions {
@@ -42,6 +48,13 @@ func NonWriteableBinDir() SpawnOptions {
 func BackgroundProcess() SpawnOptions {
 	return func(opts *Options) error {
 		opts.BackgroundProcess = true
+		return nil
+	}
+}
+
+func WithDebugOutput(fh *os.File) SpawnOptions {
+	return func(opts *Options) error {
+		opts.ExtraOpts = append(opts.ExtraOpts, expect.WithStdout(fh))
 		return nil
 	}
 }

@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -145,7 +146,10 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("packages", "--output", "editor")
+	testFile, err := os.CreateTemp("", "")
+	suite.Require().NoError(err)
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("packages", "--output", "editor"), e2e.WithDebugOutput(testFile))
 	cp.Expect("]")
 	cp.ExpectExitCode(0)
 
@@ -155,8 +159,14 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	}
 
 	var po []PackageOutput
-	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
+	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
 	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
+
+	testFile.Close()
+	contents, err := os.ReadFile(testFile.Name())
+	suite.Require().NoError(err)
+
+	fmt.Printf("Parsed output:\n\n%+q\n\n", contents)
 
 	suite.Len(po, 2)
 }
