@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -129,4 +130,14 @@ func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, arti
 
 func (bl *BuildLogFile) Close() error {
 	return nil
+}
+
+func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {
+	if err := bl.writeMessage(locale.Tr("solver_err", "", serr.Error())); err != nil {
+		return err
+	}
+	if !serr.IsTransient() {
+		return nil
+	}
+	return bl.writeMessage(locale.Tr("transient_solver_tip"))
 }

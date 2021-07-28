@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -169,20 +168,23 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(output string) string {
-	regex := regexp.MustCompile(`Refer to log *file *(.*) *for *progress.`)
-	resultLogfile := regex.FindStringSubmatch(output)
-
-	suite.Require().Equal(len(resultLogfile), 2, "expected to have logfile in output %s", output)
-	logpath := strings.TrimSpace(resultLogfile[1])
-
-	return suite.pollForUpdateFromLogfile(logpath)
+func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(configDir string, beforeFiles []string) string {
+	for i := 0; i < 10; i++ {
+		after := fileutils.ListDir(configDir, false)
+		onlyAfter, _ := funk.Difference(after, beforeFiles)
+		logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
+		if ok {
+			return suite.pollForUpdateFromLogfile(logFile)
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return ""
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string) string {
 	var logs []byte
 	// poll for successful auto-update
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 60; i++ {
 		time.Sleep(time.Millisecond * 200)
 
 		var err error
@@ -276,6 +278,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			err := fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+
 			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
 			cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
@@ -283,7 +287,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 			var logs string
 			if tt.TestUpdate {
-				logs = suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+				logs = suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 			}
 
 			// tell background process to stop...
@@ -305,7 +309,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
-	suite.T().Skip("This test is disabled while this bug is unresolved: https://www.pivotaltracker.com/story/show/178819606")
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -330,6 +333,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+
 			info, err := os.Stat(ts.Exe)
 			suite.Require().NoError(err)
 			modTime := info.ModTime()
@@ -348,18 +353,27 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp.ExpectExitCode(0)
 
 			if tt.TestUpdate {
-				logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 				suite.Assert().Contains(logs, "was successful")
 			} else {
-				for x := 0; x < 30; x++ {
+				updated := false
+				// wait for up to two minutes for the State Tool to get modified
+				for x := 0; x < 600; x++ {
 					info, err := os.Stat(ts.Exe)
-					suite.Require().NoError(err)
+					if errors.Is(err, os.ErrNotExist) {
+						continue
+					}
 					if !info.ModTime().Equal(modTime) {
+						updated = true
 						break
 					}
 					time.Sleep(200 * time.Millisecond)
 				}
+				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified.")
 			}
+
+			// wait half a second for the State Tool to be written to disk completely
+			time.Sleep(500 * time.Millisecond)
 
 			suite.branchCompare(ts, false, tt.TestUpdate, tt.Channel, suite.Equal)
 
@@ -389,13 +403,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
+	before := fileutils.ListDir(ts.Dirs.Config, false)
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 	cp.ExpectExitCode(0)
 
-	suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
-	logs := suite.pollForUpdateInBackground(cp.TrimmedSnapshot())
+	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 	suite.Assert().Contains(logs, "Installation failed")
 
 	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)

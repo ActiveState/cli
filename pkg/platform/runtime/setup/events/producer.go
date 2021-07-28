@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -53,6 +54,10 @@ func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver
 		r.event(newArtifactFailureEvent(Build, failed.ArtifactID, failed.UnsignedLogURI, failed.ErrorMsg))
 		r.artLogs.RequestArtifactLog(failed.ArtifactID, failed.UnsignedLogURI)
 	}
+}
+
+func (r *RuntimeEventProducer) SolverError(serr *model.SolverError) {
+	r.event(newSolverErrorEvent(serr))
 }
 
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {

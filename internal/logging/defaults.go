@@ -105,6 +105,7 @@ const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	filename := filepath.Join(datadir, FileName())
+	originalMessage := message
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
@@ -125,7 +126,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				l.file = nil // unset so that it is reset later in this func
 			}
 
-			rollbar.Error(fmt.Errorf(message, args...), data)
+			rollbar.Error(fmt.Errorf(originalMessage, args...), data)
 		}
 	}()
 
