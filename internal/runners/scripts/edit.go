@@ -157,7 +157,10 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg pr
 				)
 				return
 			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			// Some editors do not set WRITE events when a file is modified. Instead they send a REMOVE event
+			// followed by a CREATE event. The script file already exists at this point so we capture the
+			// CREATE event as a WRITE event.
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 				err := updateProjectFile(cfg, proj, sw.scriptFile, scriptName)
 				if err != nil {
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
