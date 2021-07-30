@@ -196,10 +196,10 @@ func LanguageFromNamespace(ns string) string {
 }
 
 // FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
-func FilterSupportedIngredients(auth *authentication.Auth, ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
+func FilterSupportedIngredients(ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
 	var res []*IngredientAndVersion
 
-	supported, err := FetchSupportedLanguages(auth)
+	supported, err := FetchSupportedLanguages()
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to retrieve the list of supported languages")
 	}

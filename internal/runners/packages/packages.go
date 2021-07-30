@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -66,7 +65,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !ns.IsValid() {
-		packageName, ns, err = resolvePkgAndNamespace(prime.Auth(), prime.Prompt(), packageName, nsType)
+		packageName, ns, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -160,7 +159,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	return nil
 }
 
-func resolvePkgAndNamespace(auth *authentication.Auth, prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
@@ -169,7 +168,7 @@ func resolvePkgAndNamespace(auth *authentication.Auth, prompt prompt.Prompter, p
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
-	ingredients, err = model.FilterSupportedIngredients(auth, ingredients)
+	ingredients, err = model.FilterSupportedIngredients(ingredients)
 	if err != nil {
 		return "", ns, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}

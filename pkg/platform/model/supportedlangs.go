@@ -5,14 +5,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mediator"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/request"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // FetchSupportedLanguages returns the list of languages that the Platform supports ATM
-func FetchSupportedLanguages(auth *authentication.Auth) ([]string, error) {
+func FetchSupportedLanguages() ([]string, error) {
 	req := request.SupportedLanguages()
 	var resp model.SupportedLanguagesResponse
-	med := mediator.New(auth)
+	med := mediator.New(nil)
 	err := med.Run(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
