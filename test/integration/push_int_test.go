@@ -125,13 +125,6 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 
-	cp.Expect("Multiple Matches")
-	cp.Expect("> ")
-	// wait a little while for windows to accept the selection
-	time.Sleep(time.Millisecond * 100)
-	// pick the current default selection
-	cp.Send("")
-
 	cp.ExpectLongString("An activestate.yaml has been created")
 	switch runtime.GOOS {
 	case "darwin":
