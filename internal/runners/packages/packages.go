@@ -168,20 +168,11 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
-	// If no ingredients matched we give the user an error that provides some alternative suggestions
-	if len(ingredients) == 0 {
-		suggestions, serr := getSuggestions(ns, packageName)
-		if serr != nil {
-			logging.Error("Failed to retrieve suggestions: %v", err)
-		}
-		if len(suggestions) == 0 {
-			return "", ns, locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
-		}
-		return "", ns, locale.WrapError(err, "err_pkgop_search",
-			"Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
+	ingredients, err = model.FilterSupportedIngredients(ingredients)
+	if err != nil {
+		return "", ns, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}
 
-	//
 	choices := []string{}
 	values := map[string][]string{}
 	for _, i := range ingredients {
