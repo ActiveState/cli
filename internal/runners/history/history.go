@@ -59,17 +59,19 @@ func (h *History) Run(params *HistoryParams) error {
 			return locale.NewInputError("err_history_no_project", "A namespace was not provided and a project could not be found. Please use a project namespace or run this command in a project directory")
 		}
 
-		remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
-		if err != nil {
-			return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
-		}
-
-		remoteCommitID := remoteBranch.CommitID
 		localCommitID := h.project.CommitUUID()
+		lastRemoteID = commit.EarliestRemoteID
 
-		lastRemoteID, err = model.CommonParent(remoteCommitID, &localCommitID)
-		if err != nil {
-			return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
+		if !h.project.IsHeadless() && h.project.Name() != "" {
+			remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
+			if err != nil {
+				return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
+			}
+
+			lastRemoteID, err = model.CommonParent(remoteBranch.CommitID, &localCommitID)
+			if err != nil {
+				return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
+			}
 		}
 
 		commits, err = model.CommitHistoryFromID(localCommitID)

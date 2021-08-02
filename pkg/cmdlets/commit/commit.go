@@ -37,12 +37,17 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	return nil
 }
 
+var EarliestRemoteID = func() *strfmt.UUID {
+	id := strfmt.UUID("earliest")
+	return &id
+}()
+
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
 	data := make([]commitData, 0, len(commits))
 	isLocal := true // recent (and, therefore, local) commits are first
 
 	for _, c := range commits {
-		if lastRemoteID == nil || (isLocal && c.CommitID == *lastRemoteID) {
+		if lastRemoteID != EarliestRemoteID || lastRemoteID == nil || (isLocal && c.CommitID == *lastRemoteID) {
 			isLocal = false
 		}
 
