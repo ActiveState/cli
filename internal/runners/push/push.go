@@ -247,6 +247,7 @@ func (r *Push) verifyInput() error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}
+		r.out.Notice("") // Add line break to ensure output doesn't stick together
 	}
 
 	// Check if as.yaml exists
