@@ -178,11 +178,13 @@ func (s *Setup) update() error {
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
+			localeID := "build_status_in_progress"
 			messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
 			if s.target.Owner() == "" && s.target.Name() == "" {
+				localeID = "build_status_in_progress_headless"
 				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
 			}
-			return locale.WrapInputError(err, "build_status_in_progress", "", messageURL)
+			return locale.WrapInputError(err, localeID, "", messageURL)
 		}
 		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
