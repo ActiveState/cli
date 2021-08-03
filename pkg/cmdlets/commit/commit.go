@@ -37,16 +37,14 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	return nil
 }
 
-// NoRemoteCommitID is a token value used to indicate that all commits should
-// be displayed as local.
-var NoRemoteCommitID = func() *strfmt.UUID {
-	id := strfmt.UUID("earliest")
-	return &id
-}()
-
-// EarliestRemoteCommitID is a token value used to indicate that all commits
-// should be displayed as remote. This is synonymous with "nil".
-var EarliestRemoteCommitID *strfmt.UUID
+var (
+	// NoRemoteCommitID is a token value used to indicate that all commits
+	// should be displayed as local.
+	NoRemoteCommitID = new(strfmt.UUID)
+	// EarliestRemoteCommitID is a token value used to indicate that all
+	// commits should be displayed as remote. This is synonymous with "nil".
+	EarliestRemoteCommitID *strfmt.UUID
+)
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
 	data := make([]commitData, 0, len(commits))
