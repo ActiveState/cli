@@ -40,6 +40,8 @@ func (h *History) Run(params *HistoryParams) error {
 	var err error
 
 	if params.Namespace != "" {
+		lastRemoteID = commit.EarliestRemoteCommitID
+
 		nsMeta, err := project.ParseNamespace(params.Namespace)
 		if err != nil {
 			return err
@@ -60,7 +62,7 @@ func (h *History) Run(params *HistoryParams) error {
 		}
 
 		localCommitID := h.project.CommitUUID()
-		lastRemoteID = commit.EarliestRemoteID
+		lastRemoteID = commit.NoRemoteCommitID
 
 		if !h.project.IsHeadless() && h.project.Name() != "" {
 			remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
