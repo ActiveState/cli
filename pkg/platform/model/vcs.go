@@ -264,7 +264,8 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 			return commits, err
 		}
 		commits = append(commits, payload.Commits...)
-		cont = payload.TotalCommits > (offset + limit)
+		offset += limit
+		cont = payload.TotalCommits > offset
 	}
 
 	return commits, nil
