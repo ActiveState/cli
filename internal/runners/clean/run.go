@@ -22,9 +22,9 @@ func undoPrepare(cfg configurable) error {
 	var aggErr error
 	for _, f := range toRemove {
 		if fileutils.TargetExists(f) {
-			err := os.Remove(f)
+			err := os.RemoveAll(f)
 			if err != nil {
-				aggErr = locale.WrapError(aggErr, "err_undo_prepare_remove_file", "Failed to remove file %s", f)
+				aggErr = locale.WrapError(aggErr, "err_undo_prepare_remove_file", "Failed to remove file {{.V0}}", f)
 			}
 		}
 	}
