@@ -50,6 +50,7 @@ func (s *safeBool) setValue(v bool) {
 type fileHandler struct {
 	formatter Formatter
 	file      *os.File
+	mu        sync.Mutex
 	verbose   safeBool
 }
 
@@ -104,6 +105,12 @@ func FilePathForCmd(cmd string, pid int) string {
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
+	// In this function we close and open the file handle to the log file. In
+	// order to ensure this is safe to be called across threads, we just
+	// synchronize the entire function
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	filename := filepath.Join(datadir, FileName())
 	originalMessage := message
 
@@ -163,7 +170,7 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 
 func init() {
 	timestamp = time.Now().UnixNano()
-	handler := &fileHandler{DefaultFormatter, nil, safeBool{}}
+	handler := &fileHandler{DefaultFormatter, nil, sync.Mutex{}, safeBool{}}
 	SetHandler(handler)
 
 	log.SetOutput(&writer{})
