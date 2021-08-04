@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
@@ -52,8 +53,10 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 		defer func() {
 			if rerr != nil {
-				if err := os.Remove(pj.Source().Path()); err != nil {
-					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
+				if !errors.Is(err, artifact.CamelRuntimeBuilding) {
+					if err := os.Remove(pj.Source().Path()); err != nil {
+						logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
+					}
 				}
 			}
 		}()
