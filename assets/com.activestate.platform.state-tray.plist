@@ -6,7 +6,7 @@
         <string>my.everydaytasks</string>
         <key>ProgramArguments</key>
         <array>
-            <!-- Wrap in `sh -c` so that the tilde is expanded -->
+            <!-- Wrap in `sh -c` so that $HOME is expanded -->
             <string>sh</string>
             <string>-c</string>
             <string>"$HOME/Applications/ActiveState Desktop.app/Contents/MacOS/state-tray"</string>
