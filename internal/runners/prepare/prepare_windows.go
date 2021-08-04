@@ -17,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
+var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+
 func (r *Prepare) prepareOS() {
 	err := setStateProtocol()
 	if err != nil {
@@ -29,12 +31,12 @@ func (r *Prepare) prepareOS() {
 }
 
 func (r *Prepare) prepareStartShortcut() error {
-	if err := fileutils.MkdirUnlessExists(shortcutDir()); err != nil {
-		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir())
+	if err := fileutils.MkdirUnlessExists(shortcutDir); err != nil {
+		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir(), appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
 	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
@@ -46,10 +48,6 @@ func (r *Prepare) prepareStartShortcut() error {
 	}
 
 	return nil
-}
-
-func shortcutDir() string {
-	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 }
 
 const (
@@ -122,7 +120,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 		files = append(files, as)
 	}
 	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir(), appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
 	files = append(files, filepath.Dir(sc.Path()))
 
 	return files
