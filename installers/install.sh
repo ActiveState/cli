@@ -352,7 +352,8 @@ if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
 fi
 
 
-info "State Tool installation complete."
+info "State Tool successfully installed."
+info "Reminder: Start a new shell in order to start using the State Tool."
 
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
