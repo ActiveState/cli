@@ -6,7 +6,10 @@
         <string>my.everydaytasks</string>
         <key>ProgramArguments</key>
         <array>
-            <string>/Applications/state-tray.app/Contents/MacOS/state-tray</string>
+            <!-- Wrap in `sh -c` so that the tilde is expanded -->
+            <string>sh</string>
+            <string>-c</string>
+            <string>"$HOME/Applications/ActiveState Desktop.app/Contents/MacOS/state-tray"</string>
         </array>
         <key>ProcessType</key>
         <string>Interactive</string>
