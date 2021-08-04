@@ -40,8 +40,6 @@ func (h *History) Run(params *HistoryParams) error {
 	var err error
 
 	if params.Namespace != "" {
-		lastRemoteID = commit.EarliestRemoteCommitID
-
 		nsMeta, err := project.ParseNamespace(params.Namespace)
 		if err != nil {
 			return err
@@ -56,13 +54,16 @@ func (h *History) Run(params *HistoryParams) error {
 		if err != nil {
 			return locale.WrapError(err, "err_commit_history_namespace", "Could not get commit history from provided namespace: {{.V0}}", params.Namespace)
 		}
+
+		if len(commits) > 0 {
+			lastRemoteID = &commits[0].CommitID
+		}
 	} else {
 		if h.project == nil {
 			return locale.NewInputError("err_history_no_project", "A namespace was not provided and a project could not be found. Please use a project namespace or run this command in a project directory")
 		}
 
 		localCommitID := h.project.CommitUUID()
-		lastRemoteID = commit.NoRemoteCommitID
 
 		if !h.project.IsHeadless() && h.project.Name() != "" {
 			remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
