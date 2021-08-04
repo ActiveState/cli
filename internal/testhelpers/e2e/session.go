@@ -341,8 +341,6 @@ func (s *Session) CreateNewUser() string {
 	p.Send(password)
 	p.Expect("again:")
 	p.Send(password)
-	p.Expect("name:")
-	p.Send(username)
 	p.Expect("email:")
 	p.Send(email)
 	p.Expect("account has been registered", authnTimeout)
