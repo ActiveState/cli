@@ -9,10 +9,10 @@ import (
 
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -195,6 +195,27 @@ func LanguageFromNamespace(ns string) string {
 	return values[1]
 }
 
+// FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
+func FilterSupportedIngredients(ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
+	var res []*IngredientAndVersion
+
+	supported, err := FetchSupportedLanguages()
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to retrieve the list of supported languages")
+	}
+	for _, i := range ingredients {
+		language := LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+
+		if !funk.ContainsString(supported, language) {
+			logging.Debug("Skipping ingredient %s (%s) due to unsupported language", i.Ingredient.Name, language)
+			continue
+		}
+		res = append(res, i)
+	}
+
+	return res, nil
+}
+
 // BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
 func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
@@ -243,7 +264,8 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 			return commits, err
 		}
 		commits = append(commits, payload.Commits...)
-		cont = payload.TotalCommits > (offset + limit)
+		offset += limit
+		cont = payload.TotalCommits > offset
 	}
 
 	return commits, nil
@@ -522,15 +544,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 }
 
 // CommitInitial creates a root commit for a new branch
-func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
-	var langName string
-	if lang != nil {
-		langName = lang.Requirement()
-		if langVersion == "" {
-			langVersion = lang.RecommendedVersion()
-		}
-	}
-
+func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UUID, error) {
 	platformID, err := hostPlatformToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err

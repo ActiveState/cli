@@ -5,11 +5,12 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/rollbar/rollbar-go"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
+
+	"github.com/rollbar/rollbar-go"
 )
 
 func SetupRollbar(token string) {
@@ -50,11 +51,7 @@ func SetupRollbar(token string) {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	machID := machineid.UniqID()
-
-	// MachineID is the only thing we have that is consistent between authed and unauthed users, so
-	// we set that as the "person ID" in rollbar so the segmenting of data is consistent
-	rollbar.SetPerson(machID, username, email)
+	rollbar.SetPerson(uniqid.Text(), username, email)
 
 	custom := rollbar.Custom()
 	if custom == nil { // could be nil if in tests that don't call SetupRollbar
@@ -62,5 +59,7 @@ func UpdateRollbarPerson(userID, username, email string) {
 	}
 
 	custom["UserID"] = userID
+	custom["MachineID"] = machineid.UniqID()
+
 	rollbar.SetCustom(custom)
 }

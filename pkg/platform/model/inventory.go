@@ -21,7 +21,7 @@ type ErrNoMatchingPlatform struct{ *locale.LocalizedError }
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
 	*inventory_models.SearchIngredientsResponseItem
-	Version   string
+	Version string
 }
 
 // Platform is a sane version of whatever the hell it is go-swagger thinks it's doing
@@ -35,13 +35,13 @@ var platformCache []*Platform
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
 func SearchIngredients(namespace Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(namespace, name, includeVersions)
+	return searchIngredientsNamespace(namespace, name, includeVersions, false)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
 func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool, includeVersions bool) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions)
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	return results.Payload.Authors, nil
 }
 
-func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool, exactOnly bool) ([]*IngredientAndVersion, error) {
 	limit := int64(100)
 	offset := int64(0)
 
@@ -102,7 +102,9 @@ func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool)
 	namespace := ns.String()
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(&name)
-
+	if exactOnly {
+		params.SetExactOnly(&exactOnly)
+	}
 	if ns.Type() != NamespaceBlank {
 		params.SetNamespaces(&namespace)
 	}

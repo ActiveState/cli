@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -91,7 +90,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !hasParentCommit {
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, nil, "")
+		languageFromNs := model.LanguageFromNamespace(ns.String())
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, "")
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
@@ -105,7 +105,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 
 	// Verify that the provided package actually exists (the vcs API doesn't care)
 	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil && !inventory.IsPlatformError(err) {
+	if err != nil && !model.IsPlatformError(err) {
 		rerr := &inventory_operations.ResolveRecipesBadRequest{}
 		if errors.As(err, &rerr) {
 			suggestions, serr := getSuggestions(ns, packageName)
@@ -168,20 +168,11 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
-	// If no ingredients matched we give the user an error that provides some alternative suggestions
-	if len(ingredients) == 0 {
-		suggestions, serr := getSuggestions(ns, packageName)
-		if serr != nil {
-			logging.Error("Failed to retrieve suggestions: %v", err)
-		}
-		if len(suggestions) == 0 {
-			return "", ns, locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
-		}
-		return "", ns, locale.WrapError(err, "err_pkgop_search",
-			"Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
+	ingredients, err = model.FilterSupportedIngredients(ingredients)
+	if err != nil {
+		return "", ns, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}
 
-	//
 	choices := []string{}
 	values := map[string][]string{}
 	for _, i := range ingredients {

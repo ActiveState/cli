@@ -49,7 +49,7 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 	if len(projects) == 0 {
 		mitem := u.menuItem.AddSubMenuItem("Get Started", "")
 		cb := func() {
-			open.Browser(constants.DocumentationURLCreateProject)
+			open.Browser(constants.DocumentationURLGetStarted)
 		}
 		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}

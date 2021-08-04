@@ -21,13 +21,17 @@ import (
 )
 
 type Resolver struct {
-	cfg *config.Instance
+	cfg   *config.Instance
+	cache *cache.Cache
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance) *Resolver {
-	return &Resolver{cfg}
+	return &Resolver{
+		cfg,
+		cache.New(12*time.Hour, time.Hour),
+	}
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -49,11 +53,16 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
 	logging.Debug("AvailableUpdate resolver")
+	defer logging.Debug("AvailableUpdate done")
+
 	const cacheKey = "AvailableUpdate"
-	c := cache.New(12*time.Hour, time.Hour)
-	if up, exists := c.Get(cacheKey); exists {
+	if up, exists := r.cache.Get(cacheKey); exists {
+		logging.Debug("Using cache")
 		return up.(*graph.AvailableUpdate), nil
 	}
+
+	var availableUpdate *graph.AvailableUpdate
+	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
 
 	update, err := updater.DefaultChecker.Check()
 	if err != nil {
@@ -63,7 +72,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 		return nil, nil
 	}
 
-	availableUpdate := graph.AvailableUpdate{
+	availableUpdate = &graph.AvailableUpdate{
 		Version:  update.Version,
 		Channel:  update.Channel,
 		Path:     update.Path,
@@ -71,9 +80,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 		Sha256:   update.Sha256,
 	}
 
-	c.Set(cacheKey, &availableUpdate, cache.DefaultExpiration)
-
-	return &availableUpdate, nil
+	return availableUpdate, nil
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {

@@ -164,7 +164,7 @@ func run() (rerr error) {
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
 	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
 
-	localProjects, err := model.LocalProjects()
+	localProjects, err := model.LocalProjects(context.Background())
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
 	}
@@ -208,7 +208,7 @@ func run() (rerr error) {
 			}
 		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
-			localProjects, err = model.LocalProjects()
+			localProjects, err = model.LocalProjects(context.Background())
 			if err != nil {
 				logging.Error("Could not get local projects listing: %v", err)
 			}

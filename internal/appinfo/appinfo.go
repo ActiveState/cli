@@ -4,7 +4,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -17,6 +19,11 @@ type AppInfo struct {
 func execDir(baseDir ...string) string {
 	if len(baseDir) > 0 {
 		return baseDir[0]
+	}
+	if condition.InTest() {
+		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
+		rootPath := environment.GetRootPathUnsafe()
+		return filepath.Join(rootPath, "build")
 	}
 	path, err := os.Executable()
 	if err != nil {

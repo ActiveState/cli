@@ -85,7 +85,7 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
 		!outFlags.NonInteractive &&
 		terminal.IsTerminal(int(os.Stdin.Fd())) &&
 		out.Type() != output.EditorV0FormatName &&
@@ -112,6 +112,8 @@ func main() {
 }
 
 func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+	defer profile.Measure("main:run", time.Now())
+
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -76,15 +77,11 @@ func run() error {
 		return runExport()
 
 	case len(os.Args) < 1 || os.Args[1] != "_prepare":
-		return runPrepare()
+		fmt.Printf("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now. If this keeps happening please re-install the State Tool as described here: %s\n", constants.StateToolMarketingPage)
+		return runDefault()
 
 	default:
-		if err := runDefault(); err != nil {
-			return err
-		}
-
-		fmt.Println("Please start a new shell to continue using the State Tool.")
-		return nil
+		return runDefault()
 	}
 }
 
@@ -94,11 +91,6 @@ func runExport() error {
 		return errs.Wrap(err, "Failed to read app data path.")
 	}
 	fmt.Println(path)
-	return nil
-}
-
-func runPrepare() error {
-	fmt.Println("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now...")
 	return nil
 }
 
@@ -113,6 +105,14 @@ func runDefault() (rerr error) {
 		return errs.Wrap(err, "Could not initialize config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
+
+	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
+	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
+		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
+		}
+		analytics.Configure(cfg)
+	}
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)

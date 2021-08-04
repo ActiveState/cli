@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/wailsapp/wails"
 )
 
@@ -89,6 +90,12 @@ func (b *Bindings) Exit() {
 func (b *Bindings) DebugMode() bool {
 	args := strings.Join(os.Args, "")
 	return strings.Contains(args, "wails.BuildMode=debug") || strings.Contains(args, "go-build")
+}
+
+func (b *Bindings) OpenURL(url string) {
+	if err := open.Run(url); err != nil {
+		logging.Error("Could not open URL: %s", errs.JoinMessage(err))
+	}
 }
 
 func formatError(err error, message string) error {

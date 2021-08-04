@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -232,7 +233,7 @@ func ProjectURL(owner, name, commitID string) string {
 
 // CommitURL creates a valid platform commit URL for the given commit
 func CommitURL(commitID string) string {
-	return fmt.Sprintf("%s/%s", constants.DashboardCommitURL, commitID)
+	return fmt.Sprintf("%s/%s", strings.TrimSuffix(constants.DashboardCommitURL, "/"), commitID)
 }
 
 func processProjectErrorResponse(err error, params ...string) error {

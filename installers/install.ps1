@@ -39,10 +39,10 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
-$script:SESSION_TOKEN_ARGS = "--session-token=\`"\`""
+$script:SESSION_TOKEN_VALUE = ""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
-  $script:SESSION_TOKEN_ARGS = " --session-token=\`"${script:SESSION_TOKEN}\`""
+  $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
 # For recipe installation without prompts we need to be able to disable
@@ -354,10 +354,14 @@ function install() {
     }
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
+    $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
     if ($script:TARGET) {
-        & "$InstallerPath" "$script:TARGET" $script:SESSION_TOKEN_ARGS 2>&1 | Tee-Object -Variable output | Write-Host
+        & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
     } else {
-        & "$InstallerPath" $script:SESSION_TOKEN_ARGS 2>&1 | Tee-Object -Variable output | Write-Host
+        & "$InstallerPath" 2>&1 | Tee-Object -Variable output | Write-Host
+    }
+    if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
+        Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
     }
 
     $outputString = $output | Out-String

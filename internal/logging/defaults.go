@@ -105,27 +105,30 @@ const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	filename := filepath.Join(datadir, FileName())
+	originalMessage := message
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
-		data := map[string]interface{}{}
+	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
+		if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
+			data := map[string]interface{}{}
 
-		if l.file != nil {
-			if err := l.file.Close(); err != nil {
-				data["log_file_close_error"] = err.Error()
-			} else {
-				logData, err := ioutil.ReadFile(filename)
-				if err != nil {
-					data["log_file_read_error"] = err.Error()
+			if l.file != nil {
+				if err := l.file.Close(); err != nil {
+					data["log_file_close_error"] = err.Error()
 				} else {
-					data["log_file_data"] = string(logData)
+					logData, err := ioutil.ReadFile(filename)
+					if err != nil {
+						data["log_file_read_error"] = err.Error()
+					} else {
+						data["log_file_data"] = string(logData)
+					}
 				}
+				l.file = nil // unset so that it is reset later in this func
 			}
-			l.file = nil // unset so that it is reset later in this func
-		}
 
-		rollbar.Error(fmt.Errorf(message, args...), data)
-	}
+			rollbar.Error(fmt.Errorf(originalMessage, args...), data)
+		}
+	}()
 
 	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose.value() {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
@@ -31,6 +32,7 @@ type Instance struct {
 }
 
 func New() (*Instance, error) {
+	defer profile.Measure("config.NewCustom", time.Now())
 	return NewCustom("", singlethread.New(), true)
 }
 
@@ -229,7 +231,7 @@ func (i *Instance) importLegacyConfig() (returnErr error) {
 		}
 	}()
 
-	_, err := os.Stat(i.appDataDir)
+	_, err := os.Stat(fpath)
 	if err != nil && os.IsNotExist(err) {
 		return nil
 	}

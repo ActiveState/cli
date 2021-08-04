@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/termutils"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/vbauerster/mpb/v6"
 )
@@ -214,6 +215,11 @@ func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID,
 	}
 
 	as.bar.SetTotal(0, true)
+	return nil
+}
+
+// SolverError is ignored by the progress bar digester
+func (rp *RuntimeProgress) SolverError(serr *model.SolverError) error {
 	return nil
 }
 
