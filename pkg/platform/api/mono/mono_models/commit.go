@@ -20,22 +20,22 @@ import (
 // swagger:model Commit
 type Commit struct {
 
-	// the date and time at which this commit was created
+	// The date and time at which this commit was created.
 	// Format: date-time
 	Added strfmt.DateTime `json:"added,omitempty"`
 
-	// an anonymous id used to help track the creator of headless commits
+	// An anonymous id used to help track the creator of headless commits.
 	AnonID string `json:"anonID,omitempty"`
 
 	// When resolving depdencies, updates made after this time will be ignored.
 	// Format: date-time
 	AtTime strfmt.DateTime `json:"atTime,omitempty"`
 
-	// the id of the user that authored this commit
+	// The id of the user that authored this commit.
 	// Format: uuid
 	Author *strfmt.UUID `json:"author,omitempty"`
 
-	// what changed in this commit
+	// What changed in this commit.
 	Changeset []*CommitChange `json:"changeset"`
 
 	// commit ID
@@ -43,15 +43,18 @@ type Commit struct {
 	// Format: uuid
 	CommitID strfmt.UUID `json:"commitID,omitempty"`
 
-	// A message that describes what was changed in this commit
+	// A message that describes what was changed in this commit.
 	Message string `json:"message,omitempty"`
 
-	// the parent commit that this one came from (empty if this is the first commit)
+	// The parent commit that this one came from (empty if this is the first commit).
 	// Read Only: true
 	// Format: uuid
 	ParentCommitID strfmt.UUID `json:"parentCommitID,omitempty"`
 
-	// the name of the user that authored this commit
+	// An id populated by the state tool.
+	UniqueDeviceID string `json:"uniqueDeviceID,omitempty"`
+
+	// The name of the user that authored this commit.
 	Username *string `json:"username,omitempty"`
 }
 
