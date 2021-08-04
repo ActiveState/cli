@@ -35,7 +35,7 @@ type HistoryParams struct {
 }
 
 func (h *History) Run(params *HistoryParams) error {
-	var lastRemoteID *strfmt.UUID
+	var latestRemoteID *strfmt.UUID
 	var commits []*mono_models.Commit
 	var err error
 
@@ -56,7 +56,7 @@ func (h *History) Run(params *HistoryParams) error {
 		}
 
 		if len(commits) > 0 {
-			lastRemoteID = &commits[0].CommitID
+			latestRemoteID = &commits[0].CommitID // most recent commit (i.e. print all as remote)
 		}
 	} else {
 		if h.project == nil {
@@ -71,7 +71,7 @@ func (h *History) Run(params *HistoryParams) error {
 				return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
 			}
 
-			lastRemoteID, err = model.CommonParent(remoteBranch.CommitID, &localCommitID)
+			latestRemoteID, err = model.CommonParent(remoteBranch.CommitID, &localCommitID)
 			if err != nil {
 				return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
 			}
@@ -95,7 +95,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	h.out.Print(locale.Tl("history_recent_changes", "Here are the most recent changes made to this project.\n"))
-	err = commit.PrintCommits(h.out, commits, orgs, lastRemoteID)
+	err = commit.PrintCommits(h.out, commits, orgs, latestRemoteID)
 	if err != nil {
 		return locale.WrapError(err, "err_history_print_commits", "Could not print commit history")
 	}
