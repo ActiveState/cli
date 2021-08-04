@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -75,7 +74,7 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 	}
 
 	parentCommitID := pj.CommitUUID()
-	commitID, err := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
+	commitID, err := model.CommitPackage(parentCommitID, operation, name, ns.String(), version)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
