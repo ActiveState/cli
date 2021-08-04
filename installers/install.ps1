@@ -403,6 +403,7 @@ function install() {
 
     warningIfAdmin
     Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
+    Write-Host "Reminder: Start a new shell in order to start using the State Tool." -ForegroundColor Yellow
 
     # Ensure that the new install dir is on the PATH variable for follow-up commands
     $Env:PATH = "$installDir;$Env:PATH"
