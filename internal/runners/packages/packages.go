@@ -52,11 +52,9 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
 		defer func() {
-			if rerr != nil {
-				if !errors.Is(err, artifact.CamelRuntimeBuilding) {
-					if err := os.Remove(pj.Source().Path()); err != nil {
-						logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
-					}
+			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
+				if err := os.Remove(pj.Source().Path()); err != nil {
+					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
 				}
 			}
 		}()
