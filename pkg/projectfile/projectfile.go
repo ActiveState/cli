@@ -496,7 +496,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 	defer rtutils.Closer(cfg.Close, &rerr)
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
+	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -701,7 +701,7 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -1273,9 +1273,9 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 	return paths
 }
 
-// storeProjectMapping associates the namespace with the project
+// StoreProjectMapping associates the namespace with the project
 // path in the config
-func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1337,11 +1337,14 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		},
 	)
 	if err != nil {
-		logging.Debug("Could not set clean project mapping in config, error: %v", err)
+		logging.Debug("Could not clean project mapping in config, error: %v", err)
 	}
 }
 
-func UpdateHeadlessConfigMapping(cfg ConfigGetter, namespace, projectPath string) {
+// CleanProjectPathMapping removes the given path from any project that contains it.
+// If the result would be a project mapping with no paths then that project is removed
+// from the config
+func CleanProjectPathMapping(cfg ConfigGetter, projectPath string) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1365,12 +1368,10 @@ func UpdateHeadlessConfigMapping(cfg ConfigGetter, namespace, projectPath string
 					}
 				}
 			}
-
-			projects[namespace] = []string{projectPath}
 			return projects, nil
 		},
 	)
 	if err != nil {
-		logging.Debug("Could not update project mapping in config, error: %v", err)
+		logging.Debug("Could not clean project mapping in config, error: %v", err)
 	}
 }
