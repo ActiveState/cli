@@ -342,15 +342,8 @@ esac
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
+CONFIGDIR=$($STATEPATH "--output=simple" "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
-
-# Check if the installation is in $PATH, if so we also check if the activate
-# flag was passed and attempt to activate the project
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State Tool installation complete."
-fi
-
 
 info "State Tool successfully installed."
 info "Reminder: Start a new shell in order to start using the State Tool."

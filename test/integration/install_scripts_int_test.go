@@ -125,21 +125,21 @@ func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAns
 	cp.Expect("Fetching version info")
 	cp.Expect("Allow $PATH to be appended in your", 20*time.Second)
 	cp.SendLine(addToPathAnswer)
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
