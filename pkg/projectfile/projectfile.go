@@ -927,16 +927,16 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner           string
-	Project         string
-	CommitID        *strfmt.UUID
-	BranchName      string
-	Directory       string
-	Content         string
-	Language        string
-	Private         bool
-	path            string
-	ProjectURL      string
+	Owner      string
+	Project    string
+	CommitID   *strfmt.UUID
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -1019,10 +1019,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":         params.ProjectURL,
-		"CommitID":        commitID,
-		"Content":         content,
-		"Private":         params.Private,
+		"Project":  params.ProjectURL,
+		"CommitID": commitID,
+		"Content":  content,
+		"Private":  params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
@@ -1338,5 +1338,39 @@ func CleanProjectMapping(cfg ConfigGetter) {
 	)
 	if err != nil {
 		logging.Debug("Could not set clean project mapping in config, error: %v", err)
+	}
+}
+
+func UpdateHeadlessConfigMapping(cfg ConfigGetter, namespace, projectPath string) {
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil && v != nil {
+				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+			}
+
+			projectPath = filepath.Clean(projectPath)
+			for name, paths := range projects {
+				for i, path := range paths {
+					if isEqual, err := fileutils.PathsEqual(projectPath, path); isEqual {
+						if err != nil {
+							logging.Debug("Failed to compare paths %s and %s", projectPath, path)
+						}
+						projects[name] = sliceutils.RemoveFromStrings(paths, i)
+					}
+
+					if len(paths) == 0 {
+						delete(projects, name)
+					}
+				}
+			}
+
+			projects[namespace] = []string{projectPath}
+			return projects, nil
+		},
+	)
+	if err != nil {
+		logging.Debug("Could not update project mapping in config, error: %v", err)
 	}
 }

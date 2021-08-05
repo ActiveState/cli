@@ -2,6 +2,7 @@ package push
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -230,6 +231,12 @@ func (r *Push) Run(params PushParams) error {
 		if err := r.project.Source().SetBranch(branch.Label); err != nil {
 			return errs.Wrap(err, "Could not set branch")
 		}
+	}
+
+	// If this project was initially headless and we have sucessfully converted
+	// to a named project, we update the configuration project mapping
+	if intend&pushFromHeadless > 0 {
+		projectfile.UpdateHeadlessConfigMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))
 	}
 
 	if projectCreated {
