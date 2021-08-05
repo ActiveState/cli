@@ -47,12 +47,9 @@ func removeEnvPaths(cfg configurable) error {
 	if err := s.CleanUserEnv(cfg, sscommon.InstallID, isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to State Tool installation PATH")
 	}
-	// Default and deployed projects will stop working, so we return them from the PATH as well
+	// Default projects will stop working, so we return them from the PATH as well
 	if err := s.CleanUserEnv(cfg, sscommon.DefaultID, isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove default directory from PATH")
-	}
-	if err := s.CleanUserEnv(cfg, sscommon.DeployID, isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to deploy directory from PATH")
 	}
 
 	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
