@@ -1307,7 +1307,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
-func CleanProjectMapping(cfg ConfigGetter) {
+func CleanProjectMapping(cfg ConfigGetter, projectPaths ...string) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1324,7 +1324,14 @@ func CleanProjectMapping(cfg ConfigGetter) {
 					if !fileutils.DirExists(path) {
 						removals = append(removals, i)
 					}
+
+					for _, projectPath := range projectPaths {
+						if path == projectPath {
+							removals = append(removals, i)
+						}
+					}
 				}
+
 				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
 				if _, ok := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
 					delete(projects, namespace)
@@ -1333,41 +1340,6 @@ func CleanProjectMapping(cfg ConfigGetter) {
 				seen[strings.ToLower(namespace)] = struct{}{}
 			}
 
-			return projects, nil
-		},
-	)
-	if err != nil {
-		logging.Debug("Could not clean project mapping in config, error: %v", err)
-	}
-}
-
-// CleanProjectPathMapping removes the given path from any project that contains it.
-// If the result would be a project mapping with no paths then that project is removed
-// from the config
-func CleanProjectPathMapping(cfg ConfigGetter, projectPath string) {
-	err := cfg.SetWithLock(
-		LocalProjectsConfigKey,
-		func(v interface{}) (interface{}, error) {
-			projects, err := cast.ToStringMapStringSliceE(v)
-			if err != nil && v != nil {
-				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
-			}
-
-			projectPath = filepath.Clean(projectPath)
-			for name, paths := range projects {
-				for i, path := range paths {
-					if isEqual, err := fileutils.PathsEqual(projectPath, path); isEqual {
-						if err != nil {
-							logging.Debug("Failed to compare paths %s and %s", projectPath, path)
-						}
-						projects[name] = sliceutils.RemoveFromStrings(paths, i)
-					}
-
-					if len(paths) == 0 {
-						delete(projects, name)
-					}
-				}
-			}
 			return projects, nil
 		},
 	)

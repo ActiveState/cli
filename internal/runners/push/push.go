@@ -236,7 +236,7 @@ func (r *Push) Run(params PushParams) error {
 	// If this project was initially headless and we have sucessfully converted
 	// to a named project, we update the configuration project mapping
 	if intend&pushFromHeadless > 0 {
-		projectfile.CleanProjectPathMapping(r.config, filepath.Dir(r.project.Source().Path()))
+		projectfile.CleanProjectMapping(r.config, filepath.Dir(r.project.Source().Path()))
 		projectfile.StoreProjectMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))
 	}
 
