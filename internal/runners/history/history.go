@@ -65,7 +65,7 @@ func (h *History) Run(params *HistoryParams) error {
 
 		localCommitID := h.project.CommitUUID()
 
-		if !h.project.IsHeadless() && h.project.Name() != "" {
+		if !h.project.IsHeadless() {
 			remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
 			if err != nil {
 				return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
