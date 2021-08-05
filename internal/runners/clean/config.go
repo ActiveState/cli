@@ -17,6 +17,9 @@ type configurable interface {
 	GetInt(string) int
 	Set(string, interface{}) error
 	IsSet(string) bool
+	GetStringMap(string) map[string]interface{}
+	GetBool(string) bool
+	GetString(string) string
 }
 
 type Config struct {
@@ -62,7 +65,7 @@ func (c *Config) Run(params *ConfigParams) error {
 
 	dir := c.cfg.ConfigPath()
 	c.cfg.Close()
-	
+
 	logging.Debug("Removing config directory: %s", dir)
 	return removeConfig(dir, c.output)
 }
