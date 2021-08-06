@@ -46,6 +46,11 @@ func (u *Uninstall) runUninstall() error {
 
 	}
 
+	err = removeEnvPaths(u.cfg)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
+	}
+
 	if aggErr != nil {
 		return aggErr
 	}
