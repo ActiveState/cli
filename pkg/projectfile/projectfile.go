@@ -1286,6 +1286,17 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 
 			projectPath = filepath.Clean(projectPath)
 
+			for name, paths := range projects {
+				if name == namespace {
+					continue
+				}
+				for i, path := range paths {
+					if path == projectPath {
+						projects[name] = sliceutils.RemoveFromStrings(projects[name], i)
+					}
+				}
+			}
+
 			paths := projects[namespace]
 			if paths == nil {
 				paths = make([]string, 0)
@@ -1307,7 +1318,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
-func CleanProjectMapping(cfg ConfigGetter, projectPaths ...string) {
+func CleanProjectMapping(cfg ConfigGetter) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1323,12 +1334,6 @@ func CleanProjectMapping(cfg ConfigGetter, projectPaths ...string) {
 				for i, path := range paths {
 					if !fileutils.DirExists(path) {
 						removals = append(removals, i)
-					}
-
-					for _, projectPath := range projectPaths {
-						if path == projectPath {
-							removals = append(removals, i)
-						}
 					}
 				}
 
