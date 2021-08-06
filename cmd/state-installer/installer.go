@@ -183,7 +183,7 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	out.Print("Installation Complete")
 
 	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
-		out.Print("Please start a new shell in order to start using the ActiveState Desktop tools.")
+		out.Print("Please start a new shell in order to start using the State Tool.")
 	}
 
 	return nil

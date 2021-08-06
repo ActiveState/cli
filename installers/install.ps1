@@ -375,7 +375,7 @@ function install() {
 
     # Write install file
     $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
-    $Command = "`"$StatePath`" export config --filter=dir"
+    $Command = "`"$StatePath`" --output=simple export config --filter=dir"
     $ConfigDir = Invoke-Expression "& $Command" | Out-String
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
@@ -402,7 +402,8 @@ function install() {
     }
 
     warningIfAdmin
-    Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
+    Write-Host "State Tool successfully installed." -ForegroundColor Yellow
+    Write-Host "Reminder: Start a new shell in order to start using the State Tool." -ForegroundColor Yellow
 
     # Ensure that the new install dir is on the PATH variable for follow-up commands
     $Env:PATH = "$installDir;$Env:PATH"
