@@ -63,9 +63,9 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]`n"
+    $response = Read-Host -Prompt $msg" [Y/n]`y"
 
-    if ( -Not ($response.ToLower() -eq "y") )
+    if ($response.ToLower() -eq "n")
     {
         return $False
     }
@@ -342,7 +342,7 @@ function install() {
 
     Write-Host "`nInstalling ActiveState State Tool...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYN "Continue?") ) {
+        if( -Not (promptYN "Accept terms and proceed with install?") ) {
             return 2
         }
     }
