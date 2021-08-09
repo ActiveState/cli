@@ -11,9 +11,8 @@ type supportedLanguages struct {
 }
 
 func (p *supportedLanguages) Query() string {
-	return `query {
-		unstableSupportedLanguages($os_name: String!)
-		{
+	return `query ($os_name: String!) {
+		unstableSupportedLanguages(os_name: $os_name) {
 			name
 			default_version
 		}
