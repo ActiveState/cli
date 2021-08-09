@@ -1,15 +1,18 @@
 package request
 
-func SupportedLanguages() *supportedLanguages {
-	return &supportedLanguages{}
+func SupportedLanguages(osName string) *supportedLanguages {
+	return &supportedLanguages{map[string]interface{}{
+		"os_name": osName,
+	}}
 }
 
 type supportedLanguages struct {
+	vars map[string]interface{}
 }
 
 func (p *supportedLanguages) Query() string {
 	return `query {
-		unstableSupportedLanguages()
+		unstableSupportedLanguages($os_name: String!)
 		{
 			name
 			default_version
@@ -18,5 +21,5 @@ func (p *supportedLanguages) Query() string {
 }
 
 func (p *supportedLanguages) Vars() map[string]interface{} {
-	return nil
+	return p.vars
 }

@@ -234,7 +234,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	}
 }
 
-func hostPlatformToKernelName(os string) string {
+func HostPlatformToKernelName(os string) string {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return "Linux"

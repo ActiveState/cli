@@ -80,7 +80,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !ns.IsValid() {
-		supported, err := model.FetchSupportedLanguages()
+		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
 		}
