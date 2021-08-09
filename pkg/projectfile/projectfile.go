@@ -1287,6 +1287,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 			projectPath, err = fileutils.ResolveUniquePath(projectPath)
 			if err != nil {
 				logging.Errorf("Could not resolve uniqe project path, %v", err)
+				projectPath = filepath.Clean(projectPath)
 			}
 
 			for name, paths := range projects {
@@ -1298,6 +1299,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 					path, err = fileutils.ResolveUniquePath(path)
 					if err != nil {
 						logging.Errorf("Could not resolve unique path, :%v", err)
+						path = filepath.Clean(path)
 					}
 
 					if path == projectPath {
