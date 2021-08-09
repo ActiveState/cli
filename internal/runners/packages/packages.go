@@ -69,7 +69,6 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !ns.IsValid() {
-
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
 			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
@@ -192,17 +191,21 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	for _, i := range ingredients {
 		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
 
-		// If we only have one ingredient match we're done; return it.
-		// This is inside the loop just to make use of the language variable
-		if len(ingredients) == 1 {
-			version := supportedLanguageByName(supported, language).DefaultVersion
-			return *i.Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), version, nil
-		}
-
 		// Generate ingredient choices to present to the user
 		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
 		choices = append(choices, name)
 		values[name] = []string{*i.Ingredient.Name, language}
+	}
+
+	if len(choices) == 0 {
+		return "", ns, "", locale.WrapInputError(err, "err_pkgop_notfound", "No valid package matches your query.")
+	}
+
+	// If we only have one ingredient match we're done; return it.
+	if len(choices) == 1 {
+		language := values[choices[0]][1]
+		version := supportedLanguageByName(supported, language).DefaultVersion
+		return values[choices[0]][0], model.NewNamespacePkgOrBundle(language, nsType), version, nil
 	}
 
 	// Prompt the user with the ingredient choices
