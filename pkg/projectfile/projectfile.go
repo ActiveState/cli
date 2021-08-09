@@ -1284,15 +1284,28 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
 
-			projectPath = filepath.Clean(projectPath)
+			projectPath, err = fileutils.ResolveUniquePath(projectPath)
+			if err != nil {
+				logging.Errorf("Could not resolve uniqe project path, %v", err)
+			}
 
 			for name, paths := range projects {
 				if name == namespace {
 					continue
 				}
+
 				for i, path := range paths {
+					path, err = fileutils.ResolveUniquePath(path)
+					if err != nil {
+						logging.Errorf("Could not resolve unique path, :%v", err)
+					}
+
 					if path == projectPath {
 						projects[name] = sliceutils.RemoveFromStrings(projects[name], i)
+					}
+
+					if len(projects[name]) == 0 {
+						delete(projects, name)
 					}
 				}
 			}
