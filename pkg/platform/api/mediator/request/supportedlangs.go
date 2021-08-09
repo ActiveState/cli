@@ -10,6 +10,10 @@ type supportedLanguages struct {
 func (p *supportedLanguages) Query() string {
 	return `query {
 		unstableSupportedLanguages()
+		{
+			name
+			default_version
+		}
 	}`
 }
 

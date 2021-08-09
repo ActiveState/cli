@@ -16,11 +16,13 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -41,9 +43,20 @@ type configurable interface {
 
 const latestVersion = "latest"
 
+func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
+	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
+}
+
 func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
+	var parentCommitID strfmt.UUID
+	var hasParentCommit bool
 	var err error
+
+	if strings.ToLower(packageVersion) == latestVersion {
+		packageVersion = ""
+	}
+
 	pj := prime.Project()
 	if pj == nil {
 		pj, err = initializeProject()
@@ -62,38 +75,40 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		if err == nil {
 			ns = model.NewNamespacePkgOrBundle(language.Name, nsType)
 		}
+		parentCommitID = pj.CommitUUID()
+		hasParentCommit = parentCommitID != ""
 	}
 
 	if !ns.IsValid() {
-		packageName, ns, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType)
+		supported, err := model.FetchSupportedLanguages()
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
+		}
+
+		packageName, ns, err = resolvePkgAndLanguage(prime.Prompt(), packageName, nsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
-	}
+		languageFromNs := model.LanguageFromNamespace(ns.String())
 
-	if strings.ToLower(packageVersion) == latestVersion {
-		packageVersion = ""
-	}
+		if !hasParentCommit {
+			sl := supportedLanguageByName(supported, languageFromNs)
 
-	parentCommitID := pj.CommitUUID()
-	hasParentCommit := parentCommitID != ""
+			parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, sl.DefaultVersion)
+			if err != nil {
+				return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
+			}
+		}
+	}
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded && parentCommitID != "" {
+	if operation == model.OperationAdded && hasParentCommit {
 		req, err := model.GetRequirement(parentCommitID, ns.String(), packageName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
 			operation = model.OperationUpdated
-		}
-	}
-
-	if !hasParentCommit {
-		languageFromNs := model.LanguageFromNamespace(ns.String())
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, "")
-		if err != nil {
-			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
 	}
 
@@ -159,7 +174,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	return nil
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
+func resolvePkgAndLanguage(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
@@ -168,7 +183,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
-	ingredients, err = model.FilterSupportedIngredients(ingredients)
+	ingredients, err = model.FilterSupportedIngredients(supported, ingredients)
 	if err != nil {
 		return "", ns, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}

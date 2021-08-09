@@ -8,7 +8,7 @@ import (
 )
 
 // FetchSupportedLanguages returns the list of languages that the Platform supports ATM
-func FetchSupportedLanguages() ([]string, error) {
+func FetchSupportedLanguages() ([]model.SupportedLanguage, error) {
 	req := request.SupportedLanguages()
 	var resp model.SupportedLanguagesResponse
 	med := mediator.New(nil)
