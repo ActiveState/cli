@@ -47,6 +47,7 @@ var (
 type Configurable interface {
 	Set(string, interface{}) error
 	GetBool(string) bool
+	GetString(string) string
 	GetStringMap(string) map[string]interface{}
 }
 

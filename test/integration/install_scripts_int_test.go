@@ -132,21 +132,21 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
-	cp.Expect("State Tool installation complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Continue?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("Installation Complete")
+	cp.Expect("State Tool successfully installed.")
 }
 
 func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, version string) {

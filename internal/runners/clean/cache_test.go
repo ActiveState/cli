@@ -38,6 +38,18 @@ func (c *configMock) GetInt(_ string) int {
 	return 0
 }
 
+func (c *configMock) GetBool(_ string) bool {
+	return true
+}
+
+func (c *configMock) GetString(_ string) string {
+	return ""
+}
+
+func (c *configMock) GetStringMap(_ string) map[string]interface{} {
+	return nil
+}
+
 func (c *configMock) IsSet(string) bool {
 	return false
 }

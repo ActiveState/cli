@@ -42,7 +42,7 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 	isLocal := true // recent (and, therefore, local) commits are first
 
 	for _, c := range commits {
-		if lastRemoteID == nil || (isLocal && c.CommitID == *lastRemoteID) {
+		if isLocal && lastRemoteID != nil && c.CommitID == *lastRemoteID {
 			isLocal = false
 		}
 

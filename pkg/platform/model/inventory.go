@@ -222,7 +222,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				continue
 			}
 
-			if *rtPf.Kernel.Name != hostPlatformToKernelName(hostPlatform) {
+			if *rtPf.Kernel.Name != HostPlatformToKernelName(hostPlatform) {
 				continue
 			}
 
