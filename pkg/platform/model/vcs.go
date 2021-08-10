@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -198,21 +198,19 @@ func LanguageFromNamespace(ns string) string {
 }
 
 // FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
-func FilterSupportedIngredients(ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
+func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
 	var res []*IngredientAndVersion
 
-	supported, err := FetchSupportedLanguages()
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to retrieve the list of supported languages")
-	}
 	for _, i := range ingredients {
 		language := LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
 
-		if !funk.ContainsString(supported, language) {
-			logging.Debug("Skipping ingredient %s (%s) due to unsupported language", i.Ingredient.Name, language)
-			continue
+		for _, l := range supported {
+			if l.Name != language {
+				continue
+			}
+			res = append(res, i)
+			break
 		}
-		res = append(res, i)
 	}
 
 	return res, nil
