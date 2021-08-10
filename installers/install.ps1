@@ -63,7 +63,7 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [Y/n]`y"
+    $response = Read-Host -Prompt $msg" [Y/n]`n"
 
     if ($response.ToLower() -eq "n")
     {
