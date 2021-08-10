@@ -1291,10 +1291,6 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 			}
 
 			for name, paths := range projects {
-				if name == namespace {
-					continue
-				}
-
 				for i, path := range paths {
 					path, err = fileutils.ResolveUniquePath(path)
 					if err != nil {
