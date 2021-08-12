@@ -7,14 +7,14 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/joint"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type PlatformVersion struct {
-	joint.NameVersion
+	captain.NameVersion
 }
 
 func (pv *PlatformVersion) Set(arg string) error {

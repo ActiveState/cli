@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/joint"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,7 +26,7 @@ import (
 )
 
 type PackageVersion struct {
-	joint.NameVersion
+	captain.NameVersion
 }
 
 func (pv *PackageVersion) Set(arg string) error {
