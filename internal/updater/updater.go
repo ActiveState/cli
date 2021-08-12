@@ -28,14 +28,23 @@ import (
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
 
+const CfgTag = "update_tag"
+
 // Info holds the version and sha info
 type Info struct {
 	Version  string
 	Sha256v2 string
+	Tag      string
+}
+
+type Configurable interface {
+	GetString(string) string
+	Set(string, interface{}) error
 }
 
 // Updater holds all the information about our update
 type Updater struct {
+	cfg            Configurable
 	CurrentVersion string // Currently running version.
 	APIURL         string // Base URL for API requests (json files).
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
@@ -45,7 +54,7 @@ type Updater struct {
 	info           Info
 }
 
-func New(currentVersion string) *Updater {
+func New(cfg Configurable, currentVersion string) *Updater {
 	return &Updater{
 		CurrentVersion: currentVersion,
 		APIURL:         constants.APIUpdateURL,
@@ -135,6 +144,10 @@ func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 	cmd := exec.Command(os.Args[0], "_prepare")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if u.info.Tag != "" {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.info.Tag))
+	}
 
 	if err := cmd.Run(); err != nil {
 		logging.Error("_prepare failed after update: %v", err)
@@ -245,6 +258,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -258,19 +272,34 @@ func (u *Updater) fetchBranch() string {
 	return constants.BranchName
 }
 
+func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) string {
+	var v url.Values
+	v.Set("branch", branchName)
+	v.Set("platform", platform)
+	v.Set("arch", arch)
+	v.Set("source", "update")
+
+	if desiredVersion != "" {
+		v.Set("version", desiredVersion)
+	}
+
+	tag := u.cfg.GetString(CfgTag)
+	if tag != "" {
+		v.Set("tag", tag)
+	}
+
+	return u.APIURL + "?" + v.Encode()
+}
+
 // fetchInfo gets the `json` file containing update information
 func (u *Updater) fetchInfo(ctx context.Context) error {
 	if u.info.Version != "" {
 		// already called fetchInfo
 		return nil
 	}
-	branchName := u.fetchBranch()
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
-	if u.DesiredVersion != "" {
-		fullURL += u.DesiredVersion + "/"
-	}
-	fullURL += url.QueryEscape(plat) + ".json"
 
+	branchName := u.fetchBranch()
+	fullURL := u.updateUrl(u.DesiredVersion, branchName, runtime.GOOS, runtime.GOARCH)
 	logging.Debug("Fetching update URL: %s", fullURL)
 
 	r, err := u.fetch(ctx, fullURL)

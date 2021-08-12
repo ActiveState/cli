@@ -261,6 +261,7 @@ fetchArtifact () {
   $FETCH $TMPDIR/$STATEJSON $STATEURL$STATEJSON || exit 1
   VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
   SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  UPDATE_TAG_VALUE=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Tag":' | awk '{print $2}' | tr -d '",}'`
   rm $TMPDIR/$STATEJSON
 
   if [ -z "$VERSION" ]; then
@@ -418,7 +419,7 @@ STATEPATH=$INSTALLDIR/$STATEEXE
 CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $STATEPATH _prepare || exit $?
+ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG_VALUE ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $STATEPATH _prepare || exit $?
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project

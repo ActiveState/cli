@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -37,6 +38,7 @@ type Lock struct {
 	project *project.Project
 	out     output.Outputer
 	prompt  prompt.Prompter
+	cfg     updater.Configurable
 }
 
 func NewLock(prime primeable) *Lock {
@@ -44,6 +46,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Config(),
 	}
 }
 
@@ -69,7 +72,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	_, info, err := fetchUpdater(version, channel)
+	_, info, err := fetchUpdater(l.cfg, version, channel)
 	if err != nil || info == nil {
 		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
 	}
