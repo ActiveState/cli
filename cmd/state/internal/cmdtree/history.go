@@ -20,7 +20,6 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("history_title", "Viewing Project History"),
 		locale.T("history_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "namespace",

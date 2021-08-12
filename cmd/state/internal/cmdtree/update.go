@@ -17,7 +17,6 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("update_title", "Updating The State Tool"),
 		locale.Tl("update_description", "Updates the State Tool to the latest available version"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "set-channel",
@@ -49,7 +48,6 @@ func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("lock_title", "Lock the State Tool version"),
 		locale.Tl("lock_description", "Lock the State Tool at the current version, this disables automatic updates."),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "set-channel",

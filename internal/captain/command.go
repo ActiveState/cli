@@ -78,10 +78,9 @@ type Command struct {
 	skipChecks bool
 
 	out output.Outputer
-	cfg analytics.Configurable
 }
 
-func NewCommand(name, title, description string, out output.Outputer, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -100,7 +99,6 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 		flags:     flags,
 		commands:  make([]*Command, 0),
 		out:       out,
-		cfg:       cfg,
 	}
 
 	short := description
@@ -141,7 +139,7 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -157,7 +155,6 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
-		cfg:       cfg,
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -185,10 +182,9 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, cfg analytics.Configurable, execute ExecuteFunc) *Command {
+func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 	cmd := &Command{
 		execute: execute,
-		cfg:     cfg,
 	}
 
 	short := description
@@ -482,7 +478,7 @@ func (c *Command) subCommandNames() []string {
 	return commands
 }
 
-func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+func (c *Command) runner(cobraCmd *cobra.Command, args []string) error { // TODO: this
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 	analytics.SetDeferred(c.deferAnalytics)
 
@@ -662,7 +658,7 @@ func pflagCmdErrMsgCmd(errMsg string) string {
 	return flagText
 }
 
-func (cmd *Command) Usage() error {
+func (cmd *Command) Usage() error { // TODO: this
 	tpl := template.New("usage")
 	tpl.Funcs(template.FuncMap{
 		"rpad": func(s string, padding int) string {
