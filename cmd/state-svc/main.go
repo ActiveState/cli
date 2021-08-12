@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -72,10 +74,7 @@ func main() {
 }
 
 func run() (rerr error) {
-	var cmd command = ""
-	if len(os.Args) > 1 {
-		cmd = command(os.Args[1])
-	}
+	args := os.Args
 
 	cfg, err := config.New()
 	if err != nil {
@@ -87,25 +86,83 @@ func run() (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	switch cmd {
-	case CmdStart:
-		logging.Debug("Running CmdStart")
-		return runStart(cfg)
-	case CmdStop:
-		logging.Debug("Running CmdStop")
-		return runStop(cfg)
-	case CmdStatus:
-		logging.Debug("Running CmdStatus")
-		return runStatus(cfg)
-	case CmdForeground:
-		logging.Debug("Running CmdForeground")
-		return runForeground(cfg)
-	}
+	out, err := output.New("", &output.Config{
+		OutWriter: os.Stdout,
+		ErrWriter: os.Stderr,
+	})
 
-	return errs.New("Expected one of following commands: %v", commands)
+	cmd := captain.NewCommand(
+		"state-svc",
+		"",
+		"",
+		out,
+		nil,
+		nil,
+		func(ccmd *captain.Command, args []string) error {
+			fmt.Println("top level")
+			return nil
+		},
+	)
+
+	cmd.AddChildren(
+		captain.NewCommand(
+			"start",
+			"Starting the ActiveState Service",
+			"Start the ActiveState Service",
+			out,
+			nil,
+			nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStart")
+				return runStart(cfg)
+			},
+		),
+		captain.NewCommand(
+			"stop",
+			"Stopping the ActiveState Service",
+			"Start the ActiveState Service",
+			out,
+			nil,
+			nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStop")
+				return runStop(cfg)
+			},
+		),
+		captain.NewCommand(
+			"status",
+			"Starting the ActiveState Service",
+			"Start the ActiveState Service",
+			out,
+			nil,
+			nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStatus")
+				return runStatus(cfg)
+			},
+		),
+		captain.NewCommand(
+			"foreground",
+			"Starting the ActiveState Service",
+			"Start the ActiveState Service",
+			out,
+			nil,
+			nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdForeground")
+				return runForeground(cfg)
+			},
+		),
+	)
+
+	return cmd.Execute(args[1:])
 }
 
 func runForeground(cfg *config.Instance) error {
+	if true {
+		fmt.Println("foreground")
+		return nil
+	}
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
@@ -148,6 +205,10 @@ func runForeground(cfg *config.Instance) error {
 }
 
 func runStart(cfg *config.Instance) error {
+	if true {
+		fmt.Println("start")
+		return nil
+	}
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], CmdForeground); err != nil {
 		if errors.Is(err, ErrSvcAlreadyRunning) {
@@ -160,6 +221,10 @@ func runStart(cfg *config.Instance) error {
 }
 
 func runStop(cfg *config.Instance) error {
+	if true {
+		fmt.Println("stop")
+		return nil
+	}
 	s := NewServiceManager(cfg)
 	if err := s.Stop(); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
@@ -169,6 +234,10 @@ func runStop(cfg *config.Instance) error {
 }
 
 func runStatus(cfg *config.Instance) error {
+	if true {
+		fmt.Println("status")
+		return nil
+	}
 	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
