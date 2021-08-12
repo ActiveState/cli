@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
@@ -170,7 +169,7 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))
 
 	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), p.project.CommitID())
-	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, machineid.UniqID(), strategies.OverwriteChanges)
+	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}

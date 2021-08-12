@@ -2,6 +2,7 @@ package push
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -232,6 +233,8 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	projectfile.StoreProjectMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))
+
 	if projectCreated {
 		r.out.Notice(locale.Tr("push_project_created", r.project.URL()))
 	} else {
@@ -247,6 +250,7 @@ func (r *Push) verifyInput() error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}
+		r.out.Notice("") // Add line break to ensure output doesn't stick together
 	}
 
 	// Check if as.yaml exists

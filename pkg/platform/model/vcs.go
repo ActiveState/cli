@@ -7,7 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -194,6 +197,25 @@ func LanguageFromNamespace(ns string) string {
 	return values[1]
 }
 
+// FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
+func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
+	var res []*IngredientAndVersion
+
+	for _, i := range ingredients {
+		language := LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+
+		for _, l := range supported {
+			if l.Name != language {
+				continue
+			}
+			res = append(res, i)
+			break
+		}
+	}
+
+	return res, nil
+}
+
 // BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
 func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
@@ -242,7 +264,8 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 			return commits, err
 		}
 		commits = append(commits, payload.Commits...)
-		cont = payload.TotalCommits > (offset + limit)
+		offset += limit
+		cont = payload.TotalCommits > offset
 	}
 
 	return commits, nil
@@ -353,14 +376,15 @@ func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
 type Changeset = []*mono_models.CommitChangeEditable
 
 // AddChangeset creates a new commit with multiple changes as provided. This is lower level than CommitChangeset.
-func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID string, changeset Changeset) (*mono_models.Commit, error) {
+func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 
 	commit := &mono_models.CommitEditable{
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
-		AnonID:         anonymousID,
+		AnonID:         machineid.UniqID(),
+		UniqueDeviceID: uniqid.Text(),
 	}
 
 	params.SetCommit(commit)
@@ -374,7 +398,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID 
 }
 
 // AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string, anonymousID string) (*mono_models.Commit, error) {
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, error) {
 	changeset := []*mono_models.CommitChangeEditable{
 		{
 			Operation:         string(operation),
@@ -384,7 +408,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 		},
 	}
 
-	return AddChangeset(parentCommitID, commitMessage, anonymousID, changeset)
+	return AddChangeset(parentCommitID, commitMessage, changeset)
 }
 
 func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
@@ -455,7 +479,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string) (strfmt.UUID, error) {
 	var message string
 	switch operation {
 	case OperationAdded:
@@ -469,7 +493,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName 
 	commit, err := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
-		packageName, packageVersion, anonymousID,
+		packageName, packageVersion,
 	)
 	if err != nil {
 		return "", err
@@ -502,7 +526,7 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 }
 
 // CommitChangeset commits multiple changes in one commit
-func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID string, changeset Changeset) (strfmt.UUID, error) {
+func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, changeset Changeset) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
 	languages, err := FetchLanguagesForCommit(parentCommitID)
 	if err != nil {
@@ -513,7 +537,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 		return commitID, locale.NewError("err_project_no_languages")
 	}
 
-	commit, err := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
+	commit, err := AddChangeset(parentCommitID, commitMsg, changeset)
 	if err != nil {
 		return commitID, err
 	}
@@ -648,7 +672,7 @@ func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "", "")
+	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "")
 	if err != nil {
 		return err
 	}
@@ -690,7 +714,7 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version, "")
+	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
 	if err != nil {
 		return err
 	}

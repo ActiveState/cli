@@ -20,22 +20,25 @@ import (
 // swagger:model CommitEditable
 type CommitEditable struct {
 
-	// an anonymous id used to help track the creator of headless commits
+	// An anonymous id used to help track the creator of headless commits.
 	AnonID string `json:"anonID,omitempty"`
 
 	// When resolving depdencies, updates made after this time will be ignored.
 	// Format: date-time
 	AtTime *strfmt.DateTime `json:"atTime,omitempty"`
 
-	// what changed in this commit
+	// What changed in this commit.
 	Changeset []*CommitChangeEditable `json:"changeset"`
 
-	// A message that describes what was changed in this commit
+	// A message that describes what was changed in this commit.
 	Message string `json:"message,omitempty"`
 
 	// The parent commit ID that this commit originates from.
 	// Format: uuid
 	ParentCommitID strfmt.UUID `json:"parentCommitID,omitempty"`
+
+	// An id populated by the state tool.
+	UniqueDeviceID string `json:"uniqueDeviceID,omitempty"`
 }
 
 // Validate validates this commit editable

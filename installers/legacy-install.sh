@@ -353,10 +353,14 @@ fi
 if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
-userprompt "Continue? [y/N] "
+userprompt "Accept terms and proceed with install? [Y/n] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
-  [Yy])
+  [Nn])
+    error "Aborting installation"
+    exit 0
+    ;;
+  [Yy]|*)
     # Install.
     if [ ! -e "$INSTALLDIR" ]; then
       mkdir -p "$INSTALLDIR" || continue
@@ -364,10 +368,6 @@ case "$RESPONSE" in
     fetchArtifact
     info "Installing to $INSTALLDIR..."
     mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
-    ;;
-  [Nn]|*)
-    error "Aborting installation"
-    exit 0
     ;;
 esac
 

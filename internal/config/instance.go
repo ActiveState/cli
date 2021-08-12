@@ -231,7 +231,7 @@ func (i *Instance) importLegacyConfig() (returnErr error) {
 		}
 	}()
 
-	_, err := os.Stat(i.appDataDir)
+	_, err := os.Stat(fpath)
 	if err != nil && os.IsNotExist(err) {
 		return nil
 	}

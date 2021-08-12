@@ -180,6 +180,8 @@ type ClientService interface {
 
 	GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientOK, error)
 
+	GetNamespaceIngredientVersion(params *GetNamespaceIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionOK, error)
+
 	GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionsOK, error)
 
 	GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientsOK, error)
@@ -3095,6 +3097,44 @@ func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, au
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetNamespaceIngredientDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetNamespaceIngredientVersion Retrieve a single ingredient version by namespace, name, and version
+*/
+func (a *Client) GetNamespaceIngredientVersion(params *GetNamespaceIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetNamespaceIngredientVersionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getNamespaceIngredientVersion",
+		Method:             "GET",
+		PathPattern:        "/v1/namespaces/ingredient/version",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetNamespaceIngredientVersionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetNamespaceIngredientVersionOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetNamespaceIngredientVersionDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

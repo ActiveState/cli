@@ -77,14 +77,11 @@ func run() error {
 		return runExport()
 
 	case len(os.Args) < 1 || os.Args[1] != "_prepare":
-		return runPrepare()
+		fmt.Printf("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now. If this keeps happening please re-install the State Tool as described here: %s\n", constants.StateToolMarketingPage)
+		return runDefault()
 
 	default:
-		if err := runDefault(); err != nil {
-			return err
-		}
-
-		return nil
+		return runDefault()
 	}
 }
 
@@ -94,11 +91,6 @@ func runExport() error {
 		return errs.Wrap(err, "Failed to read app data path.")
 	}
 	fmt.Println(path)
-	return nil
-}
-
-func runPrepare() error {
-	fmt.Println("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now...")
 	return nil
 }
 

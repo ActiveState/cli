@@ -319,10 +319,14 @@ fetchArtifact () {
 if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$CURRENT_INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
-userprompt "Continue? [y/N] "
+userprompt "Accept terms and proceed with install? [Y/n] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
-  [Yy])
+  [Nn])
+    error "Aborting installation"
+    exit 0
+    ;;
+  [Yy]|*)
     fetchArtifact
     OUTPUT_FILE=$TMPDIR/install_output.txt
     if [ ! -z "$TARGET" ]; then
@@ -334,25 +338,15 @@ case "$RESPONSE" in
     rm -f $OUTPUT_FILE
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     ;;
-  [Nn]|*)
-    error "Aborting installation"
-    exit 0
-    ;;
 esac
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
+CONFIGDIR=$($STATEPATH "--output=simple" "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-# Check if the installation is in $PATH, if so we also check if the activate
-# flag was passed and attempt to activate the project
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State Tool installation complete."
-fi
-
-
-info "State Tool installation complete."
+info "State Tool successfully installed."
+info "Reminder: Start a new shell in order to start using the State Tool."
 
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
