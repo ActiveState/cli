@@ -1,4 +1,4 @@
-﻿# Copyright 2019 ActiveState Software Inc. All rights reserved.
+﻿# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
 <#
 .DESCRIPTION
 Install the ActiveState state.exe tool.  Must be run as admin OR install State Tool to
@@ -84,9 +84,9 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]`n"
+    $response = Read-Host -Prompt $msg" [Y/n]`n"
 
-    if ( -Not ($response.ToLower() -eq "y") )
+    if ($response.ToLower() -eq "n")
     {
         return $False
     }
@@ -368,7 +368,7 @@ function install() {
     # Install binary
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYN "Continue?") ) {
+        if( -Not (promptYN "Accept terms and proceed with install?") ) {
             return 2
         }
     }
