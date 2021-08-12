@@ -1,4 +1,4 @@
-package captain
+package joint
 
 import (
 	"fmt"

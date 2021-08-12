@@ -3,9 +3,9 @@ package update
 import (
 	"context"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/joint"
 	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,10 +16,10 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 
 type StateToolChannelVersion struct {
-	captain.NameVersion
+	joint.NameVersion
 }
 
 func (stv *StateToolChannelVersion) Set(arg string) error {
