@@ -99,7 +99,10 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 // OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
-// APIUpdateURL is the URL for our update server
+// APIUpdateInfoURL is the URL for our update info server
+const APIUpdateInfoURL = "https://<to-be-determined>"
+
+// APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts

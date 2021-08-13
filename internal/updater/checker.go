@@ -24,7 +24,8 @@ type Configurable interface {
 }
 
 type Checker struct {
-	apiURL         string
+	apiInfoURL     string
+	fileURL        string
 	currentChannel string
 	currentVersion string
 	httpreq        httpGetter
@@ -33,16 +34,21 @@ type Checker struct {
 var DefaultChecker = newDefaultChecker()
 
 func newDefaultChecker() *Checker {
+	infoURL := constants.APIUpdateInfoURL
+	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
+		infoURL = url
+	}
 	updateURL := constants.APIUpdateURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		updateURL = url
 	}
-	return NewChecker(updateURL, constants.BranchName, constants.Version, httpreq.New())
+	return NewChecker(infoURL, updateURL, constants.BranchName, constants.Version, httpreq.New())
 }
 
-func NewChecker(apiURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
+func NewChecker(infoURL, fileURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
 	return &Checker{
-		apiURL,
+		infoURL,
+		fileURL,
 		currentChannel,
 		currentVersion,
 		httpget,
@@ -66,7 +72,7 @@ func (u *Checker) CheckFor(cfg Configurable, desiredChannel, desiredVersion stri
 	return info, nil
 }
 
-func (u *Checker) infoUrl(cfg Configurable, desiredVersion, branchName, platform string) string {
+func (u *Checker) infoURL(cfg Configurable, desiredVersion, branchName, platform string) string {
 	v := make(url.Values)
 	v.Set("channel", branchName)
 	v.Set("platform", platform)
@@ -81,7 +87,7 @@ func (u *Checker) infoUrl(cfg Configurable, desiredVersion, branchName, platform
 		v.Set("tag", tag)
 	}
 
-	return u.apiURL + "?" + v.Encode()
+	return u.apiInfoURL + "?" + v.Encode()
 }
 
 func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
@@ -93,10 +99,10 @@ func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion
 		}
 	}
 
-	infoUrl := u.infoUrl(cfg, desiredVersion, desiredChannel, runtime.GOOS)
-	res, err := u.httpreq.Get(infoUrl)
+	infoURL := u.infoURL(cfg, desiredVersion, desiredChannel, runtime.GOOS)
+	res, err := u.httpreq.Get(infoURL)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoUrl)
+		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 	}
 
 	info := &AvailableUpdate{}
@@ -104,7 +110,7 @@ func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	info.url = u.apiURL + "/" + info.Path
+	info.url = u.fileURL + "/" + info.Path
 
 	return info, nil
 }

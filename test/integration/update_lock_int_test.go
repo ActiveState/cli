@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -12,6 +13,10 @@ import (
 )
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
 	suite.OnlyRunForTags(tagsuite.Update)
 	suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 	pjfile := projectfile.Project{
@@ -24,7 +29,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	ts.UseDistinctStateExes()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
+	pjfile.Save(cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock"),
@@ -38,6 +43,9 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	defer cfg.Close()
 	targetBranch := "release"
 	if constants.BranchName == "release" {
 		targetBranch = "master"
@@ -82,7 +90,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 
 			yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 			pjfile.SetPath(yamlPath)
-			pjfile.Save(suite.cfg)
+			pjfile.Save(cfg)
 
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs("update", "lock", "--set-channel", tt.lock),
@@ -110,6 +118,10 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
 	tests := []struct {
 		Name    string
 		Confirm bool
@@ -138,7 +150,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			ts.UseDistinctStateExes()
 
 			pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-			pjfile.Save(suite.cfg)
+			pjfile.Save(cfg)
 
 			args := []string{"update", "lock"}
 			if tt.Forced {

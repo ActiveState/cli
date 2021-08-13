@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -24,13 +25,12 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type UpdateIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg    projectfile.ConfigGetter
-	server *http.Server
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -51,27 +51,60 @@ func init() {
 
 var testPort = "24217"
 
-func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) {
+func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(string, string) string) func() {
 	var err error
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
+
 	mux := http.NewServeMux()
+	mux.HandleFunc("/info", func(rw http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		platform := q.Get("platform")
+		arch := "amd64"
+		source := q.Get("source")
+		version := q.Get("target-version")
+		channel := q.Get("channel")
+		tag := q.Get("tag")
+
+		fp := filepath.Join(testUpdateDir, channel)
+		if version != "" {
+			fp = filepath.Join(fp, version)
+		}
+		fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
+
+		b, err := os.ReadFile(fp)
+		suite.Require().NoError(err, "failed finding version info file")
+
+		var up *updater.AvailableUpdate
+		err = json.Unmarshal(b, &up)
+		suite.Require().NoError(err)
+
+		if tagFunc != nil {
+			up.Tag = tagFunc(source, tag)
+		}
+
+		b, err = json.Marshal(up)
+		suite.Require().NoError(err, "failed marshaling the response")
+
+		fmt.Fprintf(rw, "%s", b)
+	})
 	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
-	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
+	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
+	server := &http.Server{Addr: "localhost:" + testPort, Handler: mux, ErrorLog: logger}
 	go func() {
-		_ = suite.server.ListenAndServe()
+		err := server.ListenAndServe()
+		if err == http.ErrServerClosed {
+			return
+		}
+		suite.Require().NoError(err)
 	}()
 
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
-}
-
-func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
-	err := suite.server.Shutdown(context.Background())
-	suite.Require().NoError(err)
-	suite.Require().NoError(suite.cfg.Close())
+	return func() {
+		err := server.Shutdown(context.Background())
+		suite.Require().NoError(err)
+	}
 }
 
 // env prepares environment variables for the test
@@ -87,7 +120,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 	}
 
 	if testUpdate {
-		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort))
+		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort), fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", testPort))
 	} else {
 		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}
@@ -152,7 +185,9 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	cancel := suite.setupMockServer(nil)
+	defer cancel()
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// use unique exe
@@ -210,6 +245,13 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
+	cancel := suite.setupMockServer(nil)
+	defer cancel()
+
 	tests := []struct {
 		Name                string
 		TestUpdate          bool
@@ -244,7 +286,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			ts := e2e.New(suite.T(), true)
 			defer ts.Close()
 
-			suite.addProjectFileWithWaitingScript(ts.Dirs.Work)
+			suite.addProjectFileWithWaitingScript(cfg, ts.Dirs.Work)
 
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
@@ -309,6 +351,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	cancel := suite.setupMockServer(nil)
+	defer cancel()
+
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -319,7 +366,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		{"release-channel", false, targetBranch, ""},
 		{"specific-update", false, targetBranch, specificVersion},
 	}
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
@@ -389,6 +435,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}
+
+	cancel := suite.setupMockServer(nil)
+	defer cancel()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -427,7 +477,7 @@ func lockedProjectURL() string {
 	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 }
 
-func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(workDir string) {
+func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(cfg *config.Instance, workDir string) {
 	pjfile := projectfile.Project{
 		Project: fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL),
 		Scripts: []projectfile.Script{
@@ -436,6 +486,6 @@ func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(workDir
 		},
 	}
 	pjfile.SetPath(filepath.Join(workDir, constants.ConfigFileName))
-	err := pjfile.Save(suite.cfg)
+	err := pjfile.Save(cfg)
 	suite.Require().NoError(err)
 }
