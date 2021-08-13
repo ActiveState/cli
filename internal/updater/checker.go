@@ -66,15 +66,14 @@ func (u *Checker) CheckFor(cfg Configurable, desiredChannel, desiredVersion stri
 	return info, nil
 }
 
-func (u *Checker) infoUrl(cfg Configurable, desiredVersion, branchName, platform, arch string) string {
-	var v url.Values
-	v.Set("branch", branchName)
+func (u *Checker) infoUrl(cfg Configurable, desiredVersion, branchName, platform string) string {
+	v := make(url.Values)
+	v.Set("channel", branchName)
 	v.Set("platform", platform)
-	v.Set("arch", arch)
 	v.Set("source", "update")
 
 	if desiredVersion != "" {
-		v.Set("version", desiredVersion)
+		v.Set("target-version", desiredVersion)
 	}
 
 	tag := cfg.GetString(CfgUpdateTag)
@@ -94,7 +93,7 @@ func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion
 		}
 	}
 
-	infoUrl := u.infoUrl(cfg, desiredVersion, desiredChannel, runtime.GOOS, runtime.GOARCH)
+	infoUrl := u.infoUrl(cfg, desiredVersion, desiredChannel, runtime.GOOS)
 	res, err := u.httpreq.Get(infoUrl)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoUrl)
