@@ -95,16 +95,16 @@ func runExport() error {
 }
 
 func runDefault() (rerr error) {
-	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
-	if err != nil {
-		return errs.Wrap(err, "Failed to check for latest update.")
-	}
-
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
+
+	up, err := updater.DefaultChecker.GetUpdateInfo(cfg, "", "")
+	if err != nil {
+		return errs.Wrap(err, "Failed to check for latest update.")
+	}
 
 	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
 	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
@@ -112,6 +112,11 @@ func runDefault() (rerr error) {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
 		analytics.Configure(cfg)
+	}
+
+	updateTag := os.Getenv(constants.UpdateTagEnvVarName)
+	if err := cfg.Set(updater.CfgUpdateTag, updateTag); err != nil {
+		logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
 	}
 
 	machineid.Configure(cfg)

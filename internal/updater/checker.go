@@ -2,7 +2,7 @@ package updater
 
 import (
 	"encoding/json"
-	"fmt"
+	"net/url"
 	"os"
 	"runtime"
 
@@ -17,6 +17,10 @@ import (
 
 type httpGetter interface {
 	Get(string) ([]byte, error)
+}
+
+type Configurable interface {
+	GetString(string) string
 }
 
 type Checker struct {
@@ -45,12 +49,12 @@ func NewChecker(apiURL, currentChannel, currentVersion string, httpget httpGette
 	}
 }
 
-func (u *Checker) Check() (*AvailableUpdate, error) {
-	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
+func (u *Checker) Check(cfg Configurable) (*AvailableUpdate, error) {
+	return u.CheckFor(cfg, os.Getenv(constants.UpdateBranchEnvVarName), "")
 }
 
-func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
+func (u *Checker) CheckFor(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
+	info, err := u.GetUpdateInfo(cfg, desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
@@ -62,8 +66,26 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 	return info, nil
 }
 
-func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	platform := runtime.GOOS + "-" + runtime.GOARCH
+func (u *Checker) infoUrl(cfg Configurable, desiredVersion, branchName, platform, arch string) string {
+	var v url.Values
+	v.Set("branch", branchName)
+	v.Set("platform", platform)
+	v.Set("arch", arch)
+	v.Set("source", "update")
+
+	if desiredVersion != "" {
+		v.Set("version", desiredVersion)
+	}
+
+	tag := cfg.GetString(CfgUpdateTag)
+	if tag != "" {
+		v.Set("tag", tag)
+	}
+
+	return u.apiURL + "?" + v.Encode()
+}
+
+func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	if desiredChannel == "" {
 		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
 			desiredChannel = overrideBranch
@@ -71,14 +93,11 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			desiredChannel = u.currentChannel
 		}
 	}
-	versionPath := ""
-	if desiredVersion != "" {
-		versionPath = "/" + desiredVersion
-	}
-	url := fmt.Sprintf("%s/%s%s/%s/info.json", u.apiURL, desiredChannel, versionPath, platform)
-	res, err := u.httpreq.Get(url)
+
+	infoUrl := u.infoUrl(cfg, desiredVersion, desiredChannel, runtime.GOOS, runtime.GOARCH)
+	res, err := u.httpreq.Get(infoUrl)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch update info from %s", url)
+		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoUrl)
 	}
 
 	info := &AvailableUpdate{}
@@ -93,12 +112,12 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func (u *Checker) PrintUpdateMessage(pjPath string, out output.Outputer) {
+func (u *Checker) PrintUpdateMessage(cfg Configurable, pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
-	info, err := u.Check()
+	info, err := u.Check(cfg)
 	if err != nil {
 		logging.Error("Could not check for updates: %v", err)
 		return

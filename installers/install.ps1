@@ -40,6 +40,7 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
 $script:SESSION_TOKEN_VALUE = ""
+$script:UPDATE_TAG = ""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
   $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
@@ -209,6 +210,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Write-Host "Fetching the latest version: $version...`n"
     }
 
+    $script:UPDATE_TAG = $infoJson.Tag
     $checksum = $infoJson.Sha256
     $relUrl = $infoJson.Path
     $zipUrl = "$STATEURL/$relurl"
@@ -355,6 +357,7 @@ function install() {
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
     $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
     if ($script:TARGET) {
         & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
     } else {
@@ -362,6 +365,9 @@ function install() {
     }
     if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
         Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    }
+    if (Test-Path env:ACTIVESTATE_UPDATE_TAG) {
+        Remove-Item Env:\ACTIVESTATE_UPDATE_TAG
     }
 
     $outputString = $output | Out-String

@@ -276,6 +276,7 @@ fetchArtifact () {
     # Determine the latest version to fetch.
     $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON || exit 1
     VERSION=`cat $TMPDIR/info.json | grep -m 1 '"version":' | awk '{print $2}' | tr -d '",'`
+    UPDATE_TAG=`cat $TMPDIR/info.json | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
 
     if [ -z "$VERSION" ]; then
       error "Unable to retrieve the latest version number"
@@ -326,9 +327,9 @@ case "$RESPONSE" in
     fetchArtifact
     OUTPUT_FILE=$TMPDIR/install_output.txt
     if [ ! -z "$TARGET" ]; then
-      ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
+      ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
     else
-      ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
+      ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
     fi
     INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
     rm -f $OUTPUT_FILE

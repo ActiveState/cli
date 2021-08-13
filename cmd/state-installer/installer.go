@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
@@ -61,7 +62,7 @@ func main() {
 	if len(os.Args) > 1 {
 		installPath = os.Args[1]
 	}
-	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
+	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), os.Getenv(constants.UpdateTagEnvVarName)); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
@@ -72,7 +73,7 @@ func main() {
 	}
 }
 
-func run(out output.Outputer, installPath, sessionToken string) (rerr error) {
+func run(out output.Outputer, installPath, sessionToken, updateTag string) (rerr error) {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
 	cfg, err := config.New()
@@ -89,6 +90,10 @@ func run(out output.Outputer, installPath, sessionToken string) (rerr error) {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
 		analytics.Configure(cfg)
+	}
+
+	if err := cfg.Set(updater.CfgUpdateTag, updateTag); err != nil {
+		logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
 	}
 
 	if installPath != "" {

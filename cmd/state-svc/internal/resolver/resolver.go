@@ -64,7 +64,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	var availableUpdate *graph.AvailableUpdate
 	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
 
-	update, err := updater.DefaultChecker.Check()
+	update, err := updater.DefaultChecker.Check(r.cfg)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
 	}
@@ -93,7 +93,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 	if version != nil {
 		ver = *version
 	}
-	up, err := updater.DefaultChecker.CheckFor(ch, ver)
+	up, err := updater.DefaultChecker.CheckFor(r.cfg, ch, ver)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
 	}

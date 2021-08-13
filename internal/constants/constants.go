@@ -84,6 +84,9 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
 
+// UpdateTagEnvVarName
+const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
+
 // NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
 

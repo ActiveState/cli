@@ -43,6 +43,7 @@ type Lock struct {
 	project *project.Project
 	out     output.Outputer
 	prompt  prompt.Prompter
+	cfg     updater.Configurable
 }
 
 func NewLock(prime primeable) *Lock {
@@ -50,6 +51,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Config(),
 	}
 }
 
@@ -75,7 +77,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	exactVersion, err := fetchExactVersion(version, channel)
+	exactVersion, err := fetchExactVersion(l.cfg, version, channel)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
@@ -130,11 +132,11 @@ func fetchExactVersionLegacy(version, channel string) (string, error) {
 	return info.Version, nil
 }
 
-func fetchExactVersion(version, channel string) (string, error) {
+func fetchExactVersion(cfg updater.Configurable, version, channel string) (string, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	info, err := updater.DefaultChecker.CheckFor(channel, version)
+	info, err := updater.DefaultChecker.CheckFor(cfg, channel, version)
 	if err != nil {
 		res, legacyErr := fetchExactVersionLegacy(version, channel)
 		if legacyErr != nil {
