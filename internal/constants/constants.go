@@ -48,6 +48,9 @@ const InternalConfigFileNameLegacy = "config.yaml"
 // InternalConfigFileName is the filename used for our sqlite based settings db
 const InternalConfigFileName = "config.db"
 
+// InternalTrackerFileName is the filename used for our sqlite based tracker db
+const InternalTrackerFileName = "tracker.db"
+
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
 
