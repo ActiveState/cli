@@ -2,8 +2,6 @@ package updater
 
 import (
 	"encoding/json"
-	"fmt"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -21,21 +19,22 @@ func (m *httpGetMock) Get(url string) ([]byte, error) {
 	return m.MockedResponse, nil
 }
 
-func mockUpdate(channel, version string) *AvailableUpdate {
-	return NewAvailableUpdate(version, channel, "platform", "path/to/zipfile.zip", "123456")
+func mockUpdate(channel, version, tag string) *AvailableUpdate {
+	return NewAvailableUpdate(version, channel, "platform", "path/to/zipfile.zip", "123456", tag)
 }
 
-func newMock(t *testing.T, channel, version string) *httpGetMock {
-	up := mockUpdate(channel, version)
+func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
+	up := mockUpdate(channel, version, tag)
 
 	b, err := json.Marshal(up)
 	require.NoError(t, err)
 	return &httpGetMock{MockedResponse: b}
 }
 
-func expectedUrl(infix string) string {
-	platform := runtime.GOOS + "-" + runtime.GOARCH
-	return fmt.Sprintf("https://state-tool.s3.amazonaws.com/update/state/%s/%s/info.json", infix, platform)
+type configMock struct{}
+
+func (cm *configMock) GetString(string) string {
+	return ""
 }
 
 func TestCheckerCheckFor(t *testing.T) {
@@ -43,59 +42,53 @@ func TestCheckerCheckFor(t *testing.T) {
 		Name           string
 		MockChannel    string
 		MockVersion    string
+		MockTag        string
 		CheckChannel   string
 		CheckVersion   string
 		ExpectedResult *AvailableUpdate
-		ExpectedUrl    string
 	}{
 		{
 			Name:        "same-version",
 			MockChannel: "master", MockVersion: "1.2.3",
 			CheckChannel: "", CheckVersion: "",
 			ExpectedResult: nil,
-			ExpectedUrl:    expectedUrl("master"),
 		},
 		{
 			Name:        "updated-version",
 			MockChannel: "master", MockVersion: "2.3.4",
 			CheckChannel: "", CheckVersion: "",
-			ExpectedResult: mockUpdate("master", "2.3.4"),
-			ExpectedUrl:    expectedUrl("master"),
+			ExpectedResult: mockUpdate("master", "2.3.4", ""),
 		},
 		{
 			Name:        "check-different-channel",
-			MockChannel: "release", MockVersion: "1.2.3",
+			MockChannel: "release", MockVersion: "1.2.3", MockTag: "experiment",
 			CheckChannel: "release", CheckVersion: "",
-			ExpectedResult: mockUpdate("release", "1.2.3"),
-			ExpectedUrl:    expectedUrl("release"),
+			ExpectedResult: mockUpdate("release", "1.2.3", "experiment"),
 		},
 		{
 			Name:        "specific-version",
 			MockChannel: "master", MockVersion: "0.1.2",
 			CheckChannel: "master", CheckVersion: "0.1.2",
-			ExpectedResult: mockUpdate("master", "0.1.2"),
-			ExpectedUrl:    expectedUrl("master/0.1.2"),
+			ExpectedResult: mockUpdate("master", "0.1.2", ""),
 		},
 		{
 			Name:        "check-same-version",
 			MockChannel: "master", MockVersion: "1.2.3",
 			CheckChannel: "master", CheckVersion: "1.2.3",
 			ExpectedResult: nil,
-			ExpectedUrl:    expectedUrl("master/1.2.3"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			m := newMock(t, tt.MockChannel, tt.MockVersion)
+			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
 			check := NewChecker(constants.APIUpdateURL, "master", "1.2.3", m)
-			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
+			res, err := check.CheckFor(&configMock{}, tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {
 				res.url = ""
 			}
 			assert.Equal(t, tt.ExpectedResult, res)
-			assert.Equal(t, tt.ExpectedUrl, m.UrlCalled)
 		})
 	}
 }
