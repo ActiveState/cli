@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -25,21 +26,16 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-type command string
-
-const (
-	CmdStart      = "start"
-	CmdStop       = "stop"
-	CmdStatus     = "status"
-	CmdForeground = "foreground"
+var (
+	cmdTop = path.Base(os.Args[0])
 )
 
-var commands = []command{
-	CmdStart,
-	CmdStop,
-	CmdStatus,
-	CmdForeground,
-}
+const (
+	cmdStart      = "start"
+	cmdStop       = "stop"
+	cmdStatus     = "status"
+	cmdForeground = "foreground"
+)
 
 func main() {
 	var exitCode int
@@ -92,12 +88,7 @@ func run() (rerr error) {
 	})
 
 	cmd := captain.NewCommand(
-		"state-svc",
-		"",
-		"",
-		out,
-		nil,
-		nil,
+		cmdTop, "", "", out, nil, nil,
 		func(ccmd *captain.Command, args []string) error {
 			fmt.Println("top level")
 			return nil
@@ -106,48 +97,40 @@ func run() (rerr error) {
 
 	cmd.AddChildren(
 		captain.NewCommand(
-			"start",
+			cmdStart,
 			"Starting the ActiveState Service",
-			"Start the ActiveState Service",
-			out,
-			nil,
-			nil,
+			"Start the ActiveState Service (Background)",
+			out, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
 				return runStart(cfg)
 			},
 		),
 		captain.NewCommand(
-			"stop",
+			cmdStop,
 			"Stopping the ActiveState Service",
-			"Start the ActiveState Service",
-			out,
-			nil,
-			nil,
+			"Stop the ActiveState Service",
+			out, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStop")
 				return runStop(cfg)
 			},
 		),
 		captain.NewCommand(
-			"status",
+			cmdStatus,
 			"Starting the ActiveState Service",
-			"Start the ActiveState Service",
-			out,
-			nil,
-			nil,
+			"Display the Status of the ActiveState Service",
+			out, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStatus")
 				return runStatus(cfg)
 			},
 		),
 		captain.NewCommand(
-			"foreground",
+			cmdForeground,
 			"Starting the ActiveState Service",
-			"Start the ActiveState Service",
-			out,
-			nil,
-			nil,
+			"Start the ActiveState Service (Foreground)",
+			out, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
 				return runForeground(cfg)
@@ -159,10 +142,6 @@ func run() (rerr error) {
 }
 
 func runForeground(cfg *config.Instance) error {
-	if true {
-		fmt.Println("foreground")
-		return nil
-	}
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
@@ -205,12 +184,8 @@ func runForeground(cfg *config.Instance) error {
 }
 
 func runStart(cfg *config.Instance) error {
-	if true {
-		fmt.Println("start")
-		return nil
-	}
 	s := NewServiceManager(cfg)
-	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+	if err := s.Start(os.Args[0], cmdForeground); err != nil {
 		if errors.Is(err, ErrSvcAlreadyRunning) {
 			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
 		}
@@ -221,10 +196,6 @@ func runStart(cfg *config.Instance) error {
 }
 
 func runStop(cfg *config.Instance) error {
-	if true {
-		fmt.Println("stop")
-		return nil
-	}
 	s := NewServiceManager(cfg)
 	if err := s.Stop(); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
@@ -234,10 +205,6 @@ func runStop(cfg *config.Instance) error {
 }
 
 func runStatus(cfg *config.Instance) error {
-	if true {
-		fmt.Println("status")
-		return nil
-	}
 	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not obtain pid")
