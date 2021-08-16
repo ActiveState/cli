@@ -293,6 +293,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			}
 			// Check that the tag is set
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
 			defer cfg.Close()
 			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
 
@@ -440,6 +441,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 
 			// Check that the tag is set
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
 			defer cfg.Close()
 			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
 
