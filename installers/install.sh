@@ -321,9 +321,13 @@ fetchArtifact () {
 if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$CURRENT_INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
-userprompt "Continue? [Y/n] "
+userprompt "Accept terms and proceed with install? [Y/n] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
+  [Nn])
+    error "Aborting installation"
+    exit 0
+    ;;
   [Yy]|*)
     fetchArtifact
     OUTPUT_FILE=$TMPDIR/install_output.txt
@@ -335,10 +339,6 @@ case "$RESPONSE" in
     INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
     rm -f $OUTPUT_FILE
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
-    ;;
-  [Nn])
-    error "Aborting installation"
-    exit 0
     ;;
 esac
 

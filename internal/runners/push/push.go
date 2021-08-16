@@ -2,6 +2,7 @@ package push
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -231,6 +232,8 @@ func (r *Push) Run(params PushParams) error {
 			return errs.Wrap(err, "Could not set branch")
 		}
 	}
+
+	projectfile.StoreProjectMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))
 
 	if projectCreated {
 		r.out.Notice(locale.Tr("push_project_created", r.project.URL()))
