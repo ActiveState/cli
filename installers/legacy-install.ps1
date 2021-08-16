@@ -184,7 +184,8 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
+    & $installDirectory\$script:STATEEXE _prepare | Write-Host
     return $LASTEXITCODE
 }
 
@@ -197,23 +198,24 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
     Write-Host $consentText
 }
 
-function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
-    $STATEURL="https://state-tool.s3.amazonaws.com/update/state"
+    $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
+    $jsonURL= "https://<to-be-determined>/info/legacy?channel=$script:BRANCH&platform=windows&source=install&target-version=$script:VERSION"
     
     Write-Host "Preparing for installation...`n"
 
     # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
     Write-Host "Fetching version info...`n"
     try{
-        $versionedJson = ConvertFrom-Json -InputObject (download $jsonurl)
+        $versionedJson = ConvertFrom-Json -InputObject (download $jsonURL)
     } catch [System.Exception] {
-        Write-Warning "Unable to retrieve version info from $jsonurl"
+        Write-Warning "Unable to retrieve version info from $jsonURL"
         Write-Error $_.Exception.Message
         return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
+    $script:UPDATE_TAG = $infoJson.Tag
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -427,7 +429,7 @@ function install() {
             $envTarget = [EnvironmentVariableTarget]::Machine
             $envTargetName = "system"
         }
-        
+
         Write-Host "Updating environment...`n"
         Write-Host "Adding $installDir to $envTargetName PATH`n"
         # This only sets it in the registry and it will NOT be accessible in the current session
