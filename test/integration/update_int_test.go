@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/updater"
@@ -79,7 +80,7 @@ func setupMockServer(suite suite.Suite, testUpdateDir string, tagFunc func(*upda
 			tagFunc(up, source, tag)
 		}
 
-		b, err = json.Marshal(up)
+		b, err = json.MarshalIndent(up, "", "")
 		suite.Require().NoError(err, "failed marshaling the response")
 
 		fmt.Fprintf(rw, "%s", b)
@@ -103,7 +104,7 @@ func setupMockServer(suite suite.Suite, testUpdateDir string, tagFunc func(*upda
 
 func mockedUpdateServerEnvVars() []string {
 	return []string{
-		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
+		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s", testPort),
 		fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", testPort),
 	}
 }
@@ -255,10 +256,6 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	defer cfg.Close()
-
 	cancel := suite.setupMockServer(nil)
 	defer cancel()
 
@@ -296,6 +293,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			ts := e2e.New(suite.T(), true)
 			defer ts.Close()
 
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
 			suite.addProjectFileWithWaitingScript(cfg, ts.Dirs.Work)
 
 			// Ensure we always use a unique exe for updates
@@ -327,7 +328,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			cp.ExpectExitCode(0)
 
 			fakeHome := filepath.Join(ts.Dirs.Work, "home")
-			err := fileutils.Mkdir(fakeHome)
+			err = fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
 			before := fileutils.ListDir(ts.Dirs.Config, false)
@@ -476,6 +477,74 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	cancel := suite.setupMockServer(
+		func(up *updater.AvailableUpdate, source, tag string) {
+			if source != "update" {
+				return
+			}
+			// If the update is tagged, respond with an invalid version, so we can test that the tag name was forwarded to the server
+			if tag == "experiment" {
+				up.Version = "99.99.99"
+				up.Path = "invalid-path"
+				return
+			}
+
+			// set the tag
+			up.Tag = "experiment"
+		})
+	defer cancel()
+
+	tests := []struct {
+		name          string
+		tagged        bool
+		expectSuccess bool
+	}{
+		{"update-to-tag", false, true},
+		{"update-with-tag", true, false},
+	}
+
+	for _, tt := range tests {
+
+		suite.Run(tt.name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+			// use unique exe
+			ts.UseDistinctStateExes()
+
+			fakeHome := filepath.Join(ts.Dirs.Work, "home")
+			err := fileutils.Mkdir(fakeHome)
+			suite.Require().NoError(err)
+
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
+			if tt.tagged {
+				err := cfg.Set(updater.CfgUpdateTag, "experiment")
+				suite.Require().NoError(err)
+				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
+			}
+
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+			cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+			cp.Expect("Updating State Tool to latest version available")
+			if tt.expectSuccess {
+				cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
+				cp.ExpectExitCode(0)
+				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
+				suite.Assert().Contains(logs, "was successful")
+				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
+				suite.versionCompare(ts, true, true, constants.Version, suite.NotEqual)
+			} else {
+				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", testPort))
+				cp.ExpectExitCode(1)
+			}
+		})
+	}
+}
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
