@@ -25,8 +25,10 @@ EOF
 # ignore project file if we are already in an activated environment
 unset ACTIVESTATE_PROJECT
 
-# URL to fetch updates from.
-STATEURL="https://state-tool.s3.amazonaws.com/update/state/release/"
+# URL to fetch update infos from.
+BASE_INFO_URL="https://<to-be-determined>/info/legacy"
+# URL to fetch update files from
+BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
@@ -129,6 +131,7 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
+CHANNEL='release'
 # Process command line arguments.
 while getopts "nb:t:e:c:v:f?h-:" opt; do
   case $opt in
@@ -146,7 +149,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
     esac
     ;;
   b)
-    STATEURL=`echo $STATEURL | sed -e "s|release|$OPTARG|;"`
+    CHANNEL=$OPTARG
     ;;
   c)
     POST_INSTALL_COMMAND=$OPTARG
@@ -172,6 +175,8 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
     ;;
   esac
 done
+
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL\&source=install\&platform=$OS\&target-version=$VERSION"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -260,7 +265,7 @@ fi
 fetchArtifact () {
   info "Fetching version info..."
   # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON $STATEURL$VERSION/$STATEJSON
+  $FETCH $TMPDIR/$STATEJSON $STATEURL
   if [ $? -ne 0 ]; then
     error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
     exit 1
@@ -270,7 +275,7 @@ fetchArtifact () {
 
   info "Fetching version: $VERSION..."
   # Fetch it.
-  $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG}
+  $FETCH $TMPDIR/$STATEPKG ${BASE_FILE_URL}/${CHANNEL}/${VERSION}/${STATEPKG}
   if [ $? -ne 0 ]; then
     error "Failed to download the State Tool archive.  Please try again later."
     exit 1

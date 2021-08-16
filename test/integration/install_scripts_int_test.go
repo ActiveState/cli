@@ -2,11 +2,9 @@ package integration
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
@@ -101,8 +100,9 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+testPort), -1)
+		b = bytes.Replace(b, []byte(constants.APIUpdateInfoURL), []byte("http://localhost:"+testPort), -1)
 		require.Contains(t, string(b), "http://localhost:"+testPort)
+		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+testPort), -1)
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
@@ -114,8 +114,7 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 
 type InstallScriptsIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg    projectfile.ConfigGetter
-	server *http.Server
+	cfg projectfile.ConfigGetter
 }
 
 func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
@@ -197,6 +196,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMultiFileUpdate() {
+	cancel := suite.setupMockServer(nil)
+	defer cancel()
+
 	if runtime.GOOS == "windows" {
 		suite.T().SkipNow()
 	}
@@ -210,8 +212,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(mockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
-			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
@@ -231,6 +233,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+
+	close := suite.setupMockServer(nil)
+	defer close()
 
 	tests := []struct {
 		Name        string
@@ -346,6 +351,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+
+	close := suite.setupMockServer(nil)
+	defer close()
 
 	tests := []struct {
 		Name        string
@@ -521,6 +529,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
+	close := suite.setupMockServer(nil)
+	defer close()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -541,9 +552,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(mockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
 			"SHELL=",
-			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
@@ -577,6 +588,9 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	if runtime.GOOS != "linux" {
 		suite.T().SkipNow()
 	}
+
+	close := suite.setupMockServer(nil)
+	defer close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -625,6 +639,9 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.T().SkipNow()
 	}
 
+	close := suite.setupMockServer(nil)
+	defer close()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -662,26 +679,23 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName string) {
-	var err error
+func (suite *InstallScriptsIntegrationTestSuite) setupMockServer(tagFunc func(*updater.AvailableUpdate, string, string)) func() {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
-	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
-	go func() {
-		_ = suite.server.ListenAndServe()
-	}()
+
+	return setupMockServer(suite.Suite.Suite, testUpdateDir, tagFunc)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName string) {
+	var err error
 
 	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) AfterTest(suiteName, testName string) {
-	err := suite.server.Shutdown(context.Background())
-	suite.Require().NoError(err)
 	suite.Require().NoError(suite.cfg.Close())
 }
 

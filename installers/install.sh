@@ -24,8 +24,10 @@ EOF
 # ignore project file if we are already in an activated environment
 unset ACTIVESTATE_PROJECT
 
-# URL to fetch updates from.
-BASEURL="https://state-tool.s3.amazonaws.com/update/state"
+# URL to fetch update infos from.
+BASE_INFO_URL="https://<to-be-determined>/info"
+# URL to fetch update files from
+BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
@@ -188,7 +190,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASEURL/$CHANNEL"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL\&source=install\&platform=$OS"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -245,7 +247,6 @@ Please note that the installer may modify your shell configuration file (eg., .b
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
 # Construct system-dependent filenames.
-STATEJSON=$OS-$ARCH/info.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
 TMPEXE="state-install/state-installer"$BINARYEXT
 
@@ -264,8 +265,8 @@ fi
 fetchArtifact () {
   if [ ! -z "$VERSION" ]; then
     info "Attempting to fetch version: $VERSION..."
-    STATEURL=$STATEURL/$VERSION
-    if ! $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON ; then
+    STATEURL="$STATEURL\&target-version=$VERSION"
+    if ! $FETCH $TMPDIR/info.json $STATEURL ; then
       error "Could not fetch version: $VERSION, please verify the version number and try again."
       exit 1
     fi
@@ -274,9 +275,8 @@ fetchArtifact () {
   else
     info "Determining latest version..."
     # Determine the latest version to fetch.
-    $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON || exit 1
+    $FETCH $TMPDIR/info.json $STATEURL || exit 1
     VERSION=`cat $TMPDIR/info.json | grep -m 1 '"version":' | awk '{print $2}' | tr -d '",'`
-    UPDATE_TAG=`cat $TMPDIR/info.json | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
 
     if [ -z "$VERSION" ]; then
       error "Unable to retrieve the latest version number"
@@ -286,6 +286,7 @@ fetchArtifact () {
     info "Fetching the latest version: $VERSION..."
   fi
 
+  UPDATE_TAG=`cat $TMPDIR/info.json | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
   SUM=`cat $TMPDIR/info.json | grep -m 1 '"sha256":' | awk '{print $2}' | tr -d '",'`
   RELURL=`cat $TMPDIR/info.json | grep -m 1 '"path":' | awk '{print $2}' | tr -d '",'`
   rm $TMPDIR/info.json

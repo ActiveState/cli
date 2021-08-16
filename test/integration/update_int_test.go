@@ -51,13 +51,7 @@ func init() {
 
 var testPort = "24217"
 
-func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(string, string) string) func() {
-	var err error
-	root, err := environment.GetRootPath()
-	suite.Require().NoError(err)
-	testUpdateDir := filepath.Join(root, "build", "test-update")
-	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
-
+func setupMockServer(suite suite.Suite, testUpdateDir string, tagFunc func(*updater.AvailableUpdate, string, string)) func() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/info", func(rw http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
@@ -82,7 +76,7 @@ func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(string, st
 		suite.Require().NoError(err)
 
 		if tagFunc != nil {
-			up.Tag = tagFunc(source, tag)
+			tagFunc(up, source, tag)
 		}
 
 		b, err = json.Marshal(up)
@@ -107,6 +101,22 @@ func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(string, st
 	}
 }
 
+func mockedUpdateServerEnvVars() []string {
+	return []string{
+		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
+		fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", testPort),
+	}
+}
+
+func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(*updater.AvailableUpdate, string, string)) func() {
+	root, err := environment.GetRootPath()
+	suite.Require().NoError(err)
+	testUpdateDir := filepath.Join(root, "build", "test-update")
+	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
+
+	return setupMockServer(suite.Suite.Suite, testUpdateDir, tagFunc)
+}
+
 // env prepares environment variables for the test
 // disableUpdates prevents all update code from running
 // testUpdate directs to the locally running update directory and requires that a test update bundles has been generated with `state run generate-test-update`
@@ -120,7 +130,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 	}
 
 	if testUpdate {
-		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort), fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", testPort))
+		env = append(env, mockedUpdateServerEnvVars()...)
 	} else {
 		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}

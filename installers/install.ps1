@@ -179,15 +179,16 @@ Please note that the installer may have to modify your system environment to add
     Write-Host $consentText
 }
 
-function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
-    $STATEURL= "https://state-tool.s3.amazonaws.com/update/state"
+    $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
+    $jsonURL= "https://<to-be-determined>/info?channel=$script:BRANCH&platform=windows&source=install"
     
     Write-Host "Preparing for installation...`n"
 
     if ($script:VERSION -ne "") {
         Write-Host "Attempting to fetch version: $script:VERSION...`n"
-        $jsonURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
+        $jsonURL = "$jsonURL&target-version=$script:VERSION"
 
         try {
             $jsonString = download $jsonURL
@@ -197,13 +198,11 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         }
 
         $infoJson = ConvertFrom-Json -InputObject $jsonString
-
         $version = $script:VERSION
 
         Write-Host "Fetching version: $version...`n"
     } else {
         Write-Host "Determining latest version...`n"
-        $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
         $infoJson = ConvertFrom-Json -InputObject (download $jsonurl)
         $version = $infoJson.Version
 
@@ -213,7 +212,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
     $script:UPDATE_TAG = $infoJson.Tag
     $checksum = $infoJson.Sha256
     $relUrl = $infoJson.Path
-    $zipUrl = "$STATEURL/$relurl"
+    $zipUrl = "$FILE_URL/$relurl"
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -316,11 +315,9 @@ function install() {
     $installerexe = (Join-Path "state-install" "state-installer.exe")
     if (test-64Bit) {
         $statepkg="windows-amd64.zip"
-        $statejson="windows-amd64/info.json"
-
     } else {
-        $statepkg="windows-386.zip"
-        $statejson="windows-386/info.json"
+        Write-Warning "Windows platform taget is 32bit.  Only 64bit builds are support at the moment."
+        return 1
     }
 
     $existing = getExistingOnPath
@@ -350,7 +347,7 @@ function install() {
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statepkg
     if ($err -eq 1){
         return 1
     }
