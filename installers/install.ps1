@@ -64,13 +64,13 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]`n"
+    $response = Read-Host -Prompt $msg" [Y/n]`n"
 
-    if ( -Not ($response.ToLower() -eq "y") )
+    if ( -Not ($response.ToLower() -eq "n") )
     {
-        return $False
+        return $True
     }
-    return $True
+    return $False
 }
 
 function errorOccured($suppress, $errMsg) {
