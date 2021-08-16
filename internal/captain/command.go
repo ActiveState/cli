@@ -478,7 +478,7 @@ func (c *Command) subCommandNames() []string {
 	return commands
 }
 
-func (c *Command) runner(cobraCmd *cobra.Command, args []string) error { // TODO: this
+func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 	analytics.SetDeferred(c.deferAnalytics)
 
@@ -658,7 +658,7 @@ func pflagCmdErrMsgCmd(errMsg string) string {
 	return flagText
 }
 
-func (cmd *Command) Usage() error { // TODO: this
+func (cmd *Command) Usage() error {
 	tpl := template.New("usage")
 	tpl.Funcs(template.FuncMap{
 		"rpad": func(s string, padding int) string {
