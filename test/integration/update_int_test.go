@@ -507,7 +507,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	}
 
 	for _, tt := range tests {
-
 		suite.Run(tt.name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()

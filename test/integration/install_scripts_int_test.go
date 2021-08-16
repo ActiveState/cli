@@ -18,10 +18,10 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -114,7 +114,6 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 
 type InstallScriptsIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg projectfile.ConfigGetter
 }
 
 func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
@@ -234,22 +233,37 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	close := suite.setupMockServer(nil)
-	defer close()
-
 	tests := []struct {
 		Name        string
 		TestInstall bool
+		Tag         string
 		Channel     string
 	}{
-		{"install-local-test-update", true, constants.BranchName},
+		{"install-local-test-update", true, "", constants.BranchName},
+		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "master"},
+		{"install-release", false, "", "master"},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			close := suite.setupMockServer(func(up *updater.AvailableUpdate, source, tag string) {
+				if source != "install" {
+					return
+				}
+
+				// If the update is tagged (which shouldn't happen), respond with an invalid version, so we can test that the tag name was forwarded to the server
+				if tag == "experiment" {
+					up.Version = "99.99.99"
+					up.Path = "invalid-path"
+					return
+				}
+
+				// set the tag
+				up.Tag = tt.Tag
+			})
+			defer close()
 			dir, err := installation.LauncherInstallPath()
 			suite.Require().NoError(err)
 			var extraEnv []string
@@ -277,6 +291,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			if !tt.TestInstall {
 				return
 			}
+			// Check that the tag is set
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			defer cfg.Close()
+			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
@@ -352,24 +371,40 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	close := suite.setupMockServer(nil)
-	defer close()
-
 	tests := []struct {
 		Name        string
 		TestInstall bool
+		Tag         string
 		Channel     string
 	}{
-		{"install-local-test-update", true, constants.BranchName},
+		{"install-local-test-update", true, "", constants.BranchName},
+		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "master"},
+		{"install-release", false, "", "master"},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
+
+			close := suite.setupMockServer(func(up *updater.AvailableUpdate, source, tag string) {
+				if source != "install" {
+					return
+				}
+
+				// If the update is tagged (which shouldn't happen), respond with an invalid version, so we can test that the tag name was forwarded to the server
+				if tag == "experiment" {
+					up.Version = "99.99.99"
+					up.Path = "invalid-path"
+					return
+				}
+
+				// set the tag
+				up.Tag = tt.Tag
+			})
+			defer close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
@@ -402,6 +437,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			}
 			// give some time for the provided state-tray app to start and write its pid to the config file
 			time.Sleep(time.Second)
+
+			// Check that the tag is set
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			defer cfg.Close()
+			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
@@ -686,17 +727,6 @@ func (suite *InstallScriptsIntegrationTestSuite) setupMockServer(tagFunc func(*u
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
 
 	return setupMockServer(suite.Suite.Suite, testUpdateDir, tagFunc)
-}
-
-func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName string) {
-	var err error
-
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
-}
-
-func (suite *InstallScriptsIntegrationTestSuite) AfterTest(suiteName, testName string) {
-	suite.Require().NoError(suite.cfg.Close())
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
