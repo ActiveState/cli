@@ -68,7 +68,10 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, args)
+	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.Tag))
+		return nil
+	})
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not start installer")
 	}
