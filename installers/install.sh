@@ -190,7 +190,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL\&source=install\&platform=$OS"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -265,7 +265,7 @@ fi
 fetchArtifact () {
   if [ ! -z "$VERSION" ]; then
     info "Attempting to fetch version: $VERSION..."
-    STATEURL="$STATEURL\&target-version=$VERSION"
+    STATEURL="$STATEURL&target-version=$VERSION"
     if ! $FETCH $TMPDIR/info.json $STATEURL ; then
       error "Could not fetch version: $VERSION, please verify the version number and try again."
       exit 1
@@ -292,7 +292,7 @@ fetchArtifact () {
   rm $TMPDIR/info.json
 
 
-  URL="${BASEURL}/${RELURL}"
+  URL="${BASE_FILE_URL}/${RELURL}"
   # Fetch it.
   $FETCH $TMPDIR/$STATEPKG ${URL} || exit 1
 
