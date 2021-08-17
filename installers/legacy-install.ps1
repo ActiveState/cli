@@ -386,7 +386,7 @@ function install() {
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statepkg
     if ($err -eq 1){
         return 1
     }
