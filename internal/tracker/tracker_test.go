@@ -7,12 +7,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTracker_GetFiles(t *testing.T) {
+func initTracker(t *testing.T) *Tracker {
+	t.Helper()
+
 	dir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err)
 
 	tracker, err := newCustom(dir)
 	assert.NoError(t, err)
+
+	return tracker
+}
+
+func TestTracker_GetFiles(t *testing.T) {
+	tracker := initTracker(t)
 	defer tracker.Close()
 
 	expected := []string{
@@ -21,13 +29,14 @@ func TestTracker_GetFiles(t *testing.T) {
 		"third-file",
 	}
 
-	var files []File
+	var files []Trackable
 	for _, e := range expected {
 		f := File{Path: e}
-		files = append(files)
-		err = tracker.Track(f)
-		assert.NoError(t, err)
+		files = append(files, f)
 	}
+
+	err := tracker.Track(files...)
+	assert.NoError(t, err)
 
 	actual, err := tracker.GetFiles()
 	assert.NoError(t, err)
@@ -36,11 +45,7 @@ func TestTracker_GetFiles(t *testing.T) {
 }
 
 func TestTracker_GetEnv(t *testing.T) {
-	dir, err := ioutil.TempDir("", "")
-	assert.NoError(t, err)
-
-	tracker, err := newCustom(dir)
-	assert.NoError(t, err)
+	tracker := initTracker(t)
 	defer tracker.Close()
 
 	expected := map[string]string{
@@ -49,11 +54,14 @@ func TestTracker_GetEnv(t *testing.T) {
 		"third-key":  "third-value",
 	}
 
+	var env []Trackable
 	for k, v := range expected {
 		ev := EnvironmentVariable{Key: k, Value: v}
-		err = tracker.Track(ev)
-		assert.NoError(t, err)
+		env = append(env, ev)
 	}
+
+	err := tracker.Track(env...)
+	assert.NoError(t, err)
 
 	actual, err := tracker.GetEnvironmentVariables()
 	assert.NoError(t, err)

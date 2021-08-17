@@ -23,7 +23,6 @@ const (
 
 type Trackable interface {
 	Type() TrackingType
-	Label() string
 	Store(db *sql.DB) error
 }
 
@@ -70,7 +69,7 @@ func newCustom(localPath string) (*Tracker, error) {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
 
-	err = t.setupDB()
+	err = t.ensureTablesExist()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not set up database")
 	}
@@ -78,7 +77,7 @@ func newCustom(localPath string) (*Tracker, error) {
 	return t, nil
 }
 
-func (t *Tracker) setupDB() error {
+func (t *Tracker) ensureTablesExist() error {
 	_, err := t.db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (path string NOT NULL PRIMARY KEY)", Files))
 	if err != nil {
 		return errs.Wrap(err, "Could not create files table in tracker database")

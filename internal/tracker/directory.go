@@ -8,16 +8,11 @@ import (
 )
 
 type Directory struct {
-	Path  string
-	label string
+	Path string
 }
 
 func (d *Directory) Type() TrackingType {
 	return Directories
-}
-
-func (d *Directory) Label() string {
-	return d.label
 }
 
 func (d *Directory) Store(db *sql.DB) error {
