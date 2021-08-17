@@ -1,13 +1,10 @@
 package integration
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -23,10 +20,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/updateinfomock"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -51,179 +48,13 @@ func init() {
 	}
 }
 
-var testPort = "24217"
-
-type mockUpdateInfoRequest struct {
-	suite    suite.Suite
-	req      *http.Request
-	isLegacy bool
-	setTag   string
-}
-
-func (mur *mockUpdateInfoRequest) ExpectQueryParam(key, expectedValue string) {
-	mur.suite.Assert().Equal(expectedValue, mur.req.URL.Query().Get(key), "Unexpected value for query parameter '%s'", key)
-}
-
-func (mur *mockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
-	mur.suite.Assert().Equal(legacy, mur.isLegacy)
-}
-
-func (mur *mockUpdateInfoRequest) ExpectTagResponse(tag string) {
-	mur.suite.Assert().Equal(tag, mur.setTag)
-}
-
-type mockUpdateInfoServer struct {
-	suite                suite.Suite
-	testUpdateDir        string
-	close                func()
-	updateModifier       func(*updater.AvailableUpdate, string, string)
-	legacyUpdateModifier func(*legacyupd.Info, string, string)
-	requests             []*mockUpdateInfoRequest
-}
-
-func (mus *mockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	platform := q.Get("platform")
-	arch := "amd64"
-	source := q.Get("source")
-	version := q.Get("target-version")
-	channel := q.Get("channel")
-	tag := q.Get("tag")
-
-	fp := filepath.Join(mus.testUpdateDir, channel)
-	if version != "" {
-		fp = filepath.Join(fp, version)
-	}
-	fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
-
-	b, err := os.ReadFile(fp)
-	mus.suite.Require().NoError(err, "failed finding version info file")
-
-	var up *updater.AvailableUpdate
-	err = json.Unmarshal(b, &up)
-	mus.suite.Require().NoError(err)
-
-	if mus.updateModifier != nil {
-		mus.updateModifier(up, source, tag)
-	}
-
-	b, err = json.MarshalIndent(up, "", "")
-	mus.suite.Require().NoError(err, "failed marshaling the response")
-
-	fmt.Fprintf(rw, "%s", b)
-
-	mus.requests = append(mus.requests, &mockUpdateInfoRequest{
-		suite:    mus.suite,
-		req:      r,
-		isLegacy: false,
-		setTag:   up.Tag,
-	})
-}
-
-func (mus *mockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	platform := q.Get("platform")
-	arch := "amd64"
-	source := q.Get("source")
-	version := q.Get("target-version")
-	channel := q.Get("channel")
-	tag := q.Get("tag")
-
-	fp := filepath.Join(mus.testUpdateDir, channel)
-	if version != "" {
-		fp = filepath.Join(fp, version)
-	}
-	fp = filepath.Join(fp, fmt.Sprintf("%s-%s.json", platform, arch))
-
-	b, err := os.ReadFile(fp)
-	mus.suite.Require().NoError(err, "failed finding version info file")
-
-	var up *legacyupd.Info
-	err = json.Unmarshal(b, &up)
-	mus.suite.Require().NoError(err)
-
-	if mus.legacyUpdateModifier != nil {
-		mus.legacyUpdateModifier(up, source, tag)
-	}
-
-	b, err = json.MarshalIndent(up, "", "")
-	mus.suite.Require().NoError(err, "failed marshaling the response")
-
-	fmt.Fprintf(rw, "%s", b)
-
-	mus.requests = append(mus.requests, &mockUpdateInfoRequest{
-		suite:    mus.suite,
-		req:      r,
-		isLegacy: true,
-		setTag:   up.Tag,
-	})
-}
-
-func (mus *mockUpdateInfoServer) Close() {
-	mus.close()
-}
-
-func (mus *mockUpdateInfoServer) SetLegacyUpdateModifier(mod func(*legacyupd.Info, string, string)) {
-	mus.legacyUpdateModifier = mod
-}
-
-func (mus *mockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUpdate, string, string)) {
-	mus.updateModifier = mod
-}
-
-func (mus *mockUpdateInfoServer) ExpectNRequests(n int) {
-	mus.suite.Require().Len(mus.requests, n)
-}
-
-func (mus *mockUpdateInfoServer) NthRequest(n int) *mockUpdateInfoRequest {
-	if n >= len(mus.requests) {
-		return nil
-	}
-
-	return mus.requests[n]
-}
-
-func newMockUpdateInfoServer(suite suite.Suite, testUpdateDir string) *mockUpdateInfoServer {
-	s := &mockUpdateInfoServer{
-		suite:         suite,
-		testUpdateDir: testUpdateDir,
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/info/legacy", s.handleLegacyInfo)
-	mux.HandleFunc("/info", s.handleInfo)
-	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
-	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
-	server := &http.Server{Addr: "localhost:" + testPort, Handler: mux, ErrorLog: logger}
-	go func() {
-		err := server.ListenAndServe()
-		if err == http.ErrServerClosed {
-			return
-		}
-		suite.Require().NoError(err)
-	}()
-
-	s.close = func() {
-		err := server.Shutdown(context.Background())
-		suite.Require().NoError(err)
-	}
-	return s
-}
-
-func mockedUpdateServerEnvVars() []string {
-	return []string{
-		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s", testPort),
-		fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", testPort),
-	}
-}
-
-func (suite *UpdateIntegrationTestSuite) setupMockServer() *mockUpdateInfoServer {
+func (suite *UpdateIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
 
-	return newMockUpdateInfoServer(suite.Suite.Suite, testUpdateDir)
+	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }
 
 // env prepares environment variables for the test
@@ -239,7 +70,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 	}
 
 	if testUpdate {
-		env = append(env, mockedUpdateServerEnvVars()...)
+		env = append(env, updateinfomock.MockedUpdateServerEnvVars()...)
 	} else {
 		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}
@@ -663,7 +494,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
 				suite.versionCompare(ts, true, true, constants.Version, suite.NotEqual)
 			} else {
-				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", testPort))
+				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", updateinfomock.TestPort))
 				cp.ExpectExitCode(1)
 			}
 

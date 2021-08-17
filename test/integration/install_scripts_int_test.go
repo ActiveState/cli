@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/updateinfomock"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
@@ -101,9 +102,9 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(constants.APIUpdateInfoURL), []byte("http://localhost:"+testPort), -1)
-		require.Contains(t, string(b), "http://localhost:"+testPort)
-		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+testPort), -1)
+		b = bytes.Replace(b, []byte(constants.APIUpdateInfoURL), []byte("http://localhost:"+updateinfomock.TestPort), -1)
+		require.Contains(t, string(b), "http://localhost:"+updateinfomock.TestPort)
+		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+updateinfomock.TestPort), -1)
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
@@ -222,7 +223,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
-		e2e.AppendEnv(mockedUpdateServerEnvVars()...),
+		e2e.AppendEnv(updateinfomock.MockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
@@ -641,7 +642,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
-		e2e.AppendEnv(mockedUpdateServerEnvVars()...),
+		e2e.AppendEnv(updateinfomock.MockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
 			"SHELL=",
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
@@ -792,13 +793,13 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	server.NthRequest(0).ExpectTagResponse("")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *mockUpdateInfoServer {
+func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
 
-	return newMockUpdateInfoServer(suite.Suite.Suite, testUpdateDir)
+	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
