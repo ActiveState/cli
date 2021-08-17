@@ -16,7 +16,7 @@ func (d *Directory) Type() TrackingType {
 }
 
 func (d *Directory) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", Files))
+	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", d.Type()))
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare file insert statement")
 	}

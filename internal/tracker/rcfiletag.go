@@ -7,21 +7,21 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 )
 
-type File struct {
-	Path string
+type RCFileTag struct {
+	Value string
 }
 
-func (f File) Type() TrackingType {
-	return Files
+func (r *RCFileTag) Type() TrackingType {
+	return FileTag
 }
 
-func (f File) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", f.Type()))
+func (r *RCFileTag) Store(db *sql.DB) error {
+	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", r.Type()))
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare file insert statement")
 	}
 
-	_, err = q.Exec(f.Path)
+	_, err = q.Exec(r.Value)
 	if err != nil {
 		return errs.Wrap(err, "Could not execute file store statement")
 	}

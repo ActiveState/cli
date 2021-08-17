@@ -19,6 +19,7 @@ const (
 	Files       TrackingType = "files"
 	Directories TrackingType = "directories"
 	Environment TrackingType = "environment"
+	FileTag     TrackingType = "tag"
 )
 
 type Trackable interface {
@@ -88,6 +89,11 @@ func (t *Tracker) ensureTablesExist() error {
 		return errs.Wrap(err, "Could not create directories table in tracker database")
 	}
 
+	_, err = t.db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (value string NOT NULL PRIMARY KEY)", FileTag))
+	if err != nil {
+		return errs.Wrap(err, "Could not create directories table in tracker database")
+	}
+
 	_, err = t.db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (key string NOT NULL PRIMARY KEY, value text)", Environment))
 	if err != nil {
 		return errs.Wrap(err, "Could not create files table in tracker database")
@@ -115,14 +121,18 @@ func (t *Tracker) Track(ts ...Trackable) error {
 }
 
 func (t *Tracker) GetFiles() ([]string, error) {
-	return t.getPaths(Files)
+	return t.getStringSlice(Files)
 }
 
 func (t *Tracker) GetDirectories() ([]string, error) {
-	return t.getPaths(Directories)
+	return t.getStringSlice(Directories)
 }
 
-func (t *Tracker) getPaths(tr TrackingType) ([]string, error) {
+func (t *Tracker) GetFileTags() ([]string, error) {
+	return t.getStringSlice(FileTag)
+}
+
+func (t *Tracker) getStringSlice(tr TrackingType) ([]string, error) {
 	rows, err := t.db.Query(fmt.Sprintf("SELECT path FROM %s", tr))
 	if err != nil {
 		return nil, errs.Wrap(err, "Get files query failed")

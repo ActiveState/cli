@@ -17,7 +17,7 @@ func (ev EnvironmentVariable) Type() TrackingType {
 }
 
 func (ev EnvironmentVariable) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(key, value) VALUES(?, ?)", Environment))
+	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(key, value) VALUES(?, ?)", ev.Type()))
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare file insert statement")
 	}
