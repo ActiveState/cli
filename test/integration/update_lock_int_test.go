@@ -7,16 +7,13 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	defer cfg.Close()
-
 	suite.OnlyRunForTags(tagsuite.Update)
 	suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 	pjfile := projectfile.Project{
@@ -24,6 +21,10 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
 
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExes()
@@ -43,14 +44,11 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	defer cfg.Close()
+	suite.OnlyRunForTags(tagsuite.Update)
 	targetBranch := "release"
 	if constants.BranchName == "release" {
 		targetBranch = "master"
 	}
-	suite.OnlyRunForTags(tagsuite.Update)
 	tests := []struct {
 		name            string
 		lock            string
@@ -85,6 +83,10 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
 
@@ -118,10 +120,6 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	defer cfg.Close()
-
 	tests := []struct {
 		Name    string
 		Confirm bool
@@ -145,6 +143,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
+
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
 
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
