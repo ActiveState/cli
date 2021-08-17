@@ -189,7 +189,7 @@ while getopts "nb:t:e:c:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -272,14 +272,14 @@ fi
 fetchArtifact () {
   info "Determining latest version..."
   # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON $STATEURL
+  $FETCH $TMPDIR/$STATEJSON "$STATEURL"
   if [ $? -ne 0 ]; then
     error "Failed to fetch update info. Exiting."
     exit 1
   fi
-  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
-  VERSION=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Version":' | awk '{print $2}' | tr -d '",'`
-  SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"tag":\s*"\([^"]*\)".*/\1/p'`
+  VERSION=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Version":\s*"\([^"]*\)".*/\1/p'`
+  SUM=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Sha256v2":\s*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/$STATEJSON
 
   if [ -z "$VERSION" ]; then
