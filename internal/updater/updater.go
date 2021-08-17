@@ -56,6 +56,7 @@ type Updater struct {
 
 func New(cfg Configurable, currentVersion string) *Updater {
 	return &Updater{
+		cfg:            cfg,
 		CurrentVersion: currentVersion,
 		APIURL:         constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
