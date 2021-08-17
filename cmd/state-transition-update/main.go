@@ -101,11 +101,6 @@ func runDefault() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	up, err := updater.DefaultChecker.GetUpdateInfo(cfg, "", "")
-	if err != nil {
-		return errs.Wrap(err, "Failed to check for latest update.")
-	}
-
 	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
 	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
@@ -129,6 +124,11 @@ func runDefault() (rerr error) {
 
 	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
+	}
+
+	up, err := updater.DefaultChecker.GetUpdateInfo(cfg, "", "")
+	if err != nil {
+		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
 	err = up.InstallBlocking("")

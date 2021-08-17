@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -195,15 +196,25 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMultiFileUpdate() {
-	cancel := suite.setupMockServer(nil)
-	defer cancel()
+	tagName := "experiment"
+	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
+		up.Tag = tagName
+	})
+	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
+		if tag != tagName {
+			return
+		}
+		up.Tag = tagName
+	})
+	defer server.Close()
 
 	if runtime.GOOS == "windows" {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
@@ -225,6 +236,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
+
+	// ensure that tagName is forwarded and stored in database
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
+
+	server.ExpectNRequests(2)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectLegacyQuery(true)
+	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectQueryParam("source", "update")
+	server.NthRequest(1).ExpectQueryParam("tag", tagName)
+	server.NthRequest(1).ExpectLegacyQuery(false)
+	server.NthRequest(1).ExpectTagResponse(tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -248,7 +274,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
-			close := suite.setupMockServer(func(up *updater.AvailableUpdate, source, tag string) {
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(func(up *updater.AvailableUpdate, source, tag string) {
 				if source != "install" {
 					return
 				}
@@ -263,7 +290,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 				// set the tag
 				up.Tag = tt.Tag
 			})
-			defer close()
+			defer server.Close()
 			dir, err := installation.LauncherInstallPath()
 			suite.Require().NoError(err)
 			var extraEnv []string
@@ -304,6 +331,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "install")
+			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
 	}
 }
@@ -390,7 +421,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			close := suite.setupMockServer(func(up *updater.AvailableUpdate, source, tag string) {
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(func(up *updater.AvailableUpdate, source, tag string) {
 				if source != "install" {
 					return
 				}
@@ -405,7 +437,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 				// set the tag
 				up.Tag = tt.Tag
 			})
-			defer close()
+			defer server.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
@@ -461,6 +493,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			binFiles := listFilesOnly(ts.Dirs.Work)
 			suite.NotContains(binFiles, "state-tray"+osutils.ExeExt)
 			suite.NotContains(binFiles, "state-svc"+osutils.ExeExt)
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "install")
+			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
 	}
 }
@@ -572,8 +608,18 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	close := suite.setupMockServer(nil)
-	defer close()
+	tagName := "experiment"
+	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
+		up.Tag = tagName
+	})
+	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
+		if tag != tagName {
+			return
+		}
+		up.Tag = tagName
+	})
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -615,6 +661,20 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray.exe"))
+
+	// ensure that tagName is forwarded and stored in database
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
+
+	server.ExpectNRequests(2)
+	server.NthRequest(0).ExpectLegacyQuery(true)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectLegacyQuery(false)
+	server.NthRequest(1).ExpectQueryParam("source", "update")
+	server.NthRequest(1).ExpectTagResponse(tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
@@ -632,8 +692,8 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 		suite.T().SkipNow()
 	}
 
-	close := suite.setupMockServer(nil)
-	defer close()
+	server := suite.setupMockServer()
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -675,6 +735,11 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	// expect State Tool Installation directory
 	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
 	cp.ExpectExitCode(0)
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectLegacyQuery(false)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installScriptArgs ...string) {
@@ -682,8 +747,8 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.T().SkipNow()
 	}
 
-	close := suite.setupMockServer(nil)
-	defer close()
+	server := suite.setupMockServer()
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -720,15 +785,20 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.Assert().Contains(paths, filepath.Join(ts.Dirs.Cache, "bin"), "Could not find global binary directory on PATH")
 	}
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectLegacyQuery(false)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse("")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) setupMockServer(tagFunc func(*updater.AvailableUpdate, string, string)) func() {
+func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *mockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
 
-	return setupMockServer(suite.Suite.Suite, testUpdateDir, tagFunc)
+	return newMockUpdateInfoServer(suite.Suite.Suite, testUpdateDir)
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {

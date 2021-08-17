@@ -127,9 +127,18 @@ x86_64)
 esac
 
 # Determine the tmp directory.
-if [ -z "$TMPDIR" ]; then
-  TMPDIR="/tmp"
-fi
+set_tempdir () {
+  if type mktemp > /dev/null; then
+    TMPDIR=`mktemp -d`
+  else
+    TMPDIR="${TMPDIR:-/tmp}/state-installer.$$"
+    # clean-up previous temp dir
+    rm -rf $tdir
+    mkdir -p $TMPDIR
+  fi
+
+}
+set_tempdir
 
 CHANNEL='release'
 # Process command line arguments.
@@ -270,7 +279,7 @@ fetchArtifact () {
     error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
     exit 1
   fi
-  UPDATE_TAG=`cat $TMPDIR/info.json | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
+  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | grep -m 1 '"tag":' | awk '{print $2}' | tr -d '",}'`
   SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
   rm $TMPDIR/$STATEJSON
 

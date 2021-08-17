@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -52,39 +53,145 @@ func init() {
 
 var testPort = "24217"
 
-func setupMockServer(suite suite.Suite, testUpdateDir string, tagFunc func(*updater.AvailableUpdate, string, string)) func() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/info", func(rw http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		platform := q.Get("platform")
-		arch := "amd64"
-		source := q.Get("source")
-		version := q.Get("target-version")
-		channel := q.Get("channel")
-		tag := q.Get("tag")
+type mockUpdateInfoRequest struct {
+	suite    suite.Suite
+	req      *http.Request
+	isLegacy bool
+	setTag   string
+}
 
-		fp := filepath.Join(testUpdateDir, channel)
-		if version != "" {
-			fp = filepath.Join(fp, version)
-		}
-		fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
+func (mur *mockUpdateInfoRequest) ExpectQueryParam(key, expectedValue string) {
+	mur.suite.Assert().Equal(expectedValue, mur.req.URL.Query().Get(key), "Unexpected value for query parameter '%s'", key)
+}
 
-		b, err := os.ReadFile(fp)
-		suite.Require().NoError(err, "failed finding version info file")
+func (mur *mockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
+	mur.suite.Assert().Equal(legacy, mur.isLegacy)
+}
 
-		var up *updater.AvailableUpdate
-		err = json.Unmarshal(b, &up)
-		suite.Require().NoError(err)
+func (mur *mockUpdateInfoRequest) ExpectTagResponse(tag string) {
+	mur.suite.Assert().Equal(tag, mur.setTag)
+}
 
-		if tagFunc != nil {
-			tagFunc(up, source, tag)
-		}
+type mockUpdateInfoServer struct {
+	suite                suite.Suite
+	testUpdateDir        string
+	close                func()
+	updateModifier       func(*updater.AvailableUpdate, string, string)
+	legacyUpdateModifier func(*legacyupd.Info, string, string)
+	requests             []*mockUpdateInfoRequest
+}
 
-		b, err = json.MarshalIndent(up, "", "")
-		suite.Require().NoError(err, "failed marshaling the response")
+func (mus *mockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	platform := q.Get("platform")
+	arch := "amd64"
+	source := q.Get("source")
+	version := q.Get("target-version")
+	channel := q.Get("channel")
+	tag := q.Get("tag")
 
-		fmt.Fprintf(rw, "%s", b)
+	fp := filepath.Join(mus.testUpdateDir, channel)
+	if version != "" {
+		fp = filepath.Join(fp, version)
+	}
+	fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
+
+	b, err := os.ReadFile(fp)
+	mus.suite.Require().NoError(err, "failed finding version info file")
+
+	var up *updater.AvailableUpdate
+	err = json.Unmarshal(b, &up)
+	mus.suite.Require().NoError(err)
+
+	if mus.updateModifier != nil {
+		mus.updateModifier(up, source, tag)
+	}
+
+	b, err = json.MarshalIndent(up, "", "")
+	mus.suite.Require().NoError(err, "failed marshaling the response")
+
+	fmt.Fprintf(rw, "%s", b)
+
+	mus.requests = append(mus.requests, &mockUpdateInfoRequest{
+		suite:    mus.suite,
+		req:      r,
+		isLegacy: false,
+		setTag:   up.Tag,
 	})
+}
+
+func (mus *mockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	platform := q.Get("platform")
+	arch := "amd64"
+	source := q.Get("source")
+	version := q.Get("target-version")
+	channel := q.Get("channel")
+	tag := q.Get("tag")
+
+	fp := filepath.Join(mus.testUpdateDir, channel)
+	if version != "" {
+		fp = filepath.Join(fp, version)
+	}
+	fp = filepath.Join(fp, fmt.Sprintf("%s-%s.json", platform, arch))
+
+	b, err := os.ReadFile(fp)
+	mus.suite.Require().NoError(err, "failed finding version info file")
+
+	var up *legacyupd.Info
+	err = json.Unmarshal(b, &up)
+	mus.suite.Require().NoError(err)
+
+	if mus.legacyUpdateModifier != nil {
+		mus.legacyUpdateModifier(up, source, tag)
+	}
+
+	b, err = json.MarshalIndent(up, "", "")
+	mus.suite.Require().NoError(err, "failed marshaling the response")
+
+	fmt.Fprintf(rw, "%s", b)
+
+	mus.requests = append(mus.requests, &mockUpdateInfoRequest{
+		suite:    mus.suite,
+		req:      r,
+		isLegacy: true,
+		setTag:   up.Tag,
+	})
+}
+
+func (mus *mockUpdateInfoServer) Close() {
+	mus.close()
+}
+
+func (mus *mockUpdateInfoServer) SetLegacyUpdateModifier(mod func(*legacyupd.Info, string, string)) {
+	mus.legacyUpdateModifier = mod
+}
+
+func (mus *mockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUpdate, string, string)) {
+	mus.updateModifier = mod
+}
+
+func (mus *mockUpdateInfoServer) ExpectNRequests(n int) {
+	mus.suite.Require().Len(mus.requests, n)
+}
+
+func (mus *mockUpdateInfoServer) NthRequest(n int) *mockUpdateInfoRequest {
+	if n >= len(mus.requests) {
+		return nil
+	}
+
+	return mus.requests[n]
+}
+
+func newMockUpdateInfoServer(suite suite.Suite, testUpdateDir string) *mockUpdateInfoServer {
+	s := &mockUpdateInfoServer{
+		suite:         suite,
+		testUpdateDir: testUpdateDir,
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/info/legacy", s.handleLegacyInfo)
+	mux.HandleFunc("/info", s.handleInfo)
 	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
 	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
 	server := &http.Server{Addr: "localhost:" + testPort, Handler: mux, ErrorLog: logger}
@@ -96,10 +203,11 @@ func setupMockServer(suite suite.Suite, testUpdateDir string, tagFunc func(*upda
 		suite.Require().NoError(err)
 	}()
 
-	return func() {
+	s.close = func() {
 		err := server.Shutdown(context.Background())
 		suite.Require().NoError(err)
 	}
+	return s
 }
 
 func mockedUpdateServerEnvVars() []string {
@@ -109,13 +217,13 @@ func mockedUpdateServerEnvVars() []string {
 	}
 }
 
-func (suite *UpdateIntegrationTestSuite) setupMockServer(tagFunc func(*updater.AvailableUpdate, string, string)) func() {
+func (suite *UpdateIntegrationTestSuite) setupMockServer() *mockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
 
-	return setupMockServer(suite.Suite.Suite, testUpdateDir, tagFunc)
+	return newMockUpdateInfoServer(suite.Suite.Suite, testUpdateDir)
 }
 
 // env prepares environment variables for the test
@@ -196,8 +304,8 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	cancel := suite.setupMockServer(nil)
-	defer cancel()
+	server := suite.setupMockServer()
+	defer server.Close()
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -212,6 +320,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "update")
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(configDir string, beforeFiles []string) string {
@@ -256,9 +367,6 @@ func (suite *UpdateIntegrationTestSuite) pollForUpdateFromLogfile(logFile string
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	cancel := suite.setupMockServer(nil)
-	defer cancel()
-
 	tests := []struct {
 		Name                string
 		TestUpdate          bool
@@ -290,6 +398,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			suite.T().Skip("This requires an update bundle to be released to the release branch")
 		}
 		suite.Run(tt.Name, func() {
+			server := suite.setupMockServer()
+			defer server.Close()
+
 			ts := e2e.New(suite.T(), true)
 			defer ts.Close()
 
@@ -349,6 +460,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			wg.Wait()
 
 			if tt.TestUpdate {
+				server.ExpectNRequests(1)
+				server.NthRequest(0).ExpectQueryParam("source", "update")
+			}
+
+			if tt.TestUpdate {
 				suite.Assert().Contains(logs, "was successful")
 				if tt.ExpectBackupCleaned {
 					suite.Assert().Contains(logs, "Removed all backup files.")
@@ -364,9 +480,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
-	cancel := suite.setupMockServer(nil)
-	defer cancel()
-
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -380,6 +493,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			server := suite.setupMockServer()
+			defer server.Close()
+
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
@@ -412,6 +528,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.TestUpdate {
 				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 				suite.Assert().Contains(logs, "was successful")
+
+				server.ExpectNRequests(1)
+				server.NthRequest(0).ExpectQueryParam("source", "update")
 			} else {
 				updated := false
 				// wait for up to two minutes for the State Tool to get modified
@@ -447,8 +566,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}
 
-	cancel := suite.setupMockServer(nil)
-	defer cancel()
+	server := suite.setupMockServer()
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -474,28 +593,16 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 	suite.Assert().Contains(logs, "Installation failed")
 
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "update")
+
 	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	suite.OnlyRunForTags(tagsuite.Update)
 
-	cancel := suite.setupMockServer(
-		func(up *updater.AvailableUpdate, source, tag string) {
-			if source != "update" {
-				return
-			}
-			// If the update is tagged, respond with an invalid version, so we can test that the tag name was forwarded to the server
-			if tag == "experiment" {
-				up.Version = "99.99.99"
-				up.Path = "invalid-path"
-				return
-			}
-
-			// set the tag
-			up.Tag = "experiment"
-		})
-	defer cancel()
+	tagName := "experiment"
 
 	tests := []struct {
 		name          string
@@ -508,6 +615,24 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(
+				func(up *updater.AvailableUpdate, source, tag string) {
+					if source != "update" {
+						return
+					}
+					// If the update is tagged, respond with an invalid version, so we can test that the tag name was forwarded to the server
+					if tag == "experiment" {
+						up.Version = "99.99.99"
+						up.Path = "invalid-path"
+						return
+					}
+
+					// set the tag
+					up.Tag = tagName
+				})
+			defer server.Close()
+
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 			// use unique exe
@@ -522,9 +647,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 			defer cfg.Close()
 
 			if tt.tagged {
-				err := cfg.Set(updater.CfgUpdateTag, "experiment")
+				err := cfg.Set(updater.CfgUpdateTag, tagName)
 				suite.Require().NoError(err)
-				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
+				suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 			}
 
 			before := fileutils.ListDir(ts.Dirs.Config, false)
@@ -540,6 +665,16 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 			} else {
 				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", testPort))
 				cp.ExpectExitCode(1)
+			}
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "update")
+			if tt.tagged {
+				server.NthRequest(0).ExpectQueryParam("tag", tagName)
+				server.NthRequest(0).ExpectTagResponse("")
+			} else {
+				server.NthRequest(0).ExpectQueryParam("tag", "")
+				server.NthRequest(0).ExpectTagResponse(tagName)
 			}
 		})
 	}

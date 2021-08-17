@@ -143,7 +143,6 @@ set_tempdir () {
     rm -rf $tdir
     mkdir -p $TMPDIR
   fi
-
 }
 
 set_tempdir
