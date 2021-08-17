@@ -1,6 +1,7 @@
 package shortcut
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -68,8 +69,28 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
 	cmd := exec.Command("gio", "set", path, "metadata::trusted", "true")
-	if err := cmd.Run(); err != nil {
-		logging.Errorf("Could not set desktop file as trusted: %v", err)
+	stderrReader, err := cmd.StderrPipe()
+	if err != nil {
+		logging.Errorf("Could not obtain stderr pipe from gio cmd: %v", err)
+		return path, nil
+	}
+
+	if err = cmd.Start(); err != nil {
+		logging.Errorf("Could not start gio cmd: %v", err)
+		return path, nil
+	}
+
+	stderrData, err := io.ReadAll(stderrReader)
+	if err != nil {
+		logging.Errorf("Could not read stderr pipe of gio cmd: %v", err)
+		return path, nil
+	}
+
+	if err = cmd.Wait(); err != nil {
+		logging.Errorf(
+			"Could not set desktop file as trusted: %v (stderr output: %s)",
+			err, stderrData,
+		)
 	}
 
 	return path, nil
