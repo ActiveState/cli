@@ -222,7 +222,7 @@ function fetchArtifacts($downloadDir, $statepkg) {
         return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
-    $script:UPDATE_TAG = $infoJson.Tag
+    $script:UPDATE_TAG = $versionedJson.Tag
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -231,7 +231,7 @@ function fetchArtifacts($downloadDir, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
+    $zipURL = "$FILE_URL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         download $zipURL $zipPath
