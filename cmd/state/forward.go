@@ -29,7 +29,7 @@ const LatestVersion = "latest"
 
 type forwardFunc func() error
 
-func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
+func forwardFn(cfg updater.Configurable, bindir string, args []string, out output.Outputer, pj *project.Project) (forwardFunc, error) {
 	if pj == nil {
 		return nil, nil
 	}
@@ -59,7 +59,7 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 		// Perform the forward
 		out.Notice(output.Heading(locale.Tl("forward_title", "Version Locked")))
 		out.Notice(locale.Tr("forward_version", versionInfo.Version))
-		code, err := forward(bindir, args, versionInfo, out)
+		code, err := forward(cfg, bindir, args, versionInfo, out)
 		if err != nil {
 			if code == 0 {
 				code = 1
@@ -80,10 +80,10 @@ func forwardFn(bindir string, args []string, out output.Outputer, pj *project.Pr
 }
 
 // forward will forward the call to the appropriate State Tool version if necessary
-func forward(bindir string, args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
+func forward(cfg updater.Configurable, bindir string, args []string, versionInfo *projectfile.VersionInfo, out output.Outputer) (int, error) {
 	logging.Debug("Forwarding to version %s/%s, arguments: %v", versionInfo.Branch, versionInfo.Version, args[1:])
 	binary := forwardBin(bindir, versionInfo)
-	err := ensureForwardExists(binary, versionInfo, out)
+	err := ensureForwardExists(cfg, binary, versionInfo, out)
 	if err != nil {
 		return 1, err
 	}
@@ -111,7 +111,7 @@ func forwardBin(bindir string, versionInfo *projectfile.VersionInfo) string {
 	return filepath.Join(bindir, "version-cache", filename)
 }
 
-func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
+func ensureForwardExists(cfg updater.Configurable, binary string, versionInfo *projectfile.VersionInfo, out output.Outputer) error {
 	if fileutils.FileExists(binary) && (versionInfo.Version != LatestVersion || !exeOverDayOld(binary)) {
 		return nil
 	}
@@ -121,13 +121,9 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		desiredVersion = ""
 	}
 
-	up := updater.Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
-		DesiredBranch:  versionInfo.Branch,
-		DesiredVersion: desiredVersion,
-	}
+	up := updater.New(cfg, constants.Version)
+	up.DesiredBranch = versionInfo.Branch
+	up.DesiredVersion = desiredVersion
 
 	info, err := up.Info(context.Background())
 	if err != nil {

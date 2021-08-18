@@ -32,9 +32,9 @@ const CfgTag = "update_tag"
 
 // Info holds the version and sha info
 type Info struct {
-	Version  string
-	Sha256v2 string
-	Tag      string
+	Version  string `json:"Version"`
+	Sha256v2 string `json:"Sha256v2"`
+	Tag      string `json:"Tag"`
 }
 
 type Configurable interface {
@@ -46,7 +46,8 @@ type Configurable interface {
 type Updater struct {
 	cfg            Configurable
 	CurrentVersion string // Currently running version.
-	APIURL         string // Base URL for API requests (json files).
+	UpdateInfoURL  string // URL for requests for update info files
+	BaseFileURL    string // Base URL for file downloads
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
 	DesiredBranch  string
@@ -58,7 +59,8 @@ func New(cfg Configurable, currentVersion string) *Updater {
 	return &Updater{
 		cfg:            cfg,
 		CurrentVersion: currentVersion,
-		APIURL:         constants.APIUpdateURL,
+		UpdateInfoURL:  constants.APIUpdateInfoURL,
+		BaseFileURL:    constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
 	}
 }
@@ -94,16 +96,12 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(pjPath string, out output.Outputer) {
+func PrintUpdateMessage(cfg Configurable, pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
-	up := Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
-	}
+	up := New(cfg, constants.Version)
 
 	info, err := up.Info(context.Background())
 	if err != nil {
@@ -274,14 +272,13 @@ func (u *Updater) fetchBranch() string {
 }
 
 func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) string {
-	var v url.Values
-	v.Set("branch", branchName)
+	v := url.Values{}
+	v.Set("channel", branchName)
 	v.Set("platform", platform)
-	v.Set("arch", arch)
 	v.Set("source", "update")
 
 	if desiredVersion != "" {
-		v.Set("version", desiredVersion)
+		v.Set("target-version", desiredVersion)
 	}
 
 	tag := u.cfg.GetString(CfgTag)
@@ -289,7 +286,7 @@ func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) s
 		v.Set("tag", tag)
 	}
 
-	return u.APIURL + "?" + v.Encode()
+	return u.UpdateInfoURL + "?" + v.Encode()
 }
 
 // fetchInfo gets the `json` file containing update information
@@ -352,7 +349,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s%s",
+	var fetchURL = u.BaseFileURL + fmt.Sprintf("%s/%s/%s/%s%s",
 		argCmdName, branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)

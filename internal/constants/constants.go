@@ -87,6 +87,9 @@ const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 // NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
+// APIUpdateInfoURL is the URL for our update server
+const APIUpdateInfoURL = "https://<to-be-determined>/"
+
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
 

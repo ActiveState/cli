@@ -148,7 +148,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 
 	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
+	forward, err := forwardFn(cfg, cfg.ConfigPath(), args, out, pj)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
-		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
+		if updated, err := autoUpdate(args, cfg, out, pjPath); err != nil || updated {
 			return err
 		}
 
