@@ -28,8 +28,7 @@ import (
 
 var client *ga.Client
 
-// appPrefix is temporarily used for all executables except for the State Tool
-// itself. Removal tracked here: https://www.pivotaltracker.com/story/show/179245592
+// appPrefix is used for all executables except for the State Tool itself.
 var appPrefix string = func() string {
 	cmdName, err := os.Executable()
 	if err != nil {
