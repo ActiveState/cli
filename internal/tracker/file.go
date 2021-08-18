@@ -2,12 +2,12 @@ package tracker
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
 
 type File struct {
+	Key  string
 	Path string
 }
 
@@ -16,12 +16,12 @@ func (f File) Type() TrackingType {
 }
 
 func (f File) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", f.Type()))
+	q, err := db.Prepare(insertQuery(f.Type()))
 	if err != nil {
 		return errs.Wrap(err, "Could not prepare file insert statement")
 	}
 
-	_, err = q.Exec(f.Path)
+	_, err = q.Exec(f.Key, f.Path)
 	if err != nil {
 		return errs.Wrap(err, "Could not execute file store statement")
 	}

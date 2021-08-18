@@ -2,28 +2,28 @@ package tracker
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
 
 type Directory struct {
+	Key  string
 	Path string
 }
 
-func (d *Directory) Type() TrackingType {
+func (d Directory) Type() TrackingType {
 	return Directories
 }
 
-func (d *Directory) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(path) VALUES(?)", d.Type()))
+func (d Directory) Store(db *sql.DB) error {
+	q, err := db.Prepare(insertQuery(d.Type()))
 	if err != nil {
-		return errs.Wrap(err, "Could not prepare file insert statement")
+		return errs.Wrap(err, "Could not prepare directory insert statement")
 	}
 
-	_, err = q.Exec(d.Path)
+	_, err = q.Exec(d.Key, d.Path)
 	if err != nil {
-		return errs.Wrap(err, "Could not execute file store statement")
+		return errs.Wrap(err, "Could not execute directory store statement")
 	}
 
 	return nil

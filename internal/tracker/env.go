@@ -2,7 +2,6 @@ package tracker
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
@@ -17,14 +16,14 @@ func (ev EnvironmentVariable) Type() TrackingType {
 }
 
 func (ev EnvironmentVariable) Store(db *sql.DB) error {
-	q, err := db.Prepare(fmt.Sprintf("INSERT OR REPLACE INTO %s(key, value) VALUES(?, ?)", ev.Type()))
+	q, err := db.Prepare(insertQuery(ev.Type()))
 	if err != nil {
-		return errs.Wrap(err, "Could not prepare file insert statement")
+		return errs.Wrap(err, "Could not prepare env insert statement")
 	}
 
 	_, err = q.Exec(ev.Key, ev.Value)
 	if err != nil {
-		return errs.Wrap(err, "Could not execute file store statement")
+		return errs.Wrap(err, "Could not execute env store statement")
 	}
 
 	return nil
