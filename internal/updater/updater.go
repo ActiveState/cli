@@ -34,7 +34,7 @@ const CfgTag = "update_tag"
 type Info struct {
 	Version  string `json:"Version"`
 	Sha256v2 string `json:"Sha256v2"`
-	Tag      string `json:"Tag"`
+	Tag      string `json:"Tag,omitempty"`
 }
 
 type Configurable interface {
