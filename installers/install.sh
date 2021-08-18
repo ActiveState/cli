@@ -344,7 +344,7 @@ esac
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "--output=simple" "export" "config" "--filter=dir")
+CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "--output=simple" "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
 info "State Tool successfully installed."

@@ -439,7 +439,7 @@ update_rc_file() {
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
+CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
 ACTIVESTATE_CLI_DISABLE_UPDATES=true ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG $STATEPATH _prepare || exit $?
