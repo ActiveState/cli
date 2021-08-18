@@ -208,7 +208,7 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
 function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
     $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
-    $jsonURL= "https://<to-be-determined>/info/legacy?channel=$script:BRANCH&platform=windows&source=install&target-version=$script:VERSION"
+    $jsonURL= "https://<to-be-determined>/api/v1/info/legacy?channel=$script:BRANCH&platform=windows&source=install"
     
     Write-Host "Preparing for installation...`n"
 
@@ -222,6 +222,7 @@ function fetchArtifacts($downloadDir, $statepkg) {
         return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
+    $latestVersion = $versionedJson.Version
     $script:UPDATE_TAG = $versionedJson.Tag
 
     # Download pkg file
