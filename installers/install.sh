@@ -277,7 +277,7 @@ fetchArtifact () {
     error "Failed to fetch update info. Exiting."
     exit 1
   fi
-  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"tag":\s*"\([^"]*\)".*/\1/p'`
+  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Tag":\s*"\([^"]*\)".*/\1/p'`
   VERSION=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Version":\s*"\([^"]*\)".*/\1/p'`
   SUM=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Sha256v2":\s*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/$STATEJSON
