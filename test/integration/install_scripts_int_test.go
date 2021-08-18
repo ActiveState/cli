@@ -91,7 +91,7 @@ type InstallScriptsIntegrationTestSuite struct {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
 	cp.Expect("Installing to")
-	cp.Expect("Continue?")
+	cp.Expect("Accept terms and proceed with install?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
 	cp.Expect("Allow $PATH to be appended in your")
@@ -101,7 +101,7 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer st
 
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
-	cp.Expect("Continue?")
+	cp.Expect("Accept terms and proceed with install?")
 	cp.SendLine("y")
 	cp.Expect("Fetching the latest version")
 	cp.Expect("State Tool successfully installed to")
