@@ -30,6 +30,8 @@ Set-StrictMode -Off
 
 # ignore project file if we are already in an activated environment
 $Env:ACTIVESTATE_PROJECT=""
+# disable auto-updates to prevent that the State Tool automatically updates to the latest version
+$Env:ACTIVESTATE_CLI_DISABLE_UPDATES = "true"
 
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f

@@ -163,11 +163,6 @@ function warningIfadmin() {
     }
 }
 
-function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
-    return $LASTEXITCODE
-}
-
 function displayConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
@@ -189,6 +184,7 @@ function fetchArtifacts($downloadDir, $statepkg) {
     if ($script:VERSION -ne "") {
         Write-Host "Attempting to fetch version: $script:VERSION...`n"
         $jsonURL = "$jsonURL&target-version=$script:VERSION"
+        $script:DISABLE_RECURSIVE_UPDATES="true"
 
         try {
             $jsonString = download $jsonURL
@@ -203,7 +199,7 @@ function fetchArtifacts($downloadDir, $statepkg) {
         Write-Host "Fetching version: $version...`n"
     } else {
         Write-Host "Determining latest version...`n"
-        $infoJson = ConvertFrom-Json -InputObject (download $jsonurl)
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
         $version = $infoJson.Version
 
         Write-Host "Fetching the latest version: $version...`n"
@@ -353,6 +349,9 @@ function install() {
     }
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
+
+    # Disable auto-updates if a specific version was requested
+    $env:ACTIVESTATE_CLI_DISABLE_UPDATES = $script:DISABLE_RECURSIVE_UPDATES
     $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
     $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
     if ($script:TARGET) {
@@ -383,9 +382,8 @@ function install() {
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
 
-    $prepExitCode = runPreparationStep $installDir
-    if ($prepExitCode -ne 0) {
-        return $prepExitCode
+    if (Test-Path env:ACTIVESTATE_CLI_DISABLE_UPDATES) {
+        Remove-Item Env:\ACTIVESTATE_CLI_DISABLE_UPDATES
     }
 
     # Check if installation is in $PATH
