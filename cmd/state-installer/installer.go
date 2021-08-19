@@ -120,7 +120,13 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		return errs.Wrap(err, "Could not detect executable path")
 	}
 
+	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
+
+	trayRunning, err := installation.IsTrayAppRunning(cfg)
+	if err != nil {
+		logging.Error("Could not determine if state-tray is running: %v", err)
+	}
 
 	out.Print("Stopping services")
 
@@ -172,6 +178,13 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
+	}
+
+	if trayRunning {
+		out.Print("Starting ActiveState Desktop")
+		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
+			return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+		}
 	}
 
 	out.Print("Installation Complete")
