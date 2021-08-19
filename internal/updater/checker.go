@@ -87,7 +87,7 @@ func (u *Checker) infoURL(cfg Configurable, desiredVersion, branchName, platform
 		v.Set("tag", tag)
 	}
 
-	return u.apiInfoURL + "?" + v.Encode()
+	return u.apiInfoURL + "/info?" + v.Encode()
 }
 
 func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {

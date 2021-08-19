@@ -111,7 +111,7 @@ func (mus *MockUpdateInfoServer) NthRequest(n int) *MockUpdateInfoRequest {
 func MockedUpdateServerEnvVars() []string {
 	return []string{
 		fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s", TestPort),
-		fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s/info", TestPort),
+		fmt.Sprintf("_TEST_UPDATE_INFO_URL=http://localhost:%s", TestPort),
 	}
 }
 func (mus *MockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Request) {
