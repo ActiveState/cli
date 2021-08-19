@@ -25,7 +25,7 @@ EOF
 unset ACTIVESTATE_PROJECT
 
 # URL to fetch update infos from.
-BASE_INFO_URL="https://<to-be-determined>/info/legacy"
+BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info/legacy"
 # URL to fetch update files from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
