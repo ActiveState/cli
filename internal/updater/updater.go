@@ -286,7 +286,7 @@ func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) s
 		v.Set("tag", tag)
 	}
 
-	return u.UpdateInfoURL + "?" + v.Encode()
+	return u.UpdateInfoURL + "info/legacy?" + v.Encode()
 }
 
 // fetchInfo gets the `json` file containing update information

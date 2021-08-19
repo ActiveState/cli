@@ -88,7 +88,7 @@ const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
 
 // APIUpdateInfoURL is the URL for our update server
-const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1/info/legacy"
+const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1/"
 
 // APIUpdateURL is the URL for our update server
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"

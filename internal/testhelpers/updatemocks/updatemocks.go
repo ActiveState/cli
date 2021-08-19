@@ -13,5 +13,5 @@ func CreateRequestPath(branch, source, platform, version string) string {
 		v.Set("target-version", version)
 	}
 
-	return "/?" + v.Encode()
+	return "/info/legacy?" + v.Encode()
 }
