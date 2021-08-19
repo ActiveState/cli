@@ -100,7 +100,7 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
 // APIUpdateInfoURL is the URL for our update info server
-const APIUpdateInfoURL = "https://<to-be-determined>"
+const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1/info"
 
 // APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
