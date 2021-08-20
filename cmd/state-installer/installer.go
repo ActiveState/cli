@@ -62,7 +62,12 @@ func main() {
 	if len(os.Args) > 1 {
 		installPath = os.Args[1]
 	}
-	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), os.Getenv(constants.UpdateTagEnvVarName)); err != nil {
+	var updateTag *string
+	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
+	if ok {
+		updateTag = &tag
+	}
+	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), updateTag); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
@@ -73,7 +78,7 @@ func main() {
 	}
 }
 
-func run(out output.Outputer, installPath, sessionToken, updateTag string) (rerr error) {
+func run(out output.Outputer, installPath, sessionToken string, updateTag *string) (rerr error) {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
 	cfg, err := config.New()
@@ -92,8 +97,10 @@ func run(out output.Outputer, installPath, sessionToken, updateTag string) (rerr
 		analytics.Configure(cfg)
 	}
 
-	if err := cfg.Set(updater.CfgUpdateTag, updateTag); err != nil {
-		logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
+	if updateTag != nil {
+		if err := cfg.Set(updater.CfgUpdateTag, *updateTag); err != nil {
+			logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
+		}
 	}
 
 	if installPath != "" {
