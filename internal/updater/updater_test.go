@@ -29,7 +29,7 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	defer httpmock.DeActivate()
 	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(constants.BranchName, "update", runtime.GOOS, ""), 200, "{}")
 
-	updater := createUpdater(t)
+	updater := createUpdater()
 
 	out := outputhelper.NewCatcher()
 	err := updater.Run(out.Outputer, false)
@@ -46,7 +46,7 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 		200,
 		`{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
-	updater := createUpdater(t)
+	updater := createUpdater()
 	updater.DesiredVersion = "1.2.3-456"
 	info, err := updater.Info(context.Background())
 	require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestPrintUpdateMessageEmpty(t *testing.T) {
 	assert.Empty(t, out.ErrorOutput(), "Should not print an update message because the version is not locked")
 }
 
-func createUpdater(t *testing.T) *Updater {
+func createUpdater() *Updater {
 	return New("", "1.2")
 }
 
