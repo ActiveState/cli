@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
@@ -26,6 +28,22 @@ import (
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 )
+
+// appEventPrefix is used for all executables except for the State Tool itself.
+var appEventPrefix string = func() string {
+	cmdName, err := os.Executable()
+	if err != nil {
+		return "unknown"
+	}
+	cmdName = path.Base(cmdName)
+	cmdName = strings.TrimSuffix(cmdName, path.Ext(cmdName))
+
+	if cmdName == constants.CommandName {
+		return ""
+	}
+
+	return cmdName + " "
+}()
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
@@ -489,7 +507,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	subCommandString := c.UseFull()
 
 	// Send  GA events unless they are handled in the runners...
-	analytics.Event(analytics.CatRunCmd, subCommandString)
+	analytics.Event(analytics.CatRunCmd, appEventPrefix+subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -537,10 +555,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, "interrupt")
+		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 	}
 
 	return err

@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
-	"path"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,22 +24,6 @@ import (
 )
 
 var client *ga.Client
-
-// appPrefix is used for all executables except for the State Tool itself.
-var appPrefix string = func() string {
-	cmdName, err := os.Executable()
-	if err != nil {
-		return "unknown"
-	}
-	cmdName = path.Base(cmdName)
-	cmdName = strings.TrimSuffix(cmdName, path.Ext(cmdName))
-
-	if cmdName == constants.CommandName {
-		return ""
-	}
-
-	return cmdName + "_"
-}()
 
 // CustomDimensions represents the custom dimensions sent with each event
 var CustomDimensions *customDimensions
@@ -226,8 +207,6 @@ func Configure(cfg configurable) {
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	category = appPrefix + category
-
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
@@ -241,8 +220,6 @@ func event(category string, action string) {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
-	category = appPrefix + category
-
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
