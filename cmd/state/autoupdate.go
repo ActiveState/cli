@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
-func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error) {
+func autoUpdate(args []string, updateTag string, out output.Outputer, pjPath string) (bool, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
 	updateIsRunning := funk.Contains(args, "update")
@@ -29,7 +29,7 @@ func autoUpdate(args []string, out output.Outputer, pjPath string) (bool, error)
 		return false, nil
 	}
 
-	updated, resultVersion := updater.AutoUpdate(pjPath, out)
+	updated, resultVersion := updater.AutoUpdate(updateTag, pjPath, out)
 	if !updated {
 		return false, nil
 	}

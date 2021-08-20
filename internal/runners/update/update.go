@@ -22,12 +22,14 @@ type Update struct {
 	project *project.Project
 	out     output.Outputer
 	prompt  prompt.Prompter
+	cfg     updater.Configurable
 }
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Prompter
+	primer.Configurer
 }
 
 func New(prime primeable) *Update {
@@ -35,6 +37,7 @@ func New(prime primeable) *Update {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Config(),
 	}
 }
 
@@ -43,8 +46,8 @@ func (u *Update) Run(params *Params) error {
 
 	channel := fetchChannel(params.Channel, true)
 
-	up := updater.New(constants.Version)
-	up, info, err := fetchUpdater(constants.Version, channel)
+	tag := u.cfg.GetString(updater.CfgTag)
+	up, info, err := fetchUpdater(tag, constants.Version, channel)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed")
 	}
@@ -65,11 +68,11 @@ func (u *Update) Run(params *Params) error {
 	return nil
 }
 
-func fetchUpdater(version, channel string) (*updater.Updater, *updater.Info, error) {
+func fetchUpdater(tag, version, channel string) (*updater.Updater, *updater.Info, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	up := updater.New(version)
+	up := updater.New(tag, version)
 	up.DesiredBranch = channel
 	info, err := up.Info(context.Background())
 	if err != nil {

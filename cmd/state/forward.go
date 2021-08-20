@@ -121,13 +121,9 @@ func ensureForwardExists(binary string, versionInfo *projectfile.VersionInfo, ou
 		desiredVersion = ""
 	}
 
-	up := updater.Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
-		DesiredBranch:  versionInfo.Branch,
-		DesiredVersion: desiredVersion,
-	}
+	up := updater.New("", constants.Version)
+	up.DesiredBranch = versionInfo.Branch
+	up.DesiredVersion = desiredVersion
 
 	info, err := up.Info(context.Background())
 	if err != nil {

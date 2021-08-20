@@ -3,7 +3,6 @@ package updater
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"path/filepath"
 	"runtime"
@@ -28,7 +27,7 @@ var configPathWithVersion = filepath.Join(environment.GetRootPathUnsafe(), "inte
 func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 	httpmock.Activate(constants.APIUpdateURL)
 	defer httpmock.DeActivate()
-	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
+	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(constants.BranchName, "update", runtime.GOOS, ""), 200, "{}")
 
 	updater := createUpdater()
 
@@ -39,11 +38,11 @@ func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
 }
 
 func TestUpdaterInfoDesiredVersion(t *testing.T) {
-	httpmock.Activate(constants.APIUpdateURL)
+	httpmock.Activate(constants.APIUpdateInfoURL)
 	defer httpmock.DeActivate()
 	httpmock.RegisterWithResponseBody(
 		"GET",
-		updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
+		updatemocks.CreateRequestPath(constants.BranchName, "update", runtime.GOOS, "1.2.3-456"),
 		200,
 		`{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
@@ -59,14 +58,14 @@ func TestUpdaterInfoDesiredVersion(t *testing.T) {
 func TestPrintUpdateMessage(t *testing.T) {
 	setup(t, true)
 
-	httpmock.Activate(constants.APIUpdateURL)
+	httpmock.Activate(constants.APIUpdateInfoURL)
 	defer httpmock.DeActivate()
 
-	requestPath := fmt.Sprintf("%s/%s/%s-%s.json", constants.CommandName, constants.BranchName, runtime.GOOS, runtime.GOARCH)
+	requestPath := updatemocks.CreateRequestPath(constants.BranchName, "update", runtime.GOOS, "")
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, `{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
 	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(configPathWithVersion, out)
+	PrintUpdateMessage("", configPathWithVersion, out)
 
 	assert.Contains(t, out.CombinedOutput(), colorize.StripColorCodes(locale.Tr("update_available", constants.Version, "1.2.3-456")), "Should print an update message")
 }
@@ -75,17 +74,13 @@ func TestPrintUpdateMessageEmpty(t *testing.T) {
 	setup(t, false)
 
 	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(configPath, out)
+	PrintUpdateMessage("", configPath, out)
 
 	assert.Empty(t, out.ErrorOutput(), "Should not print an update message because the version is not locked")
 }
 
 func createUpdater() *Updater {
-	return &Updater{
-		CurrentVersion: "1.2",
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName, // app name
-	}
+	return New("", "1.2")
 }
 
 type testReadCloser struct {

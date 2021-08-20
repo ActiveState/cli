@@ -28,16 +28,26 @@ import (
 
 const plat = runtime.GOOS + "-" + runtime.GOARCH
 
+const CfgTag = "update_tag"
+
 // Info holds the version and sha info
 type Info struct {
-	Version  string
-	Sha256v2 string
+	Version  string `json:"Version"`
+	Sha256v2 string `json:"Sha256v2"`
+	Tag      string `json:"Tag,omitempty"`
+}
+
+type Configurable interface {
+	GetString(string) string
+	Set(string, interface{}) error
 }
 
 // Updater holds all the information about our update
 type Updater struct {
+	Tag            string
 	CurrentVersion string // Currently running version.
-	APIURL         string // Base URL for API requests (json files).
+	UpdateInfoURL  string // URL for requests for update info files
+	BaseFileURL    string // Base URL for file downloads
 	CmdName        string // Command name is appended to the APIURL like http://apiurl/CmdName/. This represents one binary.
 	ForceCheck     bool   // Check for update regardless of cktime timestamp
 	DesiredBranch  string
@@ -45,10 +55,12 @@ type Updater struct {
 	info           Info
 }
 
-func New(currentVersion string) *Updater {
+func New(tag, currentVersion string) *Updater {
 	return &Updater{
+		Tag:            tag,
 		CurrentVersion: currentVersion,
-		APIURL:         constants.APIUpdateURL,
+		UpdateInfoURL:  constants.APIUpdateInfoURL,
+		BaseFileURL:    constants.APIUpdateURL,
 		CmdName:        constants.CommandName,
 	}
 }
@@ -84,16 +96,12 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(pjPath string, out output.Outputer) {
+func PrintUpdateMessage(updateTag string, pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
-	up := Updater{
-		CurrentVersion: constants.Version,
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName,
-	}
+	up := New(updateTag, constants.Version)
 
 	info, err := up.Info(context.Background())
 	if err != nil {
@@ -135,6 +143,10 @@ func (u *Updater) Run(out output.Outputer, autoUpdate bool) error {
 	cmd := exec.Command(os.Args[0], "_prepare")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if u.info.Tag != "" {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.info.Tag))
+	}
 
 	if err := cmd.Run(); err != nil {
 		logging.Error("_prepare failed after update: %v", err)
@@ -245,6 +257,7 @@ func (u *Updater) update(out output.Outputer, autoUpdate bool) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -258,19 +271,32 @@ func (u *Updater) fetchBranch() string {
 	return constants.BranchName
 }
 
+func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) string {
+	v := url.Values{}
+	v.Set("channel", branchName)
+	v.Set("platform", platform)
+	v.Set("source", "update")
+
+	if desiredVersion != "" {
+		v.Set("target-version", desiredVersion)
+	}
+
+	if u.Tag != "" {
+		v.Set("tag", u.Tag)
+	}
+
+	return u.UpdateInfoURL + "info/legacy?" + v.Encode()
+}
+
 // fetchInfo gets the `json` file containing update information
 func (u *Updater) fetchInfo(ctx context.Context) error {
 	if u.info.Version != "" {
 		// already called fetchInfo
 		return nil
 	}
-	branchName := u.fetchBranch()
-	var fullURL = u.APIURL + url.QueryEscape(u.CmdName) + "/" + branchName + "/"
-	if u.DesiredVersion != "" {
-		fullURL += u.DesiredVersion + "/"
-	}
-	fullURL += url.QueryEscape(plat) + ".json"
 
+	branchName := u.fetchBranch()
+	fullURL := u.updateUrl(u.DesiredVersion, branchName, runtime.GOOS, runtime.GOARCH)
 	logging.Debug("Fetching update URL: %s", fullURL)
 
 	r, err := u.fetch(ctx, fullURL)
@@ -322,7 +348,7 @@ func (u *Updater) fetchArchive() ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	var fetchURL = u.APIURL + fmt.Sprintf("%s/%s/%s/%s%s",
+	var fetchURL = u.BaseFileURL + fmt.Sprintf("%s/%s/%s/%s%s",
 		argCmdName, branchName, argInfoVersion, argPlatform, ext)
 
 	logging.Debug("Starting to fetch full binary from: %s", fetchURL)
