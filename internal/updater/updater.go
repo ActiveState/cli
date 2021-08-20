@@ -44,7 +44,7 @@ type Configurable interface {
 
 // Updater holds all the information about our update
 type Updater struct {
-	cfg            Configurable
+	Tag            string
 	CurrentVersion string // Currently running version.
 	UpdateInfoURL  string // URL for requests for update info files
 	BaseFileURL    string // Base URL for file downloads
@@ -55,9 +55,9 @@ type Updater struct {
 	info           Info
 }
 
-func New(cfg Configurable, currentVersion string) *Updater {
+func New(tag, currentVersion string) *Updater {
 	return &Updater{
-		cfg:            cfg,
+		Tag:            tag,
 		CurrentVersion: currentVersion,
 		UpdateInfoURL:  constants.APIUpdateInfoURL,
 		BaseFileURL:    constants.APIUpdateURL,
@@ -101,7 +101,7 @@ func PrintUpdateMessage(cfg Configurable, pjPath string, out output.Outputer) {
 		return
 	}
 
-	up := New(cfg, constants.Version)
+	up := New(cfg.GetString(CfgTag), constants.Version)
 
 	info, err := up.Info(context.Background())
 	if err != nil {
@@ -281,9 +281,8 @@ func (u *Updater) updateUrl(desiredVersion, branchName, platform, arch string) s
 		v.Set("target-version", desiredVersion)
 	}
 
-	tag := u.cfg.GetString(CfgTag)
-	if tag != "" {
-		v.Set("tag", tag)
+	if u.Tag != "" {
+		v.Set("tag", u.Tag)
 	}
 
 	return u.UpdateInfoURL + "info/legacy?" + v.Encode()

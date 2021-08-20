@@ -72,7 +72,8 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	_, info, err := fetchUpdater(l.cfg, version, channel)
+	tag := l.cfg.GetString(updater.CfgTag)
+	_, info, err := fetchUpdater(tag, version, channel)
 	if err != nil || info == nil {
 		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
 	}

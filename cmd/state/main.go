@@ -148,7 +148,7 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 
 	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(cfg, cfg.ConfigPath(), args, out, pj)
+	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
 	if err != nil {
 		return err
 	}

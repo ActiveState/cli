@@ -33,7 +33,8 @@ func AutoUpdate(cfg Configurable, pjPath string, out output.Outputer) (updated b
 
 	// Check for an update, but timeout after one second.
 	logging.Debug("Checking for updates.")
-	update := New(cfg, constants.Version)
+	tag := cfg.GetString(CfgTag)
+	update := New(tag, constants.Version)
 	seconds := 1
 	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
 		override, err := strconv.Atoi(secondsOverride)

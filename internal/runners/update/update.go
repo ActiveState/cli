@@ -46,8 +46,8 @@ func (u *Update) Run(params *Params) error {
 
 	channel := fetchChannel(params.Channel, true)
 
-	up := updater.New(u.cfg, constants.Version)
-	up, info, err := fetchUpdater(u.cfg, constants.Version, channel)
+	tag := u.cfg.GetString(updater.CfgTag)
+	up, info, err := fetchUpdater(tag, constants.Version, channel)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed")
 	}
@@ -68,11 +68,11 @@ func (u *Update) Run(params *Params) error {
 	return nil
 }
 
-func fetchUpdater(cfg updater.Configurable, version, channel string) (*updater.Updater, *updater.Info, error) {
+func fetchUpdater(tag, version, channel string) (*updater.Updater, *updater.Info, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	up := updater.New(cfg, version)
+	up := updater.New(tag, version)
 	up.DesiredBranch = channel
 	info, err := up.Info(context.Background())
 	if err != nil {
