@@ -3,8 +3,6 @@
 #
 # Usage: ./install.sh [-b branch]
 
-set -x
-
 echo "Installing the State Tool .."
 
 USAGE=`cat <<EOF
