@@ -127,7 +127,7 @@ func (mus *MockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Requ
 	if version != "" {
 		fp = filepath.Join(fp, version)
 	}
-	fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "infos.json")
+	fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
 
 	b, err := os.ReadFile(fp)
 	if err != nil {
