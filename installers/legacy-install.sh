@@ -281,6 +281,7 @@ fetchArtifact () {
     error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
     exit 1
   fi
+  cat $TMPDIR/$STATEJSON
   UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Tag":\s*"\([^"]*\)".*/\1/p'`
   SUM=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Sha256v2":\s*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/$STATEJSON
