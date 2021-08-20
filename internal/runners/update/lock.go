@@ -136,7 +136,7 @@ func fetchExactVersion(cfg updater.Configurable, version, channel string) (strin
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	info, err := updater.DefaultChecker(cfg).CheckFor(channel, version)
+	info, err := updater.NewDefaultChecker(cfg).CheckFor(channel, version)
 	if err != nil {
 		res, legacyErr := fetchExactVersionLegacy(version, channel)
 		if legacyErr != nil {

@@ -126,7 +126,7 @@ func runDefault() (rerr error) {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
 
-	up, err := updater.DefaultChecker(cfg).GetUpdateInfo("", "")
+	up, err := updater.NewDefaultChecker(cfg).GetUpdateInfo("", "")
 	if err != nil {
 		return errs.Wrap(err, "Failed to check for latest update.")
 	}

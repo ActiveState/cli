@@ -32,7 +32,7 @@ type Checker struct {
 	httpreq        httpGetter
 }
 
-func DefaultChecker(cfg Configurable) *Checker {
+func NewDefaultChecker(cfg Configurable) *Checker {
 	infoURL := constants.APIUpdateInfoURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
