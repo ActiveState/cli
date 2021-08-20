@@ -1,13 +1,12 @@
 package shortcut
 
 import (
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -68,39 +67,11 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
-	cmd := exec.Command("gio", "set", path, "metadata::trusted", "true")
-	stdoutReader, err := cmd.StdoutPipe()
+	stdoutText, stderrText, err := exeutils.ExecSimple("gio", "set", path, "metadata::trusted", "true")
 	if err != nil {
-		logging.Errorf("Could not obtain stdout pipe from gio cmd: %v", err)
-		return path, nil
-	}
-	stderrReader, err := cmd.StderrPipe()
-	if err != nil {
-		logging.Errorf("Could not obtain stderr pipe from gio cmd: %v", err)
-		return path, nil
-	}
-
-	if err = cmd.Start(); err != nil {
-		logging.Errorf("Could not start gio cmd: %v", err)
-		return path, nil
-	}
-
-	stdoutData, err := io.ReadAll(stdoutReader)
-	if err != nil {
-		logging.Errorf("Could not read stdout pipe of gio cmd: %v", err)
-		return path, nil
-	}
-
-	stderrData, err := io.ReadAll(stderrReader)
-	if err != nil {
-		logging.Errorf("Could not read stderr pipe of gio cmd: %v", err)
-		return path, nil
-	}
-
-	if err = cmd.Wait(); err != nil {
 		logging.Errorf(
 			"Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)",
-			err, stdoutData, stderrData,
+			err, stdoutText, stderrText,
 		)
 	}
 
