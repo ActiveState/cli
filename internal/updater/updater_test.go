@@ -82,8 +82,8 @@ func TestCheckerCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
-			check := NewChecker(constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
-			res, err := check.CheckFor(&configMock{}, tt.CheckChannel, tt.CheckVersion)
+			check := NewChecker(&configMock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
+			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {
 				res.url = ""
