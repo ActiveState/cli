@@ -136,18 +136,10 @@ x86_64)
   ;;
 esac
 
-set_tempdir () {
-  if type mktemp > /dev/null; then
-    TMPDIR=`mktemp -d`
-  else
-    TMPDIR="${TMPDIR:-/tmp}/state-installer.$$"
-    # clean-up previous temp dir
-    rm -rf $tdir
-    mkdir -p $TMPDIR
-  fi
-}
-
-set_tempdir
+# Determine the tmp directory.
+if [ -z "$TMPDIR" ]; then
+  TMPDIR="/tmp"
+fi
 
 CHANNEL='release'
 # Process command line arguments.
