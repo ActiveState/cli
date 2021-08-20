@@ -26,10 +26,6 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-var (
-	cmdTop = path.Base(os.Args[0])
-)
-
 const (
 	cmdStart      = "start"
 	cmdStop       = "stop"
@@ -88,7 +84,7 @@ func run() (rerr error) {
 	})
 
 	cmd := captain.NewCommand(
-		cmdTop, "", "", out, nil, nil,
+		path.Base(os.Args[0]), "", "", out, nil, nil,
 		func(ccmd *captain.Command, args []string) error {
 			fmt.Println("top level")
 			return nil
