@@ -86,9 +86,7 @@ func TestPrintUpdateMessageEmpty(t *testing.T) {
 }
 
 func createUpdater(t *testing.T) *Updater {
-	cfg, err := config.New()
-	require.NoError(t, err)
-	return New(cfg, "1.2")
+	return New("", "1.2")
 }
 
 type testReadCloser struct {

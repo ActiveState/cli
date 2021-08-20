@@ -26,15 +26,14 @@ type UpdateResult struct {
 // timeout period of one second, applies the update and returns `true`.
 // Otherwise, returns `false`.
 // AutoUpdate is skipped altogether if the current project has a locked version.
-func AutoUpdate(cfg Configurable, pjPath string, out output.Outputer) (updated bool, resultVersion string) {
+func AutoUpdate(updateTag string, pjPath string, out output.Outputer) (updated bool, resultVersion string) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo != nil {
 		return false, ""
 	}
 
 	// Check for an update, but timeout after one second.
 	logging.Debug("Checking for updates.")
-	tag := cfg.GetString(CfgTag)
-	update := New(tag, constants.Version)
+	update := New(updateTag, constants.Version)
 	seconds := 1
 	if secondsOverride := os.Getenv(constants.AutoUpdateTimeoutEnvVarName); secondsOverride != "" {
 		override, err := strconv.Atoi(secondsOverride)
