@@ -268,7 +268,7 @@ fetchArtifact () {
     info "Determining latest version..."
     # Determine the latest version to fetch.
     $FETCH $TMPDIR/info.json $STATEURL || exit 1
-    VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":\s*"\([^"]*\)".*/\1/p'`
+    VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
 
     if [ -z "$VERSION" ]; then
       error "Unable to retrieve the latest version number"
@@ -278,9 +278,9 @@ fetchArtifact () {
     info "Fetching the latest version: $VERSION..."
   fi
 
-  UPDATE_TAG=`cat $TMPDIR/info.json | sed -ne 's/.*"tag":\s*"\([^"]*\)".*/\1/p'`
-  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":\s*"\([^"]*\)".*/\1/p'`
-  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":\s*"\([^"]*\)".*/\1/p'`
+  UPDATE_TAG=`cat $TMPDIR/info.json | sed -ne 's/.*"tag":[ \t]*"\([^"]*\)".*/\1/p'`
+  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/info.json
 
 
