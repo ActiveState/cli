@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/locale"
@@ -65,10 +64,8 @@ func TestPrintUpdateMessage(t *testing.T) {
 	requestPath := updatemocks.CreateRequestPath(constants.BranchName, "update", runtime.GOOS, "")
 	httpmock.RegisterWithResponseBody("GET", requestPath, 200, `{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
 
-	cfg, err := config.New()
-	require.NoError(t, err)
 	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(cfg, configPathWithVersion, out)
+	PrintUpdateMessage("", configPathWithVersion, out)
 
 	assert.Contains(t, out.CombinedOutput(), colorize.StripColorCodes(locale.Tr("update_available", constants.Version, "1.2.3-456")), "Should print an update message")
 }
@@ -76,11 +73,8 @@ func TestPrintUpdateMessage(t *testing.T) {
 func TestPrintUpdateMessageEmpty(t *testing.T) {
 	setup(t, false)
 
-	cfg, err := config.New()
-	require.NoError(t, err)
-
 	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(cfg, configPath, out)
+	PrintUpdateMessage("", configPath, out)
 
 	assert.Empty(t, out.ErrorOutput(), "Should not print an update message because the version is not locked")
 }

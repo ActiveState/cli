@@ -96,12 +96,12 @@ func (u *Updater) CanUpdate() bool {
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func PrintUpdateMessage(cfg Configurable, pjPath string, out output.Outputer) {
+func PrintUpdateMessage(updateTag string, pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
-	up := New(cfg.GetString(CfgTag), constants.Version)
+	up := New(updateTag, constants.Version)
 
 	info, err := up.Info(context.Background())
 	if err != nil {
