@@ -6,4 +6,4 @@ package constants
 // This is currently shared by the installer and uninstall mechanisms
 // Todo With https://www.pivotaltracker.com/story/show/177600107 the constant
 // should only be needed by the installer, so we could consider moving it there.
-const MacOSApplicationName = "ActiveState Desktop.app"
+const MacOSApplicationName = "ActiveState Desktop (Preview).app"

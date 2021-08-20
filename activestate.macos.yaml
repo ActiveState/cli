@@ -1,7 +1,7 @@
 constants:
   - name: SYSTRAY_APP
     if: eq .OS.Name "MacOS"
-    value: ActiveState\ Desktop.app
+    value: ActiveState\ Desktop\ \(Preview\).app
 scripts:
   - name: build-systray-app
     language: bash

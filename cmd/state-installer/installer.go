@@ -123,6 +123,11 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
 
+	trayRunning, err := installation.IsTrayAppRunning(cfg)
+	if err != nil {
+		logging.Error("Could not determine if state-tray is running: %v", err)
+	}
+
 	out.Print("Stopping services")
 
 	if err := installation.StopRunning(installPath); err != nil {
@@ -175,9 +180,11 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
-	out.Print("Starting ActiveState Desktop")
-	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
-		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+	if trayRunning {
+		out.Print("Starting ActiveState Desktop")
+		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
+			return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+		}
 	}
 
 	out.Print("Installation Complete")
