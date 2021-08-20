@@ -24,6 +24,7 @@ type Configurable interface {
 }
 
 type Checker struct {
+	cfg            Configurable
 	apiInfoURL     string
 	fileURL        string
 	currentChannel string
@@ -31,9 +32,7 @@ type Checker struct {
 	httpreq        httpGetter
 }
 
-var DefaultChecker = newDefaultChecker()
-
-func newDefaultChecker() *Checker {
+func DefaultChecker(cfg Configurable) *Checker {
 	infoURL := constants.APIUpdateInfoURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
@@ -42,11 +41,12 @@ func newDefaultChecker() *Checker {
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		updateURL = url
 	}
-	return NewChecker(infoURL, updateURL, constants.BranchName, constants.Version, httpreq.New())
+	return NewChecker(cfg, infoURL, updateURL, constants.BranchName, constants.Version, httpreq.New())
 }
 
-func NewChecker(infoURL, fileURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
+func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
 	return &Checker{
+		cfg,
 		infoURL,
 		fileURL,
 		currentChannel,
@@ -55,12 +55,12 @@ func NewChecker(infoURL, fileURL, currentChannel, currentVersion string, httpget
 	}
 }
 
-func (u *Checker) Check(cfg Configurable) (*AvailableUpdate, error) {
-	return u.CheckFor(cfg, os.Getenv(constants.UpdateBranchEnvVarName), "")
+func (u *Checker) Check() (*AvailableUpdate, error) {
+	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
 }
 
-func (u *Checker) CheckFor(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	info, err := u.GetUpdateInfo(cfg, desiredChannel, desiredVersion)
+func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
+	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
@@ -72,7 +72,7 @@ func (u *Checker) CheckFor(cfg Configurable, desiredChannel, desiredVersion stri
 	return info, nil
 }
 
-func (u *Checker) infoURL(cfg Configurable, desiredVersion, branchName, platform string) string {
+func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) string {
 	v := make(url.Values)
 	v.Set("channel", branchName)
 	v.Set("platform", platform)
@@ -82,7 +82,6 @@ func (u *Checker) infoURL(cfg Configurable, desiredVersion, branchName, platform
 		v.Set("target-version", desiredVersion)
 	}
 
-	tag := cfg.GetString(CfgUpdateTag)
 	if tag != "" {
 		v.Set("tag", tag)
 	}
@@ -90,7 +89,7 @@ func (u *Checker) infoURL(cfg Configurable, desiredVersion, branchName, platform
 	return u.apiInfoURL + "/info?" + v.Encode()
 }
 
-func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
+func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	if desiredChannel == "" {
 		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
 			desiredChannel = overrideBranch
@@ -99,7 +98,8 @@ func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion
 		}
 	}
 
-	infoURL := u.infoURL(cfg, desiredVersion, desiredChannel, runtime.GOOS)
+	tag := u.cfg.GetString(CfgUpdateTag)
+	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
 	res, err := u.httpreq.Get(infoURL)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
@@ -117,12 +117,12 @@ func (u *Checker) GetUpdateInfo(cfg Configurable, desiredChannel, desiredVersion
 
 // PrintUpdateMessage will print a message to stdout when an update is available.
 // This will only print the message if the current project has a version lock AND if an update is available
-func (u *Checker) PrintUpdateMessage(cfg Configurable, pjPath string, out output.Outputer) {
+func (u *Checker) PrintUpdateMessage(pjPath string, out output.Outputer) {
 	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
 		return
 	}
 
-	info, err := u.Check(cfg)
+	info, err := u.Check()
 	if err != nil {
 		logging.Error("Could not check for updates: %v", err)
 		return
