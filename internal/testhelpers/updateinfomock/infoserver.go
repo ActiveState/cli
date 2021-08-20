@@ -130,18 +130,27 @@ func (mus *MockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Requ
 	fp = filepath.Join(fp, fmt.Sprintf("%s-%s", platform, arch), "info.json")
 
 	b, err := os.ReadFile(fp)
-	mus.suite.Require().NoError(err, "failed finding version info file")
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	var up *updater.AvailableUpdate
 	err = json.Unmarshal(b, &up)
-	mus.suite.Require().NoError(err)
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	if mus.updateModifier != nil {
 		mus.updateModifier(up, source, tag)
 	}
 
 	b, err = json.MarshalIndent(up, "", "")
-	mus.suite.Require().NoError(err, "failed marshaling the response")
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	fmt.Fprintf(rw, "%s", b)
 
@@ -169,18 +178,27 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 	fp = filepath.Join(fp, fmt.Sprintf("%s-%s.json", platform, arch))
 
 	b, err := os.ReadFile(fp)
-	mus.suite.Require().NoError(err, "failed finding version info file")
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	var up *legacyupd.Info
 	err = json.Unmarshal(b, &up)
-	mus.suite.Require().NoError(err)
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	if mus.legacyUpdateModifier != nil {
 		mus.legacyUpdateModifier(up, source, tag)
 	}
 
 	b, err = json.MarshalIndent(up, "", "")
-	mus.suite.Require().NoError(err, "failed marshaling the response")
+	if err != nil {
+		http.Error(rw, err.Error(), 400)
+		return
+	}
 
 	fmt.Fprintf(rw, "%s", b)
 
