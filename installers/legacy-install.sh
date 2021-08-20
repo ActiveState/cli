@@ -25,8 +25,10 @@ EOF
 # ignore project file if we are already in an activated environment
 unset ACTIVESTATE_PROJECT
 
-# URL to fetch updates from.
-STATEURL="https://state-tool.s3.amazonaws.com/update/state/release/"
+# URL to fetch update infos from.
+BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info/legacy"
+# URL to fetch update files from
+BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
@@ -125,10 +127,20 @@ x86_64)
 esac
 
 # Determine the tmp directory.
-if [ -z "$TMPDIR" ]; then
-  TMPDIR="/tmp"
-fi
+set_tempdir () {
+  if type mktemp > /dev/null; then
+    TMPDIR=`mktemp -d`
+  else
+    TMPDIR="${TMPDIR:-/tmp}/state-installer.$$"
+    # clean-up previous temp dir
+    rm -rf $tdir
+    mkdir -p $TMPDIR
+  fi
 
+}
+set_tempdir
+
+CHANNEL='release'
 # Process command line arguments.
 while getopts "nb:t:e:c:v:f?h-:" opt; do
   case $opt in
@@ -146,7 +158,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
     esac
     ;;
   b)
-    STATEURL=`echo $STATEURL | sed -e "s|release|$OPTARG|;"`
+    CHANNEL=$OPTARG
     ;;
   c)
     POST_INSTALL_COMMAND=$OPTARG
@@ -172,6 +184,8 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
     ;;
   esac
 done
+
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSION"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -260,17 +274,18 @@ fi
 fetchArtifact () {
   info "Fetching version info..."
   # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON $STATEURL$VERSION/$STATEJSON
+  $FETCH $TMPDIR/$STATEJSON "$STATEURL"
   if [ $? -ne 0 ]; then
     error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
     exit 1
   fi
-  SUM=`cat $TMPDIR/$STATEJSON | grep -m 1 '"Sha256v2":' | awk '{print $2}' | tr -d '",'`
+  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Tag":[ \t]*"\([^"]*\)".*/\1/p'`
+  SUM=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Sha256v2":[ \t]*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/$STATEJSON
 
   info "Fetching version: $VERSION..."
   # Fetch it.
-  $FETCH $TMPDIR/$STATEPKG ${STATEURL}${VERSION}/${STATEPKG}
+  $FETCH $TMPDIR/$STATEPKG ${BASE_FILE_URL}/${CHANNEL}/${VERSION}/${STATEPKG}
   if [ $? -ne 0 ]; then
     error "Failed to download the State Tool archive.  Please try again later."
     exit 1
@@ -424,10 +439,10 @@ update_rc_file() {
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "export" "config" "--filter=dir")
+CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-$STATEPATH _prepare || exit $?
+ACTIVESTATE_CLI_DISABLE_UPDATES=true ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG $STATEPATH _prepare || exit $?
 
 # Check if the installation is in $PATH, if so we also check if the activate
 # flag was passed and attempt to activate the project

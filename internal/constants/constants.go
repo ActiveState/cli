@@ -84,6 +84,9 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
 
+// UpdateTagEnvVarName
+const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
+
 // NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
 
@@ -96,7 +99,10 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 // OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
-// APIUpdateURL is the URL for our update server
+// APIUpdateInfoURL is the URL for our update info server
+const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
+
+// APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
