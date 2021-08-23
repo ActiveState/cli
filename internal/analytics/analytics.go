@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	ga "github.com/ActiveState/go-ogle-analytics"
@@ -97,6 +99,7 @@ type customDimensions struct {
 	projectName   string
 	sessionToken  string
 	uniqID        string
+	updateTag     string
 }
 
 func (d *customDimensions) SetOutput(output string) {
@@ -123,6 +126,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"10": d.projectName,
 		"11": d.sessionToken,
 		"12": d.uniqID,
+		"13": d.updateTag,
 	}
 }
 
@@ -183,6 +187,11 @@ func setup() {
 		logging.SendToRollbarWhenReady("warning", fmt.Sprintf("Cannot detect the OS version: %v", err))
 	}
 
+	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
+	if !ok {
+		tag = cfg.GetString(updater.CfgTag)
+	}
+
 	CustomDimensions = &customDimensions{
 		version:       constants.Version,
 		branchName:    constants.BranchName,
@@ -194,6 +203,7 @@ func setup() {
 		output:        string(output.PlainFormatName),
 		sessionToken:  cfg.GetString(CfgSessionToken),
 		uniqID:        uniqid.Text(),
+		updateTag:     tag,
 	}
 
 	if id == "unknown" {
