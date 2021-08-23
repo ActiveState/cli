@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -21,23 +23,25 @@ import (
 )
 
 type Server struct {
-	shutdown    context.CancelFunc
+	cancel      context.CancelFunc
+	done        chan bool
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
 }
 
-func New(cfg *config.Instance, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, cancel context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{shutdown: shutdown}
-	s.graphServer = newGraphServer(cfg)
+	s := &Server{cancel: cancel}
+	s.graphServer = newGraphServer(cfg, s.done)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
+	s.done = make(chan bool, 1)
 
 	s.setupRouting()
 
@@ -61,6 +65,18 @@ func (s *Server) Start() error {
 	return s.httpServer.Start(s.listener.Addr().String())
 }
 
+func (s *Server) quit() {
+	logging.Debug("Sending on quit chan")
+	s.done <- true
+	logging.Debug("Quit chan sent")
+	logging.Debug("Closing quit chan")
+	close(s.done)
+	logging.Debug("Quit chan closed")
+	logging.Debug("Calling cancel func")
+	s.cancel()
+	logging.Debug("Cancel done")
+}
+
 func (s *Server) Shutdown() error {
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -72,9 +88,17 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func newGraphServer(cfg *config.Instance) *handler.Server {
-	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg)}))
-	graphServer.AddTransport(&transport.Websocket{})
+func newGraphServer(cfg *config.Instance, done chan bool) *handler.Server {
+	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg, done)}))
+	graphServer.AddTransport(&transport.Websocket{
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				// For development. User proper CORS for prod
+				return true
+			},
+		},
+		KeepAlivePingInterval: 10 * time.Second,
+	})
 	graphServer.SetQueryCache(lru.New(1000))
 	graphServer.Use(extension.Introspection{})
 	graphServer.Use(extension.AutomaticPersistedQuery{

@@ -85,6 +85,16 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	return &u.AvailableUpdate, nil
 }
 
+func (m *SvcModel) Quit(ctx context.Context) (chan bool, error) {
+	r := request.NewQuitRequest()
+	q := graph.QuitResponse{}
+	if err := m.client.RunWithContext(ctx, r, &q); err != nil {
+		return nil, errs.Wrap(err, "Error subscribing to quit event")
+	}
+
+	return q.Quit, nil
+}
+
 func (m *SvcModel) StopServer() error {
 	htClient := retryhttp.DefaultClient.StandardClient()
 

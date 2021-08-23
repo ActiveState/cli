@@ -121,6 +121,13 @@ func run() (rerr error) {
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
 	defer closeUpdateSupervision()
 
+	// Does this have to be in a goroutine?
+	quit, err := model.Quit(context.Background())
+	logging.Debug("Quit err: %v", err)
+	if err != nil {
+		return errs.Wrap(err, "Could not subscribe so service quit event")
+	}
+
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
 		locale.Tl("tray_about_tooltip", "Information about the State Tool"),
@@ -244,6 +251,9 @@ func run() (rerr error) {
 			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")
+			systray.Quit()
+		case <-quit:
+			logging.Debug("Quit from subscription")
 			systray.Quit()
 		}
 	}

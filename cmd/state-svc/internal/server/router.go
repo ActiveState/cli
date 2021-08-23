@@ -14,12 +14,17 @@ func (s *Server) setupRouting() {
 	})
 
 	s.httpServer.GET("/", func(c echo.Context) error {
-		playground.Handler("GraphQL", "/query").ServeHTTP(c.Response(), c.Request())
+		playground.Handler("GraphQL", "/subscriptions").ServeHTTP(c.Response(), c.Request())
+		return nil
+	})
+
+	s.httpServer.GET("/subscriptions", func(c echo.Context) error {
+		s.graphServer.ServeHTTP(c.Response(), c.Request())
 		return nil
 	})
 
 	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
-		s.shutdown()
+		s.quit()
 		return nil
 	})
 }
