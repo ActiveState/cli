@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
@@ -31,18 +31,11 @@ import (
 
 // appEventPrefix is used for all executables except for the State Tool itself.
 var appEventPrefix string = func() string {
-	cmdName, err := os.Executable()
-	if err != nil {
-		return "unknown"
-	}
-	cmdName = path.Base(cmdName)
-	cmdName = strings.TrimSuffix(cmdName, path.Ext(cmdName))
-
-	if cmdName == constants.CommandName {
+	execName := osutils.ExecutableName()
+	if execName == constants.CommandName {
 		return ""
 	}
-
-	return cmdName + " "
+	return execName + " "
 }()
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -124,4 +125,16 @@ func Executable() (string, error) {
 	}
 
 	return fileutils.ResolvePath(exec)
+}
+
+// ExecutableName returns the name of the executable called with the extension
+// removed and falls back to the command used to call the executable.
+func ExecutableName() string {
+	name, err := os.Executable()
+	if err != nil {
+		name = os.Args[0]
+	}
+	name = path.Base(name)
+	name = strings.TrimSuffix(name, path.Ext(name))
+	return name
 }
