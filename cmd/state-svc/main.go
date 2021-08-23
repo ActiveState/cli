@@ -110,7 +110,7 @@ func runForeground(cfg *config.Instance) error {
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
 	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, shutdown)
+	p := NewService(cfg, ctx, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)

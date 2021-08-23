@@ -201,6 +201,11 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	}
 
 	if childCmd != nil && !childCmd.SkipChecks() {
+		// Auto update to latest state tool version
+		if updated, err := autoUpdate(args, cfg, out, svcm, pjPath); err != nil || updated {
+			return err
+		}
+
 		// Check for deprecation
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {

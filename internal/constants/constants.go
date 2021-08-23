@@ -39,6 +39,9 @@ const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// DisableUpdates is the env var used to disable automatic updates
+const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
@@ -47,6 +50,9 @@ const InternalConfigFileNameLegacy = "config.yaml"
 
 // InternalConfigFileName is the filename used for our sqlite based settings db
 const InternalConfigFileName = "config.db"
+
+// AutoUpdateTimeoutEnvVarName is the name of the environment variable that can be set to override the allowed timeout to check for an available auto-update
+const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"

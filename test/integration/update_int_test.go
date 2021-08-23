@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -460,7 +461,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 					}
 
 					// set the tag
-					up.Tag = tagName
+					up.Tag = &tagName
 				})
 			defer server.Close()
 
@@ -502,10 +503,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 			server.NthRequest(0).ExpectQueryParam("source", "update")
 			if tt.tagged {
 				server.NthRequest(0).ExpectQueryParam("tag", tagName)
-				server.NthRequest(0).ExpectTagResponse("")
+				server.NthRequest(0).ExpectTagResponse(nil)
 			} else {
 				server.NthRequest(0).ExpectQueryParam("tag", "")
-				server.NthRequest(0).ExpectTagResponse(tagName)
+				server.NthRequest(0).ExpectTagResponse(&tagName)
 			}
 		})
 	}
@@ -532,4 +533,73 @@ func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(cfg *co
 	pjfile.SetPath(filepath.Join(workDir, constants.ConfigFileName))
 	err := pjfile.Save(cfg)
 	suite.Require().NoError(err)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.versionCompare(ts, true, false, constants.Version, suite.Equal)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// update should not run because the exe is less than a day old
+	suite.versionCompare(ts, false, false, constants.Version, suite.Equal)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	server := suite.setupMockServer()
+	defer server.Close()
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExes()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
+	// update should run because the exe is more than a day old
+	suite.versionCompare(ts, false, true, constants.Version, suite.NotEqual)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExes()
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, false)...), e2e.NonWriteableBinDir())
+	cp.Expect("insufficient permissions")
+	cp.Expect("ActiveState CLI")
+	cp.Expect("Revision")
+	cp.ExpectExitCode(0)
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
+	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
+
+	suite.GreaterOrEqual(len(resultVersions), 1,
+		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
+	)
+
+	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
 }

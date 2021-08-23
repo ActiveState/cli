@@ -37,6 +37,7 @@ require (
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-openapi/validate v0.20.2
 	github.com/gobuffalo/packr v1.10.7
+	github.com/gofrs/flock v0.8.1
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
@@ -64,7 +65,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nicksnyder/go-i18n v1.10.0
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/pierrec/lz4 v0.0.0-20190222153722-062282ea0dcf // indirect
 	github.com/pkg/errors v0.9.1

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"golang.org/x/net/context"
 
@@ -17,20 +16,23 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
-	cfg   *config.Instance
-	cache *cache.Cache
+	cfg        *config.Instance
+	upProvider UpdateInfoProvider
+}
+
+type UpdateInfoProvider interface {
+	LatestUpdate() (*updater.AvailableUpdate, error)
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance) *Resolver {
+func New(cfg *config.Instance, upProvider UpdateInfoProvider) *Resolver {
 	return &Resolver{
 		cfg,
-		cache.New(12*time.Hour, time.Hour),
+		upProvider,
 	}
 }
 
@@ -55,32 +57,17 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
-	const cacheKey = "AvailableUpdate"
-	if up, exists := r.cache.Get(cacheKey); exists {
-		logging.Debug("Using cache")
-		return up.(*graph.AvailableUpdate), nil
-	}
-
-	var availableUpdate *graph.AvailableUpdate
-	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
-
-	update, err := updater.NewDefaultChecker(r.cfg).Check()
+	update, err := r.upProvider.LatestUpdate()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
+		return nil, errs.Wrap(err, "Failed to check for available update")
 	}
 	if update == nil {
 		return nil, nil
 	}
 
-	availableUpdate = &graph.AvailableUpdate{
-		Version:  update.Version,
-		Channel:  update.Channel,
-		Path:     update.Path,
-		Platform: update.Platform,
-		Sha256:   update.Sha256,
-	}
+	availableUpdate := graph.AvailableUpdate(*update)
 
-	return availableUpdate, nil
+	return &availableUpdate, nil
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {

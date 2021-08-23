@@ -3,11 +3,13 @@
 package graph
 
 type AvailableUpdate struct {
-	Version  string `json:"version"`
-	Channel  string `json:"channel"`
-	Path     string `json:"path"`
-	Platform string `json:"platform"`
-	Sha256   string `json:"sha256"`
+	Version  string  `json:"version"`
+	Channel  string  `json:"channel"`
+	Path     string  `json:"path"`
+	Platform string  `json:"platform"`
+	Sha256   string  `json:"sha256"`
+	URL      string  `json:"url"`
+	Tag      *string `json:"tag"`
 }
 
 type DeferredUpdate struct {

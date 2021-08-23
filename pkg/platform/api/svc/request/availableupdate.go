@@ -15,6 +15,8 @@ func (u *AvailableUpdate) Query() string {
 			path
 			platform
 			sha256
+			tag
+			url
 		}
 	}`
 }

@@ -207,7 +207,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 		if tag != tagName {
 			return
 		}
-		up.Tag = tagName
+		up.Tag = &tagName
 	})
 	defer server.Close()
 
@@ -248,11 +248,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	server.ExpectNRequests(2)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectLegacyQuery(true)
-	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(0).ExpectTagResponse(&tagName)
 	server.NthRequest(1).ExpectQueryParam("source", "update")
 	server.NthRequest(1).ExpectQueryParam("tag", tagName)
 	server.NthRequest(1).ExpectLegacyQuery(false)
-	server.NthRequest(1).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectTagResponse(&tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -260,18 +260,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	tagName := "experiment"
 
 	tests := []struct {
 		Name        string
 		TestInstall bool
-		Tag         string
+		Tag         *string
 		Channel     string
 	}{
-		{"install-local-test-update", true, "", constants.BranchName},
-		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
+		{"install-local-test-update", true, nil, constants.BranchName},
+		{"install-local-test-update-with-tag", true, &tagName, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "", "master"},
+		{"install-release", false, nil, "master"},
 	}
 
 	for _, tt := range tests {
@@ -404,18 +405,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	tagName := "experiment"
 
 	tests := []struct {
 		Name        string
 		TestInstall bool
-		Tag         string
+		Tag         *string
 		Channel     string
 	}{
-		{"install-local-test-update", true, "", constants.BranchName},
-		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
+		{"install-local-test-update", true, nil, constants.BranchName},
+		{"install-local-test-update-with-tag", true, &tagName, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "", "master"},
+		{"install-release", false, nil, "master"},
 	}
 
 	for _, tt := range tests {
@@ -619,7 +621,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 		if tag != tagName {
 			return
 		}
-		up.Tag = tagName
+		up.Tag = &tagName
 	})
 	defer server.Close()
 
@@ -673,10 +675,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	server.ExpectNRequests(2)
 	server.NthRequest(0).ExpectLegacyQuery(true)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(0).ExpectTagResponse(&tagName)
 	server.NthRequest(1).ExpectLegacyQuery(false)
 	server.NthRequest(1).ExpectQueryParam("source", "update")
-	server.NthRequest(1).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectTagResponse(&tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
@@ -740,7 +742,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 
 	server.ExpectNRequests(1)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectTagResponse(nil)
 	server.NthRequest(0).ExpectLegacyQuery(false)
 }
 
@@ -791,7 +793,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	server.ExpectNRequests(1)
 	server.NthRequest(0).ExpectLegacyQuery(false)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectTagResponse(nil)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {

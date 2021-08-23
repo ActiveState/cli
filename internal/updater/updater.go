@@ -13,27 +13,24 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
-type AvailableUpdate struct {
-	Version  string `json:"version"`
-	Channel  string `json:"channel"`
-	Platform string `json:"platform"`
-	Path     string `json:"path"`
-	Sha256   string `json:"sha256"`
-	Tag      string `json:"tag,omitempty"`
-	url      string
-}
+type AvailableUpdate graph.AvailableUpdate
 
 func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
+	var t *string
+	if tag != "" {
+		t = &tag
+	}
 	return &AvailableUpdate{
 		Version:  version,
 		Channel:  channel,
 		Platform: platform,
 		Path:     path,
 		Sha256:   sha256,
-		Tag:      tag,
+		Tag:      t,
 	}
 }
 

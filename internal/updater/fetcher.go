@@ -20,9 +20,9 @@ func NewFetcher() *Fetcher {
 }
 
 func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
-	b, err := f.httpreq.Get(update.url)
+	b, err := f.httpreq.Get(update.URL)
 	if err != nil {
-		return errs.Wrap(err, "Fetch %s failed", update.url)
+		return errs.Wrap(err, "Fetch '%s' failed", update.URL)
 	}
 
 	if err := verifySha(b, update.Sha256); err != nil {

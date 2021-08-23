@@ -28,14 +28,14 @@ type Server struct {
 	port        int
 }
 
-func New(cfg *config.Instance, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, shutdown context.CancelFunc, upProvider resolver.UpdateInfoProvider) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
 	s := &Server{shutdown: shutdown}
-	s.graphServer = newGraphServer(cfg)
+	s.graphServer = newGraphServer(cfg, upProvider)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
 
@@ -72,8 +72,8 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func newGraphServer(cfg *config.Instance) *handler.Server {
-	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg)}))
+func newGraphServer(cfg *config.Instance, upProvider resolver.UpdateInfoProvider) *handler.Server {
+	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg, upProvider)}))
 	graphServer.AddTransport(&transport.Websocket{})
 	graphServer.SetQueryCache(lru.New(1000))
 	graphServer.Use(extension.Introspection{})

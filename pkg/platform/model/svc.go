@@ -82,6 +82,7 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	if u.AvailableUpdate.Version == "" {
 		return nil, nil
 	}
+
 	return &u.AvailableUpdate, nil
 }
 

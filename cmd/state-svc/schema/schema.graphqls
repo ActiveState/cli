@@ -16,6 +16,8 @@ type AvailableUpdate {
   path: String!
   platform: String!
   sha256: String!
+  url: String!
+  tag: String
 }
 
 type DeferredUpdate {

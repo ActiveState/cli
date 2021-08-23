@@ -22,7 +22,7 @@ type MockUpdateInfoRequest struct {
 	suite    suite.Suite
 	req      *http.Request
 	isLegacy bool
-	setTag   string
+	setTag   *string
 }
 
 // ExpectQueryParam expects that a query parameter with key key has been set to the expectedValue
@@ -36,7 +36,7 @@ func (mur *MockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
 }
 
 // ExpectTagResponse expects that the server responded with a tag field in the response
-func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag string) {
+func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag *string) {
 	mur.suite.Assert().Equal(tag, mur.setTag)
 }
 
@@ -184,10 +184,15 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 
 	fmt.Fprintf(rw, "%s", b)
 
+	var t *string
+	if up.Tag != "" {
+		t = &up.Tag
+	}
+
 	mus.requests = append(mus.requests, &MockUpdateInfoRequest{
 		suite:    mus.suite,
 		req:      r,
 		isLegacy: true,
-		setTag:   up.Tag,
+		setTag:   t,
 	})
 }

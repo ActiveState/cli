@@ -47,6 +47,8 @@ type ComplexityRoot struct {
 		Path     func(childComplexity int) int
 		Platform func(childComplexity int) int
 		Sha256   func(childComplexity int) int
+		Tag      func(childComplexity int) int
+		URL      func(childComplexity int) int
 		Version  func(childComplexity int) int
 	}
 
@@ -130,6 +132,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AvailableUpdate.Sha256(childComplexity), true
+
+	case "AvailableUpdate.tag":
+		if e.complexity.AvailableUpdate.Tag == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.Tag(childComplexity), true
+
+	case "AvailableUpdate.url":
+		if e.complexity.AvailableUpdate.URL == nil {
+			break
+		}
+
+		return e.complexity.AvailableUpdate.URL(childComplexity), true
 
 	case "AvailableUpdate.version":
 		if e.complexity.AvailableUpdate.Version == nil {
@@ -316,6 +332,8 @@ type AvailableUpdate {
   path: String!
   platform: String!
   sha256: String!
+  url: String!
+  tag: String
 }
 
 type DeferredUpdate {
@@ -593,6 +611,73 @@ func (ec *executionContext) _AvailableUpdate_sha256(ctx context.Context, field g
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_url(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AvailableUpdate_tag(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AvailableUpdate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tag, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeferredUpdate_channel(ctx context.Context, field graphql.CollectedField, obj *graph.DeferredUpdate) (ret graphql.Marshaler) {
@@ -2320,6 +2405,13 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "url":
+			out.Values[i] = ec._AvailableUpdate_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "tag":
+			out.Values[i] = ec._AvailableUpdate_tag(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

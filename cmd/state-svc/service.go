@@ -11,24 +11,28 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/spf13/cast"
 )
 
 type service struct {
 	cfg      *config.Instance
+	ctx      context.Context
 	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, shutdown context.CancelFunc) *service {
-	return &service{cfg: cfg, shutdown: shutdown}
+func NewService(cfg *config.Instance, ctx context.Context, shutdown context.CancelFunc) *service {
+	return &service{cfg: cfg, ctx: ctx, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
+	updateService := updater.NewCheckService(s.cfg, s.ctx)
+
 	var err error
-	s.server, err = server.New(s.cfg, s.shutdown)
+	s.server, err = server.New(s.cfg, s.shutdown, updateService)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
