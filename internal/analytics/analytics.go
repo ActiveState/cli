@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	ga "github.com/ActiveState/go-ogle-analytics"
@@ -99,6 +101,7 @@ type customDimensions struct {
 	projectName   string
 	uniqID        string
 	sessionToken  string
+	updateTag     string
 }
 
 type configurable interface {
@@ -129,6 +132,7 @@ func (d *customDimensions) toMap() map[string]string {
 		"10": d.projectName,
 		"11": d.sessionToken,
 		"12": d.uniqID,
+		"13": d.updateTag,
 	}
 }
 
@@ -203,6 +207,11 @@ func setup() {
 
 func Configure(cfg configurable) {
 	CustomDimensions.sessionToken = cfg.GetString(CfgSessionToken)
+	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
+	if !ok {
+		tag = cfg.GetString(updater.CfgUpdateTag)
+	}
+	CustomDimensions.updateTag = tag
 }
 
 // Event logs an event to google analytics
