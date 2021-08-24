@@ -114,12 +114,12 @@ func run() (rerr error) {
 	logging.Debug("hiding systray menu")
 	mUpdate.Hide()
 
-	updNotice := updateNotice{
-		item: mUpdate,
-	}
+	// updNotice := updateNotice{
+	//	item: mUpdate,
+	// }
 
-	closeUpdateSupervision := superviseUpdate(model, &updNotice)
-	defer closeUpdateSupervision()
+	// closeUpdateSupervision := superviseUpdate(model, &updNotice)
+	// defer closeUpdateSupervision()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
