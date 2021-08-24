@@ -82,12 +82,13 @@ func getEnvironmentPath(userScope bool) string {
 
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
 func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string {
-	name := "install.ps1"
+	ext := ".ps1"
 	if runtime.GOOS != "windows" {
-		name = "install.sh"
+		ext = ".sh"
 	}
+	name := "install-v2" + ext
 	if legacy {
-		name = "legacy-" + name
+		name = "legacy-install" + ext
 	}
 	root := environment.GetRootPathUnsafe()
 	subdir := "installers"
