@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -13,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -87,8 +85,6 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 		r.reportError(locale.Tl("err_reset_executor", "Could not reset global executors, error received: {{.V0}}", errs.JoinMessage(err)), err)
 	}
 
-	r.prepareSystray()
-
 	// OS specific preparations
 	r.prepareOS()
 
@@ -99,15 +95,4 @@ func (r *Prepare) reportError(message string, err error) {
 	logging.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
-}
-
-func (r *Prepare) prepareSystray() {
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
-
-	if err := autostart.New(name, exec, r.cfg).EnableFirstTime(); err != nil {
-		r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
-	}
-
-	return
 }

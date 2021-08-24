@@ -95,11 +95,6 @@ func runExport() error {
 }
 
 func runDefault() (rerr error) {
-	up, err := updater.DefaultChecker.GetUpdateInfo("", "")
-	if err != nil {
-		return errs.Wrap(err, "Failed to check for latest update.")
-	}
-
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")
@@ -114,6 +109,11 @@ func runDefault() (rerr error) {
 		analytics.Configure(cfg)
 	}
 
+	updateTag := os.Getenv(constants.UpdateTagEnvVarName)
+	if err := cfg.Set(updater.CfgUpdateTag, updateTag); err != nil {
+		logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
+	}
+
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
@@ -124,6 +124,11 @@ func runDefault() (rerr error) {
 
 	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
+	}
+
+	up, err := updater.NewDefaultChecker(cfg).GetUpdateInfo("", "")
+	if err != nil {
+		return errs.Wrap(err, "Failed to check for latest update.")
 	}
 
 	err = up.InstallBlocking("")

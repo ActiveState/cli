@@ -1,12 +1,10 @@
 package integration
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,15 +20,16 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/updateinfomock"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type UpdateIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg    projectfile.ConfigGetter
-	server *http.Server
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -49,29 +48,13 @@ func init() {
 	}
 }
 
-var testPort = "24217"
-
-func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) {
-	var err error
+func (suite *UpdateIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
-	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
-	go func() {
-		_ = suite.server.ListenAndServe()
-	}()
 
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
-}
-
-func (suite *UpdateIntegrationTestSuite) AfterTest(suiteName, testName string) {
-	err := suite.server.Shutdown(context.Background())
-	suite.Require().NoError(err)
-	suite.Require().NoError(suite.cfg.Close())
+	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }
 
 // env prepares environment variables for the test
@@ -87,7 +70,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, testUpdate bool) []
 	}
 
 	if testUpdate {
-		env = append(env, fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort))
+		env = append(env, updateinfomock.MockedUpdateServerEnvVars()...)
 	} else {
 		env = append(env, fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, targetBranch))
 	}
@@ -152,7 +135,9 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	server := suite.setupMockServer()
+	defer server.Close()
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// use unique exe
@@ -166,6 +151,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "update")
 }
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(configDir string, beforeFiles []string) string {
@@ -241,10 +229,17 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			suite.T().Skip("This requires an update bundle to be released to the release branch")
 		}
 		suite.Run(tt.Name, func() {
+			server := suite.setupMockServer()
+			defer server.Close()
+
 			ts := e2e.New(suite.T(), true)
 			defer ts.Close()
 
-			suite.addProjectFileWithWaitingScript(ts.Dirs.Work)
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
+			suite.addProjectFileWithWaitingScript(cfg, ts.Dirs.Work)
 
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
@@ -275,7 +270,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			cp.ExpectExitCode(0)
 
 			fakeHome := filepath.Join(ts.Dirs.Work, "home")
-			err := fileutils.Mkdir(fakeHome)
+			err = fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
 			before := fileutils.ListDir(ts.Dirs.Config, false)
@@ -296,6 +291,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			wg.Wait()
 
 			if tt.TestUpdate {
+				server.ExpectNRequests(1)
+				server.NthRequest(0).ExpectQueryParam("source", "update")
+			}
+
+			if tt.TestUpdate {
 				suite.Assert().Contains(logs, "was successful")
 				if tt.ExpectBackupCleaned {
 					suite.Assert().Contains(logs, "Removed all backup files.")
@@ -309,6 +309,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
 	tests := []struct {
 		Name       string
 		TestUpdate bool
@@ -319,10 +321,12 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		{"release-channel", false, targetBranch, ""},
 		{"specific-update", false, targetBranch, specificVersion},
 	}
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			server := suite.setupMockServer()
+			defer server.Close()
+
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
@@ -355,6 +359,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.TestUpdate {
 				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 				suite.Assert().Contains(logs, "was successful")
+
+				server.ExpectNRequests(1)
+				server.NthRequest(0).ExpectQueryParam("source", "update")
 			} else {
 				updated := false
 				// wait for up to two minutes for the State Tool to get modified
@@ -389,6 +396,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}
+
+	server := suite.setupMockServer()
+	defer server.Close()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -413,9 +424,92 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 	suite.Assert().Contains(logs, "Installation failed")
 
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "update")
+
 	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	tagName := "experiment"
+
+	tests := []struct {
+		name          string
+		tagged        bool
+		expectSuccess bool
+	}{
+		{"update-to-tag", false, true},
+		{"update-with-tag", true, false},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(
+				func(up *updater.AvailableUpdate, source, tag string) {
+					if source != "update" {
+						return
+					}
+					// If the update is tagged, respond with an invalid version, so we can test that the tag name was forwarded to the server
+					if tag == "experiment" {
+						up.Version = "99.99.99"
+						up.Path = "invalid-path"
+						return
+					}
+
+					// set the tag
+					up.Tag = tagName
+				})
+			defer server.Close()
+
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+			// use unique exe
+			ts.UseDistinctStateExes()
+
+			fakeHome := filepath.Join(ts.Dirs.Work, "home")
+			err := fileutils.Mkdir(fakeHome)
+			suite.Require().NoError(err)
+
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
+			if tt.tagged {
+				err := cfg.Set(updater.CfgUpdateTag, tagName)
+				suite.Require().NoError(err)
+				suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
+			}
+
+			before := fileutils.ListDir(ts.Dirs.Config, false)
+			cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+			cp.Expect("Updating State Tool to latest version available")
+			if tt.expectSuccess {
+				cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
+				cp.ExpectExitCode(0)
+				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
+				suite.Assert().Contains(logs, "was successful")
+				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
+				suite.versionCompare(ts, true, true, constants.Version, suite.NotEqual)
+			} else {
+				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", updateinfomock.TestPort))
+				cp.ExpectExitCode(1)
+			}
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "update")
+			if tt.tagged {
+				server.NthRequest(0).ExpectQueryParam("tag", tagName)
+				server.NthRequest(0).ExpectTagResponse("")
+			} else {
+				server.NthRequest(0).ExpectQueryParam("tag", "")
+				server.NthRequest(0).ExpectTagResponse(tagName)
+			}
+		})
+	}
+}
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
@@ -427,7 +521,7 @@ func lockedProjectURL() string {
 	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 }
 
-func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(workDir string) {
+func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(cfg *config.Instance, workDir string) {
 	pjfile := projectfile.Project{
 		Project: fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL),
 		Scripts: []projectfile.Script{
@@ -436,6 +530,6 @@ func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(workDir
 		},
 	}
 	pjfile.SetPath(filepath.Join(workDir, constants.ConfigFileName))
-	err := pjfile.Save(suite.cfg)
+	err := pjfile.Save(cfg)
 	suite.Require().NoError(err)
 }
