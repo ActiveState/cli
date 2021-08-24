@@ -256,6 +256,7 @@ scripts:
 
       cp installers/install.sh $INSTALLERS_DIR/install.sh
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
+      cp installers/install-v2.sh $INSTALLERS_DIR/install-v2.sh
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
