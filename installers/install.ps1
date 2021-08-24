@@ -1,4 +1,4 @@
-﻿# Copyright 2019 ActiveState Software Inc. All rights reserved.
+﻿# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
 <#
 .DESCRIPTION
 Install the ActiveState state.exe tool.  Must be run as admin OR install State Tool to
@@ -40,6 +40,7 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
 $script:SESSION_TOKEN_VALUE = ""
+$script:UPDATE_TAG = ""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
   $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
@@ -63,9 +64,9 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]`n"
+    $response = Read-Host -Prompt $msg" [Y/n]`n"
 
-    if ( -Not ($response.ToLower() -eq "y") )
+    if ($response.ToLower() -eq "n")
     {
         return $False
     }
@@ -162,11 +163,6 @@ function warningIfadmin() {
     }
 }
 
-function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
-    return $LASTEXITCODE
-}
-
 function displayConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
@@ -178,15 +174,17 @@ Please note that the installer may have to modify your system environment to add
     Write-Host $consentText
 }
 
-function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
-    $STATEURL= "https://state-tool.s3.amazonaws.com/update/state"
+    $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
+    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info?channel=$script:BRANCH&platform=windows&source=install"
     
     Write-Host "Preparing for installation...`n"
 
     if ($script:VERSION -ne "") {
         Write-Host "Attempting to fetch version: $script:VERSION...`n"
-        $jsonURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
+        $jsonURL = "$jsonURL&target-version=$script:VERSION"
+        $script:DISABLE_RECURSIVE_UPDATES="true"
 
         try {
             $jsonString = download $jsonURL
@@ -196,22 +194,21 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         }
 
         $infoJson = ConvertFrom-Json -InputObject $jsonString
-
         $version = $script:VERSION
 
         Write-Host "Fetching version: $version...`n"
     } else {
         Write-Host "Determining latest version...`n"
-        $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
-        $infoJson = ConvertFrom-Json -InputObject (download $jsonurl)
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
         $version = $infoJson.Version
 
         Write-Host "Fetching the latest version: $version...`n"
     }
 
+    $script:UPDATE_TAG = $infoJson.Tag
     $checksum = $infoJson.Sha256
     $relUrl = $infoJson.Path
-    $zipUrl = "$STATEURL/$relurl"
+    $zipUrl = "$FILE_URL/$relurl"
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -314,11 +311,9 @@ function install() {
     $installerexe = (Join-Path "state-install" "state-installer.exe")
     if (test-64Bit) {
         $statepkg="windows-amd64.zip"
-        $statejson="windows-amd64/info.json"
-
     } else {
-        $statepkg="windows-386.zip"
-        $statejson="windows-386/info.json"
+        Write-Warning "Windows platform taget is 32bit.  Only 64bit builds are support at the moment."
+        return 1
     }
 
     $existing = getExistingOnPath
@@ -342,19 +337,23 @@ function install() {
 
     Write-Host "`nInstalling ActiveState State Tool...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYN "Continue?") ) {
+        if( -Not (promptYN "Accept terms and proceed with install?") ) {
             return 2
         }
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statepkg
     if ($err -eq 1){
         return 1
     }
 
     $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
+
+    # Disable auto-updates if a specific version was requested
+    $env:ACTIVESTATE_CLI_DISABLE_UPDATES = $script:DISABLE_RECURSIVE_UPDATES
     $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
     if ($script:TARGET) {
         & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
     } else {
@@ -362,6 +361,9 @@ function install() {
     }
     if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
         Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    }
+    if (Test-Path env:ACTIVESTATE_UPDATE_TAG) {
+        Remove-Item Env:\ACTIVESTATE_UPDATE_TAG
     }
 
     $outputString = $output | Out-String
@@ -380,9 +382,8 @@ function install() {
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
 
-    $prepExitCode = runPreparationStep $installDir
-    if ($prepExitCode -ne 0) {
-        return $prepExitCode
+    if (Test-Path env:ACTIVESTATE_CLI_DISABLE_UPDATES) {
+        Remove-Item Env:\ACTIVESTATE_CLI_DISABLE_UPDATES
     }
 
     # Check if installation is in $PATH

@@ -90,7 +90,6 @@ func createUpdate(path string, platform string) {
 	}
 
 	jsonPath := filepath.Join(genDir, branch, platform+".json")
-	fmt.Printf("Creating %s\n", jsonPath)
 	err = ioutil.WriteFile(jsonPath, b, 0755)
 	if err != nil {
 		panic(err)

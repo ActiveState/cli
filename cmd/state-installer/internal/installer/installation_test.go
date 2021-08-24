@@ -33,7 +33,7 @@ func createSystemDirectoryStructure(t *testing.T, targetPath string) {
 	var err error
 	switch runtime.GOOS {
 	case "darwin":
-		err = fileutils.Mkdir(filepath.Join(targetPath, "ActiveState Desktop.app", "Contents", "MacOS"))
+		err = fileutils.Mkdir(filepath.Join(targetPath, "ActiveState Desktop (Preview).app", "Contents", "MacOS"))
 	case "linux":
 		err = nil
 	default:

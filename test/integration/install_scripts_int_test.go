@@ -2,11 +2,9 @@ package integration
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -19,10 +17,13 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/internal/testhelpers/updateinfomock"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -101,8 +102,9 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	require.NoError(t, err)
 
 	if useTestUrl {
-		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+testPort), -1)
-		require.Contains(t, string(b), "http://localhost:"+testPort)
+		b = bytes.Replace(b, []byte(constants.APIUpdateInfoURL), []byte("http://localhost:"+updateinfomock.TestPort), -1)
+		require.Contains(t, string(b), "http://localhost:"+updateinfomock.TestPort)
+		b = bytes.Replace(b, []byte(constants.APIUpdateURL), []byte("http://localhost:"+updateinfomock.TestPort), -1)
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
@@ -114,14 +116,12 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 
 type InstallScriptsIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg    projectfile.ConfigGetter
-	server *http.Server
 }
 
 func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAnswer string) {
 	cp.Expect("Installing to")
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect("Fetching version info")
 	cp.Expect("Allow $PATH to be appended in your", 20*time.Second)
 	cp.SendLine(addToPathAnswer)
@@ -129,37 +129,37 @@ func expectLegacyStateToolInstallation(cp *termtest.ConsoleProcess, addToPathAns
 }
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect("Fetching the latest version")
 	cp.Expect("State Tool successfully installed.")
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
 	cp.Expect("State Tool successfully installed.")
 }
 
 func expectStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect("Fetching the latest version")
 	cp.Expect("State Tool successfully installed.")
 }
 
 func expectVersionedStateToolInstallationWindows(cp *termtest.ConsoleProcess, version string) {
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect(fmt.Sprintf("Fetching version: %s", version))
 	cp.Expect("Installation Complete")
 }
 
 func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installing to")
-	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
 	cp.Expect("Fetching version info")
 	cp.Expect("State Tool successfully installed to")
 }
@@ -197,12 +197,25 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMultiFileUpdate() {
+	tagName := "experiment"
+	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
+		up.Tag = tagName
+	})
+	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
+		if tag != tagName {
+			return
+		}
+		up.Tag = tagName
+	})
+	defer server.Close()
+
 	if runtime.GOOS == "windows" {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
@@ -210,8 +223,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp := ts.SpawnCmdWithOpts(
 		"bash",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(updateinfomock.MockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
-			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
@@ -224,6 +237,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
+
+	// ensure that tagName is forwarded and stored in database
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
+
+	server.ExpectNRequests(2)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectLegacyQuery(true)
+	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectQueryParam("source", "update")
+	server.NthRequest(1).ExpectQueryParam("tag", tagName)
+	server.NthRequest(1).ExpectLegacyQuery(false)
+	server.NthRequest(1).ExpectTagResponse(tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -235,16 +263,35 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 	tests := []struct {
 		Name        string
 		TestInstall bool
+		Tag         string
 		Channel     string
 	}{
-		{"install-local-test-update", true, constants.BranchName},
+		{"install-local-test-update", true, "", constants.BranchName},
+		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "master"},
+		{"install-release", false, "", "master"},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(func(up *updater.AvailableUpdate, source, tag string) {
+				if source != "install" {
+					return
+				}
+
+				// If the update is tagged (which shouldn't happen), respond with an invalid version, so we can test that the tag name was forwarded to the server
+				if tag == "experiment" {
+					up.Version = "99.99.99"
+					up.Path = "invalid-path"
+					return
+				}
+
+				// set the tag
+				up.Tag = tt.Tag
+			})
+			defer server.Close()
 			dir, err := installation.LauncherInstallPath()
 			suite.Require().NoError(err)
 			var extraEnv []string
@@ -272,6 +319,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			if !tt.TestInstall {
 				return
 			}
+			// Check that the tag is set
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
@@ -279,6 +332,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "install")
+			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
 	}
 }
@@ -350,18 +407,38 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 	tests := []struct {
 		Name        string
 		TestInstall bool
+		Tag         string
 		Channel     string
 	}{
-		{"install-local-test-update", true, constants.BranchName},
+		{"install-local-test-update", true, "", constants.BranchName},
+		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "master"},
+		{"install-release", false, "", "master"},
 	}
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
+
+			server := suite.setupMockServer()
+			server.SetUpdateModifier(func(up *updater.AvailableUpdate, source, tag string) {
+				if source != "install" {
+					return
+				}
+
+				// If the update is tagged (which shouldn't happen), respond with an invalid version, so we can test that the tag name was forwarded to the server
+				if tag == "experiment" {
+					up.Version = "99.99.99"
+					up.Path = "invalid-path"
+					return
+				}
+
+				// set the tag
+				up.Tag = tt.Tag
+			})
+			defer server.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
@@ -394,6 +471,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			}
 			// give some time for the provided state-tray app to start and write its pid to the config file
 			time.Sleep(time.Second)
+
+			// Check that the tag is set
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
 			cp.SendLine("y")
@@ -410,6 +494,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			binFiles := listFilesOnly(ts.Dirs.Work)
 			suite.NotContains(binFiles, "state-tray"+osutils.ExeExt)
 			suite.NotContains(binFiles, "state-svc"+osutils.ExeExt)
+
+			server.ExpectNRequests(1)
+			server.NthRequest(0).ExpectQueryParam("source", "install")
+			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
 	}
 }
@@ -521,6 +609,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
+	tagName := "experiment"
+	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
+		up.Tag = tagName
+	})
+	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
+		if tag != tagName {
+			return
+		}
+		up.Tag = tagName
+	})
+	defer server.Close()
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -541,9 +642,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	cp := ts.SpawnCmdWithOpts(
 		"powershell.exe",
 		e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", constants.BranchName, "-v", constants.Version),
+		e2e.AppendEnv(updateinfomock.MockedUpdateServerEnvVars()...),
 		e2e.AppendEnv(
 			"SHELL=",
-			fmt.Sprintf("_TEST_UPDATE_URL=http://localhost:%s/", testPort),
 			fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 		))
 
@@ -561,6 +662,20 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray.exe"))
+
+	// ensure that tagName is forwarded and stored in database
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
+
+	server.ExpectNRequests(2)
+	server.NthRequest(0).ExpectLegacyQuery(true)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectLegacyQuery(false)
+	server.NthRequest(1).ExpectQueryParam("source", "update")
+	server.NthRequest(1).ExpectTagResponse(tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
@@ -577,6 +692,9 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	if runtime.GOOS != "linux" {
 		suite.T().SkipNow()
 	}
+
+	server := suite.setupMockServer()
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -618,12 +736,20 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	// expect State Tool Installation directory
 	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
 	cp.ExpectExitCode(0)
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectLegacyQuery(false)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installScriptArgs ...string) {
 	if runtime.GOOS != "windows" {
 		suite.T().SkipNow()
 	}
+
+	server := suite.setupMockServer()
+	defer server.Close()
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -660,29 +786,20 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 		suite.Assert().Contains(paths, filepath.Join(ts.Dirs.Cache, "bin"), "Could not find global binary directory on PATH")
 	}
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectLegacyQuery(false)
+	server.NthRequest(0).ExpectQueryParam("source", "install")
+	server.NthRequest(0).ExpectTagResponse("")
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) BeforeTest(suiteName, testName string) {
-	var err error
+func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "update")
 	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-updates` for this test to work.")
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.Dir(testUpdateDir)))
-	suite.server = &http.Server{Addr: "localhost:" + testPort, Handler: mux}
-	go func() {
-		_ = suite.server.ListenAndServe()
-	}()
 
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
-}
-
-func (suite *InstallScriptsIntegrationTestSuite) AfterTest(suiteName, testName string) {
-	err := suite.server.Shutdown(context.Background())
-	suite.Require().NoError(err)
-	suite.Require().NoError(suite.cfg.Close())
+	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {

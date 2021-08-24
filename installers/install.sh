@@ -24,8 +24,10 @@ EOF
 # ignore project file if we are already in an activated environment
 unset ACTIVESTATE_PROJECT
 
-# URL to fetch updates from.
-BASEURL="https://state-tool.s3.amazonaws.com/update/state"
+# URL to fetch update infos from.
+BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info"
+# URL to fetch update files from
+BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
 STATEEXE="state"
 # Optional target directory
@@ -132,19 +134,10 @@ x86_64)
   ;;
 esac
 
-set_tempdir () {
-  if type mktemp > /dev/null; then
-    TMPDIR=`mktemp -d`
-  else
-    TMPDIR="${TMPDIR:-/tmp}/state-installer.$$"
-    # clean-up previous temp dir
-    rm -rf $tdir
-    mkdir -p $TMPDIR
-  fi
-
-}
-
-set_tempdir
+# Determine the tmp directory.
+if [ -z "$TMPDIR" ]; then
+  TMPDIR="/tmp"
+fi
 
 CHANNEL='release'
 # Process command line arguments.
@@ -188,7 +181,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASEURL/$CHANNEL"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -245,7 +238,6 @@ Please note that the installer may modify your shell configuration file (eg., .b
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
 # Construct system-dependent filenames.
-STATEJSON=$OS-$ARCH/info.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
 TMPEXE="state-install/state-installer"$BINARYEXT
 
@@ -264,18 +256,19 @@ fi
 fetchArtifact () {
   if [ ! -z "$VERSION" ]; then
     info "Attempting to fetch version: $VERSION..."
-    STATEURL=$STATEURL/$VERSION
-    if ! $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON ; then
+    STATEURL="$STATEURL&target-version=$VERSION"
+    if ! $FETCH $TMPDIR/info.json $STATEURL ; then
       error "Could not fetch version: $VERSION, please verify the version number and try again."
       exit 1
     fi
 
+    DISABLE_UPDATES="true"
     info "Fetching version: $VERSION..."
   else
     info "Determining latest version..."
     # Determine the latest version to fetch.
-    $FETCH $TMPDIR/info.json $STATEURL/$STATEJSON || exit 1
-    VERSION=`cat $TMPDIR/info.json | grep -m 1 '"version":' | awk '{print $2}' | tr -d '",'`
+    $FETCH $TMPDIR/info.json $STATEURL || exit 1
+    VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
 
     if [ -z "$VERSION" ]; then
       error "Unable to retrieve the latest version number"
@@ -285,12 +278,13 @@ fetchArtifact () {
     info "Fetching the latest version: $VERSION..."
   fi
 
-  SUM=`cat $TMPDIR/info.json | grep -m 1 '"sha256":' | awk '{print $2}' | tr -d '",'`
-  RELURL=`cat $TMPDIR/info.json | grep -m 1 '"path":' | awk '{print $2}' | tr -d '",'`
+  UPDATE_TAG=`cat $TMPDIR/info.json | sed -ne 's/.*"tag":[ \t]*"\([^"]*\)".*/\1/p'`
+  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
   rm $TMPDIR/info.json
 
 
-  URL="${BASEURL}/${RELURL}"
+  URL="${BASE_FILE_URL}/${RELURL}"
   # Fetch it.
   $FETCH $TMPDIR/$STATEPKG ${URL} || exit 1
 
@@ -319,30 +313,30 @@ fetchArtifact () {
 if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$CURRENT_INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
-userprompt "Continue? [y/N] "
+userprompt "Accept terms and proceed with install? [Y/n] "
 RESPONSE=$(userinput y)
 case "$RESPONSE" in
-  [Yy])
+  [Nn])
+    error "Aborting installation"
+    exit 0
+    ;;
+  [Yy]|*)
     fetchArtifact
     OUTPUT_FILE=$TMPDIR/install_output.txt
     if [ ! -z "$TARGET" ]; then
-      ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
+      ACTIVESTATE_CLI_DISABLE_UPDATES=$DISABLE_UPDATES ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
     else
-      ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
+      ACTIVESTATE_CLI_DISABLE_UPDATES=$DISABLE_UPDATES ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
     fi
     INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
     rm -f $OUTPUT_FILE
     INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     ;;
-  [Nn]|*)
-    error "Aborting installation"
-    exit 0
-    ;;
 esac
 
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$($STATEPATH "--output=simple" "export" "config" "--filter=dir")
+CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "--output=simple" "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
 info "State Tool successfully installed."

@@ -9,6 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/httpreq"
 )
 
+const CfgUpdateTag = "update_tag"
+
 type Fetcher struct {
 	httpreq *httpreq.Client
 }
