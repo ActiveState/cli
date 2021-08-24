@@ -7,6 +7,19 @@ import (
 	"github.com/ActiveState/cli/internal/colorize"
 )
 
+type Title string
+
+func (t Title) String() string {
+	return fmt.Sprintf("[DISABLED]░▒▓█[/RESET] [HEADING]%s[/RESET]", string(t))
+}
+
+func (t Title) MarshalOutput(f Format) interface{} {
+	if f != PlainFormatName {
+		return Suppress
+	}
+	return t.String()
+}
+
 type Heading string
 
 func (h Heading) String() string {

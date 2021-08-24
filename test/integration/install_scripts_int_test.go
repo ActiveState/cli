@@ -442,7 +442,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 
 			script := scriptPath(suite.T(), ts.Dirs.Work, false, tt.TestInstall)
 
-			isAdmin, err := osutils.IsWindowsAdmin()
+			isAdmin, err := osutils.IsAdmin()
 			suite.Require().NoError(err, "Could not determine if running as administrator")
 
 			cmdEnv := newCmdEnv(!isAdmin)
@@ -511,7 +511,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1Version() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
 	cmdEnv := newCmdEnv(!isAdmin)
@@ -577,7 +577,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1() {
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, false)
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
 	cmdEnv := newCmdEnv(!isAdmin)
@@ -627,7 +627,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, true, true)
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
 	cmdEnv := newCmdEnv(!isAdmin)
@@ -756,7 +756,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 
 	script := scriptPath(suite.T(), ts.Dirs.Work, false, true)
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if running as administrator")
 
 	cmdEnv := newCmdEnv(!isAdmin)

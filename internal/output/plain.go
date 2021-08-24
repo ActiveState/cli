@@ -56,6 +56,11 @@ func (f *Plain) Type() Format {
 	return PlainFormatName
 }
 
+// Fprint allows printing to a specific writer, using all the conveniences of the output package
+func (f *Plain) Fprint(writer io.Writer, v interface{}) {
+	f.write(writer, v)
+}
+
 // Print will marshal and print the given value to the output writer
 func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, value)

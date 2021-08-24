@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -268,8 +267,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := txtstyle.NewTitle(locale.Tl("youre_activated", "You're Activated!"))
-	activatedMessage.ColorCode = "SUCCESS"
+	activatedMessage := output.Title(locale.Tl("youre_activated", "You're Activated!"))
 
 	var activateEvtMessage string
 	if userScripts != "" {
@@ -288,17 +286,14 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
 	}
 
-	currExecAbsPath, err := osutils.Executable()
-	if err != nil {
-		return nil, errs.Wrap(err, "OS failure")
-	}
-	currExecAbsDir := filepath.Dir(currExecAbsPath)
+	currExec := osutils.Executable()
+	currExecAbsDir := filepath.Dir(currExec)
 
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
 	if !ok || !inPathList {
-		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
+		rcData["ExecAlias"] = currExec // alias {ExecName}={ExecAlias}
 	}
 
 	t := template.New("rcfile")

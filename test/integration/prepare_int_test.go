@@ -39,7 +39,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	)
 	cp.ExpectExitCode(0)
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if we are a Windows Administrator")
 	// For Windows Administrator users `state _prepare` is doing nothing now (because it doesn't make sense...)
 	if isAdmin {

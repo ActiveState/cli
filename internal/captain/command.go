@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 )
@@ -130,7 +129,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
-		panic(errs.Join(err, "\n").Error())
+		panic(errs.JoinMessage(err))
 	}
 
 	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
@@ -528,7 +527,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.out != nil && c.title != "" {
-		c.out.Notice(txtstyle.NewTitle(c.title))
+		c.out.Notice(output.Title(c.title))
 	}
 
 	intercept := c.interceptFunc()

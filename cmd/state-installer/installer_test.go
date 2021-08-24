@@ -1,4 +1,4 @@
-package installer_test
+package main_test
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/phayes/permbits"
@@ -131,21 +132,18 @@ func TestInstallation(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			inst := installer.New(from, to, systemPath)
-			err := inst.Install()
+			cfg, err := config.New()
+			require.NoError(t, err)
+
+			inst := installer.NewCustom(cfg, from, to, systemPath)
+			err = inst.Install()
 
 			if tt.ExpectSuccess {
-				require.NoError(t, err)
-
-				err = inst.RemoveBackupFiles()
 				require.NoError(t, err)
 
 				assertSuccessfulInstallation(t, to)
 			} else {
 				require.Error(t, err)
-
-				err = inst.RemoveBackupFiles()
-				require.NoError(t, err)
 
 				assertRevertedInstallation(t, to)
 			}

@@ -1,6 +1,7 @@
 package captain
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -34,7 +35,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 
 		switch v := flag.Value.(type) {
 		case nil:
-			return errs.New("flag value must not be nil")
+			return errs.New("flag value must not be nil (%v)", flag)
 		case *string:
 			flagSetter().StringVarP(
 				v, flag.Name, flag.Shorthand, *v, flag.Description,
@@ -53,7 +54,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 			)
 		default:
 			return errs.New(
-				"Unknown type:" + reflect.TypeOf(v).Name(),
+				fmt.Sprintf("Unknown type: %s (%v)"+reflect.TypeOf(v).Name(), v),
 			)
 		}
 

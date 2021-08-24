@@ -28,7 +28,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir(cfg)
 
-	isWindowsAdmin, err := osutils.IsWindowsAdmin()
+	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if we are running as administrator: %v", err)
 	}

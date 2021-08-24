@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -90,7 +89,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	checker.RunUpdateNotifier(r.svcMgr, r.config, r.out)
 
-	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
+	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -328,7 +327,7 @@ func warningForAdministrator(out output.Outputer) {
 		return
 	}
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if run as administrator.")
 	}
