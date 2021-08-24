@@ -185,9 +185,13 @@ function warningIfadmin() {
 
 function runPreparationStep($installDirectory) {
     $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
     &$installDirectory\$script:STATEEXE _prepare | Write-Host
     if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
         Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    }
+    if (Test-Path env:ACTIVESTATE_UPDATE_TAG) {
+        Remove-Item Env:\ACTIVESTATE_UPDATE_TAG
     }
     return $LASTEXITCODE
 }
@@ -201,25 +205,25 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
     Write-Host $consentText
 }
 
-function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
-    $STATEURL="https://state-tool.s3.amazonaws.com/update/state"
+    $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
+    $jsonURL= "https://https://platform.activestate.com/sv/state-update/api/v1/info/legacy?channel=$script:BRANCH&platform=windows&source=install"
     
     Write-Host "Preparing for installation...`n"
 
     # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$statejson"
     Write-Host "Determining latest version...`n"
     try{
-        $branchJson = ConvertFrom-Json -InputObject (download $jsonurl)
-        $latestVersion = $branchJson.Version
-        $versionedJson = ConvertFrom-Json -InputObject (download "$STATEURL/$script:BRANCH/$latestVersion/$statejson")
+        $versionedJson = ConvertFrom-Json -InputObject (download $jsonURL)
     } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number from $STATEURL/$script:BRANCH/$latestVersion/$statejson"
+        Write-Warning "Unable to retrieve the latest version number from $jsonURL"
         Write-Error $_.Exception.Message
         return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
+    $latestVersion = $versionedJson.Version
+    $script:UPDATE_TAG = $versionedJson.Tag
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -228,7 +232,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$latestVersion/$statepkg"
+    $zipURL = "$FILE_URL/$script:BRANCH/$latestVersion/$statepkg"
     Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         download $zipURL $zipPath
@@ -323,14 +327,12 @@ function install() {
 
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
     if (test-64Bit) {
-        $statejson="windows-amd64.json"
         $statepkg="windows-amd64.zip"
         $stateexe="windows-amd64.exe"
 
     } else {
-        $statejson="windows-386.json"
-        $statepkg="windows-386.zip"
-        $stateexe="windows-386.exe"
+        Write-Warning "Windows platform taget is 32bit.  Only 64bit builds are support at the moment."
+        return 1
     }
 
     # Get the install directory and ensure we have permissions on it.
@@ -390,7 +392,7 @@ function install() {
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statepkg
     if ($err -eq 1){
         return 1
     }
@@ -433,7 +435,7 @@ function install() {
             $envTarget = [EnvironmentVariableTarget]::Machine
             $envTargetName = "system"
         }
-        
+
         Write-Host "Updating environment...`n"
         Write-Host "Adding $installDir to $envTargetName PATH`n"
         # This only sets it in the registry and it will NOT be accessible in the current session
