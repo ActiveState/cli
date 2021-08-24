@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/logging"
 	_ "modernc.org/sqlite"
 )
 
@@ -17,14 +16,15 @@ type TrackingType string
 
 const (
 	Files       TrackingType = "files"
-	Directories TrackingType = "directories"
-	Environment TrackingType = "environment"
-	FileTag     TrackingType = "tag"
+	Directories              = "directories"
+	Environment              = "environment"
+	FileTag                  = "tag"
 )
 
 type Trackable interface {
 	Type() TrackingType
-	Store(db *sql.DB) error
+	Key() string
+	Value() string
 }
 
 type Tracker struct {
@@ -58,13 +58,6 @@ func newCustom(localPath string) (*Tracker, error) {
 	}
 
 	path := filepath.Join(t.appDataDir, constants.InternalTrackerFileName)
-	if _, err = os.Stat(path); os.IsNotExist(err) {
-		_, err = os.Create(path)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not create tracker db file")
-		}
-	}
-
 	t.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
@@ -99,11 +92,25 @@ func (t *Tracker) Close() error {
 
 func (t *Tracker) Track(ts ...Trackable) error {
 	for _, tr := range ts {
-		err := tr.Store(t.db)
+		err := t.store(tr)
 		if err != nil {
 			return errs.Wrap(err, "Could not store trackable")
 		}
 	}
+	return nil
+}
+
+func (t *Tracker) store(tr Trackable) error {
+	q, err := t.db.Prepare(insertQuery(tr.Type()))
+	if err != nil {
+		return errs.Wrap(err, "Could not prepare env insert statement")
+	}
+
+	_, err = q.Exec(tr.Key(), tr.Value())
+	if err != nil {
+		return errs.Wrap(err, "Could not execute env store statement")
+	}
+
 	return nil
 }
 
@@ -142,8 +149,7 @@ func (t *Tracker) GetEnvironmentVariables() (map[string]string, error) {
 		var key, value string
 		err := rows.Scan(&key, &value)
 		if err != nil {
-			logging.Error("Failed to scan path value: %v", err)
-			continue
+			return nil, errs.Wrap(err, "Failed to scan value")
 		}
 		env[key] = value
 	}
@@ -166,8 +172,7 @@ func (t *Tracker) getStringSlice(tr TrackingType) ([]string, error) {
 		var path string
 		err := rows.Scan(&path)
 		if err != nil {
-			logging.Error("Failed to scan path value: %v", err)
-			continue
+			return nil, errs.Wrap(err, "Failed to scan path value")
 		}
 		paths = append(paths, path)
 	}

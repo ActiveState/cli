@@ -1,30 +1,22 @@
 package tracker
 
-import (
-	"database/sql"
-
-	"github.com/ActiveState/cli/internal/errs"
-)
-
 type EnvironmentVariable struct {
-	Key   string
-	Value string
+	key   string
+	value string
+}
+
+func NewEnvironmentVariable(key, value string) EnvironmentVariable {
+	return EnvironmentVariable{key, value}
 }
 
 func (ev EnvironmentVariable) Type() TrackingType {
 	return Environment
 }
 
-func (ev EnvironmentVariable) Store(db *sql.DB) error {
-	q, err := db.Prepare(insertQuery(ev.Type()))
-	if err != nil {
-		return errs.Wrap(err, "Could not prepare env insert statement")
-	}
+func (ev EnvironmentVariable) Key() string {
+	return ev.key
+}
 
-	_, err = q.Exec(ev.Key, ev.Value)
-	if err != nil {
-		return errs.Wrap(err, "Could not execute env store statement")
-	}
-
-	return nil
+func (ev EnvironmentVariable) Value() string {
+	return ev.value
 }

@@ -28,10 +28,7 @@ func TestTracker_GetFiles(t *testing.T) {
 	var expected []string
 	for i := 0; i < 3; i++ {
 		path := fmt.Sprintf("/Some/Path/File%d", i)
-		files = append(files, File{
-			Key:  fmt.Sprintf("FileKey%d", i),
-			Path: path,
-		})
+		files = append(files, NewFile(fmt.Sprintf("FileKey%d", i), path))
 		expected = append(expected, path)
 	}
 
@@ -52,10 +49,7 @@ func TestTracker_GetDirectories(t *testing.T) {
 	var expected []string
 	for i := 0; i < 3; i++ {
 		path := fmt.Sprintf("/Some/Path/Dir%d/", i)
-		dirs = append(dirs, Directory{
-			Key:  fmt.Sprintf("DirKey%d", i),
-			Path: path,
-		})
+		dirs = append(dirs, NewDirectory(fmt.Sprintf("DirKey%d", i), path))
 		expected = append(expected, path)
 	}
 
@@ -76,10 +70,7 @@ func TestTracker_GetTags(t *testing.T) {
 	var expected []string
 	for i := 0; i < 3; i++ {
 		tag := fmt.Sprintf("Tag%d", i)
-		tags = append(tags, RCFileTag{
-			Key:   fmt.Sprintf("TagKey%d", i),
-			Value: tag,
-		})
+		tags = append(tags, NewRCFileTag(fmt.Sprintf("TagKey%d", i), tag))
 		expected = append(expected, tag)
 	}
 
@@ -101,10 +92,7 @@ func TestTracker_GetEnv(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		key := fmt.Sprintf("EnvVarKey%d", i)
 		value := fmt.Sprintf("SomeVar%d", i)
-		env = append(env, EnvironmentVariable{
-			Key:   key,
-			Value: value,
-		})
+		env = append(env, NewEnvironmentVariable(key, value))
 		expected[key] = value
 	}
 
@@ -124,10 +112,7 @@ func TestTracker_GetFile(t *testing.T) {
 	expected := "file"
 	key := "key"
 
-	err := tracker.Track(File{
-		Key:  key,
-		Path: expected,
-	})
+	err := tracker.Track(NewFile(key, expected))
 	assert.NoError(t, err)
 
 	actual, err := tracker.GetFile(key)
@@ -143,10 +128,7 @@ func TestTracker_GetDirectory(t *testing.T) {
 	expected := "dir"
 	key := "key"
 
-	err := tracker.Track(Directory{
-		Key:  key,
-		Path: expected,
-	})
+	err := tracker.Track(NewDirectory(key, expected))
 	assert.NoError(t, err)
 
 	actual, err := tracker.GetDirectory(key)
@@ -162,10 +144,7 @@ func TestTracker_GetFileTag(t *testing.T) {
 	expected := "file"
 	key := "key"
 
-	err := tracker.Track(RCFileTag{
-		Key:   key,
-		Value: expected,
-	})
+	err := tracker.Track(NewRCFileTag(key, expected))
 	assert.NoError(t, err)
 
 	actual, err := tracker.GetFileTag(key)
@@ -181,10 +160,7 @@ func TestTracker_GetEnvVar(t *testing.T) {
 	expected := "value"
 	key := "key"
 
-	err := tracker.Track(EnvironmentVariable{
-		Key:   key,
-		Value: expected,
-	})
+	err := tracker.Track(NewEnvironmentVariable(key, expected))
 	assert.NoError(t, err)
 
 	actual, err := tracker.GetEnvironmentVariable(key)
@@ -201,30 +177,21 @@ func TestTracker_GetMixed(t *testing.T) {
 	var expectedFiles []string
 	for i := 0; i < 3; i++ {
 		path := fmt.Sprintf("/Some/Path/File%d", i)
-		track = append(track, File{
-			Key:  fmt.Sprintf("FileKey%d", i),
-			Path: path,
-		})
+		track = append(track, NewFile(fmt.Sprintf("FileKey%d", i), path))
 		expectedFiles = append(expectedFiles, path)
 	}
 
 	var expectedDirs []string
 	for i := 0; i < 3; i++ {
 		path := fmt.Sprintf("/Some/Path/Dir%d/", i)
-		track = append(track, Directory{
-			Key:  fmt.Sprintf("DirKey%d", i),
-			Path: path,
-		})
+		track = append(track, NewDirectory(fmt.Sprintf("DirKey%d", i), path))
 		expectedDirs = append(expectedDirs, path)
 	}
 
 	var expectedTags []string
 	for i := 0; i < 3; i++ {
 		tag := fmt.Sprintf("Tag%d", i)
-		track = append(track, RCFileTag{
-			Key:   fmt.Sprintf("TagKey%d", i),
-			Value: tag,
-		})
+		track = append(track, NewRCFileTag(fmt.Sprintf("TagKey%d", i), tag))
 		expectedTags = append(expectedTags, tag)
 	}
 
@@ -232,10 +199,7 @@ func TestTracker_GetMixed(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		key := fmt.Sprintf("EnvVarKey%d", i)
 		value := fmt.Sprintf("SomeVar%d", i)
-		track = append(track, EnvironmentVariable{
-			Key:   key,
-			Value: value,
-		})
+		track = append(track, NewEnvironmentVariable(key, value))
 		expectedEnv[key] = value
 	}
 
