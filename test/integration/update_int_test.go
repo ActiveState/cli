@@ -153,7 +153,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
 
-	server.ExpectNRequests(1)
+	server.ExpectNRequests(1, 1)
 	server.NthRequest(0).ExpectQueryParam("source", "update")
 }
 
@@ -292,7 +292,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			wg.Wait()
 
 			if tt.TestUpdate {
-				server.ExpectNRequests(1)
+				server.ExpectNRequests(1, 1)
 				server.NthRequest(0).ExpectQueryParam("source", "update")
 			}
 
@@ -361,7 +361,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 				suite.Assert().Contains(logs, "was successful")
 
-				server.ExpectNRequests(1)
+				server.ExpectNRequests(1, 1)
 				server.NthRequest(0).ExpectQueryParam("source", "update")
 			} else {
 				updated := false
@@ -425,7 +425,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 	suite.Assert().Contains(logs, "Installation failed")
 
-	server.ExpectNRequests(1)
+	server.ExpectNRequests(1, 1)
 	server.NthRequest(0).ExpectQueryParam("source", "update")
 
 	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
@@ -499,7 +499,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 				cp.ExpectExitCode(1)
 			}
 
-			server.ExpectNRequests(1)
+			server.ExpectNRequests(1, 1)
 			server.NthRequest(0).ExpectQueryParam("source", "update")
 			if tt.tagged {
 				server.NthRequest(0).ExpectQueryParam("tag", tagName)
