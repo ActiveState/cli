@@ -94,7 +94,8 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	before := fileutils.ListDir(ts.Dirs.Config, false)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...), e2e.AppendEnv("VERBOSE=true"))
-	cp.ExpectExitCode(0)
+	cp.Wait()
+	fmt.Println(cp.MatchState().Buf.String())
 
 	if !disableUpdates {
 		// short timeout to wait for installation log file to be created
