@@ -38,7 +38,7 @@ func New(cfg *config.Instance, cancel context.CancelFunc) (*Server, error) {
 	}
 
 	s := &Server{cancel: cancel}
-	s.done = make(chan bool)
+	s.done = make(chan bool, 1)
 	s.graphServer = newGraphServer(cfg, s.done)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
