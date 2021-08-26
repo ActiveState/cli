@@ -23,7 +23,7 @@ func refreshUpdate(cfg Configurable) updateResponse {
 	if err != nil {
 		logging.Error("Failed to check for latest update in state-svc: %s", errs.JoinMessage(err))
 	}
-	logging.Debug("Available update result is %v", *up)
+	logging.Debug("Available update result is %v", up)
 	return updateResponse{up, err}
 }
 
