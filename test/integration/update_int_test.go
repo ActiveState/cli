@@ -495,7 +495,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
 				suite.versionCompare(ts, true, true, constants.Version, suite.NotEqual)
 			} else {
-				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", updateinfomock.TestPort))
+				cp.ExpectLongString("404 Not Found")
 				cp.ExpectExitCode(1)
 			}
 
