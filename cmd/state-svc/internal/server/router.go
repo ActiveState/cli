@@ -14,7 +14,7 @@ func (s *Server) setupRouting() {
 	})
 
 	s.httpServer.GET("/", func(c echo.Context) error {
-		playground.Handler("GraphQL", "/subscriptions").ServeHTTP(c.Response(), c.Request())
+		playground.Handler("GraphQL", "/").ServeHTTP(c.Response(), c.Request())
 		return nil
 	})
 
