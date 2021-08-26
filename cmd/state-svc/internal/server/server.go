@@ -38,10 +38,10 @@ func New(cfg *config.Instance, cancel context.CancelFunc) (*Server, error) {
 	}
 
 	s := &Server{cancel: cancel}
+	s.done = make(chan bool)
 	s.graphServer = newGraphServer(cfg, s.done)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
-	s.done = make(chan bool, 1)
 
 	s.setupRouting()
 
@@ -66,15 +66,9 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) quit() {
-	logging.Debug("Sending on quit chan")
 	s.done <- true
-	logging.Debug("Quit chan sent")
-	logging.Debug("Closing quit chan")
 	close(s.done)
-	logging.Debug("Quit chan closed")
-	logging.Debug("Calling cancel func")
 	s.cancel()
-	logging.Debug("Cancel done")
 }
 
 func (s *Server) Shutdown() error {

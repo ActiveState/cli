@@ -121,13 +121,6 @@ func run() (rerr error) {
 	closeUpdateSupervision := superviseUpdate(model, &updNotice)
 	defer closeUpdateSupervision()
 
-	// Does this have to be in a goroutine?
-	quit, err := model.Quit(context.Background())
-	logging.Debug("Quit err: %v", err)
-	if err != nil {
-		return errs.Wrap(err, "Could not subscribe so service quit event")
-	}
-
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),
 		locale.Tl("tray_about_tooltip", "Information about the State Tool"),
@@ -179,7 +172,10 @@ func run() (rerr error) {
 
 	systray.AddSeparator()
 
-	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
+	quit, err := setupQuit(model)
+	if err != nil {
+		return errs.Wrap(err, "Could not setup quit channel")
+	}
 
 	for {
 		select {
@@ -249,14 +245,37 @@ func run() (rerr error) {
 			if err := execute(updlgInfo.Exec(), nil); err != nil {
 				return errs.New("Could not execute: %s", updlgInfo.Name())
 			}
-		case <-mQuit.ClickedCh:
-			logging.Debug("Quit event")
-			systray.Quit()
 		case <-quit:
-			logging.Debug("Quit from subscription")
+			logging.Debug("Quit event")
+			model.CloseSubscriptions()
 			systray.Quit()
 		}
 	}
+}
+
+func setupQuit(model *model.SvcModel) (chan struct{}, error) {
+	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
+	quitSub, err := model.Quit(context.Background())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not subscribe so service quit event")
+	}
+
+	quit := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-mQuit.ClickedCh:
+				logging.Debug("Quit clicked")
+				quit <- struct{}{}
+			case <-quitSub:
+				logging.Debug("Quit from subscription")
+				quit <- struct{}{}
+			}
+		}
+	}()
+
+	return quit, nil
 }
 
 func onExit() {

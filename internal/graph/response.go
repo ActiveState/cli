@@ -17,5 +17,5 @@ type AvailableUpdateResponse struct {
 }
 
 type QuitResponse struct {
-	Quit chan bool `json:"quit"`
+	Quit bool
 }

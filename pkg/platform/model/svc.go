@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -86,13 +87,24 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 }
 
 func (m *SvcModel) Quit(ctx context.Context) (chan bool, error) {
-	r := request.NewQuitRequest()
-	q := graph.QuitResponse{}
-	if err := m.client.RunWithContext(ctx, r, &q); err != nil {
-		return nil, errs.Wrap(err, "Error subscribing to quit event")
+	response := graph.QuitResponse{}
+	result := make(chan bool)
+	_, err := m.client.Subscribe(&response, nil, func(message *json.RawMessage, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		err = json.Unmarshal(*message, &response)
+		result <- response.Quit
+		return nil
+	})
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not subscribe")
 	}
 
-	return q.Quit, nil
+	go m.client.SubscriptionClient.Run()
+
+	return result, nil
 }
 
 func (m *SvcModel) StopServer() error {
@@ -126,4 +138,8 @@ func (m *SvcModel) StopServer() error {
 func (m *SvcModel) Ping() error {
 	_, err := m.StateVersion(context.Background())
 	return err
+}
+
+func (m *SvcModel) CloseSubscriptions() error {
+	return m.client.Close()
 }
