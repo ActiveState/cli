@@ -29,7 +29,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		"",
 		locale.T("activate_project"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "path",

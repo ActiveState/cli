@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 
 type StateToolChannelVersion struct {
 	captain.NameVersion

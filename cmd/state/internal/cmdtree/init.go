@@ -20,7 +20,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("init_title", "Initializing Project"),
 		locale.T("init_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -51,7 +50,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		[]*captain.Argument{
-			&captain.Argument{
+			{
 				Name:        locale.T("arg_state_init_namespace"),
 				Description: locale.T("arg_state_init_namespace_description"),
 				Value:       params.Namespace,
