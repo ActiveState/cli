@@ -605,7 +605,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
-	cp.Expect("insufficient permissions")
+	cp.Expect("permission denied")
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
 	cp.ExpectExitCode(0)
