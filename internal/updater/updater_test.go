@@ -86,7 +86,7 @@ func TestCheckerCheckFor(t *testing.T) {
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {
-				res.url = ""
+				res.URL = ""
 			}
 			assert.Equal(t, tt.ExpectedResult, res)
 		})

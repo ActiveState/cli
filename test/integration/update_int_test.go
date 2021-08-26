@@ -537,19 +537,29 @@ func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(cfg *co
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
 	suite.OnlyRunForTags(tagsuite.Update)
+	server := suite.setupMockServer()
+	defer server.Close()
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.versionCompare(ts, true, false, constants.Version, suite.Equal)
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update)
+	server := suite.setupMockServer()
+	defer server.Close()
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
 	// update should not run because the exe is less than a day old
-	suite.versionCompare(ts, false, false, constants.Version, suite.Equal)
+	suite.versionCompare(ts, false, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
@@ -579,17 +589,22 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
 	}
+	server := suite.setupMockServer()
+	defer server.Close()
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// use unique exe
 	ts.UseDistinctStateExes()
 
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
 	// Spoof modtime
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, false)...), e2e.NonWriteableBinDir())
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("insufficient permissions")
 	cp.Expect("ActiveState CLI")
 	cp.Expect("Revision")
