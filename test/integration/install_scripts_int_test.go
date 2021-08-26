@@ -133,7 +133,7 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("proceed with install?")
 	cp.SendLine("Y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool successfully installed.")
+	cp.Expect("State Tool successfully installed.", time.Second*20)
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
@@ -325,7 +325,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 			suite.Require().NoError(err)
 			defer cfg.Close()
-			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+			var tag *string
+			if ctag := cfg.GetString(updater.CfgUpdateTag); ctag != "" {
+				tag = &ctag
+			}
+			suite.Assert().Equal(tt.Tag, tag)
 
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
