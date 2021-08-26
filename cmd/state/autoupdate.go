@@ -7,6 +7,7 @@ import (
 
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -47,7 +48,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer, svcm *
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 func relaunch() (int, error) {
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd := exec.Command(appinfo.StateApp().Exec(), os.Args[1:]...)
 	logging.Debug("Running command: %s", strings.Join(cmd.Args, " "))
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Start()
