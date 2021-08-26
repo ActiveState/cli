@@ -235,7 +235,7 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/empty
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.1
+# github.com/golang/snappy v0.0.3
 github.com/golang/snappy
 # github.com/google/go-cmp v0.5.3
 github.com/google/go-cmp/cmp
@@ -245,7 +245,7 @@ github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
 # github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99
 github.com/google/pprof/profile
-# github.com/google/uuid v1.1.2
+# github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
 # github.com/googleapis/gax-go/v2 v2.0.5
@@ -266,6 +266,11 @@ github.com/hashicorp/go-version
 ## explicit
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
+# github.com/hasura/go-graphql-client v0.2.0
+## explicit
+github.com/hasura/go-graphql-client
+github.com/hasura/go-graphql-client/ident
+github.com/hasura/go-graphql-client/internal/jsonutil
 # github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 ## explicit
 github.com/hectane/go-acl
@@ -311,6 +316,9 @@ github.com/kballard/go-shellquote
 github.com/kennygrant/sanitize
 # github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd
 github.com/kevinburke/ssh_config
+# github.com/klauspost/compress v1.13.4
+## explicit
+github.com/klauspost/compress/flate
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/kr/pty v1.1.8
@@ -562,7 +570,7 @@ golang.org/x/image/draw
 golang.org/x/image/math/f64
 # golang.org/x/mod v0.3.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+# golang.org/x/net v0.0.0-20210825183410-e898025ed96a
 ## explicit
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
@@ -847,4 +855,12 @@ modernc.org/sqlite/lib
 modernc.org/strutil
 # modernc.org/token v1.0.0
 modernc.org/token
+# nhooyr.io/websocket v1.8.7
+## explicit
+nhooyr.io/websocket
+nhooyr.io/websocket/internal/bpool
+nhooyr.io/websocket/internal/errd
+nhooyr.io/websocket/internal/wsjs
+nhooyr.io/websocket/internal/xsync
+nhooyr.io/websocket/wsjson
 # github.com/ActiveState/cli => ./
