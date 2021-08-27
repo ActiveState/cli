@@ -47,7 +47,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer, svcm *
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 func relaunch() (int, error) {
-	logging.Debug("Running command: %s", strings.Join(cmd.Args, " "))
+	logging.Debug("Running command: %s", strings.Join(os.Args[1:], " "))
 	code, _, err := exeutils.ExecuteAndPipeStd(appinfo.StateApp().Exec(), os.Args[1:], []string{})
 	if err != nil {
 		return code, locale.WrapError(err, "err_autoupdate_relaunch_wait", "Could not forward your command after auto-updating, please manually run your command again.")
