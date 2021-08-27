@@ -110,7 +110,12 @@ func TestInstallation(t *testing.T) {
 		ExpectSuccess             bool
 	}{
 		{"successful", false, true},
-		{"update-without-permissions", true, false},
+		{
+			"update-without-permissions",
+			true,
+			// On Windows, the installation will succeed even if the existing files have no write permissions, because we are allowed to rename them and delete them (we are just not allowed to overwrite them!).
+			runtime.GOOS == "windows",
+		},
 	}
 
 	for _, tt := range tests {
