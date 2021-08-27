@@ -227,7 +227,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	updater.PrintUpdateMessage(proj.Source().Path(), r.out)
+	updateTag := r.config.GetString(updater.CfgTag)
+	updater.PrintUpdateMessage(updateTag, proj.Source().Path(), r.out)
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))

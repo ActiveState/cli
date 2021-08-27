@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -182,7 +183,8 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version, only runs once per day
-		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
+		updateTag := cfg.GetString(updater.CfgTag)
+		if updated, err := autoUpdate(args, updateTag, out, pjPath); err != nil || updated {
 			return err
 		}
 

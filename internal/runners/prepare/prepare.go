@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 )
 
 type primeable interface {
@@ -59,6 +60,11 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 		}
 	}
 
+	updateTagValue := os.Getenv(constants.UpdateTagEnvVarName)
+	if err := r.cfg.Set(updater.CfgTag, updateTagValue); err != nil {
+		logging.Error("Failed to set update tag value: %s", errs.Join(err, ": "))
+	}
+
 	if err := globaldefault.Prepare(r.cfg, r.subshell); err != nil {
 		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)
 		if runtime.GOOS != "linux" {
@@ -82,4 +88,3 @@ func (r *Prepare) reportError(message string, err error) {
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
 }
-
