@@ -246,7 +246,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 
 	// after pulling in the multi-file update, we expect up to TWO more requests to the update server: for the auto-update check (possibly), and the `state update` request
-	server.ExpectNRequests(2, 3)
+	server.ExpectAtLeastNRequests(2)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectLegacyQuery(true)
 	server.NthRequest(0).ExpectTagResponse(&tagName)
@@ -341,7 +341,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 
 			// We expect up to two requests: one from the install script, and potentially another one for the initial auto-update check in the state-svc
-			server.ExpectNRequests(1, 2)
+			server.ExpectAtLeastNRequests(1)
 			server.NthRequest(0).ExpectQueryParam("source", "install")
 			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
@@ -510,7 +510,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			suite.NotContains(binFiles, "state-svc"+osutils.ExeExt)
 
 			// We expect up to two requests: one from the install script, and potentially another one for the initial auto-update check
-			server.ExpectNRequests(1, 2)
+			server.ExpectAtLeastNRequests(1)
 			server.NthRequest(0).ExpectQueryParam("source", "install")
 			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
@@ -685,7 +685,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 
 	// We expect two more requests after an update to the multi-file State Tool: possibly one for the initial auto-update check, and another one for the `state update` call
-	server.ExpectNRequests(2, 3)
+	server.ExpectAtLeastNRequests(2)
 	server.NthRequest(0).ExpectLegacyQuery(true)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectTagResponse(&tagName)
@@ -754,7 +754,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	cp.ExpectExitCode(0)
 
 	// We expect up two requests: one from the install script, and possibly another one for the initial auto-update check in the state-svc
-	server.ExpectNRequests(1, 2)
+	server.ExpectAtLeastNRequests(1)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectTagResponse(nil)
 	server.NthRequest(0).ExpectLegacyQuery(false)
@@ -805,7 +805,7 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 
 	// We expect up to two requests: one from the install script, and possibly another one for the initial auto-update check in the state-svc
-	server.ExpectNRequests(1, 2)
+	server.ExpectAtLeastNRequests(1)
 	server.NthRequest(0).ExpectLegacyQuery(false)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectTagResponse(nil)

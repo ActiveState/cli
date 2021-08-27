@@ -93,10 +93,9 @@ func (mus *MockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUp
 	mus.updateModifier = mod
 }
 
-// ExpectNRequests ensures that the server handled between min and max requests so far
-func (mus *MockUpdateInfoServer) ExpectNRequests(min, max int) {
-	mus.suite.Require().GreaterOrEqual(len(mus.requests), min, "Not enough requests to server: %v", mus.requests)
-	mus.suite.Require().LessOrEqual(len(mus.requests), max, "Too many requests to server: %v", mus.requests)
+// ExpectAtLeastNRequests ensures that the server handled at least N requests so far
+func (mus *MockUpdateInfoServer) ExpectAtLeastNRequests(N int) {
+	mus.suite.Require().GreaterOrEqual(len(mus.requests), N, "Not enough requests to server: %v", mus.requests)
 }
 
 // NthRequest returns information about the n-th request for further inspection
