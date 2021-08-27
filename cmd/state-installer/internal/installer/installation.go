@@ -108,9 +108,6 @@ func (i *Installation) Rollback() error {
 }
 
 func (i *Installation) Install() error {
-	if err := i.BackupFiles(); err != nil {
-		return errs.Wrap(err, "Failed to backup original files.")
-	}
 	if err := fileutils.MkdirUnlessExists(i.binaryDir); err != nil {
 		return errs.Wrap(err, "Could not create target directory: %s", i.binaryDir)
 	}
