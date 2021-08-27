@@ -53,3 +53,8 @@ func createNewSymlink(target, filename string) error {
 	}
 	return nil
 }
+
+// BackupFiles on Darwin does nothing.  The backup/restore mechanism in combination with auto-updates, results in weird behavior, where the forward to an updated State Tool is interrupted by a KILL signal (this possibly is done by a malware protection algorithm: https://developer.apple.com/forums/thread/663456
+func (i *Installation) BackupFiles() error {
+	return nil
+}

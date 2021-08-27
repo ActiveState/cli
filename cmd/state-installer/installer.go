@@ -154,7 +154,15 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	inst := installer.New(tmpDir, installPath, appDir)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		os.RemoveAll(tmpDir)
+		err := inst.RemoveBackupFiles()
+		if err != nil {
+			logging.Debug("Failed to remove backup files: %v", err)
+		} else {
+			logging.Debug("Removed all backup files.")
+		}
+	}()
 
 	if err := inst.Install(); err != nil {
 		out.Error("Installation failed.")
