@@ -326,7 +326,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			ts.UseDistinctStateExes()
 
 			// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
 			before := fileutils.ListDir(ts.Dirs.Config, false)
@@ -399,7 +399,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	ts.UseDistinctStateExes()
 
 	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, true)...))
 	cp.ExpectExitCode(0)
 
 	// Spoof modtime
