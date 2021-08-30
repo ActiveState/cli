@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -36,30 +36,46 @@ type BearerTokenProvider interface {
 }
 
 type Client struct {
-	*graphqlClient
-	*hsgraphql.SubscriptionClient
-	tokenProvider BearerTokenProvider
-	timeout       time.Duration
+	queryClient        *graphqlClient
+	subscriptionClient *hsgraphql.SubscriptionClient
+	tokenProvider      BearerTokenProvider
+	timeout            time.Duration
 }
 
-func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption) *Client {
+type ClientOption func(*Client)
+
+func NewWithOpts(baseUrl string, timeout time.Duration, opts ...ClientOption) *Client {
 	if timeout == 0 {
 		timeout = time.Second * 60
 	}
 
-	queryUrl := fmt.Sprintf("%s/query", url)
-	subUrl := fmt.Sprintf("%s/subscriptions", strings.Replace(url, "http", "ws", 1))
 	client := &Client{
-		graphqlClient:      graphql.NewClient(queryUrl, opts...),
-		SubscriptionClient: hsgraphql.NewSubscriptionClient(subUrl),
-		timeout:            timeout,
+		queryClient: graphql.NewClient(baseUrl),
+		timeout:     timeout,
 	}
-	client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
+	client.queryClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
+
+	for _, opt := range opts {
+		opt(client)
+	}
+
 	return client
 }
 
 func New(url string, timeout time.Duration) *Client {
-	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
+	return NewWithOpts(url, timeout, WithHTTPClient(url, retryhttp.DefaultClient.StandardClient()))
+}
+
+func WithHTTPClient(baseUrl string, httpclient *http.Client) ClientOption {
+	return func(c *Client) {
+		c.queryClient = graphql.NewClient(baseUrl, graphql.WithHTTPClient(httpclient))
+	}
+}
+
+func WithSubscriptions(subUrl string) ClientOption {
+	return func(c *Client) {
+		c.subscriptionClient = hsgraphql.NewSubscriptionClient(subUrl)
+	}
 }
 
 func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {
@@ -67,9 +83,9 @@ func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {
 }
 
 func (c *Client) SetDebug(b bool) {
-	c.graphqlClient.Log = func(string) {}
+	c.queryClient.Log = func(string) {}
 	if b {
-		c.graphqlClient.Log = func(s string) {
+		c.queryClient.Log = func(s string) {
 			fmt.Fprintln(os.Stderr, s)
 		}
 	}
@@ -104,12 +120,12 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 
 	graphRequest.Header.Set("X-Requestor", machineid.UniqID())
 
-	return c.graphqlClient.Run(ctx, graphRequest, &response)
+	return c.queryClient.Run(ctx, graphRequest, &response)
 }
 
 func (c *Client) RunSubscription(ctx context.Context, response interface{}) (chan interface{}, error) {
 	result := make(chan interface{})
-	_, err := c.Subscribe(response, nil, func(message *json.RawMessage, err error) error {
+	_, err := c.subscriptionClient.Subscribe(response, nil, func(message *json.RawMessage, err error) error {
 		if err != nil {
 			return nil
 		}
@@ -122,7 +138,11 @@ func (c *Client) RunSubscription(ctx context.Context, response interface{}) (cha
 		return nil, errs.Wrap(err, "Could not subscribe")
 	}
 
-	go c.SubscriptionClient.Run()
+	go c.subscriptionClient.Run()
 
 	return result, nil
+}
+
+func (c *Client) CloseSubscriptions() error {
+	return c.subscriptionClient.Close()
 }

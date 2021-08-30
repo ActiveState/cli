@@ -124,5 +124,5 @@ func (m *SvcModel) Ping() error {
 }
 
 func (m *SvcModel) CloseSubscriptions() error {
-	return m.client.Close()
+	return m.client.CloseSubscriptions()
 }
