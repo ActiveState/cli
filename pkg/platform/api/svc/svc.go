@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	// hsgraphql "github.com/hasura/go-graphql-client"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
@@ -13,7 +11,6 @@ import (
 
 type Client struct {
 	*gqlclient.Client
-	// *hsgraphql.SubscriptionClient
 	baseUrl string
 }
 
@@ -32,7 +29,7 @@ func New(cfg configurable) (*Client, error) {
 	subUrl := fmt.Sprintf("ws://127.0.0.1:%d/subscriptions", port)
 	return &Client{
 		// The custom client bypasses http-retry, which we don't need for doing local requests
-		Client:  gqlclient.NewWithOpts(baseUrl, 0, gqlclient.WithHTTPClient(baseUrl, &http.Client{}), gqlclient.WithSubscriptions(subUrl)),
+		Client:  gqlclient.NewWithOpts(baseUrl, 0, gqlclient.WithHTTPClient(&http.Client{}), gqlclient.WithSubscriptions(subUrl)),
 		baseUrl: baseUrl,
 	}, nil
 }

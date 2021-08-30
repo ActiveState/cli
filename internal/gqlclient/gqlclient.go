@@ -36,6 +36,7 @@ type BearerTokenProvider interface {
 }
 
 type Client struct {
+	baseUrl            string
 	queryClient        *graphqlClient
 	subscriptionClient *hsgraphql.SubscriptionClient
 	tokenProvider      BearerTokenProvider
@@ -50,25 +51,26 @@ func NewWithOpts(baseUrl string, timeout time.Duration, opts ...ClientOption) *C
 	}
 
 	client := &Client{
+		baseUrl:     baseUrl,
 		queryClient: graphql.NewClient(baseUrl),
 		timeout:     timeout,
 	}
-	client.queryClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 
 	for _, opt := range opts {
 		opt(client)
 	}
+	client.queryClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 
 	return client
 }
 
 func New(url string, timeout time.Duration) *Client {
-	return NewWithOpts(url, timeout, WithHTTPClient(url, retryhttp.DefaultClient.StandardClient()))
+	return NewWithOpts(url, timeout, WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
 }
 
-func WithHTTPClient(baseUrl string, httpclient *http.Client) ClientOption {
+func WithHTTPClient(httpclient *http.Client) ClientOption {
 	return func(c *Client) {
-		c.queryClient = graphql.NewClient(baseUrl, graphql.WithHTTPClient(httpclient))
+		c.queryClient = graphql.NewClient(fmt.Sprintf("%s/query", c.baseUrl), graphql.WithHTTPClient(httpclient))
 	}
 }
 
