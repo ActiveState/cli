@@ -29,7 +29,7 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 	req := request.VulnerabilitiesByProject(org, project)
 	var resp model.ProjectResponse
 	med := mediator.New(auth)
-	err := med.Run(req, &resp)
+	err := med.RunQuery(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
 	}
@@ -54,7 +54,7 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 	req := request.VulnerabilitiesByCommit(commitID)
 	var resp model.CommitResponse
 	med := mediator.New(auth)
-	err := med.Run(req, &resp)
+	err := med.RunQuery(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
 	}

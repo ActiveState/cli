@@ -2,13 +2,18 @@ package gqlclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
+
+	hsgraphql "github.com/hasura/go-graphql-client"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -32,6 +37,7 @@ type BearerTokenProvider interface {
 
 type Client struct {
 	*graphqlClient
+	*hsgraphql.SubscriptionClient
 	tokenProvider BearerTokenProvider
 	timeout       time.Duration
 }
@@ -41,9 +47,12 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 		timeout = time.Second * 60
 	}
 
+	queryUrl := fmt.Sprintf("%s/query", url)
+	subUrl := fmt.Sprintf("%s/subscriptions", strings.Replace(url, "http", "ws", 1))
 	client := &Client{
-		graphqlClient: graphql.NewClient(url, opts...),
-		timeout:       timeout,
+		graphqlClient:      graphql.NewClient(queryUrl, opts...),
+		SubscriptionClient: hsgraphql.NewSubscriptionClient(subUrl),
+		timeout:            timeout,
 	}
 	client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 	return client
@@ -66,7 +75,7 @@ func (c *Client) SetDebug(b bool) {
 	}
 }
 
-func (c *Client) Run(request Request, response interface{}) error {
+func (c *Client) RunQuery(request Request, response interface{}) error {
 	ctx := context.Background()
 	if c.timeout != 0 {
 		var cancel context.CancelFunc
@@ -96,4 +105,24 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	graphRequest.Header.Set("X-Requestor", machineid.UniqID())
 
 	return c.graphqlClient.Run(ctx, graphRequest, &response)
+}
+
+func (c *Client) RunSubscription(ctx context.Context, response interface{}) (chan interface{}, error) {
+	result := make(chan interface{})
+	_, err := c.Subscribe(response, nil, func(message *json.RawMessage, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		err = json.Unmarshal(*message, response)
+		result <- response
+		return nil
+	})
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not subscribe")
+	}
+
+	go c.SubscriptionClient.Run()
+
+	return result, nil
 }

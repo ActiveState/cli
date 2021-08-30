@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -86,25 +85,9 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	return &u.AvailableUpdate, nil
 }
 
-func (m *SvcModel) Quit(ctx context.Context) (chan bool, error) {
+func (m *SvcModel) Quit(ctx context.Context) (chan interface{}, error) {
 	response := graph.QuitResponse{}
-	result := make(chan bool)
-	_, err := m.client.Subscribe(&response, nil, func(message *json.RawMessage, err error) error {
-		if err != nil {
-			return nil
-		}
-
-		err = json.Unmarshal(*message, &response)
-		result <- response.Quit
-		return nil
-	})
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not subscribe")
-	}
-
-	go m.client.SubscriptionClient.Run()
-
-	return result, nil
+	return m.client.RunSubscription(ctx, &response)
 }
 
 func (m *SvcModel) StopServer() error {
