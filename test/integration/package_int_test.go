@@ -346,19 +346,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 50*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 }
@@ -397,19 +397,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
