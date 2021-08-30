@@ -9,10 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type httpGetter interface {
@@ -113,23 +109,4 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	info.url = u.fileURL + "/" + info.Path
 
 	return info, nil
-}
-
-// PrintUpdateMessage will print a message to stdout when an update is available.
-// This will only print the message if the current project has a version lock AND if an update is available
-func (u *Checker) PrintUpdateMessage(pjPath string, out output.Outputer) {
-	if versionInfo, _ := projectfile.ParseVersionInfo(pjPath); versionInfo == nil {
-		return
-	}
-
-	info, err := u.Check()
-	if err != nil {
-		logging.Error("Could not check for updates: %v", err)
-		return
-	}
-
-	if info != nil && info.Version != constants.Version {
-		out.Notice(output.Heading(locale.Tl("update_available_title", "Update Available")))
-		out.Notice(locale.Tr("update_available", constants.Version, info.Version))
-	}
 }

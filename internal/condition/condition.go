@@ -14,3 +14,7 @@ var inTest = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") 
 func InTest() bool {
 	return inTest
 }
+
+func OnCI() bool {
+	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
+}

@@ -22,7 +22,7 @@ type MockUpdateInfoRequest struct {
 	suite    suite.Suite
 	req      *http.Request
 	isLegacy bool
-	setTag   string
+	setTag   *string
 }
 
 // ExpectQueryParam expects that a query parameter with key key has been set to the expectedValue
@@ -36,7 +36,7 @@ func (mur *MockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
 }
 
 // ExpectTagResponse expects that the server responded with a tag field in the response
-func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag string) {
+func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag *string) {
 	mur.suite.Assert().Equal(tag, mur.setTag)
 }
 
@@ -93,9 +93,9 @@ func (mus *MockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUp
 	mus.updateModifier = mod
 }
 
-// ExpectNRequests ensures that the server handled exactly N requests so far
-func (mus *MockUpdateInfoServer) ExpectNRequests(n int) {
-	mus.suite.Require().Len(mus.requests, n)
+// ExpectAtLeastNRequests ensures that the server handled at least N requests so far
+func (mus *MockUpdateInfoServer) ExpectAtLeastNRequests(N int) {
+	mus.suite.Require().GreaterOrEqual(len(mus.requests), N, "Not enough requests to server: %v", mus.requests)
 }
 
 // NthRequest returns information about the n-th request for further inspection
@@ -184,10 +184,15 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 
 	fmt.Fprintf(rw, "%s", b)
 
+	var t *string
+	if up.Tag != "" {
+		t = &up.Tag
+	}
+
 	mus.requests = append(mus.requests, &MockUpdateInfoRequest{
 		suite:    mus.suite,
 		req:      r,
 		isLegacy: true,
-		setTag:   up.Tag,
+		setTag:   t,
 	})
 }
