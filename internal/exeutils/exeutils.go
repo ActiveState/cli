@@ -170,3 +170,13 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 
 	return cmd.Process, nil
 }
+
+// DecodeCmd takes an encoded command and decodes it by returning a shell variant based on the OS we're on
+func DecodeCmd(cmd string) (string, []string) {
+	switch runtime.GOOS {
+	case "windows":
+		return "cmd", []string{"/C", cmd}
+	default:
+		return "sh", []string{"-c", cmd}
+	}
+}

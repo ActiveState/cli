@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
@@ -93,7 +94,7 @@ func main() {
 		"state-installer",
 		"State Tool Installer",
 		"Installs or updates the State Tool",
-		nil,
+		out,
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",
@@ -177,27 +178,57 @@ By using the State Tool Package Manager you agree to the terms of ActiveState’
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		out.Fprint(os.Stdout, fmt.Sprintf("Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
-		err := NewInstaller(cfg, out, params).Run()
-		if err != nil {
-			out.Print("[ERROR]x Failed[/RESET]")
-		} else {
-			out.Print("[SUCCESS]✔ Done[/RESET]")
-		}
-		return err
+		return installFromLocalSource(out, cfg, args, params)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
 	// installation to the installer contained within the source file
-	args = append(args, "--from-deferred")
-	return installDeferred(out, cfg, args, params)
+	return installFromRemoteSource(out, cfg, args, params)
 }
 
-// installDeferred is invoked when we run the installer without providing the associated source files
+// installFromLocalSource is invoked when we're performing an installation where the payload is already provided
+func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	out.Fprint(os.Stdout, fmt.Sprintf("Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
+
+	// Run installer
+	if err := NewInstaller(cfg, out, params).Run(); err != nil {
+		out.Print("[ERROR]x Failed[/RESET]")
+		return err
+	}
+	out.Print("[SUCCESS]✔ Done[/RESET]")
+
+	// Execute requested command, these are mutually exclusive
+	switch {
+	// Execute provided --command
+	case params.command != "":
+		out.Print(output.Heading(fmt.Sprintf("Running `[NOTICE]%s[/RESET]`", params.command)))
+		cmd, args := exeutils.DecodeCmd(params.command)
+		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, []string{}); err != nil {
+			return errs.Wrap(err, "Running provided command failed")
+		}
+	// Activate provided --activate Namespace
+	case params.activate.IsValid():
+		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activate.String()}, []string{}); err != nil {
+			return errs.Wrap(err, "Could not activate %s", args[1])
+		}
+	// Activate provided --activate-default Namespace
+	case params.activateDefault.IsValid():
+		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activateDefault.String(), "--default"}, []string{}); err != nil {
+			return errs.Wrap(err, "Could not activate %s", args[1])
+		}
+	}
+
+	return nil
+}
+
+// installFromRemoteSource is invoked when we run the installer without providing the associated source files
 // Effectively this will download and unpack the target version and then run the installer packaged for that version
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
-func installDeferred(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	args = append(args, "--from-deferred")
+
+	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg)
 	update, err := checker.CheckFor(params.branch, params.version)
 	if err != nil {
