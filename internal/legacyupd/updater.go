@@ -29,8 +29,9 @@ const plat = runtime.GOOS + "-" + runtime.GOARCH
 
 // Info holds the version and sha info
 type Info struct {
-	Version  string
-	Sha256v2 string
+	Version  string `json:"Version"`
+	Sha256v2 string `json:"Sha256v2"`
+	Tag      string `json:"Tag,omitempty"`
 }
 
 // Updater holds all the information about our update

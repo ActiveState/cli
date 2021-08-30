@@ -12,6 +12,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
@@ -26,6 +28,15 @@ import (
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 )
+
+// appEventPrefix is used for all executables except for the State Tool itself.
+var appEventPrefix string = func() string {
+	execName := osutils.ExecutableName()
+	if execName == constants.CommandName {
+		return ""
+	}
+	return execName + " "
+}()
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
@@ -78,10 +89,9 @@ type Command struct {
 	skipChecks bool
 
 	out output.Outputer
-	cfg analytics.Configurable
 }
 
-func NewCommand(name, title, description string, out output.Outputer, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -100,7 +110,6 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 		flags:     flags,
 		commands:  make([]*Command, 0),
 		out:       out,
-		cfg:       cfg,
 	}
 
 	short := description
@@ -141,7 +150,7 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -157,7 +166,6 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
-		cfg:       cfg,
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -185,10 +193,9 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, cfg analytics.Configurable, execute ExecuteFunc) *Command {
+func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 	cmd := &Command{
 		execute: execute,
-		cfg:     cfg,
 	}
 
 	short := description
@@ -493,7 +500,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	subCommandString := c.UseFull()
 
 	// Send  GA events unless they are handled in the runners...
-	analytics.Event(analytics.CatRunCmd, subCommandString)
+	analytics.Event(analytics.CatRunCmd, appEventPrefix+subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -541,10 +548,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, "interrupt")
+		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 	}
 
 	return err

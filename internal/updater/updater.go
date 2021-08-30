@@ -2,6 +2,7 @@ package updater
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -21,16 +22,18 @@ type AvailableUpdate struct {
 	Platform string `json:"platform"`
 	Path     string `json:"path"`
 	Sha256   string `json:"sha256"`
+	Tag      string `json:"tag,omitempty"`
 	url      string
 }
 
-func NewAvailableUpdate(version, channel, platform, path, sha256 string) *AvailableUpdate {
+func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
 	return &AvailableUpdate{
 		Version:  version,
 		Channel:  channel,
 		Platform: platform,
 		Path:     path,
 		Sha256:   sha256,
+		Tag:      tag,
 	}
 }
 
@@ -65,7 +68,10 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	proc, err := exeutils.ExecuteAndForget(installerPath, args)
+	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.Tag))
+		return nil
+	})
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not start installer")
 	}
@@ -83,7 +89,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, []string{})
+	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, []string{fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.Tag)})
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
@@ -107,6 +113,7 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 		if stdout, err = cmd.StdoutPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
+		cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, u.Tag))
 		go func() {
 			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
 			for scanner.Scan() {

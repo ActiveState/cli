@@ -16,7 +16,6 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("cve_title", "Vulnerability Summary"),
 		locale.Tl("cve_description", "Show a summary of project vulnerabilities"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -39,7 +38,6 @@ func newReportCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("cve_report_title", "Vulnerability Report"),
 		locale.Tl("cve_report_cmd_description", "Show a detailed report of project vulnerabilities"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -63,7 +61,6 @@ func newOpenCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("cve_open_title", "Opening Vulnerability Details Page"),
 		locale.Tl("cve_open_cmd_description", "Open the given vulnerability details in your browser"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

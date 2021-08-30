@@ -15,7 +15,6 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("platforms_title", "Listing Platforms"),
 		locale.T("platforms_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -32,7 +31,6 @@ func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("platforms_search_title", "Searching Platforms"),
 		locale.T("platforms_search_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -51,7 +49,6 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("platforms_add_title", "Adding Platform"),
 		locale.T("platforms_add_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        locale.T("flag_platforms_shared_bitwidth"),
@@ -83,7 +80,6 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("platforms_remove_title", "Removing Platform"),
 		locale.T("platforms_remove_cmd_description"),
 		prime.Output(),
-		prime.Config(),
 		[]*captain.Flag{
 			{
 				Name:        locale.T("flag_platforms_shared_bitwidth"),

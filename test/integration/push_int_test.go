@@ -93,7 +93,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)
@@ -128,7 +128,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.ExpectLongString("An activestate.yaml has been created")
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)
@@ -180,7 +180,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)
@@ -249,7 +249,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|currently building", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", 60*time.Second)

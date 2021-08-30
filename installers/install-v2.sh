@@ -13,7 +13,6 @@ Flags:
  -n                              Don't prompt for anything when installing into a new location
  -f                              Forces overwrite.  Overwrite existing State Tool
  -t <dir>                        Install into target directory <dir>
- -e <file>                        Default 'state'. Filename to use for the executable
  -c <comand>                     Run any command after the install script has completed
  --activate <project>            Activate a project when State Tool is correctly installed
  --activate-default <project>    Activate a project and make it the system default
@@ -26,7 +25,7 @@ EOF
 unset ACTIVESTATE_PROJECT
 
 # URL to fetch update infos from.
-BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info/legacy"
+BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info"
 # URL to fetch update files from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the executable to ultimately use.
@@ -37,6 +36,7 @@ TARGET=""
 ACTIVATE=""
 ACTIVATE_DEFAULT=""
 POST_INSTALL_COMMAND=""
+VERSION=""
 
 OS="linux"
 SHA256SUM="sha256sum"
@@ -46,6 +46,14 @@ ARCH="amd64"
 
 NOPROMPT=false
 FORCEOVERWRITE=false
+
+SESSION_TOKEN_VERIFY="{TOKEN""}"
+SESSION_TOKEN="{TOKEN}"
+SESSION_TOKEN_VALUE=""
+
+if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
+  SESSION_TOKEN_VALUE=$SESSION_TOKEN
+fi
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
@@ -127,18 +135,9 @@ x86_64)
 esac
 
 # Determine the tmp directory.
-set_tempdir () {
-  if type mktemp > /dev/null; then
-    TMPDIR=`mktemp -d`
-  else
-    TMPDIR="${TMPDIR:-/tmp}/state-installer.$$"
-    # clean-up previous temp dir
-    rm -rf $tdir
-    mkdir -p $TMPDIR
-  fi
-
-}
-set_tempdir
+if [ -z "$TMPDIR" ]; then
+  TMPDIR="/tmp"
+fi
 
 CHANNEL='release'
 # Process command line arguments.
@@ -169,9 +168,6 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   f)
     FORCEOVERWRITE=true
     ;;
-  e)
-    STATEEXE=$OPTARG
-    ;;
   n)
     NOPROMPT=true
     ;;
@@ -185,7 +181,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSION"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
@@ -199,28 +195,22 @@ if [ -n "$ACTIVATE" ] && [ -n "$ACTIVATE_DEFAULT" ]; then
   exit 1
 fi
 
-if [ -z "$VERSION" ]; then
-  error "Please provide an argument for parameter '-v'. This installation script only installs specific State Tool versions."
-  info "Use 'https://platform.activestate.com/dl/cli/install.sh' to install the latest version of the State Tool."
-  exit 1
-fi
-
-INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
+CURRENT_INSTALLDIR="`dirname \`which $STATEEXE\` 2>/dev/null`"
 
 # stop if previous installation is detected unless
 # - FORCEOVERWRITE is specified OR
-# - a TARGET directory is specified that differs from INSTALLDIR
-if [ ! -z "$INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
-      [ -z $TARGET ] || [ "$TARGET" = "$INSTALLDIR" ] \
+# - a TARGET directory is specified that differs from CURRENT_INSTALLDIR
+if [ ! -z "$CURRENT_INSTALLDIR" ] && ( ! $FORCEOVERWRITE ) && ( \
+      [ -z $TARGET ] || [ $TARGET -ef $CURRENT_INSTALLDIR ] \
    ); then
 
   if [ -n "${ACTIVATE}" ]; then
-    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE}
+    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE}
   elif [ -n "${ACTIVATE_DEFAULT}" ]; then
-    exec $INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
+    exec $CURRENT_INSTALLDIR/$STATEEXE activate ${ACTIVATE_DEFAULT} --default
   fi
 
-  warn "State Tool is already installed at $INSTALLDIR, to reinstall run this command again with -f"
+  warn "State Tool is already installed at $CURRENT_INSTALLDIR, to reinstall run this command again with -f"
   echo "To update the State Tool to the latest version, please run 'state update'."
   echo "To install in a different location, please specify the installation directory with '-t TARGET_DIR'."
   exit 0
@@ -228,7 +218,7 @@ fi
 
 # If '-f' is passed and a previous installation exists we set NOPROMPT
 # as we will overwrite the existing State Tool installation
-if $FORCEOVERWRITE && [ ! -z "$INSTALLDIR" ]; then
+if $FORCEOVERWRITE && [ ! -z "$CURRENT_INSTALLDIR" ]; then
   NOPROMPT=true
 fi
 
@@ -242,13 +232,14 @@ CONSENT_TEXT="\
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
 By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
+
+Please note that the installer may modify your shell configuration file (eg., .bashrc) to add the installation PATH to your environment.
 "
 echo "$CONSENT_TEXT" | fold -s -w $WIDTH
 
 # Construct system-dependent filenames.
-STATEJSON=$OS-$ARCH.json
 STATEPKG=$OS-$ARCH$DOWNLOADEXT
-TMPEXE=$OS-$ARCH$BINARYEXT
+TMPEXE="state-install/state-installer"$BINARYEXT
 
 info "${PREFIX}Preparing for installation...${SUFFIX}"
 
@@ -262,34 +253,40 @@ else
   exit 1
 fi
 
-# remove previous installation in temp dir
-if [ -f $TMPDIR/$STATEPKG ]; then
-  rm $TMPDIR/$STATEPKG
-fi
-
-if [ -f $TMPDIR/$TMPEXE ]; then
-  rm $TMPDIR/$TMPEXE
-fi
-
 fetchArtifact () {
-  info "Fetching version info..."
-  # Determine the latest version to fetch.
-  $FETCH $TMPDIR/$STATEJSON "$STATEURL"
-  if [ $? -ne 0 ]; then
-    error "Failed to fetch info for version $VERSION.  Please check that the version string is valid."
-    exit 1
-  fi
-  UPDATE_TAG=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Tag":[ \t]*"\([^"]*\)".*/\1/p'`
-  SUM=`cat $TMPDIR/$STATEJSON | sed -ne 's/.*"Sha256v2":[ \t]*"\([^"]*\)".*/\1/p'`
-  rm $TMPDIR/$STATEJSON
+  if [ ! -z "$VERSION" ]; then
+    info "Attempting to fetch version: $VERSION..."
+    STATEURL="$STATEURL&target-version=$VERSION"
+    if ! $FETCH $TMPDIR/info.json $STATEURL ; then
+      error "Could not fetch version: $VERSION, please verify the version number and try again."
+      exit 1
+    fi
 
-  info "Fetching version: $VERSION..."
-  # Fetch it.
-  $FETCH $TMPDIR/$STATEPKG ${BASE_FILE_URL}/${CHANNEL}/${VERSION}/${STATEPKG}
-  if [ $? -ne 0 ]; then
-    error "Failed to download the State Tool archive.  Please try again later."
-    exit 1
+    DISABLE_UPDATES="true"
+    info "Fetching version: $VERSION..."
+  else
+    info "Determining latest version..."
+    # Determine the latest version to fetch.
+    $FETCH $TMPDIR/info.json $STATEURL || exit 1
+    VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
+
+    if [ -z "$VERSION" ]; then
+      error "Unable to retrieve the latest version number"
+      exit 1
+    fi
+
+    info "Fetching the latest version: $VERSION..."
   fi
+
+  UPDATE_TAG=`cat $TMPDIR/info.json | sed -ne 's/.*"tag":[ \t]*"\([^"]*\)".*/\1/p'`
+  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
+  rm $TMPDIR/info.json
+
+
+  URL="${BASE_FILE_URL}/${RELURL}"
+  # Fetch it.
+  $FETCH $TMPDIR/$STATEPKG ${URL} || exit 1
 
   # Extract the State binary after verifying its checksum.
   # Verify checksum.
@@ -313,59 +310,7 @@ fetchArtifact () {
   chmod +x $TMPDIR/$TMPEXE
 }
 
-# Use target directory provided by user with no verification or default to
-# one of two commonly used directories. 
-# Ensure they are in PATH and if not use the first writable directory in PATH
-if [ ! -z "$TARGET" ]; then
-  INSTALLDIR=$TARGET
-else
-  if [ -w "/usr/local/bin" ]; then
-    INSTALLDIR="/usr/local/bin"
-  else
-    INSTALLDIR="$HOME/.local/bin"
-  fi
-  # Verify the install directory is in PATH.
-  INPATH=false
-  OLDIFS=$IFS
-  IFS=':'
-  for PATHELEM in $PATH; do 
-    if [ $INSTALLDIR = $PATHELEM ]; then
-      INPATH=true
-      break
-    fi
-  done
-
-  # If the install directory is not in PATH we default to the first
-  # directory in PATH that we have write access to as a last resort.
-  if ! $INPATH; then
-    for PATHELEM in $PATH; do
-      if [ -w $PATHELEM ]; then
-        INSTALLDIR=$PATHELEM
-        break
-      else
-        INSTALLDIR=""
-      fi
-    done
-  fi
-  IFS=$OLDIFS
-fi
-
-if [ -z "$INSTALLDIR" ]; then
-  error "Could not install State Tool to PATH."
-  error "You do not have write access to any directories currently on PATH."
-  error "You can use the '-t' flag to denote an install target, "
-  error "otherwise please ensure you have write permissions to a directory that's on your PATH."
-  exit 1
-fi
-
-# Install to the determined directory.
-info "Installing to $INSTALLDIR"
-if [ ! -e "$INSTALLDIR" ]; then
-  info "NOTE: $INSTALLDIR will be created"
-elif [ -e "$INSTALLDIR/$STATEEXE" ]; then
-  warn "WARNING: overwriting previous installation"
-fi
-if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$INSTALLDIR" ]; then
+if [ ! -z "`which $STATEEXE`" -a "`dirname \`which $STATEEXE\` 2>/dev/null`" != "$CURRENT_INSTALLDIR" ]; then
   warn "WARNING: installing elsewhere from previous installation"
 fi
 userprompt "Accept terms and proceed with install? [Y/n] "
@@ -376,99 +321,30 @@ case "$RESPONSE" in
     exit 0
     ;;
   [Yy]|*)
-    # Install.
-    if [ ! -e "$INSTALLDIR" ]; then
-      mkdir -p "$INSTALLDIR" || continue
-    fi
     fetchArtifact
-    info "Installing to $INSTALLDIR..."
-    mv $TMPDIR/$TMPEXE "$INSTALLDIR/$STATEEXE"
+    OUTPUT_FILE=$TMPDIR/install_output.txt
+    if [ ! -z "$TARGET" ]; then
+      ACTIVESTATE_CLI_DISABLE_UPDATES=$DISABLE_UPDATES ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" "$TARGET" 2>&1 | tee $OUTPUT_FILE
+    else
+      ACTIVESTATE_CLI_DISABLE_UPDATES=$DISABLE_UPDATES ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE "$TMPDIR/$TMPEXE" 2>&1 | tee $OUTPUT_FILE
+    fi
+    INSTALL_OUTPUT=$(cat $OUTPUT_FILE)
+    rm -f $OUTPUT_FILE
+    INSTALLDIR=$(echo $INSTALL_OUTPUT | sed -n 's/.*Install Location: //p' | cut -f1 -d" ")
     ;;
 esac
 
-
-# If the installation is not in $PATH then we attempt to update the users rc file
-if [ ! -z "$ZSH_VERSION" ] && [ -w "$HOME/.zshrc" ]; then
-  info "Zsh shell detected"
-  RC_FILE="$HOME/.zshrc"
-elif [ ! -z "$BASH_VERSION" ] && [ -w "$HOME/.bashrc" ]; then
-  info "Bash shell detected"
-  RC_FILE="$HOME/.bashrc"
-else
-  RC_FILE="$HOME/.profile"
-fi
-
-manual_installation_instructions() {
-  info "State Tool installation complete."
-  echo "Please manually add $INSTALLDIR to your \$PATH in order to start "
-  echo "using the '$STATEEXE' program."
-  echo "You can update your \$PATH by running 'export PATH=\$PATH:$INSTALLDIR'."
-  echo "To make the changes to your path permanent please add the line"
-  echo "'export PATH=\$PATH:$INSTALLDIR' to your $RC_FILE file"
-}
-
-manual_update_instructions() {
-  info "State Tool installation complete."
-  # skip instruction to source rc file when we are activating
-  if [ -n "${ACTIVATE}" ] || [ -n "${ACTIVATE_DEFAULT}" ]; then
-    return
-  fi
-  echo "Please either run 'source $RC_FILE' or start a new login shell in "
-  echo "order to start using the '$STATEEXE' program."
-}
-
-update_rc_file() {
-  # Check if we can write to the users rcfile, if not give manual
-  # insallation instructions
-  if [ ! -w "$RC_FILE" ]; then
-    warn "Could not write to $RC_FILE. Please ensure it exists and is writeable"
-    manual_installation_instructions
-  fi
-
-  RC_KEY="# ActiveState State Tool"
-
-  echo "Updating environment..."
-  pathenv="export PATH=\"\$PATH:$INSTALLDIR\" $RC_KEY"
-  if grep -q "$RC_KEY" $RC_FILE; then
-    sed -i -E "s@^export.+$RC_KEY@$pathenv@" $RC_FILE
-  else
-    echo "" >> "$RC_FILE"
-    echo "$pathenv" >> "$RC_FILE"
-  fi
-}
-
 # Write install file
 STATEPATH=$INSTALLDIR/$STATEEXE
-CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "export" "config" "--filter=dir")
+CONFIGDIR=$(ACTIVESTATE_CLI_DISABLE_UPDATES=true $STATEPATH "--output=simple" "export" "config" "--filter=dir")
 echo "install.sh" > $CONFIGDIR/"installsource.txt"
 
-ACTIVESTATE_CLI_DISABLE_UPDATES=true ACTIVESTATE_UPDATE_TAG=$UPDATE_TAG $STATEPATH _prepare || exit $?
-
-# Check if the installation is in $PATH, if so we also check if the activate
-# flag was passed and attempt to activate the project
-if [ "`dirname \`which $STATEEXE\` 2>/dev/null`" = "$INSTALLDIR" ]; then
-  info "State Tool installation complete."
-fi
-
-
-if $NOPROMPT; then
-  update_rc_file
-  manual_update_instructions
-else
-  # Prompt user to update users path, otherwise present manual
-  # installation instructions
-  userprompt "Allow \$PATH to be appended in your $RC_FILE? [y/N]"
-  RESPONSE=$(userinput y | tr '[:upper:]' '[:lower:]')
-  if [ "$RESPONSE" != "y" ]; then
-    manual_installation_instructions
-  else
-    update_rc_file
-    manual_update_instructions
-  fi
-fi
+info "State Tool successfully installed."
+info "Reminder: Start a new shell in order to start using the State Tool."
 
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
+  # Ensure that new installation dir is on the PATH for follow up commands
   export PATH="$PATH:$INSTALLDIR"
   exec $POST_INSTALL_COMMAND
 elif [ -n "${ACTIVATE}" ]; then

@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
@@ -61,7 +62,12 @@ func main() {
 	if len(os.Args) > 1 {
 		installPath = os.Args[1]
 	}
-	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName)); err != nil {
+	var updateTag *string
+	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
+	if ok {
+		updateTag = &tag
+	}
+	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), updateTag); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
 		logging.Error(errMsg)
 		out.Error(errMsg)
@@ -72,7 +78,7 @@ func main() {
 	}
 }
 
-func run(out output.Outputer, installPath, sessionToken string) (rerr error) {
+func run(out output.Outputer, installPath, sessionToken string, updateTag *string) (rerr error) {
 	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
 
 	cfg, err := config.New()
@@ -89,6 +95,12 @@ func run(out output.Outputer, installPath, sessionToken string) (rerr error) {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
 		analytics.Configure(cfg)
+	}
+
+	if updateTag != nil {
+		if err := cfg.Set(updater.CfgUpdateTag, *updateTag); err != nil {
+			logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
+		}
 	}
 
 	if installPath != "" {
@@ -122,6 +134,11 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 
 	trayInfo := appinfo.TrayApp(installPath)
 	stateInfo := appinfo.StateApp(installPath)
+
+	trayRunning, err := installation.IsTrayAppRunning(cfg)
+	if err != nil {
+		logging.Error("Could not determine if state-tray is running: %v", err)
+	}
 
 	out.Print("Stopping services")
 
@@ -175,9 +192,11 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
-	out.Print("Starting ActiveState Desktop")
-	if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
-		return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+	if trayRunning {
+		out.Print("Starting ActiveState Desktop")
+		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
+			return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+		}
 	}
 
 	out.Print("Installation Complete")
