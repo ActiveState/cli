@@ -155,6 +155,9 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 func prepareBinTargets(dir string) error {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return errs.Wrap(err, "Could not read target dir")
 	}
 

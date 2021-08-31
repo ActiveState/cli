@@ -63,7 +63,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
 
-	if info.Channel == u.currentChannel && info.Version == u.currentVersion {
+	if info == nil || (info.Channel == u.currentChannel && info.Version == u.currentVersion) {
 		return nil, nil
 	}
 
