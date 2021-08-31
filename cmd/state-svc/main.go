@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -36,7 +37,7 @@ const (
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {

@@ -53,7 +53,7 @@ func (suite *UpdateIntegrationTestSuite) setupMockServer() *updateinfomock.MockU
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
-	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
+	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-update` for this test to work.")
 
 	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }

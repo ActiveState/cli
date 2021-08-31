@@ -5,14 +5,16 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type httpGetter interface {
-	Get(string) ([]byte, error)
+	Get(string) ([]byte, int, error)
 }
 
 type Configurable interface {
@@ -94,10 +96,17 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		}
 	}
 
+	logging.Debug("Getting update info (desired channel: %s, version: %s)", desiredChannel, desiredVersion)
+
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
-	res, err := u.httpreq.Get(infoURL)
+	res, code, err := u.httpreq.Get(infoURL)
 	if err != nil {
+		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {
+			// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
+			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
+			return nil, nil
+		}
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 	}
 

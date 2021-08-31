@@ -156,10 +156,6 @@ scripts:
       $scripts.build-svc.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
-      echo "Building State Update Dialog Frontend"
-      $scripts.build-updlg-front.path._posix()
-      echo "Building State Update Dialog"
-      $scripts.build-updlg.path._posix()
       echo "Building Transitional Update"
       $scripts.build-transitional-update._posix()
   - name: build-installer

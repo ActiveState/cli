@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		run(os.Args)
 	}
 }

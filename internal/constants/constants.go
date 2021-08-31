@@ -105,6 +105,9 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 // OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
+// TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always auto update
+const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 

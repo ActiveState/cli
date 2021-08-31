@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/proxyreader"
+	"github.com/ActiveState/cli/internal/retryhttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -30,7 +30,7 @@ type DownloadProgress interface {
 var GetWithProgress func(url string, progress DownloadProgress) ([]byte, error)
 
 func init() {
-	SetMocking(condition.InTest())
+	SetMocking(condition.InUnitTest())
 }
 
 // SetMocking sets the correct Get methods for testing

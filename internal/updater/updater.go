@@ -91,6 +91,10 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
 		return err
 	}
 
+	if err := prepareBinTargets(installTargetPath); err != nil {
+		return errs.Wrap(err, "Could not prepare bin dir")
+	}
+
 	var args []string
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
@@ -144,4 +148,31 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 	}
 
 	return proc, nil
+}
+
+// prepareBinTargets moves state executables to a temp dir prior to running the installer to avoid conflicts and
+// security software false-positives
+func prepareBinTargets(dir string) error {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return errs.Wrap(err, "Could not read target dir")
+	}
+
+	temp, err := ioutil.TempDir("", "update-state")
+	if err != nil {
+		return errs.Wrap(err, "Could not access temp dir")
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		targetFile := filepath.Join(dir, file.Name())
+		if err := os.Rename(targetFile, filepath.Join(temp, file.Name())); err != nil {
+			return errs.Wrap(err, "Could not move executable aside prior to install: %s", targetFile)
+		}
+	}
+
+	return nil
 }

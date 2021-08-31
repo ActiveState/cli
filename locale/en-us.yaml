@@ -1710,7 +1710,7 @@ auto_update_permission_err:
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
 auto_update_to_version:
   other: |
-    Auto updating from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
+    Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
 auto_update_relaunch:
   other: |
     Update installed. Forwarding input to updated State Tool.

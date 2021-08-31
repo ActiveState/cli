@@ -133,7 +133,7 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("proceed with install?")
 	cp.SendLine("Y")
 	cp.Expect("Fetching the latest version")
-	cp.Expect("State Tool successfully installed.")
+	cp.Expect("State Tool successfully installed.", time.Second*20)
 }
 
 func expectVersionedStateToolInstallation(cp *termtest.ConsoleProcess, version string) {
@@ -207,7 +207,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 		if tag != tagName {
 			return
 		}
-		up.Tag = tagName
+		up.Tag = &tagName
 	})
 	defer server.Close()
 
@@ -245,14 +245,15 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	defer cfg.Close()
 	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 
-	server.ExpectNRequests(2)
+	// after pulling in the multi-file update, we expect up to TWO more requests to the update server: for the auto-update check (possibly), and the `state update` request
+	server.ExpectAtLeastNRequests(2)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
 	server.NthRequest(0).ExpectLegacyQuery(true)
-	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(0).ExpectTagResponse(&tagName)
 	server.NthRequest(1).ExpectQueryParam("source", "update")
 	server.NthRequest(1).ExpectQueryParam("tag", tagName)
 	server.NthRequest(1).ExpectLegacyQuery(false)
-	server.NthRequest(1).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectTagResponse(&tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -260,18 +261,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	tagName := "experiment"
 
 	tests := []struct {
 		Name        string
 		TestInstall bool
-		Tag         string
+		Tag         *string
 		Channel     string
 	}{
-		{"install-local-test-update", true, "", constants.BranchName},
-		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
+		{"install-local-test-update", true, nil, constants.BranchName},
+		{"install-local-test-update-with-tag", true, &tagName, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "", "master"},
+		{"install-release", false, nil, "master"},
 	}
 
 	for _, tt := range tests {
@@ -324,7 +326,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 			suite.Require().NoError(err)
 			defer cfg.Close()
-			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+			var tag *string
+			if ctag := cfg.GetString(updater.CfgUpdateTag); ctag != "" {
+				tag = &ctag
+			}
+			suite.Assert().Equal(tt.Tag, tag)
 
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
@@ -334,7 +340,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
 			assertApplicationDirContents(suite.NotContains, dir)
 			assertBinDirContents(suite.NotContains, ts.Dirs.Work)
 
-			server.ExpectNRequests(1)
+			// We expect up to two requests: one from the install script, and potentially another one for the initial auto-update check in the state-svc
+			server.ExpectAtLeastNRequests(1)
 			server.NthRequest(0).ExpectQueryParam("source", "install")
 			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
@@ -404,18 +411,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 		suite.T().SkipNow()
 	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	tagName := "experiment"
 
 	tests := []struct {
 		Name        string
 		TestInstall bool
-		Tag         string
+		Tag         *string
 		Channel     string
 	}{
-		{"install-local-test-update", true, "", constants.BranchName},
-		{"install-local-test-update-with-tag", true, "experiment", constants.BranchName},
+		{"install-local-test-update", true, nil, constants.BranchName},
+		{"install-local-test-update-with-tag", true, &tagName, constants.BranchName},
 		// Todo https://www.pivotaltracker.com/story/show/177863116
 		// Replace the target branch for this test to release, as soon as we have a working deployment there.
-		{"install-release", false, "", "master"},
+		{"install-release", false, nil, "master"},
 	}
 
 	for _, tt := range tests {
@@ -477,7 +485,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 			suite.Require().NoError(err)
 			defer cfg.Close()
-			suite.Assert().Equal(tt.Tag, cfg.GetString(updater.CfgUpdateTag))
+			var tag *string
+			ct := cfg.GetString(updater.CfgUpdateTag)
+			if ct != "" {
+				tag = &ct
+			}
+			suite.Assert().Equal(tt.Tag, tag)
 
 			cp = ts.SpawnCmdWithOpts(filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt), e2e.WithArgs("clean", "uninstall"))
 			cp.Expect("Please Confirm")
@@ -496,7 +509,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstallPs1() {
 			suite.NotContains(binFiles, "state-tray"+osutils.ExeExt)
 			suite.NotContains(binFiles, "state-svc"+osutils.ExeExt)
 
-			server.ExpectNRequests(1)
+			// We expect up to two requests: one from the install script, and potentially another one for the initial auto-update check
+			server.ExpectAtLeastNRequests(1)
 			server.NthRequest(0).ExpectQueryParam("source", "install")
 			server.NthRequest(0).ExpectTagResponse(tt.Tag)
 		})
@@ -619,7 +633,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 		if tag != tagName {
 			return
 		}
-		up.Tag = tagName
+		up.Tag = &tagName
 	})
 	defer server.Close()
 
@@ -670,13 +684,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	defer cfg.Close()
 	suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 
-	server.ExpectNRequests(2)
+	// We expect two more requests after an update to the multi-file State Tool: possibly one for the initial auto-update check, and another one for the `state update` call
+	server.ExpectAtLeastNRequests(2)
 	server.NthRequest(0).ExpectLegacyQuery(true)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse(tagName)
+	server.NthRequest(0).ExpectTagResponse(&tagName)
 	server.NthRequest(1).ExpectLegacyQuery(false)
 	server.NthRequest(1).ExpectQueryParam("source", "update")
-	server.NthRequest(1).ExpectTagResponse(tagName)
+	server.NthRequest(1).ExpectTagResponse(&tagName)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
@@ -738,9 +753,10 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTest(installScriptArg
 	cp.ExpectLongString(ts.Dirs.Work, 1*time.Second)
 	cp.ExpectExitCode(0)
 
-	server.ExpectNRequests(1)
+	// We expect up two requests: one from the install script, and possibly another one for the initial auto-update check in the state-svc
+	server.ExpectAtLeastNRequests(1)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectTagResponse(nil)
 	server.NthRequest(0).ExpectLegacyQuery(false)
 }
 
@@ -788,10 +804,11 @@ func (suite *InstallScriptsIntegrationTestSuite) runInstallTestWindows(installSc
 	}
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path in PATH")
 
-	server.ExpectNRequests(1)
+	// We expect up to two requests: one from the install script, and possibly another one for the initial auto-update check in the state-svc
+	server.ExpectAtLeastNRequests(1)
 	server.NthRequest(0).ExpectLegacyQuery(false)
 	server.NthRequest(0).ExpectQueryParam("source", "install")
-	server.NthRequest(0).ExpectTagResponse("")
+	server.NthRequest(0).ExpectTagResponse(nil)
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) setupMockServer() *updateinfomock.MockUpdateInfoServer {

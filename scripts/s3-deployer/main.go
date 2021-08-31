@@ -25,7 +25,7 @@ var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 var sess *session.Session
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		if len(os.Args) != 5 {
 			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
 		}

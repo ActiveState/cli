@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -47,7 +48,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 
@@ -165,15 +166,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		if err != nil {
 			return err
 		}
-	}
-
-	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
-	if err != nil {
-		return err
-	}
-	if forward != nil {
-		return forward()
 	}
 
 	pjOwner := ""
