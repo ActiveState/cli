@@ -212,6 +212,17 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 			}
 		}
+
+		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
+			if (pj.Version() != "" && pj.Version() != constants.Version) ||
+				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
+				return errs.AddTips(
+					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
+					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.T("lock_update_lock"),
+				)
+			}
+		}
 	}
 
 	err = cmds.Execute(args[1:])

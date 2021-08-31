@@ -1713,4 +1713,10 @@ auto_update_to_version:
     Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
 auto_update_relaunch:
   other: |
-    Update installed. Forwarding input to updated State Tool.
+    Update installed. Forwarding input to updated State Tool.  other: Update installed. Forwarding input to updated State Tool.
+lock_update_legacy_version:
+  other: See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.
+lock_version_mismatch:
+  other: This project is locked at State Tool version [NOTICE]{{.V0}}[/RESET]. Your current State Tool version is [NOTICE]{{.V1}}@{{.V2}}[/RESET].
+lock_update_lock:
+  other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.
