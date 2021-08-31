@@ -136,7 +136,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
 	suite.NoError(err)
 
 	expectedCatcher := outputhelper.NewCatcher()
-	expectedCatcher.Notice(locale.Tr("warning_git_project_mismatch", "test-repo", project.NewNamespace(owner, name, "").String(), fmt.Sprintf("%stroubleshooting/git-project-mismatch/", constants.DocumentationURL)))
+	expectedCatcher.Notice(locale.Tr("warning_git_project_mismatch", "test-repo", project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
 
 	suite.Equal(expectedCatcher.CombinedOutput(), actualCatcher.CombinedOutput())
 	suite.Equal(owner, proj.Owner())
