@@ -29,7 +29,7 @@ func New(cfg configurable) (*Client, error) {
 	subUrl := fmt.Sprintf("ws://127.0.0.1:%d/subscriptions", port)
 	return &Client{
 		// The custom client bypasses http-retry, which we don't need for doing local requests
-		Client:  gqlclient.NewWithOpts(baseUrl, 0, gqlclient.WithHTTPClient(&http.Client{}), gqlclient.WithSubscriptions(subUrl)),
+		Client:  gqlclient.NewWithOpts(fmt.Sprintf("%s/query", baseUrl), 0, gqlclient.WithHTTPClient(&http.Client{}), gqlclient.WithSubscriptions(subUrl)),
 		baseUrl: baseUrl,
 	}, nil
 }
