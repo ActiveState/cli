@@ -68,7 +68,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		return errs.AddTips(err, tipMsg)
 	}
 
-	err = ensureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), out)
+	err = ensureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out)
 	if err != nil {
 		return locale.WrapError(err, "err_git_ensure_project", "Could not ensure that the activestate.yaml in the cloned repository matches the project you are activating.")
 	}
@@ -99,7 +99,7 @@ func plainClone(path string, isBare bool, o *git.CloneOptions) (r *git.Repositor
 	return git.PlainClone(path, isBare, o)
 }
 
-func ensureCorrectProject(owner, name, projectFilePath string, out output.Outputer) error {
+func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer) error {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil
 	}
@@ -115,12 +115,12 @@ func ensureCorrectProject(owner, name, projectFilePath string, out output.Output
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		out.Print(locale.T("warning_git_project_mismatch"))
+		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURL))
 		err = proj.Source().SetNamespace(owner, name)
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
 		}
-		analytics.Event(analytics.CatMisc, "git-project-mistmatch")
+		analytics.Event(analytics.CatMisc, "git-project-mismatch")
 	}
 
 	return nil

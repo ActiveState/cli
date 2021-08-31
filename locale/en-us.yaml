@@ -1710,5 +1710,5 @@ transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
   other: |
-    [ERROR]Warning:[/RESET] The activestate.yaml used on "[NOTICE]<repo-url>[/RESET]" does not match your project; "[NOTICE]<project namespace>[/RESET]".
-    We're updating it to match your current project. For more information check out <documentation-url>.
+    [ERROR]Warning:[/RESET] The activestate.yaml used on "[NOTICE]{{.V0}}[/RESET]" does not match your project; "[NOTICE]{{.V1}}[/RESET]".
+    We're updating it to match your current project. For more information check out {{.V2}}.

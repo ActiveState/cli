@@ -120,7 +120,7 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
-	err := ensureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), outputhelper.NewCatcher())
+	err := ensureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher())
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
@@ -129,16 +129,16 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
 	actualCatcher := outputhelper.NewCatcher()
-	err := ensureCorrectProject(owner, name, projectPath, actualCatcher)
+	err := ensureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher)
 	suite.NoError(err)
 
 	proj, err := project.Parse(projectPath)
 	suite.NoError(err)
 
 	expectedCatcher := outputhelper.NewCatcher()
-	expectedCatcher.Print(locale.T("warning_git_project_mismatch"))
+	expectedCatcher.Notice(locale.Tr("warning_git_project_mismatch", "test-repo", project.NewNamespace(owner, name, "").String(), constants.DocumentationURL))
 
-	suite.Equal(expectedCatcher.Output(), actualCatcher.Output())
+	suite.Equal(expectedCatcher.CombinedOutput(), actualCatcher.CombinedOutput())
 	suite.Equal(owner, proj.Owner())
 	suite.Equal(name, proj.Name())
 }
