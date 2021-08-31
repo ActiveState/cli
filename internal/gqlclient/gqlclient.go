@@ -70,7 +70,7 @@ func New(url string, timeout time.Duration) *Client {
 
 func WithHTTPClient(httpclient *http.Client) ClientOption {
 	return func(c *Client) {
-		c.queryClient = graphql.NewClient(fmt.Sprintf("%s/query", c.baseUrl), graphql.WithHTTPClient(httpclient))
+		c.queryClient = graphql.NewClient(c.baseUrl, graphql.WithHTTPClient(httpclient))
 	}
 }
 
