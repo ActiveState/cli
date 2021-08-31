@@ -115,7 +115,7 @@ func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURL))
+		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), fmt.Sprintf("%stroubleshooting/git-project-mismatch/", constants.DocumentationURL)))
 		err = proj.Source().SetNamespace(owner, name)
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
