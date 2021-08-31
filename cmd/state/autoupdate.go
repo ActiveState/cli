@@ -66,7 +66,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 		log := logging.Error
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
-			return false, locale.WrapInputError(err, "auto_update_permission_err", innerErr.Error())
+			return false, locale.WrapInputError(err, "auto_update_permission_err", errs.JoinMessage(err))
 		}
 		if errors.As(err, new(*lockfile.AlreadyLockedError)) {
 			log("Auto update failed because the update lock file is already in use")
