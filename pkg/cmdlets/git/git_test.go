@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -118,15 +119,28 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")
 }
 
-func (suite *GitTestSuite) TestEnsureCorrectRepo() {
-	err := ensureCorrectRepo("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName))
+func (suite *GitTestSuite) TestEnsureCorrectProject() {
+	err := ensureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), outputhelper.NewCatcher())
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
-func (suite *GitTestSuite) TestEnsureCorrectRepo_Mistmatch() {
-	err := ensureCorrectRepo("not-owner", "bad-project", filepath.Join(suite.dir, constants.ConfigFileName))
-	expected := locale.NewError("err_git_project_url_mismatch", "Cloned project file does not match expected")
-	suite.EqualError(err, expected.Error(), "expected errors to match")
+func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
+	owner := "not-owner"
+	name := "bad-project"
+	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
+	actualCatcher := outputhelper.NewCatcher()
+	err := ensureCorrectProject(owner, name, projectPath, actualCatcher)
+	suite.NoError(err)
+
+	proj, err := project.Parse(projectPath)
+	suite.NoError(err)
+
+	expectedCatcher := outputhelper.NewCatcher()
+	expectedCatcher.Print(locale.T("warning_git_project_mismatch"))
+
+	suite.Equal(expectedCatcher.Output(), actualCatcher.Output())
+	suite.Equal(owner, proj.Owner())
+	suite.Equal(name, proj.Name())
 }
 
 func (suite *GitTestSuite) TestMoveFiles() {

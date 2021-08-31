@@ -87,6 +87,9 @@ const CatActivationFlow = "activation"
 // CatPrompt is for prompt events
 const CatPrompt = "prompt"
 
+// CatMist is for miscellaneous events
+const CatMisc = "misc"
+
 const CfgSessionToken = "sessionToken"
 
 type customDimensions struct {
