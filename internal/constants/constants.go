@@ -215,6 +215,9 @@ const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 // DocumentationURLGetStarted is the documentation URL for creating projects
 const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
+// DocumentationURLMismatch is the documentation URL for the project mismatch warning
+const DocumentationURLMismatch = DocumentationURL + "troubleshooting/git-project-mismatch/"
+
 // DocumentationURLLocking is the documentation URL for locking
 const DocumentationURLLocking = DocumentationURL + "advanced-topics/locking/"
 
