@@ -28,6 +28,12 @@ import (
 const CfgKeyLastCheck = "auto_update_lastcheck"
 
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
+	defer func() {
+		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
+			logging.Error("Failed to store last update check: %s", errs.JoinMessage(err))
+		}
+	}()
+	
 	if !shouldRunAutoUpdate(args, cfg) {
 		return false, nil
 	}
