@@ -409,9 +409,20 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
+	before := fileutils.ListDir(ts.Dirs.Config, false)
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.NonWriteableBinDir())
-	cp.Expect("permission denied")
-	cp.ExpectExitCode(1)
+	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
+	cp.ExpectExitCode(0)
+
+	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
+	suite.Assert().Contains(logs, "Installation failed")
+
+	server.ExpectNRequests(1)
+	server.NthRequest(0).ExpectQueryParam("source", "update")
+
+	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
