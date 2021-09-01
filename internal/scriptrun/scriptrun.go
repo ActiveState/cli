@@ -16,9 +16,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/virtualenv"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
@@ -75,7 +75,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
-	venv := virtualenvironment.New(rt)
+	venv := virtualenv.New(s.out, s.project, rt)
 
 	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {

@@ -12,13 +12,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
+	"github.com/ActiveState/cli/internal/runbits/virtualenv"
 	"github.com/ActiveState/cli/internal/sighandler"
-	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironment.VirtualEnvironment) error {
+func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenv.VirtualEnv) error {
 	logging.Debug("Activating and waiting")
 
 	err := os.Chdir(filepath.Dir(proj.Source().Path()))
