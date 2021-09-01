@@ -36,7 +36,12 @@ func (mur *MockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
 
 // ExpectTagResponse expects that the server responded with a tag field in the response
 func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag *string) {
-	mur.suite.Assert().Equal(tag, mur.setTag)
+	if tag == nil {
+		mur.suite.Assert().Equal(tag, mur.setTag)
+	} else {
+		mur.suite.Assert().NotNil(mur.setTag)
+		mur.suite.Assert().Equal(*tag, *mur.setTag)
+	}
 }
 
 // MockUpdateInfoServer serves update information files found relative to a testUpdateDir directory path

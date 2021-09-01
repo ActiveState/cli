@@ -628,6 +628,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 
 	tagName := "experiment"
 	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *updateinfomock.LegacyInfo, _ string, _ string) {
+		up.Tag = tagName
+	})
 	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
 		if tag != tagName {
 			return
