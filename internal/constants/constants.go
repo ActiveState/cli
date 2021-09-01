@@ -188,6 +188,9 @@ const DocumentationURL = "http://docs.activestate.com/platform/state/"
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// DocumentationURLMismatch is the documentation URL for the project mismatch warning
+const DocumentationURLMismatch = DocumentationURL + "troubleshooting/git-project-mismatch/"
+
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/"
 

@@ -9,6 +9,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -61,9 +62,9 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		return errs.Wrap(err, "Cmd failure")
 	}
 
-	err = ensureCorrectRepo(owner, name, filepath.Join(tempDir, constants.ConfigFileName))
+	err = ensureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_git_ensure_project", "Could not ensure that the activestate.yaml in the cloned repository matches the project you are activating.")
 	}
 
 	err = moveFiles(tempDir, path)
@@ -73,7 +74,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 	return nil
 }
 
-func ensureCorrectRepo(owner, name, projectFilePath string) error {
+func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer) error {
 	_, err := os.Stat(projectFilePath)
 	if os.IsNotExist(err) {
 		return nil
@@ -93,7 +94,12 @@ func ensureCorrectRepo(owner, name, projectFilePath string) error {
 	}
 
 	if !(strings.ToLower(proj.Owner()) == strings.ToLower(owner)) || !(strings.ToLower(proj.Name()) == strings.ToLower(name)) {
-		return locale.NewError("ProjectURLMismatch")
+		out.Notice(locale.Tr("warning_git_project_mismatch", repoURL, project.NewNamespace(owner, name, "").String(), constants.DocumentationURLMismatch))
+		err = proj.Source().SetNamespace(owner, name)
+		if err != nil {
+			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
+		}
+		analytics.Event(analytics.CatMisc, "git-project-mismatch")
 	}
 
 	return nil

@@ -1665,3 +1665,7 @@ headless_notify:
     For more information, including how to merge these changes into an existing project, visit: [ACTIONABLE]{{.V1}}[/RESET].
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
+warning_git_project_mismatch:
+   other: |
+     [ERROR]Warning:[/RESET] The activestate.yaml used on "[NOTICE]{{.V0}}[/RESET]" does not match your project; "[NOTICE]{{.V1}}[/RESET]".
+     We're updating it to match your current project. For more information check out {{.V2}}.
