@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -597,15 +596,5 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("permission denied")
-	cp.Expect("ActiveState CLI")
-	cp.Expect("Revision")
-	cp.ExpectExitCode(0)
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
-
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
-
-	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
+	cp.ExpectExitCode(1)
 }

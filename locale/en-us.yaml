@@ -1707,8 +1707,9 @@ auto_update_permission_err:
   other: |
     Could not update to the latest available version of the state tool due to insufficient permissions.
     To manually update, run 'state update' as a privileged user.
+    If your installation has become corrupted, please re-install using the instructions on {{.V0}}.
     If you want the state tool to auto-update, please re-install it in a user-writable directory.
-    Error received: {{.V0}}
+    Error received: {{.V1}}
 auto_update_to_version:
   other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
 auto_update_relaunch:
