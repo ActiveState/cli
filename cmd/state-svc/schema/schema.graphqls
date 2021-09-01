@@ -35,3 +35,7 @@ type Query {
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
 }
+
+type Subscription {
+  quit: Boolean!
+}

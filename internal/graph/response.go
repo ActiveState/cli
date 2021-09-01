@@ -15,3 +15,7 @@ type UpdateResponse struct {
 type AvailableUpdateResponse struct {
 	AvailableUpdate AvailableUpdate `json:"availableUpdate"`
 }
+
+type QuitResponse struct {
+	Quit bool
+}

@@ -23,20 +23,24 @@ import (
 type Resolver struct {
 	cfg   *config.Instance
 	cache *cache.Cache
+	done  chan bool
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance) *Resolver {
+func New(cfg *config.Instance, done chan bool) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
+		done,
 	}
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
 // So far no need for this, so we're pointing back at ourselves..
 func (r *Resolver) Query() genserver.QueryResolver { return r }
+
+func (r *Resolver) Subscription() genserver.SubscriptionResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	logging.Debug("Version resolver")
@@ -128,4 +132,9 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	})
 
 	return projects, nil
+}
+
+func (r *Resolver) Quit(ctx context.Context) (<-chan bool, error) {
+	logging.Debug("Quit resolver")
+	return r.done, nil
 }

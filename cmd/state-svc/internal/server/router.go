@@ -18,8 +18,13 @@ func (s *Server) setupRouting() {
 		return nil
 	})
 
+	s.httpServer.GET("/subscriptions", func(c echo.Context) error {
+		s.graphServer.ServeHTTP(c.Response(), c.Request())
+		return nil
+	})
+
 	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
-		s.shutdown()
+		s.quit()
 		return nil
 	})
 }

@@ -38,12 +38,13 @@ require (
 	github.com/go-openapi/validate v0.20.2
 	github.com/gobuffalo/packr v1.10.7
 	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/hashicorp/go-version v1.1.0
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hasura/go-graphql-client v0.2.0
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/hpcloud/tail v1.0.0
 	github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
@@ -52,6 +53,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
+	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -87,7 +89,7 @@ require (
 	github.com/yuin/goldmark v1.3.5
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
@@ -98,4 +100,5 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	modernc.org/sqlite v1.11.2
+	nhooyr.io/websocket v1.8.7 // indirect
 )

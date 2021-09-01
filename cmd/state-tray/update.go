@@ -15,7 +15,7 @@ const (
 )
 
 func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
-	var done chan struct{}
+	done := make(chan struct{})
 
 	go func() {
 		for {

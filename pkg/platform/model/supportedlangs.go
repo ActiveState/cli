@@ -13,7 +13,7 @@ func FetchSupportedLanguages(osPlatformName string) ([]model.SupportedLanguage, 
 	req := request.SupportedLanguages(kernelName)
 	var resp model.SupportedLanguagesResponse
 	med := mediator.New(nil)
-	err := med.Run(req, &resp)
+	err := med.RunQuery(req, &resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to run mediator request.")
 	}

@@ -85,6 +85,11 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	return &u.AvailableUpdate, nil
 }
 
+func (m *SvcModel) Quit(ctx context.Context) (chan interface{}, error) {
+	response := graph.QuitResponse{}
+	return m.client.RunSubscription(ctx, &response)
+}
+
 func (m *SvcModel) StopServer() error {
 	htClient := retryhttp.DefaultClient.StandardClient()
 
@@ -116,4 +121,8 @@ func (m *SvcModel) StopServer() error {
 func (m *SvcModel) Ping() error {
 	_, err := m.StateVersion(context.Background())
 	return err
+}
+
+func (m *SvcModel) CloseSubscriptions() error {
+	return m.client.CloseSubscriptions()
 }

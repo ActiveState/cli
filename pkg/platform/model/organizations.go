@@ -111,7 +111,7 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 
 	gql := graphql.New()
 	response := model.Organizations{}
-	err := gql.Run(request, &response)
+	err := gql.RunQuery(request, &response)
 	if err != nil {
 		return nil, errs.Wrap(err, "gql.Run failed")
 	}

@@ -88,7 +88,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) ([]*gqlModel.Requirement, st
 
 	gql := graphql.New()
 	response := gqlModel.Checkpoint{}
-	err := gql.Run(request, &response)
+	err := gql.RunQuery(request, &response)
 	if err != nil {
 		return nil, strfmt.DateTime{}, errs.Wrap(err, "gql.Run failed")
 	}
