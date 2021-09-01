@@ -196,9 +196,18 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 	cp.ExpectExitCode(0)
 }
 
+// TestLegacyInstallShInstallMultiFileUpdate is meant to test whether installing via the legacy installer results in
+// a multi-file state tool. This is achieved using the state-transition-update
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMultiFileUpdate() {
+	if runtime.GOOS == "windows" {
+		suite.T().SkipNow()
+	}
+
 	tagName := "experiment"
 	server := suite.setupMockServer()
+	server.SetLegacyUpdateModifier(func(up *updateinfomock.LegacyInfo, _ string, _ string) {
+		up.Tag = tagName
+	})
 	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
 		if tag != tagName {
 			return
@@ -207,9 +216,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	})
 	defer server.Close()
 
-	if runtime.GOOS == "windows" {
-		suite.T().SkipNow()
-	}
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
