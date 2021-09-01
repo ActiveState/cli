@@ -309,7 +309,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		Version    string
 	}{
 		{"test-update", true, testBranch, ""},
-		{"release-channel", false, targetBranch, ""},
+		// Updating from master to release is not supported until release runs the multi-file updater
+		// https://www.pivotaltracker.com/story/show/179443800
+		// {"release-channel", false, targetBranch, ""},
 		{"specific-update", false, targetBranch, specificVersion},
 	}
 
