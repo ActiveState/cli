@@ -68,6 +68,10 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 		return nil, err
 	}
 
+	if err := prepareBinTargets(installTargetPath); err != nil {
+		return nil, errs.Wrap(err, "Could not prepare bin dir")
+	}
+
 	var args []string
 	if installTargetPath != "" {
 		args = append(args, installTargetPath)
@@ -118,6 +122,10 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 		return nil, errs.Wrap(err, "Could not download update")
 	}
 
+	if err := prepareBinTargets(installTargetPath); err != nil {
+		return nil, errs.Wrap(err, "Could not prepare bin dir")
+	}
+
 	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
@@ -165,6 +173,7 @@ func prepareBinTargets(dir string) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not access temp dir")
 	}
+	defer os.RemoveAll(temp)
 
 	for _, file := range files {
 		if file.IsDir() {

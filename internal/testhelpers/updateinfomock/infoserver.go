@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,7 +45,6 @@ type MockUpdateInfoServer struct {
 	testUpdateDir        string
 	close                func()
 	updateModifier       func(*updater.AvailableUpdate, string, string)
-	legacyUpdateModifier func(*legacyupd.Info, string, string)
 	requests             []*MockUpdateInfoRequest
 }
 
@@ -83,12 +81,7 @@ func (mus *MockUpdateInfoServer) Close() {
 	mus.close()
 }
 
-// SetLegacyUpdateModifier sets a function modifying the returned update information when a legacy info was requested
-func (mus *MockUpdateInfoServer) SetLegacyUpdateModifier(mod func(*legacyupd.Info, string, string)) {
-	mus.legacyUpdateModifier = mod
-}
-
-// SetLegacyUpdateModifier sets a function modifying the returned update information
+// SetUpdateModifier sets a function modifying the returned update information
 func (mus *MockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUpdate, string, string)) {
 	mus.updateModifier = mod
 }
@@ -158,14 +151,18 @@ func (mus *MockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Requ
 	})
 }
 
+type Info struct {
+	Version  string `json:"Version"`
+	Sha256v2 string `json:"Sha256v2"`
+	Tag      string `json:"Tag,omitempty"`
+}
+
 func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	platform := q.Get("platform")
 	arch := "amd64"
-	source := q.Get("source")
 	version := q.Get("target-version")
 	channel := q.Get("channel")
-	tag := q.Get("tag")
 
 	fp := filepath.Join(mus.testUpdateDir, channel)
 	if version != "" {
@@ -176,13 +173,9 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 	b, err := os.ReadFile(fp)
 	mus.suite.Require().NoError(err, "failed finding version info file")
 
-	var up *legacyupd.Info
+	var up *Info
 	err = json.Unmarshal(b, &up)
 	mus.suite.Require().NoError(err)
-
-	if mus.legacyUpdateModifier != nil {
-		mus.legacyUpdateModifier(up, source, tag)
-	}
 
 	b, err = json.MarshalIndent(up, "", "")
 	mus.suite.Require().NoError(err, "failed marshaling the response")

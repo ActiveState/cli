@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -200,9 +199,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallSh() {
 func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMultiFileUpdate() {
 	tagName := "experiment"
 	server := suite.setupMockServer()
-	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
-		up.Tag = tagName
-	})
 	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
 		if tag != tagName {
 			return
@@ -626,9 +622,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 
 	tagName := "experiment"
 	server := suite.setupMockServer()
-	server.SetLegacyUpdateModifier(func(up *legacyupd.Info, _ string, _ string) {
-		up.Tag = tagName
-	})
 	server.SetUpdateModifier(func(up *updater.AvailableUpdate, _ string, tag string) {
 		if tag != tagName {
 			return
