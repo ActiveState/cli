@@ -23,10 +23,10 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/promptable"
-	"github.com/ActiveState/cli/internal/runbits/virtualenv"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -230,7 +230,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	venv := virtualenv.New(r.out, r.proj, rt)
+	venv := virtualenvironment.New(rt)
 
 	if setDefault {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))
