@@ -67,7 +67,6 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	targetDir := filepath.Dir(appinfo.StateApp().Exec())
 	err = up.InstallBlocking(targetDir)
 	if err != nil {
-		log := logging.Error
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
 			return false, locale.WrapInputError(err, "auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
