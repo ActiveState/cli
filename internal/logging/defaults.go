@@ -139,7 +139,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose.value() {
-		fmt.Fprintln(os.Stderr, message)
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("(PID %d) %s", os.Getpid(), message))
 	}
 
 	if l.file == nil {

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,7 +23,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {

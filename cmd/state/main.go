@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -47,7 +48,7 @@ func main() {
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 
@@ -167,15 +168,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		}
 	}
 
-	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
-	if err != nil {
-		return err
-	}
-	if forward != nil {
-		return forward()
-	}
-
 	pjOwner := ""
 	pjNamespace := ""
 	pjName := ""
@@ -201,6 +193,11 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	}
 
 	if childCmd != nil && !childCmd.SkipChecks() {
+		// Auto update to latest state tool version
+		if updated, err := autoUpdate(args, cfg, out); err != nil || updated {
+			return err
+		}
+
 		// Check for deprecation
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
@@ -213,6 +210,17 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
 			} else {
 				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+			}
+		}
+
+		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
+			if (pj.Version() != "" && pj.Version() != constants.Version) ||
+				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
+				return errs.AddTips(
+					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
+					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.T("lock_update_lock"),
+				)
 			}
 		}
 	}

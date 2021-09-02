@@ -166,7 +166,7 @@ func createBuildDir() {
 }
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		run()
 	}
 }
@@ -182,7 +182,7 @@ func run() {
 	defaultPlatform = fetchPlatform()
 
 	flag.Parse()
-	if flag.NArg() < 1 && !condition.InTest() {
+	if flag.NArg() < 1 && !condition.InUnitTest() {
 		flag.Usage()
 		printUsage()
 		exit(0)

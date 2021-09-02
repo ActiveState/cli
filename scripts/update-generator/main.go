@@ -30,7 +30,7 @@ func printUsage() {
 }
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		err := run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.Join(err, ":"))
@@ -115,7 +115,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 
 func run() error {
 	flag.Parse()
-	if flag.NArg() < 1 && !condition.InTest() {
+	if flag.NArg() < 1 && !condition.InUnitTest() {
 		flag.Usage()
 		printUsage()
 		exit(0)

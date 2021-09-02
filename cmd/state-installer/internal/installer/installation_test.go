@@ -92,16 +92,6 @@ func assertSuccessfulInstallation(t *testing.T, toDir string) {
 	}
 }
 
-func assertRevertedInstallation(t *testing.T, toDir string) {
-	fp := filepath.Join(toDir, stateToolTestFile)
-	b, err := ioutil.ReadFile(fp)
-	require.NoError(t, err)
-	if !bytes.Equal(stateToolTestFileContent, b) {
-		t.Error("State Tool test file was not correctly restored.")
-	}
-	assertPermissions(t, fp)
-}
-
 // TestInstallation tests that an installation is working if there are no obstacles like running processes
 func TestInstallation(t *testing.T) {
 	tests := []struct {
@@ -137,17 +127,9 @@ func TestInstallation(t *testing.T) {
 			if tt.ExpectSuccess {
 				require.NoError(t, err)
 
-				err = inst.RemoveBackupFiles()
-				require.NoError(t, err)
-
 				assertSuccessfulInstallation(t, to)
 			} else {
 				require.Error(t, err)
-
-				err = inst.RemoveBackupFiles()
-				require.NoError(t, err)
-
-				assertRevertedInstallation(t, to)
 			}
 
 		})

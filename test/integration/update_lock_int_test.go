@@ -58,13 +58,13 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 		{
 			"oldVersion",
 			oldUpdateVersion,
-			false,
+			true,
 			"beta",
 		},
 		{
 			"channel",
 			targetBranch,
-			false,
+			true,
 			targetBranch,
 		},
 		{
@@ -109,12 +109,9 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			if tt.expectLockError {
 				cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(true, false)...))
 				cp.Expect("This project is locked at State Tool version")
-				cp.ExpectLongString("Run state update --set-version")
 				cp.ExpectExitCode(1)
 				return
 			}
-
-			suite.branchCompare(ts, false, false, tt.expectedChannel, suite.Equal)
 		})
 	}
 }

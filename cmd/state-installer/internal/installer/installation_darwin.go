@@ -53,3 +53,7 @@ func createNewSymlink(target, filename string) error {
 	}
 	return nil
 }
+
+func (i *Installation) PrepareBinTargets() error {
+	return nil
+}

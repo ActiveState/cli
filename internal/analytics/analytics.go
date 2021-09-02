@@ -161,7 +161,7 @@ func setup() {
 
 	id := machineid.UniqID()
 	var trackingID string
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		trackingID = constants.AnalyticsTrackingID
 	}
 
