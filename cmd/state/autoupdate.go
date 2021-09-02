@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gofrs/flock"
 	"github.com/thoas/go-funk"
 
@@ -26,12 +27,13 @@ import (
 const CfgKeyLastCheck = "auto_update_lastcheck"
 
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
+	profile.Measure("autoUpdate", time.Now())
 	defer func() {
 		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
 			logging.Error("Failed to store last update check: %s", errs.JoinMessage(err))
 		}
 	}()
-	
+
 	if !shouldRunAutoUpdate(args, cfg) {
 		return false, nil
 	}
