@@ -10,16 +10,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Package management is now performed only locally, meaning you have
+  to `state push` your changes back to your project when you are ready to save
+  them.
 - Enhanced error reporting when attempting package operations on an out of sync
   project ([PR #1353](https://github.com/ActiveState/cli/pull/1353))
 - Enhanced error reporting for errors that occur when cloning a project's
-  associated git repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
-- The State Tool now comes with the ActiveState Desktop application, which is
-  currently a system tray application.
-- We've replaced the auto updating system with a manual updating system, updates
-  will from now on be made available through the system tray application and you
-  will have the choice to install it at your own convenience.
-- You can now switch to specific State Tool versions by running `state update --set-version <version>` ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
+  associated git
+  repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
+- The State Tool now comes with a preview of the ActiveState Desktop
+  application, which facilitates shortcuts to commonly used actions, including
+  activating your projects.
+- You can now switch to specific State Tool versions by
+  running `state update --set-version <version>` ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
 
 ### Changed
 
@@ -33,8 +36,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fixed duplicate ActiveState Desktop and state services started
-  during update when switching channels ([PR #1387](https://github.com/ActiveState/cli/pull/1387))
 - Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
   ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
 - Fixed issue where `state clean uninstall` would not remove expected files on

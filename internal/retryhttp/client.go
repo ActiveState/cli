@@ -127,7 +127,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 }
 
 func transport() http.RoundTripper {
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		return http.DefaultClient.Transport
 	}
 	return cleanhttp.DefaultPooledTransport()

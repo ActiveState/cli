@@ -233,7 +233,7 @@ func (p *Project) NormalizedName() string {
 	return strings.ToLower(normalizeRx.ReplaceAllString(p.Name(), ""))
 }
 
-// Version returns project version
+// Version returns the locked state tool version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
 // VersionBranch returns branch that we're pinned to (useless unless version is also set)

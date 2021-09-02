@@ -754,7 +754,7 @@ func (p *Project) SetBranch(branch string) error {
 
 	pf.SetBranch(branch)
 
-	if !condition.InTest() || p.path != "" {
+	if !condition.InUnitTest() || p.path != "" {
 		if err := pf.Save(p.path); err != nil {
 			return errs.Wrap(err, "Could not save activestate.yaml")
 		}

@@ -39,6 +39,10 @@ func (i *Installer) Run() error {
 }
 
 func (i *Installer) install() (rerr error) {
+	if err := i.PrepareBinTargets(); err != nil {
+		return errs.Wrap(err, "Could not prepare for installation")
+	}
+ 	
 	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := i.cfg.Set(analytics.CfgSessionToken, i.sessionToken); err != nil {

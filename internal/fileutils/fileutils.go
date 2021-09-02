@@ -532,7 +532,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 }
 
 // CopyAndRenameFiles copies files from fromDir to toDir.
-// If the target file exists already, it is first copied next to it, and then overwritten by renaming it.
+// If the target file exists already, the source file is first copied next to the target file, and then overwrites the target by renaming the source.
 // This method is more robust and than copying directly, in case the target file is opened or executed.
 func CopyAndRenameFiles(fromPath, toPath string) error {
 	if !DirExists(fromPath) {

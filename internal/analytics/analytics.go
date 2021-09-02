@@ -87,6 +87,9 @@ const CatActivationFlow = "activation"
 // CatPrompt is for prompt events
 const CatPrompt = "prompt"
 
+// CatMist is for miscellaneous events
+const CatMisc = "misc"
+
 const CfgSessionToken = "sessionToken"
 
 type customDimensions struct {
@@ -158,7 +161,7 @@ func setup() {
 
 	id := machineid.UniqID()
 	var trackingID string
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		trackingID = constants.AnalyticsTrackingID
 	}
 

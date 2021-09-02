@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -43,7 +44,7 @@ func main() {
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {

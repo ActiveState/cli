@@ -1,14 +1,10 @@
 package update
 
 import (
-	"context"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
@@ -110,40 +106,13 @@ func confirmLock(prom prompt.Prompter) error {
 	return nil
 }
 
-func fetchExactVersionLegacy(version, channel string) (string, error) {
-	if channel != constants.BranchName {
-		version = "" // force update
-	}
-	up := legacyupd.New(version)
-	up.DesiredBranch = channel
-	info, err := up.Info(context.Background())
-	if err != nil {
-		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
-	}
-
-	if info == nil {
-		if version == "" { // if version is empty then we should have been asked for a version
-			return "", locale.NewInputError("err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
-		} else {
-			return version, nil
-		}
-	}
-
-	return info.Version, nil
-}
-
 func fetchExactVersion(cfg updater.Configurable, version, channel string) (string, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
 	info, err := updater.NewDefaultChecker(cfg).CheckFor(channel, version)
 	if err != nil {
-		res, legacyErr := fetchExactVersionLegacy(version, channel)
-		if legacyErr != nil {
-			logging.Error("Failed to fetch legacy version: %v", legacyErr)
-			return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
-		}
-		return res, nil
+		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
 	if info == nil { // if info is empty, we are at the current version

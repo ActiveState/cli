@@ -39,6 +39,9 @@ const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// DisableUpdates is the env var used to disable automatic updates
+const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
@@ -47,6 +50,9 @@ const InternalConfigFileNameLegacy = "config.yaml"
 
 // InternalConfigFileName is the filename used for our sqlite based settings db
 const InternalConfigFileName = "config.db"
+
+// AutoUpdateTimeoutEnvVarName is the name of the environment variable that can be set to override the allowed timeout to check for an available auto-update
+const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
@@ -98,6 +104,9 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 
 // OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
+
+// TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always auto update
+const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -205,6 +214,12 @@ const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
 // DocumentationURLGetStarted is the documentation URL for creating projects
 const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
+// DocumentationURLMismatch is the documentation URL for the project mismatch warning
+const DocumentationURLMismatch = DocumentationURL + "troubleshooting/git-project-mismatch/"
+
+// DocumentationURLLocking is the documentation URL for locking
+const DocumentationURLLocking = DocumentationURL + "advanced-topics/locking/"
 
 // ActiveStateBlogURL is the URL for the ActiveState Blog
 const ActiveStateBlogURL = "https://www.activestate.com/blog/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"

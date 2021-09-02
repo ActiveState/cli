@@ -14,7 +14,7 @@ type ArtifactDownload struct {
 	Checksum       string
 }
 
-var CamelRuntimeBuilding error = errs.New("camel runtime is currently building")
+var CamelRuntimeBuilding error = errs.New("camel runtime is currently being built")
 
 // InstallerTestsSubstr is used to exclude test artifacts, we don't care about them
 const InstallerTestsSubstr = "-tests."

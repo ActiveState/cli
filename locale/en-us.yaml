@@ -722,11 +722,6 @@ forward_fail_info:
   other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
-update_available:
-  other: |
-    Your version: [NOTICE]{{.V0}}[/RESET]
-    Available Version: [NOTICE]{{.V1}}[/RESET]
-    You can update by running [ACTIONABLE]`state update`[/RESET]
 runtime_update_notice_known_count:
   other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
@@ -1708,3 +1703,24 @@ solver_err:
   other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
+warning_git_project_mismatch:
+  other: |
+    [ERROR]Warning:[/RESET] The activestate.yaml used on "[NOTICE]{{.V0}}[/RESET]" does not match your project; "[NOTICE]{{.V1}}[/RESET]".
+    We're updating it to match your current project. For more information check out {{.V2}}.
+auto_update_permission_err:
+  other: |
+    Could not update to the latest available version of the state tool due to insufficient permissions.
+    To manually update, run 'state update' as a privileged user.
+    If your installation has become corrupted, please re-install using the instructions on {{.V0}}.
+    If you want the state tool to auto-update, please re-install it in a user-writable directory.
+    Error received: {{.V1}}
+auto_update_to_version:
+  other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
+auto_update_relaunch:
+  other: Update installed. Forwarding input to updated State Tool.
+lock_update_legacy_version:
+  other: See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.
+lock_version_mismatch:
+  other: This project is locked at State Tool version [NOTICE]{{.V0}}[/RESET]. Your current State Tool version is [NOTICE]{{.V1}}@{{.V2}}[/RESET].
+lock_update_lock:
+  other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.

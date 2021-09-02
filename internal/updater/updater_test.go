@@ -14,9 +14,9 @@ type httpGetMock struct {
 	MockedResponse []byte
 }
 
-func (m *httpGetMock) Get(url string) ([]byte, error) {
+func (m *httpGetMock) Get(url string) ([]byte, int, error) {
 	m.UrlCalled = url
-	return m.MockedResponse, nil
+	return m.MockedResponse, 0, nil
 }
 
 func mockUpdate(channel, version, tag string) *AvailableUpdate {

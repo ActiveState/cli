@@ -63,7 +63,7 @@ func (a *App) Start() error {
 
 	go func() {
 		url := fmt.Sprintf("https://raw.githubusercontent.com/ActiveState/cli/%s/changelog.md", bindings.update.Channel)
-		changelog, err := httpreq.New().Get(url)
+		changelog, _, err := httpreq.New().Get(url)
 		if err != nil {
 			logging.Error(fmt.Sprintf("Could not retrieve changelog: %v", errs.Join(err, ": ")))
 			return

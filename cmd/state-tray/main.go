@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
@@ -51,7 +52,7 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)

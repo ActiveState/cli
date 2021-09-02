@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -402,5 +403,5 @@ func (s *Session) Close() error {
 }
 
 func RunningOnCI() bool {
-	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
+	return condition.OnCI()
 }
