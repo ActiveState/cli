@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/gofrs/flock"
 	"github.com/thoas/go-funk"
 
@@ -73,10 +71,6 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
 			return false, locale.WrapInputError(err, "auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
-		}
-		if errors.As(err, new(*lockfile.AlreadyLockedError)) {
-			log("Auto update failed because the update lock file is already in use")
-			return false, nil
 		}
 		return false, errs.Wrap(err, "Failed to install update")
 	}
