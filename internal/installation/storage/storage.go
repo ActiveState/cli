@@ -20,7 +20,7 @@ func AppDataPath() (string, error) {
 	localPath, envSet := os.LookupEnv(constants.ConfigEnvVarName)
 	if envSet {
 		return AppDataPathWithParent(localPath)
-	} else if condition.InTest() {
+	} else if condition.InUnitTest() {
 		var err error
 		localPath, err = appDataPathInTest()
 		if err != nil {
@@ -34,7 +34,7 @@ func AppDataPath() (string, error) {
 	_, envSet = os.LookupEnv("HOME")
 	if !envSet && runtime.GOOS != "windows" {
 		localPath := filepath.Dir(os.Args[0])
-		if localPath == "" || condition.InTest() {
+		if localPath == "" || condition.InUnitTest() {
 			// Use temp dir if we can't get the working directory OR we're in a test (we don't want to write to our src directory)
 			var err error
 			localPath, err = ioutil.TempDir("", "cli-config-test")
@@ -92,7 +92,7 @@ func CachePath() string {
 	var err error
 	var cachePath string
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		prefix := "state-cache-tests"
 		cachePath, err = ioutil.TempDir("", prefix)
 		if err != nil {

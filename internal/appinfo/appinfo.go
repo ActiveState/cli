@@ -20,7 +20,7 @@ func execDir(baseDir ...string) string {
 	if len(baseDir) > 0 {
 		return baseDir[0]
 	}
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 		rootPath := environment.GetRootPathUnsafe()
 		return filepath.Join(rootPath, "build")

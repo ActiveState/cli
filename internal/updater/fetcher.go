@@ -20,7 +20,7 @@ func NewFetcher() *Fetcher {
 }
 
 func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
-	b, err := f.httpreq.Get(update.url)
+	b, _, err := f.httpreq.Get(update.url)
 	if err != nil {
 		return errs.Wrap(err, "Fetch %s failed", update.url)
 	}

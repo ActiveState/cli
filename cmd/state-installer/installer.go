@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
@@ -154,24 +155,10 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 	}
 
 	inst := installer.New(tmpDir, installPath, appDir)
-	defer func() {
-		os.RemoveAll(tmpDir)
-		err := inst.RemoveBackupFiles()
-		if err != nil {
-			logging.Debug("Failed to remove backup files: %v", err)
-		} else {
-			logging.Debug("Removed all backup files.")
-		}
-	}()
+	defer os.RemoveAll(tmpDir)
 
 	if err := inst.Install(); err != nil {
-		out.Error("Installation failed, rolling back")
-		rbErr := inst.Rollback()
-		if rbErr != nil {
-			logging.Debug("Failed to restore files: %v", rbErr)
-			return errs.Wrap(err, "Installation failed and some files could not be rolled back with error: %v", rbErr)
-		}
-		logging.Debug("Successfully restored original files.")
+		out.Error("Installation failed.")
 		return errs.Wrap(err, "Installation failed")
 	}
 
@@ -201,7 +188,8 @@ func install(installPath string, cfg *config.Instance, out output.Outputer) erro
 
 	out.Print("Installation Complete")
 
-	if !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
+	_, isForward := os.LookupEnv(constants.ForwardedStateEnvVarName)
+	if !isForward && !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
 		out.Print("Please start a new shell in order to start using the State Tool.")
 	}
 

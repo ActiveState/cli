@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/legacyupd"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -22,7 +21,7 @@ type MockUpdateInfoRequest struct {
 	suite    suite.Suite
 	req      *http.Request
 	isLegacy bool
-	setTag   string
+	setTag   *string
 }
 
 // ExpectQueryParam expects that a query parameter with key key has been set to the expectedValue
@@ -36,8 +35,13 @@ func (mur *MockUpdateInfoRequest) ExpectLegacyQuery(legacy bool) {
 }
 
 // ExpectTagResponse expects that the server responded with a tag field in the response
-func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag string) {
-	mur.suite.Assert().Equal(tag, mur.setTag)
+func (mur *MockUpdateInfoRequest) ExpectTagResponse(tag *string) {
+	if tag == nil {
+		mur.suite.Assert().Equal(tag, mur.setTag)
+	} else {
+		mur.suite.Assert().NotNil(mur.setTag)
+		mur.suite.Assert().Equal(*tag, *mur.setTag)
+	}
 }
 
 // MockUpdateInfoServer serves update information files found relative to a testUpdateDir directory path
@@ -46,7 +50,7 @@ type MockUpdateInfoServer struct {
 	testUpdateDir        string
 	close                func()
 	updateModifier       func(*updater.AvailableUpdate, string, string)
-	legacyUpdateModifier func(*legacyupd.Info, string, string)
+	legacyUpdateModifier func(*LegacyInfo, string, string)
 	requests             []*MockUpdateInfoRequest
 }
 
@@ -84,11 +88,11 @@ func (mus *MockUpdateInfoServer) Close() {
 }
 
 // SetLegacyUpdateModifier sets a function modifying the returned update information when a legacy info was requested
-func (mus *MockUpdateInfoServer) SetLegacyUpdateModifier(mod func(*legacyupd.Info, string, string)) {
+func (mus *MockUpdateInfoServer) SetLegacyUpdateModifier(mod func(*LegacyInfo, string, string)) {
 	mus.legacyUpdateModifier = mod
 }
 
-// SetLegacyUpdateModifier sets a function modifying the returned update information
+// SetUpdateModifier sets a function modifying the returned update information
 func (mus *MockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUpdate, string, string)) {
 	mus.updateModifier = mod
 }
@@ -96,6 +100,11 @@ func (mus *MockUpdateInfoServer) SetUpdateModifier(mod func(*updater.AvailableUp
 // ExpectNRequests ensures that the server handled exactly N requests so far
 func (mus *MockUpdateInfoServer) ExpectNRequests(n int) {
 	mus.suite.Require().Len(mus.requests, n)
+}
+
+// ExpectAtLeastNRequests ensures that the server handled at least N requests so far
+func (mus *MockUpdateInfoServer) ExpectAtLeastNRequests(N int) {
+	mus.suite.Require().GreaterOrEqual(len(mus.requests), N, "Not enough requests to server: %v", mus.requests)
 }
 
 // NthRequest returns information about the n-th request for further inspection
@@ -153,6 +162,12 @@ func (mus *MockUpdateInfoServer) handleInfo(rw http.ResponseWriter, r *http.Requ
 	})
 }
 
+type LegacyInfo struct {
+	Version  string `json:"Version"`
+	Sha256v2 string `json:"Sha256v2"`
+	Tag      string `json:"Tag,omitempty"`
+}
+
 func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	platform := q.Get("platform")
@@ -171,7 +186,7 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 	b, err := os.ReadFile(fp)
 	mus.suite.Require().NoError(err, "failed finding version info file")
 
-	var up *legacyupd.Info
+	var up *LegacyInfo
 	err = json.Unmarshal(b, &up)
 	mus.suite.Require().NoError(err)
 
@@ -184,10 +199,15 @@ func (mus *MockUpdateInfoServer) handleLegacyInfo(rw http.ResponseWriter, r *htt
 
 	fmt.Fprintf(rw, "%s", b)
 
+	var t *string
+	if up.Tag != "" {
+		t = &up.Tag
+	}
+
 	mus.requests = append(mus.requests, &MockUpdateInfoRequest{
 		suite:    mus.suite,
 		req:      r,
 		isLegacy: true,
-		setTag:   up.Tag,
+		setTag:   t,
 	})
 }

@@ -52,7 +52,7 @@ func (suite *UpdateIntegrationTestSuite) setupMockServer() *updateinfomock.MockU
 	root, err := environment.GetRootPath()
 	suite.Require().NoError(err)
 	testUpdateDir := filepath.Join(root, "build", "test-update")
-	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-updates` for this test to work.")
+	suite.Require().DirExists(testUpdateDir, "You need to run `state run generate-test-update` for this test to work.")
 
 	return updateinfomock.New(suite.Suite.Suite, testUpdateDir)
 }
@@ -152,7 +152,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
 
-	server.ExpectNRequests(1)
+	server.ExpectAtLeastNRequests(1)
 	server.NthRequest(0).ExpectQueryParam("source", "update")
 }
 
@@ -199,28 +199,24 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	tests := []struct {
-		Name                string
-		TestUpdate          bool
-		StateToolRunning    bool
-		ExpectBackupCleaned bool
+		Name             string
+		TestUpdate       bool
+		StateToolRunning bool
 	}{
 		{
-			Name:                "test-update",
-			TestUpdate:          true,
-			StateToolRunning:    false,
-			ExpectBackupCleaned: true,
+			Name:             "test-update",
+			TestUpdate:       true,
+			StateToolRunning: false,
 		},
 		{
-			Name:                "actual-update",
-			TestUpdate:          false,
-			StateToolRunning:    false,
-			ExpectBackupCleaned: true,
+			Name:             "actual-update",
+			TestUpdate:       false,
+			StateToolRunning: false,
 		},
 		{
-			Name:                "old-state-tool-running",
-			TestUpdate:          true,
-			StateToolRunning:    true,
-			ExpectBackupCleaned: runtime.GOOS != "windows", // Note: On Windows we cannot remove the backup file when an old process is still running!
+			Name:             "old-state-tool-running",
+			TestUpdate:       true,
+			StateToolRunning: true,
 		},
 	}
 	for _, tt := range tests {
@@ -291,17 +287,12 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			wg.Wait()
 
 			if tt.TestUpdate {
-				server.ExpectNRequests(1)
+				server.ExpectAtLeastNRequests(1)
 				server.NthRequest(0).ExpectQueryParam("source", "update")
 			}
 
 			if tt.TestUpdate {
 				suite.Assert().Contains(logs, "was successful")
-				if tt.ExpectBackupCleaned {
-					suite.Assert().Contains(logs, "Removed all backup files.")
-				} else {
-					suite.Assert().Contains(logs, "Failed to remove backup files")
-				}
 			}
 			suite.versionCompare(ts, true, tt.TestUpdate, constants.Version, suite.NotEqual)
 		})
@@ -318,7 +309,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		Version    string
 	}{
 		{"test-update", true, testBranch, ""},
-		{"release-channel", false, targetBranch, ""},
+		// Updating from master to release is not supported until release runs the multi-file updater
+		// https://www.pivotaltracker.com/story/show/179443800
+		// {"release-channel", false, targetBranch, ""},
 		{"specific-update", false, targetBranch, specificVersion},
 	}
 
@@ -334,7 +327,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			ts.UseDistinctStateExes()
 
 			// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
 			before := fileutils.ListDir(ts.Dirs.Config, false)
@@ -347,7 +340,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
 			}
-			cp = ts.SpawnWithOpts(e2e.WithArgs(updateArgs...), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...))
+			cp = ts.SpawnWithOpts(
+				e2e.WithArgs(updateArgs...),
+				e2e.AppendEnv(suite.env(false, tt.TestUpdate)...),
+				e2e.AppendEnv("VERBOSE=true"),
+			)
 			if tt.Version == "" {
 				cp.Expect("Updating State Tool to latest version available")
 			} else {
@@ -360,7 +357,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
 				suite.Assert().Contains(logs, "was successful")
 
-				server.ExpectNRequests(1)
+				server.ExpectAtLeastNRequests(1)
 				server.NthRequest(0).ExpectQueryParam("source", "update")
 			} else {
 				updated := false
@@ -376,7 +373,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 					}
 					time.Sleep(200 * time.Millisecond)
 				}
-				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified.")
+				suite.Require().True(updated, "Timeout: Expected the State Tool to get modified. Output: %s", cp.Snapshot())
 			}
 
 			// wait half a second for the State Tool to be written to disk completely
@@ -407,7 +404,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	ts.UseDistinctStateExes()
 
 	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, true)...))
 	cp.ExpectExitCode(0)
 
 	// Spoof modtime
@@ -460,7 +457,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 					}
 
 					// set the tag
-					up.Tag = tagName
+					up.Tag = &tagName
 				})
 			defer server.Close()
 
@@ -494,18 +491,18 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 				suite.Assert().Equal("experiment", cfg.GetString(updater.CfgUpdateTag))
 				suite.versionCompare(ts, true, true, constants.Version, suite.NotEqual)
 			} else {
-				cp.ExpectLongString(fmt.Sprintf("Fetch http://localhost:%s/invalid-path failed", updateinfomock.TestPort))
+				cp.ExpectLongString("404 Not Found")
 				cp.ExpectExitCode(1)
 			}
 
-			server.ExpectNRequests(1)
+			server.ExpectAtLeastNRequests(1)
 			server.NthRequest(0).ExpectQueryParam("source", "update")
 			if tt.tagged {
 				server.NthRequest(0).ExpectQueryParam("tag", tagName)
-				server.NthRequest(0).ExpectTagResponse("")
+				server.NthRequest(0).ExpectTagResponse(nil)
 			} else {
 				server.NthRequest(0).ExpectQueryParam("tag", "")
-				server.NthRequest(0).ExpectTagResponse(tagName)
+				server.NthRequest(0).ExpectTagResponse(&tagName)
 			}
 		})
 	}
@@ -532,4 +529,78 @@ func (suite *UpdateIntegrationTestSuite) addProjectFileWithWaitingScript(cfg *co
 	pjfile.SetPath(filepath.Join(workDir, constants.ConfigFileName))
 	err := pjfile.Save(cfg)
 	suite.Require().NoError(err)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	server := suite.setupMockServer()
+	defer server.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	suite.versionCompare(ts, true, true, constants.Version, suite.Equal)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	server := suite.setupMockServer()
+	defer server.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	// update should not run because the exe is less than a day old
+	suite.versionCompare(ts, false, true, constants.Version, suite.Equal)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	server := suite.setupMockServer()
+	defer server.Close()
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExes()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
+	// update should run because the exe is more than a day old
+	suite.versionCompare(ts, false, true, constants.Version, suite.NotEqual)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
+	}
+	server := suite.setupMockServer()
+	defer server.Close()
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// use unique exe
+	ts.UseDistinctStateExes()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp.ExpectExitCode(0)
+
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.NonWriteableBinDir())
+	cp.Expect("permission denied")
+	cp.ExpectExitCode(1)
 }

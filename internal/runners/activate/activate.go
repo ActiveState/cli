@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/promptable"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
@@ -247,8 +246,6 @@ func (r *Activate) run(params *ActivateParams) error {
 			return nil
 		}
 	}
-
-	updater.NewDefaultChecker(r.config).PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
