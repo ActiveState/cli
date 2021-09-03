@@ -491,7 +491,9 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				// If the subToPath file exists, we remove it first - in order to ensure compatibility between platforms:
 				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
 				err = os.Remove(subToPath)
-				logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+				if err != nil {
+					logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+				}
 			}
 		}
 
