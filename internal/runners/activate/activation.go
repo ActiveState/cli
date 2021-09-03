@@ -28,7 +28,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	r.out.Notice(locale.Tl(
 		"activate_virtualenv_creation",
-		"	• Creating a virtual environment...  ✔ Done",
+		"	• Creating a virtual environment...  [SUCCESS]✔ Done[/RESET]",
 	))
 
 	ve, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
