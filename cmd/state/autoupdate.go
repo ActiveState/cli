@@ -26,6 +26,15 @@ import (
 
 const CfgKeyLastCheck = "auto_update_lastcheck"
 
+type forwardExitError struct {
+	code int
+}
+
+func (fe *forwardExitError) Error() string  { return "forwardExitError" }
+func (fe *forwardExitError) Unwrap() error  { return nil }
+func (fe *forwardExitError) IsSilent() bool { return true }
+func (fe *forwardExitError) ExitCode() int  { return fe.code }
+
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
 	defer func() {
@@ -78,9 +87,9 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
-	code, err := relaunch(args)
-	if err != nil {
-		return true, errs.WrapExitCode(err, code)
+	code := relaunch(args)
+	if code != 0 {
+		return true, &forwardExitError{code}
 	}
 
 	return true, nil
@@ -134,13 +143,14 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
-func relaunch(args []string) (int, error) {
+func relaunch(args []string) int {
 	code, _, err := exeutils.ExecuteAndPipeStd(appinfo.StateApp().Exec(), args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
-		return code, locale.WrapError(err, "err_autoupdate_relaunch_wait", "Could not forward your command after auto-updating, please manually run your command again.")
+		logging.Debug("Forwarded command after auto-updating failed. Exit code: %d", code)
+		return code
 	}
 
-	return code, nil
+	return code
 }
 
 func isFreshInstall() bool {
