@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -144,6 +145,7 @@ var (
 )
 
 func init() {
+	defer handlePanics(recover(), debug.Stack())
 	defer profile.Measure("analytics:Init", time.Now())
 	CustomDimensions = &customDimensions{}
 	setup()
@@ -219,6 +221,7 @@ func Configure(cfg configurable) {
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
+	defer handlePanics(recover(), debug.Stack())
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
@@ -232,6 +235,7 @@ func event(category string, action string) {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
+	defer handlePanics(recover(), debug.Stack())
 	eventWaitGroup.Add(1)
 	go func() {
 		defer eventWaitGroup.Done()
@@ -315,4 +319,12 @@ func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 		logging.Error("Could not download S3 pixel: %v", err)
 		return
 	}
+}
+
+func handlePanics(err interface{}, stack []byte) {
+	if err == nil {
+		return
+	}
+	logging.Error("Panic in analytics: %v", err)
+	logging.Debug("Stack: %s", string(stack))
 }
