@@ -210,12 +210,12 @@ func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []st
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
 		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activate.String()}, []string{}); err != nil {
-			return errs.Wrap(err, "Could not activate %s", args[1])
+			return errs.Wrap(err, "Could not activate %s", params.activate.String())
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
 		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activateDefault.String(), "--default"}, []string{}); err != nil {
-			return errs.Wrap(err, "Could not activate %s", args[1])
+			return errs.Wrap(err, "Could not activate %s", params.activateDefault.String())
 		}
 	}
 
@@ -231,9 +231,12 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg)
-	update, err := checker.CheckFor(params.branch, params.version)
+	update, err := checker.Check()
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
+	}
+	if update == nil {
+		return errs.Wrap(err, "No update information could be found.")
 	}
 
 	version := update.Version

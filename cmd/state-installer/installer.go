@@ -73,7 +73,7 @@ func (i *Installer) install() (rerr error) {
 
 	// Copy all the files
 	if err := fileutils.CopyAndRenameFiles(i.sourcePath, i.path); err != nil {
-		return errs.Wrap(err, "Failed to copy installation files to dir %s", i.path)
+		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
 	// Install Launcher

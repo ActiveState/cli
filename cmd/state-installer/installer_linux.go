@@ -8,6 +8,6 @@ func (i *Installer) installLauncher() error {
 	return nil
 }
 
-func (i *Installation) PrepareBinTargets() error {
+func (i *Installer) PrepareBinTargets() error {
 	return nil
 }
