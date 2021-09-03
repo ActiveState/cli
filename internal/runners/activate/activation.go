@@ -27,7 +27,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	r.out.Notice(locale.Tl(
-		"activate_virtualenv_creation",
+		"activate_creating_virtualenv",
 		"	• Creating a virtual environment...  [SUCCESS]✔ Done[/RESET]",
 	))
 
