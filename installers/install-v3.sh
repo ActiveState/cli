@@ -1,14 +1,12 @@
 #!/usr/bin/env sh
 # Copyright 2021 ActiveState Software Inc. All rights reserved.
 
-# URL to fetch update files from
+# URL to fetch installer archive from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
-# Name of the executable to ultimately use.
-INSTALLEREXE="state-installer"
-# channel the installer will target
-CHANNEL='release'
-# the name of the remote archive to download
+# Name of the installer executable and archive.
 INSTALLERNAME="state-installer"
+# Channel the installer will target
+CHANNEL='release'
 # the download exetension
 DOWNLOADEXT=".tar.gz"
 # the installer extension
