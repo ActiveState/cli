@@ -6,12 +6,12 @@ install.ps1 -b branchToInstall
 
 # URL to fetch installer archive from
 $script:BASEFILEURL = "https://state-tool.s3.amazonaws.com/update/state"
+# The name of the remove archive to download
+$script:ARCHIVENAME = "state-installer.zip"
 # Name of the installer executable to ultimately use
 $script:INSTALLERNAME="state-installer.exe"
 # Channel the installer will target
 $script:CHANNEL = "release"
-# The name of the remove archive to download
-$script:ARCHIVENAME="state-installer.zip"
 
 function download([string] $url, [string] $out) {
     [int]$Retrycount = "0"
@@ -41,7 +41,7 @@ function download([string] $url, [string] $out) {
     While ($true)
 }
 
-Write-Host "Perparing ActiveState Installer"
+Write-Host "Preparing ActiveState Installer"
 
 $zipURL = $script:BASEFILEURL/$script:ARCHIVENAME
 $tmpParentPath = Join-Path $env:TEMP "ActiveState"
@@ -61,5 +61,4 @@ Write-Host "Extracting $script:ARCHIVENAME...`n"
 # using LiteralPath argument prevents interpretation of wildcards in zipPath
 Expand-Archive -LiteralPath $zipPath -DestinationPath $tmpParentPath
 
-# TODO: Test this arguments approach works
-& $exePath $arguments
+& $exePath $args
