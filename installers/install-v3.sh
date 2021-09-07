@@ -83,7 +83,7 @@ STATEURL="$STATEURL/$CHANNEL/$INSTALLERNAME$DOWNLOADEXT"
 ARCHIVE="$TMPDIR/$INSTALLERNAME$DOWNLOADEXT"
 INSTALLER="$TMDIR/$INSTALLERNAME$BINARYEXT"
 if ! $FETCH $ARCHIVE $STATEURL ; then
-  error "Could not fetch version: $VERSION, please verify the version number and try again."
+  error "Could not fetch the State Tool installer. Please try again."
   exit 1
 fi
 

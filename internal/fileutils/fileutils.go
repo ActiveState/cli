@@ -50,9 +50,14 @@ var (
 
 type includeFunc func(path string, contents []byte) (include bool)
 
-// ReplaceAll replaces all instances of search text with replacement text in a
+// ReplaceAllInclude replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
-func ReplaceAll(filename, find string, replace string, include includeFunc) error {
+func ReplaceAll(filename, find, replace string) error {
+	return ReplaceAllInclude(filename, find, replace, func(path string, contents []byte) bool { return true })
+}
+
+// ReplaceAllInclude works similary to ReplaceAll with an includeFunc for added custom behaviour
+func ReplaceAllInclude(filename, find string, replace string, include includeFunc) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
@@ -134,7 +139,7 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 		if f.IsDir() {
 			return nil
 		}
-		return ReplaceAll(filepath.Join(path, subpath), find, replace, include)
+		return ReplaceAllInclude(filepath.Join(path, subpath), find, replace, include)
 	})
 
 	if err != nil {

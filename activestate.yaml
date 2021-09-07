@@ -243,12 +243,14 @@ scripts:
     language: bash
     standalone: true
     if: ne .OS.Name "Windows"
-    description: Copies install scripts to build dir, this script exists for transparency with CI behavior
+    description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
       INSTALLERS_DIR=build/installers/${BRANCH#release}
       mkdir -p $INSTALLERS_DIR
+
+      go run scripts/installer-builder/main.go -f CHANNEL=\'release\' -r CHANNEL=\'$BRANCH\' installers/install-v3.sh
 
       cp installers/install.sh $INSTALLERS_DIR/install.sh
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
