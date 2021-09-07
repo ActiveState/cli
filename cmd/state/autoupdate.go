@@ -21,10 +21,10 @@ import (
 func autoUpdate(args []string, updateTag string, out output.Outputer, pjPath string) (bool, error) {
 	disableAutoUpdate := strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true"
 	disableAutoUpdateCauseCI := (os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != "") && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false"
-	updateIsRunning := funk.Contains(args, "update")
+	blacklistedArgs := funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare")
 	testsAreRunning := condition.InTest()
 
-	if testsAreRunning || updateIsRunning || disableAutoUpdate || disableAutoUpdateCauseCI || !osExeOverDayOld() {
+	if testsAreRunning || blacklistedArgs || disableAutoUpdate || disableAutoUpdateCauseCI || !osExeOverDayOld() {
 		logging.Debug("Not running auto updates")
 		return false, nil
 	}
