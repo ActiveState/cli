@@ -221,9 +221,9 @@ func Configure(cfg configurable) {
 
 // Event logs an event to google analytics
 func Event(category string, action string) {
-	defer handlePanics(recover(), debug.Stack())
 	eventWaitGroup.Add(1)
 	go func() {
+		defer handlePanics(recover(), debug.Stack())
 		defer eventWaitGroup.Done()
 		event(category, action)
 	}()
@@ -238,6 +238,7 @@ func EventWithLabel(category string, action string, label string) {
 	defer handlePanics(recover(), debug.Stack())
 	eventWaitGroup.Add(1)
 	go func() {
+		defer handlePanics(recover(), debug.Stack())
 		defer eventWaitGroup.Done()
 		eventWithLabel(category, action, label)
 	}()
@@ -271,6 +272,7 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 }
 
 func sendGAEvent(category, action, label string, dimensions map[string]string) {
+	defer handlePanics(recover(), debug.Stack())
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending Google Analytics event with: %s, %s, %s", category, action, label)
 
@@ -294,6 +296,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) {
 }
 
 func sendS3Pixel(category, action, label string, dimensions map[string]string) {
+	defer handlePanics(recover(), debug.Stack())
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
