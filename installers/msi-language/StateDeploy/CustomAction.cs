@@ -61,7 +61,7 @@ namespace StateDeploy
 
             var paths = GetPaths();
             string stateURL = "https://state-tool.s3.amazonaws.com/update/state/release/";
-            string latestSingleFileRelease = "0.28.3-SHAc387797";
+            string latestSingleFileRelease = "0.28.6-SHA8847c88";
             string jsonURL = stateURL + latestSingleFileRelease + "/" + paths.JsonDescription;
             string timeStamp = DateTime.Now.ToFileTime().ToString();
             string tempDir = Path.Combine(Path.GetTempPath(), timeStamp);
