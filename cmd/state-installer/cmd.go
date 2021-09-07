@@ -189,7 +189,7 @@ By using the State Tool Package Manager you agree to the terms of ActiveState’
 
 // installFromLocalSource is invoked when we're performing an installation where the payload is already provided
 func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	out.Fprint(os.Stdout, fmt.Sprintf("Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
+	out.Fprint(os.Stdout, fmt.Sprintf(" • Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
 
 	// Run installer
 	if err := NewInstaller(cfg, out, params).Run(); err != nil {
@@ -244,7 +244,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 		version = fmt.Sprintf("%s (%s)", version, params.branch)
 	}
 
-	out.Fprint(os.Stdout, fmt.Sprintf("Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
+	out.Fprint(os.Stdout, fmt.Sprintf(" • Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
 	if _, err := update.DownloadAndUnpack(); err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
 		return errs.Wrap(err, "Could not download and unpack")

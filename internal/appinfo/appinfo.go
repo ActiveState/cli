@@ -67,6 +67,10 @@ func UpdateDialogApp(baseDir ...string) *AppInfo {
 	return newAppInfo(constants.UpdateDialogName, "state-update-dialog", baseDir...)
 }
 
+func InstallerApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.StateInstallerCmd, "state-installer", baseDir...)
+}
+
 func (a *AppInfo) Name() string {
 	return a.name
 }
