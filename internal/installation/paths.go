@@ -9,6 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
+const ConfigKeyInstallPath = "install-path"
+
 func InstallPath() (string, error) {
 	// Facilitate use-case of running executables from the build dir while developing
 	if !rtutils.BuiltViaCI && strings.Contains(os.Args[0], "/build/") {
@@ -26,4 +28,3 @@ func LauncherInstallPath() (string, error) {
 	}
 	return defaultSystemInstallPath()
 }
-

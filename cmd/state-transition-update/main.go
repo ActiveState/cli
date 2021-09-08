@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -13,16 +16,21 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/gobuffalo/packr"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -149,10 +157,43 @@ func runDefault() (rerr error) {
 		return nil
 	}
 
+	err = addStateScript(cfg)
+	if err != nil {
+		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
+	}
+
 	logging.Debug("Removing transitional State Tool")
 	// otherwise: remove the transitional State Tool
 	if err := removeSelf(); err != nil {
 		logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
+	}
+
+	return nil
+}
+
+func addStateScript(cfg *config.Instance) error {
+	exec := appinfo.StateApp().Exec()
+	newInstallpath := cfg.GetString(installation.ConfigKeyInstallPath)
+
+	box := packr.NewBox("../../assets/state")
+	boxFile := "state.sh"
+	if runtime.GOOS == "windows" {
+		boxFile = "state.bat"
+		exec = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
+	}
+
+	tplParams := map[string]interface{}{
+		"path": filepath.Join(newInstallpath, filepath.Base(exec)),
+	}
+
+	fileBytes := box.Bytes(boxFile)
+	fileStr, err := strutils.ParseTemplate(string(fileBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s template", boxFile)
+	}
+
+	if err = ioutil.WriteFile(exec, []byte(fileStr), 0755); err != nil {
+		return locale.WrapError(err, "Could not create State Tool script at {{.V0}}.", exec)
 	}
 
 	return nil

@@ -116,6 +116,11 @@ func run(out output.Outputer, installPath, sessionToken string, updateTag *strin
 		}
 	}
 
+	err = cfg.Set(installation.ConfigKeyInstallPath, installPath)
+	if err != nil {
+		logging.Error("Could not set install path in config: %v", errs.JoinMessage(err))
+	}
+
 	logging.Debug("Installing to %s", installPath)
 	if err := install(installPath, cfg, out); err != nil {
 		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
