@@ -112,9 +112,9 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 		logging.Debug("Not running auto updates in unit tests")
 		return false
 
-	// Already running manual update
-	case funk.Contains(args, "update"):
-		logging.Debug("Not running auto updates because 'update' in args")
+	// Already running update (_prepare and export are called by install scripts)
+	case funk.Contains(args, "update") || funk.Contains(args, "_prepare") || funk.Contains(args, "export"):
+		logging.Debug("Not running auto updates because 'update', '_prepare' or 'export' in args")
 		return false
 
 	// Updates are disabled
