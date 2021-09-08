@@ -14,6 +14,7 @@ import (
 )
 
 func SetupRollbar(token string) {
+	defer handlePanics(recover())
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
@@ -51,6 +52,7 @@ func SetupRollbar(token string) {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
+	defer handlePanics(recover())
 	rollbar.SetPerson(uniqid.Text(), username, email)
 
 	custom := rollbar.Custom()

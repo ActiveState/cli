@@ -105,6 +105,7 @@ func FilePathForCmd(cmd string, pid int) string {
 const FileNameSuffix = ".log"
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
+	defer handlePanics(recover())
 	// In this function we close and open the file handle to the log file. In
 	// order to ensure this is safe to be called across threads, we just
 	// synchronize the entire function
@@ -169,6 +170,7 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 }
 
 func init() {
+	defer handlePanics(recover())
 	timestamp = time.Now().UnixNano()
 	handler := &fileHandler{DefaultFormatter, nil, sync.Mutex{}, safeBool{}}
 	SetHandler(handler)

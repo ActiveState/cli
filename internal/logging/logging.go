@@ -351,5 +351,11 @@ func BridgeStdLog(level int) {
 			log.SetOutput(b)
 		}
 	}
+}
 
+func handlePanics(err interface{}) {
+	if err == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "Failed to log error. Please report this on the forums if it keeps happening. Error: %v\n", err)
 }
