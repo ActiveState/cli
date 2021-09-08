@@ -54,8 +54,7 @@ func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) string {
 
 	cp.Expect("proceed with install?")
 	cp.SendLine("Y")
-	cp.Expect("Fetching version info")
-	// cp.Expect("Determining latest version")
+	cp.Expect(fmt.Sprintf("Fetching the latest version: %s", rcVersion))
 	cp.Expect("Installing to")
 	cp.Expect("Allow $PATH to be appended in your")
 	cp.SendLine("n")
@@ -140,7 +139,7 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	cfg.Set(updater.CfgUpdateTag, "")
 
 	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
+	os.Chtimes(stateExe, t, t)
 
 	// This should trigger the auto-update
 	cp := ts.SpawnCmdWithOpts(stateExe, e2e.WithArgs("--version", "--output=json"))
@@ -148,7 +147,7 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
 	json.Unmarshal([]byte(out), &actual)
-	suite.NotEqual(rcVersion, actual, "Version should have changed due to auto-update")
+	suite.NotEqual(rcVersion, actual.Version, "Version should have changed due to auto-update")
 
 	// after auto-update we should be still forwarded to the v29 release
 	suite.compareVersionedInstall(ts, stateExe, rcVersion, suite.NotEqual)
