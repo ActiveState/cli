@@ -24,10 +24,14 @@ type V29TestSuite struct {
 	tagsuite.Suite
 }
 
+type versionData struct {
+	Version string `json:"version"`
+}
+
 const rcVersion = "0.28.7-SHAf566db1"
 const rcTag = "v29-update"
 
-func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) {
+func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) string {
 	scriptExt := ".sh"
 	shell := "bash"
 	extraEnv := []string{}
@@ -48,25 +52,31 @@ func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) {
 		e2e.AppendEnv(extraEnv...),
 	)
 
-	expectLegacyStateToolInstallation(cp, "n")
-	cp.Expect("State Tool Installed")
+	cp.Expect("proceed with install?")
+	cp.SendLine("Y")
+	cp.Expect("Fetching version info")
+	// cp.Expect("Determining latest version")
+	cp.Expect("Installing to")
+	cp.Expect("Allow $PATH to be appended in your")
+	cp.SendLine("n")
+	cp.Expect("State Tool installation complete")
 	cp.ExpectExitCode(0)
 
-	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), rcVersion, suite.Equal)
+	stateExe := filepath.Join(ts.Dirs.Work, "state")
+	suite.compareVersionedInstall(ts, stateExe, rcVersion, suite.Equal)
+
+	return stateExe
 }
 
 // TestTaggedUpdateFlow is meant to test whether installing our release-candidate will update correctly
 // It is supposed to not attempt an auto-update, and the tag should be set
 func (suite *V29TestSuite) TestTaggedUpdateFlow() {
-	if runtime.GOOS == "windows" {
-		suite.T().SkipNow()
-	}
-	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.V29Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	suite.installReleaseCandidate(ts)
+	stateExe := suite.installReleaseCandidate(ts)
 
 	// ensure that tagName is forwarded and stored in database
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
@@ -75,7 +85,8 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 	suite.Assert().Equal(rcTag, cfg.GetString(updater.CfgUpdateTag))
 
 	suite.Run("Tagged RC should not update", func() {
-		cp := ts.SpawnWithOpts(
+		cp := ts.SpawnCmdWithOpts(
+			stateExe,
 			e2e.WithArgs("update"),
 			e2e.AppendEnv(
 				fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
@@ -89,7 +100,8 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 		// remote update-tag
 		cfg.Set(updater.CfgUpdateTag, "")
 
-		cp := ts.SpawnWithOpts(
+		cp := ts.SpawnCmdWithOpts(
+			stateExe,
 			e2e.WithArgs("update"),
 			e2e.AppendEnv(
 				fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
@@ -111,14 +123,12 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 
 // TestAutoUpdateFlow meant to test whether updating from an untagged release-candidate will auto-update to a v29 update forwarding to the new State Tool.
 func (suite *V29TestSuite) TestAutoUpdateFlow() {
-	if runtime.GOOS == "windows" {
-		suite.T().SkipNow()
-	}
+	suite.OnlyRunForTags(tagsuite.V29Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	suite.installReleaseCandidate(ts)
+	stateExe := suite.installReleaseCandidate(ts)
 
 	// ensure that tagName is forwarded and stored in database
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
@@ -133,14 +143,15 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
 	// This should trigger the auto-update
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"))
+	cp := ts.SpawnCmdWithOpts(stateExe, e2e.WithArgs("--version", "--output=json"))
 	cp.ExpectExitCode(0)
-	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), rcVersion, suite.NotEqual)
+	actual := versionData{}
+	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	json.Unmarshal([]byte(out), &actual)
+	suite.NotEqual(rcVersion, actual, "Version should have changed due to auto-update")
 
 	// after auto-update we should be still forwarded to the v29 release
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"))
-	cp.ExpectExitCode(0)
-	suite.compareVersionedInstall(ts, filepath.Join(ts.Dirs.Work, "state"), rcVersion, suite.NotEqual)
+	suite.compareVersionedInstall(ts, stateExe, rcVersion, suite.NotEqual)
 }
 
 func TestV29TestSuite(t *testing.T) {
@@ -148,10 +159,6 @@ func TestV29TestSuite(t *testing.T) {
 }
 
 func (suite *V29TestSuite) compareVersionedInstall(ts *e2e.Session, installPath, expected string, matcher matcherFunc) {
-	type versionData struct {
-		Version string `json:"version"`
-	}
-
 	cp := ts.SpawnCmd(installPath, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
