@@ -57,3 +57,7 @@ func createNewSymlink(target, filename string) error {
 func (i *Installation) PrepareBinTargets() error {
 	return nil
 }
+
+func prepareOriginalPath(path string) error {
+	return nil
+}

@@ -5,10 +5,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -54,15 +56,20 @@ func (i *Installation) ensureOriginalPath() error {
 	}
 
 	stateExe := filepath.Base(appinfo.StateApp().Exec())
-	statePath, err := exec.LookPath(stateExe)
+	originalPath, err := exec.LookPath(stateExe)
 	if err != nil {
-		logging.Debug("State tool not already installed, error: %v", err)
+		logging.Debug("State tool not installed, error: %v", err)
 		return nil
 	}
 
-	if i.binaryDir == filepath.Dir(statePath) {
+	if i.binaryDir == filepath.Dir(originalPath) {
 		logging.Debug("State tool installation paths do not differ")
 		return nil
+	}
+
+	err = prepareOriginalPath(originalPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not prepare original installation path for update")
 	}
 
 	tplParams := map[string]interface{}{
@@ -72,15 +79,17 @@ func (i *Installation) ensureOriginalPath() error {
 	boxFile := "state.sh"
 	if runtime.GOOS == "windows" {
 		boxFile = "state.bat"
+		originalPath = strings.TrimSuffix(originalPath, exeutils.Extension) + ".bat"
 	}
+
 	fileBytes := box.Bytes(boxFile)
 	fileStr, err := strutils.ParseTemplate(string(fileBytes), tplParams)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
-	if err = ioutil.WriteFile(statePath, []byte(fileStr), 0755); err != nil {
-		return locale.WrapError(err, "Could not create State Tool script at {{.V0}}.", statePath)
+	if err = ioutil.WriteFile(originalPath, []byte(fileStr), 0755); err != nil {
+		return locale.WrapError(err, "Could not create State Tool script at {{.V0}}.", originalPath)
 	}
 
 	return nil

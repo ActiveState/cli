@@ -50,3 +50,14 @@ func (i *Installation) PrepareBinTargets() error {
 
 	return nil
 }
+
+func prepareOriginalPath(exePath string) error {
+	dir := filepath.Dir(exePath)
+	exe := filepath.Base(exePath)
+	err := os.Rename(exePath, filepath.Join(dir, fmt.Sprintf("%s%s", exe, ".old")))
+	if err != nil {
+		return errs.Wrap(err, "Could not rename file")
+	}
+
+	return nil
+}
