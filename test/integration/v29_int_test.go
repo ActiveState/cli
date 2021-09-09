@@ -63,6 +63,9 @@ func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) string {
 	cp.ExpectExitCode(0)
 
 	stateExe := filepath.Join(ts.Dirs.Work, "state")
+	if runtime.GOOS == "windows" {
+		stateExe = stateExe + ".exe"
+	}
 	suite.compareVersionedInstall(ts, stateExe, rcVersion, suite.Equal)
 
 	return stateExe
