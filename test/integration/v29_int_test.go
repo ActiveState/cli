@@ -77,11 +77,10 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 
 	stateExe := suite.installReleaseCandidate(ts)
 
-	// ensure that tagName is forwarded and stored in database
-	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	// ensure tag is in config yaml file
+	f, err := os.ReadFile(filepath.Join(ts.Dirs.Config, "config.yaml"))
 	suite.Require().NoError(err)
-	defer cfg.Close()
-	suite.Assert().Equal(rcTag, cfg.GetString(updater.CfgUpdateTag))
+	suite.Require().Contains(string(f), fmt.Sprintf(`tag: %s`, rcTag))
 
 	suite.Run("Tagged RC should not update", func() {
 		cp := ts.SpawnCmdWithOpts(
@@ -91,13 +90,14 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 				fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, filepath.Join(ts.Dirs.Work, "multi-file")),
 			),
 		)
-		cp.Expect("Updating State Tool to latest version available")
+		cp.Expect("You are already using the latest State Tool version")
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("Update without tag", func() {
-		// remote update-tag
-		cfg.Set(updater.CfgUpdateTag, "")
+		// remove update-tag
+		err := os.Remove(filepath.Join(ts.Dirs.Config, "config.yaml"))
+		suite.Require().NoError(err)
 
 		cp := ts.SpawnCmdWithOpts(
 			stateExe,
@@ -107,7 +107,7 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 			),
 		)
 		cp.Expect("Updating State Tool to latest version available")
-		cp.Expect("Updating State Tool to version")
+		cp.Expect("Updating State Tool to version", 40*time.Second)
 		cp.ExpectExitCode(0)
 
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "state"))
