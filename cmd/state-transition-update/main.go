@@ -160,6 +160,7 @@ func addStateScript() error {
 	logging.Debug("Adding state script")
 
 	exec := appinfo.StateApp().Exec()
+	script := exec
 	newInstallPath, err := installation.InstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get default install path")
@@ -169,7 +170,7 @@ func addStateScript() error {
 	boxFile := "state.sh"
 	if runtime.GOOS == "windows" {
 		boxFile = "state.bat"
-		exec = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
+		script = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
 	}
 
 	logging.Debug("NewInstallPath: %v", newInstallPath)
@@ -183,10 +184,10 @@ func addStateScript() error {
 		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
-	logging.Debug("Writing to %s, value: %s", exec, fileStr)
+	logging.Debug("Writing to %s, value: %s", script, fileStr)
 
-	if err = ioutil.WriteFile(exec, []byte(fileStr), 0755); err != nil {
-		return errs.Wrap(err, "Could not create State Tool script at %s.", exec)
+	if err = ioutil.WriteFile(script, []byte(fileStr), 0755); err != nil {
+		return errs.Wrap(err, "Could not create State Tool script at %s.", script)
 	}
 
 	return nil
