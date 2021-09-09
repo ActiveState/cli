@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -152,13 +153,13 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	// This should trigger the auto-update
 	cp := ts.SpawnCmdWithOpts(
 		stateExe,
-		e2e.WithArgs("--version", "--output=json"),
+		e2e.WithArgs("--version"),
 		e2e.AppendEnv(fmt.Sprintf("%s=false", constants.DisableUpdates)))
 	cp.ExpectExitCode(0, 60*time.Second)
-	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
-	json.Unmarshal([]byte(out), &actual)
-	suite.NotEqual(rcVersion, actual.Version, "Version should have changed due to auto-update")
+	versionMatcher := regexp.MustCompile("Version ([^ ]*)")
+	actual := versionMatcher.FindString(out)
+	suite.NotEqual(rcVersion, actual, "Version should have changed due to auto-update")
 
 	stateScript := strings.ReplaceAll(stateExe, ".exe", ".bat")
 	// after auto-update we should be still forwarded to the v29 release
