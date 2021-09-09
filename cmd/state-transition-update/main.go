@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -85,7 +84,7 @@ func run() error {
 	case len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir":
 		return runExport()
 
-	case len(os.Args) < 1 || os.Args[1] != "_prepare":
+	case len(os.Args) <= 1 || os.Args[1] != "_prepare":
 		fmt.Printf("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now. If this keeps happening please re-install the State Tool as described here: %s\n", constants.StateToolMarketingPage)
 		return runDefault()
 
@@ -126,11 +125,6 @@ func runDefault() (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	oldInfo, err := os.Stat(appinfo.StateApp().Exec())
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
-	}
-
 	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
 		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
 	}
@@ -147,23 +141,12 @@ func runDefault() (rerr error) {
 
 	logging.Debug("Multi-file State Tool is installed.")
 
-	info, err := os.Stat(appinfo.StateApp().Exec())
-	if err != nil {
-		return errs.Wrap(err, "Failed to retrieve stat info for transitional State Tool executable.")
-	}
-
-	// if the transitional state tool has been replaced by the installer, we are done
-	if oldInfo.ModTime() != info.ModTime() {
-		return nil
-	}
-
 	err = addStateScript()
 	if err != nil {
 		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
 	}
 
 	logging.Debug("Removing transitional State Tool")
-	// otherwise: remove the transitional State Tool
 	if err := removeSelf(); err != nil {
 		logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
 	}
@@ -172,7 +155,10 @@ func runDefault() (rerr error) {
 }
 
 func addStateScript() error {
+	logging.Debug("Adding state script")
+
 	exec := appinfo.StateApp().Exec()
+	script := exec
 	newInstallPath, err := installation.InstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get default install path")
@@ -182,7 +168,9 @@ func addStateScript() error {
 	boxFile := "state.sh"
 	if runtime.GOOS == "windows" {
 		boxFile = "state.bat"
-		exec = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
+		script = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
+	} else {
+		script = exec + ".sh"
 	}
 
 	tplParams := map[string]interface{}{
@@ -195,8 +183,10 @@ func addStateScript() error {
 		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
-	if err = ioutil.WriteFile(exec, []byte(fileStr), 0755); err != nil {
-		return locale.WrapError(err, "Could not create State Tool script at {{.V0}}.", exec)
+	logging.Debug("Writing to %s, value: %s", script, fileStr)
+
+	if err = ioutil.WriteFile(script, []byte(fileStr), 0755); err != nil {
+		return errs.Wrap(err, "Could not create State Tool script at %s.", script)
 	}
 
 	return nil
