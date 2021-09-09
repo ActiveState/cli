@@ -82,6 +82,9 @@ func icon(p languagePreset) (string, error) {
 	if p == Perl || p == ActivePerl {
 		return "assets/perl.ico", nil
 	}
+	if p == Python {
+		return "assets/python.ico", nil
+	}
 	return "", fmt.Errorf("No icon for language preset %v", p)
 }
 
@@ -94,10 +97,7 @@ func releaseNotes(p languagePreset, c *config) (string, error) {
 		majorMinor := strings.Join(vParts[0:2], ".")
 		return fmt.Sprintf("http://docs.activestate.com/activeperl/%s/get/relnotes/", majorMinor), nil
 	}
-	if p == Perl {
 		return fmt.Sprintf("http://platform.activestate.com/%s", c.ProjectOwnerAndName), nil
-	}
-	return "", fmt.Errorf("No release notes for language preset %v", p)
 }
 
 // normalizes and validates the configuration
