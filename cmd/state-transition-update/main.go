@@ -141,16 +141,15 @@ func runDefault() (rerr error) {
 
 	logging.Debug("Multi-file State Tool is installed.")
 
-	err = addStateScript()
-	if err != nil {
-		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
-	}
-
-	if runtime.GOOS == "windows" {
-		logging.Debug("Removing transitional State Tool")
+	if runtime.GOOS != "darwin" {
 		if err := removeSelf(); err != nil {
 			logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
 		}
+	}
+
+	err = addStateScript()
+	if err != nil {
+		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
 	}
 
 	return nil
