@@ -135,6 +135,9 @@ func RemoveLegacyInstallPath(path string) error {
 }
 
 func CleanRcFile(path string, data RcIdentification) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
 	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
