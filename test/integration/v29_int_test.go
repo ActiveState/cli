@@ -52,9 +52,13 @@ func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) string {
 	cp.Expect("proceed with install?")
 	cp.SendLine("Y")
 	cp.Expect(fmt.Sprintf("Fetching the latest version: %s", rcVersion))
-	cp.Expect("Installing to")
-	cp.Expect("Allow $PATH to be appended in your")
-	cp.SendLine("n")
+	if runtime.GOOS == "windows" {
+		cp.Expect("successfully installed to", 30*time.Second)
+	} else {
+		cp.Expect("Installing to", 30*time.Second)
+		cp.Expect("Allow $PATH to be appended in your")
+		cp.SendLine("n")
+	}
 	cp.Expect("State Tool installation complete")
 	cp.ExpectExitCode(0)
 
@@ -107,10 +111,11 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 		cp.Expect("Version updated to", 60*time.Second)
 		cp.ExpectExitCode(0)
 
-		suite.Assert().FileExists(filepath.Join(ts.Dirs.Work, "state"), "Transitional state tool script does not exist.")
-		contents, err := os.ReadFile(filepath.Join(ts.Dirs.Work, "state"))
-		suite.Assert().NoError(err)
-		suite.Assert().Contains(contents, "#!/bin/bash")
+		ext := ""
+		if runtime.GOOS == "windows" {
+			ext = ".bat"
+		}
+		suite.Assert().FileExists(filepath.Join(ts.Dirs.Work, "state"+ext), "Transitional state tool script does not exist.")
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
 	})
@@ -144,7 +149,7 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 		stateExe,
 		e2e.WithArgs("--version", "--output=json"),
 		e2e.AppendEnv(fmt.Sprintf("%s=false", constants.DisableUpdates)))
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, 60*time.Second)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
 	json.Unmarshal([]byte(out), &actual)
