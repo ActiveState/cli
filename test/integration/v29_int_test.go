@@ -10,13 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -107,12 +104,12 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 			),
 		)
 		cp.Expect("Updating State Tool to latest version available")
-		cp.Expect("Updating State Tool to version", 40*time.Second)
+		cp.Expect("Version updated to", 60*time.Second)
 		cp.ExpectExitCode(0)
 
-		suite.FileExists(filepath.Join(ts.Dirs.Work, "state"))
+		suite.Assert().FileExists(filepath.Join(ts.Dirs.Work, "state"), "Transitional state tool script does not exist.")
 		contents, err := os.ReadFile(filepath.Join(ts.Dirs.Work, "state"))
-		suite.Require().NoError(err)
+		suite.Assert().NoError(err)
 		suite.Assert().Contains(contents, "#!/bin/bash")
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
@@ -130,13 +127,14 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	stateExe := suite.installReleaseCandidate(ts)
 
 	// ensure that tagName is forwarded and stored in database
-	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	// ensure tag is in config yaml file
+	f, err := os.ReadFile(filepath.Join(ts.Dirs.Config, "config.yaml"))
 	suite.Require().NoError(err)
-	defer cfg.Close()
-	suite.Assert().Equal(rcTag, cfg.GetString(updater.CfgUpdateTag))
+	suite.Require().Contains(string(f), fmt.Sprintf(`tag: %s`, rcTag))
 
 	// remove update tag
-	cfg.Set(updater.CfgUpdateTag, "")
+	err = os.Remove(filepath.Join(ts.Dirs.Config, "config.yaml"))
+	suite.Require().NoError(err)
 
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(stateExe, t, t)
