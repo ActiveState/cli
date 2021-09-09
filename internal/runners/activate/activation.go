@@ -26,6 +26,11 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return err
 	}
 
+	r.out.Notice(locale.Tl(
+		"activate_creating_virtualenv",
+		" • Creating a virtual environment... [SUCCESS]✔ Done[/RESET]",
+	))
+
 	ve, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
