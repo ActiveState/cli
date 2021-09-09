@@ -146,9 +146,11 @@ func runDefault() (rerr error) {
 		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
 	}
 
-	logging.Debug("Removing transitional State Tool")
-	if err := removeSelf(); err != nil {
-		logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
+	if runtime.GOOS == "windows" {
+		logging.Debug("Removing transitional State Tool")
+		if err := removeSelf(); err != nil {
+			logging.Error("Failed to remove transitional State Tool: %s", errs.JoinMessage(err))
+		}
 	}
 
 	return nil
@@ -158,7 +160,6 @@ func addStateScript() error {
 	logging.Debug("Adding state script")
 
 	exec := appinfo.StateApp().Exec()
-	script := exec
 	newInstallPath, err := installation.InstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get default install path")
@@ -168,11 +169,10 @@ func addStateScript() error {
 	boxFile := "state.sh"
 	if runtime.GOOS == "windows" {
 		boxFile = "state.bat"
-		script = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
-	} else {
-		script = exec + ".sh"
+		exec = strings.TrimSuffix(exec, exeutils.Extension) + ".bat"
 	}
 
+	logging.Debug("NewInstallPath: %v", newInstallPath)
 	tplParams := map[string]interface{}{
 		"path": filepath.Join(newInstallPath, filepath.Base(exec)),
 	}
@@ -183,10 +183,10 @@ func addStateScript() error {
 		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
-	logging.Debug("Writing to %s, value: %s", script, fileStr)
+	logging.Debug("Writing to %s, value: %s", exec, fileStr)
 
-	if err = ioutil.WriteFile(script, []byte(fileStr), 0755); err != nil {
-		return errs.Wrap(err, "Could not create State Tool script at %s.", script)
+	if err = ioutil.WriteFile(exec, []byte(fileStr), 0755); err != nil {
+		return errs.Wrap(err, "Could not create State Tool script at %s.", exec)
 	}
 
 	return nil
