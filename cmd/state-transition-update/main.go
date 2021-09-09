@@ -126,7 +126,7 @@ func runDefault() (rerr error) {
 	machineid.SetErrorLogger(logging.Error)
 
 	if err := removeOldStateToolEnvironmentSettings(cfg); err != nil {
-		return errs.Wrap(err, "failed to remove environment settings from old State Tool installation")
+		logging.Error("Failed to remove environment settings from old State Tool installation: %s", errs.JoinMessage(err))
 	}
 
 	up, err := updater.NewDefaultChecker(cfg).GetUpdateInfo("", "")

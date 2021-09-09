@@ -107,6 +107,9 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 
 // RemoveLegacyInstallPath removes the PATH modification statement added to the shell-rc file by the legacy install script
 func RemoveLegacyInstallPath(path string) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
 	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
@@ -135,6 +138,9 @@ func RemoveLegacyInstallPath(path string) error {
 }
 
 func CleanRcFile(path string, data RcIdentification) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
 	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
