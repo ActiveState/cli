@@ -189,5 +189,12 @@ func addStateScript() error {
 		return errs.Wrap(err, "Could not create State Tool script at %s.", script)
 	}
 
+	if runtime.GOOS == "windows" {
+		// Address use-case of user writing `state.exe` instead of `state`
+		if err = ioutil.WriteFile(filepath.Join(filepath.Dir(script), "state.exe.bat"), []byte(fileStr), 0755); err != nil {
+			return errs.Wrap(err, "Could not create State Tool script at %s.", script)
+		}
+	}
+
 	return nil
 }
