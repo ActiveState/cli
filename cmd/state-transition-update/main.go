@@ -157,7 +157,7 @@ func runDefault() (rerr error) {
 		return nil
 	}
 
-	err = addStateScript(cfg)
+	err = addStateScript()
 	if err != nil {
 		logging.Error("Could not add state script: %s", errs.JoinMessage(err))
 	}
@@ -171,9 +171,12 @@ func runDefault() (rerr error) {
 	return nil
 }
 
-func addStateScript(cfg *config.Instance) error {
+func addStateScript() error {
 	exec := appinfo.StateApp().Exec()
-	newInstallpath := cfg.GetString(installation.ConfigKeyInstallPath)
+	newInstallPath, err := installation.InstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get default install path")
+	}
 
 	box := packr.NewBox("../../assets/state")
 	boxFile := "state.sh"
@@ -183,7 +186,7 @@ func addStateScript(cfg *config.Instance) error {
 	}
 
 	tplParams := map[string]interface{}{
-		"path": filepath.Join(newInstallpath, filepath.Base(exec)),
+		"path": filepath.Join(newInstallPath, filepath.Base(exec)),
 	}
 
 	fileBytes := box.Bytes(boxFile)
