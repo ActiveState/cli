@@ -26,4 +26,3 @@ func LauncherInstallPath() (string, error) {
 	}
 	return defaultSystemInstallPath()
 }
-
