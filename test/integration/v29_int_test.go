@@ -140,7 +140,10 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	os.Chtimes(stateExe, t, t)
 
 	// This should trigger the auto-update
-	cp := ts.SpawnCmdWithOpts(stateExe, e2e.WithArgs("--version", "--output=json"))
+	cp := ts.SpawnCmdWithOpts(
+		stateExe,
+		e2e.WithArgs("--version", "--output=json"),
+		e2e.AppendEnv(fmt.Sprintf("%s=false", constants.DisableUpdates)))
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
