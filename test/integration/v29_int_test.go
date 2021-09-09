@@ -58,8 +58,8 @@ func (suite *V29TestSuite) installReleaseCandidate(ts *e2e.Session) string {
 		cp.Expect("Installing to", 30*time.Second)
 		cp.Expect("Allow $PATH to be appended in your")
 		cp.SendLine("n")
+		cp.Expect("State Tool installation complete")
 	}
-	cp.Expect("State Tool installation complete")
 	cp.ExpectExitCode(0)
 
 	stateExe := filepath.Join(ts.Dirs.Work, "state")
