@@ -84,7 +84,7 @@ func run() error {
 	case len(os.Args) == 4 && os.Args[1] == "export" && os.Args[2] == "config" && os.Args[3] == "--filter=dir":
 		return runExport()
 
-	case len(os.Args) <= 1 || os.Args[1] != "_prepare":
+	case len(os.Args) < 1 || os.Args[1] != "_prepare":
 		fmt.Printf("Sorry! This is a transitional tool that should have been replaced during the last update.   If you see this message, something must have gone wrong.  Re-trying to update now. If this keeps happening please re-install the State Tool as described here: %s\n", constants.StateToolMarketingPage)
 		return runDefault()
 
