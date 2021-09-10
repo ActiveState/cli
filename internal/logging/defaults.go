@@ -5,6 +5,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/rollbar/rollbar-go"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -91,11 +93,11 @@ func FileNamePrefix() string {
 }
 
 func FilePath() string {
-	return filepath.Join(datadir, FileName())
+	return FilePathFor(FileName())
 }
 
 func FilePathFor(filename string) string {
-	return filepath.Join(datadir, filename)
+	return filepath.Join(datadir, "logs", filename)
 }
 
 func FilePathForCmd(cmd string, pid int) string {
@@ -112,7 +114,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	filename := filepath.Join(datadir, FileName())
+	filename := FilePath()
 	originalMessage := message
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
@@ -144,6 +146,10 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 
 	if l.file == nil {
+		if err := l.reopenLogfile(); err != nil {
+			return errs.Wrap(err, "Failed to reopen log-file")
+		}
+
 		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
 			return errs.Wrap(err, "Could not ensure dir exists")
 		}
@@ -156,7 +162,13 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	_, err := l.file.WriteString(message + "\n")
 	if err != nil {
-		return err
+		// try to reopen the log file once:
+		if rerr := l.reopenLogfile(); rerr != nil {
+			return errs.Wrap(err, "Failed to write log line and reopen failed with err: %v", rerr)
+		}
+		if _, err2 := l.file.WriteString(message + "\n"); err2 != nil {
+			return errs.Wrap(err2, "Failed to write log line twice. First error was: %v", err)
+		}
 	}
 
 	return nil
@@ -167,6 +179,19 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 func (l *fileHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
+}
+
+func (l *fileHandler) reopenLogfile() error {
+	filename := FilePath()
+	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
+		return errs.Wrap(err, "Could not ensure dir exists")
+	}
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return errs.Wrap(err, "Could not open log file for writing: %s", filename)
+	}
+	l.file = f
+	return nil
 }
 
 func init() {
@@ -192,12 +217,15 @@ func init() {
 	}
 
 	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
+	files = funk.Filter(files, func(f fs.FileInfo) bool {
+		return f.ModTime().Before(time.Now().Add(-time.Hour))
+	}).([]fs.FileInfo)
 
 	c := 0
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
 			c = c + 1
-			if c > 19 {
+			if c > 9 {
 				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
 					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 				}
