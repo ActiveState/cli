@@ -235,9 +235,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	cp.Expect("State Tool Installed")
 	cp.ExpectExitCode(0)
 
+	// The transitional state tool should stay around and forward to the new installation
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "state"))
 	// Note: When updating from an old update, we always install to the default installation path.
 	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
-	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"))
 
@@ -256,6 +257,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallShInstallMulti
 	server.NthRequest(1).ExpectQueryParam("tag", tagName)
 	server.NthRequest(1).ExpectLegacyQuery(false)
 	server.NthRequest(1).ExpectTagResponse(&tagName)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state"), "clean", "uninstall")
+	cp.Expect("You are about to remove")
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	// Ensure that transitional State Tool has been removed
+	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallSh() {
@@ -673,9 +682,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	paths := strings.Split(pathEnv, string(os.PathListSeparator))
 	suite.Assert().Contains(paths, ts.Dirs.Work, "Could not find installation path, output: %s", cp.TrimmedSnapshot())
 
+	// The transitional state tool should be kept around and forward to the new default installation
+	suite.FileExists(filepath.Join(ts.Dirs.Work, "state.exe"))
 	// Note: When updating from an old update, we always install to the default installation path.
 	// The default installation path is set to <ts.Dirs.Work>/multi-file for this test.
-	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc.exe"))
 	suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray.exe"))
@@ -694,6 +704,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestLegacyInstallPs1MultiFileUp
 	server.NthRequest(1).ExpectLegacyQuery(false)
 	server.NthRequest(1).ExpectQueryParam("source", "update")
 	server.NthRequest(1).ExpectTagResponse(&tagName)
+
+	cp = ts.SpawnCmd(filepath.Join(ts.Dirs.Work, "state.exe"), "clean", "uninstall")
+	cp.Expect("You are about to remove")
+	cp.SendLine("y")
+	cp.ExpectExitCode(0)
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Ensure that transitional State Tool has been removed
+	suite.NoFileExists(filepath.Join(ts.Dirs.Work, "state"))
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstallPerl5_32DefaultWindows() {
