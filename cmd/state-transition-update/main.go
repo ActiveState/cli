@@ -29,8 +29,6 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-const cfgNewInstallPath = "new_installation_path"
-
 func main() {
 	var exitCode int
 	defer func() {
