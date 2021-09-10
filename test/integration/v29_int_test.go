@@ -114,13 +114,11 @@ func (suite *V29TestSuite) TestTaggedUpdateFlow() {
 		cp.Expect("Version updated to", 60*time.Second)
 		cp.ExpectExitCode(0)
 
-		scriptExt := ""
 		exeExt := ""
 		if runtime.GOOS == "windows" {
-			scriptExt = ".bat"
 			exeExt = ".exe"
 		}
-		suite.Assert().FileExists(filepath.Join(ts.Dirs.Work, "state"+scriptExt), "Transitional state tool script does not exist.")
+		suite.Assert().FileExists(filepath.Join(ts.Dirs.Work, "state"+exeExt), "Transitional state tool script does not exist.")
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-svc"+exeExt))
 		suite.FileExists(filepath.Join(ts.Dirs.Work, "multi-file", "state-tray"+exeExt))
 	})
@@ -157,9 +155,8 @@ func (suite *V29TestSuite) TestAutoUpdateFlow() {
 	cp.ExpectExitCode(0, 60*time.Second)
 	suite.NotContains(cp.TrimmedSnapshot(), "This is a transitional tool")
 
-	stateScript := strings.ReplaceAll(stateExe, ".exe", ".bat")
 	// after auto-update we should be still forwarded to the v29 release
-	suite.compareVersionedInstall(ts, stateScript, rcVersion, suite.NotEqual)
+	suite.compareVersionedInstall(ts, stateExe, rcVersion, suite.NotEqual)
 }
 
 func TestV29TestSuite(t *testing.T) {
