@@ -81,12 +81,16 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	// The transitional State Tool will forward all commands to the installed multi-file State Tool, once it has been successfully installed
-	newInstallPath := cfg.GetString(cfgNewInstallPath)
-	newStatePath := appinfo.StateApp(newInstallPath).Exec()
-	if newInstallPath != "" && fileutils.TargetExists(newStatePath) {
-		code, _, _ := exeutils.ExecuteAndPipeStd(newStatePath, os.Args[1:], []string{})
-		os.Exit(code)
+	// The transitional State Tool will forward all commands if it can find a multi-file State Tool that has been installed in the new install location
+	newInstallPath, err := pathToCheckForStateToolInstallation(cfg)
+	if err != nil {
+		logging.Error("Could not determine installation path to check for installation: %s", errs.JoinMessage(err))
+	} else {
+		newStatePath := appinfo.StateApp(newInstallPath).Exec()
+		if fileutils.TargetExists(newStatePath) && newStatePath != appinfo.StateApp().Exec() {
+			code, _, _ := exeutils.ExecuteAndPipeStd(newStatePath, os.Args[1:], []string{})
+			os.Exit(code)
+		}
 	}
 
 	switch {
@@ -150,9 +154,18 @@ func runDefault(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not get default install path")
 	}
 
-	if err := cfg.Set(cfgNewInstallPath, newInstallPath); err != nil {
+	if err := cfg.Set(installation.CfgNewInstallPath, newInstallPath); err != nil {
 		return errs.Wrap(err, "Could not set new install path in config")
 	}
 
 	return nil
+}
+
+func pathToCheckForStateToolInstallation(cfg *config.Instance) (string, error) {
+	newInstallPath := cfg.GetString(installation.CfgNewInstallPath)
+	if newInstallPath != "" {
+		return newInstallPath, nil
+	}
+
+	return installation.InstallPath()
 }
