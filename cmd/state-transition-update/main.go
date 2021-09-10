@@ -87,6 +87,10 @@ func run() (rerr error) {
 		logging.Error("Could not determine installation path to check for installation: %s", errs.JoinMessage(err))
 	} else {
 		newStatePath := appinfo.StateApp(newInstallPath).Exec()
+
+		// ensure that path to transitional state tool is stored in the config file
+		transitionalStatePath := appinfo.StateApp().Exec()
+		cfg.Set(installation.CfgTransitionalStateToolPath, transitionalStatePath)
 		if fileutils.TargetExists(newStatePath) && newStatePath != appinfo.StateApp().Exec() {
 			code, _, _ := exeutils.ExecuteAndPipeStd(newStatePath, os.Args[1:], []string{})
 			os.Exit(code)
@@ -154,15 +158,18 @@ func runDefault(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not get default install path")
 	}
 
-	if err := cfg.Set(installation.CfgNewInstallPath, newInstallPath); err != nil {
+	if err := cfg.Set(installation.CfgInstallPath, newInstallPath); err != nil {
 		return errs.Wrap(err, "Could not set new install path in config")
 	}
 
+	// ensure that path to transitional state tool is stored in the config file
+	transitionalStatePath := appinfo.StateApp().Exec()
+	cfg.Set(installation.CfgTransitionalStateToolPath, transitionalStatePath)
 	return nil
 }
 
 func pathToCheckForStateToolInstallation(cfg *config.Instance) (string, error) {
-	newInstallPath := cfg.GetString(installation.CfgNewInstallPath)
+	newInstallPath := cfg.GetString(installation.CfgInstallPath)
 	if newInstallPath != "" {
 		return newInstallPath, nil
 	}
