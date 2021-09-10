@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,7 +31,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	err = removeInstall(logFile.Name(), u.cfg.ConfigPath())
+	err = removeInstall(logFile.Name(), u.cfg.ConfigPath(), u.cfg.GetString(installation.CfgTransitionalStateToolPath))
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -68,7 +69,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(logFile, configPath string) error {
+func removeInstall(logFile, configPath, transitionalStateTool string) error {
 	svcInfo := appinfo.SvcApp()
 	trayInfo := appinfo.TrayApp()
 	var aggErr error
@@ -86,7 +87,13 @@ func removeInstall(logFile, configPath string) error {
 		return aggErr
 	}
 
-	return removePaths(logFile, appinfo.StateApp().Exec(), configPath)
+	paths := []string{appinfo.StateApp().Exec(), configPath}
+	// If the transitional state tool path is known, we remove it.  This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
+	if transitionalStateTool != "" {
+		paths = append(paths, transitionalStateTool)
+	}
+
+	return removePaths(logFile, paths...)
 }
 
 func removePaths(logFile string, paths ...string) error {

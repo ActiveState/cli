@@ -105,6 +105,12 @@ func removeInstall(cfg configurable) error {
 		}
 	}
 
+	if transitionalStatePath := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStatePath != "" {
+		if err := os.Remove(transitionalStatePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", transitionalStatePath, err)
+		}
+	}
+
 	appPath, err := installation.LauncherInstallPath()
 	if err != nil {
 		return errs.Wrap(aggErr, "Could not determine OS specific launcher install path")
