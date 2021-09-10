@@ -197,7 +197,7 @@ func init() {
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
 			c = c + 1
-			if c > 9 {
+			if c > 19 {
 				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
 					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 				}
