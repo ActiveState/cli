@@ -50,9 +50,14 @@ var (
 
 type includeFunc func(path string, contents []byte) (include bool)
 
-// ReplaceAll replaces all instances of search text with replacement text in a
+// ReplaceAllInclude replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
-func ReplaceAll(filename, find string, replace string, include includeFunc) error {
+func ReplaceAll(filename, find, replace string) error {
+	return ReplaceAllInclude(filename, find, replace, func(path string, contents []byte) bool { return true })
+}
+
+// ReplaceAllInclude works similary to ReplaceAll with an includeFunc for added custom behaviour
+func ReplaceAllInclude(filename, find string, replace string, include includeFunc) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
@@ -134,7 +139,7 @@ func ReplaceAllInDirectory(path, find string, replace string, include includeFun
 		if f.IsDir() {
 			return nil
 		}
-		return ReplaceAll(filepath.Join(path, subpath), find, replace, include)
+		return ReplaceAllInclude(filepath.Join(path, subpath), find, replace, include)
 	})
 
 	if err != nil {
@@ -491,7 +496,9 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				// If the subToPath file exists, we remove it first - in order to ensure compatibility between platforms:
 				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
 				err = os.Remove(subToPath)
-				logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+				if err != nil {
+					logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+				}
 			}
 		}
 

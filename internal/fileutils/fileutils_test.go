@@ -61,7 +61,7 @@ func TestReplaceAllTextFile(t *testing.T) {
 	defer os.RemoveAll(filepath.Dir(tmpfile))
 
 	// Perform the replacement.
-	err = ReplaceAll(tmpfile, "%%FIND%%", "REPL", func(string, []byte) bool { return true })
+	err = ReplaceAllInclude(tmpfile, "%%FIND%%", "REPL", func(string, []byte) bool { return true })
 	assert.NoError(t, err, "Replacement worked")
 
 	// Verify the file size changed for text files.
