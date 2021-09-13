@@ -36,3 +36,65 @@ Tool applications. Shell script wrappers are provided as a convenience.
 
 The State Update Dialog provides a cross-platform updater for the suite of State
 Tool Applications.
+
+## Directory Structure
+
+### assets/
+
+Various files (e.g. images, templates, etc.) used by any application.
+
+### build/
+
+Artifacts resulting from building applications.
+
+### cmd/{app_name}/
+
+Individual "main" applications.
+
+#### cmd/{app_name}/internal/
+
+Packages used exclusively for the parent application.
+
+### docs/
+
+Developer-focused documentation.
+
+### installers/
+
+Shell scripts wrapping the installer application for user convenience.
+
+### internal/
+
+Packages that are made available for use by any application, but are restricted
+from use by external code.
+
+#### internal/runbits/
+
+Packages that are made available for use by "runner" packages. In essence,
+`internal/runbits/internal/runners`.
+
+#### internal/runners/
+
+Packages that provide command behavior for the State Tool application.
+
+### locale/
+
+Localization keys and associated values.
+
+### pkg/
+
+Packages that are made available for use by any application, including external
+code. The packages that are currently located here are not intended for use by
+external code, and will eventually be moved into the `internal/` directory.
+
+### scripts/
+
+Helper scripts.
+
+### test/integration/
+
+End-to-end tests.
+
+### vendor/
+
+Go language dependencies.
