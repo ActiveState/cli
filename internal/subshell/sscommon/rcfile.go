@@ -237,6 +237,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 			userScripts = userScripts + "\n" + v
 		}
 	}
+	firstActivate := cfg.GetString(constants.GlobalDefaultPrefname) == "" && !cfg.GetBool(activatedKey)
 	err := cfg.Set(activatedKey, true)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not set activatedKey in config")
@@ -274,7 +275,10 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := txtstyle.NewTitle(locale.Tl("youre_activated", "You're Activated!"))
+	activatedMessage := txtstyle.NewTitle(locale.Tl("language_installed", "Language sucessfully installed"))
+	if !firstActivate {
+		activatedMessage = txtstyle.NewTitle(locale.Tl("language_activate", "Language is now active"))
+	}
 	activatedMessage.ColorCode = "SUCCESS"
 
 	var activateEvtMessage string
