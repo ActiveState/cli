@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iafan/cwalk"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -50,23 +48,14 @@ var (
 
 type includeFunc func(path string, contents []byte) (include bool)
 
-// ReplaceAllInclude replaces all instances of search text with replacement text in a
+// ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
 func ReplaceAll(filename, find, replace string) error {
-	return ReplaceAllInclude(filename, find, replace, func(path string, contents []byte) bool { return true })
-}
-
-// ReplaceAllInclude works similary to ReplaceAll with an includeFunc for added custom behaviour
-func ReplaceAllInclude(filename, find string, replace string, include includeFunc) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
-	}
-
-	if !include(filename, fileBytes) {
-		return nil
 	}
 
 	changed, byts, err := replaceInFile(fileBytes, find, replace)
@@ -131,22 +120,6 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
 
 	return !bytes.Equal(replaced, buf), replaced, nil
-}
-
-// ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
-func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	err := cwalk.Walk(path, func(subpath string, f os.FileInfo, err error) error {
-		if f.IsDir() {
-			return nil
-		}
-		return ReplaceAllInclude(filepath.Join(path, subpath), find, replace, include)
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // IsSymlink checks if a path is a symlink

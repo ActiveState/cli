@@ -12,27 +12,28 @@ DOWNLOADEXT=".tar.gz"
 # the installer extension
 BINARYEXT=""
 
+SESSION_TOKEN_VERIFY="{TOKEN""}"
+SESSION_TOKEN="{TOKEN}"
+SESSION_TOKEN_VALUE=""
+
+if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
+  SESSION_TOKEN_VALUE=$SESSION_TOKEN
+fi
+
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
-  OUTPUT_WARN=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
-  WIDTH=80
 else
   OUTPUT_BOLD="$(tput bold)"
-  OUTPUT_WARN="$(tput setf 3)"
   OUTPUT_ERROR="$(tput setf 1)"
   OUTPUT_END="$(tput sgr0)"
-  WIDTH="$(tput cols)"
 fi
 
 info () {
   echo "░▒▓█$OUTPUT_BOLD${1}$OUTPUT_END"
 }
 
-warn () {
-  echo "$OUTPUT_WARN${1}$OUTPUT_END"
-}
 
 error () {
   echo "$OUTPUT_ERROR${1}$OUTPUT_END"
@@ -97,4 +98,4 @@ else
 fi
 chmod +x $TMPDIR/$INSTALLER
 
-$TMPDIR/$INSTALLER "$@"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLER "$@"
