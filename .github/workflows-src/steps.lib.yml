@@ -258,6 +258,17 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
 ---
+#@ def steps_deploy_versioned():
+name: "Deploy Versioned"
+shell: bash
+if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+run: |
+  state run deploy-updates
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#@ end
+---
 #@ def steps_build_state_msi():
 name: "Build State MSI"
 if: runner.os == 'Windows'
@@ -295,4 +306,13 @@ env:
 name: "Cleanup Build Dir"
 shell: bash
 run: rm build/state* || true
+#@ end
+---
+#@ def steps_clean_nonversioned_update():
+name: "Cleanup Non-Versioned Update Files"
+shell: bash
+run: |
+  BRANCHDIR=$(echo $GITHUB_REF | sed -En "s#refs/heads/##p")
+  rm build/update/*.json
+  rm $BRANCHDIR/*.json
 #@ end

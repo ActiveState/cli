@@ -43,6 +43,27 @@ steps:
   - #@ steps_uploadsessartifacts()
 #@ end
 
+
+#@ def jobs_deploy_versioned():
+name: Deploy Versioned
+needs: [ build, unittest ]
+runs-on: ubuntu-20.04
+env: *env
+timeout-minutes: 10
+steps:
+  - name: "Checkout code"
+    uses: actions/checkout@v2
+  - #@ steps_installgo()
+  - #@ steps_setup()
+  - #@ steps_downloadallsessartifacts()
+  - #@ steps_sanitizeallsessartifacts()
+  - #@ steps_preprocess()
+  - #@ steps_cleanbuild()
+  - #@ steps_clean_nonversioned_update()
+  - #@ steps_deploy_versioned()
+  - #@ steps_uploadartifacts()
+#@ end
+
 #@ def jobs_unittest():
 name: "Unit Test"
 strategy: #@ strategy(False)
@@ -62,6 +83,7 @@ steps:
 #@ def jobs_inttestcrit():
 name: "Critical Integration Test"
 strategy: #@ strategy(False)
+needs: [ deploy_versioned ]
 runs-on: *runs-on
 env: *env
 timeout-minutes: 25
@@ -88,6 +110,7 @@ steps:
 #@ def jobs_inttest():
 name: "Integration Test"
 strategy: #@ strategy(False)
+needs: [ deploy_versioned ]
 runs-on: *runs-on
 env: *env
 timeout-minutes: 25
