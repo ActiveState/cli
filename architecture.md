@@ -4,7 +4,7 @@ This document describes the high-level architecture of the State Tool and
 related applications (currently: State Service, State Tray, State Installer, and
 State Update Dialog).
 
-## Broad Descriptions
+## Applications Overviews
 
 ### State Tool
 
@@ -119,3 +119,25 @@ End-to-end tests.
 ### vendor/
 
 Go language dependencies.
+
+## Code Change Entry Points
+
+While the entry point of control flow in every application is some version of a
+main file (e.g. `cmd/state/main.go`), the code that tends to be modified the
+most lives in `internal/runners/`, `pkg/`, and `internal/`.
+
+State Tool interactions are routed from command line arguments to the
+appropriate "runner" where the runner can be thought of as a "handler" or
+"controller". Various output formats (which can be thought of as "views") are
+available and defined by logic within `internal/output`. Similarly, commonly
+used logic is defined in packages like `pkg/project`.
+
+Currently, the State Service is in its beginning stages of importance. As it
+matures, it will become more central to code changes. For the State Service, the
+interactions are GraphQL queries that are routed to handlers.
+
+## activestate.yaml
+
+The project file contains information that connects a project to the platform,
+and also provides local behavior similar to `make`. The most commonly used
+scripts are `preprocess` and `build`. Run `state scripts` for a full listing.
