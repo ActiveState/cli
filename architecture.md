@@ -47,17 +47,23 @@ Various files (e.g. images, templates, etc.) used by any application.
 
 Artifacts resulting from building applications.
 
-### cmd/{app_name}/
+### cmd/*/
 
 Individual "main" applications.
 
-#### cmd/{app_name}/internal/
+#### cmd/*/internal/
 
 Packages used exclusively for the parent application.
 
 ### docs/
 
 Developer-focused documentation.
+
+### .github/workflows-src/
+
+YAML-formatted config that is processed by `ytt`
+(https://github.com/vmware-tanzu/carvel-ytt) to produce yml files used for CI
+(stored in `.github/workflows/`).
 
 ### installers/
 
@@ -71,7 +77,7 @@ from use by external code.
 #### internal/runbits/
 
 Packages that are made available for use by "runner" packages. In essence,
-`internal/runbits/internal/runners`.
+`internal/runners/internal/runbits`.
 
 #### internal/runners/
 
@@ -86,6 +92,21 @@ Localization keys and associated values.
 Packages that are made available for use by any application, including external
 code. The packages that are currently located here are not intended for use by
 external code, and will eventually be moved into the `internal/` directory.
+
+#### pkg/cmdlets/
+
+Packages that are made available for use by "runner" packages. Synonymous with
+`internal/runbits/`, and all new runner-common packages should be placed there.
+
+#### pkg/platform/
+
+Packages focused on interacting with the platform. Much of the behavior is
+generated, but there are also critical components providing platform-dependent
+client-side logic (e.g. `pkg/platform/runtime`).
+
+#### pkg/{project,projectfile}/
+
+Packages that provide setup and interaction with the activestate.yaml files.
 
 ### scripts/
 
