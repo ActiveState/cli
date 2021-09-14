@@ -71,7 +71,7 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 	if err != nil {
 		logging.Errorf(
 			"Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)",
-			err, stdoutText, stderrText,
+			errs.JoinMessage(err), stdoutText, stderrText,
 		)
 	}
 
