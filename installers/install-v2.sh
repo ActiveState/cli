@@ -20,20 +20,39 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
+while getopts "b:" arg; do
+  case $arg in
+    b) CHANNEL=$OPTARG;;
+  esac
+done
+
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
+  OUTPUT_OK=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
 else
-  OUTPUT_BOLD="$(tput bold)"
-  OUTPUT_ERROR="$(tput setf 1)"
-  OUTPUT_END="$(tput sgr0)"
+  OUTPUT_BOLD=`tput bold`
+  OUTPUT_OK=`tput setaf 2`
+  OUTPUT_ERROR=`tput setaf 1`
+  OUTPUT_END=`tput sgr0`
 fi
 
-info () {
+header () {
   echo "░▒▓█ $OUTPUT_BOLD${1}$OUTPUT_END"
 }
 
+progress () {
+  printf "• %s... " "$1"
+}
+
+progress_done() {
+  echo "${OUTPUT_OK}✔ Done${OUTPUT_END}"
+}
+
+progress_fail() {
+  echo "${OUTPUT_ERROR}x Failed${OUTPUT_END}"
+}
 
 error () {
   echo "$OUTPUT_ERROR${1}$OUTPUT_END"
@@ -78,17 +97,19 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-info "Preparing ActiveState Installer"
+header "Preparing ActiveState Installer"
 
-STATEURL="$STATEURL/$CHANNEL/$INSTALLERNAME$DOWNLOADEXT"
-ARCHIVE="$TMPDIR/$INSTALLERNAME$DOWNLOADEXT"
-INSTALLER="$TMDIR/$INSTALLERNAME$BINARYEXT"
-if ! $FETCH $ARCHIVE $STATEURL ; then
-  error "Could not fetch the State Tool installer. Please try again."
+progress "Downloading Installer"
+STATEURL="$BASE_FILE_URL/$CHANNEL/$OS-amd64/$INSTALLERNAME$DOWNLOADEXT"
+ARCHIVE="$INSTALLERNAME$DOWNLOADEXT"
+if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
+  progress_fail
+  error "Could not fetch the State Tool installer at $STATEURL. Please try again."
   exit 1
 fi
+progress_done
 
-info "Extracting $ARCHIVE..."
+progress "Extracting Installer"
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
@@ -96,6 +117,7 @@ if [ $OS = "windows" ]; then
 else
   tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
 fi
-chmod +x $TMPDIR/$INSTALLER
+chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
+progress_done
 
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLER "$@"
+VERBOSE=true ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@"
