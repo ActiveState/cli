@@ -34,7 +34,7 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	targetPath := preferredPath
 	if targetPath == "" {
 		var err error
-		targetPath, err = r.promptForPath(namespace)
+		targetPath, err = r.getProjectPath(namespace)
 		if err != nil {
 			return "", err
 		}
@@ -53,45 +53,19 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	return targetPath, nil
 }
 
-func (r *NamespaceSelect) promptForPath(namespace string) (string, error) {
+func (r *NamespaceSelect) getProjectPath(namespace string) (string, error) {
 	// If no targetPath was given try to get it from our config (ie. previous activations)
 	paths := projectfile.GetProjectPaths(r.config, namespace)
 	if len(paths) > 0 {
-		targetPath, err := r.promptAvailablePaths(paths)
-		if err != nil {
-			return "", err
-		}
-		if targetPath != nil {
-			return *targetPath, nil
-		}
+		return paths[0], nil
 	}
 
-	// Is targetPath STILL nil? Prompt the user for a path
-	userPath, err := r.promptForPathInput(namespace)
+	targetPath, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return "", locale.NewError("err_get_wd", "Could not get current working directory")
 	}
 
-	return userPath, nil
-}
-
-func (r *NamespaceSelect) promptAvailablePaths(paths []string) (*string, error) {
-	if len(paths) == 0 {
-		return nil, nil
-	}
-
-	noneStr := locale.T("activate_select_optout")
-	choices := append(paths, noneStr)
-	var defaultPath string
-	path, err := r.prompter.Select(locale.Tl("activate_existing_title", "Existing Checkout"), locale.T("activate_namespace_existing"), choices, &defaultPath)
-	if err != nil {
-		return nil, err
-	}
-	if path != "" && path != noneStr {
-		return &path, nil
-	}
-
-	return nil, nil
+	return targetPath, nil
 }
 
 // promptForPathInput will prompt the user for a location to save the project at
