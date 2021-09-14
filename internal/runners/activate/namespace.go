@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
@@ -60,35 +58,12 @@ func (r *NamespaceSelect) getProjectPath(namespace string) (string, error) {
 		return paths[0], nil
 	}
 
-	targetPath, err := os.Getwd()
+	targetPath, err := getSafeWorkDir()
 	if err != nil {
-		return "", locale.NewError("err_get_wd", "Could not get current working directory")
+		return "", locale.NewError("err_get_wd", "Could not get safe working directory")
 	}
 
 	return targetPath, nil
-}
-
-// promptForPathInput will prompt the user for a location to save the project at
-func (r *NamespaceSelect) promptForPathInput(namespace string) (string, error) {
-	wd, err := getSafeWorkDir()
-	if err != nil {
-		return "", errs.Wrap(err, "Runtime failure")
-	}
-
-	defDir := filepath.Join(wd, namespace)
-	directory, err := r.prompter.Input(
-		locale.Tl("choose_dest", "Choose Destination"),
-		locale.Tr("activate_namespace_location", namespace), &defDir, prompt.InputRequired)
-	if err != nil {
-		return "", err
-	}
-	if directory == "" {
-		return "", locale.NewError("err_must_provide_directory")
-	}
-
-	logging.Debug("Using: %s", directory)
-
-	return directory, nil
 }
 
 func (r *NamespaceSelect) validatePath(namespace string, path string) error {

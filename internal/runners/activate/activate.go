@@ -140,12 +140,13 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	var projectfileCreated bool
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
+		projectfileCreated, err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}
@@ -250,6 +251,17 @@ func (r *Activate) run(params *ActivateParams) error {
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
+	}
+
+	if projectfileCreated {
+		r.out.Notice(locale.Tl(
+			"activate_configfile_created",
+			" • An [NOTICE]activestate.yaml[/RESET] file has been created for you at: [NOTICE]{{.V0}}[/RESET]", pathToUse,
+		))
+		r.out.Notice(locale.Tl(
+			"activate_configfile_manual",
+			" • To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag",
+		))
 	}
 
 	if err := r.activateAndWait(proj, venv); err != nil {
