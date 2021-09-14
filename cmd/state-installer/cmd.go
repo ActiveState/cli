@@ -93,7 +93,7 @@ func main() {
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
-		"State Tool Installer",
+		"",
 		"Installs or updates the State Tool",
 		out,
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
@@ -171,11 +171,10 @@ func main() {
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
 	out.Print(output.Title("Installing State Tool Package Manager\n"))
-	out.Print(`The State Tool lets you install and manage your language runtimes.
-
-ActiveState collects usage statistics and diagnostic data about failures. 
-By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, available at: 
-[ACTIONABLE]https://www.activestate.com/company/privacy-policy/[/RESET]` + "\n")
+	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
+		`ActiveState collects usage statistics and diagnostic data about failures. ` +
+		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` +
+		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy/[/RESET]` + "\n")
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
@@ -189,7 +188,7 @@ By using the State Tool Package Manager you agree to the terms of ActiveState’
 
 // installFromLocalSource is invoked when we're performing an installation where the payload is already provided
 func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	out.Fprint(os.Stdout, fmt.Sprintf(" • Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
+	out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
 
 	// Run installer
 	if err := NewInstaller(cfg, out, params).Run(); err != nil {
@@ -231,7 +230,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg)
-	update, err := checker.Check()
+	update, err := checker.CheckFor(params.branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
@@ -244,7 +243,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 		version = fmt.Sprintf("%s (%s)", version, params.branch)
 	}
 
-	out.Fprint(os.Stdout, fmt.Sprintf(" • Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
+	out.Fprint(os.Stdout, fmt.Sprintf("• Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
 	if _, err := update.DownloadAndUnpack(); err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
 		return errs.Wrap(err, "Could not download and unpack")
