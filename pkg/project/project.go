@@ -148,9 +148,15 @@ func (p *Project) Events() []*Event {
 	if err != nil {
 		logging.Warning("Could not filter unconstrained events: %v", err)
 	}
+
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
+	addedEvents := make(map[string]struct{})
 	for _, e := range es {
+		if _, ok := addedEvents[e.Name]; ok {
+			continue
+		}
+		addedEvents[e.Name] = struct{}{}
 		events = append(events, &Event{e, p})
 	}
 	return events

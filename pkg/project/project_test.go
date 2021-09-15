@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -127,6 +128,18 @@ func (suite *ProjectTestSuite) TestEvents() {
 		suite.Equal("baz", name, "Names should match (OSX)")
 		suite.Equal("baz OSX", value, "Value should match (OSX)")
 	}
+}
+
+func (suite *ProjectTestSuite) TestEvents_Duplicates() {
+	project, err := project.Parse(filepath.Join(suite.testdataDir, "events", constants.ConfigFileName))
+	suite.NoError(err)
+
+	events := project.Events()
+	suite.Equal(1, len(events), "Events do not contain duplicates")
+
+	value, err := events[0].Value()
+	suite.NoError(err)
+	suite.Equal("first-event", value, "Value of event should be first event in file")
 }
 
 func (suite *ProjectTestSuite) TestLanguages() {
