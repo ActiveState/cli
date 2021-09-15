@@ -138,6 +138,9 @@ func (r *Resolver) Quit(ctx context.Context) (<-chan bool, error) {
 	logging.Debug("Quit resolver")
 	done := make(chan bool)
 
+	// Each subscriber gets its own copy of a done channel. We wait on the main
+	// done channel and send a response once that channel is closed or a response
+	// is sent
 	go func() {
 		<-r.done
 		done <- true
