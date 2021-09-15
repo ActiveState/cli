@@ -136,5 +136,12 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 
 func (r *Resolver) Quit(ctx context.Context) (<-chan bool, error) {
 	logging.Debug("Quit resolver")
-	return r.done, nil
+	done := make(chan bool)
+
+	go func() {
+		<-r.done
+		done <- true
+	}()
+
+	return done, nil
 }
