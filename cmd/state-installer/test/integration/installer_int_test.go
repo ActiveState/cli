@@ -42,8 +42,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
-	suite.FileExists(appinfo.StateApp(filepath.Join(target)).Exec())
-	suite.FileExists(appinfo.SvcApp(filepath.Join(target)).Exec())
+	suite.FileExists(appinfo.StateApp(target).Exec())
+	suite.FileExists(appinfo.SvcApp(target).Exec())
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)

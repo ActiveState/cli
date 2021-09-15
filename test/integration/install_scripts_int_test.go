@@ -130,7 +130,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string
 // listFilesOnly is a helper function for assertBinDirContents and assertApplicationDirContents filtering a directory recursively for base filenames
 // It allows for simple and coarse checks if a file exists or does not exist in the directory structure
 func listFilesOnly(dir string) []string {
-	files := fileutils.ListDir(dir, true)
+	files := fileutils.ListDirSimple(dir, true)
 	files = funk.Filter(files, func(f string) bool {
 		return !fileutils.IsDir(f)
 	}).([]string)

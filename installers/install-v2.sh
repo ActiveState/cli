@@ -28,18 +28,21 @@ done
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
+  OUTPUT_DIM=""
   OUTPUT_OK=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
 else
   OUTPUT_BOLD=`tput bold`
+  OUTPUT_DIM=`tput setaf 8`
   OUTPUT_OK=`tput setaf 2`
   OUTPUT_ERROR=`tput setaf 1`
   OUTPUT_END=`tput sgr0`
 fi
 
 header () {
-  echo "░▒▓█ $OUTPUT_BOLD${1}$OUTPUT_END"
+  echo "${OUTPUT_DIM}░▒▓█${OUTPUT_END} $OUTPUT_BOLD${1}$OUTPUT_END"
+  echo ""
 }
 
 progress () {
@@ -119,5 +122,6 @@ else
 fi
 chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
 progress_done
+echo ""
 
-VERBOSE=true ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@"

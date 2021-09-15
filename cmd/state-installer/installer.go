@@ -27,22 +27,22 @@ type Installer struct {
 	*Params
 }
 
-func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) *Installer {
-	return &Installer{cfg: cfg, out: out, Params: params}
-}
-
-func (i *Installer) Run() error {
+func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
+	i := &Installer{cfg: cfg, out: out, Params: params}
 	if err := i.sanitize(); err != nil {
-		return errs.Wrap(err, "Could not sanitize input")
+		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
-	return i.install()
+
+	logging.Debug("Instantiated installer with source dir: %s", i.path)
+
+	return i, nil
 }
 
-func (i *Installer) install() (rerr error) {
+func (i *Installer) Install() (rerr error) {
 	if err := i.PrepareBinTargets(); err != nil {
 		return errs.Wrap(err, "Could not prepare for installation")
 	}
- 	
+
 	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := i.cfg.Set(analytics.CfgSessionToken, i.sessionToken); err != nil {
@@ -82,30 +82,35 @@ func (i *Installer) install() (rerr error) {
 	}
 
 	// Set up the environment
+	binDir := filepath.Join(i.path, "bin")
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 	shell := subshell.New(i.cfg)
-	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": filepath.Join(i.path, "bin")}, sscommon.InstallID, !isAdmin)
+	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(i.path).Exec(), "_prepare"); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(i.path).Exec(), []string{}); err != nil {
+		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(binDir).Exec(), []string{}); err != nil {
 			logging.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}
 
 	return nil
+}
+
+func (i *Installer) InstallPath() string {
+	return i.path
 }
 
 // sanitize cleans up the input and inserts fallback values

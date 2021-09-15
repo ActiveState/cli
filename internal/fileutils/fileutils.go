@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -515,6 +516,8 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 // If the target file exists already, the source file is first copied next to the target file, and then overwrites the target by renaming the source.
 // This method is more robust and than copying directly, in case the target file is opened or executed.
 func CopyAndRenameFiles(fromPath, toPath string) error {
+	logging.Debug("Copying files from %s to %s", fromPath, toPath)
+
 	if !DirExists(fromPath) {
 		return locale.NewError("err_os_not_a_directory", "", fromPath)
 	} else if !DirExists(toPath) {
@@ -522,20 +525,28 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 	}
 
 	// read all child files and dirs
-	dir, err := os.Open(fromPath)
+	files, err := ListDir(fromPath, true)
 	if err != nil {
-		return errs.Wrap(err, "os.Open %s failed", fromPath)
-	}
-	fileInfos, err := dir.Readdir(-1)
-	dir.Close()
-	if err != nil {
-		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
+		return errs.Wrap(err, "Could not ListDir %s", fromPath)
 	}
 
 	// any found files and dirs
-	for _, fileInfo := range fileInfos {
-		fromPath := filepath.Join(fromPath, fileInfo.Name())
-		toPath := filepath.Join(toPath, fileInfo.Name())
+	for _, file := range files {
+		rpath := file.RelativePath()
+		fromPath := filepath.Join(fromPath, rpath)
+		toPath := filepath.Join(toPath, rpath)
+
+		if file.IsDir() {
+			if err := MkdirUnlessExists(toPath); err != nil {
+				return errs.Wrap(err, "Could not create dir: %s", toPath)
+			}
+			continue
+		}
+
+		finfo, err := file.Info()
+		if err != nil {
+			return errs.Wrap(err, "Could not get file info for %s", file.RelativePath())
+		}
 
 		if TargetExists(toPath) {
 			tmpToPath := fmt.Sprintf("%s.new", toPath)
@@ -543,7 +554,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 			if err != nil {
 				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
 			}
-			err = os.Chmod(tmpToPath, fileInfo.Mode())
+			err = os.Chmod(tmpToPath, finfo.Mode())
 			if err != nil {
 				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
 			}
@@ -558,7 +569,7 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 			if err != nil {
 				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
 			}
-			err = os.Chmod(toPath, fileInfo.Mode())
+			err = os.Chmod(toPath, finfo.Mode())
 			if err != nil {
 				return errs.Wrap(err, "failed to set file permissions for %s", toPath)
 			}
@@ -898,11 +909,11 @@ func SymlinkTarget(symlink string) (string, error) {
 	return evalDest, nil
 }
 
-// ListDir recursively lists filepaths under the given sourcePath
+// ListDirSimple recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDir(sourcePath string, includeDirs bool) []string {
+func ListDirSimple(sourcePath string, includeDirs bool) []string {
 	result := []string{}
-	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+	filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not walk path: %s", path)
 		}
@@ -913,6 +924,44 @@ func ListDir(sourcePath string, includeDirs bool) []string {
 		return nil
 	})
 	return result
+}
+
+type DirEntry struct {
+	fs.DirEntry
+	absolutePath string
+	rootPath     string
+}
+
+func (d DirEntry) Path() string {
+	return d.absolutePath
+}
+
+func (d DirEntry) RelativePath() string {
+	// This is a bit awkward, but fs.DirEntry does not give us a relative path to the originally queried dir
+	return strings.TrimPrefix(d.absolutePath, d.rootPath)
+}
+
+// ListDir recursively lists filepaths under the given sourcePath
+// This does not follow symlinks
+func ListDir(sourcePath string, includeDirs bool) ([]DirEntry, error) {
+	result := []DirEntry{}
+	sourcePath = filepath.Clean(sourcePath)
+	if err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
+		if path == sourcePath {
+			return nil // I don't know why WalkDir feels the need to include the very dir I queried..
+		}
+		if err != nil {
+			return errs.Wrap(err, "Could not walk path: %s", path)
+		}
+		if includeDirs == false && f.IsDir() {
+			return nil
+		}
+		result = append(result, DirEntry{f, path, sourcePath + string(filepath.Separator)})
+		return nil
+	}); err != nil {
+		return result, errs.Wrap(err, "Could not walk dir: %s", sourcePath)
+	}
+	return result, nil
 }
 
 // PathInList returns whether the provided path list contains the provided

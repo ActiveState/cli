@@ -97,6 +97,7 @@ func ExecSimple(bin string, args ...string) (string, string, error) {
 }
 
 func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) {
+	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %v", dir, bin, args)
 	c := exec.Command(bin, args...)
 	if dir != "" {
 		c.Dir = dir

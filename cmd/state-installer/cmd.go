@@ -170,12 +170,6 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	out.Print(output.Title("Installing State Tool Package Manager\n"))
-	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
-		`ActiveState collects usage statistics and diagnostic data about failures. ` +
-		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` +
-		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy/[/RESET]` + "\n")
-
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
 		return installFromLocalSource(out, cfg, args, params)
@@ -188,10 +182,15 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 
 // installFromLocalSource is invoked when we're performing an installation where the payload is already provided
 func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", params.path))
+	installer, err := NewInstaller(cfg, out, params)
+	if err != nil {
+		out.Print("[ERROR]x Failed[/RESET]")
+		return err
+	}
+	out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
 
 	// Run installer
-	if err := NewInstaller(cfg, out, params).Run(); err != nil {
+	if err := installer.Install(); err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
 		return err
 	}
@@ -216,6 +215,11 @@ func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []st
 		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activateDefault.String(), "--default"}, []string{}); err != nil {
 			return errs.Wrap(err, "Could not activate %s", params.activateDefault.String())
 		}
+	default:
+		out.Print("")
+		out.Print(output.Title("Installation Complete"))
+		out.Print("")
+		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
 	}
 
 	return nil
@@ -226,10 +230,17 @@ func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []st
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
 func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	out.Print(output.Title("Installing State Tool Package Manager\n"))
+	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
+		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
+		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` +
+		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
+
 	args = append(args, "--from-deferred")
 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg)
+	checker.VerifyVersion = false
 	update, err := checker.CheckFor(params.branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")

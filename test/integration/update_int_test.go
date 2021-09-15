@@ -90,7 +90,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExes()
 
-	before := fileutils.ListDir(ts.Dirs.Config, false)
+	before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates, testUpdate)...))
 	cp.ExpectExitCode(0)
@@ -98,7 +98,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	if !disableUpdates {
 		// short timeout to wait for installation log file to be created
 		time.Sleep(500 * time.Millisecond)
-		after := fileutils.ListDir(ts.Dirs.Config, false)
+		after := fileutils.ListDirSimple(ts.Dirs.Config, false)
 		onlyAfter, _ := funk.Difference(after, before)
 		logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
 		if ok {
@@ -158,7 +158,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 
 func (suite *UpdateIntegrationTestSuite) pollForUpdateInBackground(configDir string, beforeFiles []string) string {
 	for i := 0; i < 10; i++ {
-		after := fileutils.ListDir(configDir, false)
+		after := fileutils.ListDirSimple(configDir, false)
 		onlyAfter, _ := funk.Difference(after, beforeFiles)
 		logFile, ok := funk.FindString(onlyAfter.([]string), func(s string) bool { return strings.HasPrefix(filepath.Base(s), "state-installer") })
 		if ok {
@@ -269,7 +269,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 			err = fileutils.Mkdir(fakeHome)
 			suite.Require().NoError(err)
 
-			before := fileutils.ListDir(ts.Dirs.Config, false)
+			before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 
 			cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, tt.TestUpdate)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
@@ -330,7 +330,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, tt.TestUpdate)...))
 			cp.ExpectExitCode(0)
 
-			before := fileutils.ListDir(ts.Dirs.Config, false)
+			before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 
 			info, err := os.Stat(ts.Exe)
 			suite.Require().NoError(err)
@@ -411,7 +411,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
-	before := fileutils.ListDir(ts.Dirs.Config, false)
+	before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.NonWriteableBinDir())
 	cp.Expect("Updating State Tool to latest version available")
@@ -480,7 +480,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 				suite.Assert().Equal(tagName, cfg.GetString(updater.CfgUpdateTag))
 			}
 
-			before := fileutils.ListDir(ts.Dirs.Config, false)
+			before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 			cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
 			cp.Expect("Updating State Tool to latest version available")
 			if tt.expectSuccess {

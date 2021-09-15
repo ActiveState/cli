@@ -93,7 +93,9 @@ env:
 #@ def steps_genupdate():
 name: "Generate Update"
 shell: bash
-run: state run generate-update
+run: |
+  state run generate-update
+  state run generate-legacy-update
 #@ end
 ---
 #@ def steps_gentest_update():

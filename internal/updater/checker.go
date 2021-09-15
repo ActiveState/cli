@@ -28,6 +28,8 @@ type Checker struct {
 	currentChannel string
 	currentVersion string
 	httpreq        httpGetter
+
+	VerifyVersion bool
 }
 
 func NewDefaultChecker(cfg Configurable) *Checker {
@@ -50,6 +52,7 @@ func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersi
 		currentChannel,
 		currentVersion,
 		httpget,
+		true,
 	}
 }
 
@@ -63,7 +66,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
 
-	if info == nil || (info.Channel == u.currentChannel && info.Version == u.currentVersion) {
+	if info == nil || (u.VerifyVersion && info.Channel == u.currentChannel && info.Version == u.currentVersion) {
 		return nil, nil
 	}
 

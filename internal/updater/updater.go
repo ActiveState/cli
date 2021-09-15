@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -59,8 +60,8 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	u.tmpDir = tmpDir
-	return tmpDir, nil
+	u.tmpDir = filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir)
+	return u.tmpDir, nil
 }
 
 func (u *AvailableUpdate) prepareInstall(args []string) (string, []string, error) {
@@ -69,7 +70,8 @@ func (u *AvailableUpdate) prepareInstall(args []string) (string, []string, error
 		return "", nil, err
 	}
 
-	installerPath := filepath.Join(sourcePath, constants.ToplevelInstallArchiveDir, InstallerName)
+	installerPath := filepath.Join(sourcePath, InstallerName)
+	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		return "", nil, errs.Wrap(err, "Downloaded update does not have installer")
 	}
