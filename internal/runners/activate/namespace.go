@@ -27,19 +27,19 @@ func NewNamespaceSelect(config *config.Instance, prime primeable) *NamespaceSele
 	return &NamespaceSelect{config, prime.Prompt()}
 }
 
-func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, error) {
+func (r *NamespaceSelect) Run(name string, preferredPath string) (string, error) {
 	// Detect targetPath either by preferredPath or by prompting the user
 	targetPath := preferredPath
 	if targetPath == "" {
 		var err error
-		targetPath, err = r.getProjectPath(namespace)
+		targetPath, err = r.getProjectPath(name)
 		if err != nil {
 			return "", err
 		}
 	}
 
 	// Validate that target path doesn't contain a config for a different namespace
-	if err := r.validatePath(namespace, targetPath); err != nil {
+	if err := r.validatePath(name, targetPath); err != nil {
 		return "", err
 	}
 
@@ -51,9 +51,8 @@ func (r *NamespaceSelect) Run(namespace string, preferredPath string) (string, e
 	return targetPath, nil
 }
 
-func (r *NamespaceSelect) getProjectPath(namespace string) (string, error) {
-	// If no targetPath was given try to get it from our config (ie. previous activations)
-	paths := projectfile.GetProjectPaths(r.config, namespace)
+func (r *NamespaceSelect) getProjectPath(name string) (string, error) {
+	paths := projectfile.GetProjectPaths(r.config, name)
 	if len(paths) > 0 {
 		return paths[0], nil
 	}
@@ -63,7 +62,7 @@ func (r *NamespaceSelect) getProjectPath(namespace string) (string, error) {
 		return "", locale.NewError("err_get_wd", "Could not get safe working directory")
 	}
 
-	return targetPath, nil
+	return filepath.Join(targetPath, name), nil
 }
 
 func (r *NamespaceSelect) validatePath(namespace string, path string) error {

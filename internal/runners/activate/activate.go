@@ -111,7 +111,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace.Project, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -307,11 +307,11 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
+func (r *Activate) pathToUse(name string, preferredPath string) (string, error) {
 	switch {
-	case namespace != "":
+	case name != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return r.namespaceSelect.Run(namespace, preferredPath)
+		return r.namespaceSelect.Run(name, preferredPath)
 	case preferredPath != "":
 		// Use the user provided path
 		return preferredPath, nil
