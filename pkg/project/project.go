@@ -151,15 +151,20 @@ func (p *Project) Events() []*Event {
 
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
-	addedEvents := make(map[string]struct{})
 	for _, e := range es {
-		if _, ok := addedEvents[e.Name]; ok {
-			continue
-		}
-		addedEvents[e.Name] = struct{}{}
 		events = append(events, &Event{e, p})
 	}
 	return events
+}
+
+// EventByName returns a reference to a projectfile.Script with a given name.
+func (p *Project) EventByName(name string) *Event {
+	for _, event := range p.Events() {
+		if event.Name() == name {
+			return event
+		}
+	}
+	return nil
 }
 
 // Scripts returns a reference to projectfile.Scripts
