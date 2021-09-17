@@ -3,6 +3,7 @@ package cmdtree
 import (
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -269,6 +270,10 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 			return runner.Run(ccmd.Usage)
 		},
 	)
+
+	cmdCall := cmdcall.New(prime)
+
+	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
 }
