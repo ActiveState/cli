@@ -29,21 +29,20 @@ func NewCheckout(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (bool, error) {
-	var created bool
+func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) error {
 	if !ns.IsValid() {
-		return created, locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
+		return locale.NewError("err_namespace_invalid", "Invalid namespace: {{.V0}}.", ns.String())
 	}
 
 	pj, err := model.FetchProjectByName(ns.Owner, ns.Project)
 	if err != nil {
-		return created, err
+		return err
 	}
 
 	if branchName == "" {
 		branch, err := model.DefaultBranchForProject(pj)
 		if err != nil {
-			return created, errs.Wrap(err, "Could not grab branch for project")
+			return errs.Wrap(err, "Could not grab branch for project")
 		}
 		branchName = branch.Label
 	}
@@ -52,26 +51,26 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (b
 	if commitID == nil {
 		branch, err := model.BranchForProjectByName(pj, branchName)
 		if err != nil {
-			return created, err
+			return err
 		}
 		commitID = branch.CommitID
 	}
 
 	if commitID == nil {
-		return created, errs.New("commitID is nil")
+		return errs.New("commitID is nil")
 	}
 
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil && *pj.RepoURL != "" {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
 		if err != nil {
-			return created, err
+			return err
 		}
 	}
 
 	language, err := getLanguage(*commitID)
 	if err != nil {
-		return created, err
+		return err
 	}
 
 	// Create the config file, if the repo clone didn't already create it
@@ -86,12 +85,11 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (b
 			Language:   language,
 		})
 		if err != nil {
-			return created, err
+			return err
 		}
-		created = true
 	}
 
-	return created, nil
+	return nil
 }
 
 func getLanguage(commitID strfmt.UUID) (string, error) {

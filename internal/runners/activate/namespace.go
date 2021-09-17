@@ -1,12 +1,12 @@
 package activate
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-// NamespaceSelect will select the right directory associated with a namespace, and chdir into it
+// NamespaceSelect will select the right directory associated with a namespace
 type NamespaceSelect struct {
 	config   *config.Instance
 	prompter prompt.Prompter
@@ -27,20 +27,15 @@ func NewNamespaceSelect(config *config.Instance, prime primeable) *NamespaceSele
 	return &NamespaceSelect{config, prime.Prompt()}
 }
 
-func (r *NamespaceSelect) Run(name string, preferredPath string) (string, error) {
+func (r *NamespaceSelect) Run(namespace *project.Namespaced, preferredPath string) (string, error) {
 	// Detect targetPath either by preferredPath or by prompting the user
 	targetPath := preferredPath
 	if targetPath == "" {
 		var err error
-		targetPath, err = r.getProjectPath(name)
+		targetPath, err = r.getProjectPath(namespace)
 		if err != nil {
 			return "", err
 		}
-	}
-
-	// Validate that target path doesn't contain a config for a different namespace
-	if err := r.validatePath(name, targetPath); err != nil {
-		return "", err
 	}
 
 	err := fileutils.MkdirUnlessExists(targetPath)
@@ -48,11 +43,16 @@ func (r *NamespaceSelect) Run(name string, preferredPath string) (string, error)
 		return "", err
 	}
 
+	// Validate that target path doesn't contain a config for a different namespace
+	if err := r.validatePath(namespace.Project, targetPath); err != nil {
+		return "", err
+	}
+
 	return targetPath, nil
 }
 
-func (r *NamespaceSelect) getProjectPath(name string) (string, error) {
-	paths := projectfile.GetProjectPaths(r.config, name)
+func (r *NamespaceSelect) getProjectPath(namespace *project.Namespaced) (string, error) {
+	paths := projectfile.GetProjectPaths(r.config, namespace.String())
 	if len(paths) > 0 {
 		return paths[0], nil
 	}
@@ -62,13 +62,25 @@ func (r *NamespaceSelect) getProjectPath(name string) (string, error) {
 		return "", locale.NewError("err_get_wd", "Could not get safe working directory")
 	}
 
-	return filepath.Join(targetPath, name), nil
+	return filepath.Join(targetPath, namespace.Project), nil
 }
 
-func (r *NamespaceSelect) validatePath(namespace string, path string) error {
+func (r *NamespaceSelect) validatePath(name string, path string) error {
+	empty, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		return locale.WrapError(err, "err_namespace_empty_dir", "Could not verify if directory is empty")
+	}
+	if empty {
+		return nil
+	}
+
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
-		return nil
+		// Directory is not empty and does not contain a config file
+		return errs.AddTips(
+			locale.NewError("err_directory_in_use", "Destination directory is not empty"),
+			locale.T("custom_path_tip", "To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag"),
+		)
 	}
 
 	pj, err := project.Parse(configFile)
@@ -76,9 +88,8 @@ func (r *NamespaceSelect) validatePath(namespace string, path string) error {
 		return err
 	}
 
-	pjns := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
-	if !pj.IsHeadless() && pjns != namespace {
-		return locale.NewInputError("err_target_path_namespace_match", "", namespace, pjns)
+	if !pj.IsHeadless() && pj.Name() != name {
+		return locale.NewInputError("err_target_path_namespace_match", "", name, pj.Name())
 	}
 
 	return nil

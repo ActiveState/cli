@@ -111,7 +111,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace.Project, params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -140,13 +140,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	var projectfileCreated bool
 	if proj == nil {
 		if params.Namespace == nil || !params.Namespace.IsValid() {
 			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
 		}
 
-		projectfileCreated, err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
+		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
 			return err
 		}
@@ -253,17 +252,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if projectfileCreated {
-		r.out.Notice(locale.Tl(
-			"activate_configfile_created",
-			" • An [NOTICE]activestate.yaml[/RESET] file has been created for you at: [NOTICE]{{.V0}}[/RESET]", pathToUse,
-		))
-		r.out.Notice(locale.Tl(
-			"activate_configfile_manual",
-			" • To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag",
-		))
-	}
-
 	if err := r.activateAndWait(proj, venv); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
@@ -307,11 +295,11 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(name string, preferredPath string) (string, error) {
+func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
 	switch {
-	case name != "":
+	case namespace != nil:
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return r.namespaceSelect.Run(name, preferredPath)
+		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
 		// Use the user provided path
 		return preferredPath, nil
