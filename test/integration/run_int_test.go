@@ -113,7 +113,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("Default Project")
 	cp.Expect("y/N")
 	cp.Send("n")
-	cp.Expect("Language sucessfully installed")
+	cp.Expect("sucessfully installed")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -147,7 +147,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 	cp.Expect("Default Project")
 	cp.Expect("y/N")
 	cp.Send("n")
-	cp.Expect("Language sucessfully installed")
+	cp.Expect("sucessfully installed")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("helloWorld")
@@ -244,7 +244,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	cp.Expect("y/N")
 	cp.Send("n")
 
-	cp.Expect("Language sucessfully installed")
+	cp.Expect("sucessfully installed")
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
