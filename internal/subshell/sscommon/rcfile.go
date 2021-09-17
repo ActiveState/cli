@@ -226,6 +226,10 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, eventType := range project.ActivateEvents() {
 		event := prj.EventByName(eventType.String())
+		if event == nil {
+			continue
+		}
+
 		v, err := event.Value()
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not get event value")
