@@ -54,7 +54,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully installed")
+	cp.Expect("sucessfully activated")
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
@@ -74,7 +74,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 
-	cp.Expect("sucessfully installed", 20*time.Second)
+	cp.Expect("sucessfully activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -92,7 +92,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully installed", 20*time.Second)
+	cp.Expect("sucessfully activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -258,7 +258,7 @@ version: %s
 	c2 := ts.Spawn("activate")
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully installed")
+	c2.Expect("sucessfully activated")
 
 	// not waiting for activation, as we test that part in a different test
 	c2.WaitForInput(20 * time.Second)
@@ -323,7 +323,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully installed")
+	cp.Expect("sucessfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -364,7 +364,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully installed")
+	cp.Expect("sucessfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -382,7 +382,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 
-	cp.Expect("sucessfully installed")
+	cp.Expect("sucessfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -417,7 +417,7 @@ version: %s
 	)
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully installed")
+	c2.Expect("sucessfully activated")
 
 	c2.WaitForInput(20 * time.Second)
 	c2.SendLine("exit")
@@ -459,7 +459,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	c2.ExpectLongString("ActiveState-CLI/Python2")
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully installed")
+	c2.Expect("sucessfully activated")
 
 	c2.WaitForInput(20 * time.Second)
 	if runtime.GOOS == "windows" {
@@ -589,7 +589,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	cp := ts.Spawn("activate")
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully installed")
+	cp.Expect("sucessfully activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
