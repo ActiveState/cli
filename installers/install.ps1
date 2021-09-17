@@ -17,10 +17,7 @@ param (
     ,[Parameter(Mandatory=$False)][switch]$f
     ,[Parameter(Mandatory=$False)][string]$c
     ,[Parameter(Mandatory=$False)][switch]$h
-    ,[Parameter(Mandatory=$False)]
-        [ValidateScript({[IO.Path]::GetExtension($_) -eq '.exe'})]
-        [string]
-        $e = "state.exe"
+    ,[Parameter(Mandatory=$False)][string]$v
     ,[Parameter(Mandatory=$False)][string]$activate = ""
     ,[Parameter(Mandatory=$False)][string]${activate-default} = ""
 )
@@ -33,9 +30,9 @@ $Env:ACTIVESTATE_PROJECT=""
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
 $script:TARGET = ($t).Trim()
-$script:STATEEXE = ($e).Trim()
-$script:STATE = $e.Substring(0, $e.IndexOf("."))
+$script:STATEEXE = "state.exe"
 $script:BRANCH = ($b).Trim()
+$script:VERSION = ($v).Trim()
 $script:POST_INSTALL_COMMAND = ($c).Trim()
 $script:ACTIVATE = ($activate).Trim()
 $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
@@ -43,13 +40,14 @@ $script:ACTIVATE_DEFAULT = (${activate-default}).Trim()
 $script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
 $script:SESSION_TOKEN = "{TOKEN}"
 $script:SESSION_TOKEN_VALUE = ""
+$script:UPDATE_TAG = ""
 
 if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
   $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
 # For recipe installation without prompts we need to be able to disable
-# prompots through an environment variable.
+# prompts through an environment variable.
 if ($Env:NOPROMPT_INSTALL -eq "true") {
     $script:NOPROMPT = $true
     $script:FORCEOVERWRITE = $true
@@ -57,24 +55,6 @@ if ($Env:NOPROMPT_INSTALL -eq "true") {
 
 # Some cmd-lets throw exceptions that don't stop the script.  Force them to stop.
 $ErrorActionPreference = "Stop"
-
-# Helpers
-function notifySettingChange(){
-    $HWND_BROADCAST = [IntPtr] 0xffff;
-    $WM_SETTINGCHANGE = 0x1a;
-    $result = [UIntPtr]::Zero
-
-    if (-not ("Win32.NativeMethods" -as [Type]))
-    {
-        # import sendmessagetimeout from win32
-        Add-Type -Namespace Win32 -Name NativeMethods -MemberDefinition @"
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
-"@
-    }
-    # notify all windows of environment block change
-    [Win32.Nativemethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result) | Out-Null;
-}
 
 function isAdmin
 {
@@ -183,24 +163,13 @@ function warningIfadmin() {
     }
 }
 
-function runPreparationStep($installDirectory) {
-    $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
-    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
-    if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
-        Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
-    }
-    if (Test-Path env:ACTIVESTATE_UPDATE_TAG) {
-        Remove-Item Env:\ACTIVESTATE_UPDATE_TAG
-    }
-    return $LASTEXITCODE
-}
-
 function displayConsent() {
     $consentText="
 ActiveState collects usage statistics and diagnostic data about failures. The collected data complies with ActiveState Privacy Policy (https://www.activestate.com/company/privacy-policy/) and will be used to identify product enhancements, help fix defects, and prevent abuse.
 
 By running the State Tool installer you consent to the Privacy Policy. This is required for the State Tool to operate while we are still in beta.
+
+Please note that the installer may have to modify your system environment to add the installation PATH.
 "
     Write-Host $consentText
 }
@@ -208,22 +177,38 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
 function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
     $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
-    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info/legacy?channel=$script:BRANCH&platform=windows&source=install"
+    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info?channel=$script:BRANCH&platform=windows&source=install"
     
     Write-Host "Preparing for installation...`n"
 
-    # Get version and checksum
-    Write-Host "Determining latest version...`n"
-    try{
-        $versionedJson = ConvertFrom-Json -InputObject (download $jsonURL)
-    } catch [System.Exception] {
-        Write-Warning "Unable to retrieve the latest version number from $jsonURL"
-        Write-Error $_.Exception.Message
-        return 1
+    if ($script:VERSION -ne "") {
+        Write-Host "Attempting to fetch version: $script:VERSION...`n"
+        $jsonURL = "$jsonURL&target-version=$script:VERSION"
+        $script:DISABLE_RECURSIVE_UPDATES="true"
+
+        try {
+            $jsonString = download $jsonURL
+        } catch [System.Exception] {
+            Write-Error "Could not fetch version: $script:VERSION, please verify the version number and try again."
+            return 1
+        }
+
+        $infoJson = ConvertFrom-Json -InputObject $jsonString
+        $version = $script:VERSION
+
+        Write-Host "Fetching version: $version...`n"
+    } else {
+        Write-Host "Determining latest version...`n"
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+        $version = $infoJson.Version
+
+        Write-Host "Fetching the latest version: $version...`n"
     }
-    $latestChecksum = $versionedJson.Sha256v2
-    $latestVersion = $versionedJson.Version
-    $script:UPDATE_TAG = $versionedJson.Tag
+
+    $script:UPDATE_TAG = $infoJson.Tag
+    $checksum = $infoJson.Sha256
+    $relUrl = $infoJson.Path
+    $zipUrl = "$FILE_URL/$relurl"
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -232,8 +217,6 @@ function fetchArtifacts($downloadDir, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$FILE_URL/$script:BRANCH/$latestVersion/$statepkg"
-    Write-Host "Fetching the latest version: $latestVersion...`n"
     try{
         download $zipURL $zipPath
     } catch [System.Exception] {
@@ -246,9 +229,9 @@ function fetchArtifacts($downloadDir, $statepkg) {
     # Check the sums
     Write-Host "Verifying checksums...`n"
     $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-    if ($hash -ne $latestChecksum){
+    if ($hash -ne $checksum){
         Write-Warning "SHA256 sum did not match:"
-        Write-Warning "Expected: $latestChecksum"
+        Write-Warning "Expected: $checksum"
         Write-Warning "Received: $hash"
         Write-Warning "Aborting installation"
         return 1
@@ -294,7 +277,6 @@ function install() {
     -b <branch>          Default 'release'.  Specify an alternative branch to install from (eg. beta)
     -n                   Don't prompt for anything, just install and override any existing executables
     -t <dir>             Install target dir
-    -f <file>            Default 'state.exe'.  Binary filename to use
     -c <command>         Run any command after the install script has completed
     -activate <project>  Activate a project when State Tools is correctly installed
     -h                   Show usage information (what you're currently reading)"
@@ -326,26 +308,12 @@ function install() {
     Write-Host "╚═══════════════════════╝" -ForegroundColor DarkGray;
 
     # $ENV:PROCESSOR_ARCHITECTURE == AMD64 | x86
+    $installerexe = (Join-Path "state-install" "state-installer.exe")
     if (test-64Bit) {
         $statepkg="windows-amd64.zip"
-        $stateexe="windows-amd64.exe"
-
     } else {
         Write-Warning "Windows platform taget is 32bit.  Only 64bit builds are support at the moment."
         return 1
-    }
-
-    # Get the install directory and ensure we have permissions on it.
-    # If the user provided an install dir we do no verification.
-    if ($script:TARGET) {
-        $installDir = $script:TARGET
-    } else {
-        $installDir = (Join-Path $Env:APPDATA (Join-Path "ActiveState" "bin"))
-        if (-Not (hasWritePermission $Env:APPDATA)){
-            Write-Warning "Do not have write permissions to: '$Env:APPDATA'"
-            Write-Warning "Aborting installation"
-            return 1
-        }
     }
 
     $existing = getExistingOnPath
@@ -367,27 +335,10 @@ function install() {
         }
     }
 
-    # Install binary
-    Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
+    Write-Host "`nInstalling ActiveState State Tool...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
         if( -Not (promptYN "Accept terms and proceed with install?") ) {
             return 2
-        }
-    }
-
-    #  If the install dir doesn't exist
-    $installPath = Join-Path $installDir $script:STATEEXE
-    if( -Not (Test-Path -LiteralPath $installDir)) {
-        Write-host "NOTE: $installDir will be created`n"
-        New-Item -Path $installDir -ItemType Directory | Out-Null
-    } else {
-        if(Test-Path -LiteralPath $installPath -PathType Leaf) {
-            Remove-Item $installPath -Erroraction 'silentlycontinue' -ErrorVariable err
-            $occurance = errorOccured $False "$err"
-            if($occurance[0]){
-                Write-Host "Aborting Installation" -ForegroundColor Yellow
-                return 1
-            }
         }
     }
 
@@ -396,18 +347,43 @@ function install() {
     if ($err -eq 1){
         return 1
     }
-    Move-Item (Join-Path $tmpParentPath $stateexe) $installPath
+
+    $InstallerPath = Join-Path -Path $tmpParentPath -ChildPath $installerexe
+
+    # Disable auto-updates if a specific version was requested
+    $env:ACTIVESTATE_CLI_DISABLE_UPDATES = $script:DISABLE_RECURSIVE_UPDATES
+    $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
+    if ($script:TARGET) {
+        & "$InstallerPath" "$script:TARGET" 2>&1 | Tee-Object -Variable output | Write-Host
+    } else {
+        & "$InstallerPath" 2>&1 | Tee-Object -Variable output | Write-Host
+    }
+    if (Test-Path env:ACTIVESTATE_SESSION_TOKEN) {
+        Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+    }
+    if (Test-Path env:ACTIVESTATE_UPDATE_TAG) {
+        Remove-Item Env:\ACTIVESTATE_UPDATE_TAG
+    }
+
+    $outputString = $output | Out-String
+    $match = $outputString -match "Install Location: (?<content>[^\s]+)"
+    if ($match) {
+        $installDir = $Matches['content']
+    } else {
+        Write-Error "Unexpected installer output"
+        return 1
+    }
 
     # Write install file
     $StatePath = Join-Path -Path $installDir -ChildPath $script:STATEEXE
-    $Command = "`"$StatePath`" export config --filter=dir"
+    $Command = "`"$StatePath`" --output=simple export config --filter=dir"
     $ConfigDir = Invoke-Expression "& $Command" | Out-String
     $InstallFilePath = Join-Path -Path $ConfigDir.Trim() -ChildPath "installsource.txt"
     "install.ps1" | Out-File -Encoding ascii -FilePath $InstallFilePath
 
-    $prepExitCode = runPreparationStep $installDir
-    if ($prepExitCode -ne 0) {
-        return $prepExitCode
+    if (Test-Path env:ACTIVESTATE_CLI_DISABLE_UPDATES) {
+        Remove-Item Env:\ACTIVESTATE_CLI_DISABLE_UPDATES
     }
 
     # Check if installation is in $PATH
@@ -423,41 +399,19 @@ function install() {
         Write-Host "╚══════════════════════╝" -ForegroundColor DarkGreen;
 
         warningIfAdmin
-        return
+        return 0
     }
-
-    $PATH = [Environment]::GetEnvironmentVariable("PATH")
-    if (!$PATH.Contains($installDir)) {
-        # Update PATH for State Tool installation directory
-        $envTarget = [EnvironmentVariableTarget]::User
-        $envTargetName = "user"
-        if (isAdmin) {
-            $envTarget = [EnvironmentVariableTarget]::Machine
-            $envTargetName = "system"
-        }
-
-        Write-Host "Updating environment...`n"
-        Write-Host "Adding $installDir to $envTargetName PATH`n"
-        # This only sets it in the registry and it will NOT be accessible in the current session
-        [Environment]::SetEnvironmentVariable(
-            'Path',
-            $installDir + ";" + [Environment]::GetEnvironmentVariable(
-                'Path', $envTarget),
-            $envTarget)
-
-        notifySettingChange
-
-        $env:Path = $installDir + ";" + $env:Path
-    }
-
 
     warningIfAdmin
-    Write-Host "State Tool successfully installed to: $installDir." -ForegroundColor Yellow
-    Write-Host "Please close your current terminal window and open a CMD prompt in order to start using the 'state.exe' program.  Powershell support is coming soon." -ForegroundColor Yellow
-    return
+    Write-Host "State Tool successfully installed." -ForegroundColor Yellow
+    Write-Host "Reminder: Start a new shell in order to start using the State Tool." -ForegroundColor Yellow
+
+    # Ensure that the new install dir is on the PATH variable for follow-up commands
+    $Env:PATH = "$installDir;$Env:PATH"
+    return 0
 }
 
-$code = install
+$code = install | Select-Object -Last 1
 if (($null -eq $code) -or ($code -eq 0)) {
     if ($script:POST_INSTALL_COMMAND) {
         # Extract executable from post install command string
