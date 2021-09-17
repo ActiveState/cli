@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -144,6 +145,7 @@ var (
 )
 
 func init() {
+	defer handlePanics(recover(), debug.Stack())
 	defer profile.Measure("analytics:Init", time.Now())
 	CustomDimensions = &customDimensions{}
 	setup()
@@ -221,6 +223,7 @@ func Configure(cfg configurable) {
 func Event(category string, action string) {
 	eventWaitGroup.Add(1)
 	go func() {
+		defer handlePanics(recover(), debug.Stack())
 		defer eventWaitGroup.Done()
 		event(category, action)
 	}()
@@ -232,8 +235,10 @@ func event(category string, action string) {
 
 // EventWithLabel logs an event with a label to google analytics
 func EventWithLabel(category string, action string, label string) {
+	defer handlePanics(recover(), debug.Stack())
 	eventWaitGroup.Add(1)
 	go func() {
+		defer handlePanics(recover(), debug.Stack())
 		defer eventWaitGroup.Done()
 		eventWithLabel(category, action, label)
 	}()
@@ -267,6 +272,7 @@ func sendEvent(category, action, label string, dimensions map[string]string) err
 }
 
 func sendGAEvent(category, action, label string, dimensions map[string]string) {
+	defer handlePanics(recover(), debug.Stack())
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending Google Analytics event with: %s, %s, %s", category, action, label)
 
@@ -290,6 +296,7 @@ func sendGAEvent(category, action, label string, dimensions map[string]string) {
 }
 
 func sendS3Pixel(category, action, label string, dimensions map[string]string) {
+	defer handlePanics(recover(), debug.Stack())
 	defer eventWaitGroup.Done()
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
@@ -315,4 +322,12 @@ func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 		logging.Error("Could not download S3 pixel: %v", err)
 		return
 	}
+}
+
+func handlePanics(err interface{}, stack []byte) {
+	if err == nil {
+		return
+	}
+	logging.Error("Panic in analytics: %v", err)
+	logging.Debug("Stack: %s", string(stack))
 }

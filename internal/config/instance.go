@@ -119,7 +119,7 @@ func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{})
 	}
 	defer q.Close()
 
-	valueMarshaled, err := json.Marshal(v)
+	valueMarshaled, err := yaml.Marshal(v)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal config value: %v", v)
 	}
@@ -156,9 +156,11 @@ func (i *Instance) get(key string) interface{} {
 	}
 
 	var result interface{}
-	if err := json.Unmarshal([]byte(value), &result); err != nil {
-		logging.Error("config:get unmarshal failed: %s", errs.JoinMessage(err))
-		return nil
+	if err := yaml.Unmarshal([]byte(value), &result); err != nil {
+		if err2 := json.Unmarshal([]byte(value), &result); err2 != nil {
+			logging.Error("config:get unmarshal failed: %s (json err: %s)", errs.JoinMessage(err), errs.JoinMessage(err2))
+			return nil
+		}
 	}
 
 	return result
@@ -241,9 +243,13 @@ func (i *Instance) importLegacyConfig() (returnErr error) {
 		return errs.Wrap(err, "Could not read legacy config file at %s", fpath)
 	}
 
+	return i.importLegacyConfigFromBlob(b)
+}
+
+func (i *Instance) importLegacyConfigFromBlob(b []byte) (returnErr error) {
 	var data map[string]interface{}
 	if err := yaml.Unmarshal(b, &data); err != nil {
-		return errs.Wrap(err, "Could not unmarshal legacy config file at %s", fpath)
+		return errs.Wrap(err, "Could not unmarshal legacy config file")
 	}
 
 	for k, v := range data {
