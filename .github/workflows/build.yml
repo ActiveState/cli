@@ -111,7 +111,9 @@ jobs:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
     - name: Generate Update
       shell: bash
-      run: state run generate-update
+      run: |
+        state run generate-update
+        state run generate-legacy-update
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
@@ -192,6 +194,73 @@ jobs:
         sudo apt-get update
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+  deploy_versioned:
+    if: ("github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' &&
+      github.ref != 'refs/heads/release'") || contains(github.event.pull_request.labels.*.name,
+      'run integration tests')
+    name: Deploy Versioned
+    needs:
+    - build
+    - unittest
+    runs-on: ubuntu-20.04
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Setup
+      shell: bash
+      run: |
+        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+        echo "Adding $bin to PATH"
+        echo "$bin" >> $GITHUB_PATH
+        printenv
+    - name: Download All Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: build/
+    - name: Sanitize All Session Artifacts
+      shell: bash
+      run: |
+        cd build
+        rm -Rf session-shared-build
+        find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+        rm -Rf session*
+    - name: Preprocess
+      shell: bash
+      run: |
+        state run preprocess
+    - name: Cleanup Build Dir
+      shell: bash
+      run: rm build/state* || true
+    - name: Cleanup Non-Versioned Update Files
+      shell: bash
+      run: |
+        BRANCHDIR=$(echo $GITHUB_REF | sed -En "s#refs/heads/##p")
+        rm build/update/*.json
+        rm $BRANCHDIR/*.json
+    - name: Deploy Versioned
+      shell: bash
+      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
+        github.ref)
+      run: |
+        state run deploy-updates
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build/
   inttest_critical:
     if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
       != 'refs/heads/release'
@@ -205,6 +274,8 @@ jobs:
         - macos-latest
         - windows-latest
       fail-fast: false
+    needs:
+    - deploy_versioned
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -260,7 +331,9 @@ jobs:
       run: state run build-transitional-update
     - name: Generate Update
       shell: bash
-      run: state run generate-update
+      run: |
+        state run generate-update
+        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update
@@ -284,7 +357,7 @@ jobs:
       run: |
         export SHELL=''
         set +e
-        go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
+        go test -timeout 10m `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
         testCode=$?
         exit ${testCode}
       env:
@@ -303,6 +376,8 @@ jobs:
         - macos-latest
         - windows-latest
       fail-fast: false
+    needs:
+    - deploy_versioned
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -358,7 +433,9 @@ jobs:
       run: state run build-transitional-update
     - name: Generate Update
       shell: bash
-      run: state run generate-update
+      run: |
+        state run generate-update
+        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update

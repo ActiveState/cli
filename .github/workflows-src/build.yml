@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit")
+#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit", "jobs_deploy_versioned")
 #@ load("@ytt:template", "template")
 name: Build-Test-Deploy
 
