@@ -136,8 +136,6 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 
 // ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
 func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
-	logging.Debug("Executing command and piping std: %s, %v", command, arg)
-
 	return Execute(command, arg, func(cmd *exec.Cmd) error {
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, env...)

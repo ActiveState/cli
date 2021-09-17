@@ -1,45 +1,65 @@
-# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
+﻿# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
 <#
 .EXAMPLE
 install.ps1 -b branchToInstall
 #>
+
+param (
+    [Parameter(Mandatory = $False)][string]$b = ""
+)
+
+Set-StrictMode -Off
 
 # URL to fetch installer archive from
 $script:BASEFILEURL = "https://state-tool.s3.amazonaws.com/update/state"
 # The name of the remove archive to download
 $script:ARCHIVENAME = "state-installer.zip"
 # Name of the installer executable to ultimately use
-$script:INSTALLERNAME="state-installer.exe"
+$script:INSTALLERNAME = "state-installer.exe"
 # Channel the installer will target
 $script:CHANNEL = "release"
 
-$script:SESSION_TOKEN_VERIFY = -join("{","TOKEN","}")
+$script:SESSION_TOKEN_VERIFY = -join ("{", "TOKEN", "}")
 $script:SESSION_TOKEN = "{TOKEN}"
 $script:SESSION_TOKEN_VALUE = ""
 
-if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY") {
-  $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
+if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY")
+{
+    $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
-function download([string] $url, [string] $out) {
+if ("$b" -ne "")
+{
+    $script:CHANNEL = $b
+}
+
+function download([string] $url, [string] $out)
+{
     [int]$Retrycount = "0"
 
-    do {
-        try {
+    do
+    {
+        try
+        {
             $downloader = new-object System.Net.WebClient
-            if ($out -eq "") {
+            if ($out -eq "")
+            {
                 return $downloader.DownloadString($url)
             }
-            else {
+            else
+            {
                 return $downloader.DownloadFile($url, $out)
             }
         }
-        catch {
-            if ($Retrycount -gt 5) {
+        catch
+        {
+            if ($Retrycount -gt 5)
+            {
                 Write-Error "Could not Download after 5 retries."
                 throw $_
             }
-            else {
+            else
+            {
                 Write-Host "Could not Download, retrying..."
                 Write-Host $_
                 $Retrycount = $Retrycount + 1
@@ -49,26 +69,89 @@ function download([string] $url, [string] $out) {
     While ($true)
 }
 
-Write-Host "Preparing ActiveState Installer"
+function tempDir()
+{
+    $parent = [System.IO.Path]::GetTempPath()
+    [string]$name = [System.Guid]::NewGuid()
+    New-Item -ItemType Directory -Path (Join-Path $parent $name)
+}
 
-$zipURL = $script:BASEFILEURL/$script:ARCHIVENAME
-$tmpParentPath = Join-Path $env:TEMP "ActiveState"
+function header([string] $msg)
+{
+    Write-Host '░▒▓█ ' -ForegroundColor DarkGray -NoNewline
+    Write-Host $msg
+    Write-Host ""
+}
+
+function progress([string] $msg)
+{
+    Write-Host "• $msg..." -NoNewline
+}
+
+function progress_done()
+{
+    $greenCheck = @{
+        Object = [Char]8730
+        ForegroundColor = 'Green'
+        NoNewLine = $true
+    }
+    Write-Host @greenCheck
+    Write-Host ' Done' -ForegroundColor Green
+}
+
+function progress_fail()
+{
+    Write-Host 'x Failed' -ForegroundColor Red
+}
+
+function error([string] $msg)
+{
+    Write-Host $msg -ForegroundColor Red
+}
+
+header "Preparing ActiveState Installer"
+
+$zipURL = "$script:BASEFILEURL/$script:CHANNEL/windows-amd64/$script:ARCHIVENAME"
+$tmpParentPath = tempDir
 $zipPath = Join-Path $tmpParentPath $script:ARCHIVENAME
 $exePath = Join-Path $tmpParentPath $script:INSTALLERNAME
-try{
+try
+{
+    progress "Downloading Installer"
     download $zipURL $zipPath
-} catch [System.Exception] {
-    Write-Warning "Could not install State Tool"
-    Write-Warning "Could not access $zipURL"
+}
+catch [System.Exception]
+{
+    progress_fail
+    Write-Error "Could not download $zipURL to $zipPath."
     Write-Error $_.Exception.Message
     return 1
 }
+progress_done
 
-# Extract binary from pkg and confirm checksum
-Write-Host "Extracting $script:ARCHIVENAME...`n"
-# using LiteralPath argument prevents interpretation of wildcards in zipPath
-Expand-Archive -LiteralPath $zipPath -DestinationPath $tmpParentPath
+try
+{
+    progress "Extracting Installer"
+    Expand-Archive -ErrorAction Stop -LiteralPath $zipPath -DestinationPath $tmpParentPath
+}
+catch
+{
+    progress_fail
+    Write-Error $_.Exception.Message
+    return 1
+}
+progress_done
+
+Write-Host ""
+
+$OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+$PSDefaultParameterValues['*:Encoding'] = 'utf8'
+[System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
 & $exePath $args
-Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
+{
+    Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+}

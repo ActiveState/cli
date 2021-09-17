@@ -33,16 +33,12 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	logging.Debug("Instantiated installer with source dir: %s", i.path)
+	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
 
 	return i, nil
 }
 
 func (i *Installer) Install() (rerr error) {
-	if err := i.PrepareBinTargets(); err != nil {
-		return errs.Wrap(err, "Could not prepare for installation")
-	}
-
 	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(analytics.CfgSessionToken) == "" {
 		if err := i.cfg.Set(analytics.CfgSessionToken, i.sessionToken); err != nil {
@@ -69,6 +65,11 @@ func (i *Installer) Install() (rerr error) {
 	// Create target dir
 	if err := fileutils.MkdirUnlessExists(i.path); err != nil {
 		return errs.Wrap(err, "Could not create target directory: %s", i.path)
+	}
+
+	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
+	if err := i.PrepareBinTargets(); err != nil {
+		return errs.Wrap(err, "Could not prepare for installation")
 	}
 
 	// Copy all the files

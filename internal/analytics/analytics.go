@@ -309,7 +309,7 @@ func sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	}
 	pixelURL.RawQuery = query.Encode()
 
-	logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
+	// logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
 	_, err = http.Head(pixelURL.String())
 	if err != nil {
 		logging.Error("Could not download S3 pixel: %v", err)

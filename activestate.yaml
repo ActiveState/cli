@@ -236,7 +236,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      echo "If using tokens make sure to run 'state run aws-mfa-auth' on TheHomeRepot first."
+      echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
       go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts

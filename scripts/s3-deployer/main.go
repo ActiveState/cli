@@ -66,6 +66,7 @@ func createSession() {
 	var logLevel = aws.LogDebug
 	_ = logLevel
 	sess, err = session.NewSessionWithOptions(session.Options{
+		Profile: "mfa",
 		Config: aws.Config{
 			CredentialsChainVerboseErrors: &verboseErr,
 			Region:                        aws.String(awsRegionName),
