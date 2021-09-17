@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,20 +23,35 @@ import (
 
 type Server struct {
 	shutdown    context.CancelFunc
+	close       func(context.Context)
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
 }
 
-func New(cfg *config.Instance, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
 	s := &Server{shutdown: shutdown}
-	s.graphServer = newGraphServer(cfg)
+	r := resolver.New(cfg)
+	an.Configure(r.Resolver.Events())
+	s.close = func(ctx context.Context) {
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			r.Close()
+		}()
+		select {
+		case <-done:
+		case <-ctx.Done():
+			logging.Error("Abandoning resolver shutdown due to context expiration")
+		}
+	}
+	s.graphServer = newGraphServer(r)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
 
@@ -65,6 +81,7 @@ func (s *Server) Shutdown() error {
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	s.close(ctx)
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
 	}
@@ -72,8 +89,8 @@ func (s *Server) Shutdown() error {
 	return nil
 }
 
-func newGraphServer(cfg *config.Instance) *handler.Server {
-	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: resolver.New(cfg)}))
+func newGraphServer(r *resolver.Resolver) *handler.Server {
+	graphServer := handler.NewDefaultServer(genserver.NewExecutableSchema(genserver.Config{Resolvers: r}))
 	graphServer.AddTransport(&transport.Websocket{})
 	graphServer.SetQueryCache(lru.New(1000))
 	graphServer.Use(extension.Introspection{})

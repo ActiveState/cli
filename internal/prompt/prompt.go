@@ -29,12 +29,13 @@ var _ Prompter = &Prompt{}
 // Prompt is our main prompting struct
 type Prompt struct {
 	out           output.Outputer
+	analytics     analytics.AnalyticsDispatcher
 	isInteractive bool
 }
 
 // New creates a new prompter
-func New(isInteractive bool) Prompter {
-	return &Prompt{output.Get(), isInteractive}
+func New(isInteractive bool, an analytics.AnalyticsDispatcher) Prompter {
+	return &Prompt{output.Get(), an, isInteractive}
 }
 
 // IsInteractive checks if the prompts can be interactive or should just return default values
@@ -149,7 +150,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	analytics.EventWithLabel(analytics.CatPrompt, title, "present")
+	p.analytics.EventWithLabel(analytics.CatPrompt, title, "present")
 
 	var defChoice bool
 	if defaultChoice != nil {
@@ -163,11 +164,11 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {
-			analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
+			p.analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
 		}
 		return false, locale.NewInputError(err.Error())
 	}
-	analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
+	p.analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
 
 	return resp, nil
 }

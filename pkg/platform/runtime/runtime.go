@@ -21,6 +21,7 @@ type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
 	envAccessed bool
+	analytics   analytics.AnalyticsDispatcher
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -34,10 +35,11 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runtime, error) {
 	rt := &Runtime{
-		target: target,
-		store:  store.New(target.Dir()),
+		target:    target,
+		store:     store.New(target.Dir()),
+		analytics: an,
 	}
 
 	if !rt.store.MarkerIsValid(target.CommitUUID()) {
@@ -52,15 +54,15 @@ func newRuntime(target setup.Targeter) (*Runtime, error) {
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
-	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+	an.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
 
-	r, err := newRuntime(target)
+	r, err := newRuntime(target, an)
 	if err == nil {
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+		an.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
 	}
 	return r, err
 }
@@ -76,11 +78,11 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	go func() {
 		defer prod.Close()
 
-		if err := setup.New(r.target, prod, auth).Update(); err != nil {
+		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
-		rt, err := newRuntime(r.target)
+		rt, err := newRuntime(r.target, r.analytics)
 		if err != nil {
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
@@ -107,9 +109,9 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
-			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
+			r.analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
 		} else {
-			analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
+			r.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
 		}
 		r.envAccessed = true
 	}

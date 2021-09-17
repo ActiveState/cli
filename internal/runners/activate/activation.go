@@ -73,7 +73,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 	defer fe.Close()
 
-	analytics.Event(analytics.CatActivationFlow, "before-subshell")
+	r.analytics.Event(analytics.CatActivationFlow, "before-subshell")
 
 	err = <-r.subshell.Errors()
 	if err != nil {

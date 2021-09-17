@@ -15,7 +15,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		"projects",
 		locale.Tl("projects_title", "Listing Projects"),
 		locale.T("projects_description"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
@@ -32,7 +32,7 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 		"remote",
 		locale.Tl("projects_remote_title", "Listing Remote Projects"),
 		locale.Tl("projects_remote_description", "Manage all projects, including ones you have not checked out locally"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

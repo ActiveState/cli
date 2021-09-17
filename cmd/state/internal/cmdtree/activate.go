@@ -28,7 +28,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		activateCmdName,
 		"",
 		locale.T("activate_project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "path",
@@ -91,21 +91,22 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 
 			// Try to report why the activation failed
 			if err != nil {
+				an := prime.Analytics()
 				var serr interface{ Signal() os.Signal }
 				if errors.As(err, &serr) {
-					analytics.Event(analytics.CatActivationFlow, "user-interrupt-error")
+					an.Event(analytics.CatActivationFlow, "user-interrupt-error")
 				}
 				if locale.IsInputError(err) {
 					// Failed due to user input
-					analytics.Event(analytics.CatActivationFlow, "user-input-error")
+					an.Event(analytics.CatActivationFlow, "user-input-error")
 				} else {
 					var exitErr = &exec.ExitError{}
 					if !errors.As(err, &exitErr) {
 						// Failed due to an error we might need to address
-						analytics.Event(analytics.CatActivationFlow, "error")
+						an.Event(analytics.CatActivationFlow, "error")
 					} else {
 						// Failed due to user subshell actions / events
-						analytics.Event(analytics.CatActivationFlow, "user-exit-error")
+						an.Event(analytics.CatActivationFlow, "user-exit-error")
 					}
 				}
 			}

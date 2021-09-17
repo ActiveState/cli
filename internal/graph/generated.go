@@ -2,6 +2,10 @@
 
 package graph
 
+type AnalyticsEventResponse struct {
+	Sent bool `json:"sent"`
+}
+
 type AvailableUpdate struct {
 	Version  string `json:"version"`
 	Channel  string `json:"channel"`

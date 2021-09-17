@@ -35,7 +35,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting to close rollbar")
 		}
 		os.Exit(exitCode)
@@ -126,7 +126,6 @@ func runDefault(cfg *config.Instance) error {
 		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
-		analytics.Configure(cfg)
 	}
 
 	updateTag := os.Getenv(constants.UpdateTagEnvVarName)

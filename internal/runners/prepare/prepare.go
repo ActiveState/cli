@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,21 +23,24 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
+	primer.Analyticer
 }
 
 // Prepare manages the prepare execution context.
 type Prepare struct {
-	out      output.Outputer
-	subshell subshell.SubShell
-	cfg      *config.Instance
+	out       output.Outputer
+	subshell  subshell.SubShell
+	cfg       *config.Instance
+	analytics analytics.AnalyticsDispatcher
 }
 
 // New prepares a prepare execution context for use.
 func New(prime primeable) *Prepare {
 	return &Prepare{
-		out:      prime.Output(),
-		subshell: prime.Subshell(),
-		cfg:      prime.Config(),
+		out:       prime.Output(),
+		subshell:  prime.Subshell(),
+		cfg:       prime.Config(),
+		analytics: prime.Analytics(),
 	}
 }
 
@@ -50,7 +54,7 @@ func (r *Prepare) resetExecutors() error {
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
 	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir))
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}

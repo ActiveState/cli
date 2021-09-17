@@ -39,7 +39,7 @@ func Test_sendEvent(t *testing.T) {
 			if err := sendEvent(tt.values[0], tt.values[1], tt.values[2], map[string]string{}); err != nil {
 				t.Errorf("sendEvent() error = %s", errs.JoinMessage(err))
 			}
-			got, _ := loadDeferred(deferrerFilePath())
+			got, _ := loadDeferred(DeferrerFilePath())
 			gotSlice := []string{}
 			if len(got) > 0 {
 				gotSlice = []string{got[0].Category, got[0].Action, got[0].Label}
@@ -60,12 +60,12 @@ func Test_sendEvent(t *testing.T) {
 				if !called {
 					t.Errorf("sendDeferred not called")
 				}
-				got, _ = loadDeferred(deferrerFilePath())
+				got, _ = loadDeferred(DeferrerFilePath())
 				if len(got) > 0 {
 					t.Errorf("Deferred events not cleared after sending, got: %v", got)
 				}
 			}
-			require.NoFileExists(t, deferrerFilePath(), "deferrer file should have been cleaned up")
+			require.NoFileExists(t, DeferrerFilePath(), "deferrer file should have been cleaned up")
 		})
 	}
 }

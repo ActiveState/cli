@@ -117,3 +117,15 @@ func (m *SvcModel) Ping() error {
 	_, err := m.StateVersion(context.Background())
 	return err
 }
+
+func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action, label, projectName, output string) error {
+	defer profile.Measure("svc:analyticsEvent", time.Now())
+
+	r := request.NewAnalyticsEvent(category, action, label, projectName, output)
+	u := graph.AnalyticsEventResponse{}
+	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error checking if update is available.")
+	}
+
+	return nil
+}

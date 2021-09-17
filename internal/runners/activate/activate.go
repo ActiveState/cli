@@ -45,6 +45,7 @@ type Activate struct {
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
+	analytics        analytics.AnalyticsDispatcher
 }
 
 type ActivateParams struct {
@@ -64,6 +65,7 @@ type primeable interface {
 	primer.Prompter
 	primer.Configurer
 	primer.Svcer
+	primer.Analyticer
 }
 
 func NewActivate(prime primeable) *Activate {
@@ -77,6 +79,7 @@ func NewActivate(prime primeable) *Activate {
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),
+		prime.Analytics(),
 	}
 }
 
@@ -157,7 +160,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Have to call this once the project has been set
-	analytics.Event(analytics.CatActivationFlow, "start")
+	r.analytics.Event(analytics.CatActivationFlow, "start")
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
@@ -199,7 +202,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil))
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil), r.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

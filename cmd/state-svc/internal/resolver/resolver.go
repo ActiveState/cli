@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
@@ -21,6 +22,7 @@ import (
 )
 
 type Resolver struct {
+	*analytics.Resolver
 	cfg   *config.Instance
 	cache *cache.Cache
 }
@@ -29,6 +31,7 @@ type Resolver struct {
 
 func New(cfg *config.Instance) *Resolver {
 	return &Resolver{
+		analytics.NewResolver(cfg),
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 	}

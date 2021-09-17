@@ -3,6 +3,7 @@ package packages
 import (
 	"io/ioutil"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -54,8 +55,9 @@ type Import struct {
 	auth *authentication.Auth
 	out  output.Outputer
 	prompt.Prompter
-	proj *project.Project
-	cfg  configurable
+	proj      *project.Project
+	cfg       configurable
+	analytics analytics.AnalyticsDispatcher
 }
 
 type primeable interface {
@@ -64,6 +66,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Configurer
+	primer.Analyticer
 }
 
 // NewImport prepares an importation execution context for use.
@@ -74,6 +77,7 @@ func NewImport(prime primeable) *Import {
 		prime.Prompt(),
 		prime.Project(),
 		prime.Config(),
+		prime.Analytics(),
 	}
 }
 
@@ -120,7 +124,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.proj, storage.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {

@@ -104,10 +104,11 @@ type Targeter interface {
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
-	model  ModelProvider
-	target Targeter
-	events Events
-	store  *store.Store
+	model     ModelProvider
+	target    Targeter
+	events    Events
+	store     *store.Store
+	analytics analytics.AnalyticsDispatcher
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -133,13 +134,13 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events, auth *authentication.Auth) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault(auth))
+func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.AnalyticsDispatcher) *Setup {
+	return NewWithModel(target, msgHandler, model.NewDefault(auth), an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider) *Setup {
-	return &Setup{model, target, msgHandler, store.New(target.Dir())}
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.AnalyticsDispatcher) *Setup {
+	return &Setup{model, target, msgHandler, store.New(target.Dir()), an}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -150,7 +151,7 @@ func (s *Setup) Update() error {
 		if locale.IsInputError(err) {
 			category = analytics.ActRuntimeUserFailure
 		}
-		analytics.EventWithLabel(analytics.CatRuntime, category, analytics.LblRtFailUpdate)
+		s.analytics.EventWithLabel(analytics.CatRuntime, category, analytics.LblRtFailUpdate)
 		return err
 	}
 	return nil
@@ -195,12 +196,12 @@ func (s *Setup) update() error {
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
+		s.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
 		ns := project.Namespaced{
 			Owner:   s.target.Owner(),
 			Project: s.target.Name(),
 		}
-		analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
+		s.analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
@@ -235,7 +236,7 @@ func (s *Setup) update() error {
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifacts) != len(alreadyInstalled) {
 		// if we get here, we dowload artifacts
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
+		s.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
 	}
 
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)

@@ -23,7 +23,7 @@ import (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProject(owner, name, path string, out output.Outputer) error
+	CloneProject(owner, name, path string, out output.Outputer, an analytics.AnalyticsDispatcher) error
 }
 
 // NewRepo returns a new repository
@@ -37,7 +37,7 @@ type Repo struct {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error {
+func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.AnalyticsDispatcher) error {
 	project, err := model.FetchProjectByName(owner, name)
 	if err != nil {
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
@@ -68,7 +68,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer) error
 		return errs.AddTips(err, tipMsg)
 	}
 
-	err = ensureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out)
+	err = ensureCorrectProject(owner, name, filepath.Join(tempDir, constants.ConfigFileName), *project.RepoURL, out, an)
 	if err != nil {
 		return locale.WrapError(err, "err_git_ensure_project", "Could not ensure that the activestate.yaml in the cloned repository matches the project you are activating.")
 	}
@@ -99,7 +99,7 @@ func plainClone(path string, isBare bool, o *git.CloneOptions) (r *git.Repositor
 	return git.PlainClone(path, isBare, o)
 }
 
-func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer) error {
+func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.AnalyticsDispatcher) error {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil
 	}
@@ -120,7 +120,7 @@ func ensureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
 		}
-		analytics.Event(analytics.CatMisc, "git-project-mismatch")
+		an.Event(analytics.CatMisc, "git-project-mismatch")
 	}
 
 	return nil

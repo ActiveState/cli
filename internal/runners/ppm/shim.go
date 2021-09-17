@@ -14,14 +14,16 @@ import (
 )
 
 type Shim struct {
-	out     output.Outputer
-	project *projectfile.Project
+	out       output.Outputer
+	project   *projectfile.Project
+	analytics analytics.AnalyticsDispatcher
 }
 
 func NewShim(prime *primer.Values) *Shim {
 	return &Shim{
-		out:     prime.Output(),
-		project: prime.Projectfile(),
+		out:       prime.Output(),
+		project:   prime.Projectfile(),
+		analytics: prime.Analytics(),
 	}
 }
 
@@ -78,9 +80,9 @@ func (s *Shim) RunList(converted bool, args ...string) error {
 func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 	err := s.executeShim(intercepted, replaced, args...)
 	if err != nil {
-		analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.Join(err, " :: ").Error()))
+		s.analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.Join(err, " :: ").Error()))
 	} else {
-		analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, "success")
+		s.analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, "success")
 	}
 	return err
 }
@@ -88,7 +90,7 @@ func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 func (s *Shim) executeShim(intercepted, replaced string, args ...string) error {
 	if s.project == nil {
 		// TODO: Replace this function call when conversion flow is complete
-		analytics.Event(analytics.CatPPMShimCmd, "tutorial")
+		s.analytics.Event(analytics.CatPPMShimCmd, "tutorial")
 		return tutorial()
 	}
 

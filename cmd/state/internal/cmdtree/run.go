@@ -16,7 +16,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 		"run",
 		"",
 		locale.T("run_description"),
-		prime.Output(),
+		prime,
 		nil,
 		[]*captain.Argument{
 			{
