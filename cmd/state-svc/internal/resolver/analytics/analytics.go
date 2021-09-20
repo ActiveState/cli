@@ -193,6 +193,8 @@ func (r *Resolver) AnalyticsEvent(ctx context.Context, category, action string, 
 			OutputType:  o,
 		}:
 		case <-ctx.Done():
+			// try to defer event if it cannot be scheduled in this session
+			_ = deferred.DeferEvent(category, action, lbl, pn, o)
 		}
 	}()
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
