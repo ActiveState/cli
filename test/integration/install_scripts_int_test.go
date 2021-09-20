@@ -166,6 +166,8 @@ func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 
 func expectDefaultActivation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Activating Virtual Environment")
+	cp.Expect("Choose Destination")
+	cp.Send("")
 	cp.Expect("Cloning Repository")
 	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")
