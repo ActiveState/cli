@@ -52,7 +52,7 @@ func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersi
 		currentChannel,
 		currentVersion,
 		httpget,
-		true,
+		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
 }
 
