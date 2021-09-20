@@ -19,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 )
@@ -141,6 +143,8 @@ func (a *Analytics) event(category, action, label string, dimensions *CustomDime
 	dims := dimensions.toMap()
 	a.sendGAEvent(category, action, label, dims)
 	a.sendS3Pixel(category, action, label, dims)
+	r.sendGAEvent(ev.Category, ev.Action, ev.Label, dimensions)
+	r.sendS3Pixel(ev.Category, ev.Action, ev.Label, dimensions)
 }
 
 func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[string]string) {
@@ -193,6 +197,32 @@ func (a *Analytics) Event(category string, action string) {
 
 func (a *Analytics) EventWithLabel(category string, action, label string) {
 	a.SendWithCustomDimensions(category, action, label, a.customDimensions)
+}
+
+// projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
+func projectID(projectIDMap map[string]string, projectName string) string {
+	if projectName == "" {
+		return ""
+	}
+
+	if pi, ok := projectIDMap[projectName]; ok {
+		return pi
+	}
+
+	pn, err := project.ParseNamespace(projectName)
+	if err != nil {
+		logging.Error("Failed to parse project namespace %s: %s", projectName, errs.JoinMessage(err))
+	}
+
+	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
+	if err != nil {
+		logging.Error("Failed get project by name: %s", errs.JoinMessage(err))
+	}
+
+	pi := string(pj.ProjectID)
+	projectIDMap[projectName] = pi
+
+	return pi
 }
 
 func handlePanics(err interface{}, stack []byte) {
