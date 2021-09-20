@@ -33,7 +33,6 @@ import (
 type Resolver struct {
 	gaClient         *ga.Client
 	customDimensions customDimensions
-	projectIDMap     map[string]string
 	closer           func()
 	ctx              context.Context
 	events           chan EventData
@@ -146,7 +145,6 @@ func NewResolver(cfg *config.Instance) *Resolver {
 	r := &Resolver{
 		gaClient:         client,
 		customDimensions: customDimensions,
-		projectIDMap:     make(map[string]string),
 		ctx:              ctx,
 		events:           make(chan EventData),
 	}
@@ -207,29 +205,8 @@ func (r *Resolver) Events() chan<- EventData {
 	return r.events
 }
 
-func (r *Resolver) projectID(projectName string) string {
-	if pi, ok := r.projectIDMap[projectName]; ok {
-		return pi
-	}
-
-	pn, err := project.ParseNamespace(projectName)
-	if err != nil {
-		logging.Error("Failed to parse project namespace %s: %s", projectName, errs.JoinMessage(err))
-	}
-
-	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
-	if err != nil {
-		logging.Error("Failed get project by name: %s", errs.JoinMessage(err))
-	}
-
-	pi := string(pj.ProjectID)
-	r.projectIDMap[projectName] = pi
-
-	return pi
-}
-
-func (r *Resolver) event(category string, action, label, projectName, output string) {
-	projectID := r.projectID(projectName)
+func (r *Resolver) event(category string, action, label, projectName, output string, projectIDMap map[string]string) {
+	projectID := projectID(projectIDMap, projectName)
 	dimensions := r.customDimensions.toMap(projectName, projectID, output)
 	r.sendGAEvent(category, action, label, dimensions)
 	r.sendS3Pixel(category, action, label, dimensions)
@@ -285,8 +262,10 @@ func (r *Resolver) eventLoop() {
 	tick := time.NewTicker(time.Minute * 5)
 	defer tick.Stop()
 
+	projectIDMap := make(map[string]string)
+
 	// flush the deferred data initially
-	if err := r.flushDeferred(); err != nil {
+	if err := r.flushDeferred(projectIDMap); err != nil {
 		logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 	}
 	for {
@@ -294,25 +273,47 @@ func (r *Resolver) eventLoop() {
 		case <-r.ctx.Done():
 			return
 		case <-tick.C:
-			if err := r.flushDeferred(); err != nil {
+			if err := r.flushDeferred(projectIDMap); err != nil {
 				logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 			}
 		case ev := <-r.events:
-			r.event(ev.Category, ev.Action, ev.Label, ev.ProjectName, ev.OutputType)
+			r.event(ev.Category, ev.Action, ev.Label, ev.ProjectName, ev.OutputType, projectIDMap)
 		}
 	}
 }
 
-func (r *Resolver) flushDeferred() error {
+func (r *Resolver) flushDeferred(projectIDMap map[string]string) error {
 	events, err := deferred.LoadEvents()
 	if err != nil {
 		return errs.Wrap(err, "Failed to load deferred events")
 	}
 	for _, event := range events {
-		r.event(event.Category, event.Action, event.Label, event.ProjectName, event.Output)
+		r.event(event.Category, event.Action, event.Label, event.ProjectName, event.Output, projectIDMap)
 	}
 
 	return nil
+}
+
+// projectID resolves the projectID from projectName, and caching the result in the provided projectIDMap
+func projectID(projectIDMap map[string]string, projectName string) string {
+	if pi, ok := projectIDMap[projectName]; ok {
+		return pi
+	}
+
+	pn, err := project.ParseNamespace(projectName)
+	if err != nil {
+		logging.Error("Failed to parse project namespace %s: %s", projectName, errs.JoinMessage(err))
+	}
+
+	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
+	if err != nil {
+		logging.Error("Failed get project by name: %s", errs.JoinMessage(err))
+	}
+
+	pi := string(pj.ProjectID)
+	projectIDMap[projectName] = pi
+
+	return pi
 }
 
 func handlePanics(err interface{}, stack []byte) {

@@ -41,6 +41,11 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+type ConfigurableAnalytics interface {
+	analytics.AnalyticsDispatcher
+	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, out output.Outputer, projectName string) error
+}
+
 func main() {
 	var exitCode int
 	// Set up logging
@@ -113,7 +118,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer, an *analytics.DefaultClient) (rerr error) {
+func run(args []string, isInteractive bool, out output.Outputer, an ConfigurableAnalytics) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling

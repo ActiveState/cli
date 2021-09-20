@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	analyMock "github.com/ActiveState/cli/internal/analytics/mock"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -29,7 +30,7 @@ func TestPrompts(t *testing.T) {
 		Colored:     true,
 		Interactive: true,
 	})
-	p := New(true)
+	p := New(true, analyMock.New())
 
 	fmt.Println("# SELECT")
 	selectDefault := "choice 1"
