@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type EventData struct {
@@ -39,7 +40,7 @@ func (m *Mock) Wait() {
 	m.CalledWait = true
 }
 
-func (m *Mock) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, out output.Outputer, projectName string) error {
+func (m *Mock) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error {
 	m.CalledConfigure = true
 	return nil
 }
