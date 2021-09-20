@@ -514,8 +514,6 @@ jobs:
       run: rm build/state* || true
     - name: Deploy
       shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
-        github.ref)
       run: |
         state run deploy-updates
         state run deploy-installers
