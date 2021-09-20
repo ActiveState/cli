@@ -57,11 +57,9 @@ steps:
   - #@ steps_setup()
   - #@ steps_downloadallsessartifacts()
   - #@ steps_sanitizeallsessartifacts()
-  - #@ steps_preprocess()
   - #@ steps_cleanbuild()
   - #@ steps_clean_nonversioned_update()
   - #@ steps_deploy_versioned()
-  - #@ steps_uploadartifacts()
 #@ end
 
 #@ def jobs_unittest():

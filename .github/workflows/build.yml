@@ -233,10 +233,6 @@ jobs:
         rm -Rf session-shared-build
         find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
         rm -Rf session*
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
     - name: Cleanup Build Dir
       shell: bash
       run: rm build/state* || true
@@ -248,18 +244,11 @@ jobs:
         rm $BRANCHDIR/*.json || true
     - name: Deploy Versioned
       shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
-        github.ref)
       run: |
         state run deploy-updates
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: build
-        path: build/
   inttest_critical:
     if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
       != 'refs/heads/release'
