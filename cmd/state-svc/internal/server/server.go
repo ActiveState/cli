@@ -38,13 +38,18 @@ func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc
 
 	s := &Server{shutdown: shutdown}
 	r := resolver.New(cfg)
+
+	// tell the analytics client how to connect to the resolvers event loop that processes analytics events
 	an.Configure(r.Resolver.Events())
+
 	s.close = func(ctx context.Context) {
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
+			// closing the resolver may block for a long time...
 			r.Close()
 		}()
+		// ... so we are abandoning the process if it takes too long
 		select {
 		case <-done:
 		case <-ctx.Done():

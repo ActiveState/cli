@@ -50,7 +50,6 @@ func (c *Client) Wait() {
 
 func (c *Client) sendEvent(category, action, label string) error {
 	// For now analytics events triggered by the state-svc are NEVER bound to a project or an output-type
-	// TODO: Once, we execute project-specific tasks in the state-svc that can be bound to a specific State Tool instance, we need to add a function that also encapsulates this information
 	projectName := ""
 	outputType := ""
 	userID := ""
@@ -66,6 +65,7 @@ func (c *Client) sendEvent(category, action, label string) error {
 		return nil
 	}
 
+	// we do not wait for the event to be processed, it is just scheduled in the background
 	c.eventWaitGroup.Add(1)
 	go func() {
 		defer handlePanics(recover(), debug.Stack())

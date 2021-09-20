@@ -142,6 +142,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, la
 		uid = *userID
 	}
 
+	// We do not wait for the events to be processed, just scheduling them
 	go func() {
 		select {
 		case r.events <- deferred.EventData{
@@ -259,7 +260,7 @@ func (r *Resolver) flushDeferred(projectIDMap map[string]string) error {
 	return nil
 }
 
-// projectID resolves the projectID from projectName, and caching the result in the provided projectIDMap
+// projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
 func projectID(projectIDMap map[string]string, projectName string) string {
 	if projectName == "" {
 		return ""
