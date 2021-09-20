@@ -262,7 +262,6 @@ env:
 #@ def steps_deploy_versioned():
 name: "Deploy Versioned"
 shell: bash
-if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
 run: |
   state run deploy-updates
 env:
