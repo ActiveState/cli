@@ -43,7 +43,7 @@ import (
 
 type ConfigurableAnalytics interface {
 	analytics.AnalyticsDispatcher
-	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, out output.Outputer, projectName string) error
+	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error
 }
 
 func main() {
@@ -179,16 +179,17 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 		pjName = pj.Name()
 	}
 
-	if err := an.Configure(svcm, cfg, out, pjNamespace); err != nil {
-		return errs.Wrap(err, "Failed to initialize analytics instance")
-	}
-
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 	auth := authentication.LegacyGet()
+
+	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
+		return errs.Wrap(err, "Failed to initialize analytics instance")
+	}
+
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)

@@ -23,62 +23,22 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 )
 
+// AnalyticsResolver resolves requests to forward analytics events
 type Resolver struct {
 	gaClient         *ga.Client
 	customDimensions customDimensions
 	closer           func()
 	ctx              context.Context
-	events           chan EventData
+	events           chan deferred.EventData
 }
 
-type EventData struct {
-	Category    string
-	Action      string
-	Label       string
-	ProjectName string
-	OutputType  string
-}
-
-type customDimensions struct {
-	version       string
-	branchName    string
-	userID        string
-	osName        string
-	osVersion     string
-	installSource string
-	machineID     string
-	uniqID        string
-	sessionToken  string
-	updateTag     string
-}
-
-func (d *customDimensions) toMap(projectName, projectID, output string) map[string]string {
-	return map[string]string{
-		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
-		// "1": "hostname (deprected)"
-		"2":  d.version,
-		"3":  d.branchName,
-		"4":  d.userID,
-		"5":  output,
-		"6":  d.osName,
-		"7":  d.osVersion,
-		"8":  d.installSource,
-		"9":  d.machineID,
-		"10": projectName,
-		"11": d.sessionToken,
-		"12": d.uniqID,
-		"13": d.updateTag,
-		"14": projectID,
-	}
-}
-
+// NewResolver initializes the resolver starting an event loop from which events are sent to the backend and initializing all the static custom dimensions
 func NewResolver(cfg *config.Instance) *Resolver {
 	installSource, err := storage.InstallSource()
 	if err != nil {
@@ -101,12 +61,6 @@ func NewResolver(cfg *config.Instance) *Resolver {
 		client.ClientID(id)
 	}
 
-	var userIDString string
-	userID := authentication.LegacyGet().UserID()
-	if userID != nil {
-		userIDString = userID.String()
-	}
-
 	osName := sysinfo.OS().String()
 	osVersion := "unknown"
 	osvInfo, err := sysinfo.OSVersion()
@@ -126,7 +80,6 @@ func NewResolver(cfg *config.Instance) *Resolver {
 	customDimensions := customDimensions{
 		version:       constants.Version,
 		branchName:    constants.BranchName,
-		userID:        userIDString,
 		osName:        osName,
 		osVersion:     osVersion,
 		installSource: installSource,
@@ -146,7 +99,7 @@ func NewResolver(cfg *config.Instance) *Resolver {
 		gaClient:         client,
 		customDimensions: customDimensions,
 		ctx:              ctx,
-		events:           make(chan EventData),
+		events:           make(chan deferred.EventData),
 	}
 
 	var wg sync.WaitGroup
@@ -165,7 +118,8 @@ func NewResolver(cfg *config.Instance) *Resolver {
 	return r
 }
 
-func (r *Resolver) AnalyticsEvent(ctx context.Context, category, action string, label, projectName, out *string) (*graph.AnalyticsEventResponse, error) {
+// AnalyticsEvent schedules the sending of the analytics event
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectName, out, userID *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
 	lbl := ""
@@ -183,36 +137,44 @@ func (r *Resolver) AnalyticsEvent(ctx context.Context, category, action string, 
 		o = *out
 	}
 
+	uid := ""
+	if userID != nil {
+		uid = *userID
+	}
+
 	go func() {
 		select {
-		case r.events <- EventData{
+		case r.events <- deferred.EventData{
 			Category:    category,
 			Action:      action,
 			Label:       lbl,
 			ProjectName: pn,
-			OutputType:  o,
+			Output:      o,
+			UserID:      uid,
 		}:
-		case <-ctx.Done():
+		case <-r.ctx.Done():
 			// try to defer event if it cannot be scheduled in this session
-			_ = deferred.DeferEvent(category, action, lbl, pn, o)
+			_ = deferred.DeferEvent(category, action, lbl, pn, o, uid)
 		}
 	}()
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
+// Close cancels all events, the event loop and waits for it to return
 func (r *Resolver) Close() {
 	r.closer()
 }
 
-func (r *Resolver) Events() chan<- EventData {
+// Events returns a channel to feed eventData directly to the event loop
+func (r *Resolver) Events() chan<- deferred.EventData {
 	return r.events
 }
 
-func (r *Resolver) event(category string, action, label, projectName, output string, projectIDMap map[string]string) {
-	projectID := projectID(projectIDMap, projectName)
-	dimensions := r.customDimensions.toMap(projectName, projectID, output)
-	r.sendGAEvent(category, action, label, dimensions)
-	r.sendS3Pixel(category, action, label, dimensions)
+func (r *Resolver) event(ev deferred.EventData, projectIDMap map[string]string) {
+	projectID := projectID(projectIDMap, ev.ProjectName)
+	dimensions := r.customDimensions.toMap(ev.ProjectName, projectID, ev.Output, ev.UserID)
+	r.sendGAEvent(ev.Category, ev.Action, ev.Label, dimensions)
+	r.sendS3Pixel(ev.Category, ev.Action, ev.Label, dimensions)
 }
 
 func (r *Resolver) sendGAEvent(category, action, label string, dimensions map[string]string) {
@@ -280,7 +242,7 @@ func (r *Resolver) eventLoop() {
 				logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 			}
 		case ev := <-r.events:
-			r.event(ev.Category, ev.Action, ev.Label, ev.ProjectName, ev.OutputType, projectIDMap)
+			r.event(ev, projectIDMap)
 		}
 	}
 }
@@ -291,7 +253,7 @@ func (r *Resolver) flushDeferred(projectIDMap map[string]string) error {
 		return errs.Wrap(err, "Failed to load deferred events")
 	}
 	for _, event := range events {
-		r.event(event.Category, event.Action, event.Label, event.ProjectName, event.Output, projectIDMap)
+		r.event(event, projectIDMap)
 	}
 
 	return nil

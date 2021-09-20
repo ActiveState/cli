@@ -1,3 +1,4 @@
+// Package deferred has logic to store and load analytics events in the configuration directory in a file.  So, they can be send in a deferred manner.
 package deferred
 
 import (
@@ -13,16 +14,19 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type DeferredData struct {
-	Category    string
-	Action      string
-	Label       string
-	ProjectName string
-	Output      string
+// EventData is the data that is synchronized on disk (or forwarded to the state-svc server)
+type EventData struct {
+	Category    string `json:"category"`
+	Action      string `json:"action"`
+	Label       string `json:"label"`
+	ProjectName string `json:"project"`
+	Output      string `json:"output_type"`
+	UserID      string `json:"user_id"`
 }
 
 const deferrerFileName = "deferrer_data"
 
+// DeferrerFilePath returns the file name of the file where deferred events are stored
 func DeferrerFilePath() string {
 	appDataPath, err := storage.AppDataPath()
 	if err != nil {
@@ -31,16 +35,18 @@ func DeferrerFilePath() string {
 	return filepath.Join(appDataPath, deferrerFileName)
 }
 
-func DeferEvent(category, action, label, projectName, output string) error {
+// DeferEvent stores a single event for deferred processing
+func DeferEvent(category, action, label, projectName, output, userID string) error {
 	logging.Debug("Deferring: %s, %s, %s", category, action, label, projectName, output)
 
-	if err := saveDeferred(DeferredData{category, action, label, projectName, output}); err != nil {
+	if err := saveDeferred(EventData{category, action, label, projectName, output, userID}); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
 }
 
-func LoadEvents() ([]DeferredData, error) {
+// LoadEvents returns the list of deferred events so they can be finally sent
+func LoadEvents() ([]EventData, error) {
 	appDataPath, err := storage.AppDataPath()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve AppDataPath")
@@ -64,7 +70,7 @@ func LoadEvents() ([]DeferredData, error) {
 	return events, nil
 }
 
-func saveDeferred(v DeferredData) error {
+func saveDeferred(v EventData) error {
 	vj, err := json.Marshal(v)
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal deferred data")
@@ -86,16 +92,16 @@ func saveDeferred(v DeferredData) error {
 	return nil
 }
 
-func loadDeferred(deferredDataPath string) ([]DeferredData, error) {
+func loadDeferred(deferredDataPath string) ([]EventData, error) {
 	b, err := os.ReadFile(deferredDataPath)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to read deferred_data")
 	}
 	lines := strings.Split(string(b), "\n")
-	var events []DeferredData
+	var events []EventData
 	var unmarshalErrorReported bool
 	for _, line := range lines {
-		var event DeferredData
+		var event EventData
 		if strings.TrimSpace(line) == "" {
 			continue
 		}

@@ -8,16 +8,19 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+// Client is an AnalyticsDispatcher that is supposed to be use by the `state-svc` service only. It sends the events directly to the analytics event loop started in the resolver (once configured)
 type Client struct {
-	events         chan<- EventData
+	auth           *authentication.Auth
+	events         chan<- deferred.EventData
 	eventWaitGroup *sync.WaitGroup
 	isDeferred     bool
 }
 
 func NewClient() *Client {
-	return &Client{eventWaitGroup: &sync.WaitGroup{}}
+	return &Client{auth: authentication.LegacyGet(), eventWaitGroup: &sync.WaitGroup{}}
 }
 
 func (c *Client) Event(category string, action string) {
@@ -32,7 +35,8 @@ func (c *Client) EventWithLabel(category string, action, label string) {
 	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
-func (c *Client) Configure(events chan<- EventData) {
+// Configure ties this client to the events loop running as part of the Resolver, un-configured clients defer events to the hard-drive
+func (c *Client) Configure(events chan<- deferred.EventData) {
 	c.events = events
 }
 
@@ -49,10 +53,14 @@ func (c *Client) sendEvent(category, action, label string) error {
 	// TODO: Once, we execute project-specific tasks in the state-svc that can be bound to a specific State Tool instance, we need to add a function that also encapsulates this information
 	projectName := ""
 	outputType := ""
+	userID := ""
+	if c.auth != nil && c.auth.UserID() != nil {
+		userID = string(*c.auth.UserID())
+	}
 
 	// if events channel is not set yet, we will defer the events to the file system
 	if c.isDeferred || c.events == nil {
-		if err := deferred.DeferEvent(category, action, label, projectName, outputType); err != nil {
+		if err := deferred.DeferEvent(category, action, label, projectName, outputType, userID); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		return nil
@@ -62,7 +70,7 @@ func (c *Client) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer c.eventWaitGroup.Done()
-		c.events <- EventData{category, action, label, projectName, outputType}
+		c.events <- deferred.EventData{category, action, label, projectName, outputType, userID}
 	}()
 	return nil
 }

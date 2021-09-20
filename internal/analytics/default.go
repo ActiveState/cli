@@ -12,11 +12,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+// DefaultClient is the default analytics dispatcher, forwarding analytics events to the state-svc service
+// If requested via `SetDeferred` or un-configured, events are "deferred" instead by serializing them to a file
 type DefaultClient struct {
 	svcModel       *model.SvcModel
+	auth           *authentication.Auth
 	output         string
 	projectName    string
 	isDeferred     bool
@@ -43,7 +47,8 @@ func (a *DefaultClient) EventWithLabel(category string, action string, label str
 	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
-func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, out output.Outputer, projectName string) error {
+// Configure configures the default client, connecting it to a state-svc service
+func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error {
 	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
 	if err != nil {
 		return errs.Wrap(err, "Failed to initialize svc model")
@@ -55,13 +60,16 @@ func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instan
 	a.svcModel = svcModel
 	a.output = o
 	a.projectName = projectName
+	a.auth = auth
 	return nil
 }
 
+// SetDeferred configures the client to defer events instead of sending them directly
 func (a *DefaultClient) SetDeferred(da bool) {
 	a.isDeferred = da
 }
 
+// Wait can be called to ensure that all events have been processed
 func (a *DefaultClient) Wait() {
 	// we want Wait() to work for uninitialized Analytics
 	if a == nil {
@@ -71,8 +79,13 @@ func (a *DefaultClient) Wait() {
 }
 
 func (a *DefaultClient) sendEvent(category, action, label string) error {
+	userID := ""
+	if a.auth != nil && a.auth.UserID() != nil {
+		userID = string(*a.auth.UserID())
+	}
+
 	if a.isDeferred || a.svcModel == nil {
-		if err := deferred.DeferEvent(category, action, label, a.projectName, a.output); err != nil {
+		if err := deferred.DeferEvent(category, action, label, a.projectName, a.output, userID); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		return nil
@@ -82,7 +95,7 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer a.eventWaitGroup.Done()
-		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectName, a.output); err != nil {
+		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectName, a.output, userID); err != nil {
 			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
