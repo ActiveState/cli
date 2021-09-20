@@ -29,7 +29,6 @@ type InstallScriptsIntegrationTestSuite struct {
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
-	tagName := "experiment"
 
 	tests := []struct {
 		Name    string

@@ -40,7 +40,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	cp.Expect("Version locked at")
 	cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, false, false, constants.Version, suite.NotEqual)
+	suite.versionCompare(ts, constants.Version, suite.NotEqual)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
