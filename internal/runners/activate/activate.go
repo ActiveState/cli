@@ -297,7 +297,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 
 func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
 	switch {
-	case namespace != nil, namespace.String() == "":
+	case namespace != nil && namespace.String() != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
 		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
