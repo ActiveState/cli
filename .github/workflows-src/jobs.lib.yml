@@ -46,7 +46,7 @@ steps:
 
 #@ def jobs_deploy_versioned():
 name: Deploy Versioned
-needs: [ build, unittest ]
+needs: [ build ]
 runs-on: ubuntu-20.04
 env: *env
 timeout-minutes: 10
@@ -140,6 +140,7 @@ needs: [ build, unittest ]
 runs-on: ubuntu-20.04
 env: *env
 timeout-minutes: 10
+if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
 steps:
   - name: "Checkout code"
     uses: actions/checkout@v2

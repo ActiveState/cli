@@ -201,7 +201,6 @@ jobs:
     name: Deploy Versioned
     needs:
     - build
-    - unittest
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -245,8 +244,8 @@ jobs:
       shell: bash
       run: |
         BRANCHDIR=$(echo $GITHUB_REF | sed -En "s#refs/heads/##p")
-        rm build/update/*.json
-        rm $BRANCHDIR/*.json
+        rm build/update/*.json || true
+        rm $BRANCHDIR/*.json || true
     - name: Deploy Versioned
       shell: bash
       if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
@@ -490,6 +489,8 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
+      github.ref)
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
