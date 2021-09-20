@@ -15,7 +15,7 @@ jobs:
   build: #@ jobs_build()
   unittest: #@ jobs_unittest()
   deploy_versioned:
-    if: ("github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'") || contains(github.event.pull_request.labels.*.name, 'run integration tests')
+    if: "(github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')"
     _: #@ template.replace(jobs_deploy_versioned())
   inttest_critical:
     if: "github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'"

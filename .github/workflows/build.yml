@@ -195,8 +195,8 @@ jobs:
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
   deploy_versioned:
-    if: ("github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' &&
-      github.ref != 'refs/heads/release'") || contains(github.event.pull_request.labels.*.name,
+    if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
+      != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name,
       'run integration tests')
     name: Deploy Versioned
     needs:
