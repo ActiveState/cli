@@ -311,6 +311,10 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
 
+	// Spoof modtime
+	t := time.Now().Add(-25 * time.Hour)
+	os.Chtimes(ts.ExecutablePath(), t, t)
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...),
 		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
 		e2e.AppendEnv("VERBOSE=true"))
