@@ -157,7 +157,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -173,6 +173,8 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute 
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
+		out:       prime.Output(),
+		analytics: prime.Analytics(),
 	}
 
 	cmd.cobra = &cobra.Command{
