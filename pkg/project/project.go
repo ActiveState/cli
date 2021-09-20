@@ -160,7 +160,7 @@ func (p *Project) Events() []*Event {
 // EventByName returns a reference to a projectfile.Script with a given name.
 func (p *Project) EventByName(name string) *Event {
 	for _, event := range p.Events() {
-		if event.Name() == name {
+		if strings.ToLower(event.Name()) == strings.ToLower(name) {
 			return event
 		}
 	}
