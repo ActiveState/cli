@@ -71,9 +71,6 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 		Version string `json:"version"`
 	}
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
-
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
 	cp.ExpectExitCode(0)
 
@@ -88,9 +85,6 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 	type branchData struct {
 		Branch string `json:"branch"`
 	}
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExesLegacy()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
 	cp.ExpectExitCode(0, 30*time.Second)
