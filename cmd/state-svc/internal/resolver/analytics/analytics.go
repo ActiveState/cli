@@ -150,6 +150,7 @@ func NewResolver(cfg *config.Instance) *Resolver {
 	}
 
 	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer wg.Done()
@@ -296,6 +297,10 @@ func (r *Resolver) flushDeferred(projectIDMap map[string]string) error {
 
 // projectID resolves the projectID from projectName, and caching the result in the provided projectIDMap
 func projectID(projectIDMap map[string]string, projectName string) string {
+	if projectName == "" {
+		return ""
+	}
+
 	if pi, ok := projectIDMap[projectName]; ok {
 		return pi
 	}
