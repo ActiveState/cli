@@ -65,15 +65,18 @@ func createSession() {
 	var verboseErr = true
 	var logLevel = aws.LogDebug
 	_ = logLevel
-	sess, err = session.NewSessionWithOptions(session.Options{
-		Profile: "mfa",
+	opts := session.Options{
 		Config: aws.Config{
 			CredentialsChainVerboseErrors: &verboseErr,
 			Region:                        aws.String(awsRegionName),
 			/*Logger:                        &logger{},*/
 			/*LogLevel:                      &logLevel,*/
 		},
-	})
+	}
+	if runtime.GOOS == "windows" && !condition.OnCI() {
+		opts.Profile = "mfa" // For some reason on windows workstations this is necessary
+	}
+	sess, err = session.NewSessionWithOptions(opts)
 	if err != nil {
 		log.Fatalf("failed to create session, %s", err.Error())
 		os.Exit(1)
