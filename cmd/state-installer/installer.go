@@ -107,6 +107,8 @@ func (i *Installer) Install() (rerr error) {
 		}
 	}
 
+	logging.Debug("Installation was successful")
+
 	return nil
 }
 

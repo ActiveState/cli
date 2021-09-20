@@ -311,7 +311,9 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...),
+		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
+		e2e.AppendEnv("VERBOSE=true"))
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.ExpectExitCode(0)
