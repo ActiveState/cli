@@ -31,13 +31,15 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
 	tests := []struct {
-		Name    string
-		Version string
-		Channel string
+		Name     string
+		Version  string
+		Channel  string
+		Activate string
 	}{
-		{"install-release-latest", "", "release"},
-		{"install-prbranch", constants.Version, constants.BranchName},
-		{"install-prbranch-with-tag", constants.Version, constants.BranchName},
+		{"install-release-latest", "", "release", ""},
+		{"install-prbranch", constants.Version, constants.BranchName, ""},
+		{"install-prbranch-and-activate", constants.Version, constants.BranchName, "ActiveState-CLI/small-python"},
+		{"install-prbranch-with-tag", constants.Version, constants.BranchName, ""},
 	}
 
 	for _, tt := range tests {
@@ -55,15 +57,46 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
+			args := []string{script, "-t", ts.Dirs.Work, "-b", tt.Channel, "-v", tt.Version}
+
+			if tt.Activate != "" {
+				args = append(args, "--activate", tt.Activate)
+			}
 
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel, "-v", tt.Version))
+				cp = ts.SpawnCmdWithOpts(
+					"bash", e2e.WithArgs(args...),
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(script, "-t", ts.Dirs.Work, "-b", tt.Channel, "-v", tt.Version), e2e.AppendEnv("SHELL="))
+				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
+					e2e.AppendEnv("SHELL="),
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 			}
 
 			expectStateToolInstallation(cp)
+
+			if tt.Activate != "" {
+				cp.Expect("Where would you like to place")
+				cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+				cp.Expect("> Other")
+				cp.Send("")
+				cp.Expect(">")
+				cp.Send(cp.WorkDirectory())
+
+				cp.ExpectLongString("default project?")
+				cp.Send("n")
+
+				cp.Expect("activated state")
+				// ensure that shell is functional
+				cp.WaitForInput()
+
+				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+				cp.Expect("ActiveState Software Inc.")
+
+				cp.SendLine("exit")
+			}
+
 			cp.ExpectExitCode(0)
 
 			suite.assertApplicationDirContents(dir)

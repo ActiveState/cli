@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -161,7 +162,16 @@ func main() {
 		},
 	)
 
-	if err := cmd.Execute(os.Args[1:]); err != nil {
+	args := os.Args
+
+	// We have old install one liners around that use `-activate` instead of `--activate`
+	for _, v := range args {
+		if strings.HasPrefix(v, "-activate") {
+			v = "--activate" + strings.TrimPrefix(v, "-activate")
+		}
+	}
+
+	if err := cmd.Execute(args[1:]); err != nil {
 		logging.Error(errs.JoinMessage(err))
 		out.Error(err.Error())
 		exitCode = 1
