@@ -13,7 +13,7 @@ type customDimensions struct {
 	updateTag     string
 }
 
-func (d *customDimensions) toMap(projectName, projectID, output, userID string) map[string]string {
+func (d *customDimensions) toMap(projectName, output, userID string) map[string]string {
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
@@ -29,6 +29,5 @@ func (d *customDimensions) toMap(projectName, projectID, output, userID string) 
 		"11": d.sessionToken,
 		"12": d.uniqID,
 		"13": d.updateTag,
-		"14": projectID,
 	}
 }

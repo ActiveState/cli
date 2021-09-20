@@ -23,8 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
 )
@@ -171,9 +169,8 @@ func (r *Resolver) Events() chan<- deferred.EventData {
 	return r.events
 }
 
-func (r *Resolver) event(ev deferred.EventData, projectIDMap map[string]string) {
-	projectID := projectID(projectIDMap, ev.ProjectName)
-	dimensions := r.customDimensions.toMap(ev.ProjectName, projectID, ev.Output, ev.UserID)
+func (r *Resolver) event(ev deferred.EventData) {
+	dimensions := r.customDimensions.toMap(ev.ProjectName, ev.Output, ev.UserID)
 	r.sendGAEvent(ev.Category, ev.Action, ev.Label, dimensions)
 	r.sendS3Pixel(ev.Category, ev.Action, ev.Label, dimensions)
 }
@@ -228,10 +225,8 @@ func (r *Resolver) eventLoop() {
 	tick := time.NewTicker(time.Minute * 5)
 	defer tick.Stop()
 
-	projectIDMap := make(map[string]string)
-
 	// flush the deferred data initially
-	if err := r.flushDeferred(projectIDMap); err != nil {
+	if err := r.flushDeferred(); err != nil {
 		logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 	}
 	for {
@@ -239,51 +234,25 @@ func (r *Resolver) eventLoop() {
 		case <-r.ctx.Done():
 			return
 		case <-tick.C:
-			if err := r.flushDeferred(projectIDMap); err != nil {
+			if err := r.flushDeferred(); err != nil {
 				logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 			}
 		case ev := <-r.events:
-			r.event(ev, projectIDMap)
+			r.event(ev)
 		}
 	}
 }
 
-func (r *Resolver) flushDeferred(projectIDMap map[string]string) error {
+func (r *Resolver) flushDeferred() error {
 	events, err := deferred.LoadEvents()
 	if err != nil {
 		return errs.Wrap(err, "Failed to load deferred events")
 	}
 	for _, event := range events {
-		r.event(event, projectIDMap)
+		r.event(event)
 	}
 
 	return nil
-}
-
-// projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
-func projectID(projectIDMap map[string]string, projectName string) string {
-	if projectName == "" {
-		return ""
-	}
-
-	if pi, ok := projectIDMap[projectName]; ok {
-		return pi
-	}
-
-	pn, err := project.ParseNamespace(projectName)
-	if err != nil {
-		logging.Error("Failed to parse project namespace %s: %s", projectName, errs.JoinMessage(err))
-	}
-
-	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
-	if err != nil {
-		logging.Error("Failed get project by name: %s", errs.JoinMessage(err))
-	}
-
-	pi := string(pj.ProjectID)
-	projectIDMap[projectName] = pi
-
-	return pi
 }
 
 func handlePanics(err interface{}, stack []byte) {
