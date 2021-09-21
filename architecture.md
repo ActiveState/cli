@@ -77,7 +77,8 @@ from use by external code.
 #### internal/runbits/
 
 Packages that are made available for use by "runner" packages. In essence,
-`internal/runners/internal/runbits`.
+`internal/runners/internal/runbits`. A synonymous and deprecated directory
+exists at `pkg/cmdlets/`.
 
 #### internal/runners/
 
@@ -92,11 +93,6 @@ Localization keys and associated values.
 Packages that are made available for use by any application, including external
 code. Note we are changing our strategy with regards to these packages, 
 and these will eventually be moved into the `internal/` directory.
-
-#### pkg/cmdlets/
-
-Packages that are made available for use by "runner" packages. Synonymous with
-`internal/runbits/`, and all new runner-common packages should be placed there.
 
 #### pkg/platform/
 
