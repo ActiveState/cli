@@ -1732,6 +1732,8 @@ lock_update_lock:
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_directory_in_use:
-  other: Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
+  other: | 
+    Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
+    To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
 custom_path_tip:
   other: Use a custom path with the [ACTIONABLE]--path <path/to/project>[/RESET] flag
