@@ -57,7 +57,7 @@ func (r *NamespaceSelect) getProjectPath(namespace *project.Namespaced) (string,
 
 	targetPath, err := getSafeWorkDir()
 	if err != nil {
-		return "", locale.NewError("err_get_wd", "Could not get safe working directory")
+		return "", locale.NewError("err_get_wd")
 	}
 
 	return filepath.Join(targetPath, namespace.Project), nil
@@ -76,8 +76,8 @@ func (r *NamespaceSelect) validatePath(name string, path string) error {
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
 		return errs.AddTips(
-			locale.NewError("err_directory_in_use", "Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty."),
-			locale.T("custom_path_tip", "To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag"),
+			locale.NewError("err_directory_in_use"),
+			locale.T("custom_path_tip"),
 		)
 	}
 
