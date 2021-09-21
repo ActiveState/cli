@@ -86,7 +86,7 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	if runtime.GOOS != "windows" {
 		ext = ".sh"
 	}
-	name := "install-v2" + ext
+	name := "install" + ext
 	if legacy {
 		name = "legacy-install" + ext
 	}

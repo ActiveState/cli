@@ -30,7 +30,6 @@ scripts:
 
       cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
       cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
-      cp installers/install-v2.ps1 $INSTALLERS_DIR/install-v2.ps1
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
