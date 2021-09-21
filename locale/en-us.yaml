@@ -1735,5 +1735,3 @@ err_directory_in_use:
   other: | 
     Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
     To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
-custom_path_tip:
-  other: Use a custom path with the [ACTIONABLE]--path <path/to/project>[/RESET] flag

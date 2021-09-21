@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -75,10 +74,7 @@ func (r *NamespaceSelect) validatePath(name string, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
-		return errs.AddTips(
-			locale.NewError("err_directory_in_use"),
-			locale.T("custom_path_tip"),
-		)
+		return locale.NewError("err_directory_in_use")
 	}
 
 	pj, err := project.Parse(configFile)
