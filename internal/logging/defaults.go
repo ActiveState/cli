@@ -117,7 +117,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		if ctx.Level == "ERROR" && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
 			data := map[string]interface{}{}
 
 			if l.file != nil {
@@ -134,7 +134,11 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				l.file = nil // unset so that it is reset later in this func
 			}
 
-			rollbar.Error(fmt.Errorf(originalMessage, args...), data)
+			if ctx.Level == "CRITICAL" {
+				rollbar.Critical(fmt.Errorf(originalMessage, args...), data)
+			} else {
+				rollbar.Error(fmt.Errorf(originalMessage, args...), data)
+			}
 		}
 	}()
 
