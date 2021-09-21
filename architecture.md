@@ -90,8 +90,8 @@ Localization keys and associated values.
 ### pkg/
 
 Packages that are made available for use by any application, including external
-code. The packages that are currently located here are not intended for use by
-external code, and will eventually be moved into the `internal/` directory.
+code. Note we are changing our strategy with regards to these packages, 
+and these will eventually be moved into the `internal/` directory.
 
 #### pkg/cmdlets/
 
@@ -100,7 +100,7 @@ Packages that are made available for use by "runner" packages. Synonymous with
 
 #### pkg/platform/
 
-Packages focused on interacting with the platform. Much of the behavior is
+Packages focused on interacting with platform API's. Much of the behavior is
 generated, but there are also critical components providing platform-dependent
 client-side logic (e.g. `pkg/platform/runtime`).
 
@@ -110,7 +110,7 @@ Packages that provide setup and interaction with the activestate.yaml files.
 
 ### scripts/
 
-Helper scripts.
+Helper scripts for development and deployment processes.
 
 ### test/integration/
 
