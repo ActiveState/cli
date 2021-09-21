@@ -93,6 +93,8 @@ const CatMisc = "misc"
 
 const CfgSessionToken = "sessionToken"
 
+const CatStateSvc = "state-svc"
+
 type customDimensions struct {
 	version       string
 	branchName    string
