@@ -148,12 +148,23 @@ func (p *Project) Events() []*Event {
 	if err != nil {
 		logging.Warning("Could not filter unconstrained events: %v", err)
 	}
+
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
 		events = append(events, &Event{e, p})
 	}
 	return events
+}
+
+// EventByName returns a reference to a projectfile.Script with a given name.
+func (p *Project) EventByName(name string) *Event {
+	for _, event := range p.Events() {
+		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+			return event
+		}
+	}
+	return nil
 }
 
 // Scripts returns a reference to projectfile.Scripts
