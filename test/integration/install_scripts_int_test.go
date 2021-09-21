@@ -108,8 +108,6 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
-	// TODO: run these tests locally to debug
-	fmt.Println("ScriptPath:", scriptPath)
 	err = ioutil.WriteFile(scriptPath, b, 0775)
 	require.NoError(t, err)
 
