@@ -68,7 +68,7 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config(), prime),
+		NewNamespaceSelect(prime.Config()),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),

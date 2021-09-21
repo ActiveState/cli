@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
@@ -19,12 +18,11 @@ import (
 
 // NamespaceSelect will select the right directory associated with a namespace
 type NamespaceSelect struct {
-	config   *config.Instance
-	prompter prompt.Prompter
+	config *config.Instance
 }
 
-func NewNamespaceSelect(config *config.Instance, prime primeable) *NamespaceSelect {
-	return &NamespaceSelect{config, prime.Prompt()}
+func NewNamespaceSelect(config *config.Instance) *NamespaceSelect {
+	return &NamespaceSelect{config}
 }
 
 func (r *NamespaceSelect) Run(namespace *project.Namespaced, preferredPath string) (string, error) {
@@ -78,7 +76,7 @@ func (r *NamespaceSelect) validatePath(name string, path string) error {
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
 		return errs.AddTips(
-			locale.NewError("err_directory_in_use", "Destination directory is not empty"),
+			locale.NewError("err_directory_in_use", "Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty."),
 			locale.T("custom_path_tip", "To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag"),
 		)
 	}
