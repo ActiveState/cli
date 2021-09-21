@@ -108,6 +108,8 @@ func scriptPath(t *testing.T, targetDir string, legacy, useTestUrl bool) string 
 	}
 
 	scriptPath := filepath.Join(targetDir, filepath.Base(exec))
+	// TODO: run these tests locally to debug
+	fmt.Println("ScriptPath:", scriptPath)
 	err = ioutil.WriteFile(scriptPath, b, 0775)
 	require.NoError(t, err)
 
@@ -166,8 +168,6 @@ func expectLegacyStateToolInstallationWindows(cp *termtest.ConsoleProcess) {
 
 func expectDefaultActivation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Activating Virtual Environment")
-	cp.Expect("Choose Destination")
-	cp.Send("")
 	cp.Expect("Cloning Repository")
 	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully configured ActiveState/Perl-5.32 as the global default project")

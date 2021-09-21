@@ -245,7 +245,7 @@ info "${PREFIX}Preparing for installation...${SUFFIX}"
 
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
-  FETCH="wget -q -O"
+  FETCH="wget -O"
 elif [ ! -z "`command -v curl`" ]; then
   FETCH="curl -sS -o"
 else
@@ -345,7 +345,8 @@ info "Reminder: Start a new shell in order to start using the State Tool."
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
   # Ensure that new installation dir is on the PATH for follow up commands
-  export PATH="$PATH:$INSTALLDIR"
+  export PATH="$INSTALLDIR:$PATH"
+  # This is most likely using the locally installed state tool?
   exec $POST_INSTALL_COMMAND
 elif [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell
