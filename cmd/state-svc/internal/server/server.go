@@ -23,7 +23,7 @@ import (
 
 type Server struct {
 	shutdown    context.CancelFunc
-	close       func(context.Context)
+	resolver    *resolver.Resolver
 	graphServer *handler.Server
 	listener    net.Listener
 	httpServer  *echo.Echo
@@ -36,27 +36,12 @@ func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{shutdown: shutdown}
-	r := resolver.New(cfg)
+	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg)}
 
 	// tell the analytics client how to connect to the resolvers event loop that processes analytics events
-	an.Configure(r.Resolver.Events())
+	an.Configure(s.resolver.Resolver.Events())
 
-	s.close = func(ctx context.Context) {
-		done := make(chan struct{})
-		go func() {
-			defer close(done)
-			// closing the resolver may block for a long time...
-			r.Close()
-		}()
-		// ... so we are abandoning the process if it takes too long
-		select {
-		case <-done:
-		case <-ctx.Done():
-			logging.Error("Abandoning resolver shutdown due to context expiration")
-		}
-	}
-	s.graphServer = newGraphServer(r)
+	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener
 	s.httpServer = newHTTPServer(listener)
 
@@ -92,6 +77,21 @@ func (s *Server) Shutdown() error {
 	}
 
 	return nil
+}
+
+func (s *Server) close(ctx context.Context) {
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		// closing the resolver may block for a long time...
+		s.resolver.Close()
+	}()
+	// ... so we are abandoning the process if it takes too long
+	select {
+	case <-done:
+	case <-ctx.Done():
+		logging.Error("Abandoning resolver shutdown due to context expiration")
+	}
 }
 
 func newGraphServer(r *resolver.Resolver) *handler.Server {
