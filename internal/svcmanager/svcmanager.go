@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -106,6 +107,10 @@ func (m *Manager) ping(ctx context.Context) error {
 	resp := graph.VersionResponse{}
 	if err := client.RunWithContext(ctx, r, &resp); err != nil {
 		return err
+	}
+
+	if !rtutils.BuiltViaCI {
+		return nil
 	}
 
 	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
