@@ -20,6 +20,8 @@ import (
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
 const MinimalTimeout = 500 * time.Millisecond
 
+type errVersionMismatch struct{ *locale.LocalizedError }
+
 type Manager struct {
 	ready bool
 	cfg   configurable
@@ -58,9 +60,14 @@ func (m *Manager) WaitWithContext(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			if m.Ready() {
+			err := m.Ready()
+			if err == nil {
 				return nil
 			}
+			if errs.Matches(err, errVersionMismatch{}) {
+				return errs.Wrap(err, "Incorrect State Service version")
+			}
+			logging.Debug("Ready failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
@@ -72,23 +79,22 @@ func (m *Manager) Wait() error {
 	return m.WaitWithContext(context.Background())
 }
 
-func (m *Manager) Ready() bool {
+func (m *Manager) Ready() error {
 	if m.ready {
-		return true
+		return nil
 	}
 
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
-		return false
+		return errs.New("Service port not set in config")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
 	if err := m.ping(ctx); err != nil {
-		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
-		return false
+		return errs.Wrap(err, "Ping failed, service may not yet be ready")
 	}
 
-	return true
+	return nil
 }
 
 func (m *Manager) ping(ctx context.Context) error {
@@ -101,5 +107,10 @@ func (m *Manager) ping(ctx context.Context) error {
 	if err := client.RunWithContext(ctx, r, &resp); err != nil {
 		return err
 	}
+
+	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
+		return errVersionMismatch{locale.NewError("err_ping_version_mismatch")}
+	}
+
 	return nil
 }

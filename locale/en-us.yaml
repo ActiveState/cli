@@ -1729,3 +1729,7 @@ lock_version_mismatch:
   other: This project is locked at State Tool version [NOTICE]{{.V0}}[/RESET]. Your current State Tool version is [NOTICE]{{.V1}}@{{.V2}}[/RESET].
 lock_update_lock:
   other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.
+err_ping_version_mismatch:
+  other: |
+    The installed version of the State Service is incorrect.
+    Please reinstall the State Tool and try again.
