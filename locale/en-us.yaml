@@ -1732,4 +1732,4 @@ lock_update_lock:
 err_ping_version_mismatch:
   other: |
     The installed version of the State Service is incorrect.
-    Please reinstall the State Tool and try again.
+    Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
