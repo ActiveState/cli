@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics/deferred"
+	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -77,8 +78,10 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 		userID = string(*a.auth.UserID())
 	}
 
+	ev := event.New(category, action, &label, &a.projectName, &a.output, &userID)
+
 	if a.svcModel == nil {
-		if err := deferred.DeferEvent(category, action, label, a.projectName, a.output, userID); err != nil {
+		if err := deferred.DeferEvent(ev); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		return nil

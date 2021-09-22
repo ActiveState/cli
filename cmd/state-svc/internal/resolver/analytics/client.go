@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics/deferred"
+	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,7 +15,7 @@ import (
 // Client is an AnalyticsDispatcher that is supposed to be use by the `state-svc` service only. It sends the events directly to the analytics event loop started in the resolver (once configured)
 type Client struct {
 	auth           *authentication.Auth
-	events         chan<- deferred.EventData
+	events         chan<- event.EventData
 	eventWaitGroup *sync.WaitGroup
 }
 
@@ -35,8 +36,8 @@ func (c *Client) EventWithLabel(category string, action, label string) {
 }
 
 // Configure ties this client to the events loop running as part of the Resolver, un-configured clients defer events to the hard-drive
-func (c *Client) Configure(events chan<- deferred.EventData) {
-	c.events = events
+func (c *Client) Configure(r *Resolver) {
+	c.events = r.events
 }
 
 func (c *Client) Wait() {
@@ -44,17 +45,17 @@ func (c *Client) Wait() {
 }
 
 func (c *Client) sendEvent(category, action, label string) error {
-	// For now analytics events triggered by the state-svc are NEVER bound to a project or an output-type
-	projectName := ""
-	outputType := ""
 	userID := ""
 	if c.auth != nil && c.auth.UserID() != nil {
 		userID = string(*c.auth.UserID())
 	}
 
+	// For now analytics events triggered by the state-svc are NEVER bound to a project or an output-type
+	ev := event.New(category, action, &label, nil, nil, &userID)
+
 	// if events channel is not set yet, we will defer the events to the file system
 	if c.events == nil {
-		if err := deferred.DeferEvent(category, action, label, projectName, outputType, userID); err != nil {
+		if err := deferred.DeferEvent(ev); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}
 		return nil
@@ -65,7 +66,7 @@ func (c *Client) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer c.eventWaitGroup.Done()
-		c.events <- deferred.EventData{category, action, label, projectName, outputType, userID}
+		c.events <- ev
 	}()
 	return nil
 }

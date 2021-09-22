@@ -39,7 +39,7 @@ func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc
 	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg)}
 
 	// tell the analytics client how to connect to the resolvers event loop that processes analytics events
-	an.Configure(s.resolver.Resolver.Events())
+	an.Configure(s.resolver.Resolver)
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener

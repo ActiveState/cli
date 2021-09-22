@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/deferred"
+	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	ga "github.com/ActiveState/go-ogle-analytics"
@@ -33,7 +33,7 @@ type Resolver struct {
 	customDimensions customDimensions
 	closer           func()
 	ctx              context.Context
-	events           chan deferred.EventData
+	events           chan event.EventData
 }
 
 // NewResolver initializes the resolver starting an event loop from which events are sent to the backend and initializing all the static custom dimensions
@@ -97,7 +97,7 @@ func NewResolver(cfg *config.Instance) *Resolver {
 		gaClient:         client,
 		customDimensions: customDimensions,
 		ctx:              ctx,
-		events:           make(chan deferred.EventData),
+		events:           make(chan event.EventData),
 	}
 
 	var wg sync.WaitGroup
@@ -119,41 +119,15 @@ func NewResolver(cfg *config.Instance) *Resolver {
 // AnalyticsEvent schedules the sending of the analytics event
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectName, out, userID *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
-
-	lbl := ""
-	if label != nil {
-		lbl = *label
-	}
-
-	pn := ""
-	if projectName != nil {
-		pn = *projectName
-	}
-
-	o := string(output.PlainFormatName)
-	if out != nil {
-		o = *out
-	}
-
-	uid := ""
-	if userID != nil {
-		uid = *userID
-	}
+	ev := event.New(category, action, label, projectName, out, userID)
 
 	// We do not wait for the events to be processed, just scheduling them
 	go func() {
 		select {
-		case r.events <- deferred.EventData{
-			Category:    category,
-			Action:      action,
-			Label:       lbl,
-			ProjectName: pn,
-			Output:      o,
-			UserID:      uid,
-		}:
+		case r.events <- ev:
 		case <-r.ctx.Done():
 			// try to defer event if it cannot be scheduled in this session
-			_ = deferred.DeferEvent(category, action, lbl, pn, o, uid)
+			_ = deferred.DeferEvent(ev)
 		}
 	}()
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
@@ -165,11 +139,7 @@ func (r *Resolver) Close() {
 }
 
 // Events returns a channel to feed eventData directly to the event loop
-func (r *Resolver) Events() chan<- deferred.EventData {
-	return r.events
-}
-
-func (r *Resolver) event(ev deferred.EventData) {
+func (r *Resolver) event(ev event.EventData) {
 	dimensions := r.customDimensions.toMap(ev.ProjectName, ev.Output, ev.UserID)
 	r.sendGAEvent(ev.Category, ev.Action, ev.Label, dimensions)
 	r.sendS3Pixel(ev.Category, ev.Action, ev.Label, dimensions)

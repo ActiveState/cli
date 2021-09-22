@@ -9,20 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 )
-
-// EventData is the data that is synchronized on disk (or forwarded to the state-svc server)
-type EventData struct {
-	Category    string `json:"category"`
-	Action      string `json:"action"`
-	Label       string `json:"label"`
-	ProjectName string `json:"project"`
-	Output      string `json:"output_type"`
-	UserID      string `json:"user_id"`
-}
 
 const deferrerFileName = "deferrer_data"
 
@@ -36,17 +27,17 @@ func DeferrerFilePath() string {
 }
 
 // DeferEvent stores a single event for deferred processing
-func DeferEvent(category, action, label, projectName, output, userID string) error {
-	logging.Debug("Deferring: %s, %s, %s", category, action, label, projectName, output)
+func DeferEvent(ev event.EventData) error {
+	logging.Debug("Deferring: %v", ev)
 
-	if err := saveDeferred(EventData{category, action, label, projectName, output, userID}); err != nil {
+	if err := saveDeferred(ev); err != nil {
 		return errs.Wrap(err, "Could not save event on defer")
 	}
 	return nil
 }
 
 // LoadEvents returns the list of deferred events so they can be finally sent
-func LoadEvents() ([]EventData, error) {
+func LoadEvents() ([]event.EventData, error) {
 	appDataPath, err := storage.AppDataPath()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve AppDataPath")
@@ -70,7 +61,7 @@ func LoadEvents() ([]EventData, error) {
 	return events, nil
 }
 
-func saveDeferred(v EventData) error {
+func saveDeferred(v event.EventData) error {
 	vj, err := json.Marshal(v)
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal deferred data")
@@ -92,16 +83,16 @@ func saveDeferred(v EventData) error {
 	return nil
 }
 
-func loadDeferred(deferredDataPath string) ([]EventData, error) {
+func loadDeferred(deferredDataPath string) ([]event.EventData, error) {
 	b, err := os.ReadFile(deferredDataPath)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to read deferred_data")
 	}
 	lines := strings.Split(string(b), "\n")
-	var events []EventData
+	var events []event.EventData
 	var unmarshalErrorReported bool
 	for _, line := range lines {
-		var event EventData
+		var event event.EventData
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
