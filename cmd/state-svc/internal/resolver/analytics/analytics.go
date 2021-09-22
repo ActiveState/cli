@@ -225,8 +225,8 @@ func (r *Resolver) eventLoop() {
 	tick := time.NewTicker(time.Minute)
 	defer tick.Stop()
 
-	// flush the deferred data initially
-	if err := r.flushDeferred(); err != nil {
+	// flush the event data stored to disk on start-up
+	if err := r.flush(); err != nil {
 		logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 	}
 	for {
@@ -234,7 +234,7 @@ func (r *Resolver) eventLoop() {
 		case <-r.ctx.Done():
 			return
 		case <-tick.C:
-			if err := r.flushDeferred(); err != nil {
+			if err := r.flush(); err != nil {
 				logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
 			}
 		case ev := <-r.events:
@@ -243,7 +243,7 @@ func (r *Resolver) eventLoop() {
 	}
 }
 
-func (r *Resolver) flushDeferred() error {
+func (r *Resolver) flush() error {
 	events, err := deferred.LoadEvents()
 	if err != nil {
 		return errs.Wrap(err, "Failed to load deferred events")
