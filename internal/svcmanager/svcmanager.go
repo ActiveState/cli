@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -109,7 +110,7 @@ func (m *Manager) ping(ctx context.Context) error {
 		return err
 	}
 
-	if !rtutils.BuiltViaCI {
+	if !rtutils.BuiltViaCI || condition.InUnitTest() {
 		return nil
 	}
 
