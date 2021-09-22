@@ -222,7 +222,7 @@ func (r *Resolver) sendS3Pixel(category, action, label string, dimensions map[st
 
 func (r *Resolver) eventLoop() {
 	// flush deferred data every five minutes
-	tick := time.NewTicker(time.Minute * 5)
+	tick := time.NewTicker(time.Minute)
 	defer tick.Stop()
 
 	// flush the deferred data initially
