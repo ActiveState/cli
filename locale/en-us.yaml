@@ -1731,5 +1731,5 @@ lock_update_lock:
   other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.
 err_ping_version_mismatch:
   other: |
-    The installed version of the State Service is incorrect.
+    The installed version of the State Service does not match that of the client.
     Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
