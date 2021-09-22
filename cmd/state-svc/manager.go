@@ -75,6 +75,7 @@ func (s *serviceManager) Stop() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
 	defer cancel()
+	svcmgr.SetCheckVersion(false)
 	svcm, err := model.NewSvcModel(ctx, s.cfg, svcmgr)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize svc model")

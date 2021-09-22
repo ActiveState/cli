@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -14,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
@@ -25,8 +23,9 @@ const MinimalTimeout = 500 * time.Millisecond
 type errVersionMismatch struct{ *locale.LocalizedError }
 
 type Manager struct {
-	ready bool
-	cfg   configurable
+	ready        bool
+	checkVersion bool
+	cfg          configurable
 }
 
 type configurable interface {
@@ -34,8 +33,12 @@ type configurable interface {
 }
 
 func New(cfg configurable) *Manager {
-	mgr := &Manager{false, cfg}
+	mgr := &Manager{false, true, cfg}
 	return mgr
+}
+
+func (m *Manager) SetCheckVersion(check bool) {
+	m.checkVersion = check
 }
 
 func (m *Manager) Start() error {
@@ -66,7 +69,7 @@ func (m *Manager) WaitWithContext(ctx context.Context) error {
 			if err == nil {
 				return nil
 			}
-			if errs.Matches(err, errVersionMismatch{}) {
+			if m.checkVersion && errs.Matches(err, errVersionMismatch{}) {
 				return errs.Wrap(err, "Incorrect State Service version")
 			}
 			logging.Debug("Ready failed, assuming we're not ready: %v", errs.JoinMessage(err))
@@ -108,10 +111,6 @@ func (m *Manager) ping(ctx context.Context) error {
 	resp := graph.VersionResponse{}
 	if err := client.RunWithContext(ctx, r, &resp); err != nil {
 		return err
-	}
-
-	if !rtutils.BuiltViaCI || !version.NumberIsProduction(constants.Version) {
-		return nil
 	}
 
 	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
