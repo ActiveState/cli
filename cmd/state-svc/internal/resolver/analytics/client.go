@@ -16,7 +16,6 @@ type Client struct {
 	auth           *authentication.Auth
 	events         chan<- deferred.EventData
 	eventWaitGroup *sync.WaitGroup
-	isDeferred     bool
 }
 
 func NewClient() *Client {
@@ -40,10 +39,6 @@ func (c *Client) Configure(events chan<- deferred.EventData) {
 	c.events = events
 }
 
-func (c *Client) SetDeferred(da bool) {
-	c.isDeferred = true
-}
-
 func (c *Client) Wait() {
 	c.eventWaitGroup.Wait()
 }
@@ -58,7 +53,7 @@ func (c *Client) sendEvent(category, action, label string) error {
 	}
 
 	// if events channel is not set yet, we will defer the events to the file system
-	if c.isDeferred || c.events == nil {
+	if c.events == nil {
 		if err := deferred.DeferEvent(category, action, label, projectName, outputType, userID); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}

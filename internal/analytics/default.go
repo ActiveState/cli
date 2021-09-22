@@ -17,13 +17,11 @@ import (
 )
 
 // DefaultClient is the default analytics dispatcher, forwarding analytics events to the state-svc service
-// If requested via `SetDeferred` or un-configured, events are "deferred" instead by serializing them to a file
 type DefaultClient struct {
 	svcModel       *model.SvcModel
 	auth           *authentication.Auth
 	output         string
 	projectName    string
-	isDeferred     bool
 	eventWaitGroup *sync.WaitGroup
 }
 
@@ -64,11 +62,6 @@ func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instan
 	return nil
 }
 
-// SetDeferred configures the client to defer events instead of sending them directly
-func (a *DefaultClient) SetDeferred(da bool) {
-	a.isDeferred = da
-}
-
 // Wait can be called to ensure that all events have been processed
 func (a *DefaultClient) Wait() {
 	// we want Wait() to work for uninitialized Analytics
@@ -84,7 +77,7 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 		userID = string(*a.auth.UserID())
 	}
 
-	if a.isDeferred || a.svcModel == nil {
+	if a.svcModel == nil {
 		if err := deferred.DeferEvent(category, action, label, a.projectName, a.output, userID); err != nil {
 			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
 		}

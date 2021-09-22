@@ -500,7 +500,6 @@ func (c *Command) subCommandNames() []string {
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
-	c.analytics.SetDeferred(c.deferAnalytics)
 
 	subCommandString := c.UseFull()
 

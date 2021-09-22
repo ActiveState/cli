@@ -10,7 +10,6 @@ const CfgSessionToken = "sessionToken"
 type AnalyticsDispatcher interface {
 	Event(category string, action string)
 	EventWithLabel(category string, action string, label string)
-	SetDeferred(bool)
 	Wait()
 }
 
