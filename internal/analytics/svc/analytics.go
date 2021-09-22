@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
@@ -23,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/patrickmn/go-cache"
 )
 
 // Analytics instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
@@ -30,12 +32,16 @@ type Analytics struct {
 	gaClient         *ga.Client
 	customDimensions *CustomDimensions
 	eventWaitGroup   *sync.WaitGroup
+	projectIDCache   *cache.Cache
+	projectIDMutex   *sync.Mutex
 }
 
 // New initializes the analytics instance with all custom dimensions known at this time
 func New() *Analytics {
 	r := &Analytics{
 		eventWaitGroup: &sync.WaitGroup{},
+		projectIDCache: cache.New(30*time.Minute, time.Hour),
+		projectIDMutex: &sync.Mutex{},
 	}
 
 	return r
@@ -130,6 +136,7 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer handlePanics(recover(), debug.Stack())
+		dims.projectID = a.projectID(dims.projectName)
 		a.event(category, action, label, dims)
 	}()
 }
@@ -143,8 +150,6 @@ func (a *Analytics) event(category, action, label string, dimensions *CustomDime
 	dims := dimensions.toMap()
 	a.sendGAEvent(category, action, label, dims)
 	a.sendS3Pixel(category, action, label, dims)
-	r.sendGAEvent(ev.Category, ev.Action, ev.Label, dimensions)
-	r.sendS3Pixel(ev.Category, ev.Action, ev.Label, dimensions)
 }
 
 func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[string]string) {
@@ -200,13 +205,16 @@ func (a *Analytics) EventWithLabel(category string, action, label string) {
 }
 
 // projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
-func projectID(projectIDMap map[string]string, projectName string) string {
+func (r *Analytics) projectID(projectName string) string {
 	if projectName == "" {
 		return ""
 	}
 
-	if pi, ok := projectIDMap[projectName]; ok {
-		return pi
+	r.projectIDMutex.Lock()
+	defer r.projectIDMutex.Unlock()
+
+	if pi, ok := r.projectIDCache.Get(projectName); ok {
+		return pi.(string)
 	}
 
 	pn, err := project.ParseNamespace(projectName)
@@ -220,7 +228,7 @@ func projectID(projectIDMap map[string]string, projectName string) string {
 	}
 
 	pi := string(pj.ProjectID)
-	projectIDMap[projectName] = pi
+	r.projectIDCache.Set(projectName, pi, cache.DefaultExpiration)
 
 	return pi
 }

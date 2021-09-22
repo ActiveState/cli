@@ -17,7 +17,7 @@ type CustomDimensions struct {
 }
 
 // WithClientData returns a copy of the custom dimensions struct with client-specific fields overwritten
-func (d *CustomDimensions) WithClientData(projectNameSpace, output, userID, projectID string) *CustomDimensions {
+func (d *CustomDimensions) WithClientData(projectNameSpace, output, userID string) *CustomDimensions {
 	res := *d
 	res.projectNameSpace = projectNameSpace
 	res.outputType = output
