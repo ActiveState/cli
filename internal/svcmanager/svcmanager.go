@@ -65,14 +65,13 @@ func (m *Manager) WaitWithContext(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			err := m.Ready()
-			if err == nil {
+			ready, err := m.Ready()
+			if err != nil {
+				return errs.Wrap(err, "Ready check failed")
+			}
+			if ready {
 				return nil
 			}
-			if m.checkVersion && errs.Matches(err, errVersionMismatch{}) {
-				return errs.Wrap(err, "Incorrect State Service version")
-			}
-			logging.Debug("Ready failed, assuming we're not ready: %v", errs.JoinMessage(err))
 		}
 		time.Sleep(250 * time.Millisecond)
 	}
@@ -84,22 +83,26 @@ func (m *Manager) Wait() error {
 	return m.WaitWithContext(context.Background())
 }
 
-func (m *Manager) Ready() error {
+func (m *Manager) Ready() (bool, error) {
 	if m.ready {
-		return nil
+		return false, nil
 	}
 
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
-		return errs.New("Service port not set in config")
+		return false, nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
 	if err := m.ping(ctx); err != nil {
-		return errs.Wrap(err, "Ping failed, service may not yet be ready")
+		if errs.Matches(err, &errVersionMismatch{}) {
+			return false, errs.Wrap(err, "Incorrect State Service version")
+		}
+		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
 func (m *Manager) ping(ctx context.Context) error {
@@ -113,8 +116,8 @@ func (m *Manager) ping(ctx context.Context) error {
 		return err
 	}
 
-	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
-		return errVersionMismatch{locale.NewError("err_ping_version_mismatch")}
+	if m.checkVersion && resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
+		return &errVersionMismatch{locale.NewError("err_ping_version_mismatch")}
 	}
 
 	return nil
