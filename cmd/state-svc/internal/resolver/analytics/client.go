@@ -66,7 +66,7 @@ func (c *Client) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer c.eventWaitGroup.Done()
-		c.events <- ev
+		c.events <- *ev
 	}()
 	return nil
 }
