@@ -40,7 +40,7 @@ func main() {
 	err := run()
 	if err != nil {
 		exitCode = 1
-		logging.Error("Update Dialog Failure: " + errs.Join(err, ": ").Error())
+		logging.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
 		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
 		return
 	}

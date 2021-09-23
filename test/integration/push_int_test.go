@@ -172,7 +172,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("You're Activated", 20*time.Second)
+	cp.Expect("sucessfully activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -233,7 +233,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	if runtime.GOOS == "windows" {
 		cp.Expect("Running Activation Events")
 	} else {
-		cp.Expect("You're Activated!")
+		cp.Expect("sucessfully activated")
 	}
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)

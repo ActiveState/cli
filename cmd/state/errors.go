@@ -91,7 +91,7 @@ func unwrapError(err error) (int, error) {
 
 	// Log error if this isn't a user input error
 	if !locale.IsInputError(err) {
-		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}

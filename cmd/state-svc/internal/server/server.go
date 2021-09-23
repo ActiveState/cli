@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -64,10 +65,16 @@ func (s *Server) Port() int {
 }
 
 func (s *Server) Start() error {
-	return s.httpServer.Start(s.listener.Addr().String())
+	analytics.Event(analytics.CatStateSvc, "start")
+	err := s.httpServer.Start(s.listener.Addr().String())
+	if err != nil {
+		analytics.Event(analytics.CatStateSvc, "start-failure")
+	}
+	return err
 }
 
 func (s *Server) Shutdown() error {
+	analytics.Event(analytics.CatStateSvc, "shutdown")
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

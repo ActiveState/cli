@@ -73,6 +73,9 @@ const CatPrompt = "prompt"
 // CatMist is for miscellaneous events
 const CatMisc = "misc"
 
+// CatStateSvc is for state-svc events
+const CatStateSvc = "state-svc"
+
 func handlePanics(err interface{}, stack []byte) {
 	if err == nil {
 		return

@@ -58,7 +58,7 @@ func main() {
 	err := run(an)
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logger := logging.Error
+		logger := logging.Critical
 		if locale.IsInputError(err) {
 			logger = logging.Debug
 		}

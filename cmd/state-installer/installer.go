@@ -56,7 +56,7 @@ func main() {
 		Interactive: false,
 	})
 	if err != nil {
-		logging.Error("Could not initialize outputer: %v", err)
+		logging.Critical("Could not initialize outputer: %v", err)
 		exitCode = 1
 		return
 	}
@@ -71,7 +71,7 @@ func main() {
 	}
 	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), updateTag); err != nil {
 		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
-		logging.Error(errMsg)
+		logging.Critical(errMsg)
 		out.Error(errMsg)
 		out.Error(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
 

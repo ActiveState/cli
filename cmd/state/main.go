@@ -71,6 +71,7 @@ func main() {
 	outFlags := parseOutputFlags(os.Args)
 	out, err := initOutput(outFlags, "")
 	if err != nil {
+		logging.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
