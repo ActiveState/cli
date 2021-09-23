@@ -104,7 +104,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: [NOTICE]{{.V0}}[/RESET]"
 info_activating_state:
-  other: "Activating Virtual Environment"
+  other: "Creating a Virtual Environment For Your Project"
 info_state_active_repoexists:
   other: "Repo already exists: [NOTICE]{{.Path}}[/RESET]"
 panic_couldnt_detect_wd:
@@ -685,15 +685,7 @@ keypairs_err_override_with_delete:
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 warn_script_name_in_use:
-  other: |
-    The following scripts should be renamed:
-
-      [DISABLED]-[/RESET] {{.V0}}
-
-    These scripts were not aliased during activation but can still be run using [ACTIONABLE]`state run`[/RESET], eg. [ACTIONABLE]`state run {{.V1}}`[/RESET].
-
-    Note that you can also access scripts by prefixing their script with your project name, eg. [ACTIONABLE]`{{.V2}}`[/RESET]
-
+  other: "[ERROR]WARNING:[/RESET] The following scripts collide with existing commands and should be renamed: [NOTICE]{{.V0}}[/RESET]."
 warn_move_incompatible_modes:
   other: "Permissions of files [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET] differ. Using permissions of [NOTICE]{{.V0}}[/RESET]"
 warn_move_destination_overwritten:

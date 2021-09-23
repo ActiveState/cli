@@ -41,7 +41,7 @@ else
 fi
 
 header () {
-  echo "${OUTPUT_DIM}░▒▓█${OUTPUT_END} $OUTPUT_BOLD${1}$OUTPUT_END"
+  echo "${OUTPUT_BOLD}█ ${1}${OUTPUT_END}"
   echo ""
 }
 

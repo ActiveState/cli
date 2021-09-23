@@ -78,7 +78,7 @@ function tempDir()
 
 function header([string] $msg)
 {
-    Write-Host '░▒▓█ ' -ForegroundColor DarkGray -NoNewline
+    Write-Host '█ ' -NoNewline
     Write-Host $msg
     Write-Host ""
 }

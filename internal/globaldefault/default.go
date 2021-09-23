@@ -1,8 +1,6 @@
 package globaldefault
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -20,13 +18,13 @@ type DefaultConfigurer interface {
 }
 
 // BinDir returns the global binary directory
-func BinDir(cfg DefaultConfigurer) string {
-	return filepath.Join(storage.CachePath(), "bin")
+func BinDir() string {
+	return storage.GlobalBinDir()
 }
 
 func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
-	binDir := BinDir(cfg)
+	binDir := BinDir()
 
 	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
@@ -69,7 +67,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	fw := executor.NewWithBinPath(projectPath, BinDir(cfg))
+	fw := executor.NewWithBinPath(projectPath, BinDir())
 	if err := fw.Update(exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}

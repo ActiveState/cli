@@ -10,7 +10,7 @@ import (
 type Title string
 
 func (t Title) String() string {
-	return fmt.Sprintf("[DISABLED]░▒▓█[/RESET] [HEADING]%s[/RESET]", string(t))
+	return fmt.Sprintf("[HEADING]█ %s[/RESET]\n", string(t))
 }
 
 func (t Title) MarshalOutput(f Format) interface{} {
