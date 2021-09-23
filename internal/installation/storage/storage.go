@@ -128,7 +128,7 @@ func InstallSource() (string, error) {
 		return "", fmt.Errorf("Could not detect AppDataPath: %w", err)
 	}
 
-	installFilePath := filepath.Join(path, "installsource.txt")
+	installFilePath := filepath.Join(path, constants.InstallSourceFile)
 	installFileData, err := ioutil.ReadFile(installFilePath)
 	if err != nil {
 		return "unknown", nil

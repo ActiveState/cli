@@ -150,7 +150,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
-& $exePath $args
+& $exePath $args --source-installer="install.sh"
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
 {
     Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN

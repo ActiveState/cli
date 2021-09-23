@@ -33,6 +33,8 @@ events:
     value: echo "First activate event"
   - name: activate
     value: echo "Activate event"
+  - name: activate
+    value: echo "Activate event duplicate"
   - name: before-command
     scope: ["activate"]
     value: before
@@ -42,6 +44,7 @@ events:
 `))
 
 	cp := ts.Spawn("activate")
+	cp.Send("")
 	cp.Expect("before-script")
 	cp.Expect("First activate event")
 	cp.Expect("Activate event")
@@ -58,6 +61,9 @@ events:
 	output := cp.TrimmedSnapshot()
 	if strings.Contains(output, "First activate event") {
 		suite.T().Fatal("Output from second activate event should not contain first-activate output")
+	}
+	if strings.Contains(output, "Activate event duplicate") {
+		suite.T().Fatal("Output should not contain output from duplicate activate event")
 	}
 }
 

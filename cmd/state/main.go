@@ -65,6 +65,7 @@ func main() {
 	outFlags := parseOutputFlags(os.Args)
 	out, err := initOutput(outFlags, "")
 	if err != nil {
+		logging.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
@@ -136,9 +137,9 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	analytics.Configure(cfg)
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {

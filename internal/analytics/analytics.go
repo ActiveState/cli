@@ -93,6 +93,8 @@ const CatMisc = "misc"
 
 const CfgSessionToken = "sessionToken"
 
+const CatStateSvc = "state-svc"
+
 type customDimensions struct {
 	version       string
 	branchName    string
@@ -245,6 +247,9 @@ func EventWithLabel(category string, action string, label string) {
 }
 
 func eventWithLabel(category, action, label string) {
+	if CustomDimensions.uniqID == machineid.FallbackID {
+		logging.Critical("machine id was set to fallback id when creating analytics event")
+	}
 	sendEventAndLog(category, action, label, CustomDimensions.toMap())
 }
 

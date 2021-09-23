@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
@@ -27,6 +30,7 @@ import (
 type Params struct {
 	fromDeferred    bool
 	sourcePath      string
+	sourceInstaller string
 	path            string
 	updateTag       string
 	branch          string
@@ -131,6 +135,11 @@ func main() {
 				Value:       &params.version,
 			},
 			{
+				Name:   "source-installer",
+				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
+				Value:  &params.sourceInstaller,
+			},
+			{
 				Name:   "source-path",
 				Hidden: true, // Source path should ideally only be used through state tool updates (ie. it's internally routed)
 				Value:  &params.sourcePath,
@@ -182,7 +191,7 @@ func main() {
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		return installFromLocalSource(out, cfg, args, params)
+		return installOrUpdateFromLocalSource(out, cfg, args, params)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -190,8 +199,8 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 	return installFromRemoteSource(out, cfg, args, params)
 }
 
-// installFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+// installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
@@ -248,8 +257,11 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 
 	args = append(args, "--from-deferred")
 
+	storeInstallSource(params.sourceInstaller)
+
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg)
+	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
 	checker.VerifyVersion = false
 	update, err := checker.CheckFor(params.branch, params.version)
 	if err != nil {
@@ -272,4 +284,21 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
 	return update.InstallBlocking("", args...)
+}
+
+// storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir
+// this is used in analytics to give us a sense for where our users are coming from
+func storeInstallSource(installSource string) {
+	if installSource == "" {
+		installSource = "state-installer"
+	}
+
+	appData, err := storage.AppDataPath()
+	if err != nil {
+		logging.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
+		return
+	}
+	if err := fileutils.WriteFile(filepath.Join(appData, constants.InstallSourceFile), []byte(installSource)); err != nil {
+		logging.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
+	}
 }
