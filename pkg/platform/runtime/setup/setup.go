@@ -16,6 +16,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
@@ -147,11 +148,11 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 func (s *Setup) Update() error {
 	err := s.update()
 	if err != nil {
-		category := analytics.ActRuntimeFailure
+		category := anaConsts.ActRuntimeFailure
 		if locale.IsInputError(err) {
-			category = analytics.ActRuntimeUserFailure
+			category = anaConsts.ActRuntimeUserFailure
 		}
-		s.analytics.EventWithLabel(analytics.CatRuntime, category, analytics.LblRtFailUpdate)
+		s.analytics.EventWithLabel(anaConsts.CatRuntime, category, anaConsts.LblRtFailUpdate)
 		return err
 	}
 	return nil
@@ -196,12 +197,12 @@ func (s *Setup) update() error {
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
-		s.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeBuild)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild)
 		ns := project.Namespaced{
 			Owner:   s.target.Owner(),
 			Project: s.target.Name(),
 		}
-		s.analytics.EventWithLabel(analytics.CatRuntime, analytics.ActBuildProject, ns.String())
+		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String())
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
@@ -236,7 +237,7 @@ func (s *Setup) update() error {
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifacts) != len(alreadyInstalled) {
 		// if we get here, we dowload artifacts
-		s.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeDownload)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload)
 	}
 
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)

@@ -4,6 +4,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -52,24 +53,24 @@ func (cf *ConversionFlow) StartIfNecessary() (bool, error) {
 		return false, nil
 	}
 
-	cf.analytics.Event(analytics.CatPpmConversion, "run")
+	cf.analytics.Event(anaConsts.CatPpmConversion, "run")
 	r, err := cf.runSurvey()
 	if err != nil {
-		cf.analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
 		return true, locale.WrapError(err, "ppm_conversion_survey_error", "Conversion flow failed.")
 	}
 
 	if r != accepted {
-		cf.analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
+		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "completed", r.String())
 		return true, locale.NewInputError("ppm_conversion_rejected", "Virtual environment creation cancelled.")
 	}
 
 	err = cf.createVirtualEnv()
 	if err != nil {
-		cf.analytics.EventWithLabel(analytics.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
 		return true, locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
 	}
-	cf.analytics.EventWithLabel(analytics.CatPpmConversion, "completed", r.String())
+	cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "completed", r.String())
 	return true, nil
 }
 
@@ -102,7 +103,7 @@ func (cf *ConversionFlow) runSurvey() (conversionResult, error) {
 		choices[0]: "create-virtual-env-1",
 		choices[1]: "asked-why",
 	}
-	cf.analytics.EventWithLabel(analytics.CatPpmConversion, "selection", eventChoices[choice])
+	cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "selection", eventChoices[choice])
 
 	if choice == choices[0] {
 		return accepted, nil
@@ -140,7 +141,7 @@ func (cf *ConversionFlow) explainVirtualEnv() (conversionResult, error) {
 		convertAnswerCreate: "create-virtual-env-2",
 		no:                  "still-wants-ppm",
 	}
-	cf.analytics.EventWithLabel(analytics.CatPpmConversion, "selection", eventChoices[choice])
+	cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "selection", eventChoices[choice])
 
 	switch choice {
 	case convertAnswerCreate:
@@ -178,7 +179,7 @@ func (cf *ConversionFlow) explainAskFeedback() (conversionResult, error) {
 		ok:   "create-virtual-env-3",
 		exit: "exit",
 	}
-	cf.analytics.EventWithLabel(analytics.CatPpmConversion, "selection", eventChoices[choice])
+	cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "selection", eventChoices[choice])
 
 	if choice == ok {
 		return accepted, nil

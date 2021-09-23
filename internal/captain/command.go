@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
@@ -504,7 +505,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	subCommandString := c.UseFull()
 
 	// Send  GA events unless they are handled in the runners...
-	c.analytics.Event(analytics.CatRunCmd, appEventPrefix+subCommandString)
+	c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -552,10 +553,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		c.analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
+		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		c.analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
+		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 	}
 
 	return err

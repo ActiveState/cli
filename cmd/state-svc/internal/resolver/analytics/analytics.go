@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/deferred"
 	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/condition"
@@ -69,7 +69,7 @@ func NewResolver(cfg *config.Instance) *Resolver {
 		osVersion = osvInfo.Version
 	}
 
-	sessionToken := cfg.GetString(analytics.CfgSessionToken)
+	sessionToken := cfg.GetString(anaConsts.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
 	if !ok {
 		tag = cfg.GetString(updater.CfgUpdateTag)
@@ -150,7 +150,7 @@ func (r *Resolver) sendGAEvent(category, action, label string, dimensions map[st
 
 	r.gaClient.CustomDimensionMap(dimensions)
 
-	if category == analytics.CatRunCmd {
+	if category == anaConsts.CatRunCmd {
 		r.gaClient.Send(ga.NewPageview())
 	}
 	event := ga.NewEvent(category, action)

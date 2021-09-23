@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -92,8 +93,8 @@ func run(out output.Outputer, installPath, sessionToken string, updateTag *strin
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
-		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+	if sessionToken != "" && cfg.GetString(anaConsts.CfgSessionToken) == "" {
+		if err := cfg.Set(anaConsts.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
 	}

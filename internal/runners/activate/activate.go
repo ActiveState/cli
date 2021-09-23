@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -160,7 +161,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Have to call this once the project has been set
-	r.analytics.Event(analytics.CatActivationFlow, "start")
+	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -58,11 +59,11 @@ func New(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runtime, err
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
-	an.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart)
 
 	r, err := newRuntime(target, an)
 	if err == nil {
-		an.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache)
 	}
 	return r, err
 }
@@ -109,9 +110,9 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
-			r.analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
+			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
 		} else {
-			r.analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
+			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
 		}
 		r.envAccessed = true
 	}

@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -94,19 +94,19 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				an := prime.Analytics()
 				var serr interface{ Signal() os.Signal }
 				if errors.As(err, &serr) {
-					an.Event(analytics.CatActivationFlow, "user-interrupt-error")
+					an.Event(constants.CatActivationFlow, "user-interrupt-error")
 				}
 				if locale.IsInputError(err) {
 					// Failed due to user input
-					an.Event(analytics.CatActivationFlow, "user-input-error")
+					an.Event(constants.CatActivationFlow, "user-input-error")
 				} else {
 					var exitErr = &exec.ExitError{}
 					if !errors.As(err, &exitErr) {
 						// Failed due to an error we might need to address
-						an.Event(analytics.CatActivationFlow, "error")
+						an.Event(constants.CatActivationFlow, "error")
 					} else {
 						// Failed due to user subshell actions / events
-						an.Event(analytics.CatActivationFlow, "user-exit-error")
+						an.Event(constants.CatActivationFlow, "user-exit-error")
 					}
 				}
 			}

@@ -6,11 +6,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,15 +26,17 @@ type Resolver struct {
 	*analytics.Resolver
 	cfg   *config.Instance
 	cache *cache.Cache
+	an    *analytics.Client
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance) *Resolver {
+func New(cfg *config.Instance, an *analytics.Client) *Resolver {
 	return &Resolver{
 		analytics.NewResolver(cfg),
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
+		an,
 	}
 }
 
@@ -43,7 +45,7 @@ func New(cfg *config.Instance) *Resolver {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
-	analytics.EventWithLabel(analytics.CatStateSvc, "endpoint", "Version")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
 		State: &graph.StateVersion{
@@ -57,7 +59,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
-	analytics.EventWithLabel(analytics.CatStateSvc, "endpoint", "AvailableUpdate")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
@@ -90,7 +92,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
-	analytics.EventWithLabel(analytics.CatStateSvc, "endpoint", "Update")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Update")
 	logging.Debug("Update resolver")
 	ch := ""
 	ver := ""
@@ -121,7 +123,7 @@ func (r *Resolver) Update(ctx context.Context, channel *string, version *string)
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
-	analytics.EventWithLabel(analytics.CatStateSvc, "endpoint", "Projects")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)

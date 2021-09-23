@@ -5,6 +5,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -150,7 +151,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	p.analytics.EventWithLabel(analytics.CatPrompt, title, "present")
+	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
 
 	var defChoice bool
 	if defaultChoice != nil {
@@ -164,11 +165,11 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {
-			p.analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
+			p.analytics.EventWithLabel(constants.CatPrompt, title, "interrupt")
 		}
 		return false, locale.NewInputError(err.Error())
 	}
-	p.analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
+	p.analytics.EventWithLabel(constants.CatPrompt, title, translateConfirm(resp))
 
 	return resp, nil
 }

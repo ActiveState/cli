@@ -10,13 +10,13 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -29,6 +29,7 @@ type Server struct {
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
+	analytics   *analytics.Client
 }
 
 func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc) (*Server, error) {
@@ -37,7 +38,7 @@ func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg)}
+	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg, an), analytics: an}
 
 	// tell the analytics client how to connect to the resolvers event loop that processes analytics events
 	an.Configure(s.resolver.Resolver)
@@ -65,16 +66,16 @@ func (s *Server) Port() int {
 }
 
 func (s *Server) Start() error {
-	analytics.Event(analytics.CatStateSvc, "start")
+	s.analytics.Event(constants.CatStateSvc, "start")
 	err := s.httpServer.Start(s.listener.Addr().String())
 	if err != nil {
-		analytics.Event(analytics.CatStateSvc, "start-failure")
+		s.analytics.Event(constants.CatStateSvc, "start-failure")
 	}
 	return err
 }
 
 func (s *Server) Shutdown() error {
-	analytics.Event(analytics.CatStateSvc, "shutdown")
+	s.analytics.Event(constants.CatStateSvc, "shutdown")
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

@@ -7,6 +7,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
@@ -43,7 +44,7 @@ type NewProjectParams struct {
 }
 
 func (t *Tutorial) RunNewProject(params NewProjectParams) error {
-	t.analytics.EventWithLabel(analytics.CatTutorial, "run", fmt.Sprintf("skipIntro=%v,language=%v", params.SkipIntro, params.Language.String()))
+	t.analytics.EventWithLabel(anaConsts.CatTutorial, "run", fmt.Sprintf("skipIntro=%v,language=%v", params.SkipIntro, params.Language.String()))
 
 	// Print intro
 	if !params.SkipIntro {
@@ -73,7 +74,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 		if lang == language.Unknown || lang == language.Unset {
 			return locale.NewError("err_tutorial_language_unknown", "Invalid language selected: {{.V0}}.", choice)
 		}
-		t.analytics.EventWithLabel(analytics.CatTutorial, "choose-language", lang.String())
+		t.analytics.EventWithLabel(anaConsts.CatTutorial, "choose-language", lang.String())
 	}
 
 	// Prompt for project name
@@ -123,7 +124,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 
 // authFlow is invoked when the user is not authenticated, it will prompt for sign in or sign up
 func (t *Tutorial) authFlow() error {
-	t.analytics.Event(analytics.CatTutorial, "authentication-flow")
+	t.analytics.Event(anaConsts.CatTutorial, "authentication-flow")
 
 	// Sign in / Sign up choices
 	signIn := locale.Tl("tutorial_signin", "Sign In")
@@ -145,17 +146,17 @@ func (t *Tutorial) authFlow() error {
 	// Evaluate user selection
 	switch choice {
 	case signIn:
-		t.analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-in")
+		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-in")
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
 		}
 	case signUpCLI:
-		t.analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-up")
+		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up")
 		if err := runbits.Invoke(t.outputer, "auth", "signup"); err != nil {
 			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running `state auth signup`.")
 		}
 	case signUpBrowser:
-		t.analytics.EventWithLabel(analytics.CatTutorial, "authentication-action", "sign-up-browser")
+		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up-browser")
 		err := open.Run(constants.PlatformSignupURL)
 		if err != nil {
 			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
@@ -170,7 +171,7 @@ func (t *Tutorial) authFlow() error {
 		return locale.WrapError(err, "err_tutorial_auth", "Could not authenticate after invoking `state auth ..`.")
 	}
 
-	t.analytics.Event(analytics.CatTutorial, "authentication-flow-complete")
+	t.analytics.Event(anaConsts.CatTutorial, "authentication-flow-complete")
 
 	return nil
 }

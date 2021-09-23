@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -80,9 +81,9 @@ func (s *Shim) RunList(converted bool, args ...string) error {
 func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 	err := s.executeShim(intercepted, replaced, args...)
 	if err != nil {
-		s.analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.Join(err, " :: ").Error()))
+		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.Join(err, " :: ").Error()))
 	} else {
-		s.analytics.EventWithLabel(analytics.CatPPMShimCmd, intercepted, "success")
+		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, "success")
 	}
 	return err
 }
@@ -90,7 +91,7 @@ func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 func (s *Shim) executeShim(intercepted, replaced string, args ...string) error {
 	if s.project == nil {
 		// TODO: Replace this function call when conversion flow is complete
-		s.analytics.Event(analytics.CatPPMShimCmd, "tutorial")
+		s.analytics.Event(constants.CatPPMShimCmd, "tutorial")
 		return tutorial()
 	}
 
