@@ -157,7 +157,7 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
 	if !fileutils.FileExists(installInfo.Exec()) {
-		t.Fatal("E2E tests require a state-installer binary. Run `state run build`.")
+		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
 	}
 
 	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
