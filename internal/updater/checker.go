@@ -21,6 +21,11 @@ type Configurable interface {
 	GetString(string) string
 }
 
+type InvocationSource string
+
+var InvocationSourceInstall InvocationSource = "install"
+var InvocationSourceUpdate InvocationSource = "update"
+
 type Checker struct {
 	cfg            Configurable
 	apiInfoURL     string
@@ -29,7 +34,8 @@ type Checker struct {
 	currentVersion string
 	httpreq        httpGetter
 
-	VerifyVersion bool
+	InvocationSource InvocationSource
+	VerifyVersion    bool
 }
 
 func NewDefaultChecker(cfg Configurable) *Checker {
@@ -52,6 +58,7 @@ func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersi
 		currentChannel,
 		currentVersion,
 		httpget,
+		InvocationSourceUpdate,
 		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
 }
@@ -77,7 +84,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 	v := make(url.Values)
 	v.Set("channel", branchName)
 	v.Set("platform", platform)
-	v.Set("source", "update")
+	v.Set("source", string(u.InvocationSource))
 
 	if desiredVersion != "" {
 		v.Set("target-version", desiredVersion)

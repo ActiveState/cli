@@ -361,3 +361,6 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// InstallSourceFile is the file we use to record what installed the state tool
+const InstallSourceFile = "installsource.txt"
