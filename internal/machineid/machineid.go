@@ -5,6 +5,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const FallbackID = "99999999-9999-9999-9999-999999999999"
+
 type Configurable interface {
 	GetString(string) string
 	Set(string, interface{}) error
@@ -28,7 +30,7 @@ func SetErrorLogger(l func(msg string, args ...interface{})) {
 func UniqID() string {
 	if id == nil {
 		// We do not log here, as it may create a recursion
-		return "99999999-9999-9999-9999-999999999999"
+		return FallbackID
 	}
 	return *id
 }

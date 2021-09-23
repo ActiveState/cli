@@ -137,9 +137,9 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	analytics.Configure(cfg)
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
