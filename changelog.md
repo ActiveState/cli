@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.29.5
+
+### Fixed
+
+- Fixed race condition in anonymized analytics
+
+## 0.29.4
+
+### Changed
+
+- Improved error reporting to help direct stability improvements
+
 ## 0.29.3
 
 ### Fixed
