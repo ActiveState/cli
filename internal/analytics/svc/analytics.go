@@ -33,7 +33,7 @@ type Analytics struct {
 	customDimensions *CustomDimensions
 	eventWaitGroup   *sync.WaitGroup
 	projectIDCache   *cache.Cache
-	projectIDMutex   *sync.Mutex
+	projectIDMutex   *sync.Mutex // used to synchronize API calls resolving the projectID
 }
 
 // New initializes the analytics instance with all custom dimensions known at this time
@@ -256,6 +256,7 @@ func (r *Analytics) projectID(projectName string) string {
 		return ""
 	}
 
+	// Lock mutex to prevent resolving the same projectName more than once
 	r.projectIDMutex.Lock()
 	defer r.projectIDMutex.Unlock()
 
