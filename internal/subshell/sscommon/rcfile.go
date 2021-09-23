@@ -223,16 +223,22 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
-	for _, event := range prj.Events() {
-		v, err := event.Value()
-		if err != nil {
-			return nil, errs.Wrap(err, "Misc failure")
+	for _, eventType := range project.ActivateEvents() {
+		event := prj.EventByName(eventType.String())
+		if event == nil {
+			continue
 		}
 
-		if strings.ToLower(event.Name()) == "first-activate" && !cfg.GetBool(activatedKey) {
+		v, err := event.Value()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get event value")
+		}
+
+		if strings.ToLower(event.Name()) == project.FirstActivate.String() && !cfg.GetBool(activatedKey) {
 			userScripts = v + "\n" + userScripts
 		}
-		if strings.ToLower(event.Name()) == "activate" {
+
+		if strings.ToLower(event.Name()) == project.Activate.String() {
 			userScripts = userScripts + "\n" + v
 		}
 	}
@@ -273,7 +279,14 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := output.Title(locale.Tl("youre_activated", "You're Activated!"))
+	var activatedMessage output.Title
+	if !prj.IsHeadless() {
+		activatedMessage = output.Title(locale.Tl("project_activated",
+			"{{.V0}} has been sucessfully activated", prj.Name()))
+	} else {
+		activatedMessage = output.Title(locale.Tl("headless_project_activated",
+			"Your virtual environment has been successfully activated", prj.Name()))
+	}
 
 	var activateEvtMessage string
 	if userScripts != "" {

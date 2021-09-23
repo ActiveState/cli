@@ -65,7 +65,7 @@ func onReady() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logging.Error("Systray encountered an error: %v", errMsg)
+		logging.Critical("Systray encountered an error: %v", errMsg)
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
