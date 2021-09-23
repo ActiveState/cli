@@ -83,6 +83,6 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	}
 }
 
-func TestShowIntegrationTestSuite(t *testing.T) {
+func TestInstallerIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InstallerIntegrationTestSuite))
 }
