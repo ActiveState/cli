@@ -24,9 +24,8 @@ const MinimalTimeout = 500 * time.Millisecond
 var errVersionMismatch = locale.NewError("err_ping_version_mismatch")
 
 type Manager struct {
-	ready        bool
-	checkVersion bool
-	cfg          configurable
+	ready bool
+	cfg   configurable
 }
 
 type configurable interface {
@@ -34,12 +33,8 @@ type configurable interface {
 }
 
 func New(cfg configurable) *Manager {
-	mgr := &Manager{false, true, cfg}
+	mgr := &Manager{false, cfg}
 	return mgr
-}
-
-func (m *Manager) SetCheckVersion(check bool) {
-	m.checkVersion = check
 }
 
 func (m *Manager) Start() error {
@@ -117,7 +112,7 @@ func (m *Manager) ping(ctx context.Context) error {
 		return err
 	}
 
-	if m.checkVersion && resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
+	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
 		return errVersionMismatch
 	}
 

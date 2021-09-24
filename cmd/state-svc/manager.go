@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/shirou/gopsutil/process"
@@ -12,7 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/pkg/platform/api/svc"
 )
 
 var ErrSvcAlreadyRunning error = errs.New("Service is already running")
@@ -68,9 +71,42 @@ func (s *serviceManager) Stop() error {
 		return nil
 	}
 
-	if err := model.StopServer(s.cfg); err != nil {
+	if err := stopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
+	return nil
+}
+
+func stopServer(cfg *config.Instance) error {
+	htClient := retryhttp.DefaultClient.StandardClient()
+
+	client, err := svc.New(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize svc client")
+	}
+
+	quitAddress := fmt.Sprintf("%s/__quit", client.BaseUrl())
+	logging.Debug("Sending quit request to %s", quitAddress)
+	req, err := http.NewRequest("GET", quitAddress, nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not create request to quit svc")
+	}
+
+	res, err := htClient.Do(req)
+	if err != nil {
+		return errs.Wrap(err, "Request to quit svc failed")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
+		}
+		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
+	}
+
 	return nil
 }
 
