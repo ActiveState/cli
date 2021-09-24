@@ -136,7 +136,7 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer handlePanics(recover(), debug.Stack())
-		dims.projectID = a.projectID(dims.projectName)
+		dims.projectID = a.projectID(dims.projectNameSpace)
 		a.event(category, action, label, dims)
 	}()
 }
