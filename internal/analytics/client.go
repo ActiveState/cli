@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -76,7 +77,10 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	}
 
 	if a.svcModel == nil {
-		return errs.New("Could not defer event, not connected to state-svc yet")
+		if !condition.BuiltViaCI() {
+			panic("Could not send analytics event, not connected to state-svc yet.")
+		}
+		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
 	a.eventWaitGroup.Add(1)
