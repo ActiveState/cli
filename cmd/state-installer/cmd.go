@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -95,6 +96,17 @@ func main() {
 
 	var garbageBool bool
 
+	// We have old install one liners around that use `-activate` instead of `--activate`
+	processedArgs := os.Args
+	for x, v := range processedArgs {
+		if strings.HasPrefix(v, "-activate") {
+			processedArgs[x] = "--activate" + strings.TrimPrefix(v, "-activate")
+		}
+	}
+
+	logging.Debug("Original Args: %v", os.Args)
+	logging.Debug("Processed Args: %v", processedArgs)
+
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
@@ -166,21 +178,12 @@ func main() {
 				Value:       &params.path,
 			},
 		},
-		func(ccmd *captain.Command, args []string) error {
-			return execute(out, cfg, args, params)
+		func(ccmd *captain.Command, _ []string) error {
+			return execute(out, cfg, processedArgs[1:], params)
 		},
 	)
 
-	args := os.Args
-
-	// We have old install one liners around that use `-activate` instead of `--activate`
-	for _, v := range args {
-		if strings.HasPrefix(v, "-activate") {
-			v = "--activate" + strings.TrimPrefix(v, "-activate")
-		}
-	}
-
-	if err := cmd.Execute(args[1:]); err != nil {
+	if err := cmd.Execute(processedArgs[1:]); err != nil {
 		logging.Error(errs.JoinMessage(err))
 		out.Error(err.Error())
 		exitCode = 1
@@ -215,30 +218,34 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
+	out.Print("")
+	out.Print(output.Title("Installation Complete"))
+	out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+
+	stateExe := appinfo.StateApp(installer.InstallPath()).Exec()
+	env := []string{"PATH=" + string(os.PathListSeparator) + filepath.Dir(stateExe) + os.Getenv("PATH")}
+
 	// Execute requested command, these are mutually exclusive
 	switch {
 	// Execute provided --command
 	case params.command != "":
-		out.Print(output.Heading(fmt.Sprintf("Running `[NOTICE]%s[/RESET]`", params.command)))
+		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`", params.command)))
 		cmd, args := exeutils.DecodeCmd(params.command)
-		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, []string{}); err != nil {
-			return errs.Wrap(err, "Running provided command failed")
+		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, env); err != nil {
+			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
-		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activate.String()}, []string{}); err != nil {
-			return errs.Wrap(err, "Could not activate %s", params.activate.String())
+		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`", params.activate.String())))
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, env); err != nil {
+			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
-		if _, _, err := exeutils.ExecuteAndPipeStd("state", []string{"activate", params.activateDefault.String(), "--default"}, []string{}); err != nil {
-			return errs.Wrap(err, "Could not activate %s", params.activateDefault.String())
+		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`", params.activateDefault.String())))
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
+			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
-	default:
-		out.Print("")
-		out.Print(output.Title("Installation Complete"))
-		out.Print("")
-		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
 	}
 
 	return nil
@@ -249,12 +256,13 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
 func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	out.Print(output.Title("Installing State Tool Package Manager\n"))
+	out.Print(output.Title("Installing State Tool Package Manager"))
 	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
 		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
 		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` + "\n" +
-		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]`)
+		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 
+	logging.Debug("installFromRemoteSource args: %v", args)
 	args = append(args, "--from-deferred")
 
 	storeInstallSource(params.sourceInstaller)
