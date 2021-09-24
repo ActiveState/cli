@@ -114,6 +114,10 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
 		return
 	}
+	if dims.uniqID == machineid.FallbackID {
+		logging.Critical("machine id was set to fallback id when creating analytics event")
+	}
+
 	logging.Debug("Analytics event resolver")
 
 	a.eventWaitGroup.Add(1)

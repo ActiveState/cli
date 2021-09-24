@@ -145,6 +145,7 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 	// set global configuration instances
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	analytics.Configure(cfg)
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
