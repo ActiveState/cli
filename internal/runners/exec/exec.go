@@ -5,7 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -27,6 +30,7 @@ type Exec struct {
 	proj     *project.Project
 	auth     *authentication.Auth
 	out      output.Outputer
+	cfg      *config.Instance
 }
 
 type primeable interface {
@@ -47,6 +51,7 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Config(),
 	}
 }
 
@@ -104,7 +109,12 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
 	// Ensure that we are not calling the exec recursively
 	if _, isBeingShimmed := env[constants.ExecEnvVarName]; isBeingShimmed {
-		return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
+		// Ensure that we would not call the executor recursively: The path for the executable should be different from the default bin dir
+		p := exeutils.PathForExecutable(filepath.Base(args[0]))
+		binDir := globaldefault.BinDir(s.cfg)
+		if p == binDir {
+			return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
+		}
 	}
 	env[constants.ExecEnvVarName] = "true"
 
