@@ -45,18 +45,23 @@ func (a *DefaultClient) EventWithLabel(category string, action string, label str
 
 // Configure configures the default client, connecting it to a state-svc service
 func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error {
-	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
-	if err != nil {
-		return errs.Wrap(err, "Failed to initialize svc model")
-	}
 	o := string(output.PlainFormatName)
 	if out.Type() != "" {
 		o = string(out.Type())
 	}
-	a.svcModel = svcModel
 	a.output = o
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
+
+	if condition.InUnitTest() {
+		return nil
+	}
+
+	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
+	if err != nil {
+		return errs.Wrap(err, "Failed to initialize svc model")
+	}
+	a.svcModel = svcModel
 	return nil
 }
 
