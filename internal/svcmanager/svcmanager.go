@@ -2,6 +2,7 @@ package svcmanager
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -20,7 +21,7 @@ import (
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
 const MinimalTimeout = 500 * time.Millisecond
 
-type errVersionMismatch struct{ *locale.LocalizedError }
+var errVersionMismatch = locale.NewError("err_ping_version_mismatch")
 
 type Manager struct {
 	ready        bool
@@ -95,7 +96,7 @@ func (m *Manager) Ready() (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
 	if err := m.ping(ctx); err != nil {
-		if errs.Matches(err, &errVersionMismatch{}) {
+		if errors.Is(err, errVersionMismatch) {
 			return false, errs.Wrap(err, "Incorrect State Service version")
 		}
 		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
@@ -117,7 +118,7 @@ func (m *Manager) ping(ctx context.Context) error {
 	}
 
 	if m.checkVersion && resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
-		return &errVersionMismatch{locale.NewError("err_ping_version_mismatch")}
+		return errVersionMismatch
 	}
 
 	return nil
