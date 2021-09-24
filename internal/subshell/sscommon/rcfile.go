@@ -287,10 +287,10 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	var activatedMessage string
 	if !prj.IsHeadless() {
 		activatedMessage = locale.Tl("project_activated",
-			"\n[SUCCESS]✔ {{.V0}} Has Been  Activated[/RESET]", prj.Name())
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
 	} else {
 		activatedMessage = locale.Tl("headless_project_activated",
-			"\n[SUCCESS]✔ Virtual Environment Activated[/RESET]", prj.Name())
+			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
 	}
 
 	rcData := map[string]interface{}{

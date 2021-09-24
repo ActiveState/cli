@@ -229,20 +229,20 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	switch {
 	// Execute provided --command
 	case params.command != "":
-		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`", params.command)))
+		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, env); err != nil {
 			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
-		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`", params.activate.String())))
+		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, env); err != nil {
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
-		out.Print(output.Heading(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`", params.activateDefault.String())))
+		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
