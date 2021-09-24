@@ -46,8 +46,8 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	}
 
 	id := machineid.UniqID()
-	if id == "unknown" {
-		logging.Error("unknown machine id")
+	if id == machineid.UnknownID || id == machineid.FallbackID {
+		logging.Error("unknown machine id: %s", id)
 	}
 
 	osName := sysinfo.OS().String()
