@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/svc"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -37,7 +37,7 @@ const (
 
 func main() {
 	var exitCode int
-	an := svc.New()
+	an := anaSvc.NewAnalytics()
 
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
@@ -69,7 +69,7 @@ func main() {
 	}
 }
 
-func run(an *svc.Analytics) (rerr error) {
+func run(an *anaSvc.Analytics) (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -143,7 +143,7 @@ func run(an *svc.Analytics) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *svc.Analytics) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Analytics) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish

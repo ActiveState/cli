@@ -10,7 +10,7 @@ import (
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/svc"
+	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,12 +26,12 @@ import (
 type Resolver struct {
 	cfg   *config.Instance
 	cache *cache.Cache
-	an    *svc.Analytics
+	an    *service.Analytics
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *svc.Analytics) *Resolver {
+func New(cfg *config.Instance, an *service.Analytics) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),

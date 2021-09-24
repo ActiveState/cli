@@ -1,4 +1,4 @@
-package svc
+package service
 
 import (
 	"fmt"
@@ -30,8 +30,8 @@ type Analytics struct {
 	eventWaitGroup   *sync.WaitGroup
 }
 
-// New initializes the analytics instance with all custom dimensions known at this time
-func New() *Analytics {
+// NewAnalytics initializes the analytics instance with all custom dimensions known at this time
+func NewAnalytics() *Analytics {
 	r := &Analytics{
 		eventWaitGroup: &sync.WaitGroup{},
 	}
