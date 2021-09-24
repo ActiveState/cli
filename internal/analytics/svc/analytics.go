@@ -196,58 +196,12 @@ func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[s
 	}
 }
 
-<<<<<<< HEAD:internal/analytics/svc/analytics.go
 func (a *Analytics) Event(category string, action string) {
 	a.EventWithLabel(category, action, "")
 }
 
 func (a *Analytics) EventWithLabel(category string, action, label string) {
 	a.SendWithCustomDimensions(category, action, label, a.customDimensions)
-=======
-func (r *Resolver) eventLoop() {
-	// flush deferred data every five minutes
-	tick := time.NewTicker(time.Minute)
-	defer tick.Stop()
-
-	// flush the deferred data initially
-	if err := r.flush(); err != nil {
-		logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
-	}
-	for {
-		select {
-		case <-r.ctx.Done():
-			return
-		case <-tick.C:
-			if err := r.flush(); err != nil {
-				logging.Error("Failed to flush deferred data: %s", errs.JoinMessage(err))
-			}
-		case ev := <-r.events:
-			r.event(&ev)
-		}
-	}
-}
-
-func (r *Resolver) flush() error {
-	events, err := deferred.LoadEvents()
-	if err != nil {
-		return errs.Wrap(err, "Failed to load deferred events")
-	}
-	for _, event := range events {
-		ev := &event
-		r.addProjectIDToEvent(ev)
-		r.event(ev)
-	}
-
-	return nil
->>>>>>> ensure that projectID is added on flush():cmd/state-svc/internal/resolver/analytics/analytics.go
-}
-
-func (r *Resolver) addProjectIDToEvent(ev *event.EventData) {
-	if ev.ProjectName == "" || ev.ProjectID != "" {
-		return
-	}
-
-	ev.ProjectID = r.projectID(ev.ProjectName)
 }
 
 // projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
