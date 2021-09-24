@@ -66,7 +66,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, project *string, output *string, userID *string) int
+		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) int
 		AvailableUpdate func(childComplexity int) int
 		Projects        func(childComplexity int) int
 		Update          func(childComplexity int, channel *string, version *string) int
@@ -91,7 +91,7 @@ type QueryResolver interface {
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
-	AnalyticsEvent(ctx context.Context, category string, action string, label *string, project *string, output *string, userID *string) (*graph.AnalyticsEventResponse, error)
+	AnalyticsEvent(ctx context.Context, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) (*graph.AnalyticsEventResponse, error)
 }
 
 type executableSchema struct {
@@ -196,7 +196,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["project"].(*string), args["output"].(*string), args["userID"].(*string)), true
+		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string)), true
 
 	case "Query.availableUpdate":
 		if e.complexity.Query.AvailableUpdate == nil {
@@ -363,7 +363,7 @@ type Query {
   availableUpdate: AvailableUpdate
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, project: String, output: String, userID: String): AnalyticsEventResponse
+  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String, userID: String): AnalyticsEventResponse
 }
 
 `, BuiltIn: false},
@@ -420,14 +420,14 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 	}
 	args["label"] = arg2
 	var arg3 *string
-	if tmp, ok := rawArgs["project"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+	if tmp, ok := rawArgs["projectNameSpace"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectNameSpace"))
 		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["project"] = arg3
+	args["projectNameSpace"] = arg3
 	var arg4 *string
 	if tmp, ok := rawArgs["output"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("output"))
@@ -1059,7 +1059,7 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["project"].(*string), args["output"].(*string), args["userID"].(*string))
+		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

@@ -139,31 +139,31 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectNameSpace, out, userID *string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label, _projectNameSpace, _out, _userID *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
-	lbl := ""
-	if label != nil {
-		lbl = *label
+	label := ""
+	if _label != nil {
+		label = *_label
 	}
 
-	pn := ""
-	if projectNameSpace != nil {
-		pn = *projectNameSpace
+	projectNameSpace := ""
+	if _projectNameSpace != nil {
+		projectNameSpace = *_projectNameSpace
 	}
 
-	o := string(output.PlainFormatName)
-	if out != nil {
-		o = *out
+	out := string(output.PlainFormatName)
+	if _out != nil {
+		out = *_out
 	}
 
-	uid := ""
-	if userID != nil {
-		uid = *userID
+	userID := ""
+	if _userID != nil {
+		userID = *_userID
 	}
 
-	dims := r.an.DimensionsWithClientData(pn, o, uid)
-	r.an.SendWithCustomDimensions(category, action, lbl, dims)
+	dimensions := r.an.DimensionsWithClientData(projectNameSpace, out, userID)
+	r.an.SendWithCustomDimensions(category, action, label, dimensions)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

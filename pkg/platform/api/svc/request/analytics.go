@@ -21,8 +21,8 @@ func NewAnalyticsEvent(category, action, label, projectName, outputType, userID 
 }
 
 func (e *AnalyticsEvent) Query() string {
-	return `query($c: String!, $a: String!, $l: String, $pn: String, $out: String, $uid: String) {
-		analyticsEvent(category: $c, action: $a, label: $l, project: $pn, output: $out, userID: $uid) {
+	return `query($category: String!, $action: String!, $label: String, $prjNameSpace: String, $out: String, $userID: String) {
+		analyticsEvent(category: $category, action: $action, label: $label, projectNameSpace: $prjNameSpace, output: $out, userID: $userID) {
 			sent
 		}
 	}`
