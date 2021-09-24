@@ -66,7 +66,7 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config(), prime),
+		NewNamespaceSelect(prime.Config()),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
@@ -109,7 +109,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -286,9 +286,9 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
+func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
 	switch {
-	case namespace != "":
+	case namespace != nil && namespace.String() != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
 		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
