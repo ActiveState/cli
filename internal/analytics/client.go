@@ -38,10 +38,9 @@ func (a *DefaultClient) Event(category string, action string) {
 // EventWithLabel logs an event with a label to google analytics
 func (a *DefaultClient) EventWithLabel(category string, action string, label string) {
 	err := a.sendEvent(category, action, label)
-	if err == nil {
-		return
+	if err != nil {
+		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 	}
-	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
 // Configure configures the default client, connecting it to a state-svc service
