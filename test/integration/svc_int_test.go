@@ -20,7 +20,6 @@ func TestSvcManagerAndModel(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	require.NoError(t, svcManager.WaitWithContext(ctx))
 
-	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcManager)
 	require.NoError(t, err)
-	require.NoError(t, svcModel.StopServer())
+	require.NoError(t, model.StopServer(cfg))
 }

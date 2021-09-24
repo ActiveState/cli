@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -70,17 +68,7 @@ func (s *serviceManager) Stop() error {
 		return nil
 	}
 
-	// Ensure that port number has been written to configuration file ie., that the server is ready to talk
-	svcmgr := svcmanager.New(s.cfg)
-
-	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
-	defer cancel()
-	svcm, err := model.NewSvcModel(ctx, s.cfg, svcmgr)
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize svc model")
-	}
-
-	if err := svcm.StopServer(); err != nil {
+	if err := model.StopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
 	return nil

@@ -21,7 +21,6 @@ import (
 
 type SvcModel struct {
 	client *svc.Client
-	svcm   *svcmanager.Manager
 }
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
@@ -37,11 +36,11 @@ func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Man
 		return nil, errs.Wrap(err, "Could not initialize svc client")
 	}
 
-	return newSvcModelWithClient(client, svcm), nil
+	return newSvcModelWithClient(client), nil
 }
 
-func newSvcModelWithClient(client *svc.Client, svcm *svcmanager.Manager) *SvcModel {
-	return &SvcModel{client, svcm}
+func newSvcModelWithClient(client *svc.Client) *SvcModel {
+	return &SvcModel{client}
 }
 
 func (m *SvcModel) StateVersion(ctx context.Context) (*graph.Version, error) {
@@ -86,17 +85,21 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	return &u.AvailableUpdate, nil
 }
 
-func (m *SvcModel) StopServer() error {
+func StopServer(cfg *config.Instance) error {
 	htClient := retryhttp.DefaultClient.StandardClient()
 
-	quitAddress := fmt.Sprintf("%s/__quit", m.client.BaseUrl())
+	client, err := svc.New(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize svc client")
+	}
+
+	quitAddress := fmt.Sprintf("%s/__quit", client.BaseUrl())
 	logging.Debug("Sending quit request to %s", quitAddress)
 	req, err := http.NewRequest("GET", quitAddress, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not create request to quit svc")
 	}
 
-	m.svcm.SetCheckVersion(false)
 	res, err := htClient.Do(req)
 	if err != nil {
 		return errs.Wrap(err, "Request to quit svc failed")
