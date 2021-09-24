@@ -345,7 +345,7 @@ info "Reminder: Start a new shell in order to start using the State Tool."
 # Keep --activate and --activate-default flags for backwards compatibility
 if [ -n "${POST_INSTALL_COMMAND}" ]; then
   # Ensure that new installation dir is on the PATH for follow up commands
-  export PATH="$PATH:$INSTALLDIR"
+  export PATH="$INSTALLDIR:$PATH"
   exec $POST_INSTALL_COMMAND
 elif [ -n "${ACTIVATE}" ]; then
   # control flow of this script ends with this line: replace the shell with the activated project's shell

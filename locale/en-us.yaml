@@ -1734,3 +1734,9 @@ err_ping_version_mismatch:
     The installed version of the State Tool Service does not match that of the client.
     Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
     If this issue persists please reinstall the State Tool.
+err_get_wd:
+  other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
+err_directory_in_use:
+  other: | 
+    Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
+    To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
