@@ -20,7 +20,7 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
-while getopts "b:" arg; do
+while getopts "b:" arg > /dev/null 2>&1; do
   case $arg in
     b) CHANNEL=$OPTARG;;
   esac

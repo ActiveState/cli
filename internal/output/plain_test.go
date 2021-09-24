@@ -3,7 +3,6 @@ package output
 import (
 	"bytes"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -351,62 +350,6 @@ func Test_localizedField(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := localizedField(tt.input); got != tt.want {
 				t.Errorf("localizedField() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_wordWrap(t *testing.T) {
-	tests := []struct {
-		name  string
-		text  string
-		width int
-		want  string
-	}{
-		{
-			"Simple",
-			"Hello!",
-			100,
-			"Hello!",
-		},
-		{
-			"Exact Length Match",
-			"Hello!",
-			6,
-			"Hello!",
-		},
-		{
-			"Cut down the middle",
-			"Hello!",
-			3,
-			"Hel\nlo!",
-		},
-		{
-			"Cut on line ending",
-			"Hello!\n",
-			6,
-			"Hello!\n",
-		},
-		{
-			"Cut on multiple line endings",
-			"Hello!\n\n",
-			7,
-			"Hello!\n\n",
-		},
-		{
-			"Cut multiple times with multiple line endings",
-			"Hello!\n\nHello!\n\nHello!\n\n",
-			21,
-			"Hello!\n\nHello!\n\nHello!\n\n",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := wordWrapWithWidth(tt.text, tt.width); got != tt.want {
-				escape := func(v string) string {
-					return strings.Replace(v, "\n", "\\n", -1)
-				}
-				t.Errorf("wordWrap() = '%v', want '%v'", escape(got), escape(tt.want))
 			}
 		})
 	}

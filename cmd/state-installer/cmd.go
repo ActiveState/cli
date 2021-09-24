@@ -252,7 +252,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 	out.Print(output.Title("Installing State Tool Package Manager\n"))
 	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
 		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
-		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` +
+		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` + "\n" +
 		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]`)
 
 	args = append(args, "--from-deferred")

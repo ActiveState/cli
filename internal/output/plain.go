@@ -108,24 +108,7 @@ func wordWrap(text string) string {
 }
 
 func wordWrapWithWidth(text string, width int) string {
-	var result []string
-	cropped := colorize.GetCroppedText(text, width)
-	for _, crop := range cropped {
-		result = append(result, crop.Line)
-	}
-	suffix := ""
-
-	// Check for line endings at the end of the string
-	// We don't care about runes here since we are only looking at line endings
-	// NOTE the `- 2`. This is because we want to skip the first line ending as
-	// this gets added regardless due to the join and the way `GetCroppedText` operates
-	for x := len(text) - 2; x >= 0; x-- {
-		if string(text[x]) != "\n" {
-			break
-		}
-		suffix += "\n"
-	}
-	return strings.Join(result, "\n") + suffix
+	return colorize.GetCroppedText(text, width, true).String()
 }
 
 const nilText = "<nil>"
