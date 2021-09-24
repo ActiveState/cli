@@ -24,9 +24,9 @@ func New(prime primeable) *Learn {
 func (l *Learn) Run() error {
 	err := open.Run(cheetSheetURL)
 	if err != nil {
-		return locale.WrapError(err, "err_learn_open", "Could not open State Tool cheat sheet in the browser")
+		return locale.WrapError(err, "err_learn_open", cheetSheetURL)
 	}
 
-	l.out.Print(locale.Tl("learn_info", "If a browser window doesn't automatically open, visit: [ACTIONABLE]{{.V0}}[/RESET] to learn about common commands", cheetSheetURL))
+	l.out.Print(locale.Tr("learn_info", "Opening [ACTIONABLE]{{.V0}}[/RESET] in browser", cheetSheetURL))
 	return nil
 }
