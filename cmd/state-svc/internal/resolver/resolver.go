@@ -139,7 +139,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectName, out, userID *string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectNameSpace, out, userID *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
 	lbl := ""
@@ -148,8 +148,8 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, la
 	}
 
 	pn := ""
-	if projectName != nil {
-		pn = *projectName
+	if projectNameSpace != nil {
+		pn = *projectNameSpace
 	}
 
 	o := string(output.PlainFormatName)

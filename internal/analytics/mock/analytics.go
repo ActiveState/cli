@@ -40,7 +40,7 @@ func (m *Mock) Wait() {
 	m.CalledWait = true
 }
 
-func (m *Mock) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error {
+func (m *Mock) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error {
 	m.CalledConfigure = true
 	return nil
 }

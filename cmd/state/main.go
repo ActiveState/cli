@@ -43,7 +43,7 @@ import (
 
 type ConfigurableAnalytics interface {
 	analytics.AnalyticsDispatcher
-	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error
+	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
 }
 
 func main() {

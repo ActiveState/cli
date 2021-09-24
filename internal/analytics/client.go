@@ -16,11 +16,11 @@ import (
 
 // DefaultClient is the default analytics dispatcher, forwarding analytics events to the state-svc service
 type DefaultClient struct {
-	svcModel       *model.SvcModel
-	auth           *authentication.Auth
-	output         string
-	projectName    string
-	eventWaitGroup *sync.WaitGroup
+	svcModel         *model.SvcModel
+	auth             *authentication.Auth
+	output           string
+	projectNameSpace string
+	eventWaitGroup   *sync.WaitGroup
 }
 
 func New() *DefaultClient {
@@ -44,7 +44,7 @@ func (a *DefaultClient) EventWithLabel(category string, action string, label str
 }
 
 // Configure configures the default client, connecting it to a state-svc service
-func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectName string) error {
+func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error {
 	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
 	if err != nil {
 		return errs.Wrap(err, "Failed to initialize svc model")
@@ -55,7 +55,7 @@ func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instan
 	}
 	a.svcModel = svcModel
 	a.output = o
-	a.projectName = projectName
+	a.projectNameSpace = projectNameSpace
 	a.auth = auth
 	return nil
 }
@@ -83,7 +83,7 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer a.eventWaitGroup.Done()
-		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectName, a.output, userID); err != nil {
+		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectNameSpace, a.output, userID); err != nil {
 			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
