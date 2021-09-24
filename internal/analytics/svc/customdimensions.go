@@ -1,6 +1,6 @@
-package analytics
+package svc
 
-type customDimensions struct {
+type CustomDimensions struct {
 	version       string
 	branchName    string
 	userID        string
@@ -11,21 +11,32 @@ type customDimensions struct {
 	uniqID        string
 	sessionToken  string
 	updateTag     string
+	projectName   string
+	outputType    string
 }
 
-func (d *customDimensions) toMap(projectName, output, userID string) map[string]string {
+// WithClientData returns a copy of the custom dimensions struct with client-specific fields overwritten
+func (d *CustomDimensions) WithClientData(projectName, output, userID string) *CustomDimensions {
+	res := *d
+	res.projectName = projectName
+	res.outputType = output
+	res.userID = userID
+	return &res
+}
+
+func (d *CustomDimensions) toMap() map[string]string {
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"
 		"2":  d.version,
 		"3":  d.branchName,
-		"4":  userID,
-		"5":  output,
+		"4":  d.userID,
+		"5":  d.outputType,
 		"6":  d.osName,
 		"7":  d.osVersion,
 		"8":  d.installSource,
 		"9":  d.machineID,
-		"10": projectName,
+		"10": d.projectName,
 		"11": d.sessionToken,
 		"12": d.uniqID,
 		"13": d.updateTag,

@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	svcAnalytics "github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
+	"github.com/ActiveState/cli/internal/analytics/svc"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -37,7 +37,7 @@ const (
 
 func main() {
 	var exitCode int
-	an := svcAnalytics.NewClient()
+	an := svc.New()
 
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
@@ -69,7 +69,7 @@ func main() {
 	}
 }
 
-func run(an *svcAnalytics.Client) (rerr error) {
+func run(an *svc.Analytics) (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -80,6 +80,7 @@ func run(an *svcAnalytics.Client) (rerr error) {
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	an.Configure(cfg, authentication.LegacyGet())
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
@@ -142,7 +143,7 @@ func run(an *svcAnalytics.Client) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *svcAnalytics.Client) error {
+func runForeground(cfg *config.Instance, an *svc.Analytics) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish

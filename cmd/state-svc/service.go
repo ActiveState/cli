@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
+	"github.com/ActiveState/cli/internal/analytics/svc"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,12 +17,12 @@ import (
 
 type service struct {
 	cfg      *config.Instance
-	an       *analytics.Client
+	an       *svc.Analytics
 	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc) *service {
+func NewService(cfg *config.Instance, an *svc.Analytics, shutdown context.CancelFunc) *service {
 	return &service{cfg: cfg, an: an, shutdown: shutdown}
 }
 

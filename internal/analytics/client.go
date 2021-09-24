@@ -5,11 +5,8 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/analytics/deferred"
-	"github.com/ActiveState/cli/internal/analytics/event"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcmanager"
@@ -78,13 +75,8 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 		userID = string(*a.auth.UserID())
 	}
 
-	ev := event.New(category, action, &label, &a.projectName, &a.output, &userID)
-
 	if a.svcModel == nil {
-		if err := deferred.DeferEvent(ev); err != nil {
-			return locale.WrapError(err, "err_analytics_defer", "Could not defer event")
-		}
-		return nil
+		return errs.New("Could not defer event, not connected to state-svc yet")
 	}
 
 	a.eventWaitGroup.Add(1)
@@ -96,4 +88,12 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 		}
 	}()
 	return nil
+}
+
+func handlePanics(err interface{}, stack []byte) {
+	if err == nil {
+		return
+	}
+	logging.Error("Panic in client analytics: %v", err)
+	logging.Debug("Stack: %s", string(stack))
 }

@@ -8,32 +8,31 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/svc"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
-	*analytics.Resolver
 	cfg   *config.Instance
 	cache *cache.Cache
-	an    *analytics.Client
+	an    *svc.Analytics
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *analytics.Client) *Resolver {
+func New(cfg *config.Instance, an *svc.Analytics) *Resolver {
 	return &Resolver{
-		analytics.NewResolver(cfg),
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 		an,
@@ -138,4 +137,33 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	})
 
 	return projects, nil
+}
+
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectName, out, userID *string) (*graph.AnalyticsEventResponse, error) {
+	logging.Debug("Analytics event resolver")
+
+	lbl := ""
+	if label != nil {
+		lbl = *label
+	}
+
+	pn := ""
+	if projectName != nil {
+		pn = *projectName
+	}
+
+	o := string(output.PlainFormatName)
+	if out != nil {
+		o = *out
+	}
+
+	uid := ""
+	if userID != nil {
+		uid = *userID
+	}
+
+	dims := r.an.DimensionsWithClientData(pn, o, uid)
+	r.an.SendWithCustomDimensions(category, action, lbl, dims)
+
+	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

@@ -14,9 +14,9 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver/analytics"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/svc"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -29,19 +29,16 @@ type Server struct {
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
-	analytics   *analytics.Client
+	analytics   *svc.Analytics
 }
 
-func New(cfg *config.Instance, an *analytics.Client, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *svc.Analytics, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
 	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg, an), analytics: an}
-
-	// tell the analytics client how to connect to the resolvers event loop that processes analytics events
-	an.Configure(s.resolver.Resolver)
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener
@@ -79,27 +76,11 @@ func (s *Server) Shutdown() error {
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	s.close(ctx)
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
 	}
 
 	return nil
-}
-
-func (s *Server) close(ctx context.Context) {
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		// closing the resolver may block for a long time...
-		s.resolver.Close()
-	}()
-	// ... so we are abandoning the process if it takes too long
-	select {
-	case <-done:
-	case <-ctx.Done():
-		logging.Error("Abandoning resolver shutdown due to context expiration")
-	}
 }
 
 func newGraphServer(r *resolver.Resolver) *handler.Server {
