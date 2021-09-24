@@ -111,6 +111,9 @@ func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userI
 // SendWithCustomDimensions sends an analytics event with the given custom dimensions
 func (a *Analytics) SendWithCustomDimensions(category, action, label string, dims *CustomDimensions) {
 	if a.customDimensions == nil {
+		if condition.InUnitTest() {
+			return
+		}
 		if !condition.BuiltViaCI() {
 			panic("Trying to send analytics without configuring the Analytics instance.")
 		}

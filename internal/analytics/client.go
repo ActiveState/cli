@@ -76,6 +76,9 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	}
 
 	if a.svcModel == nil {
+		if condition.InUnitTest() {
+			return nil
+		}
 		if !condition.BuiltViaCI() {
 			panic("Could not send analytics event, not connected to state-svc yet.")
 		}
