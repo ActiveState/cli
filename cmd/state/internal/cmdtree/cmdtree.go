@@ -171,6 +171,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newResetCommand(prime),
 		secretsCmd,
 		branchCmd,
+		newLearnCommand(prime),
 	)
 
 	return &CmdTree{
