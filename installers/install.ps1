@@ -4,10 +4,6 @@
 install.ps1 -b branchToInstall
 #>
 
-param (
-    [Parameter(Mandatory = $False)][string]$b = ""
-)
-
 Set-StrictMode -Off
 
 # URL to fetch installer archive from
@@ -28,10 +24,20 @@ if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY")
     $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
-if ("$b" -ne "")
+function parseChannel([string[]]$arr)
 {
-    $script:CHANNEL = $b
+    for ($i = 0; $i -le $arr.Length; $i++)
+    {
+        $arg = $arr[$i]
+        if ($arg -eq "-b" -And $arr.Length -ge ($i + 2))
+        {
+            return $arr[$i + 1]
+        }
+    }
+    return $script:CHANNEL
 }
+
+$script:CHANNEL = parseChannel $args
 
 function download([string] $url, [string] $out)
 {
