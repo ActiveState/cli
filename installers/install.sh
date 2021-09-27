@@ -21,22 +21,11 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
 fi
 
 parseChannel() {
-  cap="false"
-  for var in "$@"
-  do
-      if [ "$var" =  "-b" ]; then
-        cap="true"
-        continue
-      fi
-
-      if [ "$cap" = "true" ]; then
-        echo "$var"
-        break
-      fi
+  i=0
+  for arg in ${@}; do
+    i=$((i + 1)) && [ "${arg}" != "-b" ] && continue
+    echo "${@}" | cut -d' ' -f$((${i} + 1)) && break
   done
-  if [ "$cap" != "true" ]; then
-    echo "$CHANNEL"
-  fi
 }
 CHANNEL=$(parseChannel "$@")
 
