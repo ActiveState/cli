@@ -1730,7 +1730,7 @@ lock_version_mismatch:
 lock_update_lock:
   other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.
 err_learn_open:
-  other: "Could not open cheat sheet in browser, visit: [ACTIONABLE]{{.V0}}[/RESET] to learn about common commands"
+  other: "Could not open cheat sheet in browser"
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_directory_in_use:

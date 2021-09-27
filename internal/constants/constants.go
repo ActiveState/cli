@@ -242,6 +242,9 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
+// CheatSheetURL is the URL for the State Tool Cheat Sheet
+const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
+
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
 const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 
