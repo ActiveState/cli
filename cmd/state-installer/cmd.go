@@ -179,6 +179,7 @@ func main() {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
+			logging.Debug("Params: %+v", params)
 			return execute(out, cfg, processedArgs[1:], params)
 		},
 	)
@@ -219,7 +220,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
 	out.Print("")
-	out.Print(output.Title("Installation Complete"))
+	out.Print(output.Title("State Tool Package Manager Installation Complete"))
 	out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
 
 	stateExe := appinfo.StateApp(installer.InstallPath()).Exec()
@@ -257,12 +258,11 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 // This is the default behavior when doing a clean install
 func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
 	out.Print(output.Title("Installing State Tool Package Manager"))
-	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n" +
+	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
 		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
 		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` + "\n" +
 		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 
-	logging.Debug("installFromRemoteSource args: %v", args)
 	args = append(args, "--from-deferred")
 
 	storeInstallSource(params.sourceInstaller)
@@ -291,7 +291,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	return update.InstallBlocking("", args...)
+	return update.InstallBlocking(params.path, args...)
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir

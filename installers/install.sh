@@ -20,11 +20,25 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
-while getopts "b:" arg > /dev/null 2>&1; do
-  case $arg in
-    b) CHANNEL=$OPTARG;;
-  esac
-done
+parseChannel() {
+  cap="false"
+  for var in "$@"
+  do
+      if [ "$var" =  "-b" ]; then
+        cap="true"
+        continue
+      fi
+
+      if [ "$cap" = "true" ]; then
+        echo "$var"
+        break
+      fi
+  done
+  if [ "$cap" != "true" ]; then
+    echo "$CHANNEL"
+  fi
+}
+CHANNEL=$(parseChannel "$@")
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
@@ -100,7 +114,7 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-header "Preparing ActiveState Installer"
+header "Preparing Installer for State Tool Package Manager"
 
 progress "Downloading Installer"
 STATEURL="$BASE_FILE_URL/$CHANNEL/$OS-amd64/$INSTALLERNAME$DOWNLOADEXT"

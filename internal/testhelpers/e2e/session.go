@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -270,6 +271,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	if !pOpts.BackgroundProcess {
 		s.cp = console
 	}
+
+	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
 
 	return console
 }

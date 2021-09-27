@@ -104,7 +104,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: [NOTICE]{{.V0}}[/RESET]"
 info_activating_state:
-  other: "Creating a Virtual Environment For Your Project"
+  other: "Creating a Virtual Environment for your Project's Packages"
 info_state_active_repoexists:
   other: "Repo already exists: [NOTICE]{{.Path}}[/RESET]"
 panic_couldnt_detect_wd:

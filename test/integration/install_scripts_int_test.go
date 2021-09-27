@@ -36,7 +36,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		Channel  string
 		Activate string
 	}{
-		{"install-release-latest", "", "release", ""},
+		// {"install-release-latest", "", "release", ""},
 		{"install-prbranch", constants.Version, constants.BranchName, ""},
 		{"install-prbranch-and-activate", constants.Version, constants.BranchName, "ActiveState-CLI/small-python"},
 		{"install-prbranch-with-tag", constants.Version, constants.BranchName, ""},
@@ -77,16 +77,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			expectStateToolInstallation(cp)
 
 			if tt.Activate != "" {
-				cp.Expect("Where would you like to place")
-				cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-				cp.Expect("> Other")
-				cp.Send("")
-				cp.Expect(">")
-				cp.Send(cp.WorkDirectory())
-
-				cp.ExpectLongString("default project?")
-				cp.Send("n")
-
 				cp.Expect("activated state")
 				// ensure that shell is functional
 				cp.WaitForInput()
@@ -100,7 +90,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			cp.ExpectExitCode(0)
 
 			suite.assertApplicationDirContents(dir)
-			suite.assertBinDirContents(ts.Dirs.Work)
+			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 		})
@@ -131,8 +121,8 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
-	cp.Expect("Preparing for installation")
-	cp.Expect("State Tool successfully installed.", time.Second*20)
+	cp.Expect("Preparing Installer for State Tool Package Manager")
+	cp.Expect("Installation Complete", time.Second*20)
 }
 
 // assertApplicationDirContents checks if given files are or are not in the application directory

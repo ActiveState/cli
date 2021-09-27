@@ -109,7 +109,7 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-header "Preparing ActiveState Installer"
+header "Preparing Installer for State Tool Package Manager"
 
 $zipURL = "$script:BASEFILEURL/$script:CHANNEL/windows-amd64/$script:ARCHIVENAME"
 $tmpParentPath = tempDir
