@@ -67,7 +67,7 @@ error () {
 # Determine the current OS.
 case `uname -s` in
 Linux)
-  # Defaults already cover Linux
+  OS="linux"
   ;;
 *BSD)
   OS=`uname -s | tr '[A-Z]' '[a-z]'`
