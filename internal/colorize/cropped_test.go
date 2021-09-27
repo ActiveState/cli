@@ -67,37 +67,6 @@ func Test_GetCroppedText(t *testing.T) {
 			args{"[HEADING][NOTICE]Hello[/RESET][/RESET]", 3},
 			[]CroppedLine{{"[HEADING][NOTICE]Hel", 3}, {"lo[/RESET][/RESET]", 2}},
 		},
-		{
-			// This should only give two empty lines, because the first line break is effectively part of the first line
-			"Line Endings",
-			args{"test\n\n\ntest", 4},
-			[]CroppedLine{{"test", 4}, {"", 0}, {"", 0}, {"test", 4}},
-		},
-		{
-			"Ends with Multiple Line Endings",
-			args{"test\n\n\n", 4},
-			[]CroppedLine{{"test", 4}, {"", 0}, {"", 0}},
-		},
-		{
-			"Starts with Multiple Line Endings",
-			args{"\n\n\ntest", 4},
-			[]CroppedLine{{"", 0}, {"", 0}, {"", 0}, {"test", 4}},
-		},
-		{
-			"Double Line Ending",
-			args{"X\n\n", 100},
-			[]CroppedLine{{"X", 1}, {"", 0}, {"", 0}},
-		},
-		{
-			"Double Line Endings",
-			args{"X\n\nX\n\nX\n\n", 100},
-			[]CroppedLine{{"X", 1}, {"", 0}, {"X", 1}, {"", 0}, {"X", 1}, {"", 0}},
-		},
-		{
-			"Just Line Endings",
-			args{"\n\n\n", 3},
-			[]CroppedLine{{"", 0}, {"", 0}, {"", 0}, {"", 0}},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
