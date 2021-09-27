@@ -47,15 +47,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
-	cp.Expect("Where would you like to place")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect("> Other")
-	cp.Send("")
-	cp.Expect(">")
-	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully activated")
+	cp.Expect("successfully activated")
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
@@ -75,7 +69,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 
-	cp.Expect("sucessfully activated", 20*time.Second)
+	cp.Expect("successfully activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -93,7 +87,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully activated", 20*time.Second)
+	cp.Expect("successfully activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -162,13 +156,6 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.AppendEnv("PYTHONPATH=/custom_pythonpath"),
 		e2e.AppendEnv(extraEnv...),
 	)
-	cp.Expect("Where would you like to place")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect("> Other")
-	cp.Send("")
-	cp.Expect(">")
-	cp.Send(cp.WorkDirectory())
-
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 
@@ -281,7 +268,7 @@ version: %s
 	c2 := ts.Spawn("activate")
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully activated")
+	c2.Expect("successfully activated")
 
 	// not waiting for activation, as we test that part in a different test
 	c2.WaitForInput(20 * time.Second)
@@ -304,12 +291,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 		),
 	)
-	cp.Expect("Where would you like to place")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect(">")
-	cp.Send("")
-	cp.Expect(">")
-	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 	cp.Expect("Downloading", 20*time.Second)
@@ -346,7 +327,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully activated")
+	cp.Expect("successfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -387,7 +368,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	)
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully activated")
+	cp.Expect("successfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -405,7 +386,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 
-	cp.Expect("sucessfully activated")
+	cp.Expect("successfully activated")
 
 	cp.WaitForInput()
 	cp.SendLine("exit")
@@ -440,7 +421,7 @@ version: %s
 	)
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully activated")
+	c2.Expect("successfully activated")
 
 	c2.WaitForInput(20 * time.Second)
 	c2.SendLine("exit")
@@ -473,16 +454,10 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 		e2e.WithArgs("activate", "ActiveState-CLI/Python2"), // activate a different namespace
 		e2e.WithWorkDirectory(targetPath),
 	)
-	c2.ExpectLongString("Where would you like")
-	c2.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	c2.Expect(">")
-	c2.Send("")
-	c2.Expect(">")
-	c2.SendLine(targetPath)
 	c2.ExpectLongString("ActiveState-CLI/Python2")
 	c2.ExpectLongString("default project?")
 	c2.Send("n")
-	c2.Expect("sucessfully activated")
+	c2.Expect("successfully activated")
 
 	c2.WaitForInput(20 * time.Second)
 	if runtime.GOOS == "windows" {
@@ -582,12 +557,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "-c", "echo CUSTOM_COMMAND"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Where would you like to place")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect(">")
-	cp.Send("")
-	cp.Expect(">")
-	cp.Send(cp.WorkDirectory())
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
 	cp.Expect("CUSTOM_COMMAND")
@@ -612,7 +581,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	cp := ts.Spawn("activate")
 	cp.ExpectLongString("default project?")
 	cp.Send("n")
-	cp.Expect("sucessfully activated")
+	cp.Expect("successfully activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
