@@ -64,7 +64,7 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 	return u.tmpDir, nil
 }
 
-func (u *AvailableUpdate) prepareInstall(args []string) (string, []string, error) {
+func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
 	sourcePath, err := u.DownloadAndUnpack()
 	if err != nil {
 		return "", nil, err
@@ -77,12 +77,13 @@ func (u *AvailableUpdate) prepareInstall(args []string) (string, []string, error
 	}
 
 	args = append(args, "--source-path", sourcePath)
+	args = append([]string{installTargetPath}, args...)
 	return installerPath, args, nil
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
 func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
-	installerPath, args, err := u.prepareInstall([]string{installTargetPath})
+	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +102,8 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 }
 
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
-	logging.Debug("InstallBlocking args: %v", args)
-	args = append([]string{installTargetPath}, args...)
-	installerPath, args, err := u.prepareInstall(args)
+	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
+	installTargetPath, args, err := u.prepareInstall(installTargetPath, args)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
+	_, _, err = exeutils.ExecuteAndPipeStd(installTargetPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
@@ -122,7 +122,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 
 // InstallWithProgress will fetch the update and run its installer
 func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
-	installerPath, args, err := u.prepareInstall([]string{installTargetPath})
+	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
 		return nil, err
 	}
