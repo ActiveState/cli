@@ -1,5 +1,13 @@
 package exeutils
 
+import (
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/fileutils"
+)
+
 const Extension = ".exe"
 
 // PathForExecutable returns the first path from the PATH env var for which the executable exists
