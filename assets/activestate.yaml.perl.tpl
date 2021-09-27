@@ -3,12 +3,10 @@ scripts:
     language: perl
     value: |
         $out = <<EOT;
-            You are now in an activated state, which is like a virtual environment to work
-            in that doesn't affect the rest of your system. To leave, run `exit`.
-
-            What's next?
-            - To learn more about what you can do, run → `state --help`
-            - To modify this runtime like adding packages or platforms, visit https://platform.activestate.com/{{.Owner}}/{{.Project}}
+            Quick Start
+            ───────────
+            • To add a package to your runtime, type "state install <package name>"
+            • Learn more about how to use the State Tool, type "state learn"
         EOT
         $out =~ s/^ +//gm;
         print $out;

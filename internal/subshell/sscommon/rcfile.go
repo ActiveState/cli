@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
 
@@ -250,12 +251,17 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	inuse := []string{}
 	scripts := map[string]string{}
 	var explicitName string
+	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
 	for _, cmd := range prj.Scripts() {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
-		_, err := exec.LookPath(cmd.Name())
+		path, err := exec.LookPath(cmd.Name())
+		dir := filepath.Clean(filepath.Dir(path))
+		if dir == globalBinDir {
+			continue
+		}
 		if err == nil {
 			// Do not overwrite commands that are already in use and
 			// keep track of those commands to warn to the user
@@ -268,8 +274,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 
 	if len(inuse) > 0 {
-		out.Notice(output.Heading(locale.Tl("warn_scriptinuse_title", "Warning: Script Names Already In Use")))
-		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  [DISABLED]-[/RESET] "), inuse[0], explicitName))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "[/RESET],[NOTICE] "), inuse[0], explicitName))
 	}
 
 	wd, err := osutils.Getwd()
@@ -279,30 +284,24 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	var activatedMessage output.Title
+	var activatedMessage string
 	if !prj.IsHeadless() {
-		activatedMessage = output.Title(locale.Tl("project_activated",
-			"{{.V0}} has been sucessfully activated", prj.Name()))
+		activatedMessage = locale.Tl("project_activated",
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
 	} else {
-		activatedMessage = output.Title(locale.Tl("headless_project_activated",
-			"Your virtual environment has been successfully activated", prj.Name()))
-	}
-
-	var activateEvtMessage string
-	if userScripts != "" {
-		activateEvtMessage = output.Heading(locale.Tl("activate_event_message", "Running Activation Events")).String()
+		activatedMessage = locale.Tl("headless_project_activated",
+			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":                prj.Owner(),
-		"Name":                 prj.Name(),
-		"Env":                  env,
-		"WD":                   wd,
-		"UserScripts":          userScripts,
-		"Scripts":              scripts,
-		"ExecName":             constants.CommandName,
-		"ActivatedMessage":     "\n" + colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
-		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
+		"Owner":            prj.Owner(),
+		"Name":             prj.Name(),
+		"Env":              env,
+		"WD":               wd,
+		"UserScripts":      userScripts,
+		"Scripts":          scripts,
+		"ExecName":         constants.CommandName,
+		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
 	}
 
 	currExec := osutils.Executable()

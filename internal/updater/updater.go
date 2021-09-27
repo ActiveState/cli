@@ -101,15 +101,13 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 }
 
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
+	logging.Debug("InstallBlocking args: %v", args)
 	args = append([]string{installTargetPath}, args...)
-	installerPath, args, err := u.prepareInstall([]string{installTargetPath})
+	installerPath, args, err := u.prepareInstall(args)
 	if err != nil {
 		return err
 	}
 
-	if installTargetPath != "" {
-		args = append(args, installTargetPath)
-	}
 	var envs []string
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
