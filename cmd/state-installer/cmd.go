@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -47,13 +48,14 @@ func newParams() *Params {
 
 func main() {
 	var exitCode int
+	an := analytics.New()
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed to wait for rollbar to close: %v", err)
 		}
 		os.Exit(exitCode)
@@ -76,9 +78,6 @@ func main() {
 	// Set up machineid, allowing us to anonymously group errors and analytics
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-
-	// Set up analytics. We make an effort to anonymize all analytics, but analytics are crucial to enhance the product.
-	analytics.Configure(cfg)
 
 	// Set up output handler
 	out, err := output.New("plain", &output.Config{
@@ -107,12 +106,14 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
+	prime := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
+
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		out,
+		prime,
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",
