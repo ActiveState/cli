@@ -311,7 +311,5 @@ run: rm build/state* || true
 name: "Cleanup Non-Versioned Update Files"
 shell: bash
 run: |
-  BRANCHDIR=$(echo $GITHUB_REF | sed -En "s#refs/heads/##p")
   rm build/update/*.json || true
-  rm $BRANCHDIR/*.json || true
 #@ end
