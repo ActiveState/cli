@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -48,14 +47,13 @@ func newParams() *Params {
 
 func main() {
 	var exitCode int
-	an := analytics.New()
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed to wait for rollbar to close: %v", err)
 		}
 		os.Exit(exitCode)
@@ -106,14 +104,12 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
-	prime := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
-
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		prime,
+		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",
