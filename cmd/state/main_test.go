@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -40,9 +41,9 @@ func (suite *MainTestSuite) TestDeprecated() {
 	mock.MockDeprecated()
 
 	catcher := outputhelper.NewCatcher()
-	err := run([]string{""}, true, catcher.Outputer)
+	err := run([]string{""}, true, catcher.Outputer, analytics.New())
 	exitCode := errs.UnwrapExitCode(err)
-	suite.Require().NoError(err)
+	suite.Require().NoError(err, errs.JoinMessage(err))
 	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 
 	if version.NumberIsProduction(constants.VersionNumber) {
@@ -58,7 +59,7 @@ func (suite *MainTestSuite) TestExpired() {
 	mock.MockExpired()
 
 	catcher := outputhelper.NewCatcher()
-	err := run([]string{""}, true, catcher.Outputer)
+	err := run([]string{""}, true, catcher.Outputer, analytics.New())
 	exitCode := errs.UnwrapExitCode(err)
 
 	if version.NumberIsProduction(constants.VersionNumber) {

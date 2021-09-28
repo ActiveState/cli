@@ -1,6 +1,7 @@
 package primer
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
@@ -22,9 +23,10 @@ type Values struct {
 	conditional *constraints.Conditional
 	config      *config.Instance
 	svcMgr      *svcmanager.Manager
+	analytics   analytics.AnalyticsDispatcher
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.AnalyticsDispatcher) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
@@ -33,6 +35,7 @@ func New(project *project.Project, output output.Outputer, auth *authentication.
 		conditional: conditional,
 		config:      config,
 		svcMgr:      svcMgr,
+		analytics:   an,
 	}
 	if project != nil {
 		v.project = project
@@ -67,6 +70,10 @@ type Configurer interface {
 
 type Svcer interface {
 	SvcManager() *svcmanager.Manager
+}
+
+type Analyticer interface {
+	Analytics() analytics.AnalyticsDispatcher
 }
 
 type Subsheller interface {
@@ -111,4 +118,8 @@ func (v *Values) Conditional() *constraints.Conditional {
 
 func (v *Values) Config() *config.Instance {
 	return v.config
+}
+
+func (v *Values) Analytics() analytics.AnalyticsDispatcher {
+	return v.analytics
 }

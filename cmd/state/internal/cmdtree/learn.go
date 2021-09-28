@@ -14,7 +14,7 @@ func newLearnCommand(prime *primer.Values) *captain.Command {
 		"learn",
 		locale.Tl("learn_title", "Learn about the State Tool"),
 		locale.Tl("learn_description", "Read the State Tool cheat sheet to learn about common commands"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {

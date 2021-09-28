@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -33,11 +34,12 @@ import (
 
 func main() {
 	var exitCode int
+	an := analytics.New()
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed to wait for rollbar to close: %v", err)
 		}
 		os.Exit(exitCode)
@@ -91,11 +93,10 @@ func run(out output.Outputer, installPath, sessionToken string, updateTag *strin
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
-		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+	if sessionToken != "" && cfg.GetString(anaConsts.CfgSessionToken) == "" {
+		if err := cfg.Set(anaConsts.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
-		analytics.Configure(cfg)
 	}
 
 	if updateTag != nil {

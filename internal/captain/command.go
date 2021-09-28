@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
@@ -42,6 +43,11 @@ var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
 type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
+}
+
+type primer interface {
+	Output() output.Outputer
+	Analytics() analytics.AnalyticsDispatcher
 }
 
 type ExecuteFunc func(cmd *Command, args []string) error
@@ -88,10 +94,11 @@ type Command struct {
 
 	skipChecks bool
 
-	out output.Outputer
+	out       output.Outputer
+	analytics analytics.AnalyticsDispatcher
 }
 
-func NewCommand(name, title, description string, out output.Outputer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -109,7 +116,8 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
-		out:       out,
+		out:       prime.Output(),
+		analytics: prime.Analytics(),
 	}
 
 	short := description
@@ -150,7 +158,7 @@ func NewCommand(name, title, description string, out output.Outputer, flags []*F
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -166,6 +174,8 @@ func NewHiddenShimCommand(name string, flags []*Flag, args []*Argument, execute 
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
+		out:       prime.Output(),
+		analytics: prime.Analytics(),
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -491,16 +501,11 @@ func (c *Command) subCommandNames() []string {
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
-	analytics.SetDeferred(c.deferAnalytics)
 
-	outputFlag := cobraCmd.Flag("output")
-	if outputFlag != nil && outputFlag.Changed {
-		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
-	}
 	subCommandString := c.UseFull()
 
 	// Send  GA events unless they are handled in the runners...
-	analytics.Event(analytics.CatRunCmd, appEventPrefix+subCommandString)
+	c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -548,10 +553,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
+		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		analytics.EventWithLabel(analytics.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
+		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 	}
 
 	return err

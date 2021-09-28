@@ -14,7 +14,7 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 		"_prepare",
 		"",
 		locale.Tl("prepare_description", "Prepare environment for use with the State Tool."),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(c *captain.Command, _ []string) error {
@@ -34,7 +34,7 @@ func newPrepareCompletionsCommand(prime *primer.Values) *captain.Command {
 		"completions",
 		"",
 		"",
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(c *captain.Command, _ []string) error {

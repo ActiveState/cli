@@ -208,7 +208,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"state",
 		"",
 		locale.T("state_description"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -300,7 +300,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		name,
 		aliased.Title(),
 		aliased.Description(),
-		a.prime.Output(),
+		a.prime,
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {

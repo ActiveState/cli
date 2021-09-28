@@ -13,6 +13,7 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -113,14 +114,14 @@ func (suite *GitTestSuite) TestCloneProjectRepo() {
 	targetDir := filepath.Join(suite.dir, "target-clone-dir")
 
 	repo := NewRepo()
-	err = repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher())
+	err = repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher(), analytics.New())
 	suite.Require().NoError(err, "should clone without issue")
 	suite.FileExists(filepath.Join(targetDir, "activestate.yaml"), "activestate.yaml file should have been cloned")
 	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
-	err := ensureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher())
+	err := ensureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), analytics.New())
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
@@ -129,7 +130,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
 	actualCatcher := outputhelper.NewCatcher()
-	err := ensureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher)
+	err := ensureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, analytics.New())
 	suite.NoError(err)
 
 	proj, err := project.Parse(projectPath)

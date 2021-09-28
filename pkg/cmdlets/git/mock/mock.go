@@ -6,6 +6,7 @@ import (
 
 	tmock "github.com/stretchr/testify/mock"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
@@ -26,7 +27,7 @@ func Init() *Mock {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (m *Mock) CloneProject(owner, name, path string, out output.Outputer) error {
+func (m *Mock) CloneProject(owner, name, path string, out output.Outputer, an analytics.AnalyticsDispatcher) error {
 	args := m.Called(path)
 
 	dummyID := "00010001-0001-0001-0001-000100010001"
