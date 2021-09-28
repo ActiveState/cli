@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -107,16 +106,12 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
-	// Ensure that we are not calling the exec recursively
-	if _, isBeingShimmed := env[constants.ExecEnvVarName]; isBeingShimmed {
-		// Ensure that we would not call the executor recursively: The path for the executable should be different from the default bin dir
-		p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
-		binDir := globaldefault.BinDir(s.cfg)
-		if p == binDir {
-			return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
-		}
+	// Ensure that we would not call the executor recursively: The path for the executable should be different from the default bin dir
+	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
+	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
+	if p == binDir {
+		return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
 	}
-	env[constants.ExecEnvVarName] = "true"
 
 	s.subshell.SetEnv(env)
 

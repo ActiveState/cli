@@ -33,9 +33,6 @@ const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 // LogBuildVerboseEnvVarName is the env var used to enable verbose build logging
 const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 
-// ExecEnvVarName is the env var used to find out if we are shimming recursively
-const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
-
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
