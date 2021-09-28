@@ -1,4 +1,4 @@
-package svc
+package service
 
 type CustomDimensions struct {
 	version          string

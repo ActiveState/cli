@@ -6,6 +6,7 @@ import (
 )
 
 const FallbackID = "99999999-9999-9999-9999-999999999999"
+const UnknownID = "11111111-1111-1111-1111-111111111111"
 
 type Configurable interface {
 	GetString(string) string
@@ -43,7 +44,7 @@ func UniqIDCustom(machineIDGetter func() (string, error), uuidGetter func() stri
 
 	if c == nil {
 		// We do not log here, as it may create a recursion
-		return "11111111-1111-1111-1111-111111111111"
+		return UnknownID
 	}
 
 	machineID := c.GetString("machineID")

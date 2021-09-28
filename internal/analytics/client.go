@@ -38,26 +38,30 @@ func (a *DefaultClient) Event(category string, action string) {
 // EventWithLabel logs an event with a label to google analytics
 func (a *DefaultClient) EventWithLabel(category string, action string, label string) {
 	err := a.sendEvent(category, action, label)
-	if err == nil {
-		return
+	if err != nil {
+		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 	}
-	logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 }
 
 // Configure configures the default client, connecting it to a state-svc service
 func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error {
-	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
-	if err != nil {
-		return errs.Wrap(err, "Failed to initialize svc model")
-	}
 	o := string(output.PlainFormatName)
 	if out.Type() != "" {
 		o = string(out.Type())
 	}
-	a.svcModel = svcModel
 	a.output = o
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
+
+	if condition.InUnitTest() {
+		return nil
+	}
+
+	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
+	if err != nil {
+		return errs.Wrap(err, "Failed to initialize svc model")
+	}
+	a.svcModel = svcModel
 	return nil
 }
 
@@ -77,6 +81,9 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	}
 
 	if a.svcModel == nil {
+		if condition.InUnitTest() {
+			return nil
+		}
 		if !condition.BuiltViaCI() {
 			panic("Could not send analytics event, not connected to state-svc yet.")
 		}

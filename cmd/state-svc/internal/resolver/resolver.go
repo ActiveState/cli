@@ -10,7 +10,7 @@ import (
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/svc"
+	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -26,12 +26,12 @@ import (
 type Resolver struct {
 	cfg   *config.Instance
 	cache *cache.Cache
-	an    *svc.Analytics
+	an    *service.Analytics
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *svc.Analytics) *Resolver {
+func New(cfg *config.Instance, an *service.Analytics) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
@@ -139,31 +139,31 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, label, projectNameSpace, out, userID *string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label, _projectNameSpace, _out, _userID *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
-	lbl := ""
-	if label != nil {
-		lbl = *label
+	label := ""
+	if _label != nil {
+		label = *_label
 	}
 
-	pn := ""
-	if projectNameSpace != nil {
-		pn = *projectNameSpace
+	projectNameSpace := ""
+	if _projectNameSpace != nil {
+		projectNameSpace = *_projectNameSpace
 	}
 
-	o := string(output.PlainFormatName)
-	if out != nil {
-		o = *out
+	out := string(output.PlainFormatName)
+	if _out != nil {
+		out = *_out
 	}
 
-	uid := ""
-	if userID != nil {
-		uid = *userID
+	userID := ""
+	if _userID != nil {
+		userID = *_userID
 	}
 
-	dims := r.an.DimensionsWithClientData(pn, o, uid)
-	r.an.SendWithCustomDimensions(category, action, lbl, dims)
+	dimensions := r.an.DimensionsWithClientData(projectNameSpace, out, userID)
+	r.an.SendWithCustomDimensions(category, action, label, dimensions)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

@@ -1,4 +1,4 @@
-package svc
+package service
 
 import (
 	"fmt"
@@ -36,8 +36,8 @@ type Analytics struct {
 	projectIDMutex   *sync.Mutex // used to synchronize API calls resolving the projectID
 }
 
-// New initializes the analytics instance with all custom dimensions known at this time
-func New() *Analytics {
+// NewAnalytics initializes the analytics instance with all custom dimensions known at this time
+func NewAnalytics() *Analytics {
 	r := &Analytics{
 		eventWaitGroup: &sync.WaitGroup{},
 		projectIDCache: cache.New(30*time.Minute, time.Hour),
@@ -54,8 +54,8 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	}
 
 	id := machineid.UniqID()
-	if id == "unknown" {
-		logging.Error("unknown machine id")
+	if id == machineid.UnknownID || id == machineid.FallbackID {
+		logging.Error("unknown machine id: %s", id)
 	}
 
 	osName := sysinfo.OS().String()
@@ -119,6 +119,9 @@ func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userI
 // SendWithCustomDimensions sends an analytics event with the given custom dimensions
 func (a *Analytics) SendWithCustomDimensions(category, action, label string, dims *CustomDimensions) {
 	if a.customDimensions == nil {
+		if condition.InUnitTest() {
+			return
+		}
 		if !condition.BuiltViaCI() {
 			panic("Trying to send analytics without configuring the Analytics instance.")
 		}

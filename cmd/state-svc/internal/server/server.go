@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/svc"
+	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -29,10 +29,10 @@ type Server struct {
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
-	analytics   *svc.Analytics
+	analytics   *service.Analytics
 }
 
-func New(cfg *config.Instance, an *svc.Analytics, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *service.Analytics, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")

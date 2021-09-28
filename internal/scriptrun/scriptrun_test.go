@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	analyMock "github.com/ActiveState/cli/internal/analytics/mock"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -66,7 +66,7 @@ scripts:
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 	err = scriptRun.Run(proj.ScriptByName("run"), []string{})
 	assert.NoError(t, err, "No error occurred")
 }
@@ -102,7 +102,7 @@ func TestEnvIsSet(t *testing.T) {
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := capturer.CaptureOutput(func() {
-		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
 		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
 	})
@@ -144,7 +144,7 @@ scripts:
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	out := outputhelper.NewCatcher()
-	scriptRun := New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg, analyMock.New())
+	scriptRun := New(authentication.LegacyGet(), out, subshell.New(cfg), proj, cfg, analytics.New())
 	fmt.Println(proj.ScriptByName("run"))
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
@@ -170,7 +170,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 	err = scriptRun.Run(nil, nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -196,7 +196,7 @@ scripts:
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.Error(t, err, "Error occurred")
 }
@@ -244,7 +244,7 @@ scripts:
 	require.NoError(t, err)
 
 	// Run the command.
-	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+	scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 	err = scriptRun.Run(proj.ScriptByName("run"), nil)
 	assert.NoError(t, err, "No error occurred")
 
@@ -334,7 +334,7 @@ func captureExecCommand(t *testing.T, tmplCmdName, cmdName string, cmdArgs []str
 	defer func() { require.NoError(t, cfg.Close()) }()
 
 	outStr, outErr := osutil.CaptureStdout(func() {
-		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analyMock.New())
+		scriptRun := New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, analytics.New())
 		err = scriptRun.Run(proj.ScriptByName(cmdName), cmdArgs)
 	})
 	require.NoError(t, outErr, "error capturing stdout")
