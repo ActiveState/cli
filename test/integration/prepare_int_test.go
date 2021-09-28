@@ -80,9 +80,9 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
 	)
+	cp.ExpectLongString("This project will be set as the default")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.ExpectLongString("Successfully configured ActiveState-CLI/small-python as the global default")
 	cp.Expect("Activated")
 
 	cp.SendLine("exit")
