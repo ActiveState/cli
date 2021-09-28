@@ -218,7 +218,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// check that default activation does not recurse
 	cp = ts.SpawnCmdWithOpts(
 		executor,
-		e2e.WithArgs("-c", fmt.Sprintf(`import subprocess; subprocess.run(["%s", "-c", "print('hello')"])`, executor)),
+		e2e.WithArgs("-c", fmt.Sprintf(`import subprocess; subprocess.call(["%s", "-c", "print('hello')"])`, executor)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("hello")
@@ -229,12 +229,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		executor,
 		e2e.WithArgs(
 			"-c", fmt.Sprintf(
-				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.run(["%s", "-c", "print('hello')"], env=env)`,
+				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "print('hello')"], env=env)`,
 				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Detected recursive loop")
-	cp.ExpectExitCode(1)
+	cp.Wait()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
