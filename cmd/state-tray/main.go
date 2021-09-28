@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -56,7 +55,7 @@ func onReady() {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -78,7 +77,6 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 

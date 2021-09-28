@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -35,7 +35,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting to close rollbar")
 		}
 		os.Exit(exitCode)
@@ -122,11 +122,10 @@ func runExport() error {
 
 func runDefault(cfg *config.Instance) error {
 	sessionToken := os.Getenv(constants.SessionTokenEnvVarName)
-	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
-		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
+	if sessionToken != "" && cfg.GetString(anaConsts.CfgSessionToken) == "" {
+		if err := cfg.Set(anaConsts.CfgSessionToken, sessionToken); err != nil {
 			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
 		}
-		analytics.Configure(cfg)
 	}
 
 	updateTag := os.Getenv(constants.UpdateTagEnvVarName)

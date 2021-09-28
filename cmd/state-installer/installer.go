@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -40,8 +40,8 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 
 func (i *Installer) Install() (rerr error) {
 	// Store sessionToken to config
-	if i.sessionToken != "" && i.cfg.GetString(analytics.CfgSessionToken) == "" {
-		if err := i.cfg.Set(analytics.CfgSessionToken, i.sessionToken); err != nil {
+	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
+		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
 			return errs.Wrap(err, "Failed to set session token")
 		}
 	}

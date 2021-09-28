@@ -113,7 +113,7 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 		return false
 
 	// Running command that could conflict
-	case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare"):
+	case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare") || funk.Contains(args, "clean"):
 		logging.Debug("Not running auto updates because current command might conflict")
 		return false
 

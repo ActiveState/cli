@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -16,19 +17,20 @@ import (
 
 type service struct {
 	cfg      *config.Instance
+	an       *anaSvc.Analytics
 	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, shutdown context.CancelFunc) *service {
-	return &service{cfg: cfg, shutdown: shutdown}
+func NewService(cfg *config.Instance, an *anaSvc.Analytics, shutdown context.CancelFunc) *service {
+	return &service{cfg: cfg, an: an, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg, s.shutdown)
+	s.server, err = server.New(s.cfg, s.an, s.shutdown)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}

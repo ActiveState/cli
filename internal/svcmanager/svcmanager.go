@@ -2,6 +2,7 @@ package svcmanager
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -19,6 +20,8 @@ import (
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
 const MinimalTimeout = 500 * time.Millisecond
+
+var errVersionMismatch = locale.NewError("err_ping_version_mismatch")
 
 type Manager struct {
 	ready bool
@@ -58,7 +61,11 @@ func (m *Manager) WaitWithContext(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			if m.Ready() {
+			ready, err := m.Ready()
+			if err != nil {
+				return errs.Wrap(err, "Ready check failed")
+			}
+			if ready {
 				return nil
 			}
 		}
@@ -72,23 +79,26 @@ func (m *Manager) Wait() error {
 	return m.WaitWithContext(context.Background())
 }
 
-func (m *Manager) Ready() bool {
+func (m *Manager) Ready() (bool, error) {
 	if m.ready {
-		return true
+		return false, nil
 	}
 
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
-		return false
+		return false, nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
 	if err := m.ping(ctx); err != nil {
+		if errors.Is(err, errVersionMismatch) {
+			return false, errs.Wrap(err, "Incorrect State Service version")
+		}
 		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (m *Manager) ping(ctx context.Context) error {
@@ -101,5 +111,10 @@ func (m *Manager) ping(ctx context.Context) error {
 	if err := client.RunWithContext(ctx, r, &resp); err != nil {
 		return err
 	}
+
+	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
+		return errVersionMismatch
+	}
+
 	return nil
 }

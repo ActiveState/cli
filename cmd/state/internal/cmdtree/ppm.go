@@ -12,6 +12,7 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 	conversion := ppm.NewConversionFlow(prime)
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
+		prime,
 		nil, nil,
 		func(_ *captain.Command, args []string) error {
 			for _, arg := range args {
