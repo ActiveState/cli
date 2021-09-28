@@ -12,12 +12,16 @@ import (
 
 const Extension = ""
 
-// PathForExecutable returns the first path from the PATH env var for which the executable exists
-func PathForExecutable(executable string) string {
-	candidates := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
+// FindExecutableOnOSPath returns the first path from the PATH env var for which the executable exists
+func FindExecutableOnOSPath(executable string) string {
+	return FindExecutableOnPath(executable, os.Getenv("PATH"))
+}
+func FindExecutableOnPath(executable string, PATH string) string {
+	candidates := strings.Split(PATH, string(os.PathListSeparator))
 	for _, p := range candidates {
-		if fileutils.TargetExists(filepath.Join(p, executable)) {
-			return p
+		fp := filepath.Clean(filepath.Join(p, executable))
+		if fileutils.TargetExists(fp) {
+			return fp
 		}
 	}
 	return ""

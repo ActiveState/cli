@@ -11,20 +11,29 @@ import (
 
 const Extension = ".exe"
 
-// PathForExecutable returns the first path from the PATH env var for which the executable exists
-func PathForExecutable(executable string) string {
-	candidates := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
+// FindExecutableOnOSPath returns the first path from the PATH env var for which the executable exists
+func FindExecutableOnOSPath(executable string) string {
+	return FindExecutableOnPath(executable, os.Getenv("PATH"))
+}
+
+func FindExecutableOnPath(executable, PATH string) string {
+	return findExecutable(executable, PATH, os.Getenv("PATHEXT"))
+}
+
+func findExecutable(executable, PATH, PATHEXT string) string {
+	candidates := strings.Split(PATH, string(os.PathListSeparator))
 	var exts []string // list of extensions to look for
-	pathexts := strings.Split(os.Getenv("PATHEXT"), string(os.PathListSeparator))
+	pathexts := funk.Map(strings.Split(PATHEXT, string(os.PathListSeparator)), strings.ToLower).([]string)
 	// if executable has valid extension for an executable file, we have to check for its existence without appending more extensions
-	if funk.ContainsString(pathexts, filepath.Ext(executable)) {
+	if funk.ContainsString(pathexts, strings.ToLower(filepath.Ext(executable))) {
 		exts = append(exts, "")
 	}
 	exts = append(exts, pathexts...)
 	for _, p := range candidates {
 		for _, ext := range exts {
-			if fileutils.TargetExists(filepath.Join(p, executable+ext)) {
-				return p
+			fp := filepath.Clean(filepath.Join(p, executable+ext))
+			if fileutils.TargetExists(fp) {
+				return fp
 			}
 		}
 	}

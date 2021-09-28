@@ -110,7 +110,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	// Ensure that we are not calling the exec recursively
 	if _, isBeingShimmed := env[constants.ExecEnvVarName]; isBeingShimmed {
 		// Ensure that we would not call the executor recursively: The path for the executable should be different from the default bin dir
-		p := exeutils.PathForExecutable(filepath.Base(args[0]))
+		p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
 		binDir := globaldefault.BinDir(s.cfg)
 		if p == binDir {
 			return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
