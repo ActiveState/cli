@@ -230,7 +230,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.WithArgs(
 			"-c", fmt.Sprintf(
 				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.run(["%s", "-c", "print('hello')"], env=env)`,
-				executor, string(os.PathListSeparator), executor)),
+				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Detected recursive loop")

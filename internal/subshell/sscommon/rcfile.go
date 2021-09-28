@@ -280,7 +280,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := txtstyle.NewTitle(locale.Tl("project_activated", "{{.V0}} has been sucessfully activated", prj.Name()))
+	activatedMessage := txtstyle.NewTitle(locale.Tl("project_activated", "{{.V0}} has been successfully activated", prj.Name()))
 	if prj.IsHeadless() {
 		activatedMessage = txtstyle.NewTitle(locale.Tl("headless_project_activated", "Your virtual environment has been successfully activated", prj.Name()))
 	}
