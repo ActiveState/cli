@@ -83,7 +83,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully configured ActiveState-CLI/small-python as the global default")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -115,7 +115,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.8.8")

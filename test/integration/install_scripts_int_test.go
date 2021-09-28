@@ -96,7 +96,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			state := appinfo.StateApp(ts.Dirs.Work)
 			suite.FileExists(state.Exec())
 
-			suite.assertApplicationDirContents(dir)
 			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
@@ -132,22 +131,6 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installation Complete", time.Second*20)
 }
 
-// assertApplicationDirContents checks if given files are or are not in the application directory
-func (suite *InstallScriptsIntegrationTestSuite) assertApplicationDirContents(dir string) {
-	homeDirFiles := listFilesOnly(dir)
-	switch runtime.GOOS {
-	case "linux":
-		suite.Contains(homeDirFiles, "state-tray.desktop")
-		suite.Contains(homeDirFiles, "state-tray.svg")
-	case "darwin":
-		suite.Contains(homeDirFiles, "Info.plist")
-		suite.Contains(homeDirFiles, "state-tray.icns")
-	case "windows":
-		suite.Contains(homeDirFiles, "state-tray.lnk")
-		suite.Contains(homeDirFiles, "state-tray.icns")
-	}
-}
-
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
 	binFiles := listFilesOnly(dir)
@@ -156,7 +139,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
 }
 
-// listFilesOnly is a helper function for assertBinDirContents and assertApplicationDirContents filtering a directory recursively for base filenames
+// listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames
 // It allows for simple and coarse checks if a file exists or does not exist in the directory structure
 func listFilesOnly(dir string) []string {
 	files := fileutils.ListDirSimple(dir, true)
