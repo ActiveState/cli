@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
@@ -19,8 +20,11 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	ga "github.com/ActiveState/go-ogle-analytics"
 	"github.com/ActiveState/sysinfo"
+	"github.com/patrickmn/go-cache"
 )
 
 // Analytics instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
@@ -28,12 +32,16 @@ type Analytics struct {
 	gaClient         *ga.Client
 	customDimensions *CustomDimensions
 	eventWaitGroup   *sync.WaitGroup
+	projectIDCache   *cache.Cache
+	projectIDMutex   *sync.Mutex // used to synchronize API calls resolving the projectID
 }
 
 // NewAnalytics initializes the analytics instance with all custom dimensions known at this time
 func NewAnalytics() *Analytics {
 	r := &Analytics{
 		eventWaitGroup: &sync.WaitGroup{},
+		projectIDCache: cache.New(30*time.Minute, time.Hour),
+		projectIDMutex: &sync.Mutex{},
 	}
 
 	return r
@@ -131,6 +139,7 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer handlePanics(recover(), debug.Stack())
+		dims.projectID = a.projectID(dims.projectNameSpace)
 		a.event(category, action, label, dims)
 	}()
 }
@@ -196,6 +205,36 @@ func (a *Analytics) Event(category string, action string) {
 
 func (a *Analytics) EventWithLabel(category string, action, label string) {
 	a.SendWithCustomDimensions(category, action, label, a.customDimensions)
+}
+
+// projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
+func (r *Analytics) projectID(projectName string) string {
+	if projectName == "" {
+		return ""
+	}
+
+	// Lock mutex to prevent resolving the same projectName more than once
+	r.projectIDMutex.Lock()
+	defer r.projectIDMutex.Unlock()
+
+	if pi, ok := r.projectIDCache.Get(projectName); ok {
+		return pi.(string)
+	}
+
+	pn, err := project.ParseNamespace(projectName)
+	if err != nil {
+		logging.Error("Failed to parse project namespace %s: %s", projectName, errs.JoinMessage(err))
+	}
+
+	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
+	if err != nil {
+		logging.Error("Failed get project by name: %s", errs.JoinMessage(err))
+	}
+
+	pi := string(pj.ProjectID)
+	r.projectIDCache.Set(projectName, pi, cache.DefaultExpiration)
+
+	return pi
 }
 
 func handlePanics(err interface{}, stack []byte) {

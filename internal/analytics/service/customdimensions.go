@@ -13,6 +13,7 @@ type CustomDimensions struct {
 	updateTag        string
 	projectNameSpace string
 	outputType       string
+	projectID        string
 }
 
 // WithClientData returns a copy of the custom dimensions struct with client-specific fields overwritten
@@ -40,5 +41,6 @@ func (d *CustomDimensions) toMap() map[string]string {
 		"11": d.sessionToken,
 		"12": d.uniqID,
 		"13": d.updateTag,
+		"14": d.projectID,
 	}
 }
