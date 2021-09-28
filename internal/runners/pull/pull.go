@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -22,11 +23,12 @@ import (
 )
 
 type Pull struct {
-	prompt  prompt.Prompter
-	project *project.Project
-	auth    *authentication.Auth
-	out     output.Outputer
-	cfg     *config.Instance
+	prompt    prompt.Prompter
+	project   *project.Project
+	auth      *authentication.Auth
+	out       output.Outputer
+	analytics analytics.AnalyticsDispatcher
+	cfg       *config.Instance
 }
 
 type PullParams struct {
@@ -39,6 +41,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
+	primer.Analyticer
 	primer.Configurer
 }
 
@@ -48,6 +51,7 @@ func New(prime primeable) *Pull {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Analytics(),
 		prime.Config(),
 	}
 }
@@ -154,7 +158,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.project, storage.CachePath(), *resultingCommit, true)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

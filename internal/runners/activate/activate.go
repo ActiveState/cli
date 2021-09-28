@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -45,6 +46,7 @@ type Activate struct {
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
+	analytics        analytics.AnalyticsDispatcher
 }
 
 type ActivateParams struct {
@@ -64,11 +66,12 @@ type primeable interface {
 	primer.Prompter
 	primer.Configurer
 	primer.Svcer
+	primer.Analyticer
 }
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config(), prime),
+		NewNamespaceSelect(prime.Config()),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
@@ -77,6 +80,7 @@ func NewActivate(prime primeable) *Activate {
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),
+		prime.Analytics(),
 	}
 }
 
@@ -111,7 +115,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -157,7 +161,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Have to call this once the project has been set
-	analytics.Event(analytics.CatActivationFlow, "start")
+	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
@@ -199,7 +203,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil))
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil), r.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -295,9 +299,9 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
+func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
 	switch {
-	case namespace != "":
+	case namespace != nil && namespace.String() != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
 		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -25,11 +26,12 @@ import (
 )
 
 type Exec struct {
-	subshell subshell.SubShell
-	proj     *project.Project
-	auth     *authentication.Auth
-	out      output.Outputer
-	cfg      *config.Instance
+	subshell  subshell.SubShell
+	proj      *project.Project
+	auth      *authentication.Auth
+	out       output.Outputer
+	cfg       *config.Instance
+	analytics analytics.AnalyticsDispatcher
 }
 
 type primeable interface {
@@ -38,6 +40,7 @@ type primeable interface {
 	primer.Subsheller
 	primer.Projecter
 	primer.Configurer
+	primer.Analyticer
 }
 
 type Params struct {
@@ -51,6 +54,7 @@ func New(prime primeable) *Exec {
 		prime.Auth(),
 		prime.Output(),
 		prime.Config(),
+		prime.Analytics(),
 	}
 }
 
@@ -86,7 +90,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	rt, err := runtime.New(rtTarget)
+	rt, err := runtime.New(rtTarget, s.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

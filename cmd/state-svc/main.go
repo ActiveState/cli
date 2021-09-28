@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -36,11 +37,13 @@ const (
 
 func main() {
 	var exitCode int
+	an := anaSvc.NewAnalytics()
+
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -52,7 +55,7 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
+	err := run(an)
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logger := logging.Critical
@@ -66,7 +69,7 @@ func main() {
 	}
 }
 
-func run() (rerr error) {
+func run(an *anaSvc.Analytics) (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -75,17 +78,19 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	an.Configure(cfg, authentication.LegacyGet())
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
 	})
 
+	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
+
 	cmd := captain.NewCommand(
-		path.Base(os.Args[0]), "", "", out, nil, nil,
+		path.Base(os.Args[0]), "", "", p, nil, nil,
 		func(ccmd *captain.Command, args []string) error {
 			fmt.Println("top level")
 			return nil
@@ -97,7 +102,7 @@ func run() (rerr error) {
 			cmdStart,
 			"Starting the ActiveState Service",
 			"Start the ActiveState Service (Background)",
-			out, nil, nil,
+			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
 				return runStart(cfg)
@@ -107,7 +112,7 @@ func run() (rerr error) {
 			cmdStop,
 			"Stopping the ActiveState Service",
 			"Stop the ActiveState Service",
-			out, nil, nil,
+			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStop")
 				return runStop(cfg)
@@ -117,7 +122,7 @@ func run() (rerr error) {
 			cmdStatus,
 			"Starting the ActiveState Service",
 			"Display the Status of the ActiveState Service",
-			out, nil, nil,
+			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStatus")
 				return runStatus(cfg)
@@ -127,10 +132,10 @@ func run() (rerr error) {
 			cmdForeground,
 			"Starting the ActiveState Service",
 			"Start the ActiveState Service (Foreground)",
-			out, nil, nil,
+			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
-				return runForeground(cfg)
+				return runForeground(cfg, an)
 			},
 		),
 	)
@@ -138,12 +143,12 @@ func run() (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Analytics) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
 	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, shutdown)
+	p := NewService(cfg, an, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
