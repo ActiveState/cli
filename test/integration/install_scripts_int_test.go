@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -37,7 +38,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		Activate string
 	}{
 		// {"install-release-latest", "", "release", ""},
-		{"install-prbranch", constants.Version, constants.BranchName, ""},
+		{"install-prbranch", "", constants.BranchName, ""},
+		{"install-prbranch-with-version", constants.Version, constants.BranchName, ""},
 		{"install-prbranch-and-activate", constants.Version, constants.BranchName, "ActiveState-CLI/small-python"},
 		{"install-prbranch-with-tag", constants.Version, constants.BranchName, ""},
 	}
@@ -67,11 +69,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(args...),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
 					e2e.AppendEnv("SHELL="),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+				)
 			}
 
 			expectStateToolInstallation(cp)
@@ -88,6 +92,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			cp.ExpectExitCode(0)
+
+			state := appinfo.StateApp(ts.Dirs.Work)
+			suite.FileExists(state.Exec())
 
 			suite.assertApplicationDirContents(dir)
 			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
@@ -165,8 +172,8 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	installPath := filepath.Join(ts.Dirs.Work, "state"+osutils.ExeExt)
-	cp := ts.SpawnCmd(installPath, "--version", "--output=json")
+	state := appinfo.StateApp(ts.Dirs.Work)
+	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
