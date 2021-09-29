@@ -2,6 +2,7 @@ package updater
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"os"
 	"runtime"
@@ -106,10 +107,10 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		}
 	}
 
-	logging.Debug("Getting update info (desired channel: %s, version: %s)", desiredChannel, desiredVersion)
-
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
+	logging.Debug("Getting update info: %s", infoURL)
+	fmt.Printf("\n\nGetting update info: %s\n\n", infoURL)
 	res, code, err := u.httpreq.Get(infoURL)
 	if err != nil {
 		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {
