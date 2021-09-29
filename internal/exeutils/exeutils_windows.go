@@ -17,7 +17,7 @@ func FindExecutableOnOSPath(executable string) string {
 }
 
 func FindExecutableOnPath(executable, PATH string) string {
-	return findExecutable(executable, PATH, os.Getenv("PATHEXT"))
+	return findExecutable(executable, PATH, os.Getenv("PATHEXT"), fileutils.TargetExists)
 }
 
 func findExecutable(executable, PATH, PATHEXT string, fileExists func(string) bool) string {

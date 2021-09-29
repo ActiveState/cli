@@ -3,14 +3,11 @@
 package exeutils
 
 import (
-	"io/ioutil"
-	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_PathForExecutables(t *testing.T) {
