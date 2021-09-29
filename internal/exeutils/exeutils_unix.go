@@ -16,11 +16,16 @@ const Extension = ""
 func FindExecutableOnOSPath(executable string) string {
 	return FindExecutableOnPath(executable, os.Getenv("PATH"))
 }
+
 func FindExecutableOnPath(executable string, PATH string) string {
+	return findExecutables(executable, PATH, fileutils.TargetExists)
+}
+
+func findExecutables(executable, PATH string, fileExists func(string) bool) string {
 	candidates := strings.Split(PATH, string(os.PathListSeparator))
 	for _, p := range candidates {
 		fp := filepath.Clean(filepath.Join(p, executable))
-		if fileutils.TargetExists(fp) {
+		if fileExists(fp) {
 			return fp
 		}
 	}

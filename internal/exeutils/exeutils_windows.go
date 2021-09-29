@@ -20,7 +20,7 @@ func FindExecutableOnPath(executable, PATH string) string {
 	return findExecutable(executable, PATH, os.Getenv("PATHEXT"))
 }
 
-func findExecutable(executable, PATH, PATHEXT string) string {
+func findExecutable(executable, PATH, PATHEXT string, fileExists func(string) bool) string {
 	candidates := strings.Split(PATH, string(os.PathListSeparator))
 	var exts []string // list of extensions to look for
 	pathexts := funk.Map(strings.Split(PATHEXT, string(os.PathListSeparator)), strings.ToLower).([]string)
@@ -32,7 +32,7 @@ func findExecutable(executable, PATH, PATHEXT string) string {
 	for _, p := range candidates {
 		for _, ext := range exts {
 			fp := filepath.Clean(filepath.Join(p, executable+ext))
-			if fileutils.TargetExists(fp) {
+			if fileExists(fp) {
 				return fp
 			}
 		}
