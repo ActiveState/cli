@@ -215,25 +215,28 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
 
-	// check that default activation does not recurse
+	// check that default activation takes count of recursion level
 	cp = ts.SpawnCmdWithOpts(
 		executor,
-		e2e.WithArgs("-c", fmt.Sprintf(`import subprocess; subprocess.call(["%s", "-c", "print('hello')"])`, executor)),
+		e2e.WithArgs("-c", fmt.Sprintf(
+			`import subprocess; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"])`,
+			executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("hello")
+	cp.Expect("RECURSION_LVL=2")
 	cp.ExpectExitCode(0)
 
-	// check that a recursion in default activation errors out
+	// check that recursion detection is firing log message
 	cp = ts.SpawnCmdWithOpts(
 		executor,
 		e2e.WithArgs(
 			"-c", fmt.Sprintf(
-				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "print('hello')"], env=env)`,
-				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
+				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 	)
-	cp.Expect("Detected recursive loop")
+	cp.ExpectLongString("executor recursion detected: parent python")
+	cp.Expect("RECURSION_LVL=2")
 	cp.Wait()
 }
 
@@ -302,11 +305,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine("perldoc -l DBD::Pg")
+	cp.SendLine("perldoc -l DBI::DBD")
 	// Expect the source code to be installed in the cache directory
 	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
 	cp.Expect("cache")
-	cp.Expect("Pg.pm")
+	cp.Expect("DBD.pm")
 
 	// Expect PPM shim to be installed
 	cp.SendLine("ppm")
