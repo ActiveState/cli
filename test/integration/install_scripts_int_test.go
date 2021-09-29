@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -45,16 +43,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 	for _, tt := range tests {
 		suite.Run(fmt.Sprintf("%s (%s@%s)", tt.Name, tt.Version, tt.Channel), func() {
-			dir, err := installation.InstallPath()
-			suite.Require().NoError(err)
-			var extraEnv []string
-			if runtime.GOOS == "linux" {
-				dir, err = ioutil.TempDir("", "temp_home*")
-				suite.Require().NoError(err)
-				extraEnv = append(extraEnv, fmt.Sprintf("HOME=%s", dir), fmt.Sprintf("_TEST_SYSTEM_PATH=%s", dir))
-			}
-
-			ts := e2e.New(suite.T(), false, extraEnv...)
+			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
