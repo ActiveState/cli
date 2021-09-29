@@ -358,3 +358,6 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
+const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"

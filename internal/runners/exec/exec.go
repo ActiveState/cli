@@ -2,11 +2,14 @@ package exec
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -110,12 +113,20 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
-	// Ensure that we would not call the executor recursively: The path for the executable should be different from the default bin dir
+
+	recursionLvl := 0
+	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
+	if err != nil {
+		recursionLvl = int(lastLvl) + 1
+	}
+
+	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
 	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
-	if p == binDir {
-		return logging.Criticalf("Detected recursive loop while calling %s", args[0])
+	if p == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
+		return logging.Criticalf("executor recursion detected: %s (lvl=%d)", strings.Join(args, " "), recursionLvl)
 	}
+	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
 
 	s.subshell.SetEnv(env)
 
