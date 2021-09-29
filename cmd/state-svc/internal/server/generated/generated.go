@@ -46,6 +46,10 @@ type ComplexityRoot struct {
 		Sent func(childComplexity int) int
 	}
 
+	AuthenticationEventResponse struct {
+		Dummy func(childComplexity int) int
+	}
+
 	AvailableUpdate struct {
 		Channel  func(childComplexity int) int
 		Path     func(childComplexity int) int
@@ -66,11 +70,12 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) int
-		AvailableUpdate func(childComplexity int) int
-		Projects        func(childComplexity int) int
-		Update          func(childComplexity int, channel *string, version *string) int
-		Version         func(childComplexity int) int
+		AnalyticsEvent      func(childComplexity int, category string, action string, label *string, projectNameSpace *string, output *string) int
+		AuthenticationEvent func(childComplexity int, userID string) int
+		AvailableUpdate     func(childComplexity int) int
+		Projects            func(childComplexity int) int
+		Update              func(childComplexity int, channel *string, version *string) int
+		Version             func(childComplexity int) int
 	}
 
 	StateVersion struct {
@@ -91,7 +96,8 @@ type QueryResolver interface {
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
-	AnalyticsEvent(ctx context.Context, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) (*graph.AnalyticsEventResponse, error)
+	AnalyticsEvent(ctx context.Context, category string, action string, label *string, projectNameSpace *string, output *string) (*graph.AnalyticsEventResponse, error)
+	AuthenticationEvent(ctx context.Context, userID string) (*graph.AuthenticationEventResponse, error)
 }
 
 type executableSchema struct {
@@ -115,6 +121,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AnalyticsEventResponse.Sent(childComplexity), true
+
+	case "AuthenticationEventResponse.dummy":
+		if e.complexity.AuthenticationEventResponse.Dummy == nil {
+			break
+		}
+
+		return e.complexity.AuthenticationEventResponse.Dummy(childComplexity), true
 
 	case "AvailableUpdate.channel":
 		if e.complexity.AvailableUpdate.Channel == nil {
@@ -196,7 +209,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string)), true
+		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string)), true
+
+	case "Query.authenticationEvent":
+		if e.complexity.Query.AuthenticationEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Query_authenticationEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AuthenticationEvent(childComplexity, args["userID"].(string)), true
 
 	case "Query.availableUpdate":
 		if e.complexity.Query.AvailableUpdate == nil {
@@ -358,14 +383,18 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
+type AuthenticationEventResponse {
+  dummy: String!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String, userID: String): AnalyticsEventResponse
+  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String): AnalyticsEventResponse
+  authenticationEvent(userID: String!): AuthenticationEventResponse
 }
-
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -437,15 +466,21 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["output"] = arg4
-	var arg5 *string
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_authenticationEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
 	if tmp, ok := rawArgs["userID"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["userID"] = arg5
+	args["userID"] = arg0
 	return args, nil
 }
 
@@ -544,6 +579,41 @@ func (ec *executionContext) _AnalyticsEventResponse_sent(ctx context.Context, fi
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AuthenticationEventResponse_dummy(ctx context.Context, field graphql.CollectedField, obj *graph.AuthenticationEventResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AuthenticationEventResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Dummy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AvailableUpdate_version(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
@@ -1059,7 +1129,7 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string))
+		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1071,6 +1141,45 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	res := resTmp.(*graph.AnalyticsEventResponse)
 	fc.Result = res
 	return ec.marshalOAnalyticsEventResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAnalyticsEventResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_authenticationEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_authenticationEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AuthenticationEvent(rctx, args["userID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.AuthenticationEventResponse)
+	fc.Result = res
+	return ec.marshalOAuthenticationEventResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAuthenticationEventResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2476,6 +2585,33 @@ func (ec *executionContext) _AnalyticsEventResponse(ctx context.Context, sel ast
 	return out
 }
 
+var authenticationEventResponseImplementors = []string{"AuthenticationEventResponse"}
+
+func (ec *executionContext) _AuthenticationEventResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.AuthenticationEventResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, authenticationEventResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AuthenticationEventResponse")
+		case "dummy":
+			out.Values[i] = ec._AuthenticationEventResponse_dummy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var availableUpdateImplementors = []string{"AvailableUpdate"}
 
 func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.SelectionSet, obj *graph.AvailableUpdate) graphql.Marshaler {
@@ -2663,6 +2799,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_analyticsEvent(ctx, field)
+				return res
+			})
+		case "authenticationEvent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_authenticationEvent(ctx, field)
 				return res
 			})
 		case "__type":
@@ -3340,6 +3487,13 @@ func (ec *executionContext) marshalOAnalyticsEventResponse2ᚖgithubᚗcomᚋAct
 		return graphql.Null
 	}
 	return ec._AnalyticsEventResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOAuthenticationEventResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAuthenticationEventResponse(ctx context.Context, sel ast.SelectionSet, v *graph.AuthenticationEventResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AuthenticationEventResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAvailableUpdate2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAvailableUpdate(ctx context.Context, sel ast.SelectionSet, v *graph.AvailableUpdate) graphql.Marshaler {

@@ -112,8 +112,12 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	a.gaClient = client
 }
 
-func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userID string) *CustomDimensions {
-	return a.customDimensions.WithClientData(projectNameSpace, outputType, userID)
+func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType string) *CustomDimensions {
+	return a.customDimensions.WithClientData(projectNameSpace, outputType)
+}
+
+func (a *Analytics) UpdateCustomDimensions(userID string) {
+	a.customDimensions.SetUserID(userID)
 }
 
 // SendWithCustomDimensions sends an analytics event with the given custom dimensions

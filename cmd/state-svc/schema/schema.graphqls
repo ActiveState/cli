@@ -33,11 +33,15 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
+type AuthenticationEventResponse {
+  dummy: String!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String, userID: String): AnalyticsEventResponse
+  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String): AnalyticsEventResponse
+  authenticationEvent(userID: String!): AuthenticationEventResponse
 }
-

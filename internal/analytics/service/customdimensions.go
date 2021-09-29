@@ -1,8 +1,11 @@
 package service
 
+import "sync"
+
 type CustomDimensions struct {
 	version          string
 	branchName       string
+	userIDLock       sync.Mutex
 	userID           string
 	osName           string
 	osVersion        string
@@ -17,15 +20,38 @@ type CustomDimensions struct {
 }
 
 // WithClientData returns a copy of the custom dimensions struct with client-specific fields overwritten
-func (d *CustomDimensions) WithClientData(projectNameSpace, output, userID string) *CustomDimensions {
-	res := *d
-	res.projectNameSpace = projectNameSpace
-	res.outputType = output
-	res.userID = userID
-	return &res
+func (d *CustomDimensions) WithClientData(projectNameSpace, output string) *CustomDimensions {
+	d.userIDLock.Lock()
+	defer d.userIDLock.Unlock()
+
+	return &CustomDimensions{
+		version:          d.version,
+		branchName:       d.branchName,
+		osName:           d.osName,
+		osVersion:        d.osVersion,
+		installSource:    d.installSource,
+		machineID:        d.machineID,
+		uniqID:           d.uniqID,
+		sessionToken:     d.sessionToken,
+		updateTag:        d.updateTag,
+		userID:           d.userID,
+		projectNameSpace: projectNameSpace,
+		outputType:       output,
+	}
+}
+
+// SetUserID is a synchronized update of the userID field.
+func (d *CustomDimensions) SetUserID(userID string) {
+	d.userIDLock.Lock()
+	defer d.userIDLock.Unlock()
+
+	d.userID = userID
 }
 
 func (d *CustomDimensions) toMap() map[string]string {
+	d.userIDLock.Lock()
+	defer d.userIDLock.Unlock()
+
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprected)"

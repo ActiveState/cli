@@ -139,7 +139,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label, _projectNameSpace, _out, _userID *string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label, _projectNameSpace, _out *string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
 	label := ""
@@ -157,13 +157,15 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		out = *_out
 	}
 
-	userID := ""
-	if _userID != nil {
-		userID = *_userID
-	}
-
-	dimensions := r.an.DimensionsWithClientData(projectNameSpace, out, userID)
+	dimensions := r.an.DimensionsWithClientData(projectNameSpace, out)
 	r.an.SendWithCustomDimensions(category, action, label, dimensions)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
+}
+
+func (r *Resolver) AuthenticationEvent(_ context.Context, userID string) (*graph.AuthenticationEventResponse, error) {
+	logging.Debug("Authentication event resolver")
+	r.an.UpdateCustomDimensions(userID)
+
+	return &graph.AuthenticationEventResponse{}, nil
 }

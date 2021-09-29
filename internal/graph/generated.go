@@ -6,6 +6,10 @@ type AnalyticsEventResponse struct {
 	Sent bool `json:"sent"`
 }
 
+type AuthenticationEventResponse struct {
+	Dummy string `json:"dummy"`
+}
+
 type AvailableUpdate struct {
 	Version  string `json:"version"`
 	Channel  string `json:"channel"`
