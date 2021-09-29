@@ -114,7 +114,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
 	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
 	if p == binDir {
-		return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
+		return logging.Criticalf("Detected recursive loop while calling %s", args[0])
 	}
 
 	s.subshell.SetEnv(env)
