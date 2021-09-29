@@ -219,7 +219,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp = ts.SpawnCmdWithOpts(
 		executor,
 		e2e.WithArgs("-c", fmt.Sprintf(
-			`import subprocess; import os; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"])`,
+			`import subprocess; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"])`,
 			executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
@@ -231,7 +231,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		executor,
 		e2e.WithArgs(
 			"-c", fmt.Sprintf(
-				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
+				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
 				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 	)
