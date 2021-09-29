@@ -75,7 +75,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			if tt.Activate != "" {
 				cp.Expect("Creating a Virtual Environment")
-				cp.Expect("Quick Start")
+				cp.Expect("Quick Start", time.Second*60)
 				// ensure that shell is functional
 				cp.WaitForInput()
 
