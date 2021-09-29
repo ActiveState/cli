@@ -47,8 +47,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
-			args := []string{script, "-t", ts.Dirs.Work, "-b", tt.Channel, "-v", tt.Version}
-
+			args := []string{script, "-t", ts.Dirs.Work}
+			if tt.Channel != "" {
+				args = append(args, "-b", tt.Channel)
+			}
+			if tt.Version != "" {
+				args = append(args, "-v", tt.Version)
+			}
 			if tt.Activate != "" {
 				args = append(args, "--activate", tt.Activate)
 			}
