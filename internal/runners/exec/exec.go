@@ -117,14 +117,14 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 	recursionLvl := 0
 	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
-	if err != nil {
+	if err == nil {
 		recursionLvl = int(lastLvl) + 1
 	}
 
 	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
 	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
-	if p == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
+	if filepath.Dir(p) == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
 		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessName(), os.Getppid(), strings.Join(args, " "), recursionLvl)
 	}
 	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
