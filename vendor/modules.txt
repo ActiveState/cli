@@ -307,7 +307,6 @@ github.com/josharian/intern
 github.com/kami-zh/go-capturer
 # github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
 ## explicit
-github.com/kardianos/osext
 # github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 github.com/kballard/go-shellquote
 # github.com/kennygrant/sanitize v1.2.4
@@ -364,6 +363,9 @@ github.com/mgutz/ansi
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
+# github.com/mitchellh/go-ps v1.0.0
+## explicit
+github.com/mitchellh/go-ps
 # github.com/mitchellh/mapstructure v1.4.1
 github.com/mitchellh/mapstructure
 # github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
@@ -387,6 +389,7 @@ github.com/opentracing/opentracing-go/log
 github.com/oxtoacart/bpool
 # github.com/patrickmn/go-cache v2.1.0+incompatible
 ## explicit
+github.com/patrickmn/go-cache
 # github.com/pelletier/go-toml v1.7.0
 github.com/pelletier/go-toml
 # github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023

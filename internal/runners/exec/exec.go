@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/mitchellh/go-ps"
 )
 
 type Exec struct {
@@ -124,7 +125,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
 	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
 	if p == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
-		return logging.Criticalf("executor recursion detected: %s (lvl=%d)", strings.Join(args, " "), recursionLvl)
+		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessName(), os.Getppid(), strings.Join(args, " "), recursionLvl)
 	}
 	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
 
@@ -143,4 +144,14 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)
+}
+
+func getParentProcessName() string {
+	p, err := ps.FindProcess(os.Getppid())
+	if err != nil {
+		logging.Debug("Could not find parent process of executor: %v", err)
+		return "unknown"
+	}
+
+	return p.Executable()
 }
