@@ -223,7 +223,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 			executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("RECURSION_LVL=2")
+	cp.Expect("RECURSION_LVL=1")
 	cp.ExpectExitCode(0)
 
 	// check that recursion detection is firing log message
@@ -236,7 +236,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 	)
 	cp.ExpectLongString("executor recursion detected: parent python")
-	cp.Expect("RECURSION_LVL=2")
+	cp.Expect("RECURSION_LVL=1")
 	cp.Wait()
 }
 
