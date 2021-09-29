@@ -365,7 +365,6 @@ github.com/mgutz/ansi
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/go-ps v1.0.0
 ## explicit
-github.com/mitchellh/go-ps
 # github.com/mitchellh/mapstructure v1.4.1
 github.com/mitchellh/mapstructure
 # github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
