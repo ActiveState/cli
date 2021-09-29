@@ -44,7 +44,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}
 
 	for _, tt := range tests {
-		suite.Run(tt.Name, func() {
+		suite.Run(fmt.Sprintf("%s (%s@%s)", tt.Name, tt.Version, tt.Channel), func() {
 			dir, err := installation.InstallPath()
 			suite.Require().NoError(err)
 			var extraEnv []string
