@@ -219,7 +219,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp = ts.SpawnCmdWithOpts(
 		executor,
 		e2e.WithArgs("-c", fmt.Sprintf(
-			`import subprocess; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"])`,
+			`import subprocess; import os; subprocess.call(["%s", "-c", "print('RECURSION_LVL='+os.environ['%s'])"])`,
 			executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
