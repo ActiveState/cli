@@ -273,7 +273,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
 	if update == nil {
-		return errs.Wrap(err, "No update information could be found.")
+		return errs.New("No update information could be found.")
 	}
 
 	version := update.Version
