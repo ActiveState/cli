@@ -92,7 +92,9 @@ env:
 #@ def steps_genupdate():
 name: "Generate Update"
 shell: bash
-run: state run generate-update
+run: |
+  state run generate-update
+  state run generate-legacy-update
 #@ end
 ---
 #@ def steps_gentest_update():
@@ -155,7 +157,7 @@ shell: bash
 run: |
   export SHELL=''
   set +e
-  go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
+  go test -timeout 10m `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
   testCode=$?
   exit ${testCode}
 env:
@@ -248,10 +250,19 @@ with:
 #@ def steps_deploy():
 name: "Deploy"
 shell: bash
-if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
 run: |
   state run deploy-updates
   state run deploy-installers
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#@ end
+---
+#@ def steps_deploy_versioned():
+name: "Deploy Versioned"
+shell: bash
+run: |
+  state run deploy-updates
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -294,4 +305,11 @@ env:
 name: "Cleanup Build Dir"
 shell: bash
 run: rm build/state* || true
+#@ end
+---
+#@ def steps_clean_nonversioned_update():
+name: "Cleanup Non-Versioned Update Files"
+shell: bash
+run: |
+  rm build/update/*.json || true
 #@ end

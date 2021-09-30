@@ -58,7 +58,7 @@ const (
 type createKeyFunc = func(path string) (osutils.RegistryKey, bool, error)
 
 func setStateProtocol() error {
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Could not check for windows administrator privileges: %v", err)
 	}

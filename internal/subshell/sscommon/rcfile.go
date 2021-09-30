@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -251,12 +251,17 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	inuse := []string{}
 	scripts := map[string]string{}
 	var explicitName string
+	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
 	for _, cmd := range prj.Scripts() {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
-		_, err := exec.LookPath(cmd.Name())
+		path, err := exec.LookPath(cmd.Name())
+		dir := filepath.Clean(filepath.Dir(path))
+		if dir == globalBinDir {
+			continue
+		}
 		if err == nil {
 			// Do not overwrite commands that are already in use and
 			// keep track of those commands to warn to the user
@@ -269,8 +274,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 
 	if len(inuse) > 0 {
-		out.Notice(output.Heading(locale.Tl("warn_scriptinuse_title", "Warning: Script Names Already In Use")))
-		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  [DISABLED]-[/RESET] "), inuse[0], explicitName))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "[/RESET],[NOTICE] "), inuse[0], explicitName))
 	}
 
 	wd, err := osutils.Getwd()
@@ -280,40 +284,34 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := txtstyle.NewTitle(locale.Tl("project_activated", "{{.V0}} has been sucessfully activated", prj.Name()))
-	if prj.IsHeadless() {
-		activatedMessage = txtstyle.NewTitle(locale.Tl("headless_project_activated", "Your virtual environment has been successfully activated", prj.Name()))
-	}
-	activatedMessage.ColorCode = "SUCCESS"
-
-	var activateEvtMessage string
-	if userScripts != "" {
-		activateEvtMessage = output.Heading(locale.Tl("activate_event_message", "Running Activation Events")).String()
+	var activatedMessage string
+	if !prj.IsHeadless() {
+		activatedMessage = locale.Tl("project_activated",
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
+	} else {
+		activatedMessage = locale.Tl("headless_project_activated",
+			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":                prj.Owner(),
-		"Name":                 prj.Name(),
-		"Env":                  env,
-		"WD":                   wd,
-		"UserScripts":          userScripts,
-		"Scripts":              scripts,
-		"ExecName":             constants.CommandName,
-		"ActivatedMessage":     "\n" + colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
-		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
+		"Owner":            prj.Owner(),
+		"Name":             prj.Name(),
+		"Env":              env,
+		"WD":               wd,
+		"UserScripts":      userScripts,
+		"Scripts":          scripts,
+		"ExecName":         constants.CommandName,
+		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
 	}
 
-	currExecAbsPath, err := osutils.Executable()
-	if err != nil {
-		return nil, errs.Wrap(err, "OS failure")
-	}
-	currExecAbsDir := filepath.Dir(currExecAbsPath)
+	currExec := osutils.Executable()
+	currExecAbsDir := filepath.Dir(currExec)
 
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
 	if !ok || !inPathList {
-		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
+		rcData["ExecAlias"] = currExec // alias {ExecName}={ExecAlias}
 	}
 
 	t := template.New("rcfile")

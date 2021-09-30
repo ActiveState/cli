@@ -61,10 +61,6 @@ scripts:
       export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      # Generate legacy update
-      echo "# Generate legacy update"
-      go run scripts/legacy-update-generator/main.go -o build/update $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET
-
       echo "# Create temp dir to generate bits"
       TEMPDIR=$BUILD_TARGET_DIR/state-install
       mkdir -p $TEMPDIR
@@ -91,6 +87,17 @@ scripts:
 
       echo "# Remove temp dir"
       rm -rf $TEMPDIR
+  - name: generate-legacy-update
+    language: bash
+    description: Generate legacy update files
+    value: |
+      set -e
+      export GOARCH=${1:-amd64}
+      $constants.SET_ENV
+
+      # Generate legacy update
+      echo "# Generate legacy update"
+      go run scripts/legacy-update-generator/main.go -o build/update $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET
   - name: generate-graph
     language: bash
     description: Generates graph server and client files

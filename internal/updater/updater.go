@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -24,6 +25,7 @@ type AvailableUpdate struct {
 	Sha256   string  `json:"sha256"`
 	Tag      *string `json:"tag,omitempty"`
 	url      string
+	tmpDir   string
 }
 
 func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
@@ -43,7 +45,12 @@ func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *A
 
 const InstallerName = "state-installer" + osutils.ExeExt
 
-func (u *AvailableUpdate) prepare() (string, error) {
+func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
+	if u.tmpDir != "" {
+		// To facilitate callers explicitly calling this method we cache the tmp dir and just return it if it's set
+		return u.tmpDir, nil
+	}
+
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
 		return "", errs.Wrap(err, "Could not create temp dir")
@@ -53,25 +60,34 @@ func (u *AvailableUpdate) prepare() (string, error) {
 		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
-	installerPath := filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir, InstallerName)
-	if !fileutils.FileExists(installerPath) {
-		return "", errs.Wrap(err, "Downloaded update does not have installer")
+	u.tmpDir = filepath.Join(tmpDir, constants.ToplevelInstallArchiveDir)
+	return u.tmpDir, nil
+}
+
+func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
+	sourcePath, err := u.DownloadAndUnpack()
+	if err != nil {
+		return "", nil, err
 	}
 
-	return installerPath, nil
+	installerPath := filepath.Join(sourcePath, InstallerName)
+	logging.Debug("Using installer: %s", installerPath)
+	if !fileutils.FileExists(installerPath) {
+		return "", nil, errs.Wrap(err, "Downloaded update does not have installer")
+	}
+
+	args = append(args, "--source-path", sourcePath)
+	args = append([]string{installTargetPath}, args...)
+	return installerPath, args, nil
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
 func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
-	installerPath, err := u.prepare()
+	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
 		return nil, err
 	}
 
-	var args []string
-	if installTargetPath != "" {
-		args = append(args, installTargetPath)
-	}
 	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
 		if u.Tag != nil {
 			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
@@ -85,21 +101,18 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 	return proc, nil
 }
 
-func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
-	installerPath, err := u.prepare()
+func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
+	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
+	installTargetPath, args, err := u.prepareInstall(installTargetPath, args)
 	if err != nil {
 		return err
 	}
 
-	var args []string
-	if installTargetPath != "" {
-		args = append(args, installTargetPath)
-	}
 	var envs []string
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
+	_, _, err = exeutils.ExecuteAndPipeStd(installTargetPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
@@ -109,12 +122,12 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string) error {
 
 // InstallWithProgress will fetch the update and run its installer
 func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
-	installerPath, err := u.prepare()
+	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not download update")
+		return nil, err
 	}
 
-	proc, err := exeutils.ExecuteAndForget(installerPath, []string{installTargetPath}, func(cmd *exec.Cmd) error {
+	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
 		if stderr, err = cmd.StderrPipe(); err != nil {

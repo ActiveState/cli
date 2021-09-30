@@ -1,5 +1,7 @@
 package output
 
+import "io"
+
 type Mediator struct {
 	Outputer
 	format Format
@@ -7,6 +9,14 @@ type Mediator struct {
 
 type Marshaller interface {
 	MarshalOutput(Format) interface{}
+}
+
+func (m *Mediator) Fprint(writer io.Writer, v interface{}) {
+	if v = mediatorValue(v, m.format); v == Suppress {
+		return
+	}
+	
+	m.Outputer.Fprint(writer, v)
 }
 
 func (m *Mediator) Print(v interface{}) {

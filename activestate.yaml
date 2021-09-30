@@ -236,14 +236,14 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      echo "If using tokens make sure to run 'state run aws-mfa-auth' on TheHomeRepot first."
+      echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
       go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
     if: ne .OS.Name "Windows"
-    description: Copies install scripts to build dir, this script exists for transparency with CI behavior
+    description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
       BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -252,6 +252,8 @@ scripts:
 
       cp installers/install.sh $INSTALLERS_DIR/install.sh
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
+
+      sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" $INSTALLERS_DIR/install.sh > $INSTALLERS_DIR/install.sh
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
@@ -322,13 +324,11 @@ events:
         echo "go is not installed. Please install Go version 1.11 or above."
         exit 1
       fi
-      $scripts.preprocess
       git config core.hooksPath .githooks
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
-      set +e # Take care not to run the shell too aggressively
   - name: file-changed
     scope: [ ".github/workflows-src" ]
     value: build-workflows

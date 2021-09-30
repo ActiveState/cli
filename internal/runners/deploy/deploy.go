@@ -75,7 +75,7 @@ func NewDeploy(step Step, prime primeable) *Deploy {
 
 func (d *Deploy) Run(params *Params) error {
 	if RequiresAdministratorRights(d.step, params.UserScope) {
-		isAdmin, err := osutils.IsWindowsAdmin()
+		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
 		}

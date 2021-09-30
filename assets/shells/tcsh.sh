@@ -22,8 +22,6 @@ alias {{.ExecName}}='{{.ExecAlias}}'
 alias {{$K}} '{{$.ExecName}} run {{$CMD}}'
 {{end}}
 
-echo "{{.ActivateEventMessage}}"
+echo "{{.ActivatedMessage}}"
 
 {{.UserScripts}}
-
-echo "{{.ActivatedMessage}}"

@@ -109,12 +109,16 @@ func CachePath() string {
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 		if runtime.GOOS == "windows" {
-		    // Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
-		    cachePath = filepath.Join(cachePath, "cache")
+			// Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
+			cachePath = filepath.Join(cachePath, "cache")
 		}
 	}
 
 	return cachePath
+}
+
+func GlobalBinDir() string {
+	return filepath.Join(CachePath(), "bin")
 }
 
 // InstallSource returns the installation source of the State Tool
@@ -124,7 +128,7 @@ func InstallSource() (string, error) {
 		return "", fmt.Errorf("Could not detect AppDataPath: %w", err)
 	}
 
-	installFilePath := filepath.Join(path, "installsource.txt")
+	installFilePath := filepath.Join(path, constants.InstallSourceFile)
 	installFileData, err := ioutil.ReadFile(installFilePath)
 	if err != nil {
 		return "unknown", nil

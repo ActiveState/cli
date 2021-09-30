@@ -18,12 +18,10 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/promptable"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -93,7 +91,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	checker.RunUpdateNotifier(r.svcMgr, r.config, r.out)
 
-	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
+	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -175,22 +173,18 @@ func (r *Activate) run(params *ActivateParams) error {
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
 	setDefault := params.Default
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
-	isPromptable, promptableKey := promptable.IsPromptableOnce, promptable.DefaultProject
-	if !setDefault && firstActivate && isPromptable(r.prompt, r.config, promptableKey) {
-		var err error
-		setDefault, err = r.prompt.Confirm(
-			locale.Tl("activate_default_prompt_title", "Default Project"),
-			locale.Tr("activate_default_prompt", proj.Namespace().String()),
-			new(bool),
-		)
-		if err != nil {
-			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
+	if firstActivate {
+		if setDefault {
+			r.out.Notice(locale.Tl(
+				"activate_default_explain_msg",
+				"This project will be set as the default, meaning you can use it from anywhere on your system without activating.",
+			))
+		} else {
+			r.out.Notice(locale.Tl(
+				"activate_default_optin_msg",
+				"To use this project without activating it in the future, make it your default by running your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
+			))
 		}
-
-		r.out.Notice(locale.Tl(
-			"global_default_modify_note",
-			"You can switch your default project at any time by passing the `[ACTIONABLE]--default[/RESET]` flag to `[ACTIONABLE]state activate[/RESET]`.",
-		))
 	}
 
 	if params.Command != "" {
@@ -240,9 +234,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
-
-		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
-		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
 
 		warningForAdministrator(r.out)
 
@@ -329,7 +320,7 @@ func warningForAdministrator(out output.Outputer) {
 		return
 	}
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if run as administrator.")
 	}

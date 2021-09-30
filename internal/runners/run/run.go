@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -71,7 +70,7 @@ func run(auth *authentication.Auth, out output.Outputer, analytics analytics.Ana
 		return locale.NewError("error_state_run_undefined_name")
 	}
 
-	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
+	out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.LegacyGet().Authenticated() {
 		checker.RunCommitsBehindNotifier(proj, out)

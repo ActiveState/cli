@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -18,6 +19,10 @@ type AppInfo struct {
 
 func execDir(baseDir ...string) string {
 	if len(baseDir) > 0 {
+		binDir := filepath.Join(baseDir[0], "bin")
+		if fileutils.DirExists(binDir) {
+			return binDir
+		}
 		return baseDir[0]
 	}
 	if condition.InUnitTest() {
@@ -65,6 +70,10 @@ func SvcApp(baseDir ...string) *AppInfo {
 
 func UpdateDialogApp(baseDir ...string) *AppInfo {
 	return newAppInfo(constants.UpdateDialogName, "state-update-dialog", baseDir...)
+}
+
+func InstallerApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.StateInstallerCmd, "state-installer", baseDir...)
 }
 
 func (a *AppInfo) Name() string {
