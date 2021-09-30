@@ -38,3 +38,26 @@ func (e *AnalyticsEvent) Vars() map[string]interface{} {
 		"userID":       e.userID,
 	}
 }
+
+type AuthenticationEvent struct {
+	userID string
+}
+
+func NewAuthenticationEvent(userID string) *AuthenticationEvent {
+	return &AuthenticationEvent{
+		userID: userID,
+	}
+}
+
+func (e *AuthenticationEvent) Query() string {
+	return `query($userID: String!) {
+		authenticationEvent(userID: $userID) {
+		}
+	}`
+}
+
+func (e *AuthenticationEvent) Vars() map[string]interface{} {
+	return map[string]interface{}{
+		"userID": e.userID,
+	}
+}

@@ -96,3 +96,15 @@ func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action
 
 	return nil
 }
+
+func (m *SvcModel) AuthenticationEvent(ctx context.Context, userID string) error {
+	defer profile.Measure("svc:authenticationEvent", time.Now())
+
+	r := request.NewAuthenticationEvent(userID)
+	u := graph.AuthenticationEventResponse{}
+	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error sending authentication event via state-svc")
+	}
+
+	return nil
+}

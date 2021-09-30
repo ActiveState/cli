@@ -101,6 +101,12 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	return nil
 }
 
+func (a *DefaultClient) AuthenticationUpdate(userID string) {
+	if err := a.svcModel.AuthenticationEvent(context.Background(), userID); err != nil {
+		logging.Error("Failed to report authentication event vita state-svc: %s", errs.JoinMessage(err))
+	}
+}
+
 func handlePanics(err interface{}, stack []byte) {
 	if err == nil {
 		return
