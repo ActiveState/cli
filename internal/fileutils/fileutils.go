@@ -492,7 +492,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
 				err = os.Remove(subToPath)
 				if err != nil {
-					logging.Error("Failed to remove destination file %s: %v", subToPath, err)
+					logging.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
 				}
 			}
 		}
@@ -526,7 +526,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 
 		err = os.Rename(subFromPath, subToPath)
 		if err != nil {
-			return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
+			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, toInfo.Mode())
 		}
 		cb(subFromPath, subToPath)
 	}
