@@ -250,10 +250,9 @@ scripts:
       INSTALLERS_DIR=build/installers/${BRANCH#release}
       mkdir -p $INSTALLERS_DIR
 
-      cp installers/install.sh $INSTALLERS_DIR/install.sh
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
 
-      sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" $INSTALLERS_DIR/install.sh > $INSTALLERS_DIR/install.sh
+      sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.sh > $INSTALLERS_DIR/install.sh
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
