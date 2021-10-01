@@ -33,9 +33,6 @@ const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 // LogBuildVerboseEnvVarName is the env var used to enable verbose build logging
 const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 
-// ExecEnvVarName is the env var used to find out if we are shimming recursively
-const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
-
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
@@ -364,6 +361,9 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
+const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
 
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"

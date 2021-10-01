@@ -3,13 +3,12 @@ package scriptrun
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -195,42 +193,5 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 }
 
 func pathProvidesExec(path, exec string) bool {
-	paths := splitPath(path)
-	paths = applySuffix(exec, paths)
-	for _, p := range paths {
-		if isExecutableFile(p) {
-			return true
-		}
-	}
-	return false
-}
-
-func splitPath(path string) []string {
-	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func applySuffix(suffix string, paths []string) []string {
-	for i, v := range paths {
-		paths[i] = filepath.Join(v, suffix)
-	}
-	return paths
-}
-
-func isExecutableFile(name string) bool {
-	// TODO: We want a better way to find the executable on Windows.
-	// Follow up filed here: https://www.pivotaltracker.com/n/projects/2203557/stories/177934469
-	if !fileutils.FileExists(name) {
-		name = executor.NameForExe(name)
-	}
-
-	f, err := os.Stat(name)
-	if err != nil { // unlikely unless file does not exist
-		return false
-	}
-
-	if rt.GOOS == "windows" {
-		return f.Mode()&0400 != 0
-	}
-
-	return f.Mode()&0110 != 0
+	return exeutils.FindExecutableOnPath(exec, path) != ""
 }
