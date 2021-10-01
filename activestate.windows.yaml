@@ -22,15 +22,22 @@ scripts:
     if: eq .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
+      REF=${GITHUB_SHA:=HEAD}
+      BRANCH=$(git rev-parse --abbrev-ref $REF)
+      if [ "$BRANCH" != "release" ]; then
+        $BRANCH=""
+      fi
 
-      BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      INSTALLERS_DIR=build/installers/$BRANCH
       mkdir -p $INSTALLERS_DIR
 
       cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
 
-      sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.ps1 > $INSTALLERS_DIR/install.ps1
+      if [ "$BRANCH" != "" ]; then
+        sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.ps1 > $INSTALLERS_DIR/install.ps1
+      else
+        cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
+      fi
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
