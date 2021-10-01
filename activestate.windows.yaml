@@ -24,7 +24,7 @@ scripts:
     value: |
       REF=${GITHUB_SHA:=HEAD}
       BRANCH=$(git rev-parse --abbrev-ref $REF)
-      if [ "$BRANCH" != "release" ]; then
+      if [ "$BRANCH" == "release" ]; then
         $BRANCH=""
       fi
 
