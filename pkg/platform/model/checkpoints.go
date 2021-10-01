@@ -59,6 +59,7 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
+			logging.Debug("Found language (%s version: %s)", requirement.Requirement, requirement.VersionConstraint)
 			languages = append(languages, Language{
 				Name:    requirement.Requirement,
 				Version: requirement.VersionConstraint,
@@ -83,6 +84,7 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) ([]*gqlModel.Requirement, st
 	}
 
 	logging.Debug("Returning %d requirements", len(response.Requirements))
+	logging.Debug("Checkpoint response: %+v", response)
 
 	if response.Commit == nil {
 		return nil, strfmt.DateTime{}, locale.WrapError(ErrNoData, "err_no_data_found")
