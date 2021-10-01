@@ -170,9 +170,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	pname := strutils.UUID()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
-	cp.ExpectLongString("default project?")
-	cp.Send("n")
-	cp.Expect("successfully activated", 20*time.Second)
+	cp.Expect("Activated", 20*time.Second)
 	cp.WaitForInput(10 * time.Second)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -227,14 +225,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 			"--path", wd),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectLongString("default project?")
-	cp.Send("n")
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
-	if runtime.GOOS == "windows" {
-		cp.Expect("Running Activation Events")
-	} else {
-		cp.Expect("successfully activated")
-	}
+	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

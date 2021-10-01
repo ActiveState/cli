@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 )
@@ -138,7 +137,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
-		panic(errs.Join(err, "\n").Error())
+		panic(errs.JoinMessage(err))
 	}
 
 	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
@@ -505,7 +504,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	subCommandString := c.UseFull()
 
 	// Send  GA events unless they are handled in the runners...
-	c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+	if c.analytics != nil {
+		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+	}
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -533,7 +534,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.out != nil && c.title != "" {
-		c.out.Notice(txtstyle.NewTitle(c.title))
+		c.out.Notice(output.Title(c.title))
 	}
 
 	intercept := c.interceptFunc()
@@ -553,10 +554,14 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
+		if c.analytics != nil {
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
+		}
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
+		if c.analytics != nil {
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
+		}
 	}
 
 	return err

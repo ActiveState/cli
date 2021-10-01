@@ -110,10 +110,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Default Project")
-	cp.Expect("y/N")
-	cp.Send("n")
-	cp.Expect("successfully activated")
+	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -144,10 +141,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"), e2e.AppendEnv("SHELL=bash"))
-	cp.Expect("Default Project")
-	cp.Expect("y/N")
-	cp.Send("n")
-	cp.Expect("successfully activated")
+	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("helloWorld")
@@ -241,10 +235,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Default Project")
-	cp.Expect("y/N")
-	cp.Send("n")
-
-	cp.Expect("successfully activated")
+	cp.Expect("Activated")
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))

@@ -37,7 +37,7 @@ func undoPrepare(cfg configurable) error {
 }
 
 func removeEnvPaths(cfg configurable) error {
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}

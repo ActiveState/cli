@@ -154,11 +154,7 @@ func relaunch(args []string) int {
 }
 
 func isFreshInstall() bool {
-	exe, err := osutils.Executable()
-	if err != nil {
-		logging.Error("Could not grab executable, error: %v", err)
-		return true
-	}
+	exe := osutils.Executable()
 	stat, err := os.Stat(exe)
 	if err != nil {
 		logging.Error("Could not stat file: %s, error: %v", exe)

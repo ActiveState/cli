@@ -73,9 +73,9 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	if err := globaldefault.Prepare(r.cfg, r.subshell); err != nil {
 		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)
 		if runtime.GOOS != "linux" {
-			return locale.WrapError(err, msgLocale, globaldefault.BinDir(r.cfg))
+			return locale.WrapError(err, msgLocale, globaldefault.BinDir())
 		}
-		r.reportError(locale.Tr(msgLocale, globaldefault.BinDir(r.cfg)), err)
+		r.reportError(locale.Tr(msgLocale, globaldefault.BinDir()), err)
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {

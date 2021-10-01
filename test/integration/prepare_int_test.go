@@ -39,7 +39,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	)
 	cp.ExpectExitCode(0)
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	suite.Require().NoError(err, "Could not determine if we are a Windows Administrator")
 	// For Windows Administrator users `state _prepare` is doing nothing now (because it doesn't make sense...)
 	if isAdmin {
@@ -80,10 +80,10 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
 	)
+	cp.ExpectLongString("This project will be set as the default")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.ExpectLongString("Successfully configured ActiveState-CLI/small-python as the global default")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -115,7 +115,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.8.8")

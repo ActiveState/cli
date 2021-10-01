@@ -56,6 +56,11 @@ func (f *Plain) Type() Format {
 	return PlainFormatName
 }
 
+// Fprint allows printing to a specific writer, using all the conveniences of the output package
+func (f *Plain) Fprint(writer io.Writer, v interface{}) {
+	f.write(writer, v)
+}
+
 // Print will marshal and print the given value to the output writer
 func (f *Plain) Print(value interface{}) {
 	f.write(f.cfg.OutWriter, value)
@@ -99,22 +104,11 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 func wordWrap(text string) string {
-	var result []string
-	cropped := colorize.GetCroppedText(text, termutils.GetWidth())
-	for _, crop := range cropped {
-		result = append(result, crop.Line)
-	}
-	suffix := ""
+	return wordWrapWithWidth(text, termutils.GetWidth())
+}
 
-	// Check for line endings at the end of the string
-	// We don't care about runes here since we are only looking at line endings
-	for x := len(text) - 1; x >= 0; x-- {
-		if string(text[x]) != "\n" {
-			break
-		}
-		suffix += "\n"
-	}
-	return strings.Join(result, "\n") + suffix
+func wordWrapWithWidth(text string, width int) string {
+	return colorize.GetCroppedText(text, width, true).String()
 }
 
 const nilText = "<nil>"

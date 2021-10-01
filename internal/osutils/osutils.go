@@ -118,23 +118,24 @@ func EnvMapToSlice(envMap map[string]string) []string {
 }
 
 // Executable returns the resolved path to the currently running executable.
-func Executable() (string, error) {
+func Executable() string {
 	exec, err := os.Executable()
 	if err != nil {
-		return "", err
+		exec = os.Args[0]
 	}
 
-	return fileutils.ResolvePath(exec)
+	resolved, err := fileutils.ResolvePath(exec)
+	if err != nil {
+		return exec
+	}
+
+	return resolved
 }
 
 // ExecutableName returns the name of the executable called with the extension
 // removed and falls back to the command used to call the executable.
 func ExecutableName() string {
-	name, err := os.Executable()
-	if err != nil {
-		name = os.Args[0]
-	}
-	name = path.Base(name)
+	name := path.Base(Executable())
 	name = strings.TrimSuffix(name, path.Ext(name))
 	return name
 }

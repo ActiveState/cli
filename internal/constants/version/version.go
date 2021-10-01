@@ -1,7 +1,6 @@
 package version
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,24 +11,7 @@ import (
 	"github.com/blang/semver"
 )
 
-// Env helps define and limit the available environments.
-type Env int
-
-// Env constants are the available environment tokens.
-const (
-	UnknownEnv Env = iota
-	LocalEnv
-	RemoteEnv
-)
-
-func ParseVersion(buildEnv Env) (*semver.Version, error) {
-	if buildEnv == LocalEnv {
-		return semver.New("0.0.0")
-	}
-	if buildEnv != RemoteEnv {
-		return nil, errors.New("encountered unknown build environment")
-	}
-
+func Detect() (*semver.Version, error) {
 	root, err := environment.GetRootPath()
 	if err != nil {
 		return nil, err

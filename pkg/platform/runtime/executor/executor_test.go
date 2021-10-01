@@ -48,7 +48,7 @@ func TestExecutor(t *testing.T) {
 		err = fw.Cleanup()
 		require.NoError(t, err, errs.Join(err, ": "))
 
-		files := fileutils.ListDir(fw.BinPath(), false)
+		files := fileutils.ListDirSimple(fw.BinPath(), false)
 		require.Len(t, files, 0, "Cleanup should remove all exes")
 	})
 }

@@ -147,7 +147,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
 	)
 	cp.Expect("Installing")
 	cp.Expect("6 / 6")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 
 	cp.SendLine(`ruby -e 'puts "      world\rhello"'`)
 	cp.Expect("hello world")
@@ -159,7 +159,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
 		e2e.WithArgs("activate", "martind-stage/ruby", "--path", ts.Dirs.Work),
 		extraEnv,
 	)
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading required artifacts")
@@ -180,7 +180,7 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
 	cp.Expect("1 / 1")
 	cp.Expect("Installing")
 	cp.Expect("6 / 6")
-	cp.Expect("activated state")
+	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
