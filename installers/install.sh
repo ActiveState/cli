@@ -26,6 +26,7 @@ parseChannel() {
     i=$((i + 1)) && [ "${arg}" != "-b" ] && continue
     echo "${@}" | cut -d' ' -f$((${i} + 1)) && break
   done
+  echo $CHANNEL
 }
 CHANNEL=$(parseChannel "$@")
 
