@@ -155,7 +155,7 @@ func getParentProcessArgs() string {
 
 	args, err := p.CmdlineSlice()
 	if err != nil {
-		logging.Debug("")
+		logging.Debug("Could not retrieve command line arguments of executor's calling process: %v", err)
 		return "unknown"
 	}
 
