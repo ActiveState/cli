@@ -214,6 +214,26 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	)
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--default"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("activated state")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	executor := filepath.Join(ts.Dirs.DefaultBin, "python3")
 
 	// check that default activation takes count of recursion level
 	cp = ts.SpawnCmdWithOpts(
