@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -34,7 +33,6 @@ type Exec struct {
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	cfg       *config.Instance
 	analytics analytics.AnalyticsDispatcher
 }
 
@@ -43,7 +41,6 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
-	primer.Configurer
 	primer.Analyticer
 }
 
@@ -57,7 +54,6 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
-		prime.Config(),
 		prime.Analytics(),
 	}
 }
@@ -123,7 +119,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
-	binDir := filepath.Clean(globaldefault.BinDir(s.cfg))
+	binDir := filepath.Clean(globaldefault.BinDir())
 	if filepath.Dir(p) == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
 		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
 	}
