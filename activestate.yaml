@@ -245,8 +245,12 @@ scripts:
     if: ne .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
-      REF=${GITHUB_SHA:=HEAD}
+      REF=${GITHUB_HEAD_REF:=HEAD}
       BRANCH=$(git rev-parse --abbrev-ref $REF)
+      if [ "$BRANCH" == "" ]; then
+        echo "Branch cannot be empty"
+        exit 1
+      fi
       if [ "$BRANCH" == "release" ]; then
         $BRANCH=""
       fi
