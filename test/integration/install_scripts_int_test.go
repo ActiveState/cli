@@ -47,7 +47,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
-			args := []string{script, "-t", ts.Dirs.Work}
+			args := []string{script, "-t", "-f", ts.Dirs.Work}
 			if tt.Channel != "" {
 				args = append(args, "-b", tt.Channel)
 			}
