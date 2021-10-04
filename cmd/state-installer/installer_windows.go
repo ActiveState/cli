@@ -28,7 +28,7 @@ func (i *Installer) PrepareBinTargets(useBinDir bool) error {
 	targetBinPath := i.path
 
 	if useBinDir {
-		targetBinPath := filepath.Join(targetBinPath, "bin")
+		targetBinPath = filepath.Join(targetBinPath, "bin")
 	}
 
 	// Clean up executables from previous install
