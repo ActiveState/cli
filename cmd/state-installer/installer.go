@@ -121,11 +121,11 @@ func (i *Installer) Install() (rerr error) {
 }
 
 func PredatesBinDir() (bool, error) {
-	installPath, err := InstallPath()
+	installPath, err := installation.InstallPath()
 	if err != nil {
 		return false, err
 	}
-	binPath, err := BinPath()
+	binPath, err := installation.BinPath()
 	if err != nil {
 		return false, err
 	}
