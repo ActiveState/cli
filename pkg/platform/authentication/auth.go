@@ -100,7 +100,10 @@ func New(cfg Configurable) *Auth {
 
 	if availableAPIToken(cfg) != "" {
 		logging.Debug("Authenticating with stored API token")
-		auth.Authenticate()
+		err := auth.Authenticate()
+		if err != nil {
+			logging.Error("Authenticating with stored API token failed: %v", err)
+		}
 	}
 
 	return auth
