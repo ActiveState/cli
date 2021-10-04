@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
@@ -57,6 +58,8 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 }
 
 func (m *SvcModel) InitiateDeferredUpdate(ctx context.Context, channel, version string) (*graph.DeferredUpdate, error) {
+	logging.Debug("Initiating deferred update")
+
 	r := request.NewUpdateRequest(channel, version)
 	u := graph.UpdateResponse{}
 	if err := m.client.RunWithContext(ctx, r, &u); err != nil {

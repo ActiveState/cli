@@ -75,8 +75,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	}
 	defer fileLock.Unlock()
 
-	targetDir := filepath.Dir(appinfo.StateApp().Exec())
-	err = up.InstallBlocking(targetDir)
+	err = up.InstallBlocking("")
 	if err != nil {
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {

@@ -71,7 +71,6 @@ scripts:
       mkdir -p $TEMPDIR/bin
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_UPDLG_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
 
       echo "# Create update dir"

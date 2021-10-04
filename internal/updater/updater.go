@@ -82,6 +82,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 }
 
 // InstallDeferred will fetch the update and run its installer in a deferred process
+// Leave installTargetPath empty to use the default/existing installation path
 func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
@@ -101,6 +102,8 @@ func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process
 	return proc, nil
 }
 
+// InstallBlocking installs the available update and returns when it has completed
+// Leave installTargetPath empty to use the default/existing installation path
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
 	installTargetPath, args, err := u.prepareInstall(installTargetPath, args)
@@ -121,6 +124,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 }
 
 // InstallWithProgress will fetch the update and run its installer
+// Leave installTargetPath empty to use the default/existing installation path
 func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {

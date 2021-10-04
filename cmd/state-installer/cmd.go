@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -221,7 +222,11 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
 
 	stateExe := appinfo.StateApp(installer.InstallPath()).Exec()
-	env := []string{"PATH=" + string(os.PathListSeparator) + filepath.Dir(stateExe) + os.Getenv("PATH")}
+	binPath, err := installation.BinPathFromInstallPath(installer.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Could not detect installation bin path")
+	}
+	env := []string{"PATH=" + string(os.PathListSeparator) + binPath + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
