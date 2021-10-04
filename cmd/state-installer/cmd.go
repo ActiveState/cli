@@ -197,18 +197,18 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
-	installPath, _ := installation.InstallPath()
-	// Check if state tool already installed
-	if !params.force && fileutils.TargetExists(appinfo.StateApp(installPath).Exec()) || fileutils.TargetExists(appinfo.StateApp(params.path).Exec()) {
-		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
-		return postInstallEvents(out, params)
-	}
-
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
 		if err := installOrUpdateFromLocalSource(out, cfg, args, params); err != nil {
 			return err
 		}
+		return postInstallEvents(out, params)
+	}
+
+	installPath, _ := installation.InstallPath()
+	// Check if state tool already installed
+	if !params.force && fileutils.TargetExists(appinfo.StateApp(installPath).Exec()) || fileutils.TargetExists(appinfo.StateApp(params.path).Exec()) {
+		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
 		return postInstallEvents(out, params)
 	}
 
