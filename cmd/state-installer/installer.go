@@ -170,15 +170,8 @@ func (i *Installer) sanitize() error {
 	}
 
 	var err error
-	if i.path != "" {
-		if i.path, err = filepath.Abs(i.path); err != nil {
-			return errs.Wrap(err, "Failed to sanitize installation path")
-		}
-	} else {
-		i.path, err = installation.InstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Failed to detect default installation path")
-		}
+	if i.path, err = resolveInstallPath(i.path); err != nil {
+		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
 	// For backwards compatibility we detect the sourcePath based on the location of the installer

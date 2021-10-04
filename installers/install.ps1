@@ -82,13 +82,6 @@ function tempDir()
     New-Item -ItemType Directory -Path (Join-Path $parent $name)
 }
 
-function header([string] $msg)
-{
-    Write-Host '█ ' -NoNewline
-    Write-Host $msg
-    Write-Host ""
-}
-
 function progress([string] $msg)
 {
     Write-Host "• $msg..." -NoNewline
@@ -115,7 +108,7 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-header "Preparing Installer for State Tool Package Manager"
+progress "Preparing Installer for State Tool Package Manager"
 
 $zipURL = "$script:BASEFILEURL/$script:CHANNEL/windows-amd64/$script:ARCHIVENAME"
 $tmpParentPath = tempDir
@@ -123,7 +116,6 @@ $zipPath = Join-Path $tmpParentPath $script:ARCHIVENAME
 $exePath = Join-Path $tmpParentPath $script:INSTALLERNAME
 try
 {
-    progress "Downloading Installer"
     download $zipURL $zipPath
 }
 catch [System.Exception]
@@ -133,11 +125,9 @@ catch [System.Exception]
     Write-Error $_.Exception.Message
     return 1
 }
-progress_done
 
 try
 {
-    progress "Extracting Installer"
     Expand-Archive -ErrorAction Stop -LiteralPath $zipPath -DestinationPath $tmpParentPath
 }
 catch

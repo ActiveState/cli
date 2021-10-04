@@ -47,25 +47,27 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
-			args := []string{script, "-t", ts.Dirs.Work}
+			argsPlain := []string{script, "-t", ts.Dirs.Work}
 			if tt.Channel != "" {
-				args = append(args, "-b", tt.Channel)
+				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
 			if tt.Version != "" {
-				args = append(args, "-v", tt.Version)
+				argsPlain = append(argsPlain, "-v", tt.Version)
 			}
+
+			argsWithActive := append(argsPlain, "-f")
 			if tt.Activate != "" {
-				args = append(args, "--activate", tt.Activate)
+				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
 			}
 
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.WithArgs(args...),
+					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
 			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
+				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
@@ -93,6 +95,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
+
+			// Verify that we don't try to install it again
+			if runtime.GOOS != "windows" {
+				cp = ts.SpawnCmdWithOpts(
+					"bash", e2e.WithArgs(argsPlain...),
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+				)
+			} else {
+				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...),
+					e2e.AppendEnv("SHELL="),
+					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+				)
+			}
+			cp.Expect("already installed")
+			cp.ExpectExitCode(0)
 		})
 	}
 }

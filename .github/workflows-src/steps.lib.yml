@@ -253,6 +253,7 @@ shell: bash
 run: |
   state run deploy-updates
   state run deploy-installers
+  state run deploy-msi
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -263,6 +264,7 @@ name: "Deploy Versioned"
 shell: bash
 run: |
   state run deploy-updates
+  state run deploy-installers
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
