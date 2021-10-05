@@ -70,7 +70,6 @@ jobs:
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update

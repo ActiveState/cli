@@ -109,7 +109,6 @@ jobs:
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
@@ -313,7 +312,6 @@ jobs:
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update
@@ -412,7 +410,6 @@ jobs:
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update
