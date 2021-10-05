@@ -1,8 +1,6 @@
 constants:
   - name: BUILD_TARGET
     value: state.exe
-  - name: BUILD_TRANSITION_TARGET
-    value: state-transition-update.exe
   - name: BUILD_DAEMON_TARGET
     value: state-svc.exe
   - name: BUILD_INSTALLER_TARGET
