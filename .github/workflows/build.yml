@@ -69,9 +69,6 @@ jobs:
     - name: Build Installer
       shell: bash
       run: state run build-installer
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -92,8 +89,7 @@ jobs:
         sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
         ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State
         Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-        \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\"
-        -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
+        \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -313,9 +309,6 @@ jobs:
       shell: bash
       if: runner.os == 'macOS'
       run: state run build-systray-app
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: |
@@ -415,9 +408,6 @@ jobs:
       shell: bash
       if: runner.os == 'macOS'
       run: state run build-systray-app
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: |
