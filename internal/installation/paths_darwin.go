@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func defaultInstallPath() (string, error) {
+func DefaultInstallPath() (string, error) {
 	// This should actually go to ~/Applications/ActiveStateDesktop.app/Contents/..
 	// but we don't have our app yet
 	usr, err := user.Current()

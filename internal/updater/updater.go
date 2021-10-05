@@ -124,6 +124,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 }
 
 // InstallWithProgress will fetch the update and run its installer
+// Leave installTargetPath empty to use the default/existing installation path
 func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {

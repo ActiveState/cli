@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -21,6 +22,8 @@ func StopTrayApp(cfg Configurable) error {
 		}
 		return errs.Wrap(err, "Could not detect if state-tray pid exists")
 	}
+	
+	logging.Debug("Attempting to stop state-tray (%d)", proc.Pid)
 	if err := proc.Kill(); err != nil {
 		return errs.Wrap(err, "Could not kill state-tray")
 	}
