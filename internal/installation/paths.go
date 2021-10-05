@@ -5,7 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -15,6 +18,8 @@ const CfgInstallPath = "installation_path"
 // CfgTransitionalStateToolPath is the configuration key for the path where a transitional State Tool might still be stored
 const CfgTransitionalStateToolPath = "transitional_installation_path"
 
+const BinDirName = "bin"
+
 func InstallPath() (string, error) {
 	// Facilitate use-case of running executables from the build dir while developing
 	if !rtutils.BuiltViaCI && strings.Contains(os.Args[0], "/build/") {
@@ -23,7 +28,39 @@ func InstallPath() (string, error) {
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
 		return path, nil
 	}
-	return defaultInstallPath()
+
+	// If State Tool is already exists then we should detect the install path from there
+	stateInfo := appinfo.StateApp()
+	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
+	if fileutils.TargetExists(stateInfo.Exec()) {
+		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
+			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
+		}
+		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
+	}
+
+	return DefaultInstallPath()
+}
+
+func BinPath() (string, error) {
+	return BinPathFromInstallPath("")
+}
+
+func BinPathFromInstallPath(installPath string) (string, error) {
+	if installPath == "" {
+		var err error
+		installPath, err = InstallPath()
+		if err != nil {
+			return "", errs.Wrap(err, "Could not detect InstallPath while searching for BinPath")
+		}
+	}
+
+	binDir := filepath.Join(installPath, BinDirName)
+	if fileutils.FileExists(binDir) {
+		return binDir, nil
+	}
+
+	return installPath, nil
 }
 
 func LauncherInstallPath() (string, error) {
