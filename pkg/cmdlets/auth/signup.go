@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -34,7 +36,7 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
 	input := &signupInput{}
 
 	if authentication.LegacyGet().Authenticated() {
@@ -54,7 +56,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	if err = doSignup(input, out); err != nil {
+	if err = doSignup(input, out, cnf, mgr); err != nil {
 		return err
 	}
 
@@ -67,7 +69,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 	return nil
 }
 
-func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) error {
+func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
 	input := &signupInput{}
 
 	input.Username = username
@@ -78,7 +80,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	return doSignup(input, out)
+	return doSignup(input, out, cnf, mgr)
 }
 
 func downloadTOS(configPath string) (string, error) {
@@ -186,7 +188,7 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 	return nil
 }
 
-func doSignup(input *signupInput, out output.Outputer) error {
+func doSignup(input *signupInput, out output.Outputer, cnf *config.Instance, mgr *svcmanager.Manager) error {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
@@ -214,7 +216,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 	err = AuthenticateWithCredentials(&mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
-	})
+	}, cnf, mgr)
 	if err != nil {
 		return err
 	}

@@ -4,11 +4,13 @@ import (
 	"errors"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -29,10 +31,12 @@ type configGetter interface {
 
 type Push struct {
 	config  configGetter
+	cnf     *config.Instance
 	out     output.Outputer
 	project *project.Project
 	prompt  prompt.Prompter
 	auth    *authentication.Auth
+	svcMgr  *svcmanager.Manager
 }
 
 type PushParams struct {
@@ -45,10 +49,21 @@ type primeable interface {
 	primer.Configurer
 	primer.Prompter
 	primer.Auther
+	primer.Svcer
 }
 
 func NewPush(prime primeable) *Push {
-	return &Push{prime.Config(), prime.Output(), prime.Project(), prime.Prompt(), prime.Auth()}
+	cnf := prime.Config()
+
+	return &Push{
+		cnf,
+		cnf,
+		prime.Output(),
+		prime.Project(),
+		prime.Prompt(),
+		prime.Auth(),
+		prime.SvcManager(),
+	}
 }
 
 type intention uint16
@@ -246,7 +261,9 @@ func (r *Push) Run(params PushParams) error {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt)
+		err := authlet.RequireAuthentication(
+			locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"),
+			r.config, r.out, r.prompt, r.cnf, r.svcMgr)
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}

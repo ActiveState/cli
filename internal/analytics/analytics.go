@@ -5,5 +5,4 @@ type AnalyticsDispatcher interface {
 	Event(category string, action string)
 	EventWithLabel(category string, action string, label string)
 	Wait()
-	AuthenticationUpdate(userID string)
 }
