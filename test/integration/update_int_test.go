@@ -133,19 +133,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
-	fakeHome := filepath.Join(ts.Dirs.Work, "home")
-	err = fileutils.Mkdir(fakeHome)
-	suite.Require().NoError(err)
-
-	before := fileutils.ListDirSimple(ts.Dirs.Config, false)
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.Expect("Updating State Tool to latest version available")
-	cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
+	cp.Expect("State Tool has been updated")
 	cp.ExpectExitCode(0)
-
-	logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
-	suite.Assert().Contains(logs, "was successful")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
