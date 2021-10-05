@@ -56,7 +56,7 @@ func (u *Update) Run(params *Params) error {
 
 	// Check for available update
 	checker := updater.NewDefaultChecker(u.cfg)
-	up, err := checker.CheckFor("", params.Version)
+	up, err := checker.CheckFor(params.Channel, params.Version)
 	if err != nil {
 		return locale.WrapError(err, "err_update_check", "Could not check for updates.")
 	}
