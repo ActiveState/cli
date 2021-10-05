@@ -75,11 +75,6 @@ func (a *DefaultClient) Wait() {
 }
 
 func (a *DefaultClient) sendEvent(category, action, label string) error {
-	userID := ""
-	if a.auth != nil && a.auth.UserID() != nil {
-		userID = string(*a.auth.UserID())
-	}
-
 	if a.svcModel == nil {
 		if condition.InUnitTest() {
 			return nil
@@ -94,7 +89,7 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer a.eventWaitGroup.Done()
-		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectNameSpace, a.output, userID); err != nil {
+		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectNameSpace, a.output); err != nil {
 			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()

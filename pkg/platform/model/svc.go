@@ -85,10 +85,10 @@ func (m *SvcModel) Ping() error {
 	return err
 }
 
-func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action, label, projectName, output, userID string) error {
+func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action, label, projectName, output string) error {
 	defer profile.Measure("svc:analyticsEvent", time.Now())
 
-	r := request.NewAnalyticsEvent(category, action, label, projectName, output, userID)
+	r := request.NewAnalyticsEvent(category, action, label, projectName, output)
 	u := graph.AnalyticsEventResponse{}
 	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
 		return errs.Wrap(err, "Error sending analytics event via state-svc")
