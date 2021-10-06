@@ -1,26 +1,36 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/svcmanager"
+	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type Logout struct {
 	output.Outputer
 	*authentication.Auth
-	cfg keypairs.Configurable
+	cfg    keypairs.Configurable
+	cnf    *config.Instance
+	svcMgr *svcmanager.Manager
 }
 
 func NewLogout(prime primeable) *Logout {
-	return &Logout{prime.Output(), prime.Auth(), prime.Config()}
+	cnf := prime.Config()
+	return &Logout{
+		prime.Output(),
+		prime.Auth(),
+		cnf,
+		cnf,
+		prime.SvcManager(),
+	}
 }
 
 func (l *Logout) Run() error {
-	l.Auth.Logout()
-	err := keypairs.DeleteWithDefaults(l.cfg)
-	if err != nil {
+	if err := authlet.Logout(l.cfg, l.cnf, l.svcMgr); err != nil {
 		return locale.WrapError(err, "err_auth_logout", "Failed to delete authentication key")
 	}
 	l.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))

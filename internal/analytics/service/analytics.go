@@ -118,6 +118,7 @@ func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType string
 
 func (a *Analytics) UpdateCustomDimensions(userID string) {
 	a.customDimensions.SetUserID(userID)
+	logging.Debug("Updating CustomDimensions (%v) with UserID (%s)", a.customDimensions, userID)
 }
 
 // SendWithCustomDimensions sends an analytics event with the given custom dimensions

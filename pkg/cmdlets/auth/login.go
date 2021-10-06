@@ -60,7 +60,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 
 	if authentication.LegacyGet().Authenticated() {
 		secretsapi.InitializeClient()
-		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt); err != nil {
+		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt, cnf, mgr); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
 		}
 	}
