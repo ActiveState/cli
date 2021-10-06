@@ -329,6 +329,8 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
+	cfg.Set(updater.CfgKeyInstallVersion, params.version)
+
 	return update.InstallBlocking(params.path, args...)
 }
 

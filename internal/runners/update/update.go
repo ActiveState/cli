@@ -75,6 +75,11 @@ func (u *Update) Run(params *Params) error {
 		return locale.WrapError(err, "err_update_generic", "Update could not be installed.")
 	}
 
+	// invalidate the installer version lock if `state update` is requested
+	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
+		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
+	}
+
 	return nil
 }
 

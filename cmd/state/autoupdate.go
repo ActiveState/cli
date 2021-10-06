@@ -125,6 +125,10 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 	case time.Now().Sub(cfg.GetTime(CfgKeyLastCheck)).Minutes() < float64(60):
 		logging.Debug("Not running auto update because we already checked it less than 60 minutes ago")
 		return false
+
+	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
+		logging.Debug("Not running auto update because a specific version had been installed on purpose")
+		return false
 	}
 
 	return true
