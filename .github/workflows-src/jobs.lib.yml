@@ -75,7 +75,6 @@ steps:
   - #@ steps_preprocess()
   - #@ steps_test()
   - #@ steps_test_linux()
-  - #@ steps_report()
 #@ end
 
 #@ def jobs_inttestcrit():
@@ -102,7 +101,6 @@ steps:
   - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttestcrit()
-  - #@ steps_report()
 #@ end
 
 #@ def jobs_inttest():
@@ -129,7 +127,6 @@ steps:
   - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttest()
-  - #@ steps_report()
 #@ end
 
 #@ def jobs_deploy():
@@ -151,4 +148,15 @@ steps:
   - #@ steps_deploy()
   - #@ steps_deletesessartifacts()
   - #@ steps_uploadartifacts()
+#@ end
+
+#@ def jobs_report():
+name: Report
+needs: [ unittest, inttest_critical, inttest]
+runs-on: ubuntu-20.04
+timeout-minutes: 10
+if: always()
+steps:
+  - #@ steps_downloadallsessartifacts()
+  - #@ steps_report()
 #@ end

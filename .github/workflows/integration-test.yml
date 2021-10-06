@@ -113,8 +113,25 @@ jobs:
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  report:
+    name: Report
+    needs:
+    - unittest
+    - inttest_critical
+    - inttest
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    if: always()
+    steps:
+    - name: Download All Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: |
+          reports/
+          build/
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
       with:
+        check_name: Test Results
         files: build/report-*.xml
