@@ -105,31 +105,10 @@ jobs:
         done
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
-        SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > build/report-inttest-${{ matrix.platform }}.xml
+        SHELL='' go test -timeout 20m ./test/integration -v
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  report:
-    name: Report
-    needs:
-    - unittest
-    - inttest_critical
-    - inttest
-    runs-on: ubuntu-20.04
-    timeout-minutes: 10
-    if: always()
-    steps:
-    - name: Download Report Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        path: report/
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always()
-      with:
-        check_name: Test Results
-        files: build/report-*.xml
