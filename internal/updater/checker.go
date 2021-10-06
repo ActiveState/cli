@@ -19,6 +19,7 @@ type httpGetter interface {
 
 type Configurable interface {
 	GetString(string) string
+	Set(string, interface{}) error
 }
 
 type InvocationSource string
