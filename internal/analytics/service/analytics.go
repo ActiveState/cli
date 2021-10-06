@@ -53,10 +53,11 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
-	id := machineid.UniqID()
-	if id == machineid.UnknownID || id == machineid.FallbackID {
-		logging.Error("unknown machine id: %s", id)
+	machineID := machineid.UniqID()
+	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
+		logging.Error("unknown machine id: %s", machineID)
 	}
+	deviceID := uniqid.Text()
 
 	osName := sysinfo.OS().String()
 	osVersion := "unknown"
@@ -86,8 +87,8 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 		osName:        osName,
 		osVersion:     osVersion,
 		installSource: installSource,
-		machineID:     machineid.UniqID(),
-		uniqID:        uniqid.Text(),
+		machineID:     machineID,
+		uniqID:        deviceID,
 		sessionToken:  sessionToken,
 		updateTag:     tag,
 		userID:        userID,
@@ -105,7 +106,7 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	}
 
 	if client != nil {
-		client.ClientID(id)
+		client.ClientID(deviceID)
 	}
 
 	a.customDimensions = customDimensions
