@@ -188,13 +188,17 @@ func deriveVersion(lang language.Language, version string) string {
 	}
 
 	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
-	if err == nil {
-		for _, l := range langs {
-			if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
-				return l.DefaultVersion
-			}
+	if err != nil {
+		logging.Error("Failed to fetch supported languages (using hardcoded default version): %v", err)
+		return lang.RecommendedVersion()
+	}
+
+	for _, l := range langs {
+		if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+			return l.DefaultVersion
 		}
 	}
 
+	logging.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
 	return lang.RecommendedVersion()
 }
