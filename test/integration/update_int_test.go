@@ -132,11 +132,6 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	defer cfg.Close()
 
 	stateExe := appinfo.StateApp(baseDir)
-	stateSvcExe := appinfo.SvcApp(baseDir)
-
-	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(stateSvcExe.Exec(), e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.ExpectExitCode(0)
 
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("update"),
@@ -146,7 +141,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp = ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
 	cp.Expect("Done")
@@ -173,15 +168,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
 
-			// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-			cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(true, false)...))
-			cp.ExpectExitCode(0)
-
 			updateArgs := []string{"update", "--set-channel", tt.Channel}
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
 			}
-			cp = ts.SpawnWithOpts(
+			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(updateArgs...),
 				e2e.AppendEnv(suite.env(false, false)...),
 			)
@@ -247,10 +238,6 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 
 func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts... e2e.SpawnOptions) {
 	stateExe := appinfo.StateApp(baseDir)
-	stateSvcExe := appinfo.SvcApp(baseDir)
-
-	cp := ts.SpawnCmdWithOpts(stateSvcExe.Exec(), e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.ExpectExitCode(0)
 
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
@@ -269,7 +256,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp = ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.Expect("Update installed")
