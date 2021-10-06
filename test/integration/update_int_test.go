@@ -6,16 +6,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -118,18 +121,32 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	ts.UseDistinctStateExes()
+
+	suite.testUpdate(ts, ts.Dirs.Bin)
+}
+
+func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts... e2e.SpawnOptions) {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	defer cfg.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
+	stateExe := appinfo.StateApp(baseDir)
+	stateSvcExe := appinfo.SvcApp(baseDir)
 
 	// Todo This should not be necessary https://www.pivotaltracker.com/story/show/177865635
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp := ts.SpawnCmdWithOpts(stateSvcExe.Exec(), e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, true)...))
+	spawnOpts := []e2e.SpawnOptions{
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(false, true)...),
+	}
+	if opts != nil {
+		spawnOpts = append(spawnOpts, opts...)
+	}
+
+	cp = ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
 	cp.Expect("Done")
@@ -223,10 +240,16 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	// use unique exe
 	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	suite.testAutoUpdate(ts, ts.Dirs.Bin)
+}
+
+func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts... e2e.SpawnOptions) {
+	stateExe := appinfo.StateApp(baseDir)
+	stateSvcExe := appinfo.SvcApp(baseDir)
+
+	cp := ts.SpawnCmdWithOpts(stateSvcExe.Exec(), e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
@@ -236,11 +259,69 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	t := time.Now().Add(-25 * time.Hour)
 	os.Chtimes(ts.ExecutablePath(), t, t)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...),
+	spawnOpts := []e2e.SpawnOptions{
+		e2e.WithArgs("--version"),
+		e2e.AppendEnv(suite.env(false, true)...),
 		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.AppendEnv("VERBOSE=true"))
+		e2e.AppendEnv("VERBOSE=true"),
+	}
+	if opts != nil {
+		spawnOpts = append(spawnOpts, opts...)
+	}
+
+	cp = ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.Expect("Update installed")
 	cp.ExpectExitCode(0)
+}
+
+
+
+func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s", dir)
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs("-c", oneLiner),
+		)
+	} else {
+		oneLiner := `powershell -Command "& $([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://platform.activestate.com/dl/cli/pdli01/install.ps1')))"`
+		oneLiner += fmt.Sprintf(" -f -n -t %s", dir)
+		cp = ts.SpawnCmdWithOpts("cmd.exe", e2e.WithArgs("/c", oneLiner),
+			e2e.AppendEnv("SHELL="),
+		)
+	}
+	cp.Expect("Installation Complete", time.Second*30)
+	cp.ExpectExitCode(0)
+
+	suite.FileExists(appinfo.StateApp(dir).Exec())
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	installDir := filepath.Join(ts.Dirs.Work, "install")
+	fileutils.MkdirUnlessExists(installDir)
+
+	suite.installLatestReleaseVersion(ts, installDir)
+
+	suite.testAutoUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	installDir := filepath.Join(ts.Dirs.Work, "install")
+	fileutils.MkdirUnlessExists(installDir)
+
+	suite.installLatestReleaseVersion(ts, installDir)
+
+	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
 }
