@@ -221,12 +221,10 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Download All Session Artifacts
+    - name: Download All Build Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        path: |
-          reports/
-          build/
+        path: build/
     - name: Sanitize All Session Artifacts
       shell: bash
       run: |
@@ -488,12 +486,10 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Download All Session Artifacts
+    - name: Download All Build Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        path: |
-          reports/
-          build/
+        path: build/
     - name: Sanitize All Session Artifacts
       shell: bash
       run: |
@@ -540,12 +536,10 @@ jobs:
     timeout-minutes: 10
     if: always()
     steps:
-    - name: Download All Session Artifacts
+    - name: Download Report Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        path: |
-          reports/
-          build/
+        path: report/
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()

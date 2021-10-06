@@ -210,12 +210,17 @@ with:
 #@ end
 ---
 #@ def steps_downloadallsessartifacts():
-name: "Download All Session Artifacts"
+name: "Download All Build Session Artifacts"
 uses: actions/download-artifact@v2
 with:
-  path: |
-    reports/
-    build/
+  path: build/
+#@ end
+---
+#@ def steps_downloadreportsessartifacts():
+name: "Download Report Session Artifacts"
+uses: actions/download-artifact@v2
+with:
+  path: report/
 #@ end
 ---
 #@ def steps_sanitizeallsessartifacts():

@@ -123,12 +123,10 @@ jobs:
     timeout-minutes: 10
     if: always()
     steps:
-    - name: Download All Session Artifacts
+    - name: Download Report Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        path: |
-          reports/
-          build/
+        path: report/
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
