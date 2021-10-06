@@ -90,16 +90,7 @@ steps:
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
-  - #@ steps_build()
-  - #@ steps_build_svc()
-  - #@ steps_build_tray()
-  - #@ steps_build_updlg()
-  - #@ steps_build_updlg_windows()
-  - #@ steps_build_installer()
-  - #@ steps_build_systrayapp()
-  - #@ steps_genupdate()
-  - #@ steps_gentest_update()
-  - #@ steps_build_languages_msi()
+  - #@ steps_downloadallsessartifacts()
   - #@ steps_inttestcrit()
 #@ end
 

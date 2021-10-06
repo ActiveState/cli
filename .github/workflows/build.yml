@@ -283,53 +283,10 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build CLI
-      shell: bash
-      run: state run build
-    - name: Build Service
-      shell: bash
-      run: state run build-svc
-    - name: Build Tray App
-      shell: bash
-      run: |
-        state run build-tray
-    - name: Build Update Dialog (Linux & Mac)
-      if: runner.os != 'Windows'
-      shell: bash
-      run: state run build-updlg prod
-    - name: Build Update Dialog (Windows)
-      if: runner.os == 'Windows'
-      shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
-    - name: Build Installer
-      shell: bash
-      run: state run build-installer
-    - name: Build Systray App
-      shell: bash
-      if: runner.os == 'macOS'
-      run: state run build-systray-app
-    - name: Generate Update
-      shell: bash
-      run: |
-        state run generate-update
-    - name: Generate Test Update
-      shell: bash
-      run: state run generate-test-update
-    - name: Build Languages MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-        state run build-base-language-msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+    - name: Download All Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: build/
     - name: Critical Integration Tests
       shell: bash
       run: |
