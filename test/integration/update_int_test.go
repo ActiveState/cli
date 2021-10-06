@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -242,15 +241,11 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
 
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
-
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("--version"),
 		e2e.AppendEnv(suite.env(false, true)...),
 		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.AppendEnv("VERBOSE=true"),
+		e2e.AppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
