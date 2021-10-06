@@ -189,7 +189,7 @@ func deriveVersion(lang language.Language, version string) string {
 
 	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
 	if err != nil {
-		logging.Error("Failed to fetch supported languages (using hardcoded default version): %v", err)
+		logging.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
 		return lang.RecommendedVersion()
 	}
 
