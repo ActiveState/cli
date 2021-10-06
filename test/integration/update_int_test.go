@@ -140,7 +140,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
-	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect("Updating")
 	cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 	cp.ExpectExitCode(0)
 
@@ -187,31 +187,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				e2e.AppendEnv(suite.env(false, false)...),
 			)
 			if tt.Version == "" {
-				cp.Expect("Updating State Tool to latest version available")
-			} else {
-				cp.Expect("Updating State Tool to version")
+				cp.Expect("Updating")
 			}
-			cp.Expect(fmt.Sprintf("Version update to %s@", tt.Channel))
 			cp.ExpectExitCode(0)
-
-			logs := suite.pollForUpdateInBackground(ts.Dirs.Config, before)
-			suite.Assert().Contains(logs, "was successful")
-
-			// Check for state tool executable to be updated
-			updated := false
-			// wait for up to two minutes for the State Tool to get modified
-			for x := 0; x < 600; x++ {
-				info, err := os.Stat(ts.Exe)
-				if errors.Is(err, os.ErrNotExist) {
-					continue
-				}
-				if !info.ModTime().Equal(modTime) {
-					updated = true
-					break
-				}
-				time.Sleep(200 * time.Millisecond)
-			}
-			suite.Require().True(updated, "Timeout: Expected the State Tool to get modified. Output: %s", cp.Snapshot())
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
 
@@ -262,7 +240,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 
 			before := fileutils.ListDirSimple(ts.Dirs.Config, false)
 			cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true, true)...), e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)))
-			cp.Expect("Updating State Tool to latest version available")
+			cp.Expect("Updating")
 			if tt.expectSuccess {
 				cp.Expect(fmt.Sprintf("Version update to %s@", constants.BranchName))
 				cp.ExpectExitCode(0)
