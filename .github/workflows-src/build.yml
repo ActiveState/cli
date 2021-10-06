@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit", "jobs_deploy_versioned")
+#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit", "jobs_deploy_versioned", "jobs_report")
 #@ load("@ytt:template", "template")
 name: Build-Test-Deploy
 
@@ -24,4 +24,5 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     _: #@ template.replace(jobs_inttest())
   deploy: #@ jobs_deploy()
+  report: #@ jobs_report()
 

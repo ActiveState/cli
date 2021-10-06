@@ -69,9 +69,6 @@ jobs:
     - name: Build Installer
       shell: bash
       run: state run build-installer
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Build Install Scripts
       shell: bash
       run: state run build-install-scripts
@@ -92,8 +89,7 @@ jobs:
         sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
         ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State
         Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-        \nsigntool.exe sign -d \"ActiveState Transitional State Tool\" -f \"Cert.p12\"
-        -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe\n"
+        \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -113,7 +109,6 @@ jobs:
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Build State MSI
       if: runner.os == 'Windows'
       shell: bash
@@ -145,7 +140,9 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: session-build-${{ matrix.platform }}
-        path: build/
+        path: |
+          reports/
+          build/
   unittest:
     name: Unit Test
     strategy:
@@ -186,14 +183,16 @@ jobs:
       shell: bash
       if: runner.os != 'Linux'
       run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
+        go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > build/report-unittest-${{ matrix.platform }}.xml
     - name: Unit Tests (Linux)
       shell: bash
       if: runner.os == 'Linux'
       run: |
+        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
         sudo apt-get update
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+        go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > build/report-unittest-${{ matrix.platform }}.xml
   deploy_versioned:
     if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
       != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name,
@@ -222,7 +221,7 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Download All Session Artifacts
+    - name: Download All Build Session Artifacts
       uses: actions/download-artifact@v2
       with:
         path: build/
@@ -313,14 +312,10 @@ jobs:
       shell: bash
       if: runner.os == 'macOS'
       run: state run build-systray-app
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update
@@ -342,9 +337,10 @@ jobs:
     - name: Critical Integration Tests
       shell: bash
       run: |
+        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
         export SHELL=''
         set +e
-        go test `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$"
+        go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | go-junit-report > build/report-crit-inttest-${{ matrix.platform }}.xml
         testCode=$?
         exit ${testCode}
       env:
@@ -415,14 +411,10 @@ jobs:
       shell: bash
       if: runner.os == 'macOS'
       run: state run build-systray-app
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update
@@ -458,7 +450,8 @@ jobs:
         done
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        SHELL='' go test -timeout 20m ./test/integration -v
+        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
+        SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > build/report-inttest-${{ matrix.platform }}.xml
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -493,7 +486,7 @@ jobs:
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
         printenv
-    - name: Download All Session Artifacts
+    - name: Download All Build Session Artifacts
       uses: actions/download-artifact@v2
       with:
         path: build/
@@ -533,3 +526,23 @@ jobs:
       with:
         name: build
         path: build/
+  report:
+    name: Report
+    needs:
+    - unittest
+    - inttest_critical
+    - inttest
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    if: always()
+    steps:
+    - name: Download Report Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: report/
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always()
+      with:
+        check_name: Test Results
+        files: build/report-*.xml
