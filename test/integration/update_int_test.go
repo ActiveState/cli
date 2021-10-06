@@ -168,9 +168,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				e2e.WithArgs(updateArgs...),
 				e2e.AppendEnv(suite.env(false, false)...),
 			)
-			cp.Expect("Updating State Tool to latest version available")
-			cp.Expect("Installing Update")
-			cp.Expect("Done")
+			cp.Expect("Updating")
 			cp.ExpectExitCode(0)
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
