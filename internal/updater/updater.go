@@ -17,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
+const CfgKeyInstallVersion = "state_tool_installer_version"
+
 type AvailableUpdate struct {
 	Version  string  `json:"version"`
 	Channel  string  `json:"channel"`

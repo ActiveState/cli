@@ -11,10 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -55,6 +57,11 @@ func (u *Update) Run(params *Params) error {
 		u.out.Notice(locale.Tl("updating_latest", "Updating State Tool to latest version available."))
 	} else {
 		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", params.Version))
+	}
+
+	// invalidate the installer version lock if `state update` is requested
+	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
+		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
 	channel := fetchChannel(params.Channel, true)
