@@ -33,7 +33,6 @@ jobs:
     - name: Setup
       shell: bash
       run: |
-        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
@@ -106,10 +105,16 @@ jobs:
         done
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > report-inttest-${{ matrix.platform }}.xml
+        GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
+        SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > build/report-inttest-${{ matrix.platform }}.xml
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always()
+      with:
+        files: build/report-*.xml

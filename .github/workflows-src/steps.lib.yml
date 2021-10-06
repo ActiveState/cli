@@ -106,7 +106,6 @@ with:
 name: "Setup"
 shell: bash
 run: |
-  GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
   bin=$(pwd)/.github/deps/${{ runner.os }}/bin
   echo "Adding $bin to PATH"
   echo "$bin" >> $GITHUB_PATH
@@ -131,7 +130,8 @@ name: "Unit Tests"
 shell: bash
 if: runner.os != 'Linux'
 run: |
-  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > report-unittest-${{ matrix.platform }}.xml
+  GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > build/report-unittest-${{ matrix.platform }}.xml
 #@ end
 ---
   #@ def steps_test_linux():
@@ -141,16 +141,17 @@ if: runner.os == 'Linux'
 run: |
   sudo apt-get update
   sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
-  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > report-unittest-${{ matrix.platform }}.xml
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > build/report-unittest-${{ matrix.platform }}.xml
 #@ end
 ---
 #@ def steps_inttestcrit():
 name: "Critical Integration Tests"
 shell: bash
 run: |
+  GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
   export SHELL=''
   set +e
-  go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | go-junit-report > report-crit-inttest-${{ matrix.platform }}.xml
+  go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | go-junit-report > build/report-crit-inttest-${{ matrix.platform }}.xml
   testCode=$?
   exit ${testCode}
 env:
@@ -177,7 +178,8 @@ run: |
   done
 
   export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-  SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > report-inttest-${{ matrix.platform }}.xml
+  GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
+  SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > build/report-inttest-${{ matrix.platform }}.xml
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -314,5 +316,5 @@ name: Publish Test Results
 uses: EnricoMi/publish-unit-test-result-action@v1
 if: always()
 with:
-  files: report-*.xml
+  files: build/report-*.xml
 #@ end
