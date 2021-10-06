@@ -183,16 +183,18 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 }
 
 func deriveVersion(lang language.Language, version string) string {
-	if version == "" {
-		version = lang.RecommendedVersion()
-		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
-		if err == nil {
-			for _, l := range langs {
-				if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
-					return l.DefaultVersion
-				}
+	if version != "" {
+		return version
+	}
+
+	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+	if err == nil {
+		for _, l := range langs {
+			if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+				return l.DefaultVersion
 			}
 		}
 	}
-	return version
+
+	return lang.RecommendedVersion()
 }
