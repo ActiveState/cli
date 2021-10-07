@@ -20,6 +20,7 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
+# Set the channel according to the `-b` flag, if provided
 cap="false"
 for var in "$@"
 do
