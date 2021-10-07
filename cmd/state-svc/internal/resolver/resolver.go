@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"fmt"
-	"path/filepath"
 	"sort"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/service"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -88,37 +86,6 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	}
 
 	return availableUpdate, nil
-}
-
-func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Update")
-	logging.Debug("Update resolver")
-	ch := ""
-	ver := ""
-	if channel != nil {
-		ch = *channel
-	}
-	if version != nil {
-		ver = *version
-	}
-	up, err := updater.NewDefaultChecker(r.cfg).CheckFor(ch, ver)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
-	}
-	if up == nil {
-		return &graph.DeferredUpdate{}, nil
-	}
-	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	proc, err := up.InstallDeferred(installTargetPath)
-	if err != nil {
-		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
-	}
-
-	return &graph.DeferredUpdate{
-		Channel: up.Channel,
-		Version: up.Version,
-		Logfile: logging.FilePathForCmd(constants.StateInstallerCmd, proc.Pid),
-	}, nil
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {

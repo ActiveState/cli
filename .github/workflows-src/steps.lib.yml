@@ -37,12 +37,6 @@ shell: cmd
 run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
 #@ end
 ---
-#@ def steps_build_transition_update():
-name: Build transitional State Tool
-shell: bash
-run: state run build-transitional-update
-#@ end
----
 #@ def steps_build_installscripts():
 name: Build Install Scripts
 shell: bash
@@ -69,7 +63,6 @@ run: |
   signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
   signtool.exe sign -d "ActiveState Update Dialog" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-update-dialog.exe
   signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe 
-  signtool.exe sign -d "ActiveState Transitional State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -94,7 +87,6 @@ name: "Generate Update"
 shell: bash
 run: |
   state run generate-update
-  state run generate-legacy-update
 #@ end
 ---
 #@ def steps_gentest_update():
@@ -226,6 +218,15 @@ run: |
   rm -Rf session-shared-build
   find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
   rm -Rf session*
+#@ end
+---
+#@ def steps_execsessartifacts():
+name: "Make Session Artifacts Executable"
+if: runner.os != 'Windows'
+shell: bash
+run: |
+  cd build
+  find build -maxdepth 1 -type f -iname "state-*" -exec chmod +x {} \;
 #@ end
 ---
 #@ def steps_downloadsessartifacts():

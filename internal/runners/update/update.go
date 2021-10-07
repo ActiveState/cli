@@ -1,15 +1,11 @@
 package update
 
 import (
-	"context"
 	"os"
-	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -17,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -59,40 +54,32 @@ func (u *Update) Run(params *Params) error {
 		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", params.Version))
 	}
 
+	// Check for available update
+	checker := updater.NewDefaultChecker(u.cfg)
+	up, err := checker.CheckFor(params.Channel, params.Version)
+	if err != nil {
+		return locale.WrapError(err, "err_update_check", "Could not check for updates.")
+	}
+	if up == nil {
+		logging.Debug("No update found")
+		u.out.Notice(locale.T("update_none_found"))
+		return nil
+	}
+
+	err = up.InstallBlocking("")
+	if err != nil {
+		innerErr := errs.InnerError(err)
+		if os.IsPermission(innerErr) {
+			return locale.WrapInputError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
+		}
+		return locale.WrapError(err, "err_update_generic", "Update could not be installed.")
+	}
+
 	// invalidate the installer version lock if `state update` is requested
 	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
 		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
-	channel := fetchChannel(params.Channel, true)
-
-	m, err := model.NewSvcModel(context.Background(), u.cfg, u.svcmgr)
-	if err != nil {
-		return errs.Wrap(err, "failed to create svc model")
-	}
-	up, err := m.InitiateDeferredUpdate(context.Background(), channel, params.Version)
-	if err != nil {
-		if channel == constants.BetaBranch || channel == constants.ReleaseBranch {
-			return locale.NewInputError("err_unsupported_update", "The current version of the State Tool cannot update to the target channel {{.V0}}.  You can still run the installation one-liners to update the State Tool. See {{.V1}} for details.", channel, "https://www.activestate.com/products/platform/state-tool/")
-		}
-		return locale.WrapError(err, "err_update_initiate", "Failed to initiate update.")
-	}
-	if up.Channel == "" && up.Version == "" {
-		u.out.Print(locale.Tl("update_uptodate", "You are already using the latest State Tool version available."))
-		return nil
-	}
-
-	// Stop currently running applications (state-tray and state-svc) if we are switching channels.
-	// When we switch channels the config directory changes and the deferred update cannot stop the
-	// running applications.
-	if up.Channel != constants.BranchName {
-		err = installation.StopRunning(filepath.Dir(appinfo.StateApp().Exec()))
-		if err != nil {
-			return errs.Wrap(err, "Could not stop running services")
-		}
-	}
-
-	u.out.Print(locale.Tl("version_updating_deferred", "Version update to {{.V0}}@{{.V1}} has started and should complete in seconds.\nRefer to log file [ACTIONABLE]{{.V2}}[/RESET] for progress.", up.Channel, up.Version, up.Logfile))
 	return nil
 }
 

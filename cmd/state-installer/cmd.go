@@ -197,17 +197,21 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	stateToolInstalled, err := installation.InstalledOnPath(params.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
+	}
+
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, args, params); err != nil {
+		if err := installOrUpdateFromLocalSource(out, cfg, params, stateToolInstalled); err != nil {
 			return err
 		}
 		return postInstallEvents(out, params)
 	}
 
-	installPath, _ := installation.InstallPath()
 	// Check if state tool already installed
-	if !params.force && (fileutils.TargetExists(appinfo.StateApp(installPath).Exec()) || fileutils.TargetExists(appinfo.StateApp(params.path).Exec())) {
+	if !params.force && stateToolInstalled {
 		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
 		return postInstallEvents(out, params)
 	}
@@ -218,13 +222,18 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, params *Params, isUpdate bool) error {
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
-		out.Print("[ERROR]x Failed[/RESET]")
+		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
 	}
-	out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
+
+	if isUpdate {
+		out.Fprint(os.Stdout, "• Installing Update... ")
+	} else {
+		out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
+	}
 
 	// Run installer
 	if err := installer.Install(); err != nil {
@@ -233,9 +242,11 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	out.Print("")
-	out.Print(output.Title("State Tool Package Manager Installation Complete"))
-	out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+	if !isUpdate {
+		out.Print("")
+		out.Print(output.Title("State Tool Package Manager Installation Complete"))
+		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+	}
 
 	return nil
 }
