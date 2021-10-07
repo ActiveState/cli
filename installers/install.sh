@@ -6,7 +6,7 @@ BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Name of the installer executable and archive.
 INSTALLERNAME="state-installer"
 # Channel the installer will target
-CHANNEL='release'
+CHANNEL=""
 # the download exetension
 DOWNLOADEXT=".tar.gz"
 # the installer extension
@@ -21,12 +21,23 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
 fi
 
 parseChannel() {
-  i=0
-  for arg in ${@}; do
-    i=$((i + 1)) && [ "${arg}" != "-b" ] && continue
-    echo "${@}" | cut -d' ' -f$((${i} + 1)) && return
+  cap="false"
+  channel="release"
+
+  for var in "$@"
+  do
+      if [ "$var" =  "-b" ]; then
+        cap="true"
+        continue
+      fi
+
+      if [ "$cap" = "true" ]; then
+        channel=$var
+        break
+      fi
   done
-  echo $CHANNEL
+
+  echo $channel
 }
 CHANNEL=$(parseChannel "$@")
 
