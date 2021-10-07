@@ -292,8 +292,11 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        cd build
+        echo "Before:"
+        ls -ahl build
         find build -maxdepth 1 -type f -iname "state-*" -exec chmod +x {} \;
+        echo "Before:"
+        ls -ahl build
     - name: Critical Integration Tests
       shell: bash
       run: |
