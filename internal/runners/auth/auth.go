@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,12 +12,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+type configurable interface {
+	keypairs.Configurable
+	GetInt(string) int
+}
+
 type Auth struct {
 	output.Outputer
 	*authentication.Auth
 	prompt.Prompter
-	cfg    keypairs.Configurable
-	cnf    *config.Instance
+	cfg    configurable
 	svcMgr *svcmanager.Manager
 }
 
@@ -31,14 +34,11 @@ type primeable interface {
 }
 
 func NewAuth(prime primeable) *Auth {
-	cnf := prime.Config()
-
 	return &Auth{
 		prime.Output(),
 		prime.Auth(),
 		prime.Prompt(),
-		cnf,
-		cnf,
+		prime.Config(),
 		prime.SvcManager(),
 	}
 }
@@ -75,7 +75,7 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.cfg, a.Outputer, a.Prompter, a.cnf, a.svcMgr)
+		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.cfg, a.Outputer, a.Prompter, a.svcMgr)
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth")
 		}

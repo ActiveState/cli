@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,12 +13,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 )
 
+type configurable interface {
+	GetInt(string) int
+}
+
 type SvcModel struct {
 	client *svc.Client
 }
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
-func NewSvcModel(ctx context.Context, cfg *config.Instance, svcm *svcmanager.Manager) (*SvcModel, error) {
+func NewSvcModel(ctx context.Context, cfg configurable, svcm *svcmanager.Manager) (*SvcModel, error) {
 	defer profile.Measure("NewSvcModel", time.Now())
 
 	if err := svcm.WaitWithContext(ctx); err != nil {

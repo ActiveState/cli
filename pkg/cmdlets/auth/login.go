@@ -5,7 +5,6 @@ import (
 
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -22,35 +21,40 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
+type configurable interface {
+	keypairs.Configurable
+	GetInt(string) int
+}
+
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
 var OpenURI = open.Run
 
 // Authenticate will prompt the user for authentication
-func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
-	return AuthenticateWithInput("", "", "", cfg, out, prompt, cnf, mgr)
+func Authenticate(cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, mgr)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func AuthenticateWithInput(username, password, totp string, cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
-	err := AuthenticateWithCredentials(credentials, cnf, mgr)
+	err := AuthenticateWithCredentials(credentials, cfg, mgr)
 	if err != nil {
 		switch {
 		case errs.Matches(err, &authentication.ErrTokenRequired{}):
-			if err := promptToken(credentials, out, prompt, cnf, mgr); err != nil {
+			if err := promptToken(credentials, out, prompt, cfg, mgr); err != nil {
 				return errs.Wrap(err, "promptToken failed")
 			}
 		case errs.Matches(err, &authentication.ErrUnauthorized{}):
 			if !uniqueUsername(credentials) {
 				return errs.Wrap(err, "uniqueUsername failed")
 			}
-			if err := promptSignup(credentials, out, prompt, cnf, mgr); err != nil {
+			if err := promptSignup(credentials, out, prompt, cfg, mgr); err != nil {
 				return errs.Wrap(err, "promptSignup failed")
 			}
 		default:
@@ -60,7 +64,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 
 	if authentication.LegacyGet().Authenticated() {
 		secretsapi.InitializeClient()
-		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt, cnf, mgr); err != nil {
+		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt, mgr); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
 		}
 	}
@@ -70,7 +74,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
-func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func RequireAuthentication(message string, cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
 	if authentication.LegacyGet().Authenticated() {
 		return nil
 	}
@@ -85,11 +89,11 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	switch choice {
 	case locale.T("prompt_login_action"):
-		if err := Authenticate(cfg, out, prompt, cnf, mgr); err != nil {
+		if err := Authenticate(cfg, out, prompt, mgr); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt, cnf, mgr); err != nil {
+		if err := Signup(cfg, out, prompt, mgr); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
@@ -98,7 +102,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return locale.WrapInputError(err, "err_browser_open", "", constants.PlatformSignupURL)
 		}
 		out.Notice(locale.T("prompt_login_after_browser_signup"))
-		if err := Authenticate(cfg, out, prompt, cnf, mgr); err != nil {
+		if err := Authenticate(cfg, out, prompt, mgr); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	}
@@ -129,7 +133,7 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 }
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
-func AuthenticateWithCredentials(creds *mono_models.Credentials, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func AuthenticateWithCredentials(creds *mono_models.Credentials, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
 	auth := authentication.LegacyGet()
 	err := auth.AuthenticateWithModel(creds)
 	if err != nil {
@@ -166,7 +170,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
 	loginConfirmDefault := true
 	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
@@ -179,7 +183,7 @@ func promptSignup(credentials *mono_models.Credentials, out output.Outputer, pro
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
 	var err error
 	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {

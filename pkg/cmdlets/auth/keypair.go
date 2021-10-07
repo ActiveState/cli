@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -15,7 +14,7 @@ import (
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
-func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, cnf *config.Instance, mgr *svcmanager.Manager) error {
+func ensureUserKeypair(passphrase string, cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
 	keypairRes, err := keypairs.FetchRaw(secretsapi.Get())
 	if err == nil {
 		err = processExistingKeypairForUser(keypairRes, passphrase, cfg, out, prompt)
@@ -24,7 +23,7 @@ func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.
 	}
 
 	if err != nil {
-		Logout(cfg, cnf, mgr)
+		Logout(cfg, mgr)
 		out.Error(locale.T("auth_unresolved_keypair_issue_message"))
 		return err
 	}

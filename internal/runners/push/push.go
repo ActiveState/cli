@@ -4,7 +4,6 @@ import (
 	"errors"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -27,11 +26,11 @@ import (
 type configGetter interface {
 	projectfile.ConfigGetter
 	ConfigPath() string
+	GetInt(string) int
 }
 
 type Push struct {
 	config  configGetter
-	cnf     *config.Instance
 	out     output.Outputer
 	project *project.Project
 	prompt  prompt.Prompter
@@ -53,11 +52,8 @@ type primeable interface {
 }
 
 func NewPush(prime primeable) *Push {
-	cnf := prime.Config()
-
 	return &Push{
-		cnf,
-		cnf,
+		prime.Config(),
 		prime.Output(),
 		prime.Project(),
 		prime.Prompt(),
@@ -263,7 +259,7 @@ func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
 		err := authlet.RequireAuthentication(
 			locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"),
-			r.config, r.out, r.prompt, r.cnf, r.svcMgr)
+			r.config, r.out, r.prompt, r.svcMgr)
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}

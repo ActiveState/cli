@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/prompt"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -51,18 +52,18 @@ func setupUser() *mono_models.UserEditable {
 	return testUser
 }
 
-func runAuth(params *AuthParams, prompter prompt.Prompter, cfg keypairs.Configurable) error {
-	auth := &Auth{outputhelper.NewCatcher(), authentication.LegacyGet(), prompter, cfg}
+func runAuth(params *AuthParams, prompter prompt.Prompter, cfg keypairs.Configurable, cnf *config.Instance, mgr *svcmanager.Manager) error {
+	auth := &Auth{outputhelper.NewCatcher(), authentication.LegacyGet(), prompter, cfg, cnf, mgr}
 	return auth.Run(params)
 }
 
-func runSignup(prompter prompt.Prompter, cfg keypairs.Configurable) error {
-	signup := &Signup{outputhelper.NewCatcher(), prompter, cfg}
+func runSignup(prompter prompt.Prompter, cfg keypairs.Configurable, cnf *config.Instance, mgr *svcmanager.Manager) error {
+	signup := &Signup{outputhelper.NewCatcher(), prompter, cfg, cnf, mgr}
 	return signup.Run()
 }
 
-func runLogout(cfg keypairs.Configurable) error {
-	signup := &Logout{outputhelper.NewCatcher(), authentication.LegacyGet(), cfg}
+func runLogout(cfg keypairs.Configurable, cnf *config.Instance, mgr *svcmanager.Manager) error {
+	signup := &Logout{outputhelper.NewCatcher(), authentication.LegacyGet(), cfg, cnf, mgr}
 	return signup.Run()
 }
 
@@ -94,7 +95,7 @@ func TestExecuteNoArgsAuthenticated(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg), "Executed without error")
+	assert.NoError(t, runAuth(&AuthParams{}, nil, cfg, cfg), "Executed without error")
 }
 
 func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
@@ -113,7 +114,7 @@ func TestExecuteNoArgsNotAuthenticated(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 
-	err = runAuth(&AuthParams{}, pmock, cfg)
+	err = runAuth(&AuthParams{}, pmock, cfg, cfg, mgr)
 	assert.Error(t, err)
 	assert.Nil(t, authentication.ClientAuth(), "Did not authenticate")
 }
