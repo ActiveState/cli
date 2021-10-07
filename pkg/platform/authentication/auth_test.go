@@ -109,27 +109,6 @@ func TestAuthInvalidUser(t *testing.T) {
 	assert.Equal(t, err.Error(), locale.T("err_unauthorized"), "Should fail to authenticate")
 }
 
-func TestAuthInvalidToken(t *testing.T) {
-	setup(t)
-
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.RegisterWithCode("POST", "/login", 401)
-
-	cfg, err := config.New()
-	require.NoError(t, err)
-	defer func() { require.NoError(t, cfg.Close()) }()
-
-	cfg.Set("apiToken", "testFailure")
-	auth := New(cfg)
-	err = auth.Authenticate()
-	require.Error(t, err)
-	assert.IsType(t, &ErrUnauthorized{}, err, "Should fail to authenticate")
-	auth.Logout()
-	assert.Empty(t, cfg.GetString("apiToken"), "", "apiToken should have cleared")
-}
-
 func TestClientFailure(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
