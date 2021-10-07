@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func defaultInstallPath() (string, error) {
+func DefaultInstallPath() (string, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not access info on current user")

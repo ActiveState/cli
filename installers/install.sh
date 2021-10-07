@@ -24,29 +24,21 @@ parseChannel() {
   i=0
   for arg in ${@}; do
     i=$((i + 1)) && [ "${arg}" != "-b" ] && continue
-    echo "${@}" | cut -d' ' -f$((${i} + 1)) && break
+    echo "${@}" | cut -d' ' -f$((${i} + 1)) && return
   done
+  echo $CHANNEL
 }
 CHANNEL=$(parseChannel "$@")
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
-  OUTPUT_BOLD=""
-  OUTPUT_DIM=""
   OUTPUT_OK=""
   OUTPUT_ERROR=""
   OUTPUT_END=""
 else
-  OUTPUT_BOLD=`tput bold`
-  OUTPUT_DIM=`tput setaf 8`
   OUTPUT_OK=`tput setaf 2`
   OUTPUT_ERROR=`tput setaf 1`
   OUTPUT_END=`tput sgr0`
 fi
-
-header () {
-  echo "${OUTPUT_BOLD}█ ${1}${OUTPUT_END}"
-  echo ""
-}
 
 progress () {
   printf "• %s... " "$1"
@@ -103,9 +95,7 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-header "Preparing Installer for State Tool Package Manager"
-
-progress "Downloading Installer"
+progress "Preparing Installer for State Tool Package Manager"
 STATEURL="$BASE_FILE_URL/$CHANNEL/$OS-amd64/$INSTALLERNAME$DOWNLOADEXT"
 ARCHIVE="$INSTALLERNAME$DOWNLOADEXT"
 if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
@@ -113,9 +103,7 @@ if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
   error "Could not fetch the State Tool installer at $STATEURL. Please try again."
   exit 1
 fi
-progress_done
 
-progress "Extracting Installer"
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')

@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -37,6 +38,7 @@ type Params struct {
 	branch          string
 	command         string
 	version         string
+	force           bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
 }
@@ -144,6 +146,12 @@ func main() {
 				Value:       &params.version,
 			},
 			{
+				Name:        "force",
+				Shorthand:   "f",
+				Description: "Force the installation, overwriting any version of the State Tool already installed",
+				Value:       &params.force,
+			},
+			{
 				Name:   "source-installer",
 				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
 				Value:  &params.sourceInstaller,
@@ -166,7 +174,6 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
-			{Name: "fff", Shorthand: "f", Hidden: true, Value: &garbageBool}, // overwrite existing state tool; useless as that's already the default
 		},
 		[]*captain.Argument{
 			{
@@ -190,9 +197,25 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	stateToolInstalled, err := installation.InstalledOnPath(params.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
+	}
+
+	isUpdate := stateToolInstalled && !params.force
+
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		return installOrUpdateFromLocalSource(out, cfg, args, params)
+		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
+			return err
+		}
+		return postInstallEvents(out, params)
+	}
+
+	// Check if state tool already installed
+	if !params.force && stateToolInstalled {
+		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
+		return postInstallEvents(out, params)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -201,13 +224,18 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, params *Params, isUpdate bool) error {
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
-		out.Print("[ERROR]x Failed[/RESET]")
+		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
 	}
-	out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
+
+	if isUpdate {
+		out.Fprint(os.Stdout, "• Installing Update... ")
+	} else {
+		out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
+	}
 
 	// Run installer
 	if err := installer.Install(); err != nil {
@@ -216,12 +244,27 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	out.Print("")
-	out.Print(output.Title("State Tool Package Manager Installation Complete"))
-	out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+	if !isUpdate {
+		out.Print("")
+		out.Print(output.Title("State Tool Package Manager Installation Complete"))
+		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+	}
 
-	stateExe := appinfo.StateApp(installer.InstallPath()).Exec()
-	env := []string{"PATH=" + string(os.PathListSeparator) + filepath.Dir(stateExe) + os.Getenv("PATH")}
+	return nil
+}
+
+func postInstallEvents(out output.Outputer, params *Params) error {
+	installPath, err := resolveInstallPath(params.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	stateExe := appinfo.StateApp(installPath).Exec()
+	binPath, err := installation.BinPathFromInstallPath(installPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not detect installation bin path")
+	}
+	env := []string{"PATH=" + string(os.PathListSeparator) + binPath + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
@@ -288,6 +331,8 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
+	cfg.Set(updater.CfgKeyInstallVersion, params.version)
+
 	return update.InstallBlocking(params.path, args...)
 }
 
@@ -305,5 +350,13 @@ func storeInstallSource(installSource string) {
 	}
 	if err := fileutils.WriteFile(filepath.Join(appData, constants.InstallSourceFile), []byte(installSource)); err != nil {
 		logging.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
+	}
+}
+
+func resolveInstallPath(path string) (string, error) {
+	if path != "" {
+		return filepath.Abs(path)
+	} else {
+		return installation.InstallPath()
 	}
 }

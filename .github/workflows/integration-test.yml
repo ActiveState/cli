@@ -66,14 +66,10 @@ jobs:
       shell: bash
       if: runner.os == 'macOS'
       run: state run build-systray-app
-    - name: Build transitional State Tool
-      shell: bash
-      run: state run build-transitional-update
     - name: Generate Update
       shell: bash
       run: |
         state run generate-update
-        state run generate-legacy-update
     - name: Generate Test Update
       shell: bash
       run: state run generate-test-update

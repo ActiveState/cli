@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -193,14 +194,59 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
+	executor := filepath.Join(ts.Dirs.DefaultBin, pythonShim)
 	// check that default activation works
 	cp = ts.SpawnCmdWithOpts(
-		filepath.Join(ts.Dirs.DefaultBin, pythonShim),
+		executor,
 		e2e.WithArgs("-c", "import sys; print(sys.copyright);"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("ActiveState Software Inc.")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--default"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("activated state")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	executor := filepath.Join(ts.Dirs.DefaultBin, "python3")
+
+	// check that default activation takes count of recursion level
+	cp = ts.SpawnCmdWithOpts(
+		executor,
+		e2e.WithArgs("-c", fmt.Sprintf(
+			`import subprocess; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"])`,
+			executor, constants.ExecRecursionLevelEnvVarName)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("RECURSION_LVL=1")
+	cp.ExpectExitCode(0)
+
+	// check that recursion detection is firing log message
+	cp = ts.SpawnCmdWithOpts(
+		executor,
+		e2e.WithArgs(
+			"-c", fmt.Sprintf(
+				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
+				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+	)
+	cp.ExpectLongString("executor recursion detected: parent python")
+	cp.Expect("RECURSION_LVL=1")
+	cp.Wait()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
@@ -265,11 +311,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
-	cp.SendLine("perldoc -l DBD::Pg")
+	cp.SendLine("perldoc -l DBI::DBD")
 	// Expect the source code to be installed in the cache directory
 	// Note: At least for Windows we cannot expect cp.Dirs.Cache, because it is unreliable how the path name formats are unreliable (sometimes DOS 8.3 format, sometimes not)
 	cp.Expect("cache")
-	cp.Expect("Pg.pm")
+	cp.Expect("DBD.pm")
 
 	// Expect PPM shim to be installed
 	cp.SendLine("ppm")

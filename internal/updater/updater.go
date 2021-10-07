@@ -13,9 +13,17 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/gofrs/flock"
 )
+
+type ErrorInProgress struct{ *locale.LocalizedError }
+
+const CfgKeyInstallVersion = "state_tool_installer_version"
 
 type AvailableUpdate struct {
 	Version  string  `json:"version"`
@@ -76,34 +84,39 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 		return "", nil, errs.Wrap(err, "Downloaded update does not have installer")
 	}
 
+	if installTargetPath == "" {
+		installTargetPath, err = installation.InstallPath()
+		if err != nil {
+			return "", nil, errs.Wrap(err, "Could not detect install path")
+		}
+	}
+
 	args = append(args, "--source-path", sourcePath)
 	args = append([]string{installTargetPath}, args...)
 	return installerPath, args, nil
 }
 
-// InstallDeferred will fetch the update and run its installer in a deferred process
-func (u *AvailableUpdate) InstallDeferred(installTargetPath string) (*os.Process, error) {
-	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
-	if err != nil {
-		return nil, err
-	}
-
-	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
-		if u.Tag != nil {
-			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not start installer")
-	}
-
-	return proc, nil
-}
-
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
-	installTargetPath, args, err := u.prepareInstall(installTargetPath, args)
+
+	appdata, err := storage.AppDataPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not detect appdata path")
+	}
+
+	// Protect against multiple updates happening simultaneously
+	lockFile := filepath.Join(appdata, "install.lock")
+	fileLock := flock.New(lockFile)
+	lockSuccess, err := fileLock.TryLock()
+	if err != nil {
+		return errs.Wrap(err, "Could not create file lock required to install update")
+	}
+	if !lockSuccess {
+		return &ErrorInProgress{locale.NewInputError("err_update_in_progress", "", lockFile)}
+	}
+	defer fileLock.Unlock()
+
+	installTargetPath, args, err = u.prepareInstall(installTargetPath, args)
 	if err != nil {
 		return err
 	}
@@ -121,6 +134,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 }
 
 // InstallWithProgress will fetch the update and run its installer
+// Leave installTargetPath empty to use the default/existing installation path
 func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {

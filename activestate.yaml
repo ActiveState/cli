@@ -15,9 +15,6 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: state
-  - name: BUILD_TRANSITION_TARGET
-    if: ne .OS.Name "Windows"
-    value: state-transition-update
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
@@ -133,15 +130,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-  - name: build-transitional-update
-    language: bash
-    description: Builds a transitional State Tool that just updates to a mult-file version
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      # Generate legacy update
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -156,8 +144,6 @@ scripts:
       $scripts.build-svc.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
-      echo "Building Transitional Update"
-      $scripts.build-transitional-update._posix()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -245,19 +231,34 @@ scripts:
     if: ne .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
-      BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      REF=${GITHUB_HEAD_REF:=HEAD}
+      BRANCH=$(git rev-parse --abbrev-ref $REF)
+      if [ "$BRANCH" == "" ]; then
+        echo "Branch cannot be empty"
+        exit 1
+      fi
+      if [ "$BRANCH" == "release" ]; then
+        $BRANCH=""
+      fi
 
-      INSTALLERS_DIR=build/installers/${BRANCH#release}
+      INSTALLERS_DIR=build/installers/$BRANCH
       mkdir -p $INSTALLERS_DIR
 
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
 
-      sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.sh > $INSTALLERS_DIR/install.sh
+      if [ "$BRANCH" != "" ]; then
+        sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.sh > $INSTALLERS_DIR/install.sh
+      else
+        cp installers/install.sh $INSTALLERS_DIR/install.sh
+      fi
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+  - name: deploy-msi
+    language: bash
+    value: |
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflows
     language: bash

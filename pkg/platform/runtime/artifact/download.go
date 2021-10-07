@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
 
@@ -49,6 +50,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	}
 
 	if buildStatus.Type != nil && *buildStatus.Type == headchef_models.V1BuildStatusResponseTypeBuildStarted {
+		logging.Debug("buildStatus=%v", buildStatus)
 		return nil, CamelRuntimeBuilding
 	}
 

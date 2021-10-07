@@ -37,12 +37,6 @@ shell: cmd
 run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
 #@ end
 ---
-#@ def steps_build_transition_update():
-name: Build transitional State Tool
-shell: bash
-run: state run build-transitional-update
-#@ end
----
 #@ def steps_build_installscripts():
 name: Build Install Scripts
 shell: bash
@@ -69,7 +63,6 @@ run: |
   signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
   signtool.exe sign -d "ActiveState Update Dialog" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-update-dialog.exe
   signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe 
-  signtool.exe sign -d "ActiveState Transitional State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-transition-update.exe
 env:
   CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
   MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -94,7 +87,6 @@ name: "Generate Update"
 shell: bash
 run: |
   state run generate-update
-  state run generate-legacy-update
 #@ end
 ---
 #@ def steps_gentest_update():
@@ -228,6 +220,18 @@ run: |
   rm -Rf session*
 #@ end
 ---
+#@ def steps_execsessartifacts():
+name: "Make Session Artifacts Executable"
+if: runner.os != 'Windows'
+shell: bash
+run: |
+  echo "Before:"
+  ls -ahl build
+  find build -maxdepth 1 -type f -iname "state-*" -exec chmod +x {} \;
+  echo "Before:"
+  ls -ahl build
+#@ end
+---
 #@ def steps_downloadsessartifacts():
 name: "Download Session Artifacts"
 uses: actions/download-artifact@v2
@@ -253,6 +257,7 @@ shell: bash
 run: |
   state run deploy-updates
   state run deploy-installers
+  state run deploy-msi
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -263,6 +268,7 @@ name: "Deploy Versioned"
 shell: bash
 run: |
   state run deploy-updates
+  state run deploy-installers
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

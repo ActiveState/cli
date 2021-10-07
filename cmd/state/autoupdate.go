@@ -3,13 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/gofrs/flock"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -63,24 +61,15 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	logging.Debug("Auto updating to %s", up.Version)
 
-	// Protect against multiple updates happening simultaneously
-	fileLock := flock.New(filepath.Join(cfg.ConfigPath(), "install.lock"))
-	lockSuccess, err := fileLock.TryLock()
-	if err != nil {
-		return false, errs.Wrap(err, "Could not create file lock required to install update")
-	}
-	if !lockSuccess {
-		logging.Debug("Another update is already in progress")
-		return false, nil
-	}
-	defer fileLock.Unlock()
-
-	targetDir := filepath.Dir(appinfo.StateApp().Exec())
-	err = up.InstallBlocking(targetDir)
+	err = up.InstallBlocking("")
 	if err != nil {
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
 			return false, locale.WrapInputError(err, "auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
+		}
+		if errs.Matches(err, &updater.ErrorInProgress{}) {
+			logging.Debug("Update already in progress")
+			return false, nil
 		}
 		return false, errs.Wrap(err, "Failed to install update")
 	}
@@ -135,6 +124,10 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 	// Already checked less than 60 minutes ago
 	case time.Now().Sub(cfg.GetTime(CfgKeyLastCheck)).Minutes() < float64(60):
 		logging.Debug("Not running auto update because we already checked it less than 60 minutes ago")
+		return false
+
+	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
+		logging.Debug("Not running auto update because a specific version had been installed on purpose")
 		return false
 	}
 
