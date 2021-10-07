@@ -300,7 +300,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
-	if strings.HasSuffix(constants.Version, "0.30") {
+	if strings.HasPrefix(constants.Version, "0.30") {
 		// Feel free to drop this once the release channel is no longer on 0.29
 		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
 	}
