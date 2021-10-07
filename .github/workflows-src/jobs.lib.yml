@@ -91,6 +91,7 @@ steps:
   - #@ steps_setup()
   - #@ steps_preprocess()
   - #@ steps_downloadallsessartifacts()
+  - #@ steps_sanitizeallsessartifacts()
   - #@ steps_inttestcrit()
 #@ end
 
