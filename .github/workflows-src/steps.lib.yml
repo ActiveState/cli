@@ -220,13 +220,13 @@ run: |
   rm -Rf session*
 #@ end
 ---
-#@ def steps_sanitizesessartifacts():
-name: "Sanitize Session Artifacts"
+#@ def steps_execsessartifacts():
+name: "Make Session Artifacts Executable"
 if: runner.os != 'Windows'
 shell: bash
 run: |
   cd build
-  find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+  find build -maxdepth 1 -type f -iname "state-*" -exec chmod +x {} \;
 #@ end
 ---
 #@ def steps_downloadsessartifacts():
