@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -268,9 +269,13 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 			"bash", e2e.WithArgs("-c", oneLiner),
 		)
 	} else {
-		oneLiner := `powershell -Command "& $([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://platform.activestate.com/dl/cli/pdli01/install.ps1')))"`
-		oneLiner += fmt.Sprintf(" -f -n -t %s", dir)
-		cp = ts.SpawnCmdWithOpts("cmd.exe", e2e.WithArgs("/c", oneLiner),
+		b, err := download.Get("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+
+		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
+		suite.Require().NoError(err)
+		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
+
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir),
 			e2e.AppendEnv("SHELL="),
 		)
 	}
