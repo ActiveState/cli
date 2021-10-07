@@ -51,7 +51,7 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 		var err error
 		installPath, err = InstallPath()
 		if err != nil {
-			return "", errs.Wrap(err, "Could not detect InstallPath while searching for BinPath")
+			return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BinPath")
 		}
 	}
 
@@ -61,6 +61,18 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	}
 
 	return installPath, nil
+}
+
+func Installed() (bool, error) {
+	return InstalledOnPath("")
+}
+
+func InstalledOnPath(installPath string) (bool, error) {
+	binPath, err := BinPathFromInstallPath(installPath)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+	}
+	return fileutils.TargetExists(appinfo.StateApp(binPath).Exec()), nil
 }
 
 func LauncherInstallPath() (string, error) {

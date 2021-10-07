@@ -37,6 +37,10 @@ func (cm *configMock) GetString(string) string {
 	return ""
 }
 
+func (cm *configMock) Set(string, interface{}) error {
+	return nil
+}
+
 func TestCheckerCheckFor(t *testing.T) {
 	tests := []struct {
 		Name           string

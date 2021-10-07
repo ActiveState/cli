@@ -21,6 +21,8 @@ import (
 // Get takes a URL and returns the contents as bytes
 var Get func(url string) ([]byte, error)
 
+var GetDirect = httpGet
+
 type DownloadProgress interface {
 	TotalSize(int)
 	IncrBy(int)
