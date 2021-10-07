@@ -90,8 +90,7 @@ steps:
   - #@ steps_installgo()
   - #@ steps_setup()
   - #@ steps_preprocess()
-  - #@ steps_downloadallsessartifacts()
-  - #@ steps_sanitizeallsessartifacts()
+  - #@ steps_downloadsessartifacts()
   - #@ steps_inttestcrit()
 #@ end
 
