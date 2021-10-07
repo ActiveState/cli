@@ -20,22 +20,20 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
-parseChannel() {
-  cap="false"
-  for var in "$@"
-  do
-      if [ "$var" =  "-b" ]; then
-        cap="true"
-        continue
-      fi
+cap="false"
+for var in "$@"
+do
+    if [ "$var" =  "-b" ]; then
+      cap="true"
+      continue
+    fi
 
-      if [ "$cap" = "true" ]; then
-        CHANNEL=$var
-        break
-      fi
-  done
-}
-parseChannel "$@"
+    if [ "$cap" = "true" ]; then
+      CHANNEL=$var
+      break
+    fi
+done
+
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_OK=""
