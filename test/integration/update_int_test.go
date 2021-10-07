@@ -269,10 +269,10 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 			"bash", e2e.WithArgs("-c", oneLiner),
 		)
 	} else {
-		b, err := download.Get("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
-		suite.Require().NoError(err)
 		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
 
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir),
@@ -300,6 +300,10 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
+	if strings.HasPrefix(constants.Version, "0.30") {
+		// Feel free to drop this once the release channel is no longer on 0.29
+		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
+	}
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)

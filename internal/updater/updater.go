@@ -116,7 +116,8 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	}
 	defer fileLock.Unlock()
 
-	installTargetPath, args, err = u.prepareInstall(installTargetPath, args)
+	var installerPath string
+	installerPath, args, err = u.prepareInstall(installTargetPath, args)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(installTargetPath, args, envs)
+	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
