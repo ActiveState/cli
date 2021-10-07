@@ -287,6 +287,13 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: build/
+    - name: Sanitize All Session Artifacts
+      shell: bash
+      run: |
+        cd build
+        rm -Rf session-shared-build
+        find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+        rm -Rf session*
     - name: Critical Integration Tests
       shell: bash
       run: |
