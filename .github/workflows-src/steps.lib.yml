@@ -225,7 +225,6 @@ name: "Make Session Artifacts Executable"
 if: runner.os != 'Windows'
 shell: bash
 run: |
-  cd build
   find build -maxdepth 1 -type f -iname "state-*" -exec chmod +x {} \;
 #@ end
 ---
