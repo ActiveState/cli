@@ -202,9 +202,11 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
 
+	isUpdate := stateToolInstalled && !params.force
+
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, params, stateToolInstalled); err != nil {
+		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
 			return err
 		}
 		return postInstallEvents(out, params)
