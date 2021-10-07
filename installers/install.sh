@@ -181,7 +181,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&tag=v29"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&tag=v30"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...
