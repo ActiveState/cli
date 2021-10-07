@@ -220,6 +220,15 @@ run: |
   rm -Rf session*
 #@ end
 ---
+#@ def steps_sanitizesessartifacts():
+name: "Sanitize Session Artifacts"
+if: runner.os != 'Windows'
+shell: bash
+run: |
+  cd build
+  find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+#@ end
+---
 #@ def steps_downloadsessartifacts():
 name: "Download Session Artifacts"
 uses: actions/download-artifact@v2
