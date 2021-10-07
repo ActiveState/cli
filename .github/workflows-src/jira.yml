@@ -1,5 +1,5 @@
 name: jira-description-action
-on:
+"on":
   pull_request:
     types: [opened, edited]
 jobs:
