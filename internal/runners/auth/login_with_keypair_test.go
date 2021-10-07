@@ -25,7 +25,7 @@ import (
 
 type LoginWithKeypairTestSuite struct {
 	suite.Suite
-	cfg keypairs.Configurable
+	cfg configurable
 
 	promptMock     *promptMock.Mock
 	platformMock   *httpmock.HTTPMock
