@@ -210,7 +210,7 @@ with:
 #@ end
 ---
 #@ def steps_uploadreportsessartifacts():
-name: "Upload Session Artifacts"
+name: "Upload Report Artifacts"
 uses: actions/upload-artifact@v2
 with:
   name: session-build-${{ matrix.platform }}
@@ -357,4 +357,11 @@ if: always()
 with:
   check_name: "Test Results"
   files: reports/report-*.xml
+#@ end
+---
+#@ def debug_reports():
+name: "Debug reports"
+shell: bash
+run: |
+  ls -lah reports/
 #@ end
