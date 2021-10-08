@@ -25,13 +25,19 @@ func (suite *PerformanceIntegrationTestSuite) TestShow() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	var firstEntry string
 	times := []time.Duration{}
 	var total int64
 	for x := 0; x < StateVersionTotalSamples+1; x++ {
 		start := time.Now()
-		cp := ts.Spawn("--version")
+		cp := ts.SpawnWithOpts(
+			e2e.WithArgs("--version"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
 		cp.ExpectExitCode(0)
 		end := time.Since(start)
+		if firstEntry == "" {
+			firstEntry = cp.Snapshot()
+		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc
 			continue
@@ -47,11 +53,14 @@ func (suite *PerformanceIntegrationTestSuite) TestShow() {
 Average duration: %s
 Minimum: %s
 Total: %s
-Totals: %v`,
+Totals: %v
+
+Output of first run: %s`,
 				avg.String(),
 				StateVersionMaxTime.String(),
 				time.Duration(total).String(),
-				times))
+				times,
+				firstEntry))
 	}
 }
 
