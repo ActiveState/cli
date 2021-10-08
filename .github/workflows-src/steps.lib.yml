@@ -229,7 +229,7 @@ with:
 name: "Download Report Session Artifacts"
 uses: actions/download-artifact@v2
 with:
-  path: report/
+  path: reports/
 #@ end
 ---
 #@ def steps_sanitizeallsessartifacts():

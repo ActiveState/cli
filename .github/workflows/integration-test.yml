@@ -129,7 +129,7 @@ jobs:
     - name: Download Report Session Artifacts
       uses: actions/download-artifact@v2
       with:
-        path: report/
+        path: reports/
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
