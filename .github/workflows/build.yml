@@ -175,7 +175,9 @@ jobs:
       if: runner.os != 'Linux'
       run: |
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > report/report-unittest-${{ matrix.platform }}.xml)
+        REPORT_FILE=report/report-unittest-${{ matrix.platform }}.xml
+        touch $REPORT_FILE
+        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
     - name: Unit Tests (Linux)
       shell: bash
       if: runner.os == 'Linux'
@@ -183,7 +185,9 @@ jobs:
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
         sudo apt-get update
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > report/report-unittest-${{ matrix.platform }}.xml)
+        REPORT_FILE=report/report-unittest-${{ matrix.platform }}.xml
+        touch $REPORT_FILE
+        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
   deploy_versioned:
     if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Deploy Versioned
@@ -297,7 +301,9 @@ jobs:
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
         export SHELL=''
         set +e
-        go test `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | tee >(go-junit-report > report/report-crit-inttest-${{ matrix.platform }}.xml)
+        REPORT_FILE=report/report-crit-inttest-${{ matrix.platform }}.xml
+        touch $REPORT_FILE
+        go test `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | tee >(go-junit-report > $REPORT_FILE)
         testCode=$?
         exit ${testCode}
       env:
@@ -409,7 +415,9 @@ jobs:
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
-        SHELL='' go test -timeout 20m ./test/integration -v | tee >(go-junit-report > report/report-inttest-${{ matrix.platform }}.xml)
+        REPORT_FILE=report/report-inttest-${{ matrix.platform }}.xml
+        touch $REPORT_FILE
+        SHELL='' go test -timeout 20m ./test/integration -v | tee >(go-junit-report > $REPORT_FILE)
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
