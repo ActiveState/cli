@@ -15,9 +15,6 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: state
-  - name: BUILD_TRANSITION_TARGET
-    if: ne .OS.Name "Windows"
-    value: state-transition-update
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
@@ -133,15 +130,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-  - name: build-transitional-update
-    language: bash
-    description: Builds a transitional State Tool that just updates to a mult-file version
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      # Generate legacy update
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_TRANSITION_TARGET ./cmd/state-transition-update
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -156,8 +144,6 @@ scripts:
       $scripts.build-svc.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
-      echo "Building Transitional Update"
-      $scripts.build-transitional-update._posix()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -259,11 +245,12 @@ scripts:
       mkdir -p $INSTALLERS_DIR
 
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
+      cp installers/legacy.sh $INSTALLERS_DIR/legacy.sh
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.sh > $INSTALLERS_DIR/install.sh
+        sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install-latest.sh > $INSTALLERS_DIR/install-latest.sh
       else
-        cp installers/install.sh $INSTALLERS_DIR/install.sh
+        cp installers/install-latest.sh $INSTALLERS_DIR/install-latest.sh
       fi
   - name: deploy-installers
     language: bash

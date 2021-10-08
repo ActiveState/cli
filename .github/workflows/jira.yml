@@ -1,5 +1,5 @@
 name: jira-description-action
-true:
+"on":
   pull_request:
     types:
     - opened
@@ -15,3 +15,4 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         jira-base-url: https://activestatef.atlassian.net
         jira-project-key: DX
+        use: branch

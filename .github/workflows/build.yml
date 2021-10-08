@@ -79,23 +79,12 @@ jobs:
     - name: Sign
       shell: bash
       if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\
-        Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\
-        Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState
-        State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe
-        sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f
-        \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe\nsigntool.exe
-        sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD}
-        ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State
-        Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-        \n"
+      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Service\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe \nsigntool.exe sign -d \"ActiveState State Tray\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe\nsigntool.exe sign -d \"ActiveState Update Dialog\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-update-dialog.exe\nsigntool.exe sign -d \"ActiveState State Installer\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe \n"
       env:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Sign install.PS1
-      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta",
-        "refs/heads/release"]'), github.ref)
+      if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
       shell: powershell
       run: |
         $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
@@ -194,9 +183,7 @@ jobs:
         sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
         go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | go-junit-report > build/report-unittest-${{ matrix.platform }}.xml
   deploy_versioned:
-    if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
-      != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name,
-      'run integration tests')
+    if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Deploy Versioned
     needs:
     - build
@@ -248,8 +235,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   inttest_critical:
-    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref
-      != 'refs/heads/release'
+    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
     name: Critical Integration Test
     strategy:
       matrix:
@@ -287,53 +273,20 @@ jobs:
       shell: bash
       run: |
         state run preprocess
-    - name: Build CLI
-      shell: bash
-      run: state run build
-    - name: Build Service
-      shell: bash
-      run: state run build-svc
-    - name: Build Tray App
-      shell: bash
-      run: |
-        state run build-tray
-    - name: Build Update Dialog (Linux & Mac)
+    - name: Download Session Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: session-build-${{ matrix.platform }}
+        path: build/
+    - name: Make Session Artifacts Executable
       if: runner.os != 'Windows'
       shell: bash
-      run: state run build-updlg prod
-    - name: Build Update Dialog (Windows)
-      if: runner.os == 'Windows'
-      shell: cmd
-      run: C:\msys64\usr\bin\bash.exe -c "state run build-updlg prod"
-    - name: Build Installer
-      shell: bash
-      run: state run build-installer
-    - name: Build Systray App
-      shell: bash
-      if: runner.os == 'macOS'
-      run: state run build-systray-app
-    - name: Generate Update
-      shell: bash
       run: |
-        state run generate-update
-    - name: Generate Test Update
-      shell: bash
-      run: state run generate-test-update
-    - name: Build Languages MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-        state run build-base-language-msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+        echo "Before:"
+        ls -ahl build
+        find build -maxdepth 1 -type f -iname "state*" -exec chmod +x {} \;
+        echo "Before:"
+        ls -ahl build
     - name: Critical Integration Tests
       shell: bash
       run: |
@@ -470,8 +423,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'),
-      github.ref)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
