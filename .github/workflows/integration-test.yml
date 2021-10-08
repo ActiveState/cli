@@ -122,7 +122,6 @@ jobs:
         name: session-build-${{ matrix.platform }}
         path: |
           reports/
-          build/
   report:
     name: Report
     needs:

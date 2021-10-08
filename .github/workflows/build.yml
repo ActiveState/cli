@@ -131,7 +131,6 @@ jobs:
       with:
         name: session-build-${{ matrix.platform }}
         path: |
-          reports/
           build/
   unittest:
     name: Unit Test
@@ -194,7 +193,6 @@ jobs:
         name: session-build-${{ matrix.platform }}
         path: |
           reports/
-          build/
   deploy_versioned:
     if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Deploy Versioned
@@ -323,7 +321,6 @@ jobs:
         name: session-build-${{ matrix.platform }}
         path: |
           reports/
-          build/
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
@@ -444,7 +441,6 @@ jobs:
         name: session-build-${{ matrix.platform }}
         path: |
           reports/
-          build/
   deploy:
     name: Deploy
     needs:
