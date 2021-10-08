@@ -107,7 +107,7 @@ jobs:
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
-        REPORT_FILE=report/report-inttest-${{ matrix.platform }}.xml
+        REPORT_FILE=reports/report-inttest-${{ matrix.platform }}.xml
         touch $REPORT_FILE
         SHELL='' go test -timeout 20m ./test/integration -v | tee >(go-junit-report > $REPORT_FILE)
       env:
