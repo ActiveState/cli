@@ -359,7 +359,7 @@ with:
   files: reports/report-*.xml
 #@ end
 ---
-#@ def debug_reports():
+#@ def steps_debug_reports():
 name: "Debug reports"
 shell: bash
 run: |

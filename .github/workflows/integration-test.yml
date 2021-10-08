@@ -136,6 +136,10 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: reports/
+    - name: Debug reports
+      shell: bash
+      run: |
+        ls -lah reports/
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
