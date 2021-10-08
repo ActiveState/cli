@@ -106,7 +106,7 @@ jobs:
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
         GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
-        SHELL='' go test -timeout 20m ./test/integration -v | go-junit-report > build/report-inttest-${{ matrix.platform }}.xml
+        SHELL='' go test -timeout 20m ./test/integration -v | tee >(go-junit-report > build/report-inttest-${{ matrix.platform }}.xml)
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
