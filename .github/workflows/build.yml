@@ -188,6 +188,13 @@ jobs:
         REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.xml
         touch $REPORT_FILE
         go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
+    - name: Upload Session Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-build-${{ matrix.platform }}
+        path: |
+          reports/
+          build/
   deploy_versioned:
     if: (github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Deploy Versioned
@@ -310,6 +317,13 @@ jobs:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+    - name: Upload Session Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-build-${{ matrix.platform }}
+        path: |
+          reports/
+          build/
   inttest:
     if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
     name: Integration Test
@@ -424,6 +438,13 @@ jobs:
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Upload Session Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: session-build-${{ matrix.platform }}
+        path: |
+          reports/
+          build/
   deploy:
     name: Deploy
     needs:

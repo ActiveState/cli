@@ -75,6 +75,7 @@ steps:
   - #@ steps_preprocess()
   - #@ steps_test()
   - #@ steps_test_linux()
+  - #@ steps_uploadsessartifacts()
 #@ end
 
 #@ def jobs_inttestcrit():
@@ -93,6 +94,7 @@ steps:
   - #@ steps_downloadsessartifacts()
   - #@ steps_execsessartifacts()
   - #@ steps_inttestcrit()
+  - #@ steps_uploadsessartifacts()
 #@ end
 
 #@ def jobs_inttest():
@@ -119,6 +121,7 @@ steps:
   - #@ steps_gentest_update()
   - #@ steps_build_languages_msi()
   - #@ steps_inttest()
+  - #@ steps_uploadsessartifacts()
 #@ end
 
 #@ def jobs_deploy():
