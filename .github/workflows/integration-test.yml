@@ -36,6 +36,7 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
+        mkdir reports
         printenv
     - name: Preprocess
       shell: bash
