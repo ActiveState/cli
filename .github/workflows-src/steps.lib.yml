@@ -348,5 +348,5 @@ uses: EnricoMi/publish-unit-test-result-action@v1
 if: always()
 with:
   check_name: "Test Results"
-  files: build/report-*.xml
+  files: reports/report-*.xml
 #@ end

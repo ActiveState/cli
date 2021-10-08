@@ -511,4 +511,4 @@ jobs:
       if: always()
       with:
         check_name: Test Results
-        files: build/report-*.xml
+        files: reports/report-*.xml
