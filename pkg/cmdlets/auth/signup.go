@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,10 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
-
-type cnfIntProvider interface {
-	GetInt(string) int
-}
 
 const (
 	maxMatchTries = 3
@@ -38,11 +33,11 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
+func Signup(cfg configurable, out output.Outputer, prompt prompt.Prompter, rep Reporter) error {
 	input := &signupInput{}
 
-	if authentication.LegacyGet().Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet().WhoAmI())
+	if authentication.LegacyGet(rep).Authenticated() {
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet(rep).WhoAmI())
 	}
 
 	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
@@ -58,11 +53,11 @@ func Signup(cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	if err = doSignup(input, out, cfg, mgr); err != nil {
+	if err = doSignup(input, out, rep); err != nil {
 		return err
 	}
 
-	if authentication.LegacyGet().Authenticated() {
+	if authentication.LegacyGet(rep).Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
@@ -71,7 +66,7 @@ func Signup(cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *
 	return nil
 }
 
-func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
+func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter, rep Reporter) error {
 	input := &signupInput{}
 
 	input.Username = username
@@ -82,7 +77,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	return doSignup(input, out, cnf, mgr)
+	return doSignup(input, out, rep)
 }
 
 func downloadTOS(configPath string) (string, error) {
@@ -190,7 +185,7 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 	return nil
 }
 
-func doSignup(input *signupInput, out output.Outputer, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
+func doSignup(input *signupInput, out output.Outputer, rep Reporter) error {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
@@ -218,7 +213,7 @@ func doSignup(input *signupInput, out output.Outputer, cnf cnfIntProvider, mgr *
 	err = AuthenticateWithCredentials(&mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
-	}, cnf, mgr)
+	}, rep)
 	if err != nil {
 		return err
 	}

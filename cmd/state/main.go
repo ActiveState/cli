@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/report"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
@@ -196,8 +197,10 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
+	report := report.New(cfg, svcm)
+
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, an, report), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

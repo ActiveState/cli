@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // persist contains the active API Client connection
@@ -23,8 +22,8 @@ var persist inventory_operations.ClientService
 var transport http.RoundTripper
 
 // Init will create a new API client using default settings
-func Init(auth *authentication.Auth) (inventory_operations.ClientService, runtime.ClientTransport) {
-	return New(api.GetServiceURL(api.ServiceInventory), auth.ClientAuth())
+func Init(auth runtime.ClientAuthInfoWriter) (inventory_operations.ClientService, runtime.ClientTransport) {
+	return New(api.GetServiceURL(api.ServiceInventory), auth)
 }
 
 // New initializes a new api client
@@ -42,9 +41,9 @@ func New(serviceURL *url.URL, auth runtime.ClientAuthInfoWriter) (inventory_oper
 }
 
 // Get returns a cached version of the default api client
-func Get() inventory_operations.ClientService {
+func Get(auth runtime.ClientAuthInfoWriter) inventory_operations.ClientService {
 	if persist == nil {
-		persist, _ = Init(authentication.LegacyGet())
+		persist, _ = Init(auth)
 	}
 	return persist
 }

@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -26,6 +27,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
+type Reporter interface {
+	Authentication(ctx context.Context, userID string)
+}
+
 var exit = os.Exit
 
 var persist *Auth
@@ -41,6 +46,7 @@ type Auth struct {
 	bearerToken string
 	user        *mono_models.User
 	cfg         Configurable
+	report      Reporter
 }
 
 type Configurable interface {
@@ -50,7 +56,7 @@ type Configurable interface {
 }
 
 // LegacyGet returns a cached version of Auth
-func LegacyGet() *Auth {
+func LegacyGet(report Reporter) *Auth {
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
@@ -58,7 +64,7 @@ func LegacyGet() *Auth {
 			logging.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
-		persist = New(cfg)
+		persist = New(cfg, report)
 	}
 	return persist
 }
@@ -71,13 +77,13 @@ func LegacyClose() {
 }
 
 // Client is a shortcut for calling Client() on the persisted auth
-func Client() *mono_client.Mono {
-	return LegacyGet().Client()
+func Client(report Reporter) *mono_client.Mono {
+	return LegacyGet(report).Client()
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
-func ClientAuth() runtime.ClientAuthInfoWriter {
-	return LegacyGet().ClientAuth()
+func ClientAuth(report Reporter) runtime.ClientAuthInfoWriter {
+	return LegacyGet(report).ClientAuth()
 }
 
 // Reset clears the cache
@@ -86,16 +92,18 @@ func Reset() {
 }
 
 // Logout will remove the stored apiToken
-func Logout() {
-	LegacyGet().Logout()
+func Logout(report Reporter) {
+	LegacyGet(report).Logout()
 	Reset()
 }
 
 // New creates a new version of Auth
-func New(cfg Configurable) *Auth {
+func New(cfg Configurable, report Reporter) *Auth {
 	defer profile.Measure("auth:New", time.Now())
+
 	auth := &Auth{
-		cfg: cfg,
+		cfg:    cfg,
+		report: report,
 	}
 
 	if availableAPIToken(cfg) != "" {
@@ -178,6 +186,14 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		}
 	}
 	defer s.updateRollbarPerson()
+
+	var userID string
+	authUserID := s.UserID()
+	if authUserID != nil {
+		userID = authUserID.String()
+	}
+
+	s.report.Authentication(context.Background(), userID)
 
 	payload := loginOK.Payload
 	s.user = payload.User

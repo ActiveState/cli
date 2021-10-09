@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/report"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -24,9 +25,10 @@ type Values struct {
 	config      *config.Instance
 	svcMgr      *svcmanager.Manager
 	analytics   analytics.AnalyticsDispatcher
+	report      *report.Report
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.AnalyticsDispatcher) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.AnalyticsDispatcher, ar *report.Report) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
@@ -36,6 +38,7 @@ func New(project *project.Project, output output.Outputer, auth *authentication.
 		config:      config,
 		svcMgr:      svcMgr,
 		analytics:   an,
+		report:      ar,
 	}
 	if project != nil {
 		v.project = project
@@ -84,6 +87,10 @@ type Conditioner interface {
 	Conditional() *constraints.Conditional
 }
 
+type Reporter interface {
+	Report() *report.Report
+}
+
 func (v *Values) Project() *project.Project {
 	return v.project
 }
@@ -110,6 +117,10 @@ func (v *Values) Subshell() subshell.SubShell {
 
 func (v *Values) SvcManager() *svcmanager.Manager {
 	return v.svcMgr
+}
+
+func (v *Values) Report() *report.Report {
+	return v.report
 }
 
 func (v *Values) Conditional() *constraints.Conditional {

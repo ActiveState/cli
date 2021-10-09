@@ -158,7 +158,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
 	}
 
-	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
+	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth()) // TODO: start here: store auth in Client, don't use package func here
 
 	switch {
 	case err != nil:

@@ -18,12 +18,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
+
+type Reporter interface {
+	Authentication(ctx context.Context, userID string)
+}
 
 type configurable interface {
 	keypairs.Configurable
-	GetInt(string) int
 }
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -31,19 +33,19 @@ type configurable interface {
 var OpenURI = open.Run
 
 // Authenticate will prompt the user for authentication
-func Authenticate(cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
-	return AuthenticateWithInput("", "", "", cfg, out, prompt, mgr)
+func Authenticate(cfg configurable, out output.Outputer, prompt prompt.Prompter, rep Reporter) error {
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, rep)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, cfg configurable, out output.Outputer, prompt prompt.Prompter, mgr *svcmanager.Manager) error {
+func AuthenticateWithInput(username, password, totp string, cfg configurable, out output.Outputer, prompt prompt.Prompter, rep Reporter) error {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
-	err := AuthenticateWithCredentials(credentials, cfg, mgr)
+	err := AuthenticateWithCredentials(credentials, rep)
 	if err != nil {
 		switch {
 		case errs.Matches(err, &authentication.ErrTokenRequired{}):
@@ -133,28 +135,9 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 }
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
-func AuthenticateWithCredentials(creds *mono_models.Credentials, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
-	auth := authentication.LegacyGet()
-	err := auth.AuthenticateWithModel(creds)
-	if err != nil {
-		return err
-	}
-
-	svcmdl, err := model.NewSvcModel(context.Background(), cnf, mgr)
-	if err != nil {
-		logging.Error("Error notifying service of updated authentication")
-	}
-
-	var userID string
-	authUserID := auth.UserID()
-	if authUserID != nil {
-		userID = authUserID.String()
-	}
-
-	logging.Debug("Sending Authentication Event")
-	svcmdl.AuthenticationEvent(context.Background(), userID)
-
-	return nil
+func AuthenticateWithCredentials(creds *mono_models.Credentials, rep Reporter) error {
+	auth := authentication.LegacyGet(rep)
+	return auth.AuthenticateWithModel(creds)
 }
 
 func uniqueUsername(credentials *mono_models.Credentials) bool {
@@ -170,20 +153,20 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, rep Reporter) error {
 	loginConfirmDefault := true
 	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
 		return err
 	}
 	if yesSignup {
-		return signupFromLogin(credentials.Username, credentials.Password, out, prompt, cnf, mgr)
+		return signupFromLogin(credentials.Username, credentials.Password, out, prompt, rep)
 	}
 
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, cnf cnfIntProvider, mgr *svcmanager.Manager) error {
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, rep Reporter) error {
 	var err error
 	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {
@@ -194,7 +177,7 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 		return locale.NewInputError("err_auth_empty_token")
 	}
 
-	err = AuthenticateWithCredentials(credentials, cnf, mgr)
+	err = AuthenticateWithCredentials(credentials, rep)
 	if err != nil {
 		return err
 	}

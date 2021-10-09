@@ -1,28 +1,28 @@
 package auth
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type configurable interface {
-	keypairs.Configurable
-	GetInt(string) int
+type Reporter interface {
+	Authentication(ctx context.Context, userID string)
 }
 
 type Auth struct {
 	output.Outputer
 	*authentication.Auth
 	prompt.Prompter
-	cfg    configurable
-	svcMgr *svcmanager.Manager
+	cfg keypairs.Configurable
+	rep Reporter
 }
 
 type primeable interface {
@@ -30,7 +30,7 @@ type primeable interface {
 	primer.Auther
 	primer.Prompter
 	primer.Configurer
-	primer.Svcer
+	primer.Reporter
 }
 
 func NewAuth(prime primeable) *Auth {
@@ -39,7 +39,7 @@ func NewAuth(prime primeable) *Auth {
 		prime.Auth(),
 		prime.Prompt(),
 		prime.Config(),
-		prime.SvcManager(),
+		prime.Report(),
 	}
 }
 
@@ -75,12 +75,12 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.cfg, a.Outputer, a.Prompter, a.svcMgr)
+		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.cfg, a.Outputer, a.Prompter, a.rep)
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth")
 		}
 	} else {
-		err := tokenAuth(params.Token)
+		err := tokenAuth(a.rep, params.Token)
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth_token")
 		}
