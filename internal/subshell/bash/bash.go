@@ -36,12 +36,6 @@ type SubShell struct {
 
 const Name string = "bash"
 
-func init() {
-	if runtime.GOOS == "darwin" {
-		rcFileName = ".profile" // .bashrc is often not respected on macOS
-	}
-}
-
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
 	return Name
