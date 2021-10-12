@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -197,12 +198,34 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+	// Detect installed state tool
 	stateToolInstalled, err := installation.InstalledOnPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
 
-	isUpdate := stateToolInstalled && !params.force
+	// Detect state tool alongside installer executable
+	installerPath := filepath.Dir(osutils.Executable())
+	packagedStateExe := appinfo.StateApp(installerPath).Exec()
+
+	// Detect whether this is a fresh install or an update
+	isUpdate := false
+	switch {
+	case params.force:
+		logging.Debug("Not using update flow as --force was passed")
+		break // When ran with `--force` we always use the install UX
+	case stateToolInstalled:
+		logging.Debug("Using update flow as state tool is already installed")
+		isUpdate = true
+	case fileutils.FileExists(packagedStateExe):
+		logging.Debug("Using update flow as installer is alongside payload")
+		isUpdate = true
+
+		if params.sourcePath == "" {
+			// Older versions of state tool do not invoke the installer with `--source-path`
+			params.sourcePath = installerPath
+		}
+	}
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
