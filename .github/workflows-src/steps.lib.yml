@@ -356,7 +356,7 @@ uses: EnricoMi/publish-unit-test-result-action@v1
 if: always()
 with:
   check_name: "Test Results"
-  files: reports/report-*.xml
+  files: reports/*.xml
 #@ end
 ---
 #@ def steps_debug_reports():
@@ -364,7 +364,7 @@ name: "Debug reports"
 shell: bash
 run: |
   ls -lah reports/
-  ls -lah repotrs/session-build-macos-latest
-  ls -lah repotrs/session-build-ubuntu-20.04
-  ls -lah repotrs/session-build-windows-latest
+  ls -lah reports/session-build-macos-latest
+  ls -lah reports/session-build-ubuntu-20.04
+  ls -lah reports/session-build-windows-latest
 #@ end
