@@ -134,7 +134,7 @@ run: |
   GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
   REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.xml
   touch $REPORT_FILE
-  go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
 #@ end
 ---
   #@ def steps_test_linux():
@@ -147,7 +147,7 @@ run: |
   sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
   REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.xml
   touch $REPORT_FILE
-  go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee >(go-junit-report > $REPORT_FILE)
 #@ end
 ---
 #@ def steps_inttestcrit():
@@ -159,7 +159,7 @@ run: |
   set +e
   REPORT_FILE=reports/report-crit-inttest-${{ matrix.platform }}.xml
   touch $REPORT_FILE
-  go test `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | tee >(go-junit-report > $REPORT_FILE)
+  go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | tee >(go-junit-report > $REPORT_FILE)
   testCode=$?
   exit ${testCode}
 env:
@@ -189,7 +189,7 @@ run: |
   GOFLAGS="" go install github.com/jstemmer/go-junit-report@latest
   REPORT_FILE=reports/report-inttest-${{ matrix.platform }}.xml
   touch $REPORT_FILE
-  SHELL='' go test -timeout 20m ./test/integration -v | tee >(go-junit-report > $REPORT_FILE)
+  SHELL='' go test -v -timeout 20m ./test/integration -v | tee >(go-junit-report > $REPORT_FILE)
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
