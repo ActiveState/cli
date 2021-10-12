@@ -364,4 +364,7 @@ name: "Debug reports"
 shell: bash
 run: |
   ls -lah reports/
+  ls -lah repotrs/session-build-macos-latest
+  ls -lah repotrs/session-build-ubuntu-20.04
+  ls -lah repotrs/session-build-windows-latest
 #@ end

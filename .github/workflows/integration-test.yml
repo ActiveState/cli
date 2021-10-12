@@ -140,6 +140,9 @@ jobs:
       shell: bash
       run: |
         ls -lah reports/
+        ls -lah repotrs/session-build-macos-latest
+        ls -lah repotrs/session-build-ubuntu-20.04
+        ls -lah repotrs/session-build-windows-latest
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
