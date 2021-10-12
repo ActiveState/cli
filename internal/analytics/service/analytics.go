@@ -10,6 +10,7 @@ import (
 	"time"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -30,7 +31,7 @@ import (
 // Analytics instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
 type Analytics struct {
 	gaClient         *ga.Client
-	customDimensions *CustomDimensions
+	customDimensions *dimensions.Map
 	eventWaitGroup   *sync.WaitGroup
 	projectIDCache   *cache.Cache
 	projectIDMutex   *sync.Mutex // used to synchronize API calls resolving the projectID
@@ -81,17 +82,17 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 		userID = string(*auth.UserID())
 	}
 
-	customDimensions := &CustomDimensions{
-		version:       constants.Version,
-		branchName:    constants.BranchName,
-		osName:        osName,
-		osVersion:     osVersion,
-		installSource: installSource,
-		machineID:     machineID,
-		uniqID:        deviceID,
-		sessionToken:  sessionToken,
-		updateTag:     tag,
-		userID:        userID,
+	customDimensions := &dimensions.Map{
+		Version:       constants.Version,
+		BranchName:    constants.BranchName,
+		OSName:        osName,
+		OSVersion:     osVersion,
+		InstallSource: installSource,
+		MachineID:     machineID,
+		UniqID:        deviceID,
+		SessionToken:  sessionToken,
+		UpdateTag:     tag,
+		UserID:        userID,
 	}
 
 	var trackingID string
@@ -113,12 +114,12 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	a.gaClient = client
 }
 
-func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userID string) *CustomDimensions {
+func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userID string) *dimensions.Map {
 	return a.customDimensions.WithClientData(projectNameSpace, outputType, userID)
 }
 
 // SendWithCustomDimensions sends an analytics event with the given custom dimensions
-func (a *Analytics) SendWithCustomDimensions(category, action, label string, dims *CustomDimensions) {
+func (a *Analytics) SendWithCustomDimensions(category, action, label string, dims *dimensions.Map) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
 			return
@@ -129,7 +130,7 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
 		return
 	}
-	if dims.uniqID == machineid.FallbackID {
+	if dims.UniqID == machineid.FallbackID {
 		logging.Critical("machine id was set to fallback id when creating analytics event")
 	}
 
@@ -140,7 +141,7 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer handlePanics(recover(), debug.Stack())
-		dims.projectID = a.projectID(dims.projectNameSpace)
+		dims.ProjectID = a.projectID(dims.ProjectNameSpace)
 		a.event(category, action, label, dims)
 	}()
 }
@@ -150,8 +151,8 @@ func (a *Analytics) Wait() {
 }
 
 // Events returns a channel to feed eventData directly to the event loop
-func (a *Analytics) event(category, action, label string, dimensions *CustomDimensions) {
-	dims := dimensions.toMap()
+func (a *Analytics) event(category, action, label string, dimensions *dimensions.Map) {
+	dims := dimensions.ToMap()
 	a.sendGAEvent(category, action, label, dims)
 	a.sendS3Pixel(category, action, label, dims)
 }
@@ -176,7 +177,7 @@ func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[s
 
 func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
-	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
+	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel-svc")
 	if err != nil {
 		logging.Error("Invalid URL for analytics S3 pixel")
 		return
