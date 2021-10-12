@@ -356,7 +356,7 @@ uses: EnricoMi/publish-unit-test-result-action@v1
 if: always()
 with:
   check_name: "Test Results"
-  files: reports/*.xml
+  files: reports/**/*.xml
 #@ end
 ---
 #@ def steps_debug_reports():

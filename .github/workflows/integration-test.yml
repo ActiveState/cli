@@ -148,4 +148,4 @@ jobs:
       if: always()
       with:
         check_name: Test Results
-        files: reports/*.xml
+        files: reports/**/*.xml
