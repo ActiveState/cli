@@ -37,7 +37,7 @@ scripts:
       cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest.ps1 > $INSTALLERS_DIR/install-latest.ps1
+        sed "s#CHANNEL\='release'#CHANNEL='$BRANCH'#" installers/install-latest.ps1 > $INSTALLERS_DIR/install-latest.ps1
       else
         cp installers/install-latest.ps1 $INSTALLERS_DIR/install-latest.ps1
       fi
