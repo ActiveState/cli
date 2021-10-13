@@ -41,10 +41,16 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+type ConfigurableAnalytics interface {
+	analytics.AnalyticsDispatcher
+	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
+}
+
 func main() {
 	var exitCode int
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
+	an := analytics.New()
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -53,7 +59,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
@@ -93,7 +99,7 @@ func main() {
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, out)
+	err = run(os.Args, isInteractive, out, an)
 	if err != nil {
 		exitCode, err = unwrapError(err)
 		if err != nil {
@@ -113,7 +119,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+func run(args []string, isInteractive bool, out output.Outputer, an ConfigurableAnalytics) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -137,7 +143,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
@@ -152,9 +157,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
 		return err
 	}
-
-	// Set up prompter
-	prompter := prompt.New(isInteractive)
 
 	// Set up project (if we have a valid path)
 	var pj *project.Project
@@ -177,16 +179,25 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		pjNamespace = pj.Namespace().String()
 		pjName = pj.Name()
 	}
+
+	// Set up prompter
+	prompter := prompt.New(isInteractive, an)
+
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 	auth := authentication.LegacyGet()
+
+	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
+		return errs.Wrap(err, "Failed to initialize analytics instance")
+	}
+
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

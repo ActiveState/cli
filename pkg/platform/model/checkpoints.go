@@ -56,24 +56,13 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 		return nil, err
 	}
 
-	languageMap := map[string]interface{}{}
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			languageMap[requirement.Requirement] = struct{}{}
 			languages = append(languages, Language{
 				Name:    requirement.Requirement,
 				Version: requirement.VersionConstraint,
 			})
-			continue
-		}
-		if NamespaceMatch(requirement.Namespace, NamespacePackageMatch) || NamespaceMatch(requirement.Namespace, NamespaceBundlesMatch) {
-			language := LanguageFromNamespace(requirement.Namespace)
-			if _, exists := languageMap[language]; exists || language == "" {
-				continue
-			}
-			languageMap[requirement.Requirement] = struct{}{}
-			languages = append(languages, Language{Name: language})
 		}
 	}
 

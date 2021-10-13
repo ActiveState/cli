@@ -2,10 +2,15 @@ package exec
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,13 +25,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/shirou/gopsutil/process"
 )
 
 type Exec struct {
-	subshell subshell.SubShell
-	proj     *project.Project
-	auth     *authentication.Auth
-	out      output.Outputer
+	subshell  subshell.SubShell
+	proj      *project.Project
+	auth      *authentication.Auth
+	out       output.Outputer
+	analytics analytics.AnalyticsDispatcher
 }
 
 type primeable interface {
@@ -34,7 +41,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
-	primer.Configurer
+	primer.Analyticer
 }
 
 type Params struct {
@@ -47,6 +54,7 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Analytics(),
 	}
 }
 
@@ -82,7 +90,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	rt, err := runtime.New(rtTarget)
+	rt, err := runtime.New(rtTarget, s.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -102,11 +110,20 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
-	// Ensure that we are not calling the exec recursively
-	if _, isBeingShimmed := env[constants.ExecEnvVarName]; isBeingShimmed {
-		return locale.NewError("err_exec_recursive_loop", "Detected recursive loop while calling {{.V0}}", args[0])
+
+	recursionLvl := 0
+	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
+	if err == nil {
+		recursionLvl = int(lastLvl) + 1
 	}
-	env[constants.ExecEnvVarName] = "true"
+
+	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
+	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
+	binDir := filepath.Clean(globaldefault.BinDir())
+	if filepath.Dir(p) == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
+		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
+	}
+	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
 
 	s.subshell.SetEnv(env)
 
@@ -123,4 +140,20 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)
+}
+
+func getParentProcessArgs() string {
+	p, err := process.NewProcess(int32(os.Getppid()))
+	if err != nil {
+		logging.Debug("Could not find parent process of executor: %v", err)
+		return "unknown"
+	}
+
+	args, err := p.CmdlineSlice()
+	if err != nil {
+		logging.Debug("Could not retrieve command line arguments of executor's calling process: %v", err)
+		return "unknown"
+	}
+
+	return strings.Join(args, " ")
 }

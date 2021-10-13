@@ -10,6 +10,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -45,11 +46,12 @@ func RequiresAdministratorRights(step Step, userScope bool) bool {
 }
 
 type Deploy struct {
-	auth     *authentication.Auth
-	output   output.Outputer
-	subshell subshell.SubShell
-	step     Step
-	cfg      *config.Instance
+	auth      *authentication.Auth
+	output    output.Outputer
+	subshell  subshell.SubShell
+	step      Step
+	cfg       *config.Instance
+	analytics analytics.AnalyticsDispatcher
 }
 
 type primeable interface {
@@ -57,6 +59,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
+	primer.Analyticer
 }
 
 func NewDeploy(step Step, prime primeable) *Deploy {
@@ -66,12 +69,13 @@ func NewDeploy(step Step, prime primeable) *Deploy {
 		prime.Subshell(),
 		step,
 		prime.Config(),
+		prime.Analytics(),
 	}
 }
 
 func (d *Deploy) Run(params *Params) error {
 	if RequiresAdministratorRights(d.step, params.UserScope) {
-		isAdmin, err := osutils.IsWindowsAdmin()
+		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
 		}
@@ -144,7 +148,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) error {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics)
 	if err == nil {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
@@ -179,7 +183,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -215,7 +219,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -331,7 +335,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")

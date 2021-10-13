@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,7 +27,12 @@ func (f *JSON) Type() Format {
 }
 
 // Print will marshal and print the given value to the output writer
-func (f *JSON) Print(value interface{}) {
+func (f *JSON) Print(v interface{}) {
+	f.Fprint(f.cfg.OutWriter, v)
+}
+
+// Fprint allows printing to a specific writer, using all the conveniences of the output package
+func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	var b []byte
 	if v, isBlob := value.([]byte); isBlob {
 		b = v
@@ -42,7 +48,7 @@ func (f *JSON) Print(value interface{}) {
 		b = []byte(colorize.StripColorCodes(string(b)))
 	}
 
-	f.cfg.OutWriter.Write(b)
+	writer.Write(b)
 
 	var nul string
 	if f.printNUL {

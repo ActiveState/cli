@@ -177,7 +177,7 @@ Please note that the installer may have to modify your system environment to add
 function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
     $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
-    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info?channel=$script:BRANCH&platform=windows&source=install"
+    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info?channel=$script:BRANCH&platform=windows&source=install&tag=v30"
     
     Write-Host "Preparing for installation...`n"
 

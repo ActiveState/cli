@@ -55,6 +55,21 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
+# Set the channel according to the `-b` flag, if provided
+cap="false"
+for var in "$@"
+do
+    if [ "$var" =  "-b" ]; then
+      cap="true"
+      continue
+    fi
+
+    if [ "$cap" = "true" ]; then
+      CHANNEL=$var
+      break
+    fi
+done
+
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_BOLD=""
   OUTPUT_WARN=""
@@ -181,7 +196,7 @@ while getopts "nb:t:e:c:v:f?h-:" opt; do
   esac
 done
 
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&tag=v30"
 
 # state activate currently does not run without user interaction, 
 # so we are bailing if that's being requested...

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcmanager"
 )
@@ -52,16 +53,19 @@ func stopServices(cfg configurable, out output.Outputer, ignoreErrors bool) erro
 		}
 
 		// Wait for service to be stopped
-		var isStopped bool
+		var isRunning bool
 		m := svcmanager.New(cfg)
 		for x := 0; x < 30; x++ {
-			isStopped = !m.Ready()
-			if isStopped {
+			isRunning, err = m.Ready()
+			if err != nil {
+				logging.Debug("Ready error: %v", err)
+			}
+			if !isRunning {
 				break
 			}
 			time.Sleep(200 * time.Millisecond)
 		}
-		if !isStopped {
+		if isRunning {
 			if !ignoreErrors {
 				return errs.AddTips(
 					locale.WrapError(err, "clean_stop_svc_failure_wait", "Cleanup interrupted, because a running {{.V0}} process failed to stop due to a timeout.", svcInfo.Name()),

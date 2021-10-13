@@ -2,18 +2,16 @@
 
 package graph
 
+type AnalyticsEventResponse struct {
+	Sent bool `json:"sent"`
+}
+
 type AvailableUpdate struct {
 	Version  string `json:"version"`
 	Channel  string `json:"channel"`
 	Path     string `json:"path"`
 	Platform string `json:"platform"`
 	Sha256   string `json:"sha256"`
-}
-
-type DeferredUpdate struct {
-	Channel string `json:"channel"`
-	Version string `json:"version"`
-	Logfile string `json:"logfile"`
 }
 
 type Project struct {

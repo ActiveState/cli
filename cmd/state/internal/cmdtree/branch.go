@@ -14,7 +14,7 @@ func newBranchCommand(prime *primer.Values) *captain.Command {
 		"branch",
 		locale.Tl("branch_title", "Listing branches"),
 		locale.Tl("branch_description", "Manage your project's branches"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
@@ -31,7 +31,7 @@ func newBranchAddCommand(prime *primer.Values) *captain.Command {
 		"add",
 		locale.Tl("add_title", "Adding branch"),
 		locale.Tl("add_description", "Add a branch to your project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -55,7 +55,7 @@ func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 		"switch",
 		locale.Tl("switch_title", "Switching branches"),
 		locale.Tl("switch_description", "Switch to the given branch name"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

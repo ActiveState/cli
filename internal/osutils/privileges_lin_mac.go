@@ -2,6 +2,6 @@
 
 package osutils
 
-func IsWindowsAdmin() (bool, error) {
-	return false, nil
+func IsAdmin() (bool, error) {
+	return false, nil // Currently we only care about this on Windows
 }

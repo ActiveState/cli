@@ -2,18 +2,12 @@ package model
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
@@ -61,15 +55,6 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 	return response.Projects, nil
 }
 
-func (m *SvcModel) InitiateDeferredUpdate(ctx context.Context, channel, version string) (*graph.DeferredUpdate, error) {
-	r := request.NewUpdateRequest(channel, version)
-	u := graph.UpdateResponse{}
-	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
-		return nil, locale.WrapError(err, "err_svc_updaterequest", "Error updating to version {{.V0}} at channel {{.V1}}: {{.V2}}", version, channel, errs.Join(err, ": ").Error())
-	}
-	return &u.DeferredUpdate, nil
-}
-
 func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
 	defer profile.Measure("svc:CheckUpdate", time.Now())
 	r := request.NewAvailableUpdate()
@@ -85,35 +70,19 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 	return &u.AvailableUpdate, nil
 }
 
-func (m *SvcModel) StopServer() error {
-	htClient := retryhttp.DefaultClient.StandardClient()
-
-	quitAddress := fmt.Sprintf("%s/__quit", m.client.BaseUrl())
-	logging.Debug("Sending quit request to %s", quitAddress)
-	req, err := http.NewRequest("GET", quitAddress, nil)
-	if err != nil {
-		return errs.Wrap(err, "Could not create request to quit svc")
-	}
-
-	res, err := htClient.Do(req)
-	if err != nil {
-		return errs.Wrap(err, "Request to quit svc failed")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
-		}
-		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
-	}
-
-	return nil
-}
-
 func (m *SvcModel) Ping() error {
 	_, err := m.StateVersion(context.Background())
 	return err
+}
+
+func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action, label, projectName, output, userID string) error {
+	defer profile.Measure("svc:analyticsEvent", time.Now())
+
+	r := request.NewAnalyticsEvent(category, action, label, projectName, output, userID)
+	u := graph.AnalyticsEventResponse{}
+	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error sending analytics event via state-svc")
+	}
+
+	return nil
 }

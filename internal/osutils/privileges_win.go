@@ -6,7 +6,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func IsWindowsAdmin() (bool, error) {
+func IsAdmin() (bool, error) {
 	var sid *windows.SID
 
 	// See https://docs.microsoft.com/en-us/windows/desktop/api/securitybaseapi/nf-securitybaseapi-checktokenmembership

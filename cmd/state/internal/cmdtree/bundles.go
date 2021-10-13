@@ -17,7 +17,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 		"bundles",
 		locale.Tl("bundles_title", "Listing Bundles"),
 		locale.Tl("bundles_cmd_description", "Manage bundles used in your project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "commit",
@@ -55,7 +55,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 		"install",
 		locale.Tl("bundle_install_title", "Installing Bundle"),
 		locale.Tl("bundle_install_cmd_description", "Add a new bundle to your project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -80,7 +80,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 		"uninstall",
 		locale.Tl("bundle_uninstall_title", "Uninstalling Bundle"),
 		locale.Tl("bundle_uninstall_cmd_description", "Remove bundle from your project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
@@ -105,7 +105,7 @@ func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
 		"search",
 		locale.Tl("bundle_search_title", "Searching Bundles"),
 		locale.Tl("bundle_search_cmd_description", "Search for all available bundles that can be added to your project"),
-		prime.Output(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "language",

@@ -19,7 +19,13 @@ type httpGetter interface {
 
 type Configurable interface {
 	GetString(string) string
+	Set(string, interface{}) error
 }
+
+type InvocationSource string
+
+var InvocationSourceInstall InvocationSource = "install"
+var InvocationSourceUpdate InvocationSource = "update"
 
 type Checker struct {
 	cfg            Configurable
@@ -28,6 +34,9 @@ type Checker struct {
 	currentChannel string
 	currentVersion string
 	httpreq        httpGetter
+
+	InvocationSource InvocationSource
+	VerifyVersion    bool
 }
 
 func NewDefaultChecker(cfg Configurable) *Checker {
@@ -50,6 +59,8 @@ func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersi
 		currentChannel,
 		currentVersion,
 		httpget,
+		InvocationSourceUpdate,
+		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
 }
 
@@ -63,7 +74,7 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpd
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
 
-	if info == nil || (info.Channel == u.currentChannel && info.Version == u.currentVersion) {
+	if info == nil || (u.VerifyVersion && info.Channel == u.currentChannel && info.Version == u.currentVersion) {
 		return nil, nil
 	}
 
@@ -74,7 +85,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 	v := make(url.Values)
 	v.Set("channel", branchName)
 	v.Set("platform", platform)
-	v.Set("source", "update")
+	v.Set("source", string(u.InvocationSource))
 
 	if desiredVersion != "" {
 		v.Set("target-version", desiredVersion)
@@ -96,10 +107,9 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		}
 	}
 
-	logging.Debug("Getting update info (desired channel: %s, version: %s)", desiredChannel, desiredVersion)
-
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
+	logging.Debug("Getting update info: %s", infoURL)
 	res, code, err := u.httpreq.Get(infoURL)
 	if err != nil {
 		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {

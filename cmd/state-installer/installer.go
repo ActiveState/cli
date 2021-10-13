@@ -1,196 +1,177 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"runtime/debug"
-	"strings"
-	"time"
 
-	"github.com/ActiveState/cli/cmd/state-installer/internal/installer"
-	"github.com/ActiveState/cli/internal/analytics"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/rollbar/rollbar-go"
-	"github.com/thoas/go-funk"
 )
 
-func main() {
-	var exitCode int
-	defer func() {
-		if panics.HandlePanics(recover(), debug.Stack()) {
-			exitCode = 1
-		}
-		if err := events.WaitForEvents(1*time.Second, analytics.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
-			logging.Warning("Failed to wait for rollbar to close: %v", err)
-		}
-		os.Exit(exitCode)
-	}()
-
-	// init logging and rollbar
-	verbose := os.Getenv("VERBOSE") != ""
-	logging.CurrentHandler().SetVerbose(verbose)
-	logging.SetupRollbar(constants.StateInstallerRollbarToken)
-
-	out, err := output.New("plain", &output.Config{
-		OutWriter:   os.Stdout,
-		ErrWriter:   os.Stderr,
-		Colored:     false,
-		Interactive: false,
-	})
-	if err != nil {
-		logging.Critical("Could not initialize outputer: %v", err)
-		exitCode = 1
-		return
-	}
-	installPath := ""
-	if len(os.Args) > 1 {
-		installPath = os.Args[1]
-	}
-	var updateTag *string
-	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
-	if ok {
-		updateTag = &tag
-	}
-	if err := run(out, installPath, os.Getenv(constants.SessionTokenEnvVarName), updateTag); err != nil {
-		errMsg := fmt.Sprintf("%s failed with error: %s", filepath.Base(os.Args[0]), errs.Join(err, ": "))
-		logging.Critical(errMsg)
-		out.Error(errMsg)
-		out.Error(fmt.Sprintf("To retry run %s", strings.Join(os.Args, " ")))
-
-		exitCode = 1
-		return
-	}
+type Installer struct {
+	out          output.Outputer
+	cfg          *config.Instance
+	sessionToken string
+	*Params
 }
 
-func run(out output.Outputer, installPath, sessionToken string, updateTag *string) (rerr error) {
-	out.Print(fmt.Sprintf("Installing version %s", constants.VersionNumber))
-
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize config.")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
-
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
-
-	if sessionToken != "" && cfg.GetString(analytics.CfgSessionToken) == "" {
-		if err := cfg.Set(analytics.CfgSessionToken, sessionToken); err != nil {
-			logging.Error("Failed to set session token: %s", errs.JoinMessage(err))
-		}
-		analytics.Configure(cfg)
+func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
+	i := &Installer{cfg: cfg, out: out, Params: params}
+	if err := i.sanitize(); err != nil {
+		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	if updateTag != nil {
-		if err := cfg.Set(updater.CfgUpdateTag, *updateTag); err != nil {
-			logging.Error("Failed to set update tag: %s", errs.JoinMessage(err))
-		}
-	}
+	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
 
-	if installPath != "" {
-		installPath, err = filepath.Abs(installPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to retrieve absolute installPath")
-		}
-	} else {
-		installPath, err = installation.InstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Failed to retrieve default installPath")
-		}
-	}
-
-	logging.Debug("Installing to %s", installPath)
-	if err := install(installPath, cfg, out); err != nil {
-		// Todo This is running in the background, so these error messages will not be seen and only be written to the log file.
-		// https://www.pivotaltracker.com/story/show/177691644
-		return errs.Wrap(err, "Installing to %s failed", installPath)
-	}
-	logging.Debug("Installation was successful.")
-	return nil
+	return i, nil
 }
 
-func install(installPath string, cfg *config.Instance, out output.Outputer) error {
-	out.Print(fmt.Sprintf("Install Location: %s", installPath))
-	exe, err := osutils.Executable()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect executable path")
+func (i *Installer) Install() (rerr error) {
+	// Store sessionToken to config
+	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
+		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
+			return errs.Wrap(err, "Failed to set session token")
+		}
 	}
 
-	trayInfo := appinfo.TrayApp(installPath)
-	stateInfo := appinfo.StateApp(installPath)
-
-	trayRunning, err := installation.IsTrayAppRunning(cfg)
-	if err != nil {
-		logging.Error("Could not determine if state-tray is running: %v", err)
+	// Store update tag
+	if i.updateTag != "" {
+		if err := i.cfg.Set(updater.CfgUpdateTag, i.updateTag); err != nil {
+			return errs.Wrap(err, "Failed to set update tag")
+		}
 	}
 
-	out.Print("Stopping services")
-
-	if err := installation.StopRunning(installPath); err != nil {
+	// Stop any running processes that might interfere
+	trayRunning, err := installation.IsTrayAppRunning(i.cfg)
+	if err != nil {
+		logging.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
+	}
+	if err := installation.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
-	tmpDir := filepath.Dir(exe)
+	// Create target dir
+	if err := fileutils.MkdirUnlessExists(i.path); err != nil {
+		return errs.Wrap(err, "Could not create target directory: %s", i.path)
+	}
 
-	appDir, err := installation.LauncherInstallPath()
+	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
+	if err := i.PrepareBinTargets(true); err != nil {
+		return errs.Wrap(err, "Could not prepare for installation")
+	}
+
+	// Copy all the files
+	if err := fileutils.CopyAndRenameFiles(i.sourcePath, i.path); err != nil {
+		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
+	}
+
+	// Account for v0.29 installations that use a different PATH entry
+	if err := i.installDeprecationFiles(); err != nil {
+		return errs.Wrap(err, "Could not install deprecation files")
+	}
+
+	// Install Launcher
+	if err := i.installLauncher(); err != nil {
+		return errs.Wrap(err, "Installation of system files failed.")
+	}
+
+	// Set up the environment
+	binDir, err := installation.BinPathFromInstallPath(i.path)
 	if err != nil {
-		return errs.Wrap(err, "Could not get system install path")
+		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-
-	inst := installer.New(tmpDir, installPath, appDir)
-	defer os.RemoveAll(tmpDir)
-
-	if err := inst.Install(); err != nil {
-		out.Error("Installation failed.")
-		return errs.Wrap(err, "Installation failed")
-	}
-
-	out.Print("Updating environment")
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-	shell := subshell.New(cfg)
-	err = shell.WriteUserEnv(cfg, map[string]string{"PATH": installPath}, sscommon.InstallID, !isAdmin)
+	shell := subshell.New(i.cfg)
+	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), "_prepare"); err != nil {
 		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
+	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		out.Print("Starting ActiveState Desktop")
-		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
-			return errs.Wrap(err, "Could not start %s", trayInfo.Exec())
+		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(binDir).Exec(), []string{}); err != nil {
+			logging.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}
 
-	out.Print("Installation Complete")
+	logging.Debug("Installation was successful")
 
-	_, isForward := os.LookupEnv(constants.ForwardedStateEnvVarName)
-	if !isForward && !funk.Contains(strings.Split(os.Getenv("PATH"), string(os.PathListSeparator)), installPath) {
-		out.Print("Please start a new shell in order to start using the State Tool.")
+	return nil
+}
+
+func PredatesBinDir() (bool, error) {
+	installPath, err := installation.InstallPath()
+	if err != nil {
+		return false, err
+	}
+	binPath, err := installation.BinPath()
+	if err != nil {
+		return false, err
+	}
+	logging.Debug("PredatesBinDir: %s vs %s", installPath, binPath)
+	return installPath == binPath, nil
+}
+
+func (i *Installer) installDeprecationFiles() error {
+	installPath := filepath.Clean(i.InstallPath())
+	binPath, err := installation.BinPathFromInstallPath(installPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not detect whether install predates bin dir schema.")
+	}
+	if installPath != binPath {
+		return nil
+	}
+
+	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
+	if err := i.PrepareBinTargets(false); err != nil {
+		return errs.Wrap(err, "Could not prepare for installation")
+	}
+
+	// Copy all the files
+	if err := fileutils.CopyAndRenameFiles(filepath.Join(i.sourcePath, installation.BinDirName), i.path); err != nil {
+		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
+	}
+
+	return nil
+}
+
+func (i *Installer) InstallPath() string {
+	return i.path
+}
+
+// sanitize cleans up the input and inserts fallback values
+func (i *Installer) sanitize() error {
+	if sessionToken, ok := os.LookupEnv(constants.SessionTokenEnvVarName); ok {
+		i.sessionToken = sessionToken
+	}
+	if tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName); ok {
+		i.updateTag = tag
+	}
+
+	var err error
+	if i.path, err = resolveInstallPath(i.path); err != nil {
+		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
 	return nil

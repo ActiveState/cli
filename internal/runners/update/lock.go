@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
@@ -58,6 +59,11 @@ func (l *Lock) Run(params *LockParams) error {
 		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
+	}
+
+	// invalidate the installer version lock if `state update lock` is requested
+	if err := l.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
+		logging.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
 	}
 
 	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()

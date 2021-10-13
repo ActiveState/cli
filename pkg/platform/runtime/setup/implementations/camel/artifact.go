@@ -2,6 +2,7 @@ package camel
 
 import (
 	"bytes"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -193,6 +194,11 @@ func fileTransformsInDir(instDir string, searchDir string, searchString string, 
 	err := filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		// skip symlinks
+		if (info.Mode() & fs.ModeSymlink) == fs.ModeSymlink {
+			return nil
 		}
 
 		if info.IsDir() {

@@ -26,7 +26,7 @@ func init() {
 		commitRef = sha
 	}
 
-	newVersion, err := version.ParseVersion(buildEnvironment())
+	newVersion, err := version.Detect()
 	if err != nil {
 		log.Fatalf("Could not parse new version: %s", err)
 	}
@@ -87,21 +87,6 @@ func getCmdOutput(cmdString string) string {
 		os.Exit(1)
 	}
 	return strings.Trim(out.String(), "\n")
-}
-
-func buildEnvironment() version.Env {
-	if !onCI() {
-		return version.LocalEnv
-	}
-
-	return version.RemoteEnv
-}
-
-func onCI() bool {
-	if os.Getenv("CI") != "" {
-		return true
-	}
-	return false
 }
 
 func mustVersionWithRevision(ver *semver.Version, revision string) string {

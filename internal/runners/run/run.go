@@ -3,12 +3,12 @@ package run
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -20,12 +20,13 @@ import (
 
 // Run contains the run execution context.
 type Run struct {
-	auth     *authentication.Auth
-	out      output.Outputer
-	proj     *project.Project
-	subshell subshell.SubShell
-	cfg      *config.Instance
-	svcMgr   *svcmanager.Manager
+	auth      *authentication.Auth
+	out       output.Outputer
+	proj      *project.Project
+	subshell  subshell.SubShell
+	cfg       *config.Instance
+	svcMgr    *svcmanager.Manager
+	analytics analytics.AnalyticsDispatcher
 }
 
 type primeable interface {
@@ -35,6 +36,7 @@ type primeable interface {
 	primer.Subsheller
 	primer.Configurer
 	primer.Svcer
+	primer.Analyticer
 }
 
 // New constructs a new instance of Run.
@@ -46,15 +48,16 @@ func New(prime primeable) *Run {
 		prime.Subshell(),
 		prime.Config(),
 		prime.SvcManager(),
+		prime.Analytics(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.auth, r.out, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
+	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
 }
 
-func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
+func run(auth *authentication.Auth, out output.Outputer, analytics analytics.AnalyticsDispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
 	checker.RunUpdateNotifier(svcMgr, cfg, out)
@@ -67,7 +70,7 @@ func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		return locale.NewError("error_state_run_undefined_name")
 	}
 
-	out.Notice(txtstyle.NewTitle(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
+	out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.LegacyGet().Authenticated() {
 		checker.RunCommitsBehindNotifier(proj, out)
@@ -78,7 +81,7 @@ func run(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg)
+	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg, analytics)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

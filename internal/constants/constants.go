@@ -33,9 +33,6 @@ const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 // LogBuildVerboseEnvVarName is the env var used to enable verbose build logging
 const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 
-// ExecEnvVarName is the env var used to find out if we are shimming recursively
-const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
-
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
@@ -105,8 +102,11 @@ const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
 // OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
 const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
 
-// TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always auto update
+// TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
 const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
+
+// ForceUpdateEnvVarName is used to force state tool to update, regardless of whether the update is equal to the current version
+const ForceUpdateEnvVarName = "ACTIVESTATE_FORCE_UPDATE"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -242,6 +242,9 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
+// CheatSheetURL is the URL for the State Tool Cheat Sheet
+const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
+
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
 const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
 
@@ -358,3 +361,9 @@ const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
+
+// ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
+const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
+
+// InstallSourceFile is the file we use to record what installed the state tool
+const InstallSourceFile = "installsource.txt"
