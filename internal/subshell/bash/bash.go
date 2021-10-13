@@ -106,7 +106,16 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, rcFileName), nil
+	rcFilePath := filepath.Join(homeDir, rcFileName)
+	// On MacOS the .bashrc is not created by default
+	if runtime.GOOS == "darwin" && !fileutils.FileExists(rcFilePath) {
+		err = fileutils.Touch(rcFilePath)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
+		}
+	}
+
+	return rcFilePath, nil
 }
 
 // SetupShellRcFile - subshell.SubShell
