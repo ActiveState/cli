@@ -137,13 +137,6 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         path: reports/
-    - name: Debug reports
-      shell: bash
-      run: |
-        ls -lah reports/
-        ls -lah reports/session-build-macos-latest
-        ls -lah reports/session-build-ubuntu-20.04
-        ls -lah reports/session-build-windows-latest
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()
