@@ -107,7 +107,7 @@ func (v *SubShell) RcFile() (string, error) {
 	}
 
 	rcFilePath := filepath.Join(homeDir, rcFileName)
-	// On MacOS the .bashrc is not created by default
+	// On MacOS the .bashrc file is not created by default
 	if runtime.GOOS == "darwin" && !fileutils.FileExists(rcFilePath) {
 		err = fileutils.Touch(rcFilePath)
 		if err != nil {
