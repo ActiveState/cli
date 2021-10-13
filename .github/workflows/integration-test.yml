@@ -118,6 +118,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     - name: Upload Report Artifacts
       uses: actions/upload-artifact@v2
+      if: always()
       with:
         name: session-build-${{ matrix.platform }}
         path: |
