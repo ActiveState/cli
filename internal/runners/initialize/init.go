@@ -4,9 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/gobuffalo/packr"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,8 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+
+	"github.com/gobuffalo/packr"
 )
 
 // RunParams stores run func parameters.
@@ -162,10 +162,7 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
 	}
 
-	version := params.version
-	if version == "" {
-		version = params.language.RecommendedVersion()
-	}
+	version := deriveVersion(params.language.Language, params.version)
 	commitID, err := model.CommitInitial(model.HostPlatform, params.language.Requirement(), version)
 	if err != nil {
 		return "", locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -183,4 +180,25 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	))
 
 	return params.Path, nil
+}
+
+func deriveVersion(lang language.Language, version string) string {
+	if version != "" {
+		return version
+	}
+
+	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+	if err != nil {
+		logging.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+		return lang.RecommendedVersion()
+	}
+
+	for _, l := range langs {
+		if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+			return l.DefaultVersion
+		}
+	}
+
+	logging.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+	return lang.RecommendedVersion()
 }
