@@ -36,12 +36,6 @@ type SubShell struct {
 
 const Name string = "bash"
 
-func init() {
-	if runtime.GOOS == "darwin" {
-		rcFileName = ".profile" // .bashrc is often not respected on macOS
-	}
-}
-
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
 	return Name
@@ -112,7 +106,16 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, rcFileName), nil
+	rcFilePath := filepath.Join(homeDir, rcFileName)
+	// Ensure the .bashrc file exists. On some platforms it is not created by default
+	if !fileutils.TargetExists(rcFilePath) {
+		err = fileutils.Touch(rcFilePath)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
+		}
+	}
+
+	return rcFilePath, nil
 }
 
 // SetupShellRcFile - subshell.SubShell
