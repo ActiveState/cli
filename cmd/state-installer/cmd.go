@@ -291,7 +291,7 @@ func postInstallEvents(out output.Outputer, params *Params) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	env := []string{"PATH=" + string(os.PathListSeparator) + binPath + os.Getenv("PATH")}
+	env := []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
