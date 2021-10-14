@@ -174,10 +174,5 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	// For backwards compatibility we detect the sourcePath based on the location of the installer
-	if i.sourcePath == "" {
-		i.sourcePath = filepath.Dir(osutils.Executable())
-	}
-
 	return nil
 }

@@ -188,7 +188,7 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 	auth := authentication.LegacyGet()
 
 	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
-		return errs.Wrap(err, "Failed to initialize analytics instance")
+		logging.Error("Failed to initialize analytics instance: %s", errs.JoinMessage(err))
 	}
 
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())

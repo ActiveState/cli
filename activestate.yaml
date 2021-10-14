@@ -245,11 +245,12 @@ scripts:
       mkdir -p $INSTALLERS_DIR
 
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
+      cp installers/install.sh $INSTALLERS_DIR/install.sh
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='$BRANCH'/" installers/install.sh > $INSTALLERS_DIR/install.sh
+        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest.sh > $INSTALLERS_DIR/install-latest.sh
       else
-        cp installers/install.sh $INSTALLERS_DIR/install.sh
+        cp installers/install-latest.sh $INSTALLERS_DIR/install-latest.sh
       fi
   - name: deploy-installers
     language: bash

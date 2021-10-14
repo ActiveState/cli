@@ -29,14 +29,16 @@ func (se silentExitCodeError) IsSilent() bool {
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan error {
+	logging.Debug("Starting subshell with cmd: %s", cmd.String())
+
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	cmd.Start()
 
-	errs := make(chan error, 1)
+	errors := make(chan error, 1)
 
 	go func() {
-		defer close(errs)
+		defer close(errors)
 
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
@@ -51,16 +53,16 @@ func Start(cmd *exec.Cmd) chan error {
 					return
 				}
 
-				errs <- silentExitCodeError{eerr}
+				errors <- silentExitCodeError{eerr}
 				return
 			}
 
-			errs <- err
+			errors <- errs.Wrap(err, "Command Failed: %s", cmd.String())
 			return
 		}
 	}()
 
-	return errs
+	return errors
 }
 
 // Stop signals the provided command to terminate.

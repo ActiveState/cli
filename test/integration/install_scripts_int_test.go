@@ -120,7 +120,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 	if runtime.GOOS != "windows" {
 		ext = ".sh"
 	}
-	name := "install" + ext
+	name := "install-latest" + ext
 	root := environment.GetRootPathUnsafe()
 	subdir := "installers"
 
