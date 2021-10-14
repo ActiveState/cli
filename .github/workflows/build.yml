@@ -531,5 +531,4 @@ jobs:
       if: always()
       with:
         check_name: Test Results
-        check_run_annotations: all tests, skipped tests
         files: reports/**/*.xml
