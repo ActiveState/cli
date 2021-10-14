@@ -142,6 +142,5 @@ jobs:
       if: always()
       with:
         check_name: Test Results
-        report_individual_runs: "true"
         check_run_annotations: all tests, skipped tests
         files: reports/**/*.xml
