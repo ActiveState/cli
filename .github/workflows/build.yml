@@ -176,7 +176,7 @@ jobs:
         GOFLAGS="" go install gotest.tools/gotestsum@latest
         REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.xml
         touch $REPORT_FILE
-        gotestsum --format standard-verbose --junitfile $REPORT_FILE -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+        gotestsum --format standard-verbose --junitfile $REPORT_FILE `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
     - name: Unit Tests (Linux)
       shell: bash
       if: runner.os == 'Linux'
