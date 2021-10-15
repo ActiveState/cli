@@ -165,8 +165,6 @@ jobs:
         echo "$bin" >> $GITHUB_PATH
         mkdir reports
         printenv
-    - name: Set up gotestfmt
-      uses: haveyoudebuggedit/gotestfmt-action@v1
     - name: Preprocess
       shell: bash
       run: |
@@ -272,8 +270,6 @@ jobs:
         echo "$bin" >> $GITHUB_PATH
         mkdir reports
         printenv
-    - name: Set up gotestfmt
-      uses: haveyoudebuggedit/gotestfmt-action@v1
     - name: Preprocess
       shell: bash
       run: |
@@ -339,8 +335,6 @@ jobs:
         echo "$bin" >> $GITHUB_PATH
         mkdir reports
         printenv
-    - name: Set up gotestfmt
-      uses: haveyoudebuggedit/gotestfmt-action@v1
     - name: Preprocess
       shell: bash
       run: |

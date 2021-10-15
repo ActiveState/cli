@@ -338,8 +338,3 @@ run: |
   rm build/update/*.json || true
 #@ end
 ---
-#@ def steps_setupgotestfmt():
-name: Set up gotestfmt
-uses: haveyoudebuggedit/gotestfmt-action@v1
-#@ end
----
