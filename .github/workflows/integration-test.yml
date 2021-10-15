@@ -106,7 +106,7 @@ jobs:
         done
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        SHELL='' go test -timeout 20m ./test/integration -v | gotestfmt
+        SHELL='' go test -v -timeout 20m ./test/integration -v | gotestfmt
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
