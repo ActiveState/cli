@@ -131,7 +131,9 @@ name: "Unit Tests"
 shell: bash
 if: runner.os != 'Linux'
 run: |
-  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | gotestfmt
+  REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.log
+  touch $REPORT_FILE
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee $REPORT_FILE | gotestfmt
 #@ end
 ---
   #@ def steps_test_linux():
@@ -139,9 +141,11 @@ name: "Unit Tests (Linux)"
 shell: bash
 if: runner.os == 'Linux'
 run: |
+  REPORT_FILE=reports/report-unittest-${{ matrix.platform }}.log
+  touch $REPORT_FILE
   sudo apt-get update
   sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
-  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | gotestfmt
+  go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | tee $REPORT_FILE | gotestfmt
 #@ end
 ---
 #@ def steps_inttestcrit():
@@ -151,7 +155,9 @@ run: |
   GOFLAGS="" go install gotest.tools/gotestsum@latest
   export SHELL=''
   set +e
-  go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | gotestfmt
+  REPORT_FILE=reports/report-crit-inttest-${{ matrix.platform }}.log
+  touch $REPORT_FILE
+  go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | tee $REPORT_FILE | gotestfmt
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -176,7 +182,9 @@ run: |
   done
 
   export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-  SHELL='' go test -v -timeout 20m ./test/integration -v | gotestfmt
+  REPORT_FILE=reports/report-crit-inttest-${{ matrix.platform }}.log
+  touch $REPORT_FILE
+  SHELL='' go test -v -timeout 20m ./test/integration -v | tee $REPORT_FILE | gotestfmt
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -334,6 +342,14 @@ run: rm build/state* || true
 #@ def steps_clean_nonversioned_update():
 name: "Cleanup Non-Versioned Update Files"
 shell: bash
+run: |
+  rm build/update/*.json || true
+#@ end
+---
+#@ def steps_upload_test_log():
+name: "Upload Test Log"
+shell: bash
+if: always()
 run: |
   rm build/update/*.json || true
 #@ end
