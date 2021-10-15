@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_inttest", "jobs_report")
+#@ load("jobs.lib.yml", "jobs_inttest")
 name: "Integration Test"
 
 "on":
@@ -7,4 +7,3 @@ name: "Integration Test"
 
 jobs:
   inttest: #@ jobs_inttest()
-  report: #@ jobs_report()
