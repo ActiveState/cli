@@ -27,7 +27,7 @@ scripts:
         exit 1
       fi
       if [ "$BRANCH" == "release" ]; then
-        $BRANCH=""
+        BRANCH=""
       fi
 
       INSTALLERS_DIR=build/installers/$BRANCH
