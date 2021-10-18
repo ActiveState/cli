@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.30.0
+
+### Added
+
+* New Command: `state learn`. Opens
+  the [State Tool Cheat Sheet](https://platform.activestate.com/state-tool-cheat-sheet)
+  in your browser.
+
+### Changed
+
+* The install and activate user experience have been overhauled to be much more
+  concise and avoid unnecessary prompts.
+* Several performance enhancements have been made. Note that some of these will
+  require at least one more release before they can realise their potential.
+* Running `state update` will now immediately perform the update, rather than
+deferring it to a background process.
+* State Tool should now attempt to use the latest version available for a given
+language, when initializing a project.
+
+### Fixed
+
+* Fixed issue where on macOS the `state` executable would sometimes not be added
+to your PATH.
+* Resolved issue where `state exec` or certain invocations of the language
+  runtime could lead to recursion errors.
+* Fixed issues where sometimes State Tool would say it have a new version
+  available when it didn't.
+
 ## 0.29.5
 
 ### Fixed
