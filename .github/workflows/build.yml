@@ -210,8 +210,7 @@ jobs:
   deploy:
     name: Deploy
     needs:
-      - build
-      - unittest
+      - os_specific
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
