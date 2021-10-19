@@ -151,6 +151,8 @@ run: |
   export SHELL=''
   set +e
   go test -v `go list ./... | grep integration` -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite|PerformanceIntegrationTestSuite$" | gotestfmt
+  testCode=$?
+  exit ${testCode}
 env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
