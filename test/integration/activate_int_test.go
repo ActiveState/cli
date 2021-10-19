@@ -109,15 +109,16 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		e2e.WithArgs("activate", "cli-integration-tests/"+projectName, "--path="+ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating Virtual Environment")
 
 	if runtime.GOOS == "linux" {
+		cp.Expect("Creating a Virtual Environment")
 		cp.Expect("Activated")
 		cp.WaitForInput(20 * time.Second)
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else {
-		cp.Expect("Could not activate project")
+		cp.Expect("Your current platform")
+		cp.Expect("does not appear to be configured")
 		cp.ExpectNotExitCode(0)
 	}
 }
@@ -169,8 +170,9 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default something/else")
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
 
-	cp.SendLine("VERBOSE=true state activate --default")
-	cp.ExpectLongString(fmt.Sprintf("Successfully configured %s as the global default project.", namespace))
+	cp.SendLine("state activate --default")
+	cp.ExpectLongString(fmt.Sprintf("Creating a Virtual Environment"))
+	cp.WaitForInput(40 * time.Second)
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {
 		pythonShim = pythonExe + ".bat"
@@ -516,11 +518,11 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Reusing cached runtime environment")
-	cp.Expect("Activated")
+
+	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-	suite.NotContains(cp.TrimmedSnapshot(), "Downloading required artifacts")
+	suite.NotContains(cp.TrimmedSnapshot(), "Downloading")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
