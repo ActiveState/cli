@@ -58,8 +58,7 @@ jobs:
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
-          if command -v apt &> /dev/null
-          then
+          if [ -x "$(command -v apt)" ]; then
             sudo apt-get update
             sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
           fi
