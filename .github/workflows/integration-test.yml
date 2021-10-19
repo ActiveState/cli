@@ -36,7 +36,6 @@ jobs:
         bin=$(pwd)/.github/deps/${{ runner.os }}/bin
         echo "Adding $bin to PATH"
         echo "$bin" >> $GITHUB_PATH
-        mkdir reports
         printenv
     - name: Preprocess
       shell: bash
@@ -106,19 +105,10 @@ jobs:
         done
 
         export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        REPORT_FILE=reports/report-crit-inttest-${{ matrix.platform }}.log
-        touch $REPORT_FILE
-        SHELL='' go test -v -timeout 20m ./test/integration -v | tee $REPORT_FILE | gotestfmt
+        SHELL='' go test -v -timeout 20m ./test/integration -v | gotestfmt
       env:
         INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
         INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
         PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    - name: Upload Report Artifacts
-      uses: actions/upload-artifact@v2
-      if: always()
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: |
-          reports/
