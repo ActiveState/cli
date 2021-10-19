@@ -125,7 +125,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 
-	cp.ExpectLongString("An activestate.yaml has been created")
+	cp.ExpectLongString("An activestate.yaml has been created", time.Second * 20)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
