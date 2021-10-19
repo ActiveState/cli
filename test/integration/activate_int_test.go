@@ -217,7 +217,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	cp.WaitForInput()
 
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
-	cp.SendLine(fmt.Sprintf(`%s -c 'import os; print(os.environ["PYTHONPATH"]);'`, pythonExe))
+	cp.SendLine(`python3 -c 'import os; print(os.environ["PYTHONPATH"]);'`)
 	cp.Expect("/custom_pythonpath")
 
 	// de-activate shell
