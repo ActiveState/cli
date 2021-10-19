@@ -1,4 +1,4 @@
-#@ load("jobs.lib.yml", "jobs_build", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit", "jobs_deploy_versioned")
+#@ load("jobs.lib.yml", "jobs_os_specific", "jobs_deploy", "jobs_unittest", "jobs_inttest", "jobs_inttestcrit", "jobs_deploy_versioned")
 #@ load("@ytt:template", "template")
 name: Build-Test-Deploy
 
@@ -12,16 +12,6 @@ name: Build-Test-Deploy
     types: [labeled, opened, synchronize, reopened]
 
 jobs:
-  build: #@ jobs_build()
-  unittest: #@ jobs_unittest()
-  deploy_versioned:
-    if: "(github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release') || contains(github.event.pull_request.labels.*.name, 'run integration tests')"
-    _: #@ template.replace(jobs_deploy_versioned())
-  inttest_critical:
-    if: "github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'"
-    _: #@ template.replace(jobs_inttestcrit())
-  inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
-    _: #@ template.replace(jobs_inttest())
+  os_specific: #@ jobs_os_specific()
   deploy: #@ jobs_deploy()
 

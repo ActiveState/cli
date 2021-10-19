@@ -161,18 +161,17 @@ env:
 ---
 #@ def steps_inttest():
 name: "Integration Tests"
+if: "github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'"
 shell: bash
 run: |
   LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
   IFS=',' read -r -a TESTS <<< "$LABELS"
-  TEST_SUITE_TAGS=""
-  for i in "${TESTS[@]}"
-  do
-    :
+  TEST_SUITE_TAGS="critical"
+  for i in "${TESTS[@]}"; do
     START=${i%:*}
     if [ "$START" == "run-int-test-only" ]; then
-      TEST_SUITE=${i##*:}
-      TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
+      TAG=${i##*:}
+      TEST_SUITE_TAGS="TAG:$TEST_SUITE_TAGS"
     fi
   done
 
@@ -182,8 +181,6 @@ env:
   INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
   INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
   PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-  # Note: The AWS access tokens are needed to download temporary artifacts in alternative_int_test.go
-  # Remove these lines, once these changes are not necessary anymore.  
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
@@ -265,8 +262,10 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 #@ end
 ---
-#@ def steps_deploy_versioned():
-name: "Deploy Versioned"
+#@ def steps_deploy_danger():
+name: "Deploy for Integration Tests"
+description: "NEVER run this against production branches. This is meant for PR deployments."
+if: "github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'"
 shell: bash
 run: |
   state run deploy-updates

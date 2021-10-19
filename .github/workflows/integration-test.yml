@@ -89,18 +89,18 @@ jobs:
         CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
         MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
     - name: Integration Tests
+      if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' &&
+        github.ref != 'refs/heads/release'
       shell: bash
       run: |
         LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
         IFS=',' read -r -a TESTS <<< "$LABELS"
-        TEST_SUITE_TAGS=""
-        for i in "${TESTS[@]}"
-        do
-          :
+        TEST_SUITE_TAGS="critical"
+        for i in "${TESTS[@]}"; do
           START=${i%:*}
           if [ "$START" == "run-int-test-only" ]; then
-            TEST_SUITE=${i##*:}
-            TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
+            TAG=${i##*:}
+            TEST_SUITE_TAGS="TAG:$TEST_SUITE_TAGS"
           fi
         done
 
