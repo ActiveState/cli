@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -119,6 +120,9 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	}
 	p, err := process.NewProcess(int32(pid))
 	if err != nil {
+		if errors.Is(err, process.ErrorProcessNotRunning) {
+			return nil, nil
+		}
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
 
