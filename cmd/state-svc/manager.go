@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 
@@ -115,13 +117,19 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if pid == 0 {
 		return nil, nil
 	}
-	pidExists, err := process.PidExists(int32(pid))
+	p, err := process.NewProcess(int32(pid))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
-	if !pidExists {
+
+	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
+	exe, err := p.Exe()
+	if err != nil {
+		logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+	} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
 		return nil, nil
 	}
 
-	return &pid, nil
+	var rpid = int(p.Pid)
+	return &rpid, nil
 }
