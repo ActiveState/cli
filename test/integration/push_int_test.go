@@ -125,7 +125,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 
-	cp.ExpectLongString("An activestate.yaml has been created", time.Second * 20)
+	cp.ExpectLongString("An activestate.yaml has been created", time.Second*40)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
@@ -170,7 +170,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	pname := strutils.UUID()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
-	cp.Expect("Activated", 20*time.Second)
+	cp.Expect("Activated", 40*time.Second)
 	cp.WaitForInput(10 * time.Second)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
