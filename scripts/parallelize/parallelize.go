@@ -43,9 +43,10 @@ func run() error {
 		return readJob(os.Args[2])
 	}
 
+	jsonData := []byte(strings.Join(os.Args[1:], ""))
 	var jobs []Job
-	if err := json.Unmarshal([]byte(strings.Join(os.Args[1:], "")), &jobs); err != nil {
-		return errs.Wrap(err, "Invalid JSON. Args: %#v", os.Args[1:])
+	if err := json.Unmarshal(jsonData, &jobs); err != nil {
+		return errs.Wrap(err, "Invalid JSON. Data: %s", jsonData)
 	}
 
 	var wg sync.WaitGroup
@@ -69,22 +70,23 @@ func runJob(job Job) {
 		cond := constraints.NewPrimeConditional(nil, "", "", "", "")
 		run, err := cond.Eval(job.If)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not evaluate conditonal: %#v", job)
+			fmt.Fprintf(os.Stderr, "Could not evaluate conditonal: %s\n", job.If)
+			return
 		}
 		if !run {
-			fmt.Printf( "Skipping '%s' as per conditional: %s", job.ID, job.If)
+			fmt.Printf( "Skipping '%s' as per conditional: %s\n", job.ID, job.If)
 			return
 		}
 	}
 	if len(job.Args) == 0 {
-		fmt.Fprintf(os.Stderr, "Job must have arguments: %#v", job)
+		fmt.Fprintf(os.Stderr, "Job must have arguments: %#v\n", job)
 		return
 	}
 
 	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
 	outfile, err := os.Create(outname)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not create : %#v", job)
+		fmt.Fprintf(os.Stderr, "Could not create : %#v\n", job)
 	}
 	defer outfile.Close()
 

@@ -74,40 +74,40 @@ jobs:
         name: Parallel Tasks
         shell: bash
         run: |
-          go run scripts/parallelize/parallelize.go $(cat << EOM
-              [
-                  {
-                      "ID": "Unit-Tests",
-                      "Args": ["state", "run", "test"]
-                  },
-                  {
-                      "ID": "Build-CLI",
-                      "Args": ["state", "run", "build"]
-                  },
-                  {
-                      "ID": "Build-Service",
-                      "Args": ["state", "run", "build-svc"]
-                  },
-                  {
-                      "ID": "Build-Tray",
-                      "Args": ["state", "run", "build-tray"]
-                  },
-                  {
-                      "ID": "Build-Systray-App",
-                      "Args": ["state", "run", "build-systray-app"]
-                      "If": 'eq .OS.Name "MacOS"'
-                  },
-                  {
-                      "ID": "Build-Installer",
-                      "Args": ["state", "run", "build-installer"]
-                  },
-                  {
-                      "ID": "Build-Install-Scripts",
-                      "Args": ["state", "run", "build-install-scripts"]
-                  },
-              ]
-          EOM
-          )
+          go run scripts/parallelize/parallelize.go "$(cat <<'EOF'
+          [
+            {
+                "ID": "Unit-Tests",
+                "Args": ["state", "run", "test"]
+            },
+            {
+                "ID": "Build-CLI",
+                "Args": ["state", "run", "build"]
+            },
+            {
+                "ID": "Build-Service",
+                "Args": ["state", "run", "build-svc"]
+            },
+            {
+                "ID": "Build-Tray",
+                "Args": ["state", "run", "build-tray"]
+            },
+            {
+                "ID": "Build-Systray-App",
+                "Args": ["state", "run", "build-systray-app"],
+                "If": "eq .OS.Name \"MacOS\""
+            },
+            {
+                "ID": "Build-Installer",
+                "Args": ["state", "run", "build-installer"]
+            },
+            {
+                "ID": "Build-Install-Scripts",
+                "Args": ["state", "run", "build-install-scripts"]
+            }
+          ]
+          EOF
+          )"
 
       - # === Unit Tests ===
         name: Unit Tests
