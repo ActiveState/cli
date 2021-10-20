@@ -66,11 +66,23 @@ func run() error {
 func runJob(job Job) {
 	fmt.Printf("Running: %s\n", job.ID)
 
+	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
+	outfile, err := os.Create(outname)
+	if err != nil {
+		panic(fmt.Sprintf( "Could not create : %#v\n", job))
+	}
+	defer outfile.Close()
+
+	failure := func(msg string, args ...interface{}) {
+		fmt.Fprintf(outfile, msg + "\n1", args...)
+		fmt.Fprintf(os.Stderr, msg, args...)
+	}
+
 	if job.If != "" {
 		cond := constraints.NewPrimeConditional(nil, "", "", "", "")
 		run, err := cond.Eval(job.If)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Could not evaluate conditonal: %s\n", job.If)
+			failure("Could not evaluate conditonal: %s\n", job.If)
 			return
 		}
 		if !run {
@@ -79,16 +91,10 @@ func runJob(job Job) {
 		}
 	}
 	if len(job.Args) == 0 {
-		fmt.Fprintf(os.Stderr, "Job must have arguments: %#v\n", job)
+		failure("Job must have arguments: %#v\n", job)
 		return
 	}
 
-	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
-	outfile, err := os.Create(outname)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not create : %#v\n", job)
-	}
-	defer outfile.Close()
 
 	code, _, err := exeutils.Execute(job.Args[0], job.Args[1:], func(cmd *exec.Cmd) error {
 		cmd.Stdout = outfile
@@ -97,7 +103,7 @@ func runJob(job Job) {
 		return nil
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Executing job %s failed", job.ID)
+		failure("Executing job %s failed", job.ID)
 		return
 	}
 	outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
