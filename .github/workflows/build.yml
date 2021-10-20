@@ -70,47 +70,80 @@ jobs:
         shell: bash
         run: state run preprocess
 
+      - # === Parallel Tasks ===
+        name: Parallel Tasks
+        shell: bash
+        run: |
+          go run scripts/parallelize/parallelize.go $(cat << EOM
+              [
+                  {
+                      "ID": "Unit-Tests",
+                      "Args": ["state", "run", "test"]
+                  },
+                  {
+                      "ID": "Build-CLI",
+                      "Args": ["state", "run", "build"]
+                  },
+                  {
+                      "ID": "Build-Service",
+                      "Args": ["state", "run", "build-svc"]
+                  },
+                  {
+                      "ID": "Build-Tray",
+                      "Args": ["state", "run", "build-tray"]
+                  },
+                  {
+                      "ID": "Build-Systray-App",
+                      "Args": ["state", "run", "build-systray-app"]
+                      "If": 'eq .OS.Name "MacOS"'
+                  },
+                  {
+                      "ID": "Build-Installer",
+                      "Args": ["state", "run", "build-installer"]
+                  },
+                  {
+                      "ID": "Build-Install-Scripts",
+                      "Args": ["state", "run", "build-install-scripts"]
+                  },
+              ]
+          EOM
+          )
+
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc` | gotestfmt
+        run: go run scripts/parallelize/parallelize.go job Unit-Test | gotestfmt
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
         shell: bash
-        run: state run build
+        run: go run scripts/parallelize/parallelize.go job Build-CLI
 
       - # === "Build: Service" ===
         name: "Build: Service"
         shell: bash
-        run: state run build-svc
+        run: go run scripts/parallelize/parallelize.go job Build-Svc
 
       - # === "Build: Tray App" ===
         name: "Build: Tray App"
         shell: bash
-        run: state run build-tray
-
-      - # === "Build: Update Dialog (Linux & Mac)" ===
-        name: "Build: Update Dialog (Linux & Mac)"
-        if: runner.os != 'Windows'
-        shell: bash
-        run: state run build-updlg prod
+        run: go run scripts/parallelize/parallelize.go job Build-Tray
 
       - # === "Build: Installer" ===
         name: "Build: Installer"
         shell: bash
-        run: state run build-installer
+        run: go run scripts/parallelize/parallelize.go job Build-Installer
 
       - # === "Build: Install Scripts" ===
         name: "Build: Install Scripts"
         shell: bash
-        run: state run build-install-scripts
+        run: go run scripts/parallelize/parallelize.go job Build-Install-Scripts
 
       - # === "Build: Systray App" ===
         name: "Build: Systray App"
         shell: bash
         if: runner.os == 'macOS'
-        run: state run build-systray-app
+        run: go run scripts/parallelize/parallelize.go job Build-Systray-App
 
       - # === "Build: State MSI" ===
         name: "Build: State MSI"
