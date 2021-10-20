@@ -115,7 +115,7 @@ jobs:
         shell: bash
         run: |
           ls -ahl scripts/parallelize
-          go run scripts/parallelize/parallelize.go job Unit-Test | gotestfmt
+          go run scripts/parallelize/parallelize.go job Unit-Tests | gotestfmt
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
