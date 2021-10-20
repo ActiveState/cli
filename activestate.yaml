@@ -234,8 +234,6 @@ scripts:
       set -e
       BRANCH=${GITHUB_HEAD_REF:=HEAD}
       PARSED=$(git rev-parse --abbrev-ref $REF || true)
-      echo "Branch: $BRANCH"
-      echo "Parsed: $PARSED"
       if [ "$PARSED" != "" ]; then
         BRANCH=$PARSED
       fi
@@ -267,22 +265,17 @@ scripts:
     language: bash
     value: |
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
-  - name: build-workflows
+  - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
-      set -e
-      if ! type "ytt" &> /dev/null; then
-        go install github.com/k14s/ytt/cmd/ytt@v0.32.0
-      fi
-      pwd
-      mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
-      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
-      mv /tmp/README.md .github/workflows
-
       $scripts.build-for.path._posix() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
+
+      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
