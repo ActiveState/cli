@@ -4,7 +4,6 @@ name: jira-description-action
     types:
     - opened
     - edited
-    - synchronize
 jobs:
   add-jira-description:
     runs-on: ubuntu-latest
