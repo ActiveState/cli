@@ -87,7 +87,7 @@ func runJob(job Job) {
 
 	outfile, err := os.Create(outname)
 	if err != nil {
-		panic(fmt.Sprintf("Could not create : %#v\n", job))
+		panic(fmt.Sprintf("Could not create: %#v, error: %s\n", job, errs.JoinMessage(err)))
 	}
 	defer outfile.Close()
 
