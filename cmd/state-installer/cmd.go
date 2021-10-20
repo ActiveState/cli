@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -233,14 +234,14 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, params)
+		return postInstallEvents(out, cfg, params)
 	}
 
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
-		return postInstallEvents(out, params)
+		return postInstallEvents(out, cfg, params)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -280,18 +281,23 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, params *Params) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params) error {
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	stateExe := appinfo.StateApp(installPath).Exec()
+	pathVal := os.Getenv("PATH")
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	env := []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+	if !strings.Contains(pathVal, binPath) && !strings.Contains(pathVal, binPath+string(os.PathSeparator)) {
+		pathVal = binPath + string(os.PathListSeparator) + pathVal
+	}
+	env := []string{"PATH=" + pathVal}
+
+	stateExe := appinfo.StateApp(installPath).Exec()
 
 	// Execute requested command, these are mutually exclusive
 	switch {
@@ -313,6 +319,12 @@ func postInstallEvents(out output.Outputer, params *Params) error {
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
+		}
+	default:
+		out.Print("\nStarting new shell\n")
+		ss := subshell.New(cfg)
+		if _, _, err := exeutils.ExecuteAndPipeStd(ss.Shell(), nil, env); err != nil {
+			return errs.Wrap(err, "Subshell; error returned: %s", errs.JoinMessage(err))
 		}
 	}
 
