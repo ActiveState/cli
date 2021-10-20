@@ -63,7 +63,15 @@ jobs:
             sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
           fi
 
+          ls -ahl $bin
+
           printenv
+
+      - # === Setup Windows ===
+        name: Setup (Windows)
+        shell: pwsh
+        run: |
+          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - # === Preprocess ===
         name: Preprocess
@@ -280,12 +288,6 @@ jobs:
           echo "$bin" >> $GITHUB_PATH
           ls -ahl $bin
           printenv
-
-      - # === Setup Windows ===
-        name: Setup (Windows)
-        shell: pwsh
-        run: |
-          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
