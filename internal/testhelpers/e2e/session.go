@@ -63,7 +63,7 @@ var (
 	PersistentUsername string
 	PersistentPassword string
 
-	defaultTimeout = 20 * time.Second
+	defaultTimeout = 40 * time.Second
 	authnTimeout   = 40 * time.Second
 )
 
