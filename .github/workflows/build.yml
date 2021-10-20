@@ -80,9 +80,7 @@ jobs:
         name: Parallel Tasks
         shell: bash
         run: |
-          which state
           export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
-          which state
           parallelize "$(cat <<'EOF'
           [
             {
