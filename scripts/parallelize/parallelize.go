@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/gammazero/workerpool"
 )
@@ -67,13 +67,27 @@ func run() error {
 	return nil
 }
 
+func jobDir() string {
+	path, err := storage.AppDataPath()
+	if err != nil {
+		panic(err)
+	}
+
+	path = filepath.Join(path, "jobs")
+	if err := fileutils.MkdirUnlessExists(path); err != nil {
+		panic(err)
+	}
+
+	return path
+}
+
 func runJob(job Job) {
-	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
+	outname := filepath.Join(jobDir(), fmt.Sprintf("%s.out", job.ID))
 	fmt.Printf("%s: saving to: %s\n", job.ID, outname)
 
 	outfile, err := os.Create(outname)
 	if err != nil {
-		panic(fmt.Sprintf( "Could not create : %#v\n", job))
+		panic(fmt.Sprintf("Could not create : %#v\n", job))
 	}
 	defer outfile.Close()
 
@@ -115,7 +129,7 @@ func runJob(job Job) {
 }
 
 func readJob(id string) error {
-	jobfile := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", id))
+	jobfile := filepath.Join(jobDir(), fmt.Sprintf("%s.out", id))
 	if ! fileutils.FileExists(jobfile) {
 		return errs.New("Job does not exist: %s", jobfile)
 	}
