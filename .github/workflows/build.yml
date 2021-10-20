@@ -63,8 +63,6 @@ jobs:
             sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
           fi
 
-          ls -ahl $bin
-
           printenv
 
       - # === Setup Windows ===
@@ -82,6 +80,9 @@ jobs:
         name: Parallel Tasks
         shell: bash
         run: |
+          which state
+          export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
+          which state
           go run scripts/parallelize/parallelize.go "$(cat <<'EOF'
           [
             {
@@ -121,7 +122,6 @@ jobs:
           ]
           EOF
           )"
-          ls -ahl scripts/parallelize
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
           MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
@@ -129,9 +129,7 @@ jobs:
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: |
-          ls -ahl scripts/parallelize
-          go run scripts/parallelize/parallelize.go job Unit-Tests | gotestfmt
+        run: go run scripts/parallelize/parallelize.go job Unit-Tests | gotestfmt
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
