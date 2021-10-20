@@ -12,7 +12,7 @@ jobs:
       name: jira-description-action
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
+        jira-token: '${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_TOKEN }}'
         jira-base-url: https://activestatef.atlassian.net
         jira-project-key: DX
         use: branch
