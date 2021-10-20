@@ -35,7 +35,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     # === OS Specific Steps ===
     steps:
