@@ -38,7 +38,7 @@ func run() error {
 		return errs.New("Must provide single argument with JSON blob, or [job <ID>] to check the results of a job.")
 	}
 
-	if os.Args[1] == "job" {
+	if os.Args[1] == "results" {
 		if len(os.Args) != 3 {
 			return errs.New("Must provide job ID")
 		}

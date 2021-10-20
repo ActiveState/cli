@@ -83,7 +83,7 @@ jobs:
           which state
           export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           which state
-          go run scripts/parallelize/parallelize.go "$(cat <<'EOF'
+          parallelize "$(cat <<'EOF'
           [
             {
                 "ID": "Unit-Tests",
@@ -129,44 +129,44 @@ jobs:
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Unit-Tests | gotestfmt
+        run: parallelize results Unit-Tests | gotestfmt
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-CLI
+        run: parallelize results Build-CLI
 
       - # === "Build: Service" ===
         name: "Build: Service"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Service
+        run: parallelize results Build-Service
 
       - # === "Build: Tray App" ===
         name: "Build: Tray App"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Tray
+        run: parallelize results Build-Tray
 
       - # === "Build: Installer" ===
         name: "Build: Installer"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Installer
+        run: parallelize results Build-Installer
 
       - # === "Build: Install Scripts" ===
         name: "Build: Install Scripts"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Install-Scripts
+        run: parallelize results Build-Install-Scripts
 
       - # === "Build: Systray App" ===
         name: "Build: Systray App"
         shell: bash
         if: runner.os == 'macOS'
-        run: go run scripts/parallelize/parallelize.go job Build-Systray-App
+        run: parallelize results Build-Systray-App
 
       - # === "Build: Languages MSI" ===
         name: "Build: Languages MSI"
         if: runner.os == 'Windows'
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Languages-MSI
+        run: parallelize results Build-Languages-MSI
 
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
