@@ -1,4 +1,4 @@
-package auth_test
+package integration_test
 
 import (
 	"net/http"

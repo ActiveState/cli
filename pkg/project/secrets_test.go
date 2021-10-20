@@ -120,27 +120,6 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	suite.Zero(value)
 }
 
-func (suite *SecretsExpanderTestSuite) TestNoAuth() {
-	authentication.LegacyGet().Logout()
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
-	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
-	suite.Error(err)
-	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret")
-}
-
-func (suite *SecretsExpanderTestSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret")
-}
-
-func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
-	// secret is defined in the project, but not in the database
-	suite.assertExpansionFailure("undefined-secret")
-}
-
 func (suite *SecretsExpanderTestSuite) TestProjectSecret() {
 	suite.assertExpansionSuccess("proj-secret", "proj-value", false)
 }

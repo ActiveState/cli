@@ -1,6 +1,6 @@
 // +build linux darwin
 
-package lockfile
+package integration
 
 import (
 	"os"

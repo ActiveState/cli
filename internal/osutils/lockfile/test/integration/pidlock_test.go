@@ -1,8 +1,9 @@
-package lockfile
+package integration
 
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,9 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"io/ioutil"
-
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -71,13 +71,13 @@ func Test_acquirePidLockProcesses(t *testing.T) {
 			require.Equal(tt, 6, n)
 			assert.Equal(tt, "LOCKED", string(buf))
 
-			pl, err := NewPidLock(lockFile)
+			pl, err := lockfile.NewPidLock(lockFile)
 			require.NoError(tt, err)
 
 			// trying to acquire the lock in this process should fail
 			err = pl.TryLock()
 			require.Error(tt, err)
-			alreadyErr := &AlreadyLockedError{}
+			alreadyErr := &lockfile.AlreadyLockedError{}
 			assert.True(tt, errors.As(err, &alreadyErr))
 
 			err = pl.Close()
@@ -184,12 +184,12 @@ func Test_acquirePidLock(t *testing.T) {
 
 	lockFile := filepath.Join(tmpDir, "lockfile")
 
-	pl, err := NewPidLock(lockFile)
+	pl, err := lockfile.NewPidLock(lockFile)
 	require.NoError(t, err)
 	err = pl.TryLock()
 	require.NoError(t, err)
 
-	pl2, err := NewPidLock(lockFile)
+	pl2, err := lockfile.NewPidLock(lockFile)
 	require.NoError(t, err)
 	err = pl2.TryLock()
 	assert.Error(t, err)
@@ -202,7 +202,7 @@ func Test_acquirePidLock(t *testing.T) {
 	f, err := os.Stat(lockFile)
 	assert.True(t, err != nil && f == nil)
 
-	pl, err = NewPidLock(lockFile)
+	pl, err = lockfile.NewPidLock(lockFile)
 	require.NoError(t, err)
 	err = pl.TryLock()
 	require.NoError(t, err)
@@ -212,7 +212,7 @@ func Test_acquirePidLock(t *testing.T) {
 	f, err = os.Stat(lockFile)
 	assert.True(t, err == nil && !f.IsDir())
 
-	pl, err = NewPidLock(lockFile)
+	pl, err = lockfile.NewPidLock(lockFile)
 	require.NoError(t, err)
 
 	err = pl.TryLock()
@@ -223,6 +223,6 @@ func Test_acquirePidLock(t *testing.T) {
 }
 
 func TestPidExists(t *testing.T) {
-	assert.True(t, PidExists(os.Getpid()))
-	assert.False(t, PidExists(99999999))
+	assert.True(t, lockfile.PidExists(os.Getpid()))
+	assert.False(t, lockfile.PidExists(99999999))
 }

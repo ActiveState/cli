@@ -1,7 +1,6 @@
 package git
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -87,37 +86,6 @@ func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)
 	}
-}
-
-func (suite *GitTestSuite) TestCloneProjectRepo() {
-	type tempProject struct {
-		Name           string `json:"name"`
-		RepoURL        string `json:"repo_url"`
-		OrganizationID string `json:"organization_id"`
-	}
-
-	suite.authMock.MockLoggedin()
-
-	response := `{"data": {"projects": [%s]}}`
-	proj := tempProject{
-		Name:           "clone",
-		RepoURL:        suite.dir + "/.git",
-		OrganizationID: "00010001-0001-0001-0001-000100010001",
-	}
-
-	file, err := json.MarshalIndent(proj, "", " ")
-	suite.NoError(err, "could not marshall tempProject struct")
-
-	data := fmt.Sprintf(response, string(file))
-	suite.graphMock.RegisterWithResponseBody("POST", "", 200, string(data))
-
-	targetDir := filepath.Join(suite.dir, "target-clone-dir")
-
-	repo := NewRepo()
-	err = repo.CloneProject("test-owner", "test-project", targetDir, outputhelper.NewCatcher(), analytics.New())
-	suite.Require().NoError(err, "should clone without issue")
-	suite.FileExists(filepath.Join(targetDir, "activestate.yaml"), "activestate.yaml file should have been cloned")
-	suite.FileExists(filepath.Join(targetDir, "test-file"), "tempororary file should have been cloned")
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
