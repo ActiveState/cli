@@ -51,7 +51,7 @@ func run() error {
 		return errs.Wrap(err, "Invalid JSON. Data: %s", jsonData)
 	}
 
-	wp := workerpool.New(2)
+	wp := workerpool.New(5)
 	for _, job := range jobs {
 		func(job Job) {
 			wp.Submit(func() {
