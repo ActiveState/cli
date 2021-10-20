@@ -22,6 +22,8 @@ scripts:
     value: |
       set -e
       BRANCH=${GITHUB_HEAD_REF:=HEAD}
+      echo "Branch: $BRANCH"
+      git rev-parse --abbrev-ref $REF || true
       BRANCH=$(git rev-parse --abbrev-ref $REF || echo $BRANCH)
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
