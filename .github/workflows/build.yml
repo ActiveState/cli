@@ -278,7 +278,14 @@ jobs:
           bin=$(pwd)/.github/deps/${{ runner.os }}/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
+          ls -ahl $bin
           printenv
+
+      - # === Setup Windows ===
+        name: Setup (Windows)
+        shell: pwsh
+        run: |
+          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
