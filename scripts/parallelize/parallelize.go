@@ -83,7 +83,7 @@ func jobDir() string {
 
 func runJob(job Job) {
 	outname := filepath.Join(jobDir(), fmt.Sprintf("%s.out", job.ID))
-	fmt.Printf("%s: saving to: %s\n", job.ID, outname)
+	fmt.Printf("%s: saving to %s\n", job.ID, outname)
 
 	outfile, err := os.Create(outname)
 	if err != nil {
