@@ -104,11 +104,19 @@ jobs:
             {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Languages-MSI",
+                "Args": ["state", "run", "ci-build-languages-msi"],
+                "If": "eq .OS.Name \"Windows\""
             }
           ]
           EOF
           )"
           ls -ahl scripts/parallelize
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 
       - # === Unit Tests ===
         name: Unit Tests
@@ -125,7 +133,7 @@ jobs:
       - # === "Build: Service" ===
         name: "Build: Service"
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Build-Svc
+        run: go run scripts/parallelize/parallelize.go job Build-Service
 
       - # === "Build: Tray App" ===
         name: "Build: Tray App"
@@ -148,36 +156,11 @@ jobs:
         if: runner.os == 'macOS'
         run: go run scripts/parallelize/parallelize.go job Build-Systray-App
 
-      - # === "Build: State MSI" ===
-        name: "Build: State MSI"
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-          export SHELL=bash
-          state run build-msi-state
-          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} build/msi/state_tool.msi
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-
       - # === "Build: Languages MSI" ===
         name: "Build: Languages MSI"
         if: runner.os == 'Windows'
         shell: bash
-        run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-          export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-          export SHELL=bash
-          state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-          signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-          state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-          signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-          state run build-base-language-msi
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+        run: go run scripts/parallelize/parallelize.go job Build-Languages-MSI
 
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
