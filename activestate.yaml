@@ -233,9 +233,12 @@ scripts:
     value: |
       set -e
       BRANCH=${GITHUB_HEAD_REF:=HEAD}
+      PARSED=$(git rev-parse --abbrev-ref $REF || true)
       echo "Branch: $BRANCH"
-      git rev-parse --abbrev-ref $REF || true
-      BRANCH=$(git rev-parse --abbrev-ref $REF || echo $BRANCH)
+      echo "Parsed: $PARSED"
+      if [ "$PARSED" != "" ]; then
+        BRANCH=$PARSED
+      fi
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
         exit 1
