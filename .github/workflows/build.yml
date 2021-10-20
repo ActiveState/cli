@@ -226,7 +226,7 @@ jobs:
             if [ "$START" == "Test" ]; then
               TAG=${i##*:}
               TAG=$(echo $TAG | xargs)
-              TEST_SUITE_TAGS="TAG:$TEST_SUITE_TAGS"
+              TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
             fi
           done
 
