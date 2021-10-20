@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constraints"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/gammazero/workerpool"
 )
 
 type Job struct {
@@ -51,19 +51,18 @@ func run() error {
 		return errs.Wrap(err, "Invalid JSON. Data: %s", jsonData)
 	}
 
-	var wg sync.WaitGroup
+	wp := workerpool.New(3)
 	for _, job := range jobs {
-		wg.Add(1)
-		go func(job Job) {
-			t := time.Now()
-			fmt.Printf("Running: %s\n", job.ID)
-			defer wg.Done()
-			runJob(job)
-			fmt.Printf("Finished %s after %s\n", job.ID, time.Since(t))
+		func(job Job) {
+			wp.Submit(func() {
+				t := time.Now()
+				fmt.Printf("Running: %s\n", job.ID)
+				runJob(job)
+				fmt.Printf("Finished %s after %s\n", job.ID, time.Since(t))
+			})
 		}(job)
 	}
-
-	wg.Wait()
+	wp.StopWait()
 
 	return nil
 }
