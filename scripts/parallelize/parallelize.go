@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
@@ -54,8 +55,11 @@ func run() error {
 	for _, job := range jobs {
 		wg.Add(1)
 		go func(job Job) {
+			t := time.Now()
+			fmt.Printf("Running: %s\n", job.ID)
 			defer wg.Done()
 			runJob(job)
+			fmt.Printf("Finished %s after %s\n", time.Since(t))
 		}(job)
 	}
 
@@ -66,7 +70,7 @@ func run() error {
 
 func runJob(job Job) {
 	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
-	fmt.Printf("Running: %s -- saving to: %s\n", job.ID, outname)
+	fmt.Printf("%s: saving to: %s\n", job.ID, outname)
 
 	outfile, err := os.Create(outname)
 	if err != nil {
@@ -76,7 +80,7 @@ func runJob(job Job) {
 
 	failure := func(msg string, args ...interface{}) {
 		fmt.Fprintf(outfile, msg + "\n1", args...)
-		fmt.Fprintf(os.Stderr, msg, args...)
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s: ", job.ID) + msg, args...)
 	}
 
 	if job.If != "" {
@@ -87,7 +91,7 @@ func runJob(job Job) {
 			return
 		}
 		if !run {
-			fmt.Printf( "Skipping '%s' as per conditional: %s\n", job.ID, job.If)
+			fmt.Printf( "%s: Skipping as per conditional: %s\n", job.ID, job.If)
 			return
 		}
 	}
@@ -108,7 +112,7 @@ func runJob(job Job) {
 		return
 	}
 	outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
-	fmt.Printf("%s Completed, exit code: %d\n", job.ID, code)
+	fmt.Printf("%s: Completed, exit code: %d\n", job.ID, code)
 }
 
 func readJob(id string) error {
