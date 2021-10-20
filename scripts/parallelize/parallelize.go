@@ -59,7 +59,7 @@ func run() error {
 			fmt.Printf("Running: %s\n", job.ID)
 			defer wg.Done()
 			runJob(job)
-			fmt.Printf("Finished %s after %s\n", time.Since(t))
+			fmt.Printf("Finished %s after %s\n", job.ID, time.Since(t))
 		}(job)
 	}
 
