@@ -180,7 +180,15 @@ jobs:
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
           signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
           signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 
+      - # === Sign Install Scripts (Windows only) ===
+        name: Sign Install Scripts (Windows only)
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
           $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
