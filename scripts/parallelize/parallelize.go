@@ -82,7 +82,7 @@ func runJob(job Job) {
 		cond := constraints.NewPrimeConditional(nil, "", "", "", "")
 		run, err := cond.Eval(job.If)
 		if err != nil {
-			failure("Could not evaluate conditonal: %s\n", job.If)
+			failure("Could not evaluate conditonal: %s, error: %s\n", job.If, errs.JoinMessage(err))
 			return
 		}
 		if !run {
@@ -103,7 +103,7 @@ func runJob(job Job) {
 		return nil
 	})
 	if err != nil {
-		failure("Executing job %s failed", job.ID)
+		failure("Executing job %s failed, error: %s", job.ID, errs.JoinMessage(err))
 		return
 	}
 	outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
