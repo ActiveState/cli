@@ -186,7 +186,7 @@ jobs:
 
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
-        shell: pwsh
+        shell: powershell
         if: runner.os == 'Windows'
         run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
