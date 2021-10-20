@@ -192,7 +192,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
+        if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
           state run deploy-updates
@@ -203,19 +203,30 @@ jobs:
 
       - # === Integration Tests ===
         name: Integration Tests
-        if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
+        if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
           LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
           IFS=',' read -r -a TESTS <<< "$LABELS"
-          TEST_SUITE_TAGS="critical"
+          TEST_SUITE_TAGS=""
           for i in "${TESTS[@]}"; do
             START=${i%:*}
-            if [ "$START" == "run-int-test-only" ]; then
+            if [ "$START" == "Test" ]; then
               TAG=${i##*:}
+              TAG=$(echo $TAG | xargs)
               TEST_SUITE_TAGS="TAG:$TEST_SUITE_TAGS"
             fi
           done
+
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          echo "Target branch: $TARGET_BRANCH"
+
+          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+            echo "Not running because no test labels were set nor beta or release were targeted."
+            exit 0
+          fi
+
+          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
           SHELL='' go test -v ./test/integration -v | gotestfmt
