@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type Job struct {
@@ -96,7 +97,7 @@ func runJob(job Job) {
 	}
 
 
-	code, _, err := exeutils.Execute(job.Args[0], job.Args[1:], func(cmd *exec.Cmd) error {
+	code, _, err := exeutils.Execute(job.Args[0] + osutils.ExeExt, job.Args[1:], func(cmd *exec.Cmd) error {
 		cmd.Stdout = outfile
 		cmd.Stderr = outfile
 		cmd.Env = append(job.Env, os.Environ()...)
