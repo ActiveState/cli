@@ -108,11 +108,14 @@ jobs:
           ]
           EOF
           )"
+          ls -ahl scripts/parallelize
 
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: go run scripts/parallelize/parallelize.go job Unit-Test | gotestfmt
+        run: |
+          ls -ahl scripts/parallelize
+          go run scripts/parallelize/parallelize.go job Unit-Test | gotestfmt
 
       - # === "Build: CLI" ===
         name: "Build: CLI"

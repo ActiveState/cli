@@ -64,9 +64,9 @@ func run() error {
 }
 
 func runJob(job Job) {
-	fmt.Printf("Running: %s\n", job.ID)
-
 	outname := filepath.Join(environment.GetRootPathUnsafe(), "scripts", "parallelize", "jobs", fmt.Sprintf("%s.out", job.ID))
+	fmt.Printf("Running: %s -- saving to: %s\n", job.ID, outname)
+
 	outfile, err := os.Create(outname)
 	if err != nil {
 		panic(fmt.Sprintf( "Could not create : %#v\n", job))
