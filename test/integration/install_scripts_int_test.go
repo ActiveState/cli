@@ -139,7 +139,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", time.Second*20)
+	cp.Expect("Installation Complete", time.Second*40)
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory

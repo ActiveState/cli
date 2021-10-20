@@ -55,8 +55,8 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 		)
 	}
 
-	cp.Expect("Installing", 20*time.Second)
-	cp.Expect("Configuring", 20*time.Second)
+	cp.Expect("Installing", 40*time.Second)
+	cp.Expect("Configuring", 40*time.Second)
 	if runtime.GOOS != "windows" {
 		cp.Expect("Symlinking", 30*time.Second)
 	}
