@@ -32,5 +32,6 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(HistoryIntegrationTestSuite))
 }

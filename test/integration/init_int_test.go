@@ -68,5 +68,6 @@ func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(InitIntegrationTestSuite))
 }

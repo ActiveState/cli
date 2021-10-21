@@ -59,5 +59,6 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 }
 
 func TestUpdateGenIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(UpdateGenIntegrationTestSuite))
 }

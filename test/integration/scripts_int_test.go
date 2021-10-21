@@ -48,5 +48,6 @@ func (suite *ScriptsIntegrationTestSuite) TestRunSubscripts() {
 }
 
 func TestScriptsIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ScriptsIntegrationTestSuite))
 }

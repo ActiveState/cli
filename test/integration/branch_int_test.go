@@ -109,5 +109,6 @@ func (suite *BranchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session,
 }
 
 func TestBranchIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(BranchIntegrationTestSuite))
 }

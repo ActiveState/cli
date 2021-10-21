@@ -98,5 +98,6 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PullIntegrationTestSuite))
 }

@@ -570,6 +570,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Command() {
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }
 

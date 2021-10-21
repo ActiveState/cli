@@ -79,6 +79,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }
 

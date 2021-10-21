@@ -210,5 +210,6 @@ func (suite *BundleIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session)
 }
 
 func TestBundleIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(BundleIntegrationTestSuite))
 }

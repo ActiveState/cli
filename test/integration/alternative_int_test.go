@@ -186,5 +186,6 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestActivateRuby() {
 }
 
 func TestAlternativeArtifactIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(AlternativeArtifactIntegrationTestSuite))
 }

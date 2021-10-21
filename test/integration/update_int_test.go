@@ -161,7 +161,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	}
 
 	for _, tt := range tests {
-		suite.Run(tt.Name, func() {
+		t.Parallel()
+	suite.Run(tt.Name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
@@ -204,7 +205,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	}
 
 	for _, tt := range tests {
-		suite.Run(tt.name, func() {
+		t.Parallel()
+	suite.Run(tt.name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 			// use unique exe
@@ -218,6 +220,7 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
 	}
+	t.Parallel()
 	suite.Run(t, new(UpdateIntegrationTestSuite))
 }
 

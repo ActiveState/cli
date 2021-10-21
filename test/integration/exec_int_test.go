@@ -166,5 +166,6 @@ echo "Hello $name!"
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(ExecIntegrationTestSuite))
 }

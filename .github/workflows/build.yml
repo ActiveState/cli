@@ -33,6 +33,7 @@ jobs:
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
+      GOMAXPROCS: 4
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10

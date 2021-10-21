@@ -463,5 +463,6 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }

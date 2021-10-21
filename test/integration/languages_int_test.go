@@ -118,5 +118,6 @@ func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts 
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(LanguagesIntegrationTestSuite))
 }
