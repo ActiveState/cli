@@ -102,6 +102,5 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 }
 
 func TestCveIntegraionTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CveIntegrationTestSuite))
 }

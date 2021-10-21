@@ -68,6 +68,5 @@ events:
 }
 
 func TestEventsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(EventsIntegrationTestSuite))
 }

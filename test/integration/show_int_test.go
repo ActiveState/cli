@@ -90,6 +90,5 @@ scripts:
 }
 
 func TestShowIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ShowIntegrationTestSuite))
 }

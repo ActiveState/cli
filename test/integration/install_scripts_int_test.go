@@ -182,6 +182,5 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(InstallScriptsIntegrationTestSuite))
 }

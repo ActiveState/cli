@@ -76,8 +76,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	}
 
 	for _, tt := range tests {
-		t.Parallel()
-	suite.Run(tt.name, func() {
+		suite.Run(tt.name, func() {
 			pjfile := projectfile.Project{
 				Project: lockedProjectURL(),
 			}
@@ -132,8 +131,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 		if tt.Forced || tt.Confirm {
 			suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 		}
-		t.Parallel()
-	suite.Run(tt.Name, func() {
+		suite.Run(tt.Name, func() {
 			suite.OnlyRunForTags(tagsuite.Update)
 			pjfile := projectfile.Project{
 				Project: lockedProjectURL(),

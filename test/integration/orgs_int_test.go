@@ -12,6 +12,5 @@ type OrganizationsIntegrationTestSuite struct {
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(OrganizationsIntegrationTestSuite))
 }

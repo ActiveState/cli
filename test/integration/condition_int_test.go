@@ -236,6 +236,5 @@ scripts:
 }
 
 func TestConditionIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(ConditionIntegrationTestSuite))
 }

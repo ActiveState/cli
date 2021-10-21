@@ -282,6 +282,5 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(RunIntegrationTestSuite))
 }

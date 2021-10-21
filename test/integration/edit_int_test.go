@@ -125,6 +125,5 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(EditIntegrationTestSuite))
 }

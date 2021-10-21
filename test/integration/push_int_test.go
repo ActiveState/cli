@@ -281,6 +281,5 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 }
 
 func TestPushIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PushIntegrationTestSuite))
 }

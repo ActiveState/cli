@@ -51,6 +51,5 @@ func (suite *InfoIntegrationTestSuite) TestInfo_UnavailableVersion() {
 }
 
 func TestInfoIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(InfoIntegrationTestSuite))
 }

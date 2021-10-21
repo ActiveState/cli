@@ -146,6 +146,5 @@ func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Sessi
 }
 
 func TestPlatformsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PlatformsIntegrationTestSuite))
 }

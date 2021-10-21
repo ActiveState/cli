@@ -101,6 +101,5 @@ func (suite *LanguageMSITestSuite) TestActivePerl() {
 }
 
 func TestLanguageMSITestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(LanguageMSITestSuite))
 }

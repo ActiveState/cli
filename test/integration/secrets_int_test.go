@@ -58,6 +58,5 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(SecretsIntegrationTestSuite))
 }

@@ -418,6 +418,5 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(DeployIntegrationTestSuite))
 }
