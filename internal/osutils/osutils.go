@@ -135,7 +135,7 @@ func Executable() string {
 // ExecutableName returns the name of the executable called with the extension
 // removed and falls back to the command used to call the executable.
 func ExecutableName() string {
-	name := path.Base(Executable())
+	name := filepath.Base(Executable())
 	name = strings.TrimSuffix(name, path.Ext(name))
 	return name
 }
