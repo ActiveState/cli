@@ -187,27 +187,6 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
 	suite.Error(err)
 }
 
-func (suite *RSAKeypairTestSuite) TestMatchPublicKey_DifferentPublicKeys() {
-	kp1, err := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(err)
-	kp2, err := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(err)
-
-	pubkey2PEM, err := kp2.EncodePublicKey()
-	suite.Require().Nil(err)
-
-	suite.False(kp1.MatchPublicKey(pubkey2PEM))
-}
-
-func (suite *RSAKeypairTestSuite) TestMatchPublicKey_SamePublicKey() {
-	kp, err := keypairs.GenerateRSA(1024)
-	suite.Require().Nil(err)
-
-	pubkeyPEM, err := kp.EncodePublicKey()
-	suite.Require().Nil(err)
-
-	suite.True(kp.MatchPublicKey(pubkeyPEM))
-}
 
 func Test_RSAKeypair_TestSuite(t *testing.T) {
 	suite.Run(t, new(RSAKeypairTestSuite))

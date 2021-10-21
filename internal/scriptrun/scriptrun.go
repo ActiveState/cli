@@ -128,7 +128,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 		}
 
 		logging.Debug("Checking for %s on %s", execPath, searchPath)
-		if pathProvidesExec(searchPath, execPath) {
+		if PathProvidesExec(searchPath, execPath) {
 			lang = l
 			logging.Debug("Found %s", execPath)
 			break
@@ -192,6 +192,6 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	return nil
 }
 
-func pathProvidesExec(path, exec string) bool {
+func PathProvidesExec(path, exec string) bool {
 	return exeutils.FindExecutableOnPath(exec, path) != ""
 }

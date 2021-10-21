@@ -20,8 +20,12 @@ scripts:
     if: eq .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
-      REF=${GITHUB_HEAD_REF:=HEAD}
-      BRANCH=$(git rev-parse --abbrev-ref $REF)
+      set -e
+      BRANCH=${GITHUB_HEAD_REF:=HEAD}
+      PARSED=$(git rev-parse --abbrev-ref $REF || true)
+      if [ "$PARSED" != "" ]; then
+        BRANCH=$PARSED
+      fi
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
         exit 1
@@ -92,6 +96,18 @@ scripts:
       mkdir -p build/msi
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
       rm -Rf build/msi-language
+  - name: ci-build-languages-msi
+    standalone: true
+    language: bash
+    value: |
+      echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+      export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+      export SHELL=bash
+      state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
+      state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
+      state run build-base-language-msi
   - name: run-updlg
     description: Runs the update dialog in debug mode
     standalone: true

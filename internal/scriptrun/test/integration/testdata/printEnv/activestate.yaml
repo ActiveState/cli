@@ -1,0 +1,8 @@
+project: https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001
+scripts:
+  - name: run
+    value: printenv
+  - name: run
+    value: cmd.exe /C SET
+    constraints:
+        os: windows
