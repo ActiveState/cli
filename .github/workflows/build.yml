@@ -185,7 +185,7 @@ jobs:
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_HEAD_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
