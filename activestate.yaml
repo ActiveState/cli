@@ -252,6 +252,8 @@ scripts:
       INSTALLERS_DIR=build/installers/$BRANCH
       mkdir -p $INSTALLERS_DIR
 
+      echo "Copying to $INSTALLERS_DIR"
+
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install${constants.SCRIPT_EXT}
       cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
 
