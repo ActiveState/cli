@@ -51,6 +51,8 @@ constants:
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
+  - name: SCRIPT_EXT
+    value: .sh
 scripts:
   - name: install-deps
     language: bash
@@ -228,15 +230,17 @@ scripts:
   - name: build-install-scripts
     language: bash
     standalone: true
-    if: ne .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
       set -e
-      BRANCH=${GITHUB_HEAD_REF:=HEAD}
-      PARSED=$(git rev-parse --abbrev-ref $REF || true)
-      if [ "$PARSED" != "" ]; then
-        BRANCH=$PARSED
+      if [ "$GITHUB_HEAD_REF" != "" ]; then
+        BRANCH=${GITHUB_HEAD_REF}
+      elif [ "$GITHUB_REF" != "" ]; then
+        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
+      else
+        BRANCH=$(git rev-parse --abbrev-ref HEAD)
       fi
+
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
         exit 1
@@ -248,13 +252,15 @@ scripts:
       INSTALLERS_DIR=build/installers/$BRANCH
       mkdir -p $INSTALLERS_DIR
 
-      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
-      cp installers/install.sh $INSTALLERS_DIR/install.sh
+      echo "Copying to $INSTALLERS_DIR"
+
+      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install${constants.SCRIPT_EXT}
+      cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest.sh > $INSTALLERS_DIR/install-latest.sh
+        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install-latest${constants.SCRIPT_EXT}
       else
-        cp installers/install-latest.sh $INSTALLERS_DIR/install-latest.sh
+        cp installers/install-latest${constants.SCRIPT_EXT} $INSTALLERS_DIR/install-latest${constants.SCRIPT_EXT}
       fi
   - name: deploy-installers
     language: bash
@@ -329,9 +335,6 @@ events:
         echo "swagger was not found on your PATH, installing .."
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
-  - name: file-changed
-    scope: [ ".github/workflows-src" ]
-    value: build-workflows
   - name: file-changed
     scope: [ "locale" ]
     value: packr

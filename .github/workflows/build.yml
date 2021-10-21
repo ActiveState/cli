@@ -185,7 +185,7 @@ jobs:
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_HEAD_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
@@ -207,6 +207,19 @@ jobs:
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
+          set +e
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          set -e
+          echo "Labels: $LABELS"
+          echo "Target Branch: $TARGET_BRANCH"
+
+          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+            echo "Not running because no test labels were set nor beta or release were targeted."
+            exit 0
+          fi
+
           state run deploy-updates
           state run deploy-installers
         env:

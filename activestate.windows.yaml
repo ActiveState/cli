@@ -13,38 +13,9 @@ constants:
     value: -ldflags="-s -w -H=windowsgui"
   - name: UPDLG_BUILDFLAGS
     value: -ldflags "-extldflags=-static -w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
+  - name: SCRIPT_EXT
+    value: .ps1
 scripts:
-  - name: build-install-scripts
-    language: bash
-    standalone: true
-    if: eq .OS.Name "Windows"
-    description: Replaces installer channel with branch and copies install scripts to build dir
-    value: |
-      set -e
-      BRANCH=${GITHUB_HEAD_REF:=HEAD}
-      PARSED=$(git rev-parse --abbrev-ref $REF || true)
-      if [ "$PARSED" != "" ]; then
-        BRANCH=$PARSED
-      fi
-      if [ "$BRANCH" == "" ]; then
-        echo "Branch cannot be empty"
-        exit 1
-      fi
-      if [ "$BRANCH" == "release" ]; then
-        BRANCH=""
-      fi
-
-      INSTALLERS_DIR=build/installers/$BRANCH
-      mkdir -p $INSTALLERS_DIR
-
-      cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
-      cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
-
-      if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest.ps1 > $INSTALLERS_DIR/install-latest.ps1
-      else
-        cp installers/install-latest.ps1 $INSTALLERS_DIR/install-latest.ps1
-      fi
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
