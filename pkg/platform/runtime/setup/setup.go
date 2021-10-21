@@ -216,10 +216,8 @@ func (s *Setup) update() error {
 	}
 
 	changedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, false)
-	if oldRecipe != nil {
-		requestedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, true)
-		s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
-	}
+	requestedArtifacts := artifact.NewArtifactChangesetByRecipe(oldRecipe, buildResult.Recipe, true)
+	s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
