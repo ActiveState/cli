@@ -147,14 +147,6 @@ func (suite *VarPromptingExpanderTestSuite) TestSavesSecret() {
 	suite.assertExpansionSaveSuccess("user-secret", project.UserCategory, "more amazing")
 }
 
-func (suite *VarPromptingExpanderTestSuite) TestSaveFails_NonProjectLevelSecret() {
-	suite.assertExpansionSaveFailure("org-secret", "not so amazing")
-}
-
-func (suite *VarPromptingExpanderTestSuite) TestSaveFails_ProjectLevelSecret() {
-	suite.assertExpansionSaveFailure("proj-secret", "utterly boring")
-}
-
 func Test_SecretsPromptingExpander_TestSuite(t *testing.T) {
 	suite.Run(t, new(VarPromptingExpanderTestSuite))
 }

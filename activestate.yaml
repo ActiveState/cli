@@ -231,8 +231,12 @@ scripts:
     if: ne .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
-      REF=${GITHUB_HEAD_REF:=HEAD}
-      BRANCH=$(git rev-parse --abbrev-ref $REF)
+      set -e
+      BRANCH=${GITHUB_HEAD_REF:=HEAD}
+      PARSED=$(git rev-parse --abbrev-ref $REF || true)
+      if [ "$PARSED" != "" ]; then
+        BRANCH=$PARSED
+      fi
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
         exit 1
@@ -261,27 +265,22 @@ scripts:
     language: bash
     value: |
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
-  - name: build-workflows
+  - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
-      set -e
-      if ! type "ytt" &> /dev/null; then
-        go install github.com/k14s/ytt/cmd/ytt@v0.32.0
-      fi
-      pwd
-      mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
-      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
-      mv /tmp/README.md .github/workflows
-
       $scripts.build-for.path._posix() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
+
+      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -parallel 12 "$@" $(go list ./... | grep -v /test/integration)
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
     standalone: true
   - name: integration-tests
     language: bash
