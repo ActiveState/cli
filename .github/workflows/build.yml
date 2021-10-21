@@ -207,6 +207,11 @@ jobs:
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
+          LABELCHECK=$(echo "${{ join(github.event.pull_request.labels.*.name, ',') }}" | grep "Test:")
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+            echo "Not running because no test labels were set nor beta or release were targeted."
+          fi
           state run deploy-updates
           state run deploy-installers
         env:
