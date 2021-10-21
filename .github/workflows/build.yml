@@ -209,15 +209,17 @@ jobs:
         run: |
           set +e
           LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          LABELCHECK="$(echo $LABELS | grep "Test:")"
+          LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
           TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          set -e
           echo "Labels: $LABELS"
           echo "Target Branch: $TARGET_BRANCH"
-          set -e
+
           if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
             echo "Not running because no test labels were set nor beta or release were targeted."
             exit 0
           fi
+
           state run deploy-updates
           state run deploy-installers
         env:
