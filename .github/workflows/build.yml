@@ -130,6 +130,7 @@ jobs:
         run: |
           set +e
           parallelize results Unit-Tests | gotestfmt
+          exit 0
 
       - # === Unit Tests (Raw) ===
         name: Unit Tests (Raw Results)
