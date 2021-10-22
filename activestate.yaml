@@ -313,6 +313,11 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: scripted
+    language: bash
+    description: "Runs a command via 'go run'"
+    standalone: true
+    value: go run github.com/ActiveState/cli/cmd/state $@
   - name: story-cleanup
     language: bash
     description: "Runs Python script to move old stories from primary project to storage project"
