@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -191,11 +192,25 @@ func main() {
 	)
 
 	if err := cmd.Execute(processedArgs[1:]); err != nil {
+		// if error carries an exit code, set that and skip error logging
+		if errExitCode := extractExitCode(err); errExitCode > 0 {
+			exitCode = errExitCode
+			return
+		}
+
 		logging.Error(errs.JoinMessage(err))
 		out.Error(err.Error())
 		exitCode = 1
 		return
 	}
+}
+
+func extractExitCode(err error) int {
+	var eerr interface{ ExitCode() int }
+	if errors.As(err, &eerr) {
+		return eerr.ExitCode()
+	}
+	return 0
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
@@ -234,14 +249,14 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, cfg, params)
+		return postInstallEvents(out, cfg, params, true)
 	}
 
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
-		return postInstallEvents(out, cfg, params)
+		return postInstallEvents(out, cfg, params, false)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -281,7 +296,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params, startSubshell bool) error {
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
@@ -321,10 +336,12 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	default:
-		out.Print("\nStarting new shell\n")
-		ss := subshell.New(cfg)
-		if _, _, err := exeutils.ExecuteAndPipeStd(ss.Shell(), nil, env); err != nil {
-			return errs.Wrap(err, "Subshell; error returned: %s", errs.JoinMessage(err))
+		if startSubshell {
+			out.Print("\nStarting new shell\n")
+			ss := subshell.New(cfg)
+			if err := ss.Run(ss.Binary()); err != nil {
+				return errs.Wrap(err, "Subshell; error returned: %s", errs.JoinMessage(err))
+			}
 		}
 	}
 
