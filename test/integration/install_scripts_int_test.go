@@ -96,6 +96,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
+			expectStateToolWorks(cp)
+
 			// Verify that we don't try to install it again
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
@@ -136,10 +138,15 @@ func scriptPath(t *testing.T, targetDir string) string {
 	return target
 }
 
-
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
 	cp.Expect("Installation Complete", time.Second*40)
+}
+
+func expectStateToolWorks(cp *termtest.ConsoleProcess) {
+	cp.Send("state --version")
+	cp.Expect("Branch")
+	cp.Expect("Built")
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
