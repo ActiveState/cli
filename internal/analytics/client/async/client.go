@@ -2,22 +2,21 @@ package async
 
 import (
 	"context"
-	"fmt"
-	"net/url"
+	"encoding/json"
 	"os"
 	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anSync "github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	ac "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
@@ -38,6 +37,8 @@ type Client struct {
 
 	sessionToken string
 	updateTag    string
+
+	legacyReporter anSync.Reporter
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -45,6 +46,7 @@ var _ analytics.Dispatcher = &Client{}
 func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
+		legacyReporter: reporters.NewLegacyPixelReporter(),
 	}
 
 	o := string(output.PlainFormatName)
@@ -77,12 +79,12 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 }
 
 // Event logs an event to google analytics
-func (a *Client) Event(category string, action string, dims ...*dimensions.Map) {
+func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
 	a.EventWithLabel(category, action, "", dims...)
 }
 
 // EventWithLabel logs an event with a label to google analytics
-func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Map) {
+func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
 		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
@@ -100,7 +102,7 @@ func (a *Client) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
-func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Map) error {
+func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
@@ -108,7 +110,12 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.M
 
 	a.eventWaitGroup.Add(1)
 	go func() {
-		a.sendS3Pixel(category, action, label)
+		actualDims := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
+		for _, dim := range dims {
+			actualDims.Merge(dim)
+		}
+
+		a.legacyReporter.Event(category, action, label, actualDims)
 		a.eventWaitGroup.Done()
 	}()
 
@@ -119,42 +126,28 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.M
 		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
-	dim := &dimensions.Map{
+	dim := &dimensions.Values{
 		ProjectNameSpace: p.StrP(a.projectNameSpace),
 		OutputType:       p.StrP(a.output),
 		UserID:           p.StrP(userID),
 	}
 	dim.Merge(dims...)
 
+	dimMarshalled, err := json.Marshal(dim)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal dimensions")
+	}
+
 	a.eventWaitGroup.Add(1)
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer a.eventWaitGroup.Done()
-		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, dim); err != nil {
+
+		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, string(dimMarshalled)); err != nil {
 			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
 	return nil
-}
-
-func (a *Client) sendS3Pixel(category, action, label string) {
-	defer handlePanics(recover(), debug.Stack())
-	defer profile.Measure("sendS3Pixel", time.Now())
-
-	query := &url.Values{}
-	query.Add("x-category", category)
-	query.Add("x-action", action)
-	query.Add("x-label", label)
-
-	for num, value := range dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag).ToMap() {
-		key := fmt.Sprintf("x-custom%s", num)
-		query.Add(key, value)
-	}
-	fullQuery := query.Encode()
-
-	logging.Debug("Using S3 pixel query: %v", fullQuery)
-	svcExec := appinfo.SvcApp().Exec()
-	exeutils.ExecuteAndForget(svcExec, []string{"_event", query.Encode()})
 }
 
 func handlePanics(err interface{}, stack []byte) {

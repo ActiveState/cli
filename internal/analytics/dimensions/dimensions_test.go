@@ -12,27 +12,27 @@ import (
 func TestMap_Merge(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     *Map
-		mergeWith *Map
-		expected  *Map
+		input     *Values
+		mergeWith *Values
+		expected  *Values
 	}{
 		{
 			"Simple",
-			&Map{Version: p.StrP("inputVersion")},
-			&Map{BranchName: p.StrP("mergeBranchName")},
-			&Map{Version: p.StrP("inputVersion"), BranchName: p.StrP("mergeBranchName")},
+			&Values{Version: p.StrP("inputVersion")},
+			&Values{BranchName: p.StrP("mergeBranchName")},
+			&Values{Version: p.StrP("inputVersion"), BranchName: p.StrP("mergeBranchName")},
 		},
 		{
 			"Override",
-			&Map{Version: p.StrP("inputVersion")},
-			&Map{Version: p.StrP("mergeVersion")},
-			&Map{Version: p.StrP("mergeVersion")},
+			&Values{Version: p.StrP("inputVersion")},
+			&Values{Version: p.StrP("mergeVersion")},
+			&Values{Version: p.StrP("mergeVersion")},
 		},
 		{
 			"Nils don't count",
-			&Map{Version: p.StrP("inputVersion")},
-			&Map{Version: nil},
-			&Map{Version: p.StrP("inputVersion")},
+			&Values{Version: p.StrP("inputVersion")},
+			&Values{Version: nil},
+			&Values{Version: p.StrP("inputVersion")},
 		},
 	}
 	for _, tt := range tests {
@@ -46,7 +46,7 @@ func TestMap_Merge(t *testing.T) {
 	}
 }
 
-func diff(m1 *Map, m2 *Map) (bool, string) {
+func diff(m1 *Values, m2 *Values) (bool, string) {
 	fields1 := reflect.ValueOf(m1).Elem().Type()
 	fields2 := reflect.ValueOf(m2).Elem().Type()
 	values1 := reflect.ValueOf(m1)

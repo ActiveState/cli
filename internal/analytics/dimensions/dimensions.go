@@ -14,7 +14,7 @@ import (
 	"github.com/imdario/mergo"
 )
 
-type Map struct {
+type Values struct {
 	Version          *string
 	BranchName       *string
 	UserID           *string
@@ -28,9 +28,11 @@ type Map struct {
 	ProjectNameSpace *string
 	OutputType       *string
 	ProjectID        *string
+
+	preProcessor     func(*Values) error
 }
 
-func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Map {
+func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
@@ -58,7 +60,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Map {
 		osVersion = osvInfo.Version
 	}
 
-	return &Map{
+	return &Values{
 		p.StrP(constants.Version),
 		p.StrP(constants.BranchName),
 		p.StrP(userIDString),
@@ -72,19 +74,11 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Map {
 		p.StrP(pjNamespace),
 		p.StrP(string(output.PlainFormatName)),
 		p.StrP(""),
+		nil,
 	}
 }
 
-// WithClientData returns a copy of the custom dimensions struct with client-specific fields overwritten
-func (d *Map) WithClientData(projectNameSpace, output, userID string) *Map {
-	res := *d
-	res.ProjectNameSpace = p.StrP(projectNameSpace)
-	res.OutputType = p.StrP(output)
-	res.UserID = p.StrP(userID)
-	return &res
-}
-
-func (m *Map) Merge(mergeWith ...*Map) {
+func (m *Values) Merge(mergeWith ...*Values) {
 	for _, dim := range mergeWith {
 		if err := mergo.Merge(m, dim); err != nil {
 			logging.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
@@ -92,22 +86,21 @@ func (m *Map) Merge(mergeWith ...*Map) {
 	}
 }
 
-func (d *Map) ToMap() map[string]string {
-	return map[string]string{
-		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
-		// "1": "hostname (deprected)"
-		"2":  p.PStr(d.Version),
-		"3":  p.PStr(d.BranchName),
-		"4":  p.PStr(d.UserID),
-		"5":  p.PStr(d.OutputType),
-		"6":  p.PStr(d.OSName),
-		"7":  p.PStr(d.OSVersion),
-		"8":  p.PStr(d.InstallSource),
-		"9":  p.PStr(d.MachineID),
-		"10": p.PStr(d.ProjectNameSpace),
-		"11": p.PStr(d.SessionToken),
-		"12": p.PStr(d.UniqID),
-		"13": p.PStr(d.UpdateTag),
-		"14": p.PStr(d.ProjectID),
-	}
+func (v *Values) RegisterPreProcessor(f func(*Values) error) {
+	v.preProcessor = f
 }
+
+func (v *Values) PreProcess() error {
+	if v.preProcessor != nil {
+		if err := v.preProcessor(v); err != nil {
+			return errs.Wrap(err, "PreProcessor failed: %s", errs.JoinMessage(err))
+		}
+	}
+
+	if p.PStr(v.UniqID) == machineid.FallbackID {
+		return errs.New("machine id was set to fallback id when creating analytics event")
+	}
+
+	return nil
+}
+

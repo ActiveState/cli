@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -23,9 +24,10 @@ import (
 )
 
 type Resolver struct {
-	cfg   *config.Instance
-	cache *cache.Cache
-	an    *sync.Client
+	cfg            *config.Instance
+	cache          *cache.Cache
+	projectIDCache *projectcache.ID
+	an             *sync.Client
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
@@ -34,7 +36,7 @@ func New(cfg *config.Instance, an *sync.Client) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
-		
+		projectcache.NewID(),
 		an,
 	}
 }
@@ -116,10 +118,24 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		label = *_label
 	}
 
-	var dims *dimensions.Map
+	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJson), &dims); err != nil {
 		return &graph.AnalyticsEventResponse{Sent: false}, errs.Wrap(err, "Could not unmarshal")
 	}
+
+	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
+	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
+		values.ProjectID = nil
+		if values.ProjectNameSpace == nil {
+			return nil
+		}
+		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve project ID")
+		}
+		values.ProjectID = &id
+		return nil
+	})
 
 	r.an.EventWithLabel(category, action, label, dims)
 

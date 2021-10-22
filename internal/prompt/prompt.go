@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -10,6 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
+
+type EventDispatcher interface {
+	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+}
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
@@ -30,12 +34,12 @@ var _ Prompter = &Prompt{}
 // Prompt is our main prompting struct
 type Prompt struct {
 	out           output.Outputer
-	analytics     analytics2.Dispatcher
+	analytics     EventDispatcher
 	isInteractive bool
 }
 
 // New creates a new prompter
-func New(isInteractive bool, an analytics2.Dispatcher) Prompter {
+func New(isInteractive bool, an EventDispatcher) Prompter {
 	return &Prompt{output.Get(), an, isInteractive}
 }
 
