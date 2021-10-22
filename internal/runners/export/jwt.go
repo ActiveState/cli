@@ -24,7 +24,7 @@ func (j *JWT) Run(params *JWTParams) error {
 	logging.Debug("Execute")
 
 	if !j.Auth.Authenticated() {
-		return locale.NewError("User")
+		return locale.NewInputError("err_jwt_not_authenticated")
 	}
 
 	token := authentication.LegacyGet().BearerToken()
