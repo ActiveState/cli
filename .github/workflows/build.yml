@@ -129,6 +129,11 @@ jobs:
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt
 
+      - # === Unit Tests (Raw) ===
+        name: Unit Tests (Raw Results)
+        shell: bash
+        run: parallelize results Unit-Tests
+
       - # === "Build: CLI" ===
         name: "Build: CLI"
         shell: bash
