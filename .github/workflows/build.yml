@@ -127,7 +127,9 @@ jobs:
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: parallelize results Unit-Tests | gotestfmt
+        run: |
+          set +e
+          parallelize results Unit-Tests | gotestfmt
 
       - # === Unit Tests (Raw) ===
         name: Unit Tests (Raw Results)
