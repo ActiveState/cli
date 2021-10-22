@@ -560,6 +560,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
 		if c.analytics != nil {
+			if err != nil && subCommandString == "install" {
+				// This is a temporary hack; proper implementation: https://activestatef.atlassian.net/browse/DX-495
+				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, errs.JoinMessage(err))
+			}
 			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 		}
 	}
