@@ -80,7 +80,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 
 func (m *Values) Merge(mergeWith ...*Values) {
 	for _, dim := range mergeWith {
-		if err := mergo.Merge(m, dim); err != nil {
+		if err := mergo.Merge(m, dim, mergo.WithOverride); err != nil {
 			logging.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
 		}
 	}

@@ -50,7 +50,7 @@ func diff(m1 *Values, m2 *Values) (bool, string) {
 	fields1 := reflect.ValueOf(m1).Elem().Type()
 	fields2 := reflect.ValueOf(m2).Elem().Type()
 	values1 := reflect.ValueOf(m1)
-	values2 := reflect.ValueOf(m1)
+	values2 := reflect.ValueOf(m2)
 
 	result := []string{}
 	for i := 0; i < fields1.NumField(); i++ {
@@ -59,8 +59,12 @@ func diff(m1 *Values, m2 *Values) (bool, string) {
 		val1Elem := values1.Elem().Field(i)
 		val2Elem := values2.Elem().Field(i)
 
+		if strings.ToUpper(field1.Name[0:1]) != field1.Name[0:1] {
+			continue
+		}
+
 		val1 := val1Elem.Elem().String()
-		val2 := val1Elem.Elem().String()
+		val2 := val2Elem.Elem().String()
 
 		if val1Elem.IsNil() {
 			val1 = "<nil>"
@@ -68,6 +72,7 @@ func diff(m1 *Values, m2 *Values) (bool, string) {
 		if val2Elem.IsNil() {
 			val2 = "<nil>"
 		}
+
 		if val1 != val2 {
 			result = append(result, fmt.Sprintf("%s:%s != %s:%s", field1.Name, val1, field2.Name, val2))
 		}
