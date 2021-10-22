@@ -74,19 +74,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			expectStateToolInstallation(cp)
-
-			if tt.Activate != "" {
-				cp.Expect("Creating a Virtual Environment")
-				cp.Expect("Quick Start", time.Second*60)
-				// ensure that shell is functional
-				cp.WaitForInput()
-
-				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-				cp.Expect("ActiveState Software Inc.")
-
-				cp.SendLine("exit")
-			}
-
+			expectStateToolWorks(cp, tt.Activate != "")
 			cp.ExpectExitCode(0)
 
 			state := appinfo.StateApp(ts.Dirs.Work)
@@ -95,8 +83,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
-
-			expectStateToolWorks(cp)
 
 			// Verify that we don't try to install it again
 			if runtime.GOOS != "windows" {
@@ -143,10 +129,21 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Installation Complete", time.Second*40)
 }
 
-func expectStateToolWorks(cp *termtest.ConsoleProcess) {
+func expectStateToolWorks(cp *termtest.ConsoleProcess, activation bool) {
+	if activation {
+		cp.Expect("Creating a Virtual Environment")
+		cp.Expect("Quick Start", time.Second*60)
+		// ensure that shell is functional
+		cp.WaitForInput()
+
+		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+		cp.Expect("ActiveState Software Inc.")
+	}
+
 	cp.Send("state --version")
 	cp.Expect("Branch")
 	cp.Expect("Built")
+	cp.Send("exit")
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
