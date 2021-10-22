@@ -1747,4 +1747,4 @@ err_directory_in_use:
     To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
 err_jwt_not_authenticated:
   other: |
-    Could not export JWT as you are not authenticated. Please authenticate with [ACTIONABLE]state auth[/RESET]
+    You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
