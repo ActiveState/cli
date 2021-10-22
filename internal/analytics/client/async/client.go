@@ -1,4 +1,4 @@
-package analytics
+package async
 
 import (
 	"context"
@@ -9,8 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/analytics"
 	ac "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -20,14 +21,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-// DefaultClient is the default analytics dispatcher, forwarding analytics events to the state-svc service
-type DefaultClient struct {
+// Client is the default analytics dispatcher, forwarding analytics events to the state-svc service
+type Client struct {
 	svcModel         *model.SvcModel
 	auth             *authentication.Auth
 	output           string
@@ -35,30 +37,16 @@ type DefaultClient struct {
 	eventWaitGroup   *sync.WaitGroup
 
 	sessionToken string
-	updateTag string
+	updateTag    string
 }
 
-func New() *DefaultClient {
-	return &DefaultClient{
+var _ analytics.Dispatcher = &Client{}
+
+func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
+	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 	}
-}
 
-// Event logs an event to google analytics
-func (a *DefaultClient) Event(category string, action string) {
-	a.EventWithLabel(category, action, "")
-}
-
-// EventWithLabel logs an event with a label to google analytics
-func (a *DefaultClient) EventWithLabel(category string, action string, label string) {
-	err := a.sendEvent(category, action, label)
-	if err != nil {
-		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
-	}
-}
-
-// Configure configures the default client, connecting it to a state-svc service
-func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error {
 	o := string(output.PlainFormatName)
 	if out.Type() != "" {
 		o = string(out.Type())
@@ -68,14 +56,15 @@ func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instan
 	a.auth = auth
 
 	if condition.InUnitTest() {
-		return nil
+		return a
 	}
 
 	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
 	if err != nil {
-		return errs.Wrap(err, "Failed to initialize svc model")
+		logging.Critical("Could not initialize svcModel for Analytics client: %s", errs.JoinMessage(err))
+	} else {
+		a.svcModel = svcModel
 	}
-	a.svcModel = svcModel
 
 	a.sessionToken = cfg.GetString(ac.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
@@ -84,11 +73,24 @@ func (a *DefaultClient) Configure(svcMgr *svcmanager.Manager, cfg *config.Instan
 	}
 	a.updateTag = tag
 
-	return nil
+	return a
+}
+
+// Event logs an event to google analytics
+func (a *Client) Event(category string, action string, dims ...*dimensions.Map) {
+	a.EventWithLabel(category, action, "", dims...)
+}
+
+// EventWithLabel logs an event with a label to google analytics
+func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Map) {
+	err := a.sendEvent(category, action, label, dims...)
+	if err != nil {
+		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+	}
 }
 
 // Wait can be called to ensure that all events have been processed
-func (a *DefaultClient) Wait() {
+func (a *Client) Wait() {
 	defer profile.Measure("analytics:Wait", time.Now())
 
 	// we want Wait() to work for uninitialized Analytics
@@ -98,7 +100,7 @@ func (a *DefaultClient) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
-func (a *DefaultClient) sendEvent(category, action, label string) error {
+func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Map) error {
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
@@ -117,18 +119,25 @@ func (a *DefaultClient) sendEvent(category, action, label string) error {
 		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
+	dim := &dimensions.Map{
+		ProjectNameSpace: p.StrP(a.projectNameSpace),
+		OutputType:       p.StrP(a.output),
+		UserID:           p.StrP(userID),
+	}
+	dim.Merge(dims...)
+
 	a.eventWaitGroup.Add(1)
 	go func() {
 		defer handlePanics(recover(), debug.Stack())
 		defer a.eventWaitGroup.Done()
-		if err := a.svcModel.AnalyticsEventWithLabel(context.Background(), category, action, label, a.projectNameSpace, a.output, userID); err != nil {
+		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, dim); err != nil {
 			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
 	return nil
 }
 
-func (a *DefaultClient) sendS3Pixel(category, action, label string) {
+func (a *Client) sendS3Pixel(category, action, label string) {
 	defer handlePanics(recover(), debug.Stack())
 	defer profile.Measure("sendS3Pixel", time.Now())
 

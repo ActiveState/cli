@@ -2,8 +2,10 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
@@ -75,10 +77,15 @@ func (m *SvcModel) Ping() error {
 	return err
 }
 
-func (m *SvcModel) AnalyticsEventWithLabel(ctx context.Context, category, action, label, projectName, output, userID string) error {
+func (m *SvcModel) AnalyticsEvent(ctx context.Context, category, action, label string, dim *dimensions.Map) error {
 	defer profile.Measure("svc:analyticsEvent", time.Now())
 
-	r := request.NewAnalyticsEvent(category, action, label, projectName, output, userID)
+	dimMarshalled, err := json.Marshal(dim)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal dimensions")
+	}
+
+	r := request.NewAnalyticsEvent(category, action, label, string(dimMarshalled))
 	u := graph.AnalyticsEventResponse{}
 	if err := m.client.RunWithContext(ctx, r, &u); err != nil {
 		return errs.Wrap(err, "Error sending analytics event via state-svc")

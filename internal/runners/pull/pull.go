@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -27,7 +27,7 @@ type Pull struct {
 	project   *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics2.Dispatcher
 	cfg       *config.Instance
 }
 

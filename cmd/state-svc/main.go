@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -39,13 +39,12 @@ const (
 
 func main() {
 	var exitCode int
-	an := anaSvc.NewAnalytics()
 
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -63,7 +62,7 @@ func main() {
 		return
 	}
 
-	err := run(an)
+	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logger := logging.Critical
@@ -77,7 +76,7 @@ func main() {
 	}
 }
 
-func run(an *anaSvc.Analytics) (rerr error) {
+func run() (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -88,7 +87,8 @@ func run(an *anaSvc.Analytics) (rerr error) {
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	an.Configure(cfg, authentication.LegacyGet())
+	an := anaSvc.New(cfg, authentication.LegacyGet())
+	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
@@ -151,7 +151,7 @@ func run(an *anaSvc.Analytics) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSvc.Analytics) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish

@@ -1,10 +1,10 @@
 package prompt
 
 import (
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -30,12 +30,12 @@ var _ Prompter = &Prompt{}
 // Prompt is our main prompting struct
 type Prompt struct {
 	out           output.Outputer
-	analytics     analytics.AnalyticsDispatcher
+	analytics     analytics2.Dispatcher
 	isInteractive bool
 }
 
 // New creates a new prompter
-func New(isInteractive bool, an analytics.AnalyticsDispatcher) Prompter {
+func New(isInteractive bool, an analytics2.Dispatcher) Prompter {
 	return &Prompt{output.Get(), an, isInteractive}
 }
 

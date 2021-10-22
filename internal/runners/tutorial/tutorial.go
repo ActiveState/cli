@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -23,7 +23,7 @@ type Tutorial struct {
 	outputer  output.Outputer
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics2.Dispatcher
 }
 
 type primeable interface {

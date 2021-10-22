@@ -12,7 +12,7 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.AnalyticsDispatcher, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
+func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
 	rtMessages, err := DefaultRuntimeEventHandler(out)
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -17,7 +17,7 @@ import (
 type Shim struct {
 	out       output.Outputer
 	project   *projectfile.Project
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics2.Dispatcher
 }
 
 func NewShim(prime *primer.Values) *Shim {

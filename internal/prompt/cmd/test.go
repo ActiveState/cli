@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 )
@@ -15,7 +15,7 @@ func main() {
 		Colored:     true,
 		Interactive: true,
 	})
-	p := prompt.New(true, analytics.New())
+	p := prompt.New(true, async.New())
 
 	selectDefault := "choice 1"
 	p.Select("Select", "Please select one", []string{"choice 1", "choice 2", "choice 3"}, &selectDefault)

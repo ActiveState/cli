@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -90,7 +90,7 @@ func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
-	err := gitlet.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), analytics.New())
+	err := gitlet.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), async.New())
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
@@ -99,7 +99,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
 	actualCatcher := outputhelper.NewCatcher()
-	err := gitlet.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, analytics.New())
+	err := gitlet.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, async.New())
 	suite.NoError(err)
 
 	proj, err := project.Parse(projectPath)

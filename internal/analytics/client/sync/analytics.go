@@ -1,4 +1,4 @@
-package service
+package sync
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/condition"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -28,8 +30,8 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-// Analytics instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
-type Analytics struct {
+// Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
+type Client struct {
 	gaClient         *ga.Client
 	customDimensions *dimensions.Map
 	eventWaitGroup   *sync.WaitGroup
@@ -37,18 +39,16 @@ type Analytics struct {
 	projectIDMutex   *sync.Mutex // used to synchronize API calls resolving the projectID
 }
 
-// NewAnalytics initializes the analytics instance with all custom dimensions known at this time
-func NewAnalytics() *Analytics {
-	r := &Analytics{
+var _ analytics.Dispatcher = &Client{}
+
+// New initializes the analytics instance with all custom dimensions known at this time
+func New(cfg *config.Instance, auth *authentication.Auth) *Client {
+	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		projectIDCache: cache.New(30*time.Minute, time.Hour),
 		projectIDMutex: &sync.Mutex{},
 	}
 
-	return r
-}
-
-func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
@@ -83,16 +83,16 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 	}
 
 	customDimensions := &dimensions.Map{
-		Version:       constants.Version,
-		BranchName:    constants.BranchName,
-		OSName:        osName,
-		OSVersion:     osVersion,
-		InstallSource: installSource,
-		MachineID:     machineID,
-		UniqID:        deviceID,
-		SessionToken:  sessionToken,
-		UpdateTag:     tag,
-		UserID:        userID,
+		Version:       p.StrP(constants.Version),
+		BranchName:    p.StrP(constants.BranchName),
+		OSName:        p.StrP(osName),
+		OSVersion:     p.StrP(osVersion),
+		InstallSource: p.StrP(installSource),
+		MachineID:     p.StrP(machineID),
+		UniqID:        p.StrP(deviceID),
+		SessionToken:  p.StrP(sessionToken),
+		UpdateTag:     p.StrP(tag),
+		UserID:        p.StrP(userID),
 	}
 
 	var trackingID string
@@ -102,7 +102,7 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 
 	client, err := ga.NewClient(trackingID)
 	if err != nil {
-		logging.Error("Cannot initialize analytics: %s", err.Error())
+		logging.Error("Cannot initialize google analytics client: %s", err.Error())
 		client = nil
 	}
 
@@ -112,52 +112,23 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 
 	a.customDimensions = customDimensions
 	a.gaClient = client
+
+	return a
 }
 
-func (a *Analytics) DimensionsWithClientData(projectNameSpace, outputType, userID string) *dimensions.Map {
-	return a.customDimensions.WithClientData(projectNameSpace, outputType, userID)
-}
 
-// SendWithCustomDimensions sends an analytics event with the given custom dimensions
-func (a *Analytics) SendWithCustomDimensions(category, action, label string, dims *dimensions.Map) {
-	if a.customDimensions == nil {
-		if condition.InUnitTest() {
-			return
-		}
-		if !condition.BuiltViaCI() {
-			panic("Trying to send analytics without configuring the Analytics instance.")
-		}
-		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
-		return
-	}
-	if dims.UniqID == machineid.FallbackID {
-		logging.Critical("machine id was set to fallback id when creating analytics event")
-	}
-
-	logging.Debug("Analytics event resolver")
-
-	a.eventWaitGroup.Add(1)
-	// We do not wait for the events to be processed, just scheduling them
-	go func() {
-		defer a.eventWaitGroup.Done()
-		defer handlePanics(recover(), debug.Stack())
-		dims.ProjectID = a.projectID(dims.ProjectNameSpace)
-		a.event(category, action, label, dims)
-	}()
-}
-
-func (a *Analytics) Wait() {
+func (a *Client) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
 // Events returns a channel to feed eventData directly to the event loop
-func (a *Analytics) event(category, action, label string, dimensions *dimensions.Map) {
+func (a *Client) event(category, action, label string, dimensions *dimensions.Map) {
 	dims := dimensions.ToMap()
 	a.sendGAEvent(category, action, label, dims)
 	a.sendS3Pixel(category, action, label, dims)
 }
 
-func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[string]string) {
+func (a *Client) sendGAEvent(category, action, label string, dimensions map[string]string) {
 	logging.Debug("Sending Google Analytics event with: %s, %s, %s, project=%s, output=%s", category, action, label, dimensions["10"], dimensions["5"])
 
 	a.gaClient.CustomDimensionMap(dimensions)
@@ -175,7 +146,7 @@ func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[s
 	}
 }
 
-func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[string]string) {
+func (a *Client) sendS3Pixel(category, action, label string, dimensions map[string]string) {
 	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel-svc")
 	if err != nil {
@@ -201,16 +172,46 @@ func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[s
 	}
 }
 
-func (a *Analytics) Event(category string, action string) {
-	a.EventWithLabel(category, action, "")
+func (a *Client) Event(category string, action string, dims ...*dimensions.Map) {
+	a.EventWithLabel(category, action, "", dims...)
 }
 
-func (a *Analytics) EventWithLabel(category string, action, label string) {
-	a.SendWithCustomDimensions(category, action, label, a.customDimensions)
+func (a *Client) EventWithLabel(category string, action, label string, dims ...*dimensions.Map) {
+	if a.customDimensions == nil {
+		if condition.InUnitTest() {
+			return
+		}
+		if !condition.BuiltViaCI() {
+			panic("Trying to send analytics without configuring the Analytics instance.")
+		}
+		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
+		return
+	}
+
+	_actualDims := *a.customDimensions
+	actualDims := &_actualDims
+	for _, dim := range dims {
+		actualDims.Merge(dim)
+	}
+
+	if actualDims.UniqID != nil && *actualDims.UniqID == machineid.FallbackID {
+		logging.Critical("machine id was set to fallback id when creating analytics event")
+	}
+
+	logging.Debug("Analytics event resolver")
+
+	a.eventWaitGroup.Add(1)
+	// We do not wait for the events to be processed, just scheduling them
+	go func() {
+		defer a.eventWaitGroup.Done()
+		defer handlePanics(recover(), debug.Stack())
+		actualDims.ProjectID = p.StrP(a.projectID(p.PStr(actualDims.ProjectNameSpace)))
+		a.event(category, action, label, actualDims)
+	}()
 }
 
 // projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
-func (r *Analytics) projectID(projectName string) string {
+func (r *Client) projectID(projectName string) string {
 	if projectName == "" {
 		return ""
 	}
