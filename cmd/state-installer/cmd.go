@@ -336,9 +336,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	default:
-		if true {
-			return nil
-		}
 		if startSubshell {
 			out.Print("\nStarting new shell\n")
 			ss := subshell.New(cfg)
