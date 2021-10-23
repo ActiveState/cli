@@ -290,7 +290,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	if !isUpdate {
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
-		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+		out.Print("State Tool Package Manager has been successfully installed.")
 	}
 
 	return nil
