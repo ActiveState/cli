@@ -22,7 +22,7 @@ func NewID() *ID {
 	}
 }
 
-// projectID resolves the projectID from projectName and caches the result in the provided projectIDMap
+// FromNamespace resolves the projectID from projectName and caches the result
 func (i *ID) FromNamespace(projectNameSpace string) (string, error) {
 	// Lock mutex to prevent resolving the same projectName more than once
 	i.projectIDMutex.Lock()
