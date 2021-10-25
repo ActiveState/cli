@@ -72,7 +72,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		tag = cfg.GetString(updater.CfgUpdateTag)
 	}
 
-	// TODO At some point we want to refresh this whenever the authentication changes https://www.pivotaltracker.com/story/show/179703938
 	userID := ""
 	if auth != nil && auth.UserID() != nil {
 		userID = string(*auth.UserID())
