@@ -3,7 +3,7 @@ package run
 import (
 	"strings"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,7 +26,7 @@ type Run struct {
 	subshell  subshell.SubShell
 	cfg       *config.Instance
 	svcMgr    *svcmanager.Manager
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
@@ -57,7 +57,7 @@ func (r *Run) Run(name string, args []string) error {
 	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
 }
 
-func run(auth *authentication.Auth, out output.Outputer, analytics analytics2.Dispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
+func run(auth *authentication.Auth, out output.Outputer, analytics analytics.Dispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
 	checker.RunUpdateNotifier(svcMgr, cfg, out)

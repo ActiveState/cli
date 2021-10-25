@@ -1,7 +1,7 @@
 package primer
 
 import (
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
@@ -23,10 +23,10 @@ type Values struct {
 	conditional *constraints.Conditional
 	config      *config.Instance
 	svcMgr      *svcmanager.Manager
-	analytics   analytics2.Dispatcher
+	analytics   analytics.Dispatcher
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics2.Dispatcher) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.Dispatcher) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
@@ -73,7 +73,7 @@ type Svcer interface {
 }
 
 type Analyticer interface {
-	Analytics() analytics2.Dispatcher
+	Analytics() analytics.Dispatcher
 }
 
 type Subsheller interface {
@@ -120,6 +120,6 @@ func (v *Values) Config() *config.Instance {
 	return v.config
 }
 
-func (v *Values) Analytics() analytics2.Dispatcher {
+func (v *Values) Analytics() analytics.Dispatcher {
 	return v.analytics
 }

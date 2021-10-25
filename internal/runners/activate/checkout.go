@@ -3,7 +3,7 @@ package activate
 import (
 	"path/filepath"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -24,7 +24,7 @@ import (
 type Checkout struct {
 	repo git.Repository
 	output.Outputer
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 func NewCheckout(repo git.Repository, prime primeable) *Checkout {

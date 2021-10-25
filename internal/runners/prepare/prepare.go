@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -31,7 +31,7 @@ type Prepare struct {
 	out       output.Outputer
 	subshell  subshell.SubShell
 	cfg       *config.Instance
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 // New prepares a prepare execution context for use.

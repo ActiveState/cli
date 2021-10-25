@@ -7,7 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -51,7 +51,7 @@ type Deploy struct {
 	subshell  subshell.SubShell
 	step      Step
 	cfg       *config.Instance
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {

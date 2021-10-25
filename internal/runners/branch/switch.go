@@ -1,7 +1,7 @@
 package branch
 
 import (
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,7 +16,7 @@ type Switch struct {
 	auth      *authentication.Auth
 	out       output.Outputer
 	project   *project.Project
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type SwitchParams struct {

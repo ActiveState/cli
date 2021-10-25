@@ -7,7 +7,7 @@ import (
 	rt "runtime"
 	"strings"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -44,7 +44,7 @@ type Activate struct {
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
-	analytics        analytics2.Dispatcher
+	analytics        analytics.Dispatcher
 }
 
 type ActivateParams struct {

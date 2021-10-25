@@ -1,7 +1,7 @@
 package reset
 
 import (
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -18,7 +18,7 @@ type Reset struct {
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
 	project   *project.Project
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {

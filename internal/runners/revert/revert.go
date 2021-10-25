@@ -1,7 +1,7 @@
 package revert
 
 import (
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -24,7 +24,7 @@ type Revert struct {
 	prompt    prompt.Prompter
 	project   *project.Project
 	auth      *authentication.Auth
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type Params struct {

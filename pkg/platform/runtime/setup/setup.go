@@ -10,7 +10,7 @@ import (
 	"strings"
 	"sync"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
@@ -109,7 +109,7 @@ type Setup struct {
 	target    Targeter
 	events    Events
 	store     *store.Store
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -135,12 +135,12 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics2.Dispatcher) *Setup {
+func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
 	return NewWithModel(target, msgHandler, model.NewDefault(auth), an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics2.Dispatcher) *Setup {
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.Dispatcher) *Setup {
 	return &Setup{model, target, msgHandler, store.New(target.Dir()), an}
 }
 

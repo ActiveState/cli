@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -33,7 +33,7 @@ type Exec struct {
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {

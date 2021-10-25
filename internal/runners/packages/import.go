@@ -3,7 +3,7 @@ package packages
 import (
 	"io/ioutil"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -57,7 +57,7 @@ type Import struct {
 	prompt.Prompter
 	proj      *project.Project
 	cfg       configurable
-	analytics analytics2.Dispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
