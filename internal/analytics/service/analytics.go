@@ -93,6 +93,7 @@ func (a *Analytics) Configure(cfg *config.Instance, auth *authentication.Auth) {
 		SessionToken:  sessionToken,
 		UpdateTag:     tag,
 		UserID:        userID,
+		Flags:         dimensions.CalculateFlags(),
 	}
 
 	var trackingID string

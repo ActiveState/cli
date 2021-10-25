@@ -256,7 +256,7 @@ const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+const StateInstallerRollbarToken = "927ad7acebe347609d584e1a4e9ba7ff"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
