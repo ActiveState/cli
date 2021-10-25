@@ -11,12 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type LegacyPixelReporter struct {
-	p *PixelReporter
-}
+type LegacyPixelReporter struct {}
 
 func NewLegacyPixelReporter() *LegacyPixelReporter {
-	return &LegacyPixelReporter{NewPixelReporter()}
+	return &LegacyPixelReporter{}
 }
 
 func (r *LegacyPixelReporter) ID() string {
