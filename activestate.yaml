@@ -122,7 +122,7 @@ scripts:
       $constants.SET_ENV
       export CGO_ENABLED=0
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.DAEMON_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-tray
     description: Builds the State Tool system tray application
     standalone: true
