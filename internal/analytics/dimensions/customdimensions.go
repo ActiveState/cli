@@ -1,6 +1,9 @@
 package dimensions
 
 import (
+	"os"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -26,6 +29,17 @@ type Map struct {
 	ProjectNameSpace string
 	OutputType       string
 	ProjectID        string
+	Flags            string
+}
+
+func CalculateFlags() string {
+	flags := []string{}
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+		}
+	}
+	return strings.Join(flags, " ")
 }
 
 func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Map {
@@ -70,6 +84,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Map {
 		pjNamespace,
 		string(output.PlainFormatName),
 		"",
+		CalculateFlags(),
 	}
 }
 
@@ -99,5 +114,6 @@ func (d *Map) ToMap() map[string]string {
 		"12": d.UniqID,
 		"13": d.UpdateTag,
 		"14": d.ProjectID,
+		"15": d.Flags,
 	}
 }

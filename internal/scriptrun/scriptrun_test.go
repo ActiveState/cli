@@ -81,7 +81,7 @@ func TestEnvIsSet(t *testing.T) {
 
 	root, err := environment.GetRootPath()
 	require.NoError(t, err, "should detect root path")
-	prjPath := filepath.Join(root, "internal", "scriptrun", "testdata", "printEnv", "activestate.yaml")
+	prjPath := filepath.Join(root, "internal", "scriptrun", "test", "integration", "testdata", "printEnv", "activestate.yaml")
 
 	pjfile, err := projectfile.Parse(prjPath)
 	require.NoError(t, err, "parsing pjfile file")
