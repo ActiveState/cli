@@ -202,7 +202,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "pre-exec")
 	err = cmd.Execute(processedArgs[1:])
 	if err != nil {
-		if !locale.IsInputError(err) {
+		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
 			logging.Warning("Installer error: " + errs.JoinMessage(err))
 		} else {
