@@ -25,7 +25,7 @@ func (r *PixelReporter) ID() string {
 func (r *PixelReporter) Event(category, action, label string, d *dimensions.Values) error {
 	pixelURL, err := url.Parse(r.url)
 	if err != nil {
-		logging.Critical("Invalid pixel URL: %s, err: %s", r.url, errs.JoinMessage(err))
+		return errs.Wrap(err, "Invalid pixel URL: %s", r.url)
 	}
 
 	query := &url.Values{}
