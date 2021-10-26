@@ -148,6 +148,9 @@ func (a *Analytics) SendWithCustomDimensions(category, action, label string, dim
 }
 
 func (a *Analytics) Wait() {
+	if a == nil {
+		return
+	}
 	a.eventWaitGroup.Wait()
 }
 
