@@ -332,7 +332,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 		}
 	default:
 		if startSubshell {
-			out.Print("\nStarting new shell\n")
 			ss := subshell.New(cfg)
 			if err := ss.Run(ss.Binary()); err != nil {
 				return errs.Wrap(err, "Subshell; error returned: %s", errs.JoinMessage(err))
