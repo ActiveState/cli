@@ -9,7 +9,6 @@ import (
 
 func newPpmCommand(prime *primer.Values) *captain.Command {
 	shim := ppm.NewShim(prime)
-	conversion := ppm.NewConversionFlow(prime)
 	rootCmd := captain.NewHiddenShimCommand(
 		"_ppm",
 		prime,
@@ -20,11 +19,7 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 					return shim.PrintDefault()
 				}
 			}
-			converted, err := conversion.StartIfNecessary()
-			if err != nil {
-				return err
-			}
-			return shim.RunPPM(converted, args...)
+			return shim.RunPPM(args...)
 		},
 	)
 
@@ -42,42 +37,26 @@ func newPpmCommand(prime *primer.Values) *captain.Command {
 
 func addPackagesCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
-	conversion := ppm.NewConversionFlow(prime)
 	return append(cmds,
 		captain.NewShimCommand(
 			"install",
 			"installs new packages",
 			func(_ *captain.Command, args []string) error {
-				converted, err := conversion.StartIfNecessary()
-				if err != nil {
-					return err
-				}
-
-				return shim.RunInstall(converted, args...)
+				return shim.RunInstall(args...)
 			},
 		),
 		captain.NewShimCommand(
 			"upgrade",
 			"upgrades installed packages",
 			func(_ *captain.Command, args []string) error {
-				converted, err := conversion.StartIfNecessary()
-				if err != nil {
-					return err
-				}
-
-				return shim.RunUpgrade(converted, args...)
+				return shim.RunUpgrade(args...)
 			},
 		),
 		captain.NewShimCommand(
 			"remove",
 			"removes installed packages",
 			func(_ *captain.Command, args []string) error {
-				converted, err := conversion.StartIfNecessary()
-				if err != nil {
-					return err
-				}
-
-				return shim.RunRemove(converted, args...)
+				return shim.RunRemove(args...)
 			},
 		),
 	)
@@ -98,17 +77,11 @@ func addVersionCommand(prime *primer.Values, cmds []*captain.Command) []*captain
 
 func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captain.Command {
 	shim := ppm.NewShim(prime)
-	conversion := ppm.NewConversionFlow(prime)
 	return append(cmds,
 		captain.NewShimCommand(
 			"area",
 			"organizes packages in different areas",
 			func(_ *captain.Command, _ []string) error {
-				_, err := conversion.StartIfNecessary()
-				if err != nil {
-					return err
-				}
-
 				prime.Output().Print(locale.Tr("ppm_print_area_redundant", "state packages"))
 				return nil
 			},
@@ -117,12 +90,7 @@ func addProjectCommands(prime *primer.Values, cmds []*captain.Command) []*captai
 			"list",
 			"lists installed packages",
 			func(_ *captain.Command, args []string) error {
-				converted, err := conversion.StartIfNecessary()
-				if err != nil {
-					return err
-				}
-
-				return shim.RunList(converted, args...)
+				return shim.RunList(args...)
 			},
 		),
 		//	Long:  strings.TrimSpace(locale.T("ppm_header_message")),
