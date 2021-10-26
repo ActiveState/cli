@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -54,7 +55,7 @@ func (r *Prepare) resetExecutors() error {
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
 	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir), r.analytics)
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, anaConsts.TriggerExec), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}

@@ -15,10 +15,11 @@ type ProjectTarget struct {
 	*project.Project
 	cacheDir     string
 	customCommit *strfmt.UUID
+	trigger      string
 }
 
-func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID) *ProjectTarget {
-	return &ProjectTarget{pj, runtimeCacheDir, customCommit}
+func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger string) *ProjectTarget {
+	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger}
 }
 
 func (p *ProjectTarget) Dir() string {
@@ -36,21 +37,26 @@ func (p *ProjectTarget) OnlyUseCache() bool {
 	return false
 }
 
+func (p *ProjectTarget) Trigger() string {
+	return p.trigger
+}
+
 type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
 	dir        string
+	trigger    string
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir, trigger string) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, dir}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -71,6 +77,10 @@ func (c *CustomTarget) Dir() string {
 
 func (c *CustomTarget) OnlyUseCache() bool {
 	return c.commitUUID == ""
+}
+
+func (c *CustomTarget) Trigger() string {
+	return c.trigger
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {

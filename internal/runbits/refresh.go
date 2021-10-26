@@ -2,6 +2,7 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -17,7 +18,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")
 	}
-	target := runtime.NewProjectTarget(proj, cachePath, &commitID)
+	target := runtime.NewProjectTarget(proj, cachePath, &commitID, constants.TriggerUnknown)
 	isCached := true
 	rt, err := runtime.New(target, an)
 	if err != nil {

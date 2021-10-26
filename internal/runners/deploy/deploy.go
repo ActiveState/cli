@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -89,7 +90,7 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path) /* TODO: handle empty path */
+	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, constants.TriggerDeploy) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 

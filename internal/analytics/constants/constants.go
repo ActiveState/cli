@@ -68,3 +68,18 @@ const CatMisc = "misc"
 
 // CatStateSvc is for state-svc events
 const CatStateSvc = "state-svc"
+
+// TriggerActivate is for activate events
+const TriggerActivate = "activate"
+
+// TriggerScript is for script run events
+const TriggerScript = "script"
+
+// TriggerDeploy is for deploy events
+const TriggerDeploy = "deploy"
+
+// TriggerExec is for exec events
+const TriggerExec = "exec"
+
+// TriggerUnknown is for unknown events
+const TriggerUnknown = "unknown"
