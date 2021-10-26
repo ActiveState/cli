@@ -302,17 +302,12 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	pathVal := os.Getenv("PATH")
+	stateExe := appinfo.StateApp(installPath).Exec()
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	if !strings.Contains(pathVal, binPath) && !strings.Contains(pathVal, binPath+string(os.PathSeparator)) {
-		pathVal = binPath + string(os.PathListSeparator) + pathVal
-	}
-	env := []string{"PATH=" + pathVal}
-
-	stateExe := appinfo.StateApp(installPath).Exec()
+	env := []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
