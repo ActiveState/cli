@@ -1745,3 +1745,6 @@ err_directory_in_use:
   other: | 
     Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
     To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
+err_jwt_not_authenticated:
+  other: |
+    You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]

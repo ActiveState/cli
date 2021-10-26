@@ -54,6 +54,9 @@ const CatTutorial = "tutorial"
 // CatCommandExit is the event category used to track the success of state commands
 const CatCommandExit = "command-exit"
 
+// CatCommandExit is the event category used to track the error that was returned from a command
+const CatCommandError = "command-error"
+
 // CatActivationFlow is for events that outline the activation flow
 const CatActivationFlow = "activation"
 

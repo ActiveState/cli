@@ -88,6 +88,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		SessionToken:  p.StrP(sessionToken),
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
+		Flags:         p.StrP(dimensions.CalculateFlags()),
 	}
 
 	a.customDimensions = customDimensions

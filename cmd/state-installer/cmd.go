@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -29,6 +31,9 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/rollbar/rollbar-go"
 )
+
+const AnalyticsCat = "installer"
+const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
 	fromDeferred    bool
@@ -51,12 +56,14 @@ func newParams() *Params {
 func main() {
 	var exitCode int
 
+	var an *service.Analytics
+
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose, an.Wait); err != nil {
 			logging.Warning("Failed to wait for rollbar to close: %v", err)
 		}
 		os.Exit(exitCode)
@@ -107,12 +114,17 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
+	an = service.NewAnalytics()
+	an.Configure(cfg, nil)
+
+	an.Event(AnalyticsFunnelCat, "start")
+
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
 		"Installs or updates the State Tool",
-		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil),
+		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
 				Name:        "channel",
@@ -185,19 +197,31 @@ func main() {
 		},
 		func(ccmd *captain.Command, _ []string) error {
 			logging.Debug("Params: %+v", params)
-			return execute(out, cfg, processedArgs[1:], params)
+			return execute(out, cfg, an, processedArgs[1:], params)
 		},
 	)
 
-	if err := cmd.Execute(processedArgs[1:]); err != nil {
-		logging.Error(errs.JoinMessage(err))
+	an.Event(AnalyticsFunnelCat, "pre-exec")
+	err = cmd.Execute(processedArgs[1:])
+	if err != nil {
+		if locale.IsInputError(err) {
+			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
+			logging.Warning("Installer error: " + errs.JoinMessage(err))
+		} else {
+			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
+			logging.Critical("Installer error: " + errs.JoinMessage(err))
+		}
+		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		out.Error(err.Error())
 		exitCode = 1
 		return
 	}
+	an.Event(AnalyticsFunnelCat, "success")
 }
 
-func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+func execute(out output.Outputer, cfg *config.Instance, an *service.Analytics, args []string, params *Params) error {
+	an.Event(AnalyticsFunnelCat, "exec")
+
 	// Detect installed state tool
 	stateToolInstalled, err := installation.InstalledOnPath(params.path)
 	if err != nil {
@@ -228,29 +252,37 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 		isUpdate = true
 	}
 
+	route := "install"
+	if isUpdate {
+		route = "update"
+	}
+	an.Event(AnalyticsFunnelCat, route)
+
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
+		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, params)
+		return postInstallEvents(out, an, params)
 	}
 
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
-		return postInstallEvents(out, params)
+		an.Event(AnalyticsFunnelCat, "already-installed")
+		return postInstallEvents(out, an, params)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
 	// installation to the installer contained within the source file
-	return installFromRemoteSource(out, cfg, args, params)
+	return installFromRemoteSource(out, cfg, an, args, params)
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, params *Params, isUpdate bool) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an *service.Analytics, params *Params, isUpdate bool) error {
 	logging.Debug("Install from local source")
+	an.Event(AnalyticsFunnelCat, "local-source")
 
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
@@ -265,10 +297,12 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	}
 
 	// Run installer
+	an.Event(AnalyticsFunnelCat, "pre-installer")
 	if err := installer.Install(); err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
 		return err
 	}
+	an.Event(AnalyticsFunnelCat, "post-installer")
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
 	if !isUpdate {
@@ -280,7 +314,9 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, params *Params) error {
+func postInstallEvents(out output.Outputer, an *service.Analytics, params *Params) error {
+	an.Event(AnalyticsFunnelCat, "post-install-events")
+
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
@@ -297,21 +333,30 @@ func postInstallEvents(out output.Outputer, params *Params) error {
 	switch {
 	// Execute provided --command
 	case params.command != "":
+		an.Event(AnalyticsFunnelCat, "forward-command")
+
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, env); err != nil {
+			an.EventWithLabel(AnalyticsFunnelCat, "forward-command-err", err.Error())
 			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
+		an.Event(AnalyticsFunnelCat, "forward-activate")
+
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, env); err != nil {
+			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
+		an.Event(AnalyticsFunnelCat, "forward-activate-default")
+
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
+			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	}
@@ -323,7 +368,9 @@ func postInstallEvents(out output.Outputer, params *Params) error {
 // Effectively this will download and unpack the target version and then run the installer packaged for that version
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
-func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
+func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an *service.Analytics,args []string, params *Params) error {
+	an.Event(AnalyticsFunnelCat, "local-source")
+
 	out.Print(output.Title("Installing State Tool Package Manager"))
 	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
 		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
@@ -351,6 +398,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 		version = fmt.Sprintf("%s (%s)", version, params.branch)
 	}
 
+	an.Event(AnalyticsFunnelCat, "download")
 	out.Fprint(os.Stdout, fmt.Sprintf("• Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
 	if _, err := update.DownloadAndUnpack(); err != nil {
 		out.Print("[ERROR]x Failed[/RESET]")
@@ -360,6 +408,7 @@ func installFromRemoteSource(out output.Outputer, cfg *config.Instance, args []s
 
 	cfg.Set(updater.CfgKeyInstallVersion, params.version)
 
+	an.Event(AnalyticsFunnelCat, "install-async")
 	return update.InstallBlocking(params.path, args...)
 }
 

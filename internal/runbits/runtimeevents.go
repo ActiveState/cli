@@ -13,6 +13,14 @@ import (
 )
 
 func DefaultRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
+	return newRuntimeEventHandler(out, changesummary.New(out))
+}
+
+func ActivateRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
+	return newRuntimeEventHandler(out, changesummary.NewEmpty())
+}
+
+func newRuntimeEventHandler(out output.Outputer, changeSummary events.ChangeSummaryDigester) (*events.RuntimeEventHandler, error) {
 	var w io.Writer = os.Stdout
 	if out.Type() != output.PlainFormatName {
 		w = nil
@@ -21,5 +29,6 @@ func DefaultRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandle
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to initialize buildlog file handler")
 	}
-	return events.NewRuntimeEventHandler(progressbar.NewRuntimeProgress(w), changesummary.New(out), lc), nil
+
+	return events.NewRuntimeEventHandler(progressbar.NewRuntimeProgress(w), changeSummary, lc), nil
 }

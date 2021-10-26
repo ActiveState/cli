@@ -202,7 +202,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(r.out)
+		eh, err := runbits.ActivateRuntimeEventHandler(r.out)
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}

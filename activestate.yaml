@@ -122,7 +122,7 @@ scripts:
       $constants.SET_ENV
       export CGO_ENABLED=0
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.DAEMON_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-tray
     description: Builds the State Tool system tray application
     standalone: true
@@ -313,6 +313,11 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: scripted
+    language: bash
+    description: "Runs a command via 'go run'"
+    standalone: true
+    value: go run github.com/ActiveState/cli/cmd/state $@
   - name: story-cleanup
     language: bash
     description: "Runs Python script to move old stories from primary project to storage project"

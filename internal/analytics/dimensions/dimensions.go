@@ -1,6 +1,9 @@
 package dimensions
 
 import (
+	"os"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -28,6 +31,7 @@ type Values struct {
 	ProjectNameSpace *string
 	OutputType       *string
 	ProjectID        *string
+	Flags            *string
 
 	preProcessor     func(*Values) error
 }
@@ -74,6 +78,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(pjNamespace),
 		p.StrP(string(output.PlainFormatName)),
 		p.StrP(""),
+		p.StrP(CalculateFlags()),
 		nil,
 	}
 }
@@ -104,3 +109,12 @@ func (v *Values) PreProcess() error {
 	return nil
 }
 
+func CalculateFlags() string {
+	flags := []string{}
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+		}
+	}
+	return strings.Join(flags, " ")
+}

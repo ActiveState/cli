@@ -64,7 +64,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("Activated", 20*time.Second)
+	cp.Expect("Activated", 40*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -80,7 +80,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 		e2e.WithArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated", 20*time.Second)
+	cp.Expect("Activated", 40*time.Second)
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -113,7 +113,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
 		cp.Expect("Activated")
-		cp.WaitForInput(20 * time.Second)
+		cp.WaitForInput(40 * time.Second)
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else {
@@ -301,7 +301,7 @@ version: %s
 	cp.Expect("Activated")
 
 	// not waiting for activation, as we test that part in a different test
-	c2.WaitForInput(20 * time.Second)
+	c2.WaitForInput(40 * time.Second)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -322,8 +322,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 		),
 	)
 
-	cp.Expect("Downloading", 20*time.Second)
-	cp.Expect("Installing", 120*time.Second)
+	cp.Expect("Downloading", 40*time.Second)
+	cp.Expect("Installing", 140*time.Second)
 	cp.Expect("Activated")
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
@@ -437,7 +437,7 @@ version: %s
 	)
 	cp.Expect("Activated")
 
-	c2.WaitForInput(20 * time.Second)
+	c2.WaitForInput(40 * time.Second)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -471,7 +471,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	c2.ExpectLongString("ActiveState-CLI/Python2")
 	cp.Expect("Activated")
 
-	c2.WaitForInput(20 * time.Second)
+	c2.WaitForInput(40 * time.Second)
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {
