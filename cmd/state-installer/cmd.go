@@ -56,12 +56,14 @@ func newParams() *Params {
 func main() {
 	var exitCode int
 
+	var an *service.Analytics
+
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose, an.Wait); err != nil {
 			logging.Warning("Failed to wait for rollbar to close: %v", err)
 		}
 		os.Exit(exitCode)
@@ -112,7 +114,7 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
-	an := service.NewAnalytics()
+	an = service.NewAnalytics()
 	an.Configure(cfg, nil)
 
 	an.Event(AnalyticsFunnelCat, "start")
