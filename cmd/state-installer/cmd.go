@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/service"
+	"github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -56,7 +56,7 @@ func newParams() *Params {
 func main() {
 	var exitCode int
 
-	var an *service.Analytics
+	var an *async.Client
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
