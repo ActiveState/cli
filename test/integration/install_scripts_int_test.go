@@ -140,10 +140,10 @@ func expectStateToolWorks(cp *termtest.ConsoleProcess, activation bool) {
 		cp.Expect("ActiveState Software Inc.")
 	}
 
-	cp.Send("state --version")
+	cp.SendLine("state --version")
 	cp.Expect("Branch")
 	cp.Expect("Built")
-	cp.Send("exit")
+	cp.SendLine("exit")
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
