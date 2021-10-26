@@ -10,9 +10,11 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/scriptrun"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -36,7 +38,17 @@ func init() {
 	mock.MockFullRuntime()
 }
 
-func TestRunStandaloneCommand(t *testing.T) {
+type ScriptRunSuite struct {
+	tagsuite.Suite
+}
+
+func TestScriptRunSuite(t *testing.T) {
+	suite.Run(t, new(ScriptRunSuite))
+}
+
+func (suite *ScriptRunSuite) TestRunStandaloneCommand() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -72,7 +84,10 @@ scripts:
 	assert.NoError(t, err, "No error occurred")
 }
 
-func TestEnvIsSet(t *testing.T) {
+func (suite *ScriptRunSuite) TestEnvIsSet() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
+
 	if runtime.GOOS == "windows" {
 		// For some reason this test hangs on Windows when ran via CI. I cannot reproduce the issue when manually invoking the
 		// test. Seeing as there isnt really any Windows specific logic being tested here I'm just disabling the test on Windows
@@ -112,7 +127,9 @@ func TestEnvIsSet(t *testing.T) {
 	assert.Contains(t, out, "TEST_KEY_EXISTS")
 }
 
-func TestRunNoProjectInheritance(t *testing.T) {
+func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
 
 	pjfile := &projectfile.Project{}
 	var contents string
@@ -151,7 +168,9 @@ scripts:
 	assert.NoError(t, err, "No error occurred")
 }
 
-func TestRunMissingScript(t *testing.T) {
+func (suite *ScriptRunSuite) TestRunMissingScript() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -176,7 +195,9 @@ scripts:
 	assert.Error(t, err, "Error occurred")
 }
 
-func TestRunUnknownCommand(t *testing.T) {
+func (suite *ScriptRunSuite) TestRunUnknownCommand() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
@@ -202,7 +223,9 @@ scripts:
 	assert.Error(t, err, "Error occurred")
 }
 
-func TestRunActivatedCommand(t *testing.T) {
+func (suite *ScriptRunSuite) TestRunActivatedCommand() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
 
 	// Prepare an empty activated environment.
 	root, err := environment.GetRootPath()
@@ -253,8 +276,11 @@ scripts:
 	projectfile.Reset()
 }
 
-func TestPathProvidesLang(t *testing.T) {
-	temp, err := ioutil.TempDir("", t.Name())
+func (suite *ScriptRunSuite) TestPathProvidesLang() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
+
+	temp, err := ioutil.TempDir("", filepath.Base(t.Name()))
 	require.NoError(t, err)
 
 	tf := filepath.Join(temp, "python3")
@@ -356,42 +382,18 @@ func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs [
 	require.Error(t, err, "run with error")
 }
 
-func TestArgs_NoArgsProvided(t *testing.T) {
+func (suite *ScriptRunSuite) TestArgs() {
+	suite.OnlyRunForTags(tagsuite.Scripts)
+	t := suite.T()
+
 	assertExecCommandFails(t, "junk", "", []string{})
-}
-
-func TestArgs_NoCmd_OnlyDash(t *testing.T) {
 	assertExecCommandFails(t, "junk", "--", []string{})
-}
-
-func TestArgs_NameAndDashOnly(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"--"}, "ARGS|--||||")
-}
-
-func TestArgs_MultipleArgs_NoDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "bar", "bar", []string{"baz", "bee"}, "ARGS|baz|bee|||")
-}
-
-func TestArgs_NoCmd_DashAsScriptName(t *testing.T) {
 	assertExecCommandFails(t, "junk", "--", []string{"foo", "geez"})
-}
-
-func TestArgs_NoCmd_FlagAsScriptName(t *testing.T) {
 	assertExecCommandFails(t, "junk", "-f", []string{"--foo", "geez"})
-}
-
-func TestArgs_WithCmd_AllArgsAfterDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "release", "release", []string{"--", "the", "kraken"}, "ARGS|--|the|kraken||")
-}
-
-func TestArgs_WithCmd_WithArgs_NoDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "release", "release", []string{"the", "kraken"}, "ARGS|the|kraken|||")
-}
-
-func TestArgs_WithCmd_WithArgs_BeforeAndAfterDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"bar", "--", "bees", "wax"}, "ARGS|bar|--|bees|wax|")
-}
-
-func TestArgs_WithCmd_WithFlags_BeforeAndAfterDash(t *testing.T) {
 	assertExecCommandProcessesArgs(t, "foo", "foo", []string{"--bar", "--", "bees", "--wax"}, "ARGS|--bar|--|bees|--wax|")
 }
