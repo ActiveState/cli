@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
-	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,12 +17,12 @@ import (
 
 type service struct {
 	cfg      *config.Instance
-	an       *anaSvc.Analytics
+	an       *anaSvc.Client
 	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, an *anaSvc.Analytics, shutdown context.CancelFunc) *service {
+func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
 	return &service{cfg: cfg, an: an, shutdown: shutdown}
 }
 

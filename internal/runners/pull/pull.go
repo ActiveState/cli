@@ -27,7 +27,7 @@ type Pull struct {
 	project   *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 	cfg       *config.Instance
 }
 

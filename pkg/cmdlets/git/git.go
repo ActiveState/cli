@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"gopkg.in/src-d/go-git.v4"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -24,7 +24,7 @@ import (
 
 // Repository is the interface used to represent a version control system repository
 type Repository interface {
-	CloneProject(owner, name, path string, out output.Outputer, an analytics.AnalyticsDispatcher) error
+	CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher) error
 }
 
 // NewRepo returns a new repository
@@ -38,7 +38,7 @@ type Repo struct {
 
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
-func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.AnalyticsDispatcher) error {
+func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher) error {
 	project, err := model.FetchProjectByName(owner, name)
 	if err != nil {
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
@@ -100,7 +100,7 @@ func plainClone(path string, isBare bool, o *git.CloneOptions) (r *git.Repositor
 	return git.PlainClone(path, isBare, o)
 }
 
-func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.AnalyticsDispatcher) error {
+func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.Dispatcher) error {
 	if !fileutils.FileExists(projectFilePath) {
 		return nil
 	}

@@ -26,7 +26,7 @@ type Run struct {
 	subshell  subshell.SubShell
 	cfg       *config.Instance
 	svcMgr    *svcmanager.Manager
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
@@ -57,7 +57,7 @@ func (r *Run) Run(name string, args []string) error {
 	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
 }
 
-func run(auth *authentication.Auth, out output.Outputer, analytics analytics.AnalyticsDispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
+func run(auth *authentication.Auth, out output.Outputer, analytics analytics.Dispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
 	logging.Debug("Execute")
 
 	checker.RunUpdateNotifier(svcMgr, cfg, out)

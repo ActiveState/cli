@@ -31,14 +31,14 @@ type ScriptRun struct {
 	sub       subshell.SubShell
 	project   *project.Project
 	cfg       *config.Instance
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.AnalyticsDispatcher) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,

@@ -17,7 +17,7 @@ import (
 type Shim struct {
 	out       output.Outputer
 	project   *projectfile.Project
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 func NewShim(prime *primer.Values) *Shim {

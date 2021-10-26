@@ -22,7 +22,7 @@ type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
 	envAccessed bool
-	analytics   analytics.AnalyticsDispatcher
+	analytics   analytics.Dispatcher
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -36,7 +36,7 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
@@ -55,7 +55,7 @@ func newRuntime(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runti
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.AnalyticsDispatcher) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}

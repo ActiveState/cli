@@ -1,9 +1,9 @@
 package ppm
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -42,7 +42,7 @@ type ConversionFlow struct {
 	prompt    prompt.Prompter
 	out       output.Outputer
 	project   *project.Project
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 // StartIfNecessary checks if the user is in a project directory.

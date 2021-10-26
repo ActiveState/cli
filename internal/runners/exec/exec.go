@@ -33,7 +33,7 @@ type Exec struct {
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {

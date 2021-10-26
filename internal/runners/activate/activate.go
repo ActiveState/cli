@@ -44,7 +44,7 @@ type Activate struct {
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
-	analytics        analytics.AnalyticsDispatcher
+	analytics        analytics.Dispatcher
 }
 
 type ActivateParams struct {

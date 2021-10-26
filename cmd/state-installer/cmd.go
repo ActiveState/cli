@@ -8,7 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/service"
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -56,7 +57,7 @@ func newParams() *Params {
 func main() {
 	var exitCode int
 
-	var an *service.Analytics
+	var an analytics.Dispatcher
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
@@ -114,9 +115,7 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
-	an = service.NewAnalytics()
-	an.Configure(cfg, nil)
-
+	an = sync.New(cfg, nil)
 	an.Event(AnalyticsFunnelCat, "start")
 
 	params := newParams()
@@ -219,7 +218,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "success")
 }
 
-func execute(out output.Outputer, cfg *config.Instance, an *service.Analytics, args []string, params *Params) error {
+func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
 	// Detect installed state tool
@@ -280,7 +279,7 @@ func execute(out output.Outputer, cfg *config.Instance, an *service.Analytics, a
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an *service.Analytics, params *Params, isUpdate bool) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
 
@@ -314,7 +313,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, an *service.Analytics, params *Params) error {
+func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
 	installPath, err := resolveInstallPath(params.path)
@@ -368,7 +367,7 @@ func postInstallEvents(out output.Outputer, an *service.Analytics, params *Param
 // Effectively this will download and unpack the target version and then run the installer packaged for that version
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
-func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an *service.Analytics,args []string, params *Params) error {
+func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "local-source")
 
 	out.Print(output.Title("Installing State Tool Package Manager"))

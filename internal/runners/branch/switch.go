@@ -16,7 +16,7 @@ type Switch struct {
 	auth      *authentication.Auth
 	out       output.Outputer
 	project   *project.Project
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type SwitchParams struct {

@@ -31,7 +31,7 @@ type Prepare struct {
 	out       output.Outputer
 	subshell  subshell.SubShell
 	cfg       *config.Instance
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 // New prepares a prepare execution context for use.

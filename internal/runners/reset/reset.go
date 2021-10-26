@@ -18,7 +18,7 @@ type Reset struct {
 	auth      *authentication.Auth
 	prompt    prompt.Prompter
 	project   *project.Project
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {

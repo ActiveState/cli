@@ -23,10 +23,10 @@ type Values struct {
 	conditional *constraints.Conditional
 	config      *config.Instance
 	svcMgr      *svcmanager.Manager
-	analytics   analytics.AnalyticsDispatcher
+	analytics   analytics.Dispatcher
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.AnalyticsDispatcher) *Values {
+func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager, an analytics.Dispatcher) *Values {
 	v := &Values{
 		output:      output,
 		auth:        auth,
@@ -73,7 +73,7 @@ type Svcer interface {
 }
 
 type Analyticer interface {
-	Analytics() analytics.AnalyticsDispatcher
+	Analytics() analytics.Dispatcher
 }
 
 type Subsheller interface {
@@ -120,6 +120,6 @@ func (v *Values) Config() *config.Instance {
 	return v.config
 }
 
-func (v *Values) Analytics() analytics.AnalyticsDispatcher {
+func (v *Values) Analytics() analytics.Dispatcher {
 	return v.analytics
 }

@@ -57,7 +57,7 @@ type Import struct {
 	prompt.Prompter
 	proj      *project.Project
 	cfg       configurable
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
