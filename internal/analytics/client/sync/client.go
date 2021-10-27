@@ -123,7 +123,6 @@ func (a *Client) Wait() {
 // Events returns a channel to feed eventData directly to the report loop
 func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
 	logging.Debug("Reporting event to %d reporters: %s, %s, %s, project=%s, output=%s", len(a.reporters), category, action, label)
-	logging.Debug("Dimensions: %#v", dimensions)
 
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {
