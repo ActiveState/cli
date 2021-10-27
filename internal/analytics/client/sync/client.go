@@ -66,10 +66,15 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		osVersion = osvInfo.Version
 	}
 
-	sessionToken := cfg.GetString(anaConsts.CfgSessionToken)
-	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
-	if !ok {
-		tag = cfg.GetString(updater.CfgUpdateTag)
+	var sessionToken string
+	var tag string
+	if cfg != nil {
+		sessionToken = cfg.GetString(anaConsts.CfgSessionToken)
+		var ok bool
+		tag, ok = os.LookupEnv(constants.UpdateTagEnvVarName)
+		if !ok {
+			tag = cfg.GetString(updater.CfgUpdateTag)
+		}
 	}
 
 	userID := ""
