@@ -502,6 +502,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 
 	subCommandString := c.UseFull()
+	logging.CurrentCmd = appEventPrefix+subCommandString
 
 	// Send  GA events unless they are handled in the runners...
 	if c.analytics != nil {
