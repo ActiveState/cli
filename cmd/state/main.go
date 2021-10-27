@@ -185,6 +185,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
 	defer an.Wait()
 
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
+
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
