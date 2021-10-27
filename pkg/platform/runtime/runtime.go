@@ -61,11 +61,7 @@ func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
-	trigger := target.Trigger()
-	if trigger == "" {
-		trigger = triggerUnknown.String()
-	}
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{Trigger: p.StrP(trigger)})
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{Trigger: p.StrP(target.Trigger())})
 
 	r, err := newRuntime(target, an)
 	if err == nil {

@@ -64,6 +64,9 @@ func (p *ProjectTarget) OnlyUseCache() bool {
 }
 
 func (p *ProjectTarget) Trigger() string {
+	if p.trigger == "" {
+		return triggerUnknown.String()
+	}
 	return p.trigger.String()
 }
 
