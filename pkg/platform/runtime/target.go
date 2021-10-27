@@ -109,6 +109,9 @@ func (c *CustomTarget) OnlyUseCache() bool {
 }
 
 func (c *CustomTarget) Trigger() string {
+	if c.trigger == "" {
+		return triggerUnknown.String()
+	}
 	return c.trigger.String()
 }
 
