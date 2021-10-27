@@ -1,10 +1,20 @@
 package instanceid
 
-import "github.com/google/uuid"
+import (
+	"sync"
 
-var id string
+	"github.com/google/uuid"
+)
+
+var (
+	id string
+	mu sync.Mutex
+)
 
 func ID() string {
+	mu.Lock()
+	defer mu.Unlock()
+
 	if id == "" {
 		id = uuid.New().String()
 	}
