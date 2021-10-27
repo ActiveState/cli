@@ -29,7 +29,7 @@ func (s *RollbarErrorLogger) Printf(format string, args ...interface{}) {
 		return
 	}
 
-	s.reporter(fmt.Sprintf(format, args))
+	s.reporter(fmt.Sprintf(format, args...))
 }
 
 func SetupRollbarReporter(reporter func(string)) {
