@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -13,12 +14,26 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-// SilentClientLogger is a type that implements the ClientLogger interface but produces no output.
 type RollbarLogger struct{}
 
-// Printf implements the ClientLogger interface.
 func (s *RollbarLogger) Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
+}
+
+type RollbarErrorLogger struct{
+	reporter func(string)
+}
+
+func (s *RollbarErrorLogger) Printf(format string, args ...interface{}) {
+	if ! strings.HasPrefix(format, "Rollbar") { // All rollbar errors I observed are prefixed with "Rollbar"
+		return
+	}
+
+	s.reporter(fmt.Sprintf(format, args...))
+}
+
+func SetupRollbarReporter(reporter func(string)) {
+	rollbar.SetLogger(&RollbarErrorLogger{reporter})
 }
 
 func SetupRollbar(token string) {

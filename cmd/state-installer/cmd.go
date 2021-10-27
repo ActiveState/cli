@@ -118,6 +118,8 @@ func main() {
 
 	an.Event(AnalyticsFunnelCat, "start")
 
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
+
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",

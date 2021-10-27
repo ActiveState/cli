@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anAsync "github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -190,6 +191,8 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
 		logging.Error("Failed to initialize analytics instance: %s", errs.JoinMessage(err))
 	}
+
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
