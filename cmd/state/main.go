@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	anAsync "github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
