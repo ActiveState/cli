@@ -6,10 +6,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -59,7 +61,7 @@ func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart)
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{Trigger: p.StrP(target.Trigger())})
 
 	r, err := newRuntime(target, an)
 	if err == nil {
