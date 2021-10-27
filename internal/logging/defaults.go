@@ -115,7 +115,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	defer l.mu.Unlock()
 
 	filename := FilePath()
-	originalMessage := message
+	originalMessage := fmt.Sprintf(message, args...)
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
@@ -136,10 +136,23 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				l.file = nil // unset so that it is reset later in this func
 			}
 
+			exec := filepath.Base(os.Args[0])
+			flags := []string{}
+			for _, arg := range os.Args[1:] {
+				if strings.HasPrefix(arg, "-") {
+					idx := strings.Index(arg, "=")
+					if idx != -1 {
+						arg = arg[0:idx]
+					}
+					flags = append(flags, arg)
+				}
+			}
+			rollbarMsg := fmt.Errorf("%s %s: %s", exec, flags, originalMessage)
+
 			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(fmt.Errorf(originalMessage, args...), data)
+				rollbar.Critical(rollbarMsg, data)
 			} else {
-				rollbar.Error(fmt.Errorf(originalMessage, args...), data)
+				rollbar.Error(rollbarMsg, data)
 			}
 		}
 	}()
