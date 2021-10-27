@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 type PixelReporter struct {
@@ -39,7 +38,7 @@ func (r *PixelReporter) Event(category, action, label string, d *dimensions.Valu
 	}
 	pixelURL.RawQuery = query.Encode()
 
-	logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
+	// logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
 	_, err = http.Head(pixelURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not download S3 pixel")

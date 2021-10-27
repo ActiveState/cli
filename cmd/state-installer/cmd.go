@@ -196,7 +196,6 @@ func main() {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			logging.Debug("Params: %+v", params)
 			return execute(out, cfg, an, processedArgs[1:], params)
 		},
 	)
