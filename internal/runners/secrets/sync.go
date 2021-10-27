@@ -59,7 +59,7 @@ func (s *Sync) Run() error {
 		return locale.WrapError(err, "secrets_err_sync", "Cannot synchronize secrets")
 	}
 
-	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))
+	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.DisplayName))
 
 	return nil
 }
