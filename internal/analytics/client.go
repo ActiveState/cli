@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	ac "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -141,9 +141,9 @@ func (a *DefaultClient) sendS3Pixel(category, action, label string) {
 		key := fmt.Sprintf("x-custom%s", num)
 		query.Add(key, value)
 	}
-	fullQuery := query.Encode()
+	// fullQuery := query.Encode()
 
-	logging.Debug("Using S3 pixel query: %v", fullQuery)
+	// logging.Debug("Using S3 pixel query: %v", fullQuery)
 	svcExec := appinfo.SvcApp().Exec()
 	exeutils.ExecuteAndForget(svcExec, []string{"_event", query.Encode()})
 }

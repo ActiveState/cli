@@ -162,7 +162,7 @@ func (a *Analytics) event(category, action, label string, dimensions *dimensions
 }
 
 func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[string]string) {
-	logging.Debug("Sending Google Analytics event with: %s, %s, %s, project=%s, output=%s", category, action, label, dimensions["10"], dimensions["5"])
+	//logging.Debug("Sending Google Analytics event with: %s, %s, %s, project=%s, output=%s", category, action, label, dimensions["10"], dimensions["5"])
 
 	a.gaClient.CustomDimensionMap(dimensions)
 
@@ -180,7 +180,7 @@ func (a *Analytics) sendGAEvent(category, action, label string, dimensions map[s
 }
 
 func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[string]string) {
-	logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
+	//logging.Debug("Sending S3 pixel event with: %s, %s, %s", category, action, label)
 	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel-svc")
 	if err != nil {
 		logging.Error("Invalid URL for analytics S3 pixel")
@@ -198,7 +198,7 @@ func (a *Analytics) sendS3Pixel(category, action, label string, dimensions map[s
 	}
 	pixelURL.RawQuery = query.Encode()
 
-	logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
+	//logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
 	_, err = http.Head(pixelURL.String())
 	if err != nil {
 		logging.Error("Could not download S3 pixel: %v", err)

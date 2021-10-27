@@ -246,7 +246,7 @@ func fireEvent(query string) {
 	}
 	pixelURL.RawQuery = query
 
-	logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
+	//logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
 	_, err = http.Head(pixelURL.String())
 	if err != nil {
 		logging.Error("Could not download S3 pixel: %v", err)

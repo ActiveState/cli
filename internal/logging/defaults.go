@@ -16,18 +16,22 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // datadir is the base directory at which the log is saved
 var datadir string
 
 var timestamp int64
+
+// CurrentCmd holds the value of the current command being invoked
+// it's a quick hack to allow us to log the command to rollbar without risking exposing sensitive info
+var CurrentCmd string
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -126,17 +130,24 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				if err := l.file.Close(); err != nil {
 					data["log_file_close_error"] = err.Error()
 				} else {
-					logData, err := ioutil.ReadFile(filename)
+					logDatab, err := ioutil.ReadFile(filename)
 					if err != nil {
 						data["log_file_read_error"] = err.Error()
 					} else {
-						data["log_file_data"] = string(logData)
+						logData := string(logDatab)
+						if len(logData) > 5000 {
+							logData = "<truncated>\n" + logData[len(logData)-5000:]
+						}
+						data["log_file_data"] = logData
 					}
 				}
 				l.file = nil // unset so that it is reset later in this func
 			}
 
-			exec := filepath.Base(os.Args[0])
+			exec := CurrentCmd
+			if exec == "" {
+				exec = strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
+			}
 			flags := []string{}
 			for _, arg := range os.Args[1:] {
 				if strings.HasPrefix(arg, "-") {
@@ -147,12 +158,16 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 					flags = append(flags, arg)
 				}
 			}
-			rollbarMsg := fmt.Errorf("%s %s: %s", exec, flags, originalMessage)
+
+			rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, originalMessage)
+			if len(rollbarMsg) > 1000 {
+				rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
+			}
 
 			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(rollbarMsg, data)
+				rollbar.Critical(errs.New(rollbarMsg), data)
 			} else {
-				rollbar.Error(rollbarMsg, data)
+				rollbar.Error(errs.New(rollbarMsg), data)
 			}
 		}
 	}()
