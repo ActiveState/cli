@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
@@ -67,10 +66,16 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	var projectDir string
 	var rtTarget setup.Targeter
 
+	if len(args) == 0 {
+		return nil
+	}
+
+	trigger := runtime.NewExecTrigger(args[0])
+
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
-		rtTarget = runtime.NewCustomTarget("", "", "", params.Path, anaConsts.TriggerExec)
+		rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger)
 	} else {
 		proj := s.proj
 		if params.Path != "" {
@@ -84,11 +89,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
-		rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, anaConsts.TriggerExec)
-	}
-
-	if len(args) == 0 {
-		return nil
+		rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
 
 	rt, err := runtime.New(rtTarget, s.analytics)

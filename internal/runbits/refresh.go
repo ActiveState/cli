@@ -2,7 +2,6 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,12 +12,12 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool) error {
+func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool, trigger runtime.Trigger) error {
 	rtMessages, err := DefaultRuntimeEventHandler(out)
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")
 	}
-	target := runtime.NewProjectTarget(proj, cachePath, &commitID, constants.TriggerUnknown)
+	target := runtime.NewProjectTarget(proj, cachePath, &commitID, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an)
 	if err != nil {

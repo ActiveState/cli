@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/go-openapi/strfmt"
@@ -11,14 +12,33 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Trigger string
+
+func (t Trigger) String() string {
+	return string(t)
+}
+
+const (
+	Activate Trigger = "activate"
+	Script   Trigger = "script"
+	Deploy   Trigger = "deploy"
+	Exec     Trigger = "exec"
+	Default  Trigger = "default-setup"
+	Unknown  Trigger = "unknown"
+)
+
+func NewExecTrigger(cmd string) Trigger {
+	return Trigger(fmt.Sprintf("%s: %s", Exec, cmd))
+}
+
 type ProjectTarget struct {
 	*project.Project
 	cacheDir     string
 	customCommit *strfmt.UUID
-	trigger      string
+	trigger      Trigger
 }
 
-func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger string) *ProjectTarget {
+func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
 	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger}
 }
 
@@ -38,7 +58,7 @@ func (p *ProjectTarget) OnlyUseCache() bool {
 }
 
 func (p *ProjectTarget) Trigger() string {
-	return p.trigger
+	return p.trigger.String()
 }
 
 type CustomTarget struct {
@@ -46,10 +66,10 @@ type CustomTarget struct {
 	name       string
 	commitUUID strfmt.UUID
 	dir        string
-	trigger    string
+	trigger    Trigger
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir, trigger string) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
@@ -80,7 +100,7 @@ func (c *CustomTarget) OnlyUseCache() bool {
 }
 
 func (c *CustomTarget) Trigger() string {
-	return c.trigger
+	return c.trigger.String()
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {

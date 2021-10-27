@@ -197,7 +197,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil, anaConsts.TriggerActivate), r.analytics)
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil, runtime.Activate), r.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
