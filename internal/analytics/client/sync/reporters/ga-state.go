@@ -68,5 +68,6 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"12": p.PStr(d.UniqID),
 		"13": p.PStr(d.UpdateTag),
 		"14": p.PStr(d.ProjectID),
+		"15": p.PStr(d.Trigger),
 	}
 }
