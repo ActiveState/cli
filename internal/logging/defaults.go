@@ -126,11 +126,15 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				if err := l.file.Close(); err != nil {
 					data["log_file_close_error"] = err.Error()
 				} else {
-					logData, err := ioutil.ReadFile(filename)
+					logDatab, err := ioutil.ReadFile(filename)
 					if err != nil {
 						data["log_file_read_error"] = err.Error()
 					} else {
-						data["log_file_data"] = string(logData)
+						logData := string(logDatab)
+						if len(logData) > 5000 {
+							logData = "<truncated>\n" + logData[len(logData)-5000:]
+						}
+						data["log_file_data"] = logData
 					}
 				}
 				l.file = nil // unset so that it is reset later in this func
@@ -147,12 +151,16 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 					flags = append(flags, arg)
 				}
 			}
-			rollbarMsg := fmt.Errorf("%s %s: %s", exec, flags, originalMessage)
+
+			rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, originalMessage)
+			if len(rollbarMsg) > 1000 {
+				rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
+			}
 
 			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(rollbarMsg, data)
+				rollbar.Critical(errs.New(rollbarMsg), data)
 			} else {
-				rollbar.Error(rollbarMsg, data)
+				rollbar.Error(errs.New(rollbarMsg), data)
 			}
 		}
 	}()
