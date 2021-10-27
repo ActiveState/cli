@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/rollbar/rollbar-go"
 )
@@ -63,8 +62,8 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose, an.Wait); err != nil {
-			logging.Warning("Failed to wait for rollbar to close: %v", err)
+		if err := events.WaitForEvents(5*time.Second, rollbar.Close, an.Wait); err != nil {
+			logging.Error("state-installer failed to wait for events: %v", err)
 		}
 		os.Exit(exitCode)
 	}()
@@ -206,7 +205,7 @@ func main() {
 	if err != nil {
 		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
-			logging.Warning("Installer error: " + errs.JoinMessage(err))
+			logging.Error("Installer input error: " + errs.JoinMessage(err))
 		} else {
 			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
 			logging.Critical("Installer error: " + errs.JoinMessage(err))

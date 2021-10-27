@@ -13,6 +13,14 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
+// SilentClientLogger is a type that implements the ClientLogger interface but produces no output.
+type RollbarLogger struct{}
+
+// Printf implements the ClientLogger interface.
+func (s *RollbarLogger) Printf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
 func SetupRollbar(token string) {
 	defer handlePanics(recover())
 	// set user to unknown (if it has not been set yet)
