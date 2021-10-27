@@ -100,7 +100,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, runtime.Unknown)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, runtime.PrefixRevert)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

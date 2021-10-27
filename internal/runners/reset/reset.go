@@ -69,7 +69,7 @@ func (r *Reset) Run() error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), *latestCommit, true, runtime.Unknown)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), *latestCommit, true, runtime.PrefixReset)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

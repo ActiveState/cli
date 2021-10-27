@@ -54,7 +54,7 @@ func (r *Prepare) resetExecutors() error {
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
 	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.Default), r.analytics)
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.PrefixDefault), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
