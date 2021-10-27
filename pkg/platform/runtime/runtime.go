@@ -63,7 +63,7 @@ func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	}
 	trigger := target.Trigger()
 	if trigger == "" {
-		trigger = prefixUnknown.String()
+		trigger = triggerUnknown.String()
 	}
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{Trigger: p.StrP(trigger)})
 

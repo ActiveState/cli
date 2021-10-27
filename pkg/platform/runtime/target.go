@@ -19,22 +19,22 @@ func (t Trigger) String() string {
 }
 
 const (
-	PrefixActivate Trigger = "activate"
-	PrefixScript   Trigger = "script"
-	PrefixDeploy   Trigger = "deploy"
-	PrefixExec     Trigger = "exec"
-	PrefixDefault  Trigger = "default-setup"
-	PrefixBranch   Trigger = "branch"
-	PrefixImport   Trigger = "import"
-	PrefixPackage  Trigger = "package"
-	PrefixPull     Trigger = "pull"
-	PrefixReset    Trigger = "reset"
-	PrefixRevert   Trigger = "revert"
-	prefixUnknown  Trigger = "unknown"
+	TriggerActivate Trigger = "activate"
+	TriggerScript   Trigger = "script"
+	TriggerDeploy   Trigger = "deploy"
+	TriggerExec     Trigger = "exec"
+	TriggerDefault  Trigger = "default-setup"
+	TriggerBranch   Trigger = "branch"
+	TriggerImport   Trigger = "import"
+	TriggerPackage  Trigger = "package"
+	TriggerPull     Trigger = "pull"
+	TriggerReset    Trigger = "reset"
+	TriggerRevert   Trigger = "revert"
+	triggerUnknown  Trigger = "unknown"
 )
 
 func NewExecTrigger(cmd string) Trigger {
-	return Trigger(fmt.Sprintf("%s: %s", PrefixExec, cmd))
+	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
 }
 
 type ProjectTarget struct {

@@ -159,7 +159,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, runtime.PrefixPull)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, runtime.TriggerPull)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

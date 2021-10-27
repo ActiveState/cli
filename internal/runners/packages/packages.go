@@ -147,7 +147,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, runtime.PrefixPackage)
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, runtime.TriggerPackage)
 	if err != nil {
 		return err
 	}
