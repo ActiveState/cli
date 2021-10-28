@@ -128,7 +128,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	exeTarget := args[0]
 	if ! fileutils.TargetExists(exeTarget) {
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := exeutils.FilterExesOnPATH(filepath.Base(args[0]), PATH, func(exe string) bool {
+		exesOnPath := exeutils.FilterExesOnPATH(args[0], PATH, func(exe string) bool {
 			v, err := executor.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
