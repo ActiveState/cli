@@ -335,8 +335,12 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 	default:
 		if installRan {
 			ss := subshell.New(cfg)
-			if err := ss.Run(ss.Binary()); err != nil {
-				return errs.Wrap(err, "Subshell; error returned: %s", errs.JoinMessage(err))
+			if err := ss.Activate(nil, cfg, out); err != nil {
+				return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
+			}
+			ers := ss.Errors()
+			for err = range ers {
+				return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 			}
 		}
 	}

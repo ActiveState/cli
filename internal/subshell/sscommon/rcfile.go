@@ -222,30 +222,32 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	userScripts := ""
 
-	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
-	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
-	for _, eventType := range project.ActivateEvents() {
-		event := prj.EventByName(eventType.String())
-		if event == nil {
-			continue
-		}
+	if prj != nil {
+		// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
+		activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
+		for _, eventType := range project.ActivateEvents() {
+			event := prj.EventByName(eventType.String())
+			if event == nil {
+				continue
+			}
 
-		v, err := event.Value()
+			v, err := event.Value()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not get event value")
+			}
+
+			if strings.ToLower(event.Name()) == project.FirstActivate.String() && !cfg.GetBool(activatedKey) {
+				userScripts = v + "\n" + userScripts
+			}
+
+			if strings.ToLower(event.Name()) == project.Activate.String() {
+				userScripts = userScripts + "\n" + v
+			}
+		}
+		err := cfg.Set(activatedKey, true)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not get event value")
+			return nil, errs.Wrap(err, "Could not set activatedKey in config")
 		}
-
-		if strings.ToLower(event.Name()) == project.FirstActivate.String() && !cfg.GetBool(activatedKey) {
-			userScripts = v + "\n" + userScripts
-		}
-
-		if strings.ToLower(event.Name()) == project.Activate.String() {
-			userScripts = userScripts + "\n" + v
-		}
-	}
-	err := cfg.Set(activatedKey, true)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not set activatedKey in config")
 	}
 
 	inuse := []string{}
@@ -254,23 +256,25 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
-	for _, cmd := range prj.Scripts() {
-		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
+	if prj != nil {
+		for _, cmd := range prj.Scripts() {
+			explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
-		path, err := exec.LookPath(cmd.Name())
-		dir := filepath.Clean(filepath.Dir(path))
-		if dir == globalBinDir {
-			continue
-		}
-		if err == nil {
-			// Do not overwrite commands that are already in use and
-			// keep track of those commands to warn to the user
-			inuse = append(inuse, cmd.Name())
-			continue
-		}
+			path, err := exec.LookPath(cmd.Name())
+			dir := filepath.Clean(filepath.Dir(path))
+			if dir == globalBinDir {
+				continue
+			}
+			if err == nil {
+				// Do not overwrite commands that are already in use and
+				// keep track of those commands to warn to the user
+				inuse = append(inuse, cmd.Name())
+				continue
+			}
 
-		scripts[cmd.Name()] = cmd.Name()
-		scripts[explicitName] = cmd.Name()
+			scripts[cmd.Name()] = cmd.Name()
+			scripts[explicitName] = cmd.Name()
+		}
 	}
 
 	if len(inuse) > 0 {
@@ -285,23 +289,27 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
 	var activatedMessage string
-	if !prj.IsHeadless() {
-		activatedMessage = locale.Tl("project_activated",
-			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
-	} else {
-		activatedMessage = locale.Tl("headless_project_activated",
-			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
+	if prj != nil {
+		if !prj.IsHeadless() {
+			activatedMessage = locale.Tl("project_activated",
+				"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
+		} else {
+			activatedMessage = locale.Tl("headless_project_activated",
+				"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
+		}
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":            prj.Owner(),
-		"Name":             prj.Name(),
-		"Env":              env,
-		"WD":               wd,
-		"UserScripts":      userScripts,
-		"Scripts":          scripts,
-		"ExecName":         constants.CommandName,
-		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
+		"Env":      env,
+		"ExecName": constants.CommandName,
+	}
+	if prj != nil {
+		rcData["Owner"] = prj.Owner()
+		rcData["Name"] = prj.Name()
+		rcData["WD"] = wd
+		rcData["UserScripts"] = userScripts
+		rcData["Scripts"] = scripts
+		rcData["ActivatedMessage"] = colorize.ColorizedOrStrip(activatedMessage, isConsole)
 	}
 
 	currExec := osutils.Executable()
