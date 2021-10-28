@@ -40,7 +40,7 @@ type Organization struct {
 	MemberCount int64 `json:"memberCount,omitempty"`
 
 	// Deprecated; use displayName instead.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// organization ID
 	// Format: uuid
