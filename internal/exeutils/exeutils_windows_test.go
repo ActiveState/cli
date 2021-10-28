@@ -15,11 +15,12 @@ func Test_PathForExecutables(t *testing.T) {
 	fileExists := func(fp string) bool {
 		return strings.ToLower(fp) == strings.ToLower(filepath.Join(testDir, "state.exe"))
 	}
+	filter := func(string) bool { return true}
 
-	assert.Equal(t, filepath.Join(testDir, "state.exe"), findExecutable("state", "/other_path;"+testDir, ".COM;.EXE;.BAT", fileExists))
-	assert.Equal(t, filepath.Join(testDir, "state.EXE"), findExecutable("state.EXE", "/other_path;"+testDir, ".COM;.EXE;.BAT", fileExists))
-	assert.Equal(t, filepath.Join(testDir, "state.exe"), findExecutable("state.exe", "/other_path;"+testDir, ".COM;.EXE;.BAT", fileExists))
-	assert.Equal(t, "", findExecutable("state", "/other_path;"+testDir, "", fileExists))
-	assert.Equal(t, "", findExecutable("non-existent", "/other_path;"+testDir, ".COM;.EXE;.BAT", fileExists))
-	assert.Equal(t, "", findExecutable("state", "/other_path", ".COM;.EXE;.BAT", fileExists))
+	assert.Equal(t, filepath.Join(testDir, "state.exe"), findExe("state", "/other_path;"+testDir, fileExists, filter))
+	assert.Equal(t, filepath.Join(testDir, "state.EXE"), findExe("state.EXE", "/other_path;"+testDir, fileExists, filter))
+	assert.Equal(t, filepath.Join(testDir, "state.exe"), findExe("state.exe", "/other_path;"+testDir, fileExists, filter))
+	assert.Equal(t, "", findExe("state", "/other_path;"+testDir, fileExists, filter))
+	assert.Equal(t, "", findExe("non-existent", "/other_path;"+testDir, fileExists, filter))
+	assert.Equal(t, "", findExe("state", "/other_path", fileExists, filter))
 }
