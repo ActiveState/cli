@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -124,19 +125,21 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 	PATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator) + os.Getenv("PATH")
 
-	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-	exesOnPath := exeutils.FilterExesOnPATH(filepath.Base(args[0]), PATH, func(exe string) bool {
-		v, err := executor.IsExecutor(exe)
-		if err != nil {
-			logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
-			return true // This usually means there's a permission issue, which means we likely don't own it
-		}
-		return !v
-	})
-
 	exeTarget := args[0]
-	if len(exesOnPath) > 0 {
-		exeTarget = exesOnPath[0]
+	if ! fileutils.TargetExists(exeTarget) {
+		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
+		exesOnPath := exeutils.FilterExesOnPATH(filepath.Base(args[0]), PATH, func(exe string) bool {
+			v, err := executor.IsExecutor(exe)
+			if err != nil {
+				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				return true // This usually means there's a permission issue, which means we likely don't own it
+			}
+			return !v
+		})
+
+		if len(exesOnPath) > 0 {
+			exeTarget = exesOnPath[0]
+		}
 	}
 
 	s.subshell.SetEnv(env)
