@@ -149,41 +149,43 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg); err != nil {
-		return err
-	}
-
-	path, err := ioutil.TempDir("", "state-zsh")
-	if err != nil {
-		return errs.Wrap(err, "OS failure")
-	}
-
-	activeZsrcPath := filepath.Join(path, ".zshrc")
-	err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
-	if err != nil {
-		return err
-	}
-
-	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
-	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
-	// commands.
-	userzdotdir := os.Getenv("ZDOTDIR")
-	if userzdotdir == "" {
-		u, err := user.Current()
-		if err != nil {
-			log.Println(locale.T("Warning: Could not load home directory for current user"))
-		} else {
-			userzdotdir = u.HomeDir
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg); err != nil {
+			return err
 		}
-	}
 
-	err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
-	if err != nil {
-		return err
+		path, err := ioutil.TempDir("", "state-zsh")
+		if err != nil {
+			return errs.Wrap(err, "OS failure")
+		}
+
+		activeZsrcPath := filepath.Join(path, ".zshrc")
+		err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+		if err != nil {
+			return err
+		}
+
+		// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
+		// and if it hasn't been set, user $HOME as that is often a default for zsh setup
+		// commands.
+		userzdotdir := os.Getenv("ZDOTDIR")
+		if userzdotdir == "" {
+			u, err := user.Current()
+			if err != nil {
+				log.Println(locale.T("Warning: Could not load home directory for current user"))
+			} else {
+				userzdotdir = u.HomeDir
+			}
+		}
+
+		err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
+		if err != nil {
+			return err
+		}
+		os.Setenv("ZDOTDIR", path)
 	}
-	os.Setenv("ZDOTDIR", path)
 
 	shellArgs := []string{}
 	if v.activateCommand != nil {

@@ -141,13 +141,18 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = append(shellArgs, "--rcfile", v.rcFile.Name())
 	}
 
-	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	if v.activateCommand != nil {
 		shellArgs = append(shellArgs, "-c", *v.activateCommand)
 	}

@@ -124,16 +124,24 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// The exec'd shell does not inherit 'prompt' from the calling terminal since
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
+		if v.activateCommand != nil {
+			shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
+		}
+	} else {
+		if v.activateCommand != nil {
+			shellArgs = []string{"-c", *v.activateCommand}
+		}
 	}
 
-	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
-	if v.activateCommand != nil {
-		shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
-	}
 	cmd := exec.Command(v.Binary(), shellArgs...)
 
 	v.errs = sscommon.Start(cmd)
