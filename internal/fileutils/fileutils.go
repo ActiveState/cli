@@ -505,7 +505,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 
 		err = os.Rename(subFromPath, subToPath)
 		if err != nil {
-			var mode fs.FileMode = 0
+			var mode fs.FileMode
 			if toPathExists {
 				mode = toInfo.Mode()
 			}
