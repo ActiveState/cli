@@ -368,8 +368,8 @@ func postInstallEvents(out output.Outputer, an *service.Analytics, params *Param
 // Effectively this will download and unpack the target version and then run the installer packaged for that version
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
-func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an *service.Analytics,args []string, params *Params) error {
-	an.Event(AnalyticsFunnelCat, "local-source")
+func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an service.Analytics,args []string, params *Params) error {
+	an.Event(AnalyticsFunnelCat, "remote-source")
 
 	out.Print(output.Title("Installing State Tool Package Manager"))
 	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
