@@ -11,7 +11,7 @@ import (
 
 // FindExeOnPATH returns the first path from the PATH env var for which the executable exists
 func FindExeOnPATH(executable string) string {
-	exes := findExes(executable, os.Getenv("PATH"), fileutils.TargetExists, nil)
+	exes := findExes(executable, os.Getenv("PATH"), exts, fileutils.TargetExists, nil)
 	if len(exes) == 0 {
 		return ""
 	}
@@ -20,21 +20,20 @@ func FindExeOnPATH(executable string) string {
 
 // FindExeOnPATH returns the first path from the PATH env var for which the executable exists
 func FilterExesOnPATH(executable string, PATH string, filter func(exe string) bool) []string {
-	return findExes(executable, PATH, fileutils.TargetExists, filter)
+	return findExes(executable, PATH, exts, fileutils.TargetExists,  filter)
 }
 
 func FindExeInside(executable string, PATH string) string {
-	exes := findExes(executable, PATH, fileutils.TargetExists, nil)
+	exes := findExes(executable, PATH, exts, fileutils.TargetExists, nil)
 	if len(exes) == 0 {
 		return ""
 	}
 	return exes[0]
 }
 
-func findExes(executable string, PATH string, fileExists func(string) bool, filter func(exe string) bool) []string {
-	var exts = exts
+func findExes(executable string, PATH string, exts []string, fileExists func(string) bool, filter func(exe string) bool) []string {
 	// if executable has valid extension for an executable file, we have to check for its existence without appending more extensions
-	if funk.ContainsString(exts, strings.ToLower(filepath.Ext(executable))) {
+	if len(exts) == 0 || funk.ContainsString(exts, strings.ToLower(filepath.Ext(executable))) {
 		exts = []string{""}
 	}
 
@@ -51,8 +50,8 @@ func findExes(executable string, PATH string, fileExists func(string) bool, filt
 	return result
 }
 
-func findExe(executable string, PATH string, fileExists func(string) bool, filter func(exe string) bool) string {
-	r := findExes(executable, PATH, fileExists, filter)
+func findExe(executable string, PATH string, exts []string,fileExists func(string) bool, filter func(exe string) bool) string {
+	r := findExes(executable, PATH, exts, fileExists, filter)
 	if len(r) > 0 {
 		return r[0]
 	}
