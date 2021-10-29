@@ -365,5 +365,11 @@ const FirstMultiFileStateToolVersion = "0.29.0"
 // ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
 const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
 
+// ExecRecursionEnvVarName is an environment variable storing a string representation of the current recursion
+const ExecRecursionEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION"
+
+// ExecRecursionMaxLevelEnvVarName is an environment variable storing the number of times the executor may be called recursively
+const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_LEVEL"
+
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"

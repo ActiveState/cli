@@ -1748,3 +1748,10 @@ err_directory_in_use:
 err_jwt_not_authenticated:
   other: |
     You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
+err_recursion_limit:
+  other: |
+    Recursion detected in command:
+
+    {{.V0}}
+
+    To increase the recursion limit set the {{.V1}} environment variable.

@@ -9,8 +9,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -23,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/shirou/gopsutil/process"
@@ -113,27 +115,40 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 	logging.Debug("Trying to exec %s on PATH=%s", args[0], env["PATH"])
 
-	recursionLvl := 0
-	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
-	if err == nil {
-		recursionLvl = int(lastLvl) + 1
+	if err := handleRecursion(env, args); err != nil {
+		return errs.Wrap(err, "Could not handle recursion")
 	}
 
-	// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-	p := exeutils.FindExecutableOnOSPath(filepath.Base(args[0]))
-	binDir := filepath.Clean(globaldefault.BinDir())
-	if filepath.Dir(p) == binDir && (recursionLvl == 1 || recursionLvl == 10 || recursionLvl == 50) {
-		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
+	rtExePaths, err := rt.ExecutablePaths()
+	if err != nil {
+		return errs.Wrap(err, "Could not detect runtime executable paths")
 	}
-	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
+	PATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator) + os.Getenv("PATH")
+
+	exeTarget := args[0]
+	if ! fileutils.TargetExists(exeTarget) {
+		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
+		exesOnPath := exeutils.FilterExesOnPATH(args[0], PATH, func(exe string) bool {
+			v, err := executor.IsExecutor(exe)
+			if err != nil {
+				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				return true // This usually means there's a permission issue, which means we likely don't own it
+			}
+			return !v
+		})
+
+		if len(exesOnPath) > 0 {
+			exeTarget = exesOnPath[0]
+		}
+	}
 
 	s.subshell.SetEnv(env)
 
 	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%s "$@"`, args[0])
+	scriptArgs := fmt.Sprintf(`%s "$@"`, exeTarget)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
-		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", args[0])
+		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", exeTarget)
 	}
 
 	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)
@@ -142,6 +157,37 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)
+}
+
+func handleRecursion(env map[string]string, args []string) (error) {
+	recursionReadable := []string{}
+	recursionReadableFull := os.Getenv(constants.ExecRecursionEnvVarName)
+	if recursionReadableFull == "" {
+		recursionReadable = append(recursionReadable, getParentProcessArgs())
+	} else {
+		recursionReadable = strings.Split(recursionReadableFull, "\n")
+	}
+	recursionReadable = append(recursionReadable, filepath.Base(os.Args[0]) + " "  + strings.Join(os.Args[1:], " "))
+	var recursionLvl int64
+	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
+	if err == nil {
+		recursionLvl = lastLvl + 1
+	}
+	maxLevel, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionMaxLevelEnvVarName), 10, 32)
+	if err == nil || maxLevel == 0 {
+		maxLevel = 10
+	}
+	if recursionLvl == 2 || recursionLvl == 10 || recursionLvl == 50 {
+		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
+	}
+	if recursionLvl >= maxLevel {
+		return locale.NewError("err_recursion_limit", "", strings.Join(recursionReadable, "\n"), constants.ExecRecursionMaxLevelEnvVarName)
+	}
+
+	env[constants.ExecRecursionLevelEnvVarName] = fmt.Sprintf("%d", recursionLvl)
+	env[constants.ExecRecursionMaxLevelEnvVarName] = fmt.Sprintf("%d", maxLevel)
+	env[constants.ExecRecursionEnvVarName] = strings.Join(recursionReadable, "\n")
+	return nil
 }
 
 func getParentProcessArgs() string {
@@ -159,3 +205,5 @@ func getParentProcessArgs() string {
 
 	return strings.Join(args, " ")
 }
+
+
