@@ -246,10 +246,8 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if false {
-			if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
-				return err
-			}
+		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
+			return err
 		}
 		return postInstallEvents(out, cfg, params, true)
 	}
