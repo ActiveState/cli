@@ -59,7 +59,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5 * time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 

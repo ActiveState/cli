@@ -117,16 +117,16 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return errs.Wrap(err, "Could not handle recursion")
 	}
 
-	rtExePaths, err := rt.ExecutablePaths()
-	if err != nil {
-		return errs.Wrap(err, "Could not detect runtime executable paths")
-	}
-	PATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator) + os.Getenv("PATH")
-
 	exeTarget := args[0]
 	if ! fileutils.TargetExists(exeTarget) {
+		rtExePaths, err := rt.ExecutablePaths()
+		if err != nil {
+			return errs.Wrap(err, "Could not detect runtime executable paths")
+		}
+		RTPATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator) + os.Getenv("PATH")
+
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := exeutils.FilterExesOnPATH(args[0], PATH, func(exe string) bool {
+		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
 			v, err := executor.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
@@ -137,6 +137,20 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 		if len(exesOnPath) > 0 {
 			exeTarget = exesOnPath[0]
+		}
+	}
+
+	// Guard against invoking the executor from PATH (ie. by name alone)
+	if os.Getenv(constants.ExecRecursionAllowEnvVarName) != "true" && filepath.Base(exeTarget) == exeTarget { // not a full path
+		exe := exeutils.FindExeInside(exeTarget, env["PATH"])
+		if exe != exeTarget { // Found the exe name on our PATH
+			isExec, err := executor.IsExecutor(exe)
+			if err != nil {
+				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+			} else if isExec {
+				// If the exe we resolve to is an executor then we have ourselves a recursive loop
+				return locale.NewError("err_exec_recursion", "", constants.ForumsURL, constants.ExecRecursionAllowEnvVarName)
+			}
 		}
 	}
 

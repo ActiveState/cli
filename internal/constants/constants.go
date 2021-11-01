@@ -368,6 +368,9 @@ const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
 // ExecRecursionEnvVarName is an environment variable storing a string representation of the current recursion
 const ExecRecursionEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION"
 
+// ExecRecursionAllowEnvVarName is an environment variable overriding the recursion allowance
+const ExecRecursionAllowEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_ALLOW"
+
 // ExecRecursionMaxLevelEnvVarName is an environment variable storing the number of times the executor may be called recursively
 const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_LEVEL"
 
