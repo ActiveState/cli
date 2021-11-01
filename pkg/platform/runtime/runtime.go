@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -9,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
@@ -124,13 +126,17 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 	env := envDef.GetEnv(inherit)
 
+	execDir := filepath.Clean(setup.ExecDir(r.target.Dir()))
 	if useExecutors {
 		// Override PATH entry with exec path
-		pathEntries := []string{setup.ExecDir(r.target.Dir())}
+		pathEntries := []string{execDir}
 		if inherit {
 			pathEntries = append(pathEntries, os.Getenv("PATH"))
 		}
 		env["PATH"] = strings.Join(pathEntries, string(os.PathListSeparator))
+	} else {
+		// Ensure we aren't inheriting the executor paths from something like an activated state
+		envdef.FilterPATH(env, execDir, storage.GlobalBinDir())
 	}
 
 	return env, nil

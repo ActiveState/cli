@@ -38,6 +38,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 		if err != nil {
 			return envMap, err
 		}
+		inherit = false // don't inherit again
 	}
 
 	if projectDir != "" {
