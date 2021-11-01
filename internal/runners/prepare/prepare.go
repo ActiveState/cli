@@ -3,6 +3,7 @@ package prepare
 import (
 	"fmt"
 	"runtime"
+	"strconv"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -54,7 +56,13 @@ func (r *Prepare) resetExecutors() error {
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
 	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.TriggerDefault), r.analytics)
+
+	proj, err := project.FromPath(defaultProjectDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not get project from default project directory")
+	}
+
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.TriggerDefault, strconv.FormatBool(proj.IsHeadless())), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}

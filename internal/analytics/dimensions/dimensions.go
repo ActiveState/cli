@@ -33,6 +33,7 @@ type Values struct {
 	ProjectID        *string
 	Flags            *string
 	Trigger          *string
+	Headless         *string
 
 	preProcessor func(*Values) error
 }
@@ -80,6 +81,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(string(output.PlainFormatName)),
 		p.StrP(""),
 		p.StrP(CalculateFlags()),
+		p.StrP(""),
 		p.StrP(""),
 		nil,
 	}

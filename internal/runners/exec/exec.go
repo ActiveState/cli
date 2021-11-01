@@ -9,8 +9,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -25,14 +27,20 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/shirou/gopsutil/process"
 )
+
+type Configurable interface {
+	GetStringMapStringSlice(key string) map[string][]string
+}
 
 type Exec struct {
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
+	cfg       Configurable
 	analytics analytics.Dispatcher
 }
 
@@ -41,6 +49,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
+	primer.Configurer
 	primer.Analyticer
 }
 
@@ -54,6 +63,7 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Config(),
 		prime.Analytics(),
 	}
 }
@@ -75,7 +85,14 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
-		rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger)
+		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
+		proj, err := project.FromPath(projectDir)
+		if err != nil {
+			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
+			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, "")
+		} else {
+			rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		}
 	} else {
 		proj := s.proj
 		if params.Path != "" {
@@ -142,6 +159,20 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)
+}
+
+func projectFromRuntimeDir(cfg Configurable, path string) string {
+	projects := cfg.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	for _, paths := range projects {
+		for _, p := range paths {
+			h := hash.ShortHash(p)
+			if strings.Contains(path, h) {
+				return p
+			}
+		}
+	}
+
+	return ""
 }
 
 func getParentProcessArgs() string {
