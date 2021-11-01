@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
@@ -34,6 +35,7 @@ type Values struct {
 	Flags            *string
 	Trigger          *string
 	Headless         *string
+	InstanceID       *string
 
 	preProcessor func(*Values) error
 }
@@ -83,6 +85,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(CalculateFlags()),
 		p.StrP(""),
 		p.StrP(""),
+		p.StrP(instanceid.ID()),
 		nil,
 	}
 }

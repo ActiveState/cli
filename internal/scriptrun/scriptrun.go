@@ -193,5 +193,5 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 }
 
 func PathProvidesExec(path, exec string) bool {
-	return exeutils.FindExecutableOnPath(exec, path) != ""
+	return exeutils.FindExeInside(exec, path) != ""
 }

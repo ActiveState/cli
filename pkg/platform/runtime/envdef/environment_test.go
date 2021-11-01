@@ -197,3 +197,47 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 func TestEnvironmentTestSuite(t *testing.T) {
 	suite.Run(t, new(EnvironmentTestSuite))
 }
+
+func TestFilterPATH(t *testing.T) {
+	s := string(os.PathListSeparator)
+	type args struct {
+		env      map[string]string
+		excludes []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"Filters out matching path",
+			args{
+				map[string]string{"PATH": "/path/to/key1" + s + "/path/to/key2" + s + "/path/to/key3"},
+				[]string{"/path/to/key2"},
+			},
+			"/path/to/key1" + s + "/path/to/key3",
+		},
+		{
+			"Filters out matching path despite malformed paths",
+			args{
+				map[string]string{"PATH": "/path/to/key1" + s + "/path//to/key2" + s + "/path/to/key3"},
+				[]string{"/path/to//key2"},
+			},
+			"/path/to/key1" + s + "/path/to/key3",
+		},
+		{
+			"Preserve original version of PATH, even if it's malformed",
+			args{
+				map[string]string{"PATH": "/path//to/key1" + s + "/path//to/key2" + s + "/path/to//key3"},
+				[]string{"/path/to//key2"},
+			},
+			"/path//to/key1" + s + "/path/to//key3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envdef.FilterPATH(tt.args.env, tt.args.excludes...)
+			require.Equal(t, tt.want, tt.args.env["PATH"])
+		})
+	}
+}
