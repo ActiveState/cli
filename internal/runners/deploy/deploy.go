@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	rt "runtime"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -91,7 +90,7 @@ func (d *Deploy) Run(params *Params) error {
 	}
 
 	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, runtime.TriggerDeploy, strconv.FormatBool(false)) /* TODO: handle empty path */
+	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, runtime.TriggerDeploy, false) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 

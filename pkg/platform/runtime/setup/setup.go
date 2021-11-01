@@ -98,7 +98,7 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Headless() string
+	Headless() bool
 	Trigger() string
 
 	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)

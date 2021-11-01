@@ -86,7 +86,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		proj, err := project.FromPath(projectDir)
 		if err != nil {
 			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
-			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, "")
+			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, false)
 		} else {
 			rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 		}

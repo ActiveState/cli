@@ -3,7 +3,6 @@ package runtime
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	"github.com/go-openapi/strfmt"
 
@@ -71,8 +70,8 @@ func (p *ProjectTarget) Trigger() string {
 	return p.trigger.String()
 }
 
-func (p *ProjectTarget) Headless() string {
-	return strconv.FormatBool(p.Project.IsHeadless())
+func (p *ProjectTarget) Headless() bool {
+	return p.Project.IsHeadless()
 }
 
 type CustomTarget struct {
@@ -81,10 +80,10 @@ type CustomTarget struct {
 	commitUUID strfmt.UUID
 	dir        string
 	trigger    Trigger
-	headless   string
+	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless string) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
@@ -121,7 +120,7 @@ func (c *CustomTarget) Trigger() string {
 	return c.trigger.String()
 }
 
-func (c *CustomTarget) Headless() string {
+func (c *CustomTarget) Headless() bool {
 	return c.headless
 }
 

@@ -3,7 +3,6 @@ package prepare
 import (
 	"fmt"
 	"runtime"
-	"strconv"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
@@ -62,7 +61,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from default project directory")
 	}
 
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.TriggerDefault, strconv.FormatBool(proj.IsHeadless())), r.analytics)
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.TriggerDefault, proj.IsHeadless()), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
