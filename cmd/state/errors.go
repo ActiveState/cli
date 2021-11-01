@@ -50,7 +50,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		}
 		err = errors.Unwrap(err)
 	}
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "Visit the Forum → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
 	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
