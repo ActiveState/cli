@@ -86,7 +86,9 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		proj, err := project.FromPath(projectDir)
 		if err != nil {
 			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
-			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, false)
+			// We do not know if the project is headless at this point so we default to true
+			// as there is no head
+			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
 			rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 		}
