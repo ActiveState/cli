@@ -1,14 +1,12 @@
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
-{{ if .Owner }}
+{{if ne .Owner ""}}
 if [ -z "$PROMPT_COMMAND" ]; then
   export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 fi
 {{end}}
 
-{{ if .WD }}
 cd "{{.WD}}"
-{{ end }}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
@@ -29,11 +27,6 @@ function {{$K}} {
 export -f {{$K}}
 {{end}}
 
-{{ if .ActivatedMessage }}
 echo "{{.ActivatedMessage}}"
-{{ end }}
 
-{{ if .UserScripts }}
 {{.UserScripts}}
-{{ end }}
-cat ${BASH_SOURCE}
