@@ -338,7 +338,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 			}
 			ers := ss.Errors()
 			for err = range ers {
-				return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
+				return errs.Wrap(err, "Subshell execution; error returned: %s", errs.JoinMessage(err))
 			}
 		}
 	}
