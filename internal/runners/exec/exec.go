@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -31,16 +32,12 @@ import (
 	"github.com/shirou/gopsutil/process"
 )
 
-type Configurable interface {
-	GetStringMapStringSlice(key string) map[string][]string
-}
-
 type Exec struct {
 	subshell  subshell.SubShell
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	cfg       Configurable
+	cfg       projectfile.ConfigGetter
 	analytics analytics.Dispatcher
 }
 
@@ -85,7 +82,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
-		projectDir = projectFromRuntimeDir(s.cfg, params.Path, storage.CachePath())
+		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err := project.FromPath(projectDir)
 		if err != nil {
 			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
@@ -188,12 +185,12 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
 
-func projectFromRuntimeDir(cfg Configurable, runtimeDir, cacheDir string) string {
-	projects := cfg.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+func projectFromRuntimeDir(cfg projectfile.ConfigGetter, runtimeDir string) string {
+	projects := projectfile.GetProjectMapping(cfg)
 	for _, paths := range projects {
 		for _, p := range paths {
-			targetDir := runtime.ProjectDirToTargetDir(p, cacheDir)
-			if filepath.Clean(runtimeDir) == filepath.Clean(targetDir) {
+			targetBase := hash.ShortHash(p)
+			if filepath.Base(runtimeDir) == targetBase {
 				return p
 			}
 		}
