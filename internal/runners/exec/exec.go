@@ -139,7 +139,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not detect runtime executable paths")
 		}
-		RTPATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator) + os.Getenv("PATH")
+		RTPATH := strings.Join(rtExePaths, string(os.PathListSeparator)) + string(os.PathListSeparator)
 
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
