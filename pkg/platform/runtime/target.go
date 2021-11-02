@@ -70,22 +70,27 @@ func (p *ProjectTarget) Trigger() string {
 	return p.trigger.String()
 }
 
+func (p *ProjectTarget) Headless() bool {
+	return p.Project.IsHeadless()
+}
+
 type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
 	dir        string
 	trigger    Trigger
+	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, dir, trigger}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger, headless}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -113,6 +118,10 @@ func (c *CustomTarget) Trigger() string {
 		return triggerUnknown.String()
 	}
 	return c.trigger.String()
+}
+
+func (c *CustomTarget) Headless() bool {
+	return c.headless
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {

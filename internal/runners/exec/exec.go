@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -27,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -35,6 +37,7 @@ type Exec struct {
 	proj      *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
+	cfg       projectfile.ConfigGetter
 	analytics analytics.Dispatcher
 }
 
@@ -43,6 +46,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Projecter
+	primer.Configurer
 	primer.Analyticer
 }
 
@@ -56,6 +60,7 @@ func New(prime primeable) *Exec {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Config(),
 		prime.Analytics(),
 	}
 }
@@ -77,7 +82,16 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
-		rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger)
+		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
+		proj, err := project.FromPath(projectDir)
+		if err != nil {
+			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
+			// We do not know if the project is headless at this point so we default to true
+			// as there is no head
+			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, true)
+		} else {
+			rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		}
 	} else {
 		proj := s.proj
 		if params.Path != "" {
@@ -120,7 +134,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	}
 
 	exeTarget := args[0]
-	if ! fileutils.TargetExists(exeTarget) {
+	if !fileutils.TargetExists(exeTarget) {
 		rtExePaths, err := rt.ExecutablePaths()
 		if err != nil {
 			return errs.Wrap(err, "Could not detect runtime executable paths")
@@ -173,7 +187,21 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }
 
-func handleRecursion(env map[string]string, args []string) (error) {
+func projectFromRuntimeDir(cfg projectfile.ConfigGetter, runtimeDir string) string {
+	projects := projectfile.GetProjectMapping(cfg)
+	for _, paths := range projects {
+		for _, p := range paths {
+			targetBase := hash.ShortHash(p)
+			if filepath.Base(runtimeDir) == targetBase {
+				return p
+			}
+		}
+	}
+
+	return ""
+}
+
+func handleRecursion(env map[string]string, args []string) error {
 	recursionReadable := []string{}
 	recursionReadableFull := os.Getenv(constants.ExecRecursionEnvVarName)
 	if recursionReadableFull == "" {
@@ -181,7 +209,7 @@ func handleRecursion(env map[string]string, args []string) (error) {
 	} else {
 		recursionReadable = strings.Split(recursionReadableFull, "\n")
 	}
-	recursionReadable = append(recursionReadable, filepath.Base(os.Args[0]) + " "  + strings.Join(os.Args[1:], " "))
+	recursionReadable = append(recursionReadable, filepath.Base(os.Args[0])+" "+strings.Join(os.Args[1:], " "))
 	var recursionLvl int64
 	lastLvl, err := strconv.ParseInt(os.Getenv(constants.ExecRecursionLevelEnvVarName), 10, 32)
 	if err == nil {
@@ -219,5 +247,3 @@ func getParentProcessArgs() string {
 
 	return strings.Join(args, " ")
 }
-
-
