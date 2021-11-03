@@ -254,14 +254,14 @@ func execute(out output.Outputer, cfg *config.Instance, args []string, params *P
 		if err := installOrUpdateFromLocalSource(out, cfg, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, cfg, params, true)
+		return postInstallEvents(out, cfg, params, isUpdate)
 	}
 
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
-		return postInstallEvents(out, cfg, params, false)
+		return postInstallEvents(out, cfg, params, true)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -301,7 +301,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, p
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params, installRan bool) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params, isUpdate bool) error {
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
@@ -335,7 +335,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	default:
-		if installRan {
+		if !isUpdate {
 			ss := subshell.New(cfg)
 			ss.SetEnv(envMap(binPath))
 			if err := ss.Activate(nil, cfg, out); err != nil {
