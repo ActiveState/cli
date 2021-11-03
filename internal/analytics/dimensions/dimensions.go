@@ -36,6 +36,7 @@ type Values struct {
 	Trigger          *string
 	Headless         *string
 	InstanceID       *string
+	CommitID         *string
 
 	preProcessor func(*Values) error
 }
@@ -86,6 +87,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(""),
 		p.StrP(""),
 		p.StrP(instanceid.ID()),
+		p.StrP(""),
 		nil,
 	}
 }

@@ -67,6 +67,7 @@ func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:  p.StrP(target.Trigger()),
 		Headless: p.StrP(strconv.FormatBool(target.Headless())),
+		CommitID: p.StrP(target.CommitUUID().String()),
 	})
 
 	r, err := newRuntime(target, an)
