@@ -193,8 +193,8 @@ func main() {
 
 	if err := cmd.Execute(processedArgs[1:]); err != nil {
 		// if error carries an exit code, set that and skip error logging
-		if errExitCode := extractExitCode(err); errExitCode > 0 {
-			exitCode = errExitCode
+		if exCode, ok := extractExitCode(err); ok {
+			exitCode = exCode
 			return
 		}
 
@@ -205,12 +205,17 @@ func main() {
 	}
 }
 
-func extractExitCode(err error) int {
-	var eerr interface{ ExitCode() int }
-	if errors.As(err, &eerr) {
-		return eerr.ExitCode()
+func extractExitCode(err error) (int, bool) {
+	if err == nil {
+		return 0, false
 	}
-	return 0
+
+	var eerr errs.ExitCodeable
+	if errors.As(err, &eerr) {
+		return eerr.ExitCode(), true
+	}
+
+	return 1, false
 }
 
 func execute(out output.Outputer, cfg *config.Instance, args []string, params *Params) error {
@@ -307,7 +312,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	env := []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
@@ -315,24 +319,25 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 	case params.command != "":
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
-		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	default:
 		if installRan {
 			ss := subshell.New(cfg)
+			ss.SetEnv(envMap(binPath))
 			if err := ss.Activate(nil, cfg, out); err != nil {
 				return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 			}
@@ -344,6 +349,17 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, params *Params
 	}
 
 	return nil
+}
+
+func envSlice(binPath string) []string {
+	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+}
+
+func envMap(binPath string) map[string]string {
+	return map[string]string{
+		"PATH":   binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"TESTER": "TEST",
+	}
 }
 
 // installFromRemoteSource is invoked when we run the installer without providing the associated source files
