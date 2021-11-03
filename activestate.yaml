@@ -52,6 +52,7 @@ constants:
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
   - name: SCRIPT_EXT
+    if: ne .OS.Name "Windows"
     value: .sh
 scripts:
   - name: install-deps
