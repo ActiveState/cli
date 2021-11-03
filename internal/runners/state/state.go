@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 )
@@ -52,11 +53,12 @@ func (s *State) Run(usageFunc func() error) error {
 }
 
 type versionData struct {
-	License  string `json:"license"`
-	Version  string `json:"version"`
-	Branch   string `json:"branch"`
-	Revision string `json:"revision"`
-	Date     string `json:"date"`
+	License     string `json:"license"`
+	Version     string `json:"version"`
+	Branch      string `json:"branch"`
+	Revision    string `json:"revision"`
+	Date        string `json:"date"`
+	BuiltViaCI  bool   `json:"builtViaCI"'`
 }
 
 func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr *svcmanager.Manager, out output.Outputer) error {
@@ -71,6 +73,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr
 			constants.BranchName,
 			constants.RevisionHash,
 			constants.Date,
+			rtutils.BuiltViaCI,
 		}
 		out.Print(
 			output.NewFormatter(vd).

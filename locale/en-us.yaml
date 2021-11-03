@@ -78,7 +78,7 @@ version_info:
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
     Branch [NOTICE]{{.Branch}}[/RESET]
-    Built [NOTICE]{{.Date}}[/RESET]
+    Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
 update_complete:
   other: Update completed successfully
 update_hash_mismatch:

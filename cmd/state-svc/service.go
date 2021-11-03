@@ -63,12 +63,12 @@ func (s *service) Stop() error {
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
 		setPid := cast.ToInt(setPidI)
 		if setPid != os.Getpid() {
-			return nil, errs.New("PID in configuration file does not match PID of server shutting down")
+			logging.Warning("PID in configuration file does not match PID of server shutting down")
 		}
 		return "", nil
 	})
 	if err != nil {
-		return errs.Wrap(err, "Could not unset State Service PID in configuration file")
+		logging.Warning("Could not unset State Service PID in configuration file")
 	}
 
 	return nil
