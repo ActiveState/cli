@@ -142,6 +142,7 @@ func (v *SubShell) Quote(value string) string {
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	var shellArgs []string
+	var directEnv []string
 
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
@@ -151,14 +152,15 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 		}
 
 		shellArgs = append(shellArgs, "--rcfile", v.rcFile.Name())
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
 	if v.activateCommand != nil {
 		shellArgs = append(shellArgs, "-c", *v.activateCommand)
 	}
 
-	env := sscommon.EnvSlice(v.env)
-	cmd := sscommon.NewCommand(v.Binary(), shellArgs, env)
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil

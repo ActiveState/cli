@@ -125,6 +125,8 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
 	var shellArgs []string
+	var directEnv []string
+
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error
@@ -137,13 +139,14 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 			shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
 		}
 	} else {
-		if v.activateCommand != nil {
-			shellArgs = []string{"-c", *v.activateCommand}
-		}
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	env := sscommon.EnvSlice(v.env)
-	cmd := sscommon.NewCommand(v.Binary(), shellArgs, env)
+	if v.activateCommand != nil {
+		shellArgs = []string{"-c", *v.activateCommand}
+	}
+
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil

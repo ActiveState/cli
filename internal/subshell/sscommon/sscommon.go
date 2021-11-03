@@ -28,9 +28,10 @@ func (se silentExitCodeError) IsSilent() bool {
 
 func NewCommand(command string, args []string, env []string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, env...)
-
+	if env != nil {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, env...)
+	}
 	return cmd
 }
 
