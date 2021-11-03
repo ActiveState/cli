@@ -26,6 +26,14 @@ func (se silentExitCodeError) IsSilent() bool {
 	return true
 }
 
+func NewCommand(command string, args []string, env []string) *exec.Cmd {
+	cmd := exec.Command(command, args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, env...)
+
+	return cmd
+}
+
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan error {
