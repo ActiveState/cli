@@ -22,9 +22,9 @@ const (
 )
 
 const (
-	fileName   = "uniqid"
-	persistDir = "activestate/persist"
-	tmpSubDir  = "activestate_persist"
+	fileName         = "uniqid"
+	legacyPersistDir = "activestate/persist"
+	persistDir       = "activestate_persist"
 )
 
 // UniqID manages the storage and retrieval of a unique id.
@@ -34,7 +34,7 @@ type UniqID struct {
 
 // New retrieves or creates a new unique id.
 func New(base BaseDirLocation) (*UniqID, error) {
-	dir, err := storageDirectory(base)
+	dir, err := storageDirectory(base, false)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot determine uniqid storage directory")
 	}
@@ -53,15 +53,17 @@ func (u *UniqID) String() string {
 }
 
 func uniqueID(filepath string) (uuid.UUID, error) {
-	data, err := readFile(filepath)
-	if err == nil {
-		id, err := uuid.FromBytes(data)
-		if err == nil {
-			return id, nil
+	// For transitionary period where old persist directory
+	// may exist on Windows. This code should be removed
+	// after some time.
+	if !fileExists(filepath) {
+		err := moveLegacyFile(filepath)
+		if err != nil {
+			return uuid.UUID{}, errs.Wrap(err, "Could not move legacy uniqid file")
 		}
-		err = os.ErrNotExist // signal to clobber existing file
 	}
 
+	data, err := readFile(filepath)
 	if errors.Is(err, os.ErrNotExist) {
 		id := uuid.New()
 
@@ -71,19 +73,58 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 
 		return id, nil
 	}
+	if err != nil {
+		return uuid.UUID{}, errs.Wrap(err, "Could not read uniqid file")
+	}
 
-	return uuid.UUID{}, errs.Wrap(err, "cannot get existing, nor create new, uniqid")
+	id, err := uuid.FromBytes(data)
+	if err != nil {
+		return uuid.UUID{}, errs.Wrap(err, "Could not create new UUID from uniqid file data")
+	}
+
+	return id, nil
+}
+
+func moveLegacyFile(destination string) error {
+	legacyDir, err := storageDirectory(InHome, true)
+	if err != nil {
+		return errs.Wrap(err, "Could not get legacy storage directory")
+	}
+
+	// If the legacy file does not not exist there is nothing to move
+	if !fileExists(filepath.Join(legacyDir, fileName)) {
+		return nil
+	}
+
+	destinationDir := filepath.Dir(destination)
+	err = mkdir(destinationDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not create new persist directory")
+	}
+
+	err = moveAllFiles(legacyDir, destinationDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not move legacy uniqid file")
+	}
+
+	// The legacy directory is a sub directory, we want to remove the parent
+	err = os.RemoveAll(filepath.Dir(legacyDir))
+	if err != nil {
+		return errs.Wrap(err, "Could not remove legacy uniqid dir")
+	}
+
+	return nil
 }
 
 // ErrUnsupportedOS indicates that an unsupported OS tried to store a uniqid as
 // a file.
 var ErrUnsupportedOS = errors.New("unsupported uniqid os")
 
-func storageDirectory(base BaseDirLocation) (string, error) {
+func storageDirectory(base BaseDirLocation, legacy bool) (string, error) {
 	var dir string
 	switch base {
 	case InTmp:
-		dir = filepath.Join(os.TempDir(), tmpSubDir)
+		dir = filepath.Join(os.TempDir(), persistDir)
 
 	default:
 		home, err := os.UserHomeDir()
@@ -100,7 +141,10 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 	case "linux":
 		subdir = ".local/share"
 	case "windows":
-		subdir = "AppData"
+		if legacy {
+			return filepath.Join(dir, "AppData", legacyPersistDir), nil
+		}
+		subdir = "AppData/Local"
 	default:
 		return "", ErrUnsupportedOS
 	}
@@ -196,6 +240,38 @@ func writeFile(filePath string, data []byte) error {
 	_, err = f.Write(data)
 	if err != nil {
 		return errs.Wrap(err, "file.Write %s failed", filePath)
+	}
+	return nil
+}
+
+// moveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
+// must already exist.
+func moveAllFiles(fromPath, toPath string) error {
+	if !dirExists(fromPath) {
+		return errs.New("Expected '%s' to be a valid directory", fromPath)
+	} else if !dirExists(toPath) {
+		errs.New("Expected '%s' to be a valid directory", toPath)
+	}
+
+	// read all child files and dirs
+	dir, err := os.Open(fromPath)
+	if err != nil {
+		return errs.Wrap(err, "os.Open %s failed", fromPath)
+	}
+	fileInfos, err := dir.Readdir(-1)
+	dir.Close()
+	if err != nil {
+		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
+	}
+
+	// any found files and dirs
+	for _, fileInfo := range fileInfos {
+		fromPath := filepath.Join(fromPath, fileInfo.Name())
+		toPath := filepath.Join(toPath, fileInfo.Name())
+		err := os.Rename(fromPath, toPath)
+		if err != nil {
+			return errs.Wrap(err, "os.Rename %s:%s failed", fromPath, toPath)
+		}
 	}
 	return nil
 }
