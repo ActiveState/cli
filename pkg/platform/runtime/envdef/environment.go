@@ -361,7 +361,7 @@ func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
 
 func FilterPATH(env map[string]string, excludes ...string) {
 	PATH, exists := env["PATH"]
-	if ! exists {
+	if !exists {
 		return
 	}
 
@@ -403,6 +403,21 @@ func (ed *EnvironmentDefinition) ExecutablePaths() (ExecutablePaths, error) {
 	}
 
 	return exes, nil
+}
+
+func (ed *EnvironmentDefinition) ExecutableDirs() (ExecutablePaths, error) {
+	exes, err := ed.ExecutablePaths()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get executable paths")
+	}
+
+	var dirs ExecutablePaths
+	for _, p := range exes {
+		dirs = append(dirs, filepath.Dir(p))
+	}
+	dirs = funk.UniqString(dirs)
+
+	return dirs, nil
 }
 
 // FindBinPathFor returns the PATH directory in which the executable can be found.

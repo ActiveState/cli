@@ -159,6 +159,14 @@ func (r *Runtime) ExecutablePaths() (envdef.ExecutablePaths, error) {
 	return env.ExecutablePaths()
 }
 
+func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
+	env, err := r.envDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not retrieve environment info")
+	}
+	return env.ExecutableDirs()
+}
+
 // Artifacts returns a map of artifact information extracted from the recipe
 func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
 	recipe, err := r.store.Recipe()
