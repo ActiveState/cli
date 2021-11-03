@@ -293,10 +293,19 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
 	}
 
+	actualEnv := map[string]string{}
+	for k, v := range env {
+		if strings.Contains(v, "\n") {
+			logging.Warning("Env key %s has a multi-line value, which is not supported", k)
+			continue
+		}
+		actualEnv[k] = v
+	}
+
 	rcData := map[string]interface{}{
 		"Owner":            prj.Owner(),
 		"Name":             prj.Name(),
-		"Env":              env,
+		"Env":              actualEnv,
 		"WD":               wd,
 		"UserScripts":      userScripts,
 		"Scripts":          scripts,

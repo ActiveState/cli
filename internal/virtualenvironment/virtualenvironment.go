@@ -2,6 +2,7 @@ package virtualenvironment
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -38,7 +39,6 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 		if err != nil {
 			return envMap, err
 		}
-		inherit = false // don't inherit again
 	}
 
 	if projectDir != "" {
@@ -51,8 +51,8 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 			return envMap, err
 		}
 		for _, constant := range pj.Constants() {
-			var err error
-			envMap[constant.Name()], err = constant.Value()
+			v, err := constant.Value()
+			envMap[constant.Name()] = strings.Replace(v, "\n", `\n`, -1)
 			if err != nil {
 				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.V0}}`.", constant.Name())
 			}
@@ -60,7 +60,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 	}
 
 	if inherit {
-		return inheritEnv(envMap), nil
+		envMap = inheritEnv(envMap)
 	}
 
 	return envMap, nil
