@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // CfgInstallPath is the configuration key for the path where the State Tool is installed
@@ -22,7 +22,7 @@ const BinDirName = "bin"
 
 func InstallPath() (string, error) {
 	// Facilitate use-case of running executables from the build dir while developing
-	if !rtutils.BuiltViaCI && strings.Contains(os.Args[0], "/build/") {
+	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
 		return filepath.Dir(os.Args[0]), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {

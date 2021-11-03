@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 )
@@ -73,7 +72,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr
 			constants.BranchName,
 			constants.RevisionHash,
 			constants.Date,
-			rtutils.BuiltViaCI,
+			constants.OnCI == "true",
 		}
 		out.Print(
 			output.NewFormatter(vd).

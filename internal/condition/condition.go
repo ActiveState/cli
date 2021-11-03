@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/thoas/go-funk"
 )
 
@@ -21,5 +21,5 @@ func OnCI() bool {
 }
 
 func BuiltViaCI() bool {
-	return rtutils.BuiltViaCI
+	return constants.OnCI == "true"
 }
