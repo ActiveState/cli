@@ -53,9 +53,9 @@ func (u *UniqID) String() string {
 }
 
 func uniqueID(filepath string) (uuid.UUID, error) {
-	// For transitionary period where old persist directory
-	// may exist on Windows. This code should be removed
-	// after some time.
+	// For a transitionary period where the old persist directory may exist on
+	// Windows we want to move the uniqid file to a better location.
+	// This code should be removed after some time.
 	if !fileExists(filepath) {
 		err := moveLegacyFile(filepath)
 		if err != nil {
