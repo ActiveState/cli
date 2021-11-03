@@ -410,16 +410,12 @@ func (ed *EnvironmentDefinition) ExecutableDirs() (ExecutablePaths, error) {
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get executable paths")
 	}
-	fmt.Println("Exepaths:", exes)
 
 	var dirs ExecutablePaths
 	for _, p := range exes {
-		dir := filepath.Dir(p)
-		if funk.Contains(dirs, dir) {
-			continue
-		}
-		dirs = append(dirs, dir)
+		dirs = append(dirs, filepath.Dir(p))
 	}
+	dirs = funk.UniqString(dirs)
 
 	return dirs, nil
 }
