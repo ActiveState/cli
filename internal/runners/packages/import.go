@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -57,7 +58,7 @@ type Import struct {
 	prompt.Prompter
 	proj      *project.Project
 	cfg       configurable
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
@@ -124,7 +125,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, runtime.TriggerImport)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {

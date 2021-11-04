@@ -60,7 +60,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) int
+		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
 		AvailableUpdate func(childComplexity int) int
 		Projects        func(childComplexity int) int
 		Version         func(childComplexity int) int
@@ -83,7 +83,7 @@ type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
-	AnalyticsEvent(ctx context.Context, category string, action string, label *string, projectNameSpace *string, output *string, userID *string) (*graph.AnalyticsEventResponse, error)
+	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 }
 
 type executableSchema struct {
@@ -167,7 +167,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string)), true
+		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["dimensionsJson"].(string)), true
 
 	case "Query.availableUpdate":
 		if e.complexity.Query.AvailableUpdate == nil {
@@ -315,7 +315,7 @@ type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String, userID: String): AnalyticsEventResponse
+  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
 }
 
 `, BuiltIn: false},
@@ -371,33 +371,15 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["label"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["projectNameSpace"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectNameSpace"))
-		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+	var arg3 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["projectNameSpace"] = arg3
-	var arg4 *string
-	if tmp, ok := rawArgs["output"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("output"))
-		arg4, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["output"] = arg4
-	var arg5 *string
-	if tmp, ok := rawArgs["userID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userID"))
-		arg5, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userID"] = arg5
+	args["dimensionsJson"] = arg3
 	return args, nil
 }
 
@@ -843,7 +825,7 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["projectNameSpace"].(*string), args["output"].(*string), args["userID"].(*string))
+		return ec.resolvers.Query().AnalyticsEvent(rctx, args["category"].(string), args["action"].(string), args["label"].(*string), args["dimensionsJson"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

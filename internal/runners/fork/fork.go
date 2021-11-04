@@ -114,7 +114,7 @@ func determineOwner(username string, prompter prompt.Prompter) (string, error) {
 
 	options := make([]string, len(orgs))
 	for i, org := range orgs {
-		options[i] = org.Name
+		options[i] = org.DisplayName
 	}
 	options = append([]string{username}, options...)
 

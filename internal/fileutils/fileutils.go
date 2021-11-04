@@ -456,7 +456,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 		subToPath := filepath.Join(toPath, fileInfo.Name())
 		toInfo, err := os.Lstat(subToPath)
 		// if stat returns, the destination path exists (either file or directory)
-		toPathExists := err == nil
+		toPathExists := toInfo != nil && err == nil
 		// handle case where destination exists
 		if toPathExists {
 			if fileInfo.IsDir() != toInfo.IsDir() {
@@ -505,7 +505,11 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 
 		err = os.Rename(subFromPath, subToPath)
 		if err != nil {
-			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, toInfo.Mode())
+			var mode fs.FileMode
+			if toPathExists {
+				mode = toInfo.Mode()
+			}
+			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, mode)
 		}
 		cb(subFromPath, subToPath)
 	}

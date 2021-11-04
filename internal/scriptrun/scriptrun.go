@@ -31,14 +31,14 @@ type ScriptRun struct {
 	sub       subshell.SubShell
 	project   *project.Project
 	cfg       *config.Instance
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.AnalyticsDispatcher) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
@@ -63,7 +63,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	rt, err := runtime.New(runtime.NewProjectTarget(s.project, storage.CachePath(), nil), s.analytics)
+	rt, err := runtime.New(runtime.NewProjectTarget(s.project, storage.CachePath(), nil, runtime.TriggerScript), s.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -193,5 +193,5 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 }
 
 func PathProvidesExec(path, exec string) bool {
-	return exeutils.FindExecutableOnPath(exec, path) != ""
+	return exeutils.FindExeInside(exec, path) != ""
 }

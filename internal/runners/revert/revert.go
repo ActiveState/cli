@@ -1,9 +1,9 @@
 package revert
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -24,7 +25,7 @@ type Revert struct {
 	prompt    prompt.Prompter
 	project   *project.Project
 	auth      *authentication.Auth
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 type Params struct {
@@ -99,7 +100,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, runtime.TriggerRevert)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

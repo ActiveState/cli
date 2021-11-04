@@ -44,7 +44,7 @@ type Activate struct {
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
-	analytics        analytics.AnalyticsDispatcher
+	analytics        analytics.Dispatcher
 }
 
 type ActivateParams struct {
@@ -197,7 +197,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil), r.analytics)
+	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil, runtime.TriggerActivate), r.analytics)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

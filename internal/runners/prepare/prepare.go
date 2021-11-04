@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type primeable interface {
@@ -31,7 +32,7 @@ type Prepare struct {
 	out       output.Outputer
 	subshell  subshell.SubShell
 	cfg       *config.Instance
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 // New prepares a prepare execution context for use.
@@ -54,7 +55,13 @@ func (r *Prepare) resetExecutors() error {
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
 	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
-	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir), r.analytics)
+
+	proj, err := project.FromPath(defaultProjectDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not get project from default project directory")
+	}
+
+	run, err := rt.New(rt.NewCustomTarget("", "", "", defaultTargetDir, rt.TriggerDefault, proj.IsHeadless()), r.analytics)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}

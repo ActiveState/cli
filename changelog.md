@@ -6,6 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.30.6
+
+### Fixed
+
+* Fixed issue where certain runtime executables could not be resolved
+
+## 0.30.5
+
+### Changed
+
+* Recursion has been disabled while we improve the mechanic for a future version
+
+## 0.30.4
+
+### Fixed
+
+* Fixed recursion issue when running certain State Tool commands
+
+## 0.30.3
+
+### Changed
+
+* Enriched the installer with analytics to allow us to diagnose installation failures
+
+## 0.30.2
+
+### Fixed
+
+* Fixed issue where State Tool sometimes could not identify its service daemon
+
+## 0.30.1
+
+### Fixed
+
+* Fixed issue where our analytics events would send the full executable paths
+
 ## 0.30.0
 
 ### Added

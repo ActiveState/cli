@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -42,7 +43,7 @@ import (
 )
 
 type ConfigurableAnalytics interface {
-	analytics.AnalyticsDispatcher
+	analytics.Dispatcher
 	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
 }
 
@@ -50,7 +51,6 @@ func main() {
 	var exitCode int
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
-	an := analytics.New()
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -59,7 +59,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5 * time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
@@ -99,7 +99,7 @@ func main() {
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, out, an)
+	err = run(os.Args, isInteractive, out)
 	if err != nil {
 		exitCode, err = unwrapError(err)
 		if err != nil {
@@ -119,7 +119,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer, an ConfigurableAnalytics) (rerr error) {
+func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -180,16 +180,18 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 		pjName = pj.Name()
 	}
 
+	auth := authentication.LegacyGet()
+
+	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
+	defer an.Wait()
+
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
+
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
-	auth := authentication.LegacyGet()
-
-	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
-		logging.Error("Failed to initialize analytics instance: %s", errs.JoinMessage(err))
-	}
 
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)

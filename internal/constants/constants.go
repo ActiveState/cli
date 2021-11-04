@@ -256,7 +256,7 @@ const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+const StateInstallerRollbarToken = "276678f6090d4f17a4b2d4d35be00ca9"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
@@ -364,6 +364,15 @@ const FirstMultiFileStateToolVersion = "0.29.0"
 
 // ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
 const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
+
+// ExecRecursionEnvVarName is an environment variable storing a string representation of the current recursion
+const ExecRecursionEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION"
+
+// ExecRecursionAllowEnvVarName is an environment variable overriding the recursion allowance
+const ExecRecursionAllowEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_ALLOW"
+
+// ExecRecursionMaxLevelEnvVarName is an environment variable storing the number of times the executor may be called recursively
+const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_LEVEL"
 
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"

@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/go-openapi/strfmt"
@@ -11,14 +12,40 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type Trigger string
+
+func (t Trigger) String() string {
+	return string(t)
+}
+
+const (
+	TriggerActivate Trigger = "activate"
+	TriggerScript   Trigger = "script"
+	TriggerDeploy   Trigger = "deploy"
+	TriggerExec     Trigger = "exec"
+	TriggerDefault  Trigger = "default-setup"
+	TriggerBranch   Trigger = "branch"
+	TriggerImport   Trigger = "import"
+	TriggerPackage  Trigger = "package"
+	TriggerPull     Trigger = "pull"
+	TriggerReset    Trigger = "reset"
+	TriggerRevert   Trigger = "revert"
+	triggerUnknown  Trigger = "unknown"
+)
+
+func NewExecTrigger(cmd string) Trigger {
+	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
+}
+
 type ProjectTarget struct {
 	*project.Project
 	cacheDir     string
 	customCommit *strfmt.UUID
+	trigger      Trigger
 }
 
-func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID) *ProjectTarget {
-	return &ProjectTarget{pj, runtimeCacheDir, customCommit}
+func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger}
 }
 
 func (p *ProjectTarget) Dir() string {
@@ -36,21 +63,34 @@ func (p *ProjectTarget) OnlyUseCache() bool {
 	return false
 }
 
+func (p *ProjectTarget) Trigger() string {
+	if p.trigger == "" {
+		return triggerUnknown.String()
+	}
+	return p.trigger.String()
+}
+
+func (p *ProjectTarget) Headless() bool {
+	return p.Project.IsHeadless()
+}
+
 type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
 	dir        string
+	trigger    Trigger
+	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, dir}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger, headless}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -71,6 +111,17 @@ func (c *CustomTarget) Dir() string {
 
 func (c *CustomTarget) OnlyUseCache() bool {
 	return c.commitUUID == ""
+}
+
+func (c *CustomTarget) Trigger() string {
+	if c.trigger == "" {
+		return triggerUnknown.String()
+	}
+	return c.trigger.String()
+}
+
+func (c *CustomTarget) Headless() bool {
+	return c.headless
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {

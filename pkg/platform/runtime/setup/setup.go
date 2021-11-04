@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
@@ -98,6 +98,8 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
+	Headless() bool
+	Trigger() string
 
 	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)
 	OnlyUseCache() bool
@@ -109,7 +111,7 @@ type Setup struct {
 	target    Targeter
 	events    Events
 	store     *store.Store
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -135,12 +137,12 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.AnalyticsDispatcher) *Setup {
+func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
 	return NewWithModel(target, msgHandler, model.NewDefault(auth), an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.AnalyticsDispatcher) *Setup {
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.Dispatcher) *Setup {
 	return &Setup{model, target, msgHandler, store.New(target.Dir()), an}
 }
 

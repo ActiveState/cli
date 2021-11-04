@@ -52,6 +52,7 @@ constants:
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
   - name: SCRIPT_EXT
+    if: ne .OS.Name "Windows"
     value: .sh
 scripts:
   - name: install-deps
@@ -122,7 +123,7 @@ scripts:
       $constants.SET_ENV
       export CGO_ENABLED=0
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.DAEMON_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-tray
     description: Builds the State Tool system tray application
     standalone: true
@@ -255,12 +256,11 @@ scripts:
       echo "Copying to $INSTALLERS_DIR"
 
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install${constants.SCRIPT_EXT}
-      cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install-latest${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install-latest${constants.SCRIPT_EXT}
+        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       else
-        cp installers/install-latest${constants.SCRIPT_EXT} $INSTALLERS_DIR/install-latest${constants.SCRIPT_EXT}
+        cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       fi
   - name: deploy-installers
     language: bash
@@ -313,6 +313,11 @@ scripts:
     description: "Runs a remote debugger, that can be hooked into from your IDE, example usage: `state run debug activate` (will debug `state activate`)"
     standalone: true
     value: dlv debug --headless --listen=:2346 --api-version=2 github.com/ActiveState/cli/cmd/state -- $@
+  - name: scripted
+    language: bash
+    description: "Runs a command via 'go run'"
+    standalone: true
+    value: go run github.com/ActiveState/cli/cmd/state $@
   - name: story-cleanup
     language: bash
     description: "Runs Python script to move old stories from primary project to storage project"

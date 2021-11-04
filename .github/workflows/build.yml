@@ -127,7 +127,15 @@ jobs:
       - # === Unit Tests ===
         name: Unit Tests
         shell: bash
-        run: parallelize results Unit-Tests | gotestfmt
+        run: |
+          set +e
+          parallelize results Unit-Tests | gotestfmt
+          exit 0
+
+      - # === Unit Tests (Raw) ===
+        name: Unit Tests (Raw Results)
+        shell: bash
+        run: parallelize results Unit-Tests
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -187,11 +195,10 @@ jobs:
         shell: powershell
         if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
         run: |
-          $branchInfix = $Env:GITHUB_HEAD_REF.Replace("refs/heads/", "").Replace("release", "")
+          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
           $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
           Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install-latest.ps1 -Certificate $cert
           Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}

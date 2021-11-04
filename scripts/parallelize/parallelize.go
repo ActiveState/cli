@@ -122,7 +122,6 @@ func runJob(job Job) {
 	})
 	if err != nil {
 		failure("Executing job %s failed, error: %s", job.ID, errs.JoinMessage(err))
-		return
 	}
 	outfile.WriteString(fmt.Sprintf("\n%d", code)) // last entry is the exit code
 	fmt.Printf("%s: Completed, exit code: %d\n", job.ID, code)

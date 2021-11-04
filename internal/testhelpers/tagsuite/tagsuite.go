@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -69,8 +70,8 @@ type Suite struct {
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
-	// if no tags are defined, run the test
-	if setTagsString == "" {
+	// if no tags are defined and we're not on CI; run the test
+	if setTagsString == "" && !condition.OnCI() {
 		return
 	}
 	setTags := strings.Split(setTagsString, ":")
