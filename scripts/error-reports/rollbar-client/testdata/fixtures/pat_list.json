@@ -1,0 +1,36 @@
+{
+  "err": 0,
+  "result": [
+    {
+      "project_id": 123,
+      "access_token": "abcdefg",
+      "name": "automation",
+      "status": "enabled",
+      "rate_limit_window_size": null,
+      "rate_limit_window_count": null,
+      "cur_rate_limit_window_start": 1582263455,
+      "cur_rate_limit_window_count": 0,
+      "date_created": 1582263455,
+      "date_modified": 1582263455,
+      "scopes": [
+        "write",
+        "read"
+      ]
+    },
+    {
+      "project_id": 123,
+      "access_token": "wxyz",
+      "name": "post_server_item",
+      "status": "enabled",
+      "rate_limit_window_size": 3600,
+      "rate_limit_window_count": 10,
+      "cur_rate_limit_window_start": 1583477850,
+      "cur_rate_limit_window_count": 0,
+      "date_created": 1582267519,
+      "date_modified": 1583477850,
+      "scopes": [
+        "post_server_item"
+      ]
+    }
+  ]
+}

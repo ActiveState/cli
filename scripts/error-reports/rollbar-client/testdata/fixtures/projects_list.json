@@ -1,0 +1,93 @@
+{
+  "err": 0,
+  "result": [
+    {
+      "id": 123,
+      "account_id": 999,
+      "settings_data": {
+        "fingerprint_versions": {
+          "browser.browser-js": 1,
+          "android.android": 1,
+          "unminify_react_errors": 1
+        },
+        "migrations": {
+          "enable_source_maps": 1,
+          "enable_custom_fingerprinting_override": 1,
+          "recognize_direct_recursion": 1,
+          "enable_missing_jquery": 1,
+          "enable_calculate_symbol_ranges": 1
+        },
+        "integrations": {
+          "jira": {},
+          "clubhouse": {},
+          "bitbucket": {},
+          "github": {},
+          "trello": {},
+          "slack": {},
+          "datadog": {},
+          "pagerduty": {},
+          "gitlab": {},
+          "webhook": {},
+          "victorops": {},
+          "ciscospark": {},
+          "asana": {},
+          "pivotal": {},
+          "campfire": {},
+          "azuredevops": {},
+          "sprintly": {},
+          "hipchat": {},
+          "email": {},
+          "flowdock": {}
+        }
+      },
+      "date_created": 1580800215,
+      "date_modified": 1583974088,
+      "name": "my project"
+    },
+    {
+      "id": 456,
+      "account_id": 999,
+      "settings_data": {
+        "time_format": "12h",
+        "timezone": "Asia/Tokyo",
+        "fingerprint_versions": {
+          "browser.browser-js": 1,
+          "android.android": 1,
+          "unminify_react_errors": 1
+        },
+        "migrations": {
+          "enable_source_maps": 1,
+          "enable_custom_fingerprinting_override": 1,
+          "recognize_direct_recursion": 1,
+          "enable_missing_jquery": 1,
+          "enable_calculate_symbol_ranges": 1
+        },
+        "integrations": {
+          "jira": {},
+          "clubhouse": {},
+          "bitbucket": {},
+          "github": {},
+          "trello": {},
+          "slack": {},
+          "datadog": {},
+          "pagerduty": {},
+          "gitlab": {},
+          "webhook": {},
+          "victorops": {},
+          "ciscospark": {},
+          "asana": {},
+          "pivotal": {},
+          "campfire": {},
+          "azuredevops": {},
+          "sprintly": {},
+          "hipchat": {},
+          "email": {},
+          "flowdock": {}
+        }
+      },
+      "date_created": 1581047734,
+      "date_modified": 1581056723,
+      "name": null
+    }
+  ]
+}

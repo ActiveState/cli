@@ -1,0 +1,13 @@
+{
+  "err": 0,
+  "result": [
+    {
+      "team_id": 123,
+      "project_id": 456
+    },
+    {
+      "team_id": 123,
+      "project_id": 456
+    }
+  ]
+}

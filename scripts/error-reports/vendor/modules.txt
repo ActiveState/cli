@@ -1,0 +1,62 @@
+# github.com/adrg/strutil v0.2.3
+## explicit
+github.com/adrg/strutil
+github.com/adrg/strutil/internal/util
+github.com/adrg/strutil/metrics
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+# github.com/davidji99/go-querystring v1.0.2
+github.com/davidji99/go-querystring/query
+# github.com/davidji99/rollrest-go v0.0.0-00010101000000-000000000000 => ./rollbar-client
+## explicit
+github.com/davidji99/rollrest-go/rollrest
+# github.com/davidji99/simpleresty v0.2.3
+github.com/davidji99/simpleresty
+# github.com/gizak/termui/v3 v3.1.0
+## explicit
+github.com/gizak/termui/v3
+github.com/gizak/termui/v3/drawille
+github.com/gizak/termui/v3/widgets
+# github.com/go-resty/resty/v2 v2.2.0
+github.com/go-resty/resty/v2
+# github.com/golang/protobuf v1.2.0
+github.com/golang/protobuf/proto
+# github.com/mattn/go-runewidth v0.0.13
+## explicit
+github.com/mattn/go-runewidth
+# github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7
+github.com/mitchellh/go-wordwrap
+# github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d
+github.com/nsf/termbox-go
+# github.com/rivo/uniseg v0.2.0
+github.com/rivo/uniseg
+# github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+## explicit
+github.com/skratchdot/open-golang/open
+# golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
+## explicit
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
+golang.org/x/net/context
+golang.org/x/net/context/ctxhttp
+golang.org/x/net/publicsuffix
+# golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+golang.org/x/oauth2
+golang.org/x/oauth2/clientcredentials
+golang.org/x/oauth2/internal
+# golang.org/x/sys v0.0.0-20211105183446-c75c47738b0c
+## explicit
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# google.golang.org/appengine v1.4.0
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+## explicit
+# github.com/davidji99/rollrest-go => ./rollbar-client

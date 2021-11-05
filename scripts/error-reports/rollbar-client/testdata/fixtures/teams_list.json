@@ -1,0 +1,17 @@
+{
+  "err": 0,
+  "result": [
+    {
+      "id": 123,
+      "account_id": 999,
+      "name": "Everyone",
+      "access_level": "everyone"
+    },
+    {
+      "id": 123,
+      "account_id": 999,
+      "name": "Owners",
+      "access_level": "owner"
+    }
+  ]
+}

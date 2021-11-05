@@ -55,6 +55,12 @@ constants:
     if: ne .OS.Name "Windows"
     value: .sh
 scripts:
+  - name: error-reports
+    language: bash
+    value: |
+      export ROLLBAR_ACCESS_TOKEN=${secrets.project.ROLLBAR_ACCESS_TOKEN}
+      cd scripts/error-reports
+      go run .
   - name: install-deps
     language: bash
     value: |

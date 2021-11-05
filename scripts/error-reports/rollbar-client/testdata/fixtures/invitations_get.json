@@ -1,0 +1,12 @@
+{
+  "err": 0,
+  "result": {
+    "id": 123,
+    "from_user_id": 999,
+    "team_id": 888,
+    "to_email": "invited_user@email.com",
+    "status": "pending",
+    "date_created": 1584171935,
+    "date_redeemed": null
+  }
+}

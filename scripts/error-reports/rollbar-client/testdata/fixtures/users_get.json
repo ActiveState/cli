@@ -1,0 +1,9 @@
+{
+  "err": 0,
+  "result": {
+    "username": "username1",
+    "id": 123,
+    "email": "username1@email.com",
+    "email_enabled": 1
+  }
+}

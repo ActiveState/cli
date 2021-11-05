@@ -1,0 +1,19 @@
+{
+  "err": 0,
+  "result": {
+    "teams": [
+      {
+        "access_level": "owner",
+        "id": 123,
+        "name": "Owners",
+        "account_id": 456
+      },
+      {
+        "access_level": "everyone",
+        "id": 789,
+        "name": "Everyone",
+        "account_id": 567
+      }
+    ]
+  }
+}

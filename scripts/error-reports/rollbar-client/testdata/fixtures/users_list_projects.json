@@ -1,0 +1,19 @@
+{
+  "err": 0,
+  "result": {
+    "projects": [
+      {
+        "status": 1,
+        "slug": "project_one",
+        "id": 991,
+        "account_id": 123
+      },
+      {
+        "status": 1,
+        "slug": "project_two",
+        "id": 992,
+        "account_id": 123
+      }
+    ]
+  }
+}

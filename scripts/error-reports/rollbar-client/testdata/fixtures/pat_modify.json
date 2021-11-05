@@ -1,0 +1,19 @@
+{
+  "err": 0,
+  "result": {
+    "project_id": 123,
+    "access_token": "abcdefg",
+    "name": "new automation token",
+    "status": "enabled",
+    "rate_limit_window_size": 60,
+    "rate_limit_window_count": 1500,
+    "cur_rate_limit_window_start": 1582263455,
+    "cur_rate_limit_window_count": 0,
+    "date_created": 1582263455,
+    "date_modified": 1582263455,
+    "scopes": [
+      "write",
+      "read"
+    ]
+  }
+}

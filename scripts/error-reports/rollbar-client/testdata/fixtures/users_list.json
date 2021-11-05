@@ -1,0 +1,22 @@
+{
+  "err": 0,
+  "result": {
+    "users": [
+      {
+        "username": "username1",
+        "id": 123,
+        "email": "username1@email.com"
+      },
+      {
+        "username": "username2",
+        "id": 456,
+        "email": "username2@email.com"
+      },
+      {
+        "username": "username3",
+        "id": 789,
+        "email": "username3@email.com"
+      }
+    ]
+  }
+}
