@@ -119,11 +119,13 @@ func New(cfg sscommon.Configurable) SubShell {
 		subs = &fish.SubShell{}
 	case "cmd":
 		subs = &cmd.SubShell{}
+	case "powershell":
+		subs = &powershell.SubShell{}
 	default:
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
 		switch runtime.GOOS {
 		case "windows":
-			return &cmd.SubShell{}
+			return &powershell.SubShell{}
 		case "darwin":
 			return &zsh.SubShell{}
 		default:
@@ -162,8 +164,12 @@ func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
 
 	if runtime.GOOS == "windows" {
 		binary = os.Getenv("ComSpec")
+		powershell = os.Getenv("PSModulePath")
 		if binary != "" {
 			return binary
+		}
+		if powershell != "" {
+			return "powershell.exe"
 		}
 	}
 
