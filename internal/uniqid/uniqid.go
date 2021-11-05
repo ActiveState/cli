@@ -22,9 +22,8 @@ const (
 )
 
 const (
-	fileName         = "uniqid"
-	legacyPersistDir = "activestate/persist"
-	persistDir       = "activestate_persist"
+	fileName   = "uniqid"
+	persistDir = "activestate_persist"
 )
 
 // UniqID manages the storage and retrieval of a unique id.
@@ -34,7 +33,7 @@ type UniqID struct {
 
 // New retrieves or creates a new unique id.
 func New(base BaseDirLocation) (*UniqID, error) {
-	dir, err := storageDirectory(base, false)
+	dir, err := storageDirectory(base)
 	if err != nil {
 		return nil, errs.Wrap(err, "cannot determine uniqid storage directory")
 	}
@@ -85,42 +84,11 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func moveLegacyFile(destination string) error {
-	legacyDir, err := storageDirectory(InHome, true)
-	if err != nil {
-		return errs.Wrap(err, "Could not get legacy storage directory")
-	}
-
-	// If the legacy file does not not exist there is nothing to move
-	if !fileExists(filepath.Join(legacyDir, fileName)) {
-		return nil
-	}
-
-	destinationDir := filepath.Dir(destination)
-	err = mkdir(destinationDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not create new persist directory")
-	}
-
-	err = moveAllFiles(legacyDir, destinationDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not move legacy uniqid file")
-	}
-
-	// The legacy directory is a sub directory, we want to remove the parent
-	err = os.RemoveAll(filepath.Dir(legacyDir))
-	if err != nil {
-		return errs.Wrap(err, "Could not remove legacy uniqid dir")
-	}
-
-	return nil
-}
-
 // ErrUnsupportedOS indicates that an unsupported OS tried to store a uniqid as
 // a file.
 var ErrUnsupportedOS = errors.New("unsupported uniqid os")
 
-func storageDirectory(base BaseDirLocation, legacy bool) (string, error) {
+func storageDirectory(base BaseDirLocation) (string, error) {
 	var dir string
 	switch base {
 	case InTmp:
@@ -141,9 +109,6 @@ func storageDirectory(base BaseDirLocation, legacy bool) (string, error) {
 	case "linux":
 		subdir = ".local/share"
 	case "windows":
-		if legacy {
-			return filepath.Join(dir, "AppData", legacyPersistDir), nil
-		}
 		subdir = "AppData/Local"
 	default:
 		return "", ErrUnsupportedOS
