@@ -29,7 +29,7 @@ func (suite *MainTestSuite) cleanDeprecationFile() {
 func (suite *MainTestSuite) TestOutputer() {
 	{
 		outputer, err := initOutput(outputFlags{"", false, false, false}, "")
-		suite.Require().NoError(err, errs.Join(err, "\n").Error())
+		suite.Require().Error(err, errs.Join(err, "\n").Error())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
@@ -41,7 +41,7 @@ func (suite *MainTestSuite) TestOutputer() {
 
 	{
 		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "")
-		suite.Require().NoError(err)
+		suite.Require().Error(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
