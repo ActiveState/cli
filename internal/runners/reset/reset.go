@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -69,7 +69,7 @@ func (r *Reset) Run() error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), *latestCommit, true, runtime.TriggerReset)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), *latestCommit, true, target.TriggerReset)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -60,7 +60,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), *branch.CommitID, false, runtime.TriggerBranch)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), *branch.CommitID, false, target.TriggerBranch)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -90,7 +91,7 @@ func (d *Deploy) Run(params *Params) error {
 	}
 
 	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, runtime.TriggerDeploy, false) /* TODO: handle empty path */
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 

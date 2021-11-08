@@ -79,6 +79,9 @@ func (s *Server) Shutdown() error {
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
 	}
+	if err := s.resolver.Close(); err != nil {
+		return errs.Wrap(err, "Could not close resolver")
+	}
 
 	return nil
 }

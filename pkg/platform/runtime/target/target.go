@@ -1,10 +1,11 @@
-package runtime
+package target
 
 import (
 	"fmt"
 	"path/filepath"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -32,6 +33,13 @@ const (
 	TriggerRevert   Trigger = "revert"
 	triggerUnknown  Trigger = "unknown"
 )
+
+// usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
+var usageTriggers = []Trigger{TriggerActivate, TriggerScript, TriggerDeploy, TriggerExec}
+
+func (t Trigger) IndicatesUsage() bool {
+	return funk.Contains(usageTriggers, t)
+}
 
 func NewExecTrigger(cmd string) Trigger {
 	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
@@ -63,11 +71,11 @@ func (p *ProjectTarget) OnlyUseCache() bool {
 	return false
 }
 
-func (p *ProjectTarget) Trigger() string {
+func (p *ProjectTarget) Trigger() Trigger {
 	if p.trigger == "" {
-		return triggerUnknown.String()
+		return triggerUnknown
 	}
-	return p.trigger.String()
+	return p.trigger
 }
 
 func (p *ProjectTarget) Headless() bool {
@@ -78,9 +86,9 @@ type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
-	dir        string
-	trigger    Trigger
-	headless   bool
+	dir      string
+	trigger  Trigger
+	headless bool
 }
 
 func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
@@ -113,11 +121,11 @@ func (c *CustomTarget) OnlyUseCache() bool {
 	return c.commitUUID == ""
 }
 
-func (c *CustomTarget) Trigger() string {
+func (c *CustomTarget) Trigger() Trigger {
 	if c.trigger == "" {
-		return triggerUnknown.String()
+		return triggerUnknown
 	}
-	return c.trigger.String()
+	return c.trigger
 }
 
 func (c *CustomTarget) Headless() bool {

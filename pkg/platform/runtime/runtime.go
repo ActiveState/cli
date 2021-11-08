@@ -12,15 +12,19 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	model2 "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"golang.org/x/net/context"
 )
 
 type Runtime struct {
@@ -28,6 +32,7 @@ type Runtime struct {
 	store       *store.Store
 	envAccessed bool
 	analytics   analytics.Dispatcher
+	svcm        *model2.SvcModel
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -41,11 +46,12 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model2.SvcModel) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
+		svcm:      svcModel,
 	}
 
 	if !rt.store.MarkerIsValid(target.CommitUUID()) {
@@ -60,17 +66,18 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model2.SvcModel) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
-		Trigger:  p.StrP(target.Trigger()),
-		Headless: p.StrP(strconv.FormatBool(target.Headless())),
-		CommitID: p.StrP(target.CommitUUID().String()),
+		Trigger:    p.StrP(target.Trigger().String()),
+		Headless:   p.StrP(strconv.FormatBool(target.Headless())),
+		CommitID:   p.StrP(target.CommitUUID().String()),
+		InstanceID: p.StrP(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an)
+	r, err := newRuntime(target, an, svcm)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache)
 	}
@@ -92,7 +99,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
-		rt, err := newRuntime(r.target, r.analytics)
+		rt, err := newRuntime(r.target, r.analytics, r.svcm)
 		if err != nil {
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
@@ -122,6 +129,9 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
 		} else {
 			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
+			if r.target.Trigger().IndicatesUsage() {
+				r.recordUsage()
+			}
 		}
 		r.envAccessed = true
 	}
@@ -145,6 +155,20 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	}
 
 	return env, nil
+}
+
+func (r *Runtime) recordUsage() {
+	dims := &dimensions.Values{
+		Trigger:    p.StrP(r.target.Trigger().String()),
+		Headless:   p.StrP(strconv.FormatBool(r.target.Headless())),
+		CommitID:   p.StrP(r.target.CommitUUID().String()),
+		InstanceID: p.StrP(instanceid.ID()),
+	}
+	dimsJson, err := dims.Marshal()
+	if err != nil {
+		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
+	}
+	r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
 }
 
 func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {

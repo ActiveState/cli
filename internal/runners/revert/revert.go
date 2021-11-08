@@ -2,6 +2,7 @@ package revert
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -14,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/project"
 
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -100,7 +100,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, runtime.TriggerRevert)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -2,7 +2,6 @@ package async
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"runtime/debug"
 	"sync"
@@ -61,12 +60,7 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 		return a
 	}
 
-	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
-	if err != nil {
-		logging.Critical("Could not initialize svcModel for Analytics client: %s", errs.JoinMessage(err))
-	} else {
-		a.svcModel = svcModel
-	}
+	a.svcModel = model.NewSvcModel(cfg, svcMgr)
 
 	a.sessionToken = cfg.GetString(ac.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
@@ -133,7 +127,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	}
 	dim.Merge(dims...)
 
-	dimMarshalled, err := json.Marshal(dim)
+	dimMarshalled, err := dim.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal dimensions")
 	}

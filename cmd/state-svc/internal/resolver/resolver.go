@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
@@ -28,6 +29,7 @@ type Resolver struct {
 	cache          *cache.Cache
 	projectIDCache *projectcache.ID
 	an             *sync.Client
+	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
@@ -38,7 +40,12 @@ func New(cfg *config.Instance, an *sync.Client) *Resolver {
 		cache.New(12*time.Hour, time.Hour),
 		projectcache.NewID(),
 		an,
+		rtwatcher.New(cfg, an),
 	}
+}
+
+func (r *Resolver) Close() error {
+	return r.rtwatch.Close()
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -140,4 +147,15 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	r.an.EventWithLabel(category, action, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
+}
+
+func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+	var dims *dimensions.Values
+	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
+		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
+	}
+
+	r.rtwatch.Watch(pid, exec, dims)
+
+	return &graph.RuntimeUsageResponse{Received: true}, nil
 }
