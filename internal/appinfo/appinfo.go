@@ -17,14 +17,19 @@ type AppInfo struct {
 	executable string
 }
 
-func execDir(baseDir ...string) string {
-	if len(baseDir) > 0 {
-		binDir := filepath.Join(baseDir[0], "bin")
+func execDir(baseDir ...string) (resultPath string) {
+	defer func() {
+		// Account for legacy use-case that wasn't using the correct bin dir
+		binDir := filepath.Join(resultPath, "bin")
 		if fileutils.DirExists(binDir) {
-			return binDir
+			resultPath = binDir
 		}
+	}()
+
+	if len(baseDir) > 0 {
 		return baseDir[0]
 	}
+
 	if condition.InUnitTest() {
 		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 		rootPath := environment.GetRootPathUnsafe()
