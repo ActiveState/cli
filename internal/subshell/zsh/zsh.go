@@ -151,6 +151,7 @@ func (v *SubShell) Quote(value string) string {
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	var directEnv []string
 
+	// available project files require more intensive modification of shell envs
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error

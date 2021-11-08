@@ -127,6 +127,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	var shellArgs []string
 	var directEnv []string
 
+	// available project files require more intensive modification of shell envs
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error
