@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	inTest = true
+}
+
 func TestGenerate(t *testing.T) {
 	targetDir, err := ioutil.TempDir("", "constants-generator-test")
 	require.NoError(t, err)

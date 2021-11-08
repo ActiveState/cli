@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 type ErrorTips interface {
@@ -112,7 +112,7 @@ func unwrapError(err error) (int, error) {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if !rtutils.BuiltViaCI {
+		if ! condition.BuiltViaCI() {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}

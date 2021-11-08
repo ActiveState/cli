@@ -45,9 +45,6 @@ constants:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-      if [ "$CI" = "true" ]; then
-        GO_BUILD_TAGS="CI"
-      fi
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
