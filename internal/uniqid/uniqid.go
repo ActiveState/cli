@@ -56,7 +56,7 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 	// Windows we want to move the uniqid file to a better location.
 	// This code should be removed after some time.
 	if !fileExists(filepath) {
-		err := moveLegacyFile(filepath)
+		err := moveUniqidFile(filepath)
 		if err != nil {
 			return uuid.UUID{}, errs.Wrap(err, "Could not move legacy uniqid file")
 		}
@@ -205,38 +205,6 @@ func writeFile(filePath string, data []byte) error {
 	_, err = f.Write(data)
 	if err != nil {
 		return errs.Wrap(err, "file.Write %s failed", filePath)
-	}
-	return nil
-}
-
-// moveAllFiles will move all of the files/dirs within one directory to another directory. Both directories
-// must already exist.
-func moveAllFiles(fromPath, toPath string) error {
-	if !dirExists(fromPath) {
-		return errs.New("Expected '%s' to be a valid directory", fromPath)
-	} else if !dirExists(toPath) {
-		errs.New("Expected '%s' to be a valid directory", toPath)
-	}
-
-	// read all child files and dirs
-	dir, err := os.Open(fromPath)
-	if err != nil {
-		return errs.Wrap(err, "os.Open %s failed", fromPath)
-	}
-	fileInfos, err := dir.Readdir(-1)
-	dir.Close()
-	if err != nil {
-		return errs.Wrap(err, "dir.Readdir %s failed", fromPath)
-	}
-
-	// any found files and dirs
-	for _, fileInfo := range fileInfos {
-		fromPath := filepath.Join(fromPath, fileInfo.Name())
-		toPath := filepath.Join(toPath, fileInfo.Name())
-		err := os.Rename(fromPath, toPath)
-		if err != nil {
-			return errs.Wrap(err, "os.Rename %s:%s failed", fromPath, toPath)
-		}
 	}
 	return nil
 }

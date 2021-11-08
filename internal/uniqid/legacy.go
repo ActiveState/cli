@@ -9,24 +9,25 @@ import (
 
 const legacyPersistDir = "activestate/persist"
 
-func moveLegacyFile(destination string) error {
+func moveUniqidFile(destination string) error {
 	legacyDir, err := legacyStorageDir()
 	if err != nil {
 		return errs.Wrap(err, "Could not get legacy storage directory")
 	}
 
-	// If the legacy file does not not exist there is nothing to move
-	if !fileExists(filepath.Join(legacyDir, fileName)) {
+	legacyUniqIDFile := filepath.Join(legacyDir, fileName)
+
+	// If the uniqID file does not not exist there is nothing to move
+	if !fileExists(legacyUniqIDFile) {
 		return nil
 	}
 
-	destinationDir := filepath.Dir(destination)
-	err = mkdir(destinationDir)
+	err = mkdir(filepath.Dir(destination))
 	if err != nil {
 		return errs.Wrap(err, "Could not create new persist directory")
 	}
 
-	err = moveAllFiles(legacyDir, destinationDir)
+	err = os.Rename(legacyUniqIDFile, destination)
 	if err != nil {
 		return errs.Wrap(err, "Could not move legacy uniqid file")
 	}
