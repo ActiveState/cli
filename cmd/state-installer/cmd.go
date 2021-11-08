@@ -399,8 +399,7 @@ func envSlice(binPath string) []string {
 
 func envMap(binPath string) map[string]string {
 	return map[string]string{
-		"PATH":   binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
-		"TESTER": "TEST",
+		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 	}
 }
 
