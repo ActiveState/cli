@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Runtime struct {
@@ -65,9 +66,10 @@ func New(target setup.Targeter, an analytics.Dispatcher) (*Runtime, error) {
 		return DisabledRuntime, nil
 	}
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
-		Trigger:  p.StrP(target.Trigger()),
-		Headless: p.StrP(strconv.FormatBool(target.Headless())),
-		CommitID: p.StrP(target.CommitUUID().String()),
+		Trigger:          p.StrP(target.Trigger()),
+		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
+		CommitID:         p.StrP(target.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 	})
 
 	r, err := newRuntime(target, an)
