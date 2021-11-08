@@ -3,6 +3,7 @@ package uniqid
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -205,6 +206,40 @@ func writeFile(filePath string, data []byte) error {
 	_, err = f.Write(data)
 	if err != nil {
 		return errs.Wrap(err, "file.Write %s failed", filePath)
+	}
+	return nil
+}
+
+// copyFile copies a file from one location to another
+func copyFile(src, target string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return errs.Wrap(err, "os.Open %s failed", src)
+	}
+	defer in.Close()
+
+	// Create target directory if it doesn't exist
+	dir := filepath.Dir(target)
+	err = mkdirUnlessExists(dir)
+	if err != nil {
+		return err
+	}
+
+	// Create target file
+	out, err := os.Create(target)
+	if err != nil {
+		return errs.Wrap(err, "os.Create %s failed", target)
+	}
+	defer out.Close()
+
+	// Copy bytes to target file
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return errs.Wrap(err, "io.Copy failed")
+	}
+	err = out.Close()
+	if err != nil {
+		return errs.Wrap(err, "out.Close failed")
 	}
 	return nil
 }

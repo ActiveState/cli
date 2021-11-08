@@ -22,21 +22,22 @@ func moveUniqidFile(destination string) error {
 		return nil
 	}
 
-	err = mkdir(filepath.Dir(destination))
+	err = mkdirUnlessExists(filepath.Dir(destination))
 	if err != nil {
 		return errs.Wrap(err, "Could not create new persist directory")
 	}
 
-	err = os.Rename(legacyUniqIDFile, destination)
+	err = copyFile(legacyUniqIDFile, destination)
 	if err != nil {
 		return errs.Wrap(err, "Could not move legacy uniqid file")
 	}
 
+	// Ignore removal errors that could occur due to permissions issues
+	// Remove the legacy uniqid file and its parent directories
 	// The legacy directory is a sub directory, we want to remove the parent
-	err = os.RemoveAll(filepath.Dir(legacyDir))
-	if err != nil {
-		return errs.Wrap(err, "Could not remove legacy uniqid dir")
-	}
+	_ = os.Remove(legacyUniqIDFile)
+	_ = os.Remove(legacyDir)
+	_ = os.Remove(filepath.Dir(legacyDir))
 
 	return nil
 }
