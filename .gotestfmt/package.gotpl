@@ -1,0 +1,52 @@
+{{- /*gotype: github.com/haveyoudebuggedit/gotestfmt/parser.Package*/ -}}
+{{- /*
+This template contains the format for an individual package. GitHub actions does not currently support nested groups so
+we are creating a stylized header for each package.
+*/ -}}
+{{- if and (ne .Result "PASS") (ne .Reason "no test files") -}}
+    {{- if eq .Result "SKIP" -}}
+        {{ "\033" }}[0;33m
+    {{- else -}}
+        {{ "\033" }}[0;31m
+    {{- end -}}
+    📦 {{ .Name }}{{ "\033" }}[0m{{- "\n" -}}
+    {{- with .Reason -}}
+        ℹ {{ . -}}{{- "\n" -}}
+    {{- end -}}
+    {{- with .Output -}}
+        {{- . -}}{{- "\n" -}}
+    {{- end -}}
+    {{- with .TestCases -}}
+        {{- $failed := false -}}
+        {{- range . -}}
+            {{- if ne .Result "PASS" -}}
+                {{- $failed = true -}}
+                ::group::
+                {{- if eq .Result "SKIP" -}}
+                    {{ "\033" }}[0;33m🚧
+                {{- else -}}
+                    {{ "\033" }}[0;31m❌
+                {{- end -}}
+                {{ " " }}{{- .Name -}}
+                {{- "\033" -}}[0;37m ({{ .Duration -}}
+                {{- with .Coverage -}}
+                    , coverage: {{ . }}%
+                {{- end -}})
+                {{- "\033" -}}[0m
+                {{- "\n" -}}
+
+                {{- with .Output -}}
+                    {{- . -}}
+                    {{- "\n" -}}
+                {{- end -}}
+
+                ::endgroup::{{- "\n" -}}
+            {{- end -}}
+        {{- end -}}
+        {{- if not $failed -}}
+            {{ "\033" }}[0;32m✅ All tests passed{{- "\033" -}}[0m
+        {{- end -}}
+    {{- end -}}
+    {{- "\n" -}}
+{{- end -}}
+{{- if eq .Result "PASS" -}}✅{{- end -}}
