@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -213,31 +212,13 @@ func main() {
 			logging.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
+		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		// if error carries an exit code, set that and skip error logging
-		if exCode, ok := extractExitCode(err); ok {
-			exitCode = exCode
-			return
-		}
 		out.Error(err.Error())
-		exitCode = 1
 		return
 	}
 
 	an.Event(AnalyticsFunnelCat, "success")
-}
-
-func extractExitCode(err error) (int, bool) {
-	if err == nil {
-		return 0, false
-	}
-
-	var eerr errs.ExitCodeable
-	if errors.As(err, &eerr) {
-		return eerr.ExitCode(), true
-	}
-
-	return 1, false
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
