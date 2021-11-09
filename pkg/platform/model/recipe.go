@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -143,6 +144,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	if err != nil {
 		return nil, locale.WrapError(err, "err_order_marshal")
 	}
+	fmt.Println("Mono order:", string(orderData))
 
 	order := &inventory_models.Order{}
 	err = order.UnmarshalBinary(orderData)
@@ -155,6 +157,12 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 		Project:      project,
 		Organization: owner,
 	}
+
+	data, err := order.MarshalBinary()
+	if err != nil {
+		fmt.Println("Order marshal err:", err)
+	}
+	fmt.Println("Inventory order:", string(data))
 
 	return order, nil
 }
@@ -207,8 +215,8 @@ func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
 		return &SolverError{
-			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", *serr.Payload.Message),
-			isTransient: *serr.GetPayload().IsTransient,
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
+			isTransient: p.PBool(serr.GetPayload().IsTransient),
 		}
 	case *iop.ResolveRecipesBadRequest:
 		var validationErrors []string
@@ -219,12 +227,11 @@ func resolveSolverError(err error) error {
 			lines := strings.Split(*verr.Error, "\n")
 			validationErrors = append(validationErrors, lines...)
 		}
-		err = &SolverError{
-			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", *serr.Payload.SolverError.Message),
+		return &SolverError{
+			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
 			validationErrors: validationErrors,
-			isTransient:      *serr.GetPayload().IsTransient,
+			isTransient:      p.PBool(serr.GetPayload().IsTransient),
 		}
-		return err
 	default:
 		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")
 	}
