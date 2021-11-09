@@ -144,7 +144,6 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	if err != nil {
 		return nil, locale.WrapError(err, "err_order_marshal")
 	}
-	fmt.Println("Mono order:", string(orderData))
 
 	order := &inventory_models.Order{}
 	err = order.UnmarshalBinary(orderData)
@@ -157,12 +156,6 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 		Project:      project,
 		Organization: owner,
 	}
-
-	data, err := order.MarshalBinary()
-	if err != nil {
-		fmt.Println("Order marshal err:", err)
-	}
-	fmt.Println("Inventory order:", string(data))
 
 	return order, nil
 }
