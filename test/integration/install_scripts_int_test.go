@@ -74,7 +74,22 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			expectStateToolInstallation(cp)
-			expectStateToolWorks(cp, tt.Activate != "")
+
+			if tt.Activate != "" {
+				cp.Expect("Creating a Virtual Environment")
+				cp.Expect("Quick Start", time.Second*60)
+				// ensure that shell is functional
+				cp.WaitForInput()
+
+				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+				cp.Expect("ActiveState Software Inc.")
+			}
+
+			cp.SendLine("state --version")
+			cp.Expect("Branch")
+			cp.Expect("Built")
+			cp.SendLine("exit")
+
 			cp.ExpectExitCode(0)
 
 			state := appinfo.StateApp(ts.Dirs.Work)
@@ -127,23 +142,6 @@ func scriptPath(t *testing.T, targetDir string) string {
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
 	cp.Expect("Installation Complete", time.Second*40)
-}
-
-func expectStateToolWorks(cp *termtest.ConsoleProcess, activation bool) {
-	if activation {
-		cp.Expect("Creating a Virtual Environment")
-		cp.Expect("Quick Start", time.Second*60)
-		// ensure that shell is functional
-		cp.WaitForInput()
-
-		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-		cp.Expect("ActiveState Software Inc.")
-	}
-
-	cp.SendLine("state --version")
-	cp.Expect("Branch")
-	cp.Expect("Built")
-	cp.SendLine("exit")
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
