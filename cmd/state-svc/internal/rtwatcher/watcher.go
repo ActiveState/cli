@@ -2,19 +2,22 @@ package rtwatcher
 
 import (
 	"encoding/json"
+	"os"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
+	constants2 "github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 )
 
-const interval = 1 * time.Minute
+const defaultInterval = 1 * time.Minute
 const CfgKey = "runtime-watchers"
 
 type Watcher struct {
@@ -43,6 +46,16 @@ func New(cfg *config.Instance, an *sync.Client) *Watcher {
 
 func (w *Watcher) ticker() {
 	defer panics.LogPanics(recover(), debug.Stack())
+
+	interval := defaultInterval
+	if v := os.Getenv(constants2.HeartbeatIntervalEnvVarName); v != "" {
+		vv, err := strconv.Atoi(v)
+		if err != nil {
+			logging.Warning("Invalid value for %s: %s", constants2.HeartbeatIntervalEnvVarName, v)
+		} else {
+			interval = time.Duration(vv) * time.Millisecond
+		}
+	}
 
 	ticker := time.NewTicker(interval)
 	for {

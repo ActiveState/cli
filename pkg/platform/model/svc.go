@@ -93,12 +93,12 @@ func (m *SvcModel) AnalyticsEvent(ctx context.Context, category, action, label s
 }
 
 func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string, dimJson string) error {
-	defer profile.Measure("svc:analyticsEvent", time.Now())
+	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
 
-	r := request.NewAnalyticsEvent(category, action, label, dimJson)
-	u := graph.AnalyticsEventResponse{}
+	r := request.NewRuntimeUsage(pid, exec, dimJson)
+	u := graph.RuntimeUsageResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
-		return errs.Wrap(err, "Error sending analytics event via state-svc")
+		return errs.Wrap(err, "Error sending runtime usage event via state-svc")
 	}
 
 	return nil

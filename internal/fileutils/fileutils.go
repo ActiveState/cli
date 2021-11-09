@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/gofrs/flock"
 )
 
 // nullByte represents the null-terminator byte
@@ -312,6 +313,20 @@ func WriteFile(filePath string, data []byte) error {
 		return errs.Wrap(err, "file.Write %s failed", filePath)
 	}
 	return nil
+}
+
+func AmendFileLocked(filePath string, data []byte, flag AmendOptions) error {
+	locker := flock.New(filePath + ".lock")
+
+	if err := locker.Lock(); err != nil {
+		return errs.Wrap(err, "Could not acquire file lock")
+	}
+
+	if err := AmendFile(filePath, data, flag); err != nil {
+		return errs.Wrap(err, "Could not write to file")
+	}
+
+	return locker.Unlock()
 }
 
 // AppendToFile appends the data to the file (if it exists) with the given data, if the file doesn't exist

@@ -11,6 +11,7 @@ import (
 
 const (
 	Activate       = "activate"
+	Analytics      = "analytics"
 	Alternative    = "alternative"
 	Auth           = "auth"
 	Branches       = "branches"

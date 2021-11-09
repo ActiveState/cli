@@ -89,7 +89,7 @@ func run() (rerr error) {
 		ErrWriter: os.Stderr,
 	})
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
+	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]), "", "", p, nil, nil,

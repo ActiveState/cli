@@ -1,9 +1,13 @@
 package e2e
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 )
 
 // Dirs represents directories that are temporarily created for this end-to-end testing session
@@ -54,6 +58,15 @@ func NewDirs(base string) (*Dirs, error) {
 	}
 
 	return &dirs, nil
+}
+
+func (d *Dirs) InheritGlobalCache() {
+	globalCachePath := storage.CachePath()
+	if fileutils.FileExists(globalCachePath) {
+		fmt.Println("Warming cache")
+		fileutils.CopyFiles(globalCachePath, d.Cache)
+		fmt.Println("Cache warmed")
+	}
 }
 
 // Close removes the temporary directories

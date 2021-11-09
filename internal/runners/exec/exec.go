@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -40,6 +41,7 @@ type Exec struct {
 	out       output.Outputer
 	cfg       projectfile.ConfigGetter
 	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
@@ -49,6 +51,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 type Params struct {
@@ -63,6 +66,7 @@ func New(prime primeable) *Exec {
 		prime.Output(),
 		prime.Config(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -109,7 +113,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
 
-	rt, err := runtime.New(rtTarget, s.analytics)
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

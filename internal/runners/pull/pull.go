@@ -30,6 +30,7 @@ type Pull struct {
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
+	svcModel  *model.SvcModel
 }
 
 type PullParams struct {
@@ -44,6 +45,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Analyticer
 	primer.Configurer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Pull {
@@ -54,6 +56,7 @@ func New(prime primeable) *Pull {
 		prime.Output(),
 		prime.Analytics(),
 		prime.Config(),
+		prime.SvcModel(),
 	}
 }
 
@@ -159,7 +162,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull, p.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

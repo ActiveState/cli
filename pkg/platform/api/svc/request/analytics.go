@@ -19,7 +19,7 @@ func NewAnalyticsEvent(category, action, label, dimensionsJson string) *Analytic
 }
 
 func (e *AnalyticsEvent) Query() string {
-	return `query($category: String!, $action: String!, $label: String, $dimensionsJson: String) {
+	return `query($category: String!, $action: String!, $label: String, $dimensionsJson: String!) {
 		analyticsEvent(category: $category, action: $action, label: $label, dimensionsJson: $dimensionsJson) {
 			sent
 		}

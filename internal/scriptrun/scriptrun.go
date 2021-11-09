@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -33,13 +34,14 @@ type ScriptRun struct {
 	project   *project.Project
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
@@ -47,6 +49,7 @@ func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		proj,
 		cfg,
 		analytics,
+		svcModel,
 
 		false,
 
@@ -64,7 +67,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics)
+	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

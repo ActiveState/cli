@@ -26,6 +26,7 @@ type Revert struct {
 	project   *project.Project
 	auth      *authentication.Auth
 	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type Params struct {
@@ -38,6 +39,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Revert {
@@ -47,6 +49,7 @@ func New(prime primeable) *Revert {
 		prime.Project(),
 		prime.Auth(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -100,7 +103,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

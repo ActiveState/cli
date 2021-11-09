@@ -168,7 +168,9 @@ func (r *Runtime) recordUsage() {
 	if err != nil {
 		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
-	r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	if r.svcm != nil {
+		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	}
 }
 
 func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {

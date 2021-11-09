@@ -15,6 +15,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 type List struct {
