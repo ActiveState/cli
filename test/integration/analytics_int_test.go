@@ -71,7 +71,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events
 	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
-	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
+	time.Sleep(time.Duration(heartbeatInterval)*time.Millisecond + time.Second) // Give it one extra second
 
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
