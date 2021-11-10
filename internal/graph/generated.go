@@ -19,6 +19,10 @@ type Project struct {
 	Locations []string `json:"locations"`
 }
 
+type RuntimeUsageResponse struct {
+	Received bool `json:"received"`
+}
+
 type StateVersion struct {
 	License  string `json:"license"`
 	Version  string `json:"version"`

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -56,12 +54,6 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	// Temporary hack to facilitate non-blocking events from the client
-	if len(os.Args) == 3 && os.Args[1] == "_event" {
-		fireEvent(os.Args[2])
-		return
-	}
-
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
@@ -97,7 +89,7 @@ func run() (rerr error) {
 		ErrWriter: os.Stderr,
 	})
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
+	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]), "", "", p, nil, nil,
@@ -236,19 +228,4 @@ func runStatus(cfg *config.Instance) error {
 	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
-}
-
-func fireEvent(query string) {
-	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
-	if err != nil {
-		logging.Error("Invalid URL for analytics S3 pixel")
-		return
-	}
-	pixelURL.RawQuery = query
-
-	//logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
-	_, err = http.Head(pixelURL.String())
-	if err != nil {
-		logging.Error("Could not download S3 pixel: %v", err)
-	}
 }

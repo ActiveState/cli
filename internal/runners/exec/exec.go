@@ -24,9 +24,11 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/shirou/gopsutil/process"
@@ -39,6 +41,7 @@ type Exec struct {
 	out       output.Outputer
 	cfg       projectfile.ConfigGetter
 	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
@@ -48,6 +51,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 type Params struct {
@@ -62,6 +66,7 @@ func New(prime primeable) *Exec {
 		prime.Output(),
 		prime.Config(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -77,7 +82,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		return nil
 	}
 
-	trigger := runtime.NewExecTrigger(args[0])
+	trigger := target.NewExecTrigger(args[0])
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
@@ -88,9 +93,9 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
 			// as there is no head
-			rtTarget = runtime.NewCustomTarget("", "", "", params.Path, trigger, true)
+			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
-			rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 		}
 	} else {
 		proj := s.proj
@@ -105,10 +110,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
-		rtTarget = runtime.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
 
-	rt, err := runtime.New(rtTarget, s.analytics)
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

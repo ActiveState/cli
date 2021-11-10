@@ -99,7 +99,10 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	a.customDimensions = customDimensions
 
 	// Register reporters
-	if !condition.InUnitTest() {
+	if condition.InTest() {
+		logging.Debug("Using test reporter")
+		a.NewReporter(reporters.NewTestReporter())
+	} else {
 		gar, err := reporters.NewGaCLIReporter(deviceID)
 		if err != nil {
 			logging.Critical("Cannot initialize google analytics client: %s", errs.JoinMessage(err))

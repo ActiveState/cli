@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -40,6 +41,7 @@ type Activate struct {
 	auth             *authentication.Auth
 	out              output.Outputer
 	svcMgr           *svcmanager.Manager
+	svcModel         *model.SvcModel
 	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
@@ -64,6 +66,7 @@ type primeable interface {
 	primer.Prompter
 	primer.Configurer
 	primer.Svcer
+	primer.SvcModeler
 	primer.Analyticer
 }
 
@@ -74,6 +77,7 @@ func NewActivate(prime primeable) *Activate {
 		prime.Auth(),
 		prime.Output(),
 		prime.SvcManager(),
+		prime.SvcModel(),
 		prime.Config(),
 		prime.Project(),
 		prime.Subshell(),
@@ -197,7 +201,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil, runtime.TriggerActivate), r.analytics)
+	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

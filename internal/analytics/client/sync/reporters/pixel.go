@@ -14,7 +14,7 @@ type PixelReporter struct {
 }
 
 func NewPixelReporter() *PixelReporter {
-	return &PixelReporter{"https://state-tool.s3.amazonaws.com/pixel-svc"}
+	return &PixelReporter{"https://state-tool.s3.amazonaws.com/pixel"}
 }
 
 func (r *PixelReporter) ID() string {

@@ -2,15 +2,12 @@ package async
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	anSync "github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	ac "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/condition"
@@ -37,8 +34,6 @@ type Client struct {
 
 	sessionToken string
 	updateTag    string
-
-	legacyReporter anSync.Reporter
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -46,7 +41,6 @@ var _ analytics.Dispatcher = &Client{}
 func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
-		legacyReporter: reporters.NewLegacyPixelReporter(),
 	}
 
 	o := string(output.PlainFormatName)
@@ -61,12 +55,7 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 		return a
 	}
 
-	svcModel, err := model.NewSvcModel(context.Background(), cfg, svcMgr)
-	if err != nil {
-		logging.Critical("Could not initialize svcModel for Analytics client: %s", errs.JoinMessage(err))
-	} else {
-		a.svcModel = svcModel
-	}
+	a.svcModel = model.NewSvcModel(cfg, svcMgr)
 
 	a.sessionToken = cfg.GetString(ac.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
@@ -115,7 +104,6 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 			actualDims.Merge(dim)
 		}
 
-		a.legacyReporter.Event(category, action, label, actualDims)
 		a.eventWaitGroup.Done()
 	}()
 
@@ -133,7 +121,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	}
 	dim.Merge(dims...)
 
-	dimMarshalled, err := json.Marshal(dim)
+	dimMarshalled, err := dim.Marshal()
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal dimensions")
 	}

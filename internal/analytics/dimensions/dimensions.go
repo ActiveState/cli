@@ -1,6 +1,7 @@
 package dimensions
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 
@@ -116,6 +117,14 @@ func (v *Values) PreProcess() error {
 	}
 
 	return nil
+}
+
+func (v *Values) Marshal() (string, error) {
+	dimMarshalled, err := json.Marshal(v)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not marshal dimensions")
+	}
+	return string(dimMarshalled), nil
 }
 
 func CalculateFlags() string {

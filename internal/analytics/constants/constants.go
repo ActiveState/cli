@@ -12,6 +12,12 @@ const CatBuild = "build"
 // CatRuntime is the event category used for all runtime setup and usage
 const CatRuntime = "runtime"
 
+// CatRuntimeUsage is the event category used for all runtime usage
+const CatRuntimeUsage = "runtime-use"
+
+// ActRuntimeHeartbeat is the event action sent when a runtime is in use
+const ActRuntimeHeartbeat = "heartbeat"
+
 // ActRuntimeStart is the event action sent when creating a runtime
 const ActRuntimeStart = "start"
 

@@ -16,7 +16,9 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -25,6 +27,7 @@ type primeable interface {
 	primer.Subsheller
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 // Prepare manages the prepare execution context.
@@ -33,6 +36,7 @@ type Prepare struct {
 	subshell  subshell.SubShell
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 // New prepares a prepare execution context for use.
@@ -54,14 +58,14 @@ func (r *Prepare) resetExecutors() error {
 	}
 
 	logging.Debug("Reset default project at %s", defaultProjectDir)
-	defaultTargetDir := rt.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
+	defaultTargetDir := target.ProjectDirToTargetDir(defaultProjectDir, storage.CachePath())
 
 	proj, err := project.FromPath(defaultProjectDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get project from default project directory")
 	}
 
-	run, err := rt.New(rt.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, rt.TriggerDefault, proj.IsHeadless()), r.analytics)
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}

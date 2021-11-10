@@ -63,7 +63,12 @@ type ComplexityRoot struct {
 		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
 		AvailableUpdate func(childComplexity int) int
 		Projects        func(childComplexity int) int
+		RuntimeUsage    func(childComplexity int, pid int, exec string, dimensionsJSON string) int
 		Version         func(childComplexity int) int
+	}
+
+	RuntimeUsageResponse struct {
+		Received func(childComplexity int) int
 	}
 
 	StateVersion struct {
@@ -84,6 +89,7 @@ type QueryResolver interface {
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
+	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
 }
 
 type executableSchema struct {
@@ -183,12 +189,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Projects(childComplexity), true
 
+	case "Query.runtimeUsage":
+		if e.complexity.Query.RuntimeUsage == nil {
+			break
+		}
+
+		args, err := ec.field_Query_runtimeUsage_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["dimensionsJson"].(string)), true
+
 	case "Query.version":
 		if e.complexity.Query.Version == nil {
 			break
 		}
 
 		return e.complexity.Query.Version(childComplexity), true
+
+	case "RuntimeUsageResponse.received":
+		if e.complexity.RuntimeUsageResponse.Received == nil {
+			break
+		}
+
+		return e.complexity.RuntimeUsageResponse.Received(childComplexity), true
 
 	case "StateVersion.branch":
 		if e.complexity.StateVersion.Branch == nil {
@@ -311,11 +336,16 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
+type RuntimeUsageResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
 }
 
 `, BuiltIn: false},
@@ -380,6 +410,39 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["dimensionsJson"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_runtimeUsage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["pid"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pid"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pid"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["exec"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("exec"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["exec"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dimensionsJson"] = arg2
 	return args, nil
 }
 
@@ -839,6 +902,45 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	return ec.marshalOAnalyticsEventResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐAnalyticsEventResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_runtimeUsage_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RuntimeUsage(rctx, args["pid"].(int), args["exec"].(string), args["dimensionsJson"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.RuntimeUsageResponse)
+	fc.Result = res
+	return ec.marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -908,6 +1010,41 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RuntimeUsageResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Received, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StateVersion_license(ctx context.Context, field graphql.CollectedField, obj *graph.StateVersion) (ret graphql.Marshaler) {
@@ -2383,10 +2520,48 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_analyticsEvent(ctx, field)
 				return res
 			})
+		case "runtimeUsage":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_runtimeUsage(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var runtimeUsageResponseImplementors = []string{"RuntimeUsageResponse"}
+
+func (ec *executionContext) _RuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.RuntimeUsageResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeUsageResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeUsageResponse")
+		case "received":
+			out.Values[i] = ec._RuntimeUsageResponse_received(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2724,6 +2899,21 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interf
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
 	res := graphql.MarshalBoolean(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3096,6 +3286,13 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcli�
 		return graphql.Null
 	}
 	return ec._Project(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeUsageResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeUsageResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

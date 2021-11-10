@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
 
@@ -99,7 +100,7 @@ type Targeter interface {
 	Owner() string
 	Dir() string
 	Headless() bool
-	Trigger() string
+	Trigger() target.Trigger
 
 	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)
 	OnlyUseCache() bool

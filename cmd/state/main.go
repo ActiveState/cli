@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
@@ -151,6 +152,8 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}
 
+	svcmodel := model.NewSvcModel(cfg, svcm)
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -199,7 +202,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

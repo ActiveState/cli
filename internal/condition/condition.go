@@ -16,6 +16,10 @@ func InUnitTest() bool {
 	return inTest
 }
 
+func InTest() bool {
+	return InUnitTest() || os.Getenv(constants.E2ETestEnvVarName) == "true"
+}
+
 func OnCI() bool {
 	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
 }
