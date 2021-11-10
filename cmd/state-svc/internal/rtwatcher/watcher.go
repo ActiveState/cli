@@ -25,10 +25,11 @@ type Watcher struct {
 	cfg      *config.Instance
 	watching []entry
 	stop     chan struct{}
+	interval time.Duration
 }
 
 func New(cfg *config.Instance, an *sync.Client) *Watcher {
-	w := &Watcher{an: an, stop: make(chan struct{}), cfg: cfg}
+	w := &Watcher{an: an, stop: make(chan struct{}), cfg: cfg, interval: defaultInterval}
 
 	if watchersJson := w.cfg.GetString(CfgKey); watchersJson != "" {
 		watchers := []entry{}
@@ -40,28 +41,27 @@ func New(cfg *config.Instance, an *sync.Client) *Watcher {
 		}
 	}
 
-	go w.ticker()
-	return w
-}
-
-func (w *Watcher) ticker() {
-	defer panics.LogPanics(recover(), debug.Stack())
-
-	interval := defaultInterval
 	if v := os.Getenv(constants.HeartbeatIntervalEnvVarName); v != "" {
 		vv, err := strconv.Atoi(v)
 		if err != nil {
 			logging.Warning("Invalid value for %s: %s", constants.HeartbeatIntervalEnvVarName, v)
 		} else {
-			interval = time.Duration(vv) * time.Millisecond
+			w.interval = time.Duration(vv) * time.Millisecond
 		}
 	}
 
-	ticker := time.NewTicker(interval)
+	go w.ticker(w.check)
+	return w
+}
+
+func (w *Watcher) ticker(cb func()) {
+	defer panics.LogPanics(recover(), debug.Stack())
+
+	ticker := time.NewTicker(w.interval)
 	for {
 		select {
 		case <-ticker.C:
-			w.check()
+			cb()
 		case <-w.stop:
 			return
 		}
