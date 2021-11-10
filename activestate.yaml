@@ -51,6 +51,15 @@ constants:
   - name: SCRIPT_EXT
     if: ne .OS.Name "Windows"
     value: .sh
+  - name: UPX_TARGET
+    if: eq .OS.Name "Windows"
+    value: ./.github/deps/Windows/bin/upx.exe
+  - name: UPX_TARGET
+    if: eq .OS.Name "MacOS"
+    value: ./.github/deps/macOS/bin/upx
+  - name: UPX_TARGET
+    if: eq .OS.Name "Linux"
+    value: ./.github/deps/Linux/bin/upx
 scripts:
   - name: install-deps
     language: bash
@@ -103,6 +112,9 @@ scripts:
       export CGO_ENABLED=0
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      if [ ! -z "${CI}" ]; then
+        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      fi
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -121,6 +133,9 @@ scripts:
       export CGO_ENABLED=0
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
+      if [ ! -z "${CI}" ]; then
+        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+      fi
   - name: build-tray
     description: Builds the State Tool system tray application
     standalone: true
@@ -130,6 +145,9 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+      if [ ! -z "${CI}" ]; then
+        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      fi
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -152,6 +170,9 @@ scripts:
       $constants.SET_ENV
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      if [ ! -z "${CI}" ]; then
+        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
+      fi
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true

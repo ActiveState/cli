@@ -89,15 +89,15 @@ jobs:
             },
             {
                 "ID": "Build-CLI",
-                "Args": ["state", "run", "ci-build"]
+                "Args": ["state", "run", "build"]
             },
             {
                 "ID": "Build-Service",
-                "Args": ["state", "run", "ci-build-svc"]
+                "Args": ["state", "run", "build-svc"]
             },
             {
                 "ID": "Build-Tray",
-                "Args": ["state", "run", "ci-build-tray"]
+                "Args": ["state", "run", "build-tray"]
             },
             {
                 "ID": "Build-Systray-App",
@@ -106,7 +106,7 @@ jobs:
             },
             {
                 "ID": "Build-Installer",
-                "Args": ["state", "run", "ci-build-installer"]
+                "Args": ["state", "run", "build-installer"]
             },
             {
                 "ID": "Build-Install-Scripts",
