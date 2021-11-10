@@ -138,7 +138,6 @@ scripts:
       fi
   - name: build-tray
     description: Builds the State Tool system tray application
-    standalone: true
     language: bash
     value: |
       set -e
