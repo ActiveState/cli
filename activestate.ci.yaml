@@ -1,0 +1,50 @@
+constants:
+  - name: UPX
+    if: eq .OS.Name "Windows"
+    value: ./.github/deps/Windows/bin/upx.exe
+  - name: UPX
+    if: eq .OS.Name "MacOS"
+    value: ./.github/deps/macOS/bin/upx
+  - name: UPX
+    if: eq .OS.Name "Linux"
+    value: ./.github/deps/Linux/bin/upx
+scripts:
+  - name: ci-build
+    language: bash
+    description: Builds the project with the host OS as the target OS.
+    value: |
+      set -e
+      $constants.SET_ENV
+      export CGO_ENABLED=0
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      $UPX $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+  - name: ci-build-svc
+    language: bash
+    description: Builds the state-svc daemon
+    value: |
+      set -e
+      $constants.SET_ENV
+      export CGO_ENABLED=0
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
+      $UPX $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+  - name: ci-build-tray
+    description: Builds the State Tool system tray application
+    standalone: true
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+      $UPX $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+  - name: build-installer
+    language: bash
+    description: Builds the state-installer
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      $UPX $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
