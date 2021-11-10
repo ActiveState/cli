@@ -61,16 +61,23 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
 
+	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	if heartbeatInitialCount > 2 {
+		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
+		// one or two by this point. Technically more is possible, just very unlikely.
+		suite.Fail("Received %d heartbeats, realistically we should at most have gotten 2", heartbeatInitialCount)
+	}
+
 	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, 1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
 
-	// Runtime-use:heartbeat events - should now be 2 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, 2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -80,15 +87,19 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
 
-	// Runtime-use:heartbeat events - should still be 2 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, 2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	// Runtime-use:heartbeat events - should still be +2 because we exited the process so it's no longer using the runtime
+	suite.assertNEvents(events, heartbeatInitialCount+2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, expectedN int, category, action string) {
+func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestLogEntry, category, action string) int {
 	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
 		return e.Category == category && e.Action == action
 	}).([]reporters.TestLogEntry)
-	suite.Assert().Equal(expectedN, len(filteredEvents),
+	return len(filteredEvents)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, expectedN int, category, action string) {
+	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
 		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s", expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events))
 }
 
