@@ -20,18 +20,18 @@ func (t Trigger) String() string {
 }
 
 const (
-	TriggerActivate Trigger = "activate"
-	TriggerScript   Trigger = "script"
-	TriggerDeploy   Trigger = "deploy"
-	TriggerExec     Trigger = "exec"
-	TriggerDefault  Trigger = "default-setup"
-	TriggerBranch   Trigger = "branch"
-	TriggerImport   Trigger = "import"
-	TriggerPackage  Trigger = "package"
-	TriggerPull     Trigger = "pull"
-	TriggerReset    Trigger = "reset"
-	TriggerRevert   Trigger = "revert"
-	triggerUnknown  Trigger = "unknown"
+	TriggerActivate  Trigger = "activate"
+	TriggerScript    Trigger = "script"
+	TriggerDeploy    Trigger = "deploy"
+	TriggerExec      Trigger = "exec"
+	TriggerResetExec Trigger = "reset-exec"
+	TriggerBranch    Trigger = "branch"
+	TriggerImport    Trigger = "import"
+	TriggerPackage   Trigger = "package"
+	TriggerPull      Trigger = "pull"
+	TriggerReset     Trigger = "reset"
+	TriggerRevert    Trigger = "revert"
+	triggerUnknown   Trigger = "unknown"
 )
 
 // usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)

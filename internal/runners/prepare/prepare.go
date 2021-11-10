@@ -65,7 +65,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from default project directory")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerDefault, proj.IsHeadless()), r.analytics, r.svcModel)
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
