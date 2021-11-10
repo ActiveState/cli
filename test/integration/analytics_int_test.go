@@ -82,7 +82,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
+	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond) + time.Second) // Give it one extra second
 
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
