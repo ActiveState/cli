@@ -81,16 +81,18 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
-	packages, err := model.SearchIngredientsStrict(ns, packageName, false, true)
-	if err != nil {
-		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
-	}
-	if len(packages) == 0 {
-		return errs.AddTips(
-			locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, packageName),
-			locale.Tl("install_try_term", "Try a different package name"),
-			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
-		)
+	if operation == model.OperationAdded {
+		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
+		if err != nil {
+			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+		}
+		if len(packages) == 0 {
+			return errs.AddTips(
+				locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, packageName),
+				locale.Tl("install_try_term", "Try a different package name"),
+				locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+			)
+		}
 	}
 
 	if strings.ToLower(packageVersion) == latestVersion {
