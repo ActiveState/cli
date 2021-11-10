@@ -161,10 +161,11 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 
 func (r *Runtime) recordUsage() {
 	dims := &dimensions.Values{
-		Trigger:    p.StrP(r.target.Trigger().String()),
-		Headless:   p.StrP(strconv.FormatBool(r.target.Headless())),
-		CommitID:   p.StrP(r.target.CommitUUID().String()),
-		InstanceID: p.StrP(instanceid.ID()),
+		Trigger:          p.StrP(r.target.Trigger().String()),
+		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
+		CommitID:         p.StrP(r.target.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
 	}
 	dimsJson, err := dims.Marshal()
 	if err != nil {
