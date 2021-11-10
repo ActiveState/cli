@@ -31,7 +31,6 @@ scripts:
       $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
   - name: ci-build-tray
     description: Builds the State Tool system tray application
-    standalone: true
     language: bash
     value: |
       set -e
