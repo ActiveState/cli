@@ -38,7 +38,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
       $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
-  - name: build-installer
+  - name: ci-build-installer
     language: bash
     description: Builds the state-installer
     value: |
