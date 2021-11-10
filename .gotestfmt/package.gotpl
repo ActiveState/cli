@@ -3,12 +3,8 @@
 This template contains the format for an individual package. GitHub actions does not currently support nested groups so
 we are creating a stylized header for each package.
 */ -}}
-{{- if and (ne .Result "PASS") (ne .Reason "no test files") -}}
-    {{- if eq .Result "SKIP" -}}
-        {{ "\033" }}[0;33m
-    {{- else -}}
-        {{ "\033" }}[0;31m
-    {{- end -}}
+{{- if and (ne .Result "PASS") (.Result "SKIP") (ne .Reason "no test files") -}}
+    {{ "\033" }}[0;31m
     📦 {{ .Name }}{{ "\033" }}[0m{{- "\n" -}}
     {{- with .Reason -}}
         ℹ {{ . -}}{{- "\n" -}}
