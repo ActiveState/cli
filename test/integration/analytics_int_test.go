@@ -87,8 +87,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
 
-	// Runtime-use:heartbeat events - should still be +2 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, heartbeatInitialCount+2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestLogEntry, category, action string) int {
