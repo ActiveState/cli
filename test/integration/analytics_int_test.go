@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
-	"github.com/ActiveState/cli/internal/analytics/constants"
-	constants2 "github.com/ActiveState/cli/internal/constants"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -40,7 +40,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		e2e.WithWorkDirectory(ts.Dirs.Work),
 		e2e.AppendEnv(
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			fmt.Sprintf("%s=%d", constants2.HeartbeatIntervalEnvVarName, heartbeatInterval),
+			fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 		),
 	)
 
@@ -56,13 +56,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, constants.CatRuntime, constants.ActRuntimeStart)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart)
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, constants.CatRuntime, constants.ActRuntimeSuccess)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
 
 	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, 1, constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
@@ -70,7 +70,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be 2 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, 2, constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, 2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -81,7 +81,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should still be 2 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, 2, constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, 2, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, expectedN int, category, action string) {

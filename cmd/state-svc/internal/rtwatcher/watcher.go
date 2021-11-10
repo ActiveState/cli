@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/analytics/constants"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
-	constants2 "github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -48,10 +48,10 @@ func (w *Watcher) ticker() {
 	defer panics.LogPanics(recover(), debug.Stack())
 
 	interval := defaultInterval
-	if v := os.Getenv(constants2.HeartbeatIntervalEnvVarName); v != "" {
+	if v := os.Getenv(constants.HeartbeatIntervalEnvVarName); v != "" {
 		vv, err := strconv.Atoi(v)
 		if err != nil {
-			logging.Warning("Invalid value for %s: %s", constants2.HeartbeatIntervalEnvVarName, v)
+			logging.Warning("Invalid value for %s: %s", constants.HeartbeatIntervalEnvVarName, v)
 		} else {
 			interval = time.Duration(vv) * time.Millisecond
 		}
@@ -89,7 +89,7 @@ func (w *Watcher) check() {
 
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
-	w.an.Event(constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat, e.Dims)
+	w.an.Event(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Dims)
 }
 
 func (w *Watcher) Close() error {
