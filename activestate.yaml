@@ -51,15 +51,6 @@ constants:
   - name: SCRIPT_EXT
     if: ne .OS.Name "Windows"
     value: .sh
-  - name: UPX_TARGET
-    if: eq .OS.Name "Windows"
-    value: ./.github/deps/Windows/bin/upx.exe
-  - name: UPX_TARGET
-    if: eq .OS.Name "MacOS"
-    value: ./.github/deps/macOS/bin/upx
-  - name: UPX_TARGET
-    if: eq .OS.Name "Linux"
-    value: ./.github/deps/Linux/bin/upx
 scripts:
   - name: install-deps
     language: bash
@@ -113,7 +104,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
       if [ ! -z "${CI}" ]; then
-        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+        upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
       fi
   - name: build-for
     language: bash
@@ -134,7 +125,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
       if [ ! -z "${CI}" ]; then
-        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+        upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
       fi
   - name: build-tray
     description: Builds the State Tool system tray application
@@ -145,7 +136,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
       if [ ! -z "${CI}" ]; then
-        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+        upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
   - name: build-all
     description: Builds all our tools
@@ -170,7 +161,7 @@ scripts:
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
       if [ ! -z "${CI}" ]; then
-        $UPX_TARGET $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
+        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
       fi
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
