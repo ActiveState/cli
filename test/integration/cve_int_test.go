@@ -26,7 +26,6 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 	cp.Expect("VulnerablePython-3.7")
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
-	// junk comment
 	cp.Expect("Vulnerabilities")
 	cp.Expect("6")
 	cp.Expect("CRITICAL")
