@@ -69,6 +69,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
+	var searchCompleted bool
 	if !ns.IsValid() {
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -79,9 +80,10 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
+		searchCompleted = true
 	}
 
-	if operation == model.OperationAdded {
+	if !searchCompleted && operation == model.OperationAdded {
 		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
