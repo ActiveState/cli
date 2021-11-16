@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -69,7 +68,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
-	var searchCompleted bool
+	var validatePkg = operation == model.OperationAdded
 	if !ns.IsValid() {
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -80,21 +79,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
-		searchCompleted = true
-	}
-
-	if !searchCompleted && operation == model.OperationAdded {
-		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
-		if err != nil {
-			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
-		}
-		if len(packages) == 0 {
-			return errs.AddTips(
-				locale.NewInputError("err_package_search_no_packages", `No packages in our catalogue match [NOTICE]"{{.V0}}"[/RESET].`, packageName),
-				locale.Tl("install_try_term", "Try a different package name"),
-				locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
-			)
-		}
+		validatePkg = false
 	}
 
 	if strings.ToLower(packageVersion) == latestVersion {
@@ -129,21 +114,21 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
-	// Verify that the provided package actually exists (the vcs API doesn't care)
-	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil && !model.IsPlatformError(err) {
-		rerr := &inventory_operations.ResolveRecipesBadRequest{}
-		if errors.As(err, &rerr) {
-			suggestions, serr := getSuggestions(ns, packageName)
-			if serr != nil {
+	if validatePkg {
+		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
+		if err != nil {
+			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+		}
+		if len(packages) == 0 {
+			suggestions, err := getSuggestions(ns, packageName)
+			if err != nil {
 				logging.Error("Failed to retrieve suggestions: %v", err)
 			}
 			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
+				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", packageName)
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "", packageName, strings.Join(suggestions, "\n"))
 		}
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", packageName)
 	}
 
 	orderChanged := !hasParentCommit
@@ -215,7 +200,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	}
 
 	if len(choices) == 0 {
-		return "", ns, "", locale.WrapInputError(err, "err_pkgop_notfound", "No valid package matches your query.")
+		return "", ns, "", locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
 	}
 
 	// If we only have one ingredient match we're done; return it.
@@ -247,19 +232,14 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
-	moreResults := false
 	maxResults := 5
 	if len(results) > maxResults {
 		results = results[:maxResults]
-		moreResults = true
 	}
 
 	suggestions := make([]string, 0, maxResults+1)
 	for _, result := range results {
 		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
-	}
-	if moreResults {
-		suggestions = append(suggestions, locale.Tr("ingredient_alternatives_more", name))
 	}
 
 	return suggestions, nil
