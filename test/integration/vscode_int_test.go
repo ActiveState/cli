@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -140,6 +141,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.OnlyRunForTags(tagsuite.Package, tagsuite.VSCode)
+
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Not running on windows cause it has issues parsing json output from termtest")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
