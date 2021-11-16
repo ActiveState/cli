@@ -57,19 +57,19 @@ func NewGetNamespaceIngredientVersionOK() *GetNamespaceIngredientVersionOK {
 The retrieved ingredient
 */
 type GetNamespaceIngredientVersionOK struct {
-	Payload *inventory_models.IngredientVersion
+	Payload *inventory_models.IngredientVersionRevision
 }
 
 func (o *GetNamespaceIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/namespaces/ingredient/version][%d] getNamespaceIngredientVersionOK  %+v", 200, o.Payload)
 }
-func (o *GetNamespaceIngredientVersionOK) GetPayload() *inventory_models.IngredientVersion {
+func (o *GetNamespaceIngredientVersionOK) GetPayload() *inventory_models.IngredientVersionRevision {
 	return o.Payload
 }
 
 func (o *GetNamespaceIngredientVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.IngredientVersion)
+	o.Payload = new(inventory_models.IngredientVersionRevision)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

@@ -21,7 +21,9 @@ import (
 type SolverValidationError struct {
 	SolverError
 
-	SolverValidationErrorAllOf1
+	SolverRemediableError
+
+	SolverValidationErrorAllOf2
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -34,18 +36,25 @@ func (m *SolverValidationError) UnmarshalJSON(raw []byte) error {
 	m.SolverError = aO0
 
 	// AO1
-	var aO1 SolverValidationErrorAllOf1
+	var aO1 SolverRemediableError
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.SolverValidationErrorAllOf1 = aO1
+	m.SolverRemediableError = aO1
+
+	// AO2
+	var aO2 SolverValidationErrorAllOf2
+	if err := swag.ReadJSON(raw, &aO2); err != nil {
+		return err
+	}
+	m.SolverValidationErrorAllOf2 = aO2
 
 	return nil
 }
 
 // MarshalJSON marshals this object to a JSON structure
 func (m SolverValidationError) MarshalJSON() ([]byte, error) {
-	_parts := make([][]byte, 0, 2)
+	_parts := make([][]byte, 0, 3)
 
 	aO0, err := swag.WriteJSON(m.SolverError)
 	if err != nil {
@@ -53,11 +62,17 @@ func (m SolverValidationError) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.SolverValidationErrorAllOf1)
+	aO1, err := swag.WriteJSON(m.SolverRemediableError)
 	if err != nil {
 		return nil, err
 	}
 	_parts = append(_parts, aO1)
+
+	aO2, err := swag.WriteJSON(m.SolverValidationErrorAllOf2)
+	if err != nil {
+		return nil, err
+	}
+	_parts = append(_parts, aO2)
 	return swag.ConcatJSON(_parts...), nil
 }
 
@@ -69,8 +84,12 @@ func (m *SolverValidationError) Validate(formats strfmt.Registry) error {
 	if err := m.SolverError.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with SolverValidationErrorAllOf1
-	if err := m.SolverValidationErrorAllOf1.Validate(formats); err != nil {
+	// validation for a type composition with SolverRemediableError
+	if err := m.SolverRemediableError.Validate(formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with SolverValidationErrorAllOf2
+	if err := m.SolverValidationErrorAllOf2.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -88,8 +107,12 @@ func (m *SolverValidationError) ContextValidate(ctx context.Context, formats str
 	if err := m.SolverError.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with SolverValidationErrorAllOf1
-	if err := m.SolverValidationErrorAllOf1.ContextValidate(ctx, formats); err != nil {
+	// validation for a type composition with SolverRemediableError
+	if err := m.SolverRemediableError.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with SolverValidationErrorAllOf2
+	if err := m.SolverValidationErrorAllOf2.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

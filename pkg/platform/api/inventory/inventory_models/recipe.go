@@ -36,11 +36,6 @@ type Recipe struct {
 	// If all of the resolved ingredients resolved to indemnified versions, then this will be true.
 	IsIndemnified *bool `json:"is_indemnified,omitempty"`
 
-	// The timestamp of the order that produced this recipe. This field is for internal use only, and may be removed in the future.
-	// Required: true
-	// Format: date-time
-	OrderTimestamp *strfmt.DateTime `json:"order_timestamp"`
-
 	// platform
 	// Required: true
 	Platform *Platform `json:"platform"`
@@ -74,10 +69,6 @@ func (m *Recipe) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateImage(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateOrderTimestamp(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -129,19 +120,6 @@ func (m *Recipe) validateImage(formats strfmt.Registry) error {
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *Recipe) validateOrderTimestamp(formats strfmt.Registry) error {
-
-	if err := validate.Required("order_timestamp", "body", m.OrderTimestamp); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("order_timestamp", "body", "date-time", m.OrderTimestamp.String(), formats); err != nil {
-		return err
 	}
 
 	return nil

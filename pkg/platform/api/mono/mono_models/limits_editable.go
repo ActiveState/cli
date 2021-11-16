@@ -17,14 +17,20 @@ import (
 // swagger:model LimitsEditable
 type LimitsEditable struct {
 
-	// clear security and compliance override
-	ClearSecurityAndComplianceOverride bool `json:"clearSecurityAndComplianceOverride,omitempty"`
+	// active runtimes limit
+	ActiveRuntimesLimit *int64 `json:"activeRuntimesLimit,omitempty"`
+
+	// active runtimes override
+	ActiveRuntimesOverride *int64 `json:"activeRuntimesOverride,omitempty"`
 
 	// nodes limit
 	NodesLimit *int64 `json:"nodesLimit,omitempty"`
 
-	// security and compliance override
-	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
+	// static runtimes limit
+	StaticRuntimesLimit *int64 `json:"staticRuntimesLimit,omitempty"`
+
+	// static runtimes override
+	StaticRuntimesOverride *int64 `json:"staticRuntimesOverride,omitempty"`
 
 	// users limit
 	UsersLimit *int64 `json:"usersLimit,omitempty"`
