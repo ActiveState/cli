@@ -135,7 +135,7 @@ func IsInputError(err error) bool {
 	return false
 }
 
-// IsInputError checks if the given error contains a InputError anywhere in the unwrap stack
+// IsInputErrorNonRecursive checks if the given error is an InputError
 func IsInputErrorNonRecursive(err error) bool {
 	if err == nil {
 		return false
