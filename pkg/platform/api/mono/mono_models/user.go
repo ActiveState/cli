@@ -34,6 +34,9 @@ type User struct {
 	// Format: date-time
 	Added strfmt.DateTime `json:"added,omitempty"`
 
+	// can unlink account
+	CanUnlinkAccount bool `json:"canUnlinkAccount,omitempty"`
+
 	// datetime format
 	DatetimeFormat string `json:"datetimeFormat,omitempty"`
 
@@ -50,6 +53,9 @@ type User struct {
 	// last login
 	// Format: date-time
 	LastLogin *strfmt.DateTime `json:"lastLogin,omitempty"`
+
+	// linked accounts
+	LinkedAccounts []string `json:"linkedAccounts"`
 
 	// name
 	Name string `json:"name,omitempty"`
