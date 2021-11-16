@@ -336,10 +336,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.Expect("No packages in our catalogue match")
-		// will be added back in https://activestatef.atlassian.net/browse/DX-502
-		//cp.Expect("json2")
-		//cp.ExpectLongString("to see more results run `state search json`")
+		cp.Expect("No results found for search term")
+		cp.Expect("json2")
+		cp.ExpectLongString("to see more results run `state search json`")
 		cp.Wait()
 	})
 
