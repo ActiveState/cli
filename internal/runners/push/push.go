@@ -164,12 +164,14 @@ func (r *Push) Run(params PushParams) error {
 	// Detect the target branch
 	var branch *mono_models.Branch
 	branch, err = model.BranchForProjectByName(targetPjm, r.project.BranchName())
-	if err != nil {
-		logging.Error("Could not fetch branch: %s", errs.JoinMessage(err))
+	if errs.Matches(err, &model.ErrBranchNotFound{}) {
 		branch, err = model.DefaultBranchForProject(targetPjm)
 		if err != nil {
 			return locale.NewInputError("err_no_default_branch")
 		}
+	}
+	if err != nil {
+		return locale.WrapError(err, "err_fetch_branch", "", r.project.BranchName())
 	}
 
 	// Check if branch is already up to date
