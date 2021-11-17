@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
@@ -59,7 +60,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	var err error
 	pj := prime.Project()
 	if pj == nil {
-		pg = output.NewDotProgress(out, locale.Tl("progress_project", "", packageName))
+		pg = output.NewDotProgress(out, locale.Tl("progress_project", "", packageName), 10*time.Second)
 		pj, err = initializeProject()
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
@@ -82,7 +83,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 
 	var validatePkg = operation == model.OperationAdded
 	if !ns.IsValid() {
-		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", packageName))
+		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", packageName), 10*time.Second)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -103,7 +104,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if validatePkg {
-		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", packageName))
+		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", packageName), 10*time.Second)
 
 		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
 		if err != nil {
@@ -126,7 +127,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	parentCommitID := pj.CommitUUID()
 	hasParentCommit := parentCommitID != ""
 
-	pg = output.NewDotProgress(out, locale.T("progress_commit"))
+	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded && parentCommitID != "" {
