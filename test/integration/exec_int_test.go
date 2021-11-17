@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -162,6 +163,27 @@ echo "Hello $name!"
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
+	suite.OnlyRunForTags(tagsuite.Exec)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts)
+
+	cacheDir := filepath.Join(ts.Dirs.Cache, "dir with spaces")
+	err := fileutils.MkdirUnlessExists(cacheDir)
+	suite.Require().NoError(err)
+
+	cp := ts.SpawnWithOpts(
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+	)
+
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.")
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
 
