@@ -178,7 +178,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%q", constants.CacheEnvVarName, cacheDir)),
 		e2e.WithArgs("activate"),
 	)
 
