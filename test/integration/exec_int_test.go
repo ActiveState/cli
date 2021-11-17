@@ -179,6 +179,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.WithArgs("activate"),
 	)
 
 	cp.SendLine("python3 --version")
