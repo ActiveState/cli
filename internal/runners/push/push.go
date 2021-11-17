@@ -164,6 +164,7 @@ func (r *Push) Run(params PushParams) error {
 	// Detect the target branch
 	var branch *mono_models.Branch
 	if projectCreated || r.project.BranchName() == "" {
+		// If we have created an empty project the only existing branch will be the default one
 		branch, err = model.DefaultBranchForProject(targetPjm)
 		if err != nil {
 			return locale.NewInputError("err_no_default_branch")
