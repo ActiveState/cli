@@ -185,7 +185,8 @@ func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
 	if runtime.GOOS == "linux" {
-		cp.SendLine("env | grep ACTIVE")
+		cp.SendLine(fmt.Sprintf(`ls -l "${%s}"`, constants.CacheEnvVarName))
+		cp.SendLine(fmt.Sprintf(`ls -l %q`, filepath.Join(ts.Dirs.Cache, "dir")))
 		cp.Expect("xxx")
 	}
 	cp.SendLine("exit")
