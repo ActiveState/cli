@@ -29,7 +29,7 @@ type Watcher struct {
 }
 
 func New(cfg *config.Instance, an *sync.Client) *Watcher {
-	w := &Watcher{an: an, stop: make(chan struct{}), cfg: cfg, interval: defaultInterval}
+	w := &Watcher{an: an, stop: make(chan struct{}, 1), cfg: cfg, interval: defaultInterval}
 
 	if watchersJson := w.cfg.GetString(CfgKey); watchersJson != "" {
 		watchers := []entry{}
