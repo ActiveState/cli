@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -89,7 +88,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, ts.ExecutablePath()))
-	cp.ExpectLongString(locale.T("pull_merge_commit"))
+	cp.ExpectLongString("Merged")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
