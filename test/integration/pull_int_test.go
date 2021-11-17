@@ -90,10 +90,6 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, ts.ExecutablePath()))
 	cp.ExpectLongString("Merged")
 	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("You do not have permission") // This tells us the history is valid, we don't need an actual successful push
-	cp.ExpectExitCode(1)
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
