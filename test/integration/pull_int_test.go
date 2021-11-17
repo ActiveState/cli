@@ -81,7 +81,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Your project has new commits available")
+	cp.ExpectLongString("Your project has new changes available")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.WithWorkDirectory(wd))
