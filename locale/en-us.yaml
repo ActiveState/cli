@@ -1775,3 +1775,17 @@ package_ingredient_alternatives_nolang:
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
+progress_project:
+  other: " • Initializing Project"
+progress_search:
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalogue"
+progress_success:
+  other: " [SUCCESS]✔ Done[/RESET]"
+progress_found:
+  other: " [SUCCESS]✔ Found[/RESET]"
+progress_fail:
+  other: " [ERROR]x Failed[/RESET]"
+progress_commit:
+  other: " • Creating commit"
+progress_pkg_nolang:
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalogue"
