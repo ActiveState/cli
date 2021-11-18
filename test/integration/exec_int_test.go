@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -170,24 +171,19 @@ func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
-
 	cacheDir := filepath.Join(ts.Dirs.Cache, "dir with spaces")
 	err := fileutils.MkdirUnlessExists(cacheDir)
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		//e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.DisableRuntime, "")),
 		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
 	)
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.6.6")
-	if runtime.GOOS == "linux" {
-		//cp.SendLine(fmt.Sprintf(`ls -l "${%s}"`, constants.CacheEnvVarName))
-		cp.SendLine("which python3")
-		cp.Expect("xxx")
-	}
+
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
