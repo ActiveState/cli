@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/gofrs/flock"
 )
 
 // nullByte represents the null-terminator byte
@@ -314,6 +315,20 @@ func WriteFile(filePath string, data []byte) error {
 	return nil
 }
 
+func AmendFileLocked(filePath string, data []byte, flag AmendOptions) error {
+	locker := flock.New(filePath + ".lock")
+
+	if err := locker.Lock(); err != nil {
+		return errs.Wrap(err, "Could not acquire file lock")
+	}
+
+	if err := AmendFile(filePath, data, flag); err != nil {
+		return errs.Wrap(err, "Could not write to file")
+	}
+
+	return locker.Unlock()
+}
+
 // AppendToFile appends the data to the file (if it exists) with the given data, if the file doesn't exist
 // it is created and the data is written
 func AppendToFile(filepath string, data []byte) error {
@@ -456,7 +471,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 		subToPath := filepath.Join(toPath, fileInfo.Name())
 		toInfo, err := os.Lstat(subToPath)
 		// if stat returns, the destination path exists (either file or directory)
-		toPathExists := err == nil
+		toPathExists := toInfo != nil && err == nil
 		// handle case where destination exists
 		if toPathExists {
 			if fileInfo.IsDir() != toInfo.IsDir() {
@@ -505,7 +520,11 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 
 		err = os.Rename(subFromPath, subToPath)
 		if err != nil {
-			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, toInfo.Mode())
+			var mode fs.FileMode
+			if toPathExists {
+				mode = toInfo.Mode()
+			}
+			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, mode)
 		}
 		cb(subFromPath, subToPath)
 	}

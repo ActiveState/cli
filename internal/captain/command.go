@@ -12,6 +12,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -20,7 +21,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -46,7 +46,7 @@ type cobraCommander interface {
 
 type primer interface {
 	Output() output.Outputer
-	Analytics() analytics.AnalyticsDispatcher
+	Analytics() analytics.Dispatcher
 }
 
 type ExecuteFunc func(cmd *Command, args []string) error
@@ -94,7 +94,7 @@ type Command struct {
 	skipChecks bool
 
 	out       output.Outputer
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 }
 
 func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
@@ -561,7 +561,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
 		if c.analytics != nil {
-			if err != nil && (subCommandString == "install" || subCommandString == "activate") {
+			if err != nil && subCommandString == "install" {
 				// This is a temporary hack; proper implementation: https://activestatef.atlassian.net/browse/DX-495
 				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, errs.JoinMessage(err))
 			}

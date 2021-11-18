@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -26,7 +27,8 @@ type Run struct {
 	subshell  subshell.SubShell
 	cfg       *config.Instance
 	svcMgr    *svcmanager.Manager
-	analytics analytics.AnalyticsDispatcher
+	svcModel  *model.SvcModel
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
@@ -37,6 +39,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Svcer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 // New constructs a new instance of Run.
@@ -48,16 +51,20 @@ func New(prime primeable) *Run {
 		prime.Subshell(),
 		prime.Config(),
 		prime.SvcManager(),
+		prime.SvcModel(),
 		prime.Analytics(),
 	}
 }
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcMgr, r.cfg, name, args)
+	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcMgr, r.svcModel, r.cfg, name, args)
 }
 
-func run(auth *authentication.Auth, out output.Outputer, analytics analytics.AnalyticsDispatcher, subs subshell.SubShell, proj *project.Project, svcMgr *svcmanager.Manager, cfg *config.Instance, name string, args []string) error {
+func run(
+	auth *authentication.Auth, out output.Outputer, analytics analytics.Dispatcher, subs subshell.SubShell,
+	proj *project.Project, svcMgr *svcmanager.Manager, svcModel *model.SvcModel, cfg *config.Instance,
+	name string, args []string) error {
 	logging.Debug("Execute")
 
 	checker.RunUpdateNotifier(svcMgr, cfg, out)
@@ -81,7 +88,7 @@ func run(auth *authentication.Auth, out output.Outputer, analytics analytics.Ana
 		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
 	}
 
-	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg, analytics)
+	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg, analytics, svcModel)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
@@ -123,7 +123,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && condition.BuiltViaCI() {
 			data := map[string]interface{}{}
 
 			if l.file != nil {

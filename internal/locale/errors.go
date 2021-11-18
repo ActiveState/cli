@@ -135,6 +135,18 @@ func IsInputError(err error) bool {
 	return false
 }
 
+// IsInputErrorNonRecursive checks if the given error is an InputError
+func IsInputErrorNonRecursive(err error) bool {
+	if err == nil {
+		return false
+	}
+	errInput, ok := err.(ErrorInput)
+	if ok && errInput.InputError() {
+		return true
+	}
+	return false
+}
+
 // JoinErrors joins all error messages in the Unwrap stack that are localized
 func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string

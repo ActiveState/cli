@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -57,7 +58,8 @@ type Import struct {
 	prompt.Prompter
 	proj      *project.Project
 	cfg       configurable
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
@@ -67,6 +69,7 @@ type primeable interface {
 	primer.Auther
 	primer.Configurer
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 // NewImport prepares an importation execution context for use.
@@ -78,6 +81,7 @@ func NewImport(prime primeable) *Import {
 		prime.Project(),
 		prime.Config(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -124,7 +128,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {

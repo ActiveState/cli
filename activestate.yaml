@@ -45,12 +45,12 @@ constants:
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
-      if [ "$CI" = "true" ]; then
-        GO_BUILD_TAGS="CI"
-      fi
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
+  - name: SCRIPT_EXT
+    if: ne .OS.Name "Windows"
+    value: .sh
 scripts:
   - name: install-deps
     language: bash
@@ -103,6 +103,9 @@ scripts:
       export CGO_ENABLED=0
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+      if [ ! -z "${CI}" ]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      fi
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -120,16 +123,21 @@ scripts:
       $constants.SET_ENV
       export CGO_ENABLED=0
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.DAEMON_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
+      if [ ! -z "${CI}" ]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+      fi
   - name: build-tray
     description: Builds the State Tool system tray application
-    standalone: true
     language: bash
     value: |
       set -e
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+      if [ ! -z "${CI}" ]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      fi
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -151,7 +159,10 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      if [ ! -z "${CI}" ]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
+      fi
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
@@ -228,11 +239,17 @@ scripts:
   - name: build-install-scripts
     language: bash
     standalone: true
-    if: ne .OS.Name "Windows"
     description: Replaces installer channel with branch and copies install scripts to build dir
     value: |
-      REF=${GITHUB_HEAD_REF:=HEAD}
-      BRANCH=$(git rev-parse --abbrev-ref $REF)
+      set -e
+      if [ "$GITHUB_HEAD_REF" != "" ]; then
+        BRANCH=${GITHUB_HEAD_REF}
+      elif [ "$GITHUB_REF" != "" ]; then
+        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
+      else
+        BRANCH=$(git rev-parse --abbrev-ref HEAD)
+      fi
+
       if [ "$BRANCH" == "" ]; then
         echo "Branch cannot be empty"
         exit 1
@@ -244,12 +261,14 @@ scripts:
       INSTALLERS_DIR=build/installers/$BRANCH
       mkdir -p $INSTALLERS_DIR
 
-      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install.sh
+      echo "Copying to $INSTALLERS_DIR"
+
+      cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install${constants.SCRIPT_EXT}
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install.sh > $INSTALLERS_DIR/install.sh
+        sed "s/CHANNEL\='release'/CHANNEL='${BRANCH/\//\\/}'/" installers/install${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       else
-        cp installers/install.sh $INSTALLERS_DIR/install.sh
+        cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       fi
   - name: deploy-installers
     language: bash
@@ -260,27 +279,22 @@ scripts:
     language: bash
     value: |
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
-  - name: build-workflows
+  - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
-      set -e
-      if ! type "ytt" &> /dev/null; then
-        go install github.com/k14s/ytt/cmd/ytt@v0.32.0
-      fi
-      pwd
-      mv .github/workflows/README.md /tmp # ytt deletes all files in target dir -- https://github.com/k14s/ytt/issues/145
-      ytt -f .github/workflows-src/ --ignore-unknown-comments --output-files .github/workflows
-      mv /tmp/README.md .github/workflows
-
       $scripts.build-for.path._posix() "windows" ./.github/deps/Windows/bin/state.exe
       $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
+
+      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -parallel 12 "$@" $(go list ./... | grep -v /test/integration)
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
     standalone: true
   - name: integration-tests
     language: bash
@@ -334,9 +348,6 @@ events:
         echo "swagger was not found on your PATH, installing .."
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
-  - name: file-changed
-    scope: [ ".github/workflows-src" ]
-    value: build-workflows
   - name: file-changed
     scope: [ "locale" ]
     value: packr

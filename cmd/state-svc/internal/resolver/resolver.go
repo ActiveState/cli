@@ -1,40 +1,51 @@
 package resolver
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
-	cfg   *config.Instance
-	cache *cache.Cache
-	an    *service.Analytics
+	cfg            *config.Instance
+	cache          *cache.Cache
+	projectIDCache *projectcache.ID
+	an             *sync.Client
+	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *service.Analytics) *Resolver {
+func New(cfg *config.Instance, an *sync.Client) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
+		projectcache.NewID(),
 		an,
+		rtwatcher.New(cfg, an),
 	}
+}
+
+func (r *Resolver) Close() error {
+	return r.rtwatch.Close()
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -106,7 +117,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label, _projectNameSpace, _out, _userID *string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
 	logging.Debug("Analytics event resolver")
 
 	label := ""
@@ -114,23 +125,37 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		label = *_label
 	}
 
-	projectNameSpace := ""
-	if _projectNameSpace != nil {
-		projectNameSpace = *_projectNameSpace
+	var dims *dimensions.Values
+	if err := json.Unmarshal([]byte(dimensionsJson), &dims); err != nil {
+		return &graph.AnalyticsEventResponse{Sent: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
-	out := string(output.PlainFormatName)
-	if _out != nil {
-		out = *_out
-	}
+	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
+	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
+		values.ProjectID = nil
+		if values.ProjectNameSpace == nil {
+			return nil
+		}
+		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve project ID")
+		}
+		values.ProjectID = &id
+		return nil
+	})
 
-	userID := ""
-	if _userID != nil {
-		userID = *_userID
-	}
-
-	dimensions := r.an.DimensionsWithClientData(projectNameSpace, out, userID)
-	r.an.SendWithCustomDimensions(category, action, label, dimensions)
+	r.an.EventWithLabel(category, action, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
+}
+
+func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+	var dims *dimensions.Values
+	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
+		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
+	}
+
+	r.rtwatch.Watch(pid, exec, dims)
+
+	return &graph.RuntimeUsageResponse{Received: true}, nil
 }

@@ -84,7 +84,7 @@ func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 			tierTitle = t.title
 		}
 		orgDatas[i] = orgData{
-			Name:            org.Name,
+			Name:            org.DisplayName,
 			URLName:         org.URLname,
 			Tier:            tierTitle,
 			PrivateProjects: tierPrivate,

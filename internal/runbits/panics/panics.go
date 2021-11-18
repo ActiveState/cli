@@ -21,3 +21,13 @@ Your error log is located at: %s`, recovered, logging.FilePath()))
 	}
 	return false
 }
+
+// LogPanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled
+func LogPanics(recovered interface{}, stack []byte) bool {
+	if recovered != nil {
+		logging.Error("Panic: %v", recovered)
+		logging.Debug("Stack: %s", string(stack))
+		return true
+	}
+	return false
+}

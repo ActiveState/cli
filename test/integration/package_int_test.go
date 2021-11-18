@@ -167,7 +167,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"Name",
 		"requests",
 		"2.26.0",
-		"+ 9 older versions",
+		"older versions",
 	}
 	for _, expectation := range expectations {
 		cp.ExpectLongString(expectation)
@@ -336,9 +336,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.Expect("Could not match json")
+		cp.Expect("No results found for search term")
 		cp.Expect("json2")
-		cp.ExpectLongString("to see more results run `state search json`")
 		cp.Wait()
 	})
 

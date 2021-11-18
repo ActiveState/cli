@@ -16,7 +16,7 @@ import (
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
 // package as actual constants, using the build-time interpretations
-var Constants = map[string]func() string{}
+var Constants = map[string]func() interface{}{}
 
 func init() {
 	branchName, commitRef := branchName()
@@ -31,17 +31,18 @@ func init() {
 		log.Fatalf("Could not parse new version: %s", err)
 	}
 
-	Constants["BranchName"] = func() string { return branchName }
-	Constants["BuildNumber"] = func() string { return buildNumber }
-	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + commitRef) }
-	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + commitRef) }
-	Constants["Version"] = func() string { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return newVersion.String() }
-	Constants["Date"] = func() string { return time.Now().Format(constants.DateTimeFormatRecord) }
-	Constants["UserAgent"] = func() string {
+	Constants["BranchName"] = func() interface{} { return branchName }
+	Constants["BuildNumber"] = func() interface{} { return buildNumber }
+	Constants["RevisionHash"] = func() interface{} { return getCmdOutput("git rev-parse --verify " + commitRef) }
+	Constants["RevisionHashShort"] = func() interface{} { return getCmdOutput("git rev-parse --short " + commitRef) }
+	Constants["Version"] = func() interface{} { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]().(string)) }
+	Constants["VersionNumber"] = func() interface{} { return newVersion.String() }
+	Constants["Date"] = func() interface{} { return time.Now().Format(constants.DateTimeFormatRecord) }
+	Constants["UserAgent"] = func() interface{} {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
 	}
-	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
+	Constants["APITokenName"] = func() interface{} { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
+	Constants["OnCI"] = func() interface{} { return os.Getenv("CI") }
 }
 
 // gitBranchName returns the branch name of the current git commit / PR

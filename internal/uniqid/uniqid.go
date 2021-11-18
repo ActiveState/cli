@@ -3,6 +3,7 @@ package uniqid
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,8 +24,7 @@ const (
 
 const (
 	fileName   = "uniqid"
-	persistDir = "activestate/persist"
-	tmpSubDir  = "activestate_persist"
+	persistDir = "activestate_persist"
 )
 
 // UniqID manages the storage and retrieval of a unique id.
@@ -53,15 +53,17 @@ func (u *UniqID) String() string {
 }
 
 func uniqueID(filepath string) (uuid.UUID, error) {
-	data, err := readFile(filepath)
-	if err == nil {
-		id, err := uuid.FromBytes(data)
-		if err == nil {
-			return id, nil
+	// For a transitionary period where the old persist directory may exist on
+	// Windows we want to move the uniqid file to a better location.
+	// This code should be removed after some time.
+	if !fileExists(filepath) {
+		err := moveUniqidFile(filepath)
+		if err != nil {
+			return uuid.UUID{}, errs.Wrap(err, "Could not move legacy uniqid file")
 		}
-		err = os.ErrNotExist // signal to clobber existing file
 	}
 
+	data, err := readFile(filepath)
 	if errors.Is(err, os.ErrNotExist) {
 		id := uuid.New()
 
@@ -71,8 +73,16 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 
 		return id, nil
 	}
+	if err != nil {
+		return uuid.UUID{}, errs.Wrap(err, "Could not read uniqid file")
+	}
 
-	return uuid.UUID{}, errs.Wrap(err, "cannot get existing, nor create new, uniqid")
+	id, err := uuid.FromBytes(data)
+	if err != nil {
+		return uuid.UUID{}, errs.Wrap(err, "Could not create new UUID from uniqid file data")
+	}
+
+	return id, nil
 }
 
 // ErrUnsupportedOS indicates that an unsupported OS tried to store a uniqid as
@@ -83,7 +93,7 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 	var dir string
 	switch base {
 	case InTmp:
-		dir = filepath.Join(os.TempDir(), tmpSubDir)
+		dir = filepath.Join(os.TempDir(), persistDir)
 
 	default:
 		home, err := os.UserHomeDir()
@@ -100,7 +110,7 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 	case "linux":
 		subdir = ".local/share"
 	case "windows":
-		subdir = "AppData"
+		subdir = "AppData/Local"
 	default:
 		return "", ErrUnsupportedOS
 	}
@@ -196,6 +206,40 @@ func writeFile(filePath string, data []byte) error {
 	_, err = f.Write(data)
 	if err != nil {
 		return errs.Wrap(err, "file.Write %s failed", filePath)
+	}
+	return nil
+}
+
+// copyFile copies a file from one location to another
+func copyFile(src, target string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return errs.Wrap(err, "os.Open %s failed", src)
+	}
+	defer in.Close()
+
+	// Create target directory if it doesn't exist
+	dir := filepath.Dir(target)
+	err = mkdirUnlessExists(dir)
+	if err != nil {
+		return err
+	}
+
+	// Create target file
+	out, err := os.Create(target)
+	if err != nil {
+		return errs.Wrap(err, "os.Create %s failed", target)
+	}
+	defer out.Close()
+
+	// Copy bytes to target file
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return errs.Wrap(err, "io.Copy failed")
+	}
+	err = out.Close()
+	if err != nil {
+		return errs.Wrap(err, "out.Close failed")
 	}
 	return nil
 }

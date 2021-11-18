@@ -17,14 +17,14 @@ import (
 // swagger:model Limits
 type Limits struct {
 
+	// active runtimes limit
+	ActiveRuntimesLimit int64 `json:"activeRuntimesLimit,omitempty"`
+
 	// nodes limit
 	NodesLimit int64 `json:"nodesLimit,omitempty"`
 
-	// security and compliance enabled
-	SecurityAndComplianceEnabled bool `json:"securityAndComplianceEnabled,omitempty"`
-
-	// security and compliance override
-	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
+	// static runtimes limit
+	StaticRuntimesLimit int64 `json:"staticRuntimesLimit,omitempty"`
 
 	// users limit
 	UsersLimit int64 `json:"usersLimit,omitempty"`

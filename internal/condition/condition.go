@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/thoas/go-funk"
 )
 
@@ -16,10 +16,14 @@ func InUnitTest() bool {
 	return inTest
 }
 
+func InTest() bool {
+	return InUnitTest() || os.Getenv(constants.E2ETestEnvVarName) == "true"
+}
+
 func OnCI() bool {
 	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
 }
 
 func BuiltViaCI() bool {
-	return rtutils.BuiltViaCI
+	return constants.OnCI == "true"
 }

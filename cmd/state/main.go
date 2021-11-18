@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
@@ -42,7 +44,7 @@ import (
 )
 
 type ConfigurableAnalytics interface {
-	analytics.AnalyticsDispatcher
+	analytics.Dispatcher
 	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
 }
 
@@ -50,7 +52,6 @@ func main() {
 	var exitCode int
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
-	an := analytics.New()
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -59,7 +60,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(5 * time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5 * time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
@@ -99,7 +100,7 @@ func main() {
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, out, an)
+	err = run(os.Args, isInteractive, out)
 	if err != nil {
 		exitCode, err = unwrapError(err)
 		if err != nil {
@@ -119,7 +120,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer, an ConfigurableAnalytics) (rerr error) {
+func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -151,6 +152,8 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}
 
+	svcmodel := model.NewSvcModel(cfg, svcm)
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -180,18 +183,18 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 		pjName = pj.Name()
 	}
 
+	auth := authentication.LegacyGet()
+
+	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
+	defer an.Wait()
+
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
+
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
-	auth := authentication.LegacyGet()
-
-	if err := an.Configure(svcm, cfg, auth, out, pjNamespace); err != nil {
-		logging.Error("Failed to initialize analytics instance: %s", errs.JoinMessage(err))
-	}
-
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
 	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
 	project.RegisterConditional(conditional)
@@ -199,7 +202,7 @@ func run(args []string, isInteractive bool, out output.Outputer, an Configurable
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

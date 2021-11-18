@@ -1,9 +1,10 @@
 package revert
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -24,7 +25,8 @@ type Revert struct {
 	prompt    prompt.Prompter
 	project   *project.Project
 	auth      *authentication.Auth
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type Params struct {
@@ -37,6 +39,7 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Revert {
@@ -46,6 +49,7 @@ func New(prime primeable) *Revert {
 		prime.Project(),
 		prime.Auth(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -99,7 +103,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

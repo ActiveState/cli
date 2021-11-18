@@ -128,18 +128,29 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "fishrc.fish", "", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+	var directEnv []string
+
+	// available project files require more intensive modification of shell envs
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "fishrc.fish", "", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = append(shellArgs,
+			"-i", "-C", fmt.Sprintf("source %s", v.rcFile.Name()),
+		)
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	shellArgs := []string{"-i", "-C", fmt.Sprintf("source %s", v.rcFile.Name())}
 	if v.activateCommand != nil {
 		shellArgs = append(shellArgs, "-c", *v.activateCommand)
 	}
-	cmd := exec.Command(v.Binary(), shellArgs...)
 
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
