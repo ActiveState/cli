@@ -269,43 +269,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
 	cp.Wait()
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Pull)
-	var project string
-	if runtime.GOOS == "darwin" {
-		project = "Activate-MacOS"
-	} else {
-		project = "Python3"
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	contents := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/%s"
-branch: %s
-version: %s
-`, project, constants.BranchName, constants.Version))
-
-	ts.PrepareActiveStateYAML(contents)
-
-	// Ensure we have the most up to date version of the project before activating
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("pull"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("activestate.yaml has been updated to")
-	cp.ExpectExitCode(0)
-
-	c2 := ts.Spawn("activate")
-	cp.Expect("Activated")
-
-	// not waiting for activation, as we test that part in a different test
-	c2.WaitForInput(40 * time.Second)
-	c2.SendLine("exit")
-	c2.ExpectExitCode(0)
-}
-
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
 	if runtime.GOOS == "darwin" {
