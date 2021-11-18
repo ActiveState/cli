@@ -92,9 +92,7 @@ func CachePath() string {
 	var err error
 	var cachePath string
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
-	if path := os.Getenv(constants.CacheEnvVarName); path != "" {
-		cachePath = path
-	} else if condition.InUnitTest() {
+	if condition.InUnitTest() {
 		prefix := "state-cache-tests"
 		cachePath, err = ioutil.TempDir("", prefix)
 		if err != nil {
@@ -106,6 +104,8 @@ func CachePath() string {
 				cachePath = filepath.Join(drive, "temp", prefix+uuid.New().String()[0:8])
 			}
 		}
+	} else if path := os.Getenv(constants.CacheEnvVarName); path != "" {
+		cachePath = path
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 		if runtime.GOOS == "windows" {
