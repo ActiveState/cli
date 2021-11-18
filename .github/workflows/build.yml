@@ -261,7 +261,8 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          SHELL='' go test -v `go list ./... | grep integration` | gotestfmt
+          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          cat build/integration-tests.out | gotestfmt
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
