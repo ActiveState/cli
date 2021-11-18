@@ -269,6 +269,29 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
 	cp.Wait()
 }
 
+func (suite *ExecIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cacheDir := filepath.Join(ts.Dirs.Cache, "dir with spaces")
+	err := fileutils.MkdirUnlessExists(cacheDir)
+	suite.Require().NoError(err)
+
+	cp := ts.SpawnWithOpts(
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.AppendEnv(fmt.Sprintf(`%s=""`, constants.DisableRuntime)),
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
+	)
+
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.")
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Pull)
 	var project string
