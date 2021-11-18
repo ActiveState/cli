@@ -35,7 +35,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     # === OS Specific Steps ===
     steps:
@@ -79,6 +79,7 @@ jobs:
       - # === Parallel Tasks ===
         name: Parallel Tasks
         shell: bash
+        timeout-minutes: 15
         run: |
           export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           parallelize "$(cat <<'EOF'
