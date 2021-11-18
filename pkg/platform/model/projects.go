@@ -25,8 +25,6 @@ type ErrProjectNameConflict struct{ *locale.LocalizedError }
 
 type ErrProjectNotFound struct{ *locale.LocalizedError }
 
-type ErrBranchNotFound struct{ *locale.LocalizedError }
-
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
@@ -141,11 +139,11 @@ func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.
 		}
 	}
 
-	return nil, &ErrBranchNotFound{locale.NewInputError(
+	return nil, locale.NewInputError(
 		"err_no_matching_branch_label",
 		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",
 		name,
-	)}
+	)
 }
 
 // CreateEmptyProject will create the project on the platform
