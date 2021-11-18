@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -225,49 +224,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
-	suite.OnlyRunForTags(tagsuite.Activate)
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--default"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-
-	cp.Expect("activated state")
-
-	cp.WaitForInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	executor := filepath.Join(ts.Dirs.DefaultBin, "python3")
-
-	// check that default activation takes count of recursion level
-	cp = ts.SpawnCmdWithOpts(
-		executor,
-		e2e.WithArgs("-c", fmt.Sprintf(
-			`import subprocess; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"])`,
-			executor, constants.ExecRecursionLevelEnvVarName)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("RECURSION_LVL=1")
-	cp.ExpectExitCode(0)
-
-	// check that recursion detection is firing log message
-	cp = ts.SpawnCmdWithOpts(
-		executor,
-		e2e.WithArgs(
-			"-c", fmt.Sprintf(
-				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
-				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
-	)
-	cp.ExpectLongString("executor recursion detected: parent python")
-	cp.Expect("RECURSION_LVL=1")
-	cp.Wait()
-}
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
@@ -364,7 +320,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating Virtual Environment")
+	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
 
 	cp.WaitForInput()
@@ -398,7 +354,7 @@ version: %s
 		e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 	)
-	cp.Expect("Activated")
+	c2.Expect("Activated")
 
 	c2.WaitForInput(40 * time.Second)
 	c2.SendLine("exit")
@@ -432,7 +388,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 		e2e.WithWorkDirectory(targetPath),
 	)
 	c2.ExpectLongString("ActiveState-CLI/Python2")
-	cp.Expect("Activated")
+	c2.Expect("Activated")
 
 	c2.WaitForInput(40 * time.Second)
 	if runtime.GOOS == "windows" {
@@ -443,22 +399,6 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	c2.Expect(identifyPath)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Error)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("init", namespace, "python3")
-	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
-	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.ExpectLongString("A CommitID is required to install this runtime environment")
-	cp.ExpectExitCode(1)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
