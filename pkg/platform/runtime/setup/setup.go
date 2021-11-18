@@ -275,10 +275,10 @@ func (s *Setup) update() error {
 	}
 
 	// Install PPM Shim if any of the installed artifacts provide the Perl executable
-	if activePerlPath := edGlobal.FindBinPathFor(constants.ActivePerlExecutable); activePerlPath != "" {
-		err = installPPMShim(activePerlPath)
+	if edGlobal.FindBinPathFor(constants.ActivePerlExecutable) != "" {
+		err = installPPMShim(execPath)
 		if err != nil {
-			return errs.Wrap(err, "Failed to install the PPM shim command at %s", activePerlPath)
+			return errs.Wrap(err, "Failed to install the PPM shim command at %s", execPath)
 		}
 	}
 
