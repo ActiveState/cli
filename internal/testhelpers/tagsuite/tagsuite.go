@@ -72,7 +72,7 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
 	// if no tags are defined and we're not on CI; run the test
-	if setTagsString == "" && !condition.OnCI() {
+	if setTagsString == "all" || (setTagsString == "" && !condition.OnCI()) {
 		return
 	}
 	setTags := strings.Split(setTagsString, ":")
