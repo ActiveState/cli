@@ -17,6 +17,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
