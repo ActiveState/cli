@@ -139,6 +139,20 @@ func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact
 	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
 }
 
+// SolverStartEvent is triggered when a solve is started
+type SolverStartEvent struct{}
+
+func (se SolverStartEvent) String() string {
+	return "solver_start"
+}
+
+// SolverSuccessEvent is triggered when the solver returns an error
+type SolverSuccessEvent struct{}
+
+func (se SolverSuccessEvent) String() string {
+	return "solver_success"
+}
+
 // SolverErrorEvent is triggered when the solver returns an error
 type SolverErrorEvent struct {
 	serr *model.SolverError

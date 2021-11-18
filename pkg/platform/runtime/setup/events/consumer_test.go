@@ -75,6 +75,13 @@ func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, 
 func (mpo *mockProgressOutput) StillBuilding(numCompleted, numTotal int) error {
 	return nil
 }
+func (mpo *mockProgressOutput) SolverStart() error {
+	return nil
+}
+
+func (mpo *mockProgressOutput) SolverSuccess() error {
+	return nil
+}
 func (mpo *mockProgressOutput) SolverError(serr *model.SolverError) error {
 	return nil
 }

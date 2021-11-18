@@ -90,6 +90,8 @@ type Events interface {
 	ArtifactStepCompleted(events.SetupStep, artifact.ArtifactID)
 	ArtifactStepFailed(events.SetupStep, artifact.ArtifactID, string)
 	SolverError(*apimodel.SolverError)
+	SolverStart()
+	SolverSuccess()
 
 	ParsedArtifacts(artifactResolver events.ArtifactResolver, downloadable []artifact.ArtifactDownload, artifactIDs []artifact.FailedArtifact)
 }
@@ -163,6 +165,7 @@ func (s *Setup) Update() error {
 
 func (s *Setup) update() error {
 	// Request build
+	s.events.SolverStart()
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		serr := &apimodel.SolverError{}
@@ -172,6 +175,8 @@ func (s *Setup) update() error {
 		}
 		return errs.Wrap(err, "Failed to fetch build result")
 	}
+
+	s.events.SolverSuccess()
 
 	// Compute and handle the change summary
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
