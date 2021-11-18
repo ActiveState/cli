@@ -177,12 +177,12 @@ func (suite *ExecIntegrationTestSuite) TestExec_SpaceInCacheDir() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.DisableRuntime, "")),
+		e2e.AppendEnv(fmt.Sprintf(`%s=""`, constants.DisableRuntime)),
 		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
 	)
 
 	cp.SendLine("python3 --version")
-	cp.Expect("Python 3.6.6")
+	cp.Expect("Python 3.")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
