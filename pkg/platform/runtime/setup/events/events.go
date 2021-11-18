@@ -139,7 +139,7 @@ func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact
 	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
 }
 
-// SolverStartEvent is triggered when the solver returns an error
+// SolverStartEvent is triggered when a solve is started
 type SolverStartEvent struct{}
 
 func (se SolverStartEvent) String() string {
