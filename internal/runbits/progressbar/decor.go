@@ -18,7 +18,7 @@ func (pb *RuntimeProgress) addTotalBar(name string, total int64) *mpb.Bar {
 	return pb.addBar(name, total, false, mpb.BarFillerClearOnComplete())
 }
 
-// addTotalBar adds a bar counting a number of sub-events adding up to total
+// addSpinnerBar adds a bar with a spinning progress indicator
 func (pb *RuntimeProgress) addSpinnerBar(name string) *mpb.Bar {
 	return pb.prg.Add(0,
 		mpb.NewBarFiller(mpb.SpinnerStyle([]string{`|`, `/`, `-`, `\`}...)),
