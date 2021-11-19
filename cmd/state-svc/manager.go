@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 
@@ -53,7 +55,8 @@ func (s *serviceManager) Start(args ...string) error {
 	})
 	if err != nil {
 		if proc != nil {
-			if err := proc.Signal(os.Interrupt); err != nil {
+			err := rtutils.Timeout(func() error { return proc.Signal(os.Kill) }, time.Second)
+			if err != nil {
 				logging.Errorf("Could not cleanup process: %v", err)
 				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 			}

@@ -224,6 +224,109 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--default"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("activated state")
+
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	executor := filepath.Join(ts.Dirs.DefaultBin, "python3")
+
+	// check that default activation takes count of recursion level
+	cp = ts.SpawnCmdWithOpts(
+		executor,
+		e2e.WithArgs("-c", fmt.Sprintf(
+			`import subprocess; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"])`,
+			executor, constants.ExecRecursionLevelEnvVarName)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("RECURSION_LVL=1")
+	cp.ExpectExitCode(0)
+
+	// check that recursion detection is firing log message
+	cp = ts.SpawnCmdWithOpts(
+		executor,
+		e2e.WithArgs(
+			"-c", fmt.Sprintf(
+				`import subprocess; import os; env = os.environ.copy(); env["PATH"] = "%s%s" + env["PATH"]; subprocess.call(["%s", "-c", "import os; print('RECURSION_LVL='+os.environ['%s'])"], env=env)`,
+				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+	)
+	cp.ExpectLongString("executor recursion detected: parent python")
+	cp.Expect("RECURSION_LVL=1")
+	cp.Wait()
+}
+
+func (suite *ExecIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cacheDir := filepath.Join(ts.Dirs.Cache, "dir with spaces")
+	err := fileutils.MkdirUnlessExists(cacheDir)
+	suite.Require().NoError(err)
+
+	cp := ts.SpawnWithOpts(
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.CacheEnvVarName, cacheDir)),
+		e2e.AppendEnv(fmt.Sprintf(`%s=""`, constants.DisableRuntime)),
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
+	)
+
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.")
+
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivatePython3_Forward() {
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Pull)
+	var project string
+	if runtime.GOOS == "darwin" {
+		project = "Activate-MacOS"
+	} else {
+		project = "Python3"
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	contents := strings.TrimSpace(fmt.Sprintf(`
+project: "https://platform.activestate.com/ActiveState-CLI/%s"
+branch: %s
+version: %s
+`, project, constants.BranchName, constants.Version))
+
+	ts.PrepareActiveStateYAML(contents)
+
+	// Ensure we have the most up to date version of the project before activating
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("pull"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("activestate.yaml has been updated to")
+	cp.ExpectExitCode(0)
+
+	c2 := ts.Spawn("activate")
+	cp.Expect("Activated")
+
+	// not waiting for activation, as we test that part in a different test
+	c2.WaitForInput(40 * time.Second)
+	c2.SendLine("exit")
+	c2.ExpectExitCode(0)
+}
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)

@@ -1,10 +1,9 @@
 package uniqid
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/errs"
 )
 
 const legacyPersistDir = "activestate/persist"
@@ -12,7 +11,7 @@ const legacyPersistDir = "activestate/persist"
 func moveUniqidFile(destination string) error {
 	legacyDir, err := legacyStorageDir()
 	if err != nil {
-		return errs.Wrap(err, "Could not get legacy storage directory")
+		return fmt.Errorf("Could not get legacy storage directory: %w", err)
 	}
 
 	legacyUniqIDFile := filepath.Join(legacyDir, fileName)
@@ -24,12 +23,12 @@ func moveUniqidFile(destination string) error {
 
 	err = mkdirUnlessExists(filepath.Dir(destination))
 	if err != nil {
-		return errs.Wrap(err, "Could not create new persist directory")
+		return fmt.Errorf("Could not create new persist directory: %w", err)
 	}
 
 	err = copyFile(legacyUniqIDFile, destination)
 	if err != nil {
-		return errs.Wrap(err, "Could not move legacy uniqid file")
+		return fmt.Errorf("Could not move legacy uniqid file: %w", err)
 	}
 
 	// Ignore removal errors that could occur due to permissions issues
@@ -45,7 +44,7 @@ func moveUniqidFile(destination string) error {
 func legacyStorageDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", errs.Wrap(err, "cannot get home dir for uniqid file")
+		return "", fmt.Errorf("cannot get home dir for uniqid file: %w", err)
 	}
 
 	return filepath.Join(home, "AppData", legacyPersistDir), nil
