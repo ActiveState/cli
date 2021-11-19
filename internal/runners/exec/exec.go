@@ -179,10 +179,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	s.subshell.SetEnv(env)
 
 	lang := language.Bash
-	scriptArgs := fmt.Sprintf(`%s "$@"`, exeTarget)
+	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)
 	if strings.Contains(s.subshell.Binary(), "cmd") {
 		lang = language.Batch
-		scriptArgs = fmt.Sprintf("@ECHO OFF\n%s %%*", exeTarget)
+		scriptArgs = fmt.Sprintf("@ECHO OFF\n%q %%*", exeTarget)
 	}
 
 	sf, err := scriptfile.New(lang, "state-exec", scriptArgs)

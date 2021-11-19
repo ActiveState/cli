@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/google/uuid"
 )
 
@@ -36,12 +35,12 @@ type UniqID struct {
 func New(base BaseDirLocation) (*UniqID, error) {
 	dir, err := storageDirectory(base)
 	if err != nil {
-		return nil, errs.Wrap(err, "cannot determine uniqid storage directory")
+		return nil, fmt.Errorf("cannot determine uniqid storage directory: %w", err)
 	}
 
 	id, err := uniqueID(filepath.Join(dir, fileName))
 	if err != nil {
-		return nil, errs.Wrap(err, "cannot obtain uniqid")
+		return nil, fmt.Errorf("cannot obtain uniqid: %w", err)
 	}
 
 	return &UniqID{ID: id}, nil
@@ -59,7 +58,7 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 	if !fileExists(filepath) {
 		err := moveUniqidFile(filepath)
 		if err != nil {
-			return uuid.UUID{}, errs.Wrap(err, "Could not move legacy uniqid file")
+			return uuid.UUID{}, fmt.Errorf("Could not move legacy uniqid file: %w", err)
 		}
 	}
 
@@ -68,18 +67,18 @@ func uniqueID(filepath string) (uuid.UUID, error) {
 		id := uuid.New()
 
 		if err := writeFile(filepath, id[:]); err != nil {
-			return uuid.UUID{}, errs.Wrap(err, "cannot write uniqid file")
+			return uuid.UUID{}, fmt.Errorf("cannot write uniqid file: %w", err)
 		}
 
 		return id, nil
 	}
 	if err != nil {
-		return uuid.UUID{}, errs.Wrap(err, "Could not read uniqid file")
+		return uuid.UUID{}, fmt.Errorf("Could not read uniqid file: %w", err)
 	}
 
 	id, err := uuid.FromBytes(data)
 	if err != nil {
-		return uuid.UUID{}, errs.Wrap(err, "Could not create new UUID from uniqid file data")
+		return uuid.UUID{}, fmt.Errorf("Could not create new UUID from uniqid file data: %w", err)
 	}
 
 	return id, nil
@@ -98,7 +97,7 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 	default:
 		home, err := os.UserHomeDir()
 		if err != nil {
-			return "", errs.Wrap(err, "cannot get home dir for uniqid file")
+			return "", fmt.Errorf("cannot get home dir for uniqid file: %w", err)
 		}
 		dir = home
 	}
@@ -126,7 +125,7 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 func readFile(filePath string) ([]byte, error) {
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "ioutil.ReadFile %s failed", filePath)
+		return nil, fmt.Errorf("ioutil.ReadFile %s failed: %w", filePath, err)
 	}
 	return b, nil
 }
@@ -151,7 +150,7 @@ func mkdir(path string, subpath ...string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			return errs.Wrap(err, fmt.Sprintf("MkdirAll failed for path: %s", path))
+			return fmt.Errorf("MkdirAll failed for path: %s: %w", path, err)
 		}
 	}
 	return nil
@@ -188,7 +187,7 @@ func writeFile(filePath string, data []byte) error {
 	if fileExists {
 		stat, _ := os.Stat(filePath)
 		if err := os.Chmod(filePath, 0644); err != nil {
-			return errs.Wrap(err, "os.Chmod %s failed", filePath)
+			return fmt.Errorf("os.Chmod %s failed: %w", filePath, err)
 		}
 		defer os.Chmod(filePath, stat.Mode().Perm())
 	}
@@ -199,13 +198,13 @@ func writeFile(filePath string, data []byte) error {
 			target := filepath.Dir(filePath)
 			err = fmt.Errorf("access to target %q is denied", target)
 		}
-		return errs.Wrap(err, "os.OpenFile %s failed", filePath)
+		return fmt.Errorf("os.OpenFile %s failed: %w", filePath, err)
 	}
 	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {
-		return errs.Wrap(err, "file.Write %s failed", filePath)
+		return fmt.Errorf("file.Write %s failed: %w", filePath, err)
 	}
 	return nil
 }
@@ -214,7 +213,7 @@ func writeFile(filePath string, data []byte) error {
 func copyFile(src, target string) error {
 	in, err := os.Open(src)
 	if err != nil {
-		return errs.Wrap(err, "os.Open %s failed", src)
+		return fmt.Errorf("os.Open %s failed: %w", src, err)
 	}
 	defer in.Close()
 
@@ -228,18 +227,18 @@ func copyFile(src, target string) error {
 	// Create target file
 	out, err := os.Create(target)
 	if err != nil {
-		return errs.Wrap(err, "os.Create %s failed", target)
+		return fmt.Errorf("os.Create %s failed: %w", target, err)
 	}
 	defer out.Close()
 
 	// Copy bytes to target file
 	_, err = io.Copy(out, in)
 	if err != nil {
-		return errs.Wrap(err, "io.Copy failed")
+		return fmt.Errorf("io.Copy failed: %w", err)
 	}
 	err = out.Close()
 	if err != nil {
-		return errs.Wrap(err, "out.Close failed")
+		return fmt.Errorf("out.Close failed: %w", err)
 	}
 	return nil
 }

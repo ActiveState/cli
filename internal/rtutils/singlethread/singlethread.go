@@ -6,19 +6,21 @@ import (
 )
 
 type callback struct {
-	cb  func() error
-	err chan (error)
+	funcToCall func() error
+	funcResult chan (error)
 }
 
 type Thread struct {
-	cbs    chan (callback)
-	closed bool
+	callback chan (callback)
+	closed   bool
+	mutex    *sync.Mutex
 }
 
 func New() *Thread {
 	t := &Thread{
 		make(chan (callback)),
 		false,
+		&sync.Mutex{},
 	}
 	go t.run()
 	return t
@@ -26,29 +28,32 @@ func New() *Thread {
 
 func (t *Thread) run() {
 	for {
-		cbs, more := <-t.cbs
-		if more {
-			cbs.err <- cbs.cb()
+		callback, gotCallback := <-t.callback
+		if gotCallback {
+			callback.funcResult <- callback.funcToCall()
 		} else {
 			return
 		}
 	}
 }
 
-func (t *Thread) Run(cb func() error) error {
+func (t *Thread) Run(funcToCall func() error) error {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
 	if t.closed {
 		return fmt.Errorf("thread is closed")
 	}
-	cbs := callback{cb, make(chan (error))}
-	t.cbs <- cbs
-	return <-cbs.err
+	
+	callback := callback{funcToCall, make(chan (error))}
+	t.callback <- callback
+	return <-callback.funcResult
 }
 
 func (t *Thread) Close() {
-	mutex := sync.Mutex{}
-	mutex.Lock()
-	defer mutex.Unlock()
-	
-	close(t.cbs)
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+
+	close(t.callback)
 	t.closed = true
 }
