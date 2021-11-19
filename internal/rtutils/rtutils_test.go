@@ -37,9 +37,9 @@ func Test_Closer(t *testing.T) {
 
 func TestTimeout(t *testing.T) {
 	err := Timeout(func() error {
-		time.Sleep(time.Millisecond * 20)
+		time.Sleep(time.Millisecond * 100)
 		return nil
-	}, time.Millisecond*10)
+	}, time.Millisecond)
 	require.True(t, errors.Is(err, ErrTimeout), "Should return timeout error, actual: %v", err)
 
 	v := false
