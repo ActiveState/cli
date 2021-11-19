@@ -208,7 +208,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", namespace),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		e2e.AppendEnv("PYTHONPATH=/custom_pythonpath"),
 	)
 
 	cp.Expect("Activated")
@@ -216,7 +215,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	cp.WaitForInput()
 
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
-	cp.SendLine(`python3 -c 'import os; print(os.environ["PYTHONPATH"]);'`)
+	cp.SendLine(`PYTHONPATH=/custom_pythonpath python3 -c 'import os; print(os.environ["PYTHONPATH"]);'`)
 	cp.Expect("/custom_pythonpath")
 
 	// de-activate shell
