@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -63,12 +64,16 @@ func newError(message string, wrapTarget error) *WrapperError {
 
 // New creates a new error, similar to errors.New
 func New(message string, args ...interface{}) *WrapperError {
-	return newError(fmt.Sprintf(message, args...), nil)
+	msg := fmt.Sprintf(message, args...)
+	logging.Debug("Created error: %v", msg)
+	return newError(msg, nil)
 }
 
 // Wrap creates a new error that wraps the given error
 func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
-	return newError(fmt.Sprintf(message, args...), wrapTarget)
+	msg := fmt.Sprintf(message, args...)
+	logging.Debug("Wrapped error: %v -- with: %v", wrapTarget, msg)
+	return newError(msg, wrapTarget)
 }
 
 // Join all error messages in the Unwrap stack
