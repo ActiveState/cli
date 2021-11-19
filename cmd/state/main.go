@@ -186,7 +186,11 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	auth := authentication.LegacyGet()
 
 	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
-	defer an.Wait()
+	defer func() {
+		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
+			logging.Warning("Failed waiting for events: %v", err)
+		}
+	}()
 
 	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 

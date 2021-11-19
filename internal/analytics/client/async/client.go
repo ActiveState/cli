@@ -97,16 +97,6 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 		userID = string(*a.auth.UserID())
 	}
 
-	a.eventWaitGroup.Add(1)
-	go func() {
-		actualDims := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
-		for _, dim := range dims {
-			actualDims.Merge(dim)
-		}
-
-		a.eventWaitGroup.Done()
-	}()
-
 	if a.svcModel == nil {
 		if condition.InUnitTest() {
 			return nil
