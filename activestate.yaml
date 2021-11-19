@@ -160,9 +160,6 @@ scripts:
       $constants.SET_ENV
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
-      if [ ! -z "${CI}" ]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
-      fi
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
