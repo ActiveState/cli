@@ -161,9 +161,6 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	defer ts.Close()
 	suite.createProjectFile(ts, 3)
 
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
-
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
 	// interrupt the first (very long) sleep
