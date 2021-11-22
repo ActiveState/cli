@@ -3,12 +3,10 @@ package installation
 import (
 	"os"
 	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/constants"
 )
 
-func DefaultInstallPath() (string, error) {
-	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", constants.BranchName), nil
+func InstallPathForBranch(branch string) (string, error) {
+	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", branch), nil
 }
 
 func defaultSystemInstallPath() (string, error) {
