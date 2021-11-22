@@ -236,8 +236,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("activated state")
-
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -321,7 +319,6 @@ version: %s
 	cp.ExpectExitCode(0)
 
 	c2 := ts.Spawn("activate")
-	cp.Expect("Activated")
 
 	// not waiting for activation, as we test that part in a different test
 	c2.WaitForInput(40 * time.Second)
@@ -424,7 +421,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating Virtual Environment")
+	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
 
 	cp.WaitForInput()
@@ -458,7 +455,6 @@ version: %s
 		e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 	)
-	cp.Expect("Activated")
 
 	c2.WaitForInput(40 * time.Second)
 	c2.SendLine("exit")
@@ -492,7 +488,6 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 		e2e.WithWorkDirectory(targetPath),
 	)
 	c2.ExpectLongString("ActiveState-CLI/Python2")
-	cp.Expect("Activated")
 
 	c2.WaitForInput(40 * time.Second)
 	if runtime.GOOS == "windows" {
@@ -503,22 +498,6 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	c2.Expect(identifyPath)
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestInit_Activation_NoCommitID() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Error)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("init", namespace, "python3")
-	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
-	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.ExpectLongString("A CommitID is required to install this runtime environment")
-	cp.ExpectExitCode(1)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
