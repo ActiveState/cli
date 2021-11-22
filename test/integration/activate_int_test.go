@@ -236,8 +236,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("activated state")
-
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -264,7 +262,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_RecursionDetection() {
 				ts.Dirs.DefaultBin, string(os.PathListSeparator), executor, constants.ExecRecursionLevelEnvVarName)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 	)
-	cp.ExpectLongString("executor recursion detected: parent python")
 	cp.Expect("RECURSION_LVL=1")
 	cp.Wait()
 }
