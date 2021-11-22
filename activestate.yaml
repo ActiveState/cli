@@ -44,6 +44,7 @@ constants:
       GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
+      CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
@@ -104,7 +105,7 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
       
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
+      if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
       fi
   - name: build-for
@@ -125,7 +126,7 @@ scripts:
       export CGO_ENABLED=0
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
+      if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
       fi
   - name: build-tray
@@ -136,7 +137,7 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
+      if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
   - name: build-all
@@ -162,7 +163,7 @@ scripts:
 
       go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
 
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
+      if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
       fi
   - name: build-updlg-all
