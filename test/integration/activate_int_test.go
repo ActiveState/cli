@@ -204,7 +204,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	namespace := "ActiveState-CLI/Python3"
+	namespace := "ActiveState-CLI/PythonPath"
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", namespace),
