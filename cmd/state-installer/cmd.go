@@ -224,8 +224,21 @@ func main() {
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
+	targetBranch := params.branch
+	if targetBranch == "" {
+		targetBranch = constants.BranchName
+	}
+
+	if params.path == "" {
+		var err error
+		params.path, err = installation.InstallPathForBranch(targetBranch)
+		if err != nil {
+			return errs.Wrap(err, "Could not detect installation path.")
+		}
+	}
+
 	// Detect installed state tool
-	stateToolInstalled, err := installation.InstalledOnPath(params.path)
+	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -240,14 +253,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	case params.force:
 		logging.Debug("Not using update flow as --force was passed")
 		break // When ran with `--force` we always use the install UX
-	case fileutils.FileExists(packagedStateExe):
+	case !params.fromDeferred && fileutils.FileExists(packagedStateExe):
+		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
-
-		if params.sourcePath == "" {
-			// Older versions of state tool do not invoke the installer with `--source-path`
-			params.sourcePath = installerPath
-		}
+		params.sourcePath = installerPath
 	case stateToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
@@ -271,7 +281,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
-		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
+		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", stateToolPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
 		return postInstallEvents(out, cfg, an, params, true)
 	}
