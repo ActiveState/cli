@@ -20,6 +20,10 @@ const CfgTransitionalStateToolPath = "transitional_installation_path"
 
 const BinDirName = "bin"
 
+func DefaultInstallPath() (string, error) {
+	return InstallPathForBranch(constants.BranchName)
+}
+
 func InstallPath() (string, error) {
 	// Facilitate use-case of running executables from the build dir while developing
 	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
@@ -63,16 +67,13 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	return installPath, nil
 }
 
-func Installed() (bool, error) {
-	return InstalledOnPath("")
-}
-
-func InstalledOnPath(installPath string) (bool, error) {
+func InstalledOnPath(installPath string) (bool, string, error) {
 	binPath, err := BinPathFromInstallPath(installPath)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
 	}
-	return fileutils.TargetExists(appinfo.StateApp(binPath).Exec()), nil
+	path := appinfo.StateApp(binPath).Exec()
+	return fileutils.TargetExists(path), path, nil
 }
 
 func LauncherInstallPath() (string, error) {
