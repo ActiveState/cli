@@ -185,8 +185,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	cp = ts.Spawn("activate", "--output", "editor")
 	cp.Expect("}")
 	cp.ExpectExitCode(0)
-	err = json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
-	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
+	out := cp.TrimmedSnapshot()
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
 }
