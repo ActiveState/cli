@@ -26,7 +26,7 @@ jobs:
           - 1.16.x
         platform:
           - ubuntu-20.04
-          - macos-latest
+          - macos-11
           - windows-latest
       fail-fast: false
     runs-on: ${{ matrix.platform }}
@@ -361,7 +361,7 @@ jobs:
           name: |
             session-shared-build
             session-build-ubuntu-20.04
-            session-build-macos-latest
+            session-build-macos-11
             session-build-windows-latest
 
       - # === Upload Artifacts ===
