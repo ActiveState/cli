@@ -361,7 +361,7 @@ jobs:
           name: |
             session-shared-build
             session-build-ubuntu-20.04
-            session-build-macos-latest
+            session-build-macos-11
             session-build-windows-latest
 
       - # === Upload Artifacts ===
