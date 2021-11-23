@@ -424,7 +424,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activating a Virtual Environment")
+	cp.Expect("Activating Virtual Environment")
 	cp.Expect("Activated")
 
 	cp.WaitForInput()
