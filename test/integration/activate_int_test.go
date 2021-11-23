@@ -116,8 +116,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else {
-		cp.Expect("Your current platform")
-		cp.Expect("does not appear to be configured")
+		// We can definitely improve this error, but this particular test is testing that we can still activate on the ]
+		// platform that DOES match (ie. Linux)
+		cp.Expect("Could not update runtime installation")
 		cp.ExpectNotExitCode(0)
 	}
 }
@@ -156,8 +157,13 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
 
-	cp.SendLine("which " + pythonExe)
-	cp.Expect("/exec/" + pythonExe)
+	if runtime.GOOS == "windows" {
+		cp.SendLine("where " + pythonExe)
+		cp.Expect(`\exec\` + pythonExe)
+	} else {
+		cp.SendLine("which " + pythonExe)
+		cp.Expect("/exec/" + pythonExe)
+	}
 
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
