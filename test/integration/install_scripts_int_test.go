@@ -34,11 +34,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		Version  string
 		Channel  string
 		Activate string
+		Command  string
 	}{
-		// {"install-release-latest", "", "release", ""},
-		{"install-prbranch", "", constants.BranchName, ""},
-		{"install-prbranch-with-version", constants.Version, constants.BranchName, ""},
-		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python"},
+		// {"install-release-latest", "", "release", "", ""},
+		{"install-prbranch", "", constants.BranchName, "a", ""},
+		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
+		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
+		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "state activate ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
@@ -53,6 +55,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			if tt.Version != "" {
 				argsPlain = append(argsPlain, "-v", tt.Version)
+			}
+			if tt.Command != "" {
+				argsPlain = append(argsPlain, "-c", tt.Command)
 			}
 
 			argsWithActive := append(argsPlain, "-f")
