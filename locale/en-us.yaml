@@ -1669,7 +1669,7 @@ err_revert_refresh:
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_no_packages:
-  other: No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].
+  other: No packages in our catalog are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
   other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
 package_info_request:
@@ -1778,7 +1778,7 @@ package_ingredient_alternatives_nolang:
 progress_project:
   other: " • Initializing Project"
 progress_search:
-  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalogue"
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:
@@ -1788,4 +1788,4 @@ progress_fail:
 progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
-  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalogue"
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
