@@ -173,7 +173,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "--output", "editor")
-	cp.Expect("}")
 	cp.ExpectNotExitCode(0)
 	var out map[string]string
 	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
