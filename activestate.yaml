@@ -136,7 +136,7 @@ scripts:
       export CGO_ENABLED=1
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-      if [[ ! -z "${CI}"]] && [[ ${ImageOS} != *mac* ]]; then
+      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
   - name: build-all
