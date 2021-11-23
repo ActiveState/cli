@@ -1691,8 +1691,6 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-    Run [ACTIONABLE]state history[/RESET] to review your local changes.
-    Run [ACTIONABLE]state activate[/RESET] to start using your runtime.
 err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
