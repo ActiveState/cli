@@ -115,10 +115,14 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.WaitForInput(40 * time.Second)
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
-	} else {
-		// We can definitely improve this error, but this particular test is testing that we can still activate on the ]
+	} else if runtime.GOOS == "windows" {
+		// We can definitely improve this error, but this particular test is testing that we can still activate on the
 		// platform that DOES match (ie. Linux)
 		cp.Expect("Could not update runtime installation")
+		cp.ExpectNotExitCode(0)
+	} else {
+		cp.Expect("Your current platform")
+		cp.Expect("does not appear to be configured")
 		cp.ExpectNotExitCode(0)
 	}
 }
