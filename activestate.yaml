@@ -133,6 +133,8 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
+      
+      # Explicitly enable CGO for systray app. We need CGO for the web bindings
       export CGO_ENABLED=1
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
