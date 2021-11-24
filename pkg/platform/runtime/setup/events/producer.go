@@ -60,6 +60,14 @@ func (r *RuntimeEventProducer) SolverError(serr *model.SolverError) {
 	r.event(newSolverErrorEvent(serr))
 }
 
+func (r *RuntimeEventProducer) SolverStart() {
+	r.event(SolverStartEvent{})
+}
+
+func (r *RuntimeEventProducer) SolverSuccess() {
+	r.event(SolverSuccessEvent{})
+}
+
 func (r *RuntimeEventProducer) TotalArtifacts(total int) {
 	r.event(newTotalArtifactEvent(total))
 }

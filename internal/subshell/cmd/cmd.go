@@ -144,21 +144,28 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+	var directEnv []string
+
+	if prj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = append(shellArgs, "/K", v.rcFile.Name())
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	shellArgs := []string{"/K", v.rcFile.Name()}
 	if v.activateCommand != nil {
 		if err := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n"+*v.activateCommand+"\r\nexit")); err != nil {
 			return err
 		}
 	}
 
-	cmd := exec.Command("cmd", shellArgs...)
-
+	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil

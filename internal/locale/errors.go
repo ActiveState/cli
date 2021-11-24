@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -81,6 +82,9 @@ func WrapError(err error, id string, args ...string) *LocalizedError {
 	l.tips = []string{}
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+
+	logging.Debug("Wrapped localized error: %v -- with: %v", err, translation)
+
 	return l
 }
 
@@ -105,6 +109,9 @@ func WrapInputError(err error, id string, args ...string) *LocalizedError {
 	l.wrapped = err
 	l.localized = translation
 	l.stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+
+	logging.Debug("Wrapped input error: %v -- with: %v", err, translation)
+
 	return l
 }
 
@@ -131,6 +138,18 @@ func IsInputError(err error) bool {
 			return true
 		}
 		err = errors.Unwrap(err)
+	}
+	return false
+}
+
+// IsInputErrorNonRecursive checks if the given error is an InputError
+func IsInputErrorNonRecursive(err error) bool {
+	if err == nil {
+		return false
+	}
+	errInput, ok := err.(ErrorInput)
+	if ok && errInput.InputError() {
+		return true
 	}
 	return false
 }

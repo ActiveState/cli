@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/gammazero/workerpool"
 )
 
@@ -92,19 +93,25 @@ func runJob(job Job) {
 	defer outfile.Close()
 
 	failure := func(msg string, args ...interface{}) {
-		fmt.Fprintf(outfile, msg + "\n1", args...)
-		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s: ", job.ID) + msg, args...)
+		fmt.Fprintf(outfile, msg+"\n1", args...)
+		fmt.Fprintf(os.Stderr, fmt.Sprintf("%s: ", job.ID)+msg, args...)
 	}
 
 	if job.If != "" {
-		cond := constraints.NewPrimeConditional(nil, "", "", "", "")
+		pj, err := project.GetOnce()
+		if err != nil {
+			failure("Could not get project: %s", errs.JoinMessage(err))
+			return
+		}
+
+		cond := constraints.NewPrimeConditional(nil, pj, "")
 		run, err := cond.Eval(job.If)
 		if err != nil {
 			failure("Could not evaluate conditonal: %s, error: %s\n", job.If, errs.JoinMessage(err))
 			return
 		}
 		if !run {
-			fmt.Printf( "%s: Skipping as per conditional: %s\n", job.ID, job.If)
+			fmt.Printf("%s: Skipping as per conditional: %s\n", job.ID, job.If)
 			return
 		}
 	}

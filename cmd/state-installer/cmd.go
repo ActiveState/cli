@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/rollbar/rollbar-go"
@@ -210,19 +211,34 @@ func main() {
 			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
 			logging.Critical("Installer error: " + errs.JoinMessage(err))
 		}
+
+		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		out.Error(err.Error())
-		exitCode = 1
 		return
 	}
+
 	an.Event(AnalyticsFunnelCat, "success")
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
+	targetBranch := params.branch
+	if targetBranch == "" {
+		targetBranch = constants.BranchName
+	}
+
+	if params.path == "" {
+		var err error
+		params.path, err = installation.InstallPathForBranch(targetBranch)
+		if err != nil {
+			return errs.Wrap(err, "Could not detect installation path.")
+		}
+	}
+
 	// Detect installed state tool
-	stateToolInstalled, err := installation.InstalledOnPath(params.path)
+	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -237,14 +253,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	case params.force:
 		logging.Debug("Not using update flow as --force was passed")
 		break // When ran with `--force` we always use the install UX
-	case fileutils.FileExists(packagedStateExe):
+	case !params.fromDeferred && fileutils.FileExists(packagedStateExe):
+		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
-
-		if params.sourcePath == "" {
-			// Older versions of state tool do not invoke the installer with `--source-path`
-			params.sourcePath = installerPath
-		}
+		params.sourcePath = installerPath
 	case stateToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
@@ -262,15 +275,15 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, an, params)
+		return postInstallEvents(out, cfg, an, params, isUpdate)
 	}
 
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
-		out.Print("State Tool Package Manager is already installed. To reinstall use the [ACTIONABLE]--force[/RESET] flag.")
+		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", stateToolPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, an, params)
+		return postInstallEvents(out, cfg, an, params, true)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -307,13 +320,13 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	if !isUpdate {
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
-		out.Print("State Tool Package Manager has been successfully installed. You may need to start a new shell to start using it.")
+		out.Print("State Tool Package Manager has been successfully installed.")
 	}
 
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Params) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
 	installPath, err := resolveInstallPath(params.path)
@@ -326,7 +339,6 @@ func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Par
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	env := []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
 
 	// Execute requested command, these are mutually exclusive
 	switch {
@@ -336,7 +348,7 @@ func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Par
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
-		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-command-err", err.Error())
 			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
@@ -345,7 +357,7 @@ func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Par
 		an.Event(AnalyticsFunnelCat, "forward-activate")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
@@ -354,20 +366,39 @@ func postInstallEvents(out output.Outputer, an analytics.Dispatcher, params *Par
 		an.Event(AnalyticsFunnelCat, "forward-activate-default")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, env); err != nil {
+		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
+		}
+	case !isUpdate:
+		ss := subshell.New(cfg)
+		ss.SetEnv(envMap(binPath))
+		if err := ss.Activate(nil, cfg, out); err != nil {
+			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
+		}
+		if err = <-ss.Errors(); err != nil {
+			return errs.Wrap(err, "Subshell execution; error returned: %s", errs.JoinMessage(err))
 		}
 	}
 
 	return nil
 }
 
+func envSlice(binPath string) []string {
+	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+}
+
+func envMap(binPath string) map[string]string {
+	return map[string]string{
+		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+	}
+}
+
 // installFromRemoteSource is invoked when we run the installer without providing the associated source files
 // Effectively this will download and unpack the target version and then run the installer packaged for that version
 // To view the source of the target version you can extract the relevant commit ID from the version of the target version
 // This is the default behavior when doing a clean install
-func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,args []string, params *Params) error {
+func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "remote-source")
 
 	out.Print(output.Title("Installing State Tool Package Manager"))

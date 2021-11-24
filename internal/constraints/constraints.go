@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -73,12 +74,51 @@ func NewConditional(a *authentication.Auth) *Conditional {
 	return c
 }
 
-func NewPrimeConditional(auth *authentication.Auth, pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
+type projectable interface {
+	Owner() string
+	Name() string
+	NamespaceString() string
+	CommitID() string
+	BranchName() string
+	Path() string
+	URL() string
+}
+
+func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
+	var (
+		pjOwner     string
+		pjName      string
+		pjNamespace string
+		pjURL       string
+		pjCommit    string
+		pjBranch    string
+		pjPath      string
+	)
+	if pj != nil {
+		pjOwner = pj.Owner()
+		pjName = pj.Name()
+		pjNamespace = pj.NamespaceString()
+		pjURL = pj.URL()
+		pjCommit = pj.CommitID()
+		pjBranch = pj.BranchName()
+		pjPath = pj.Path()
+		if pjPath != "" {
+			pjPath = filepath.Dir(pjPath)
+		}
+	}
+
 	c := NewConditional(auth)
 	c.RegisterParam("Project", map[string]string{
+		"Owner":     pjOwner,
+		"Name":      pjName,
+		"Namespace": pjNamespace,
+		"Url":       pjURL,
+		"Commit":    pjCommit,
+		"Branch":    pjBranch,
+		"Path":      pjPath,
+
+		// Legacy
 		"NamespacePrefix": pjNamespace,
-		"Name":            pjName,
-		"Owner":           pjOwner,
 	})
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {

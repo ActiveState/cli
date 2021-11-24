@@ -26,7 +26,7 @@ jobs:
           - 1.16.x
         platform:
           - ubuntu-20.04
-          - macos-latest
+          - macos-11
           - windows-latest
       fail-fast: false
     runs-on: ${{ matrix.platform }}
@@ -35,7 +35,7 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
+    timeout-minutes: 30
 
     # === OS Specific Steps ===
     steps:
@@ -79,6 +79,7 @@ jobs:
       - # === Parallel Tasks ===
         name: Parallel Tasks
         shell: bash
+        timeout-minutes: 15
         run: |
           export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
           parallelize "$(cat <<'EOF'
@@ -261,7 +262,11 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          SHELL='' go test -v `go list ./... | grep integration` | gotestfmt
+          set +e
+          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          CODE=$?
+          cat build/integration-tests.out | gotestfmt
+          exit $CODE
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -356,7 +361,7 @@ jobs:
           name: |
             session-shared-build
             session-build-ubuntu-20.04
-            session-build-macos-latest
+            session-build-macos-11
             session-build-windows-latest
 
       - # === Upload Artifacts ===

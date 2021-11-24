@@ -32,9 +32,13 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	AddOrganization(params *AddOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationOK, error)
 
+	AddOrganizationAutoInvite(params *AddOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationAutoInviteOK, error)
+
 	DeleteInvite(params *DeleteInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInviteOK, error)
 
 	DeleteOrganization(params *DeleteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationOK, error)
+
+	DeleteOrganizationAutoInvite(params *DeleteOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationAutoInviteOK, error)
 
 	EditBilling(params *EditBillingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditBillingOK, error)
 
@@ -47,6 +51,8 @@ type ClientService interface {
 	GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNextMutationIDOK, error)
 
 	GetOrganization(params *GetOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationOK, error)
+
+	GetOrganizationAutoInvite(params *GetOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationAutoInviteOK, error)
 
 	GetOrganizationInvitations(params *GetOrganizationInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationInvitationsOK, error)
 
@@ -111,6 +117,47 @@ func (a *Client) AddOrganization(params *AddOrganizationParams, authInfo runtime
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for addOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  AddOrganizationAutoInvite adds a domain to organization auto invite
+
+  Add a domain to an organization's auto-invite settings
+*/
+func (a *Client) AddOrganizationAutoInvite(params *AddOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationAutoInviteOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddOrganizationAutoInviteParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "addOrganizationAutoInvite",
+		Method:             "POST",
+		PathPattern:        "/organizations/{organizationName}/autoinvite",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &AddOrganizationAutoInviteReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddOrganizationAutoInviteOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for addOrganizationAutoInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -193,6 +240,47 @@ func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo r
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for deleteOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  DeleteOrganizationAutoInvite removes a domain from an organization s auto invite settings
+
+  Remove a domain from an organization's auto-invite settings
+*/
+func (a *Client) DeleteOrganizationAutoInvite(params *DeleteOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationAutoInviteOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteOrganizationAutoInviteParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteOrganizationAutoInvite",
+		Method:             "DELETE",
+		PathPattern:        "/organizations/{organizationName}/autoinvite/{domain}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &DeleteOrganizationAutoInviteReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteOrganizationAutoInviteOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for deleteOrganizationAutoInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -439,6 +527,47 @@ func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for getOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  GetOrganizationAutoInvite organizations auto invite settings
+
+  Return organization auto-invite settings
+*/
+func (a *Client) GetOrganizationAutoInvite(params *GetOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationAutoInviteOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetOrganizationAutoInviteParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getOrganizationAutoInvite",
+		Method:             "GET",
+		PathPattern:        "/organizations/{organizationName}/autoinvite",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetOrganizationAutoInviteReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetOrganizationAutoInviteOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getOrganizationAutoInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
