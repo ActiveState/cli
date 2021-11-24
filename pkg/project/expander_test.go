@@ -2,6 +2,7 @@ package project_test
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"testing"
@@ -68,7 +69,7 @@ scripts:
 
 func TestExpandProject(t *testing.T) {
 	prj := loadProject(t)
-	prj.Source().SetPath("spoofed path")
+	prj.Source().SetPath(fmt.Sprintf("spoofed path%sactivestate.yaml", string(os.PathSeparator)))
 
 	expanded, err := project.ExpandFromProject("$project.url()", prj)
 	require.NoError(t, err)
