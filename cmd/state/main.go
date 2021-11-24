@@ -60,7 +60,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(5 * time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
@@ -174,13 +174,9 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		}
 	}
 
-	pjOwner := ""
 	pjNamespace := ""
-	pjName := ""
 	if pj != nil {
-		pjOwner = pj.Owner()
 		pjNamespace = pj.Namespace().String()
-		pjName = pj.Name()
 	}
 
 	auth := authentication.LegacyGet()
@@ -200,7 +196,7 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
-	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
+	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
