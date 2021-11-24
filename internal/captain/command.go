@@ -507,6 +507,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	// Send  GA events unless they are handled in the runners...
 	if c.analytics != nil {
 		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
+			c.analytics.Event(anaConsts.CatShim, shim)
+		}
 	}
 
 	// Run OnUse functions for non-persistent flags
