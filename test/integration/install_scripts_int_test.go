@@ -37,7 +37,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		Command  string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
-		{"install-prbranch", "", constants.BranchName, "a", ""},
+		{"install-prbranch", "", constants.BranchName, "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
 		//{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "state activate ActiveState-CLI/small-python"},
