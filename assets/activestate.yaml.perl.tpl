@@ -18,7 +18,7 @@ scripts:
 
         $ENV{ACTIVESTATE_SHIM} = 'ppm';
 
-        map((
+        mapcmds((
             "install" => "install",
             "search"  => "search",
             "upgrade" => "install",
@@ -26,15 +26,15 @@ scripts:
             "list"    => "packages",
         ));
 
-        printf("Could not shim your command as it is not supported by the State Tool.\nPlease check 'state --help' to find " .
+        print("Could not shim your command as it is not supported by the State Tool.\nPlease check 'state --help' to find " .
             "the best analog for the command you're trying to run.\n" .
-            "To configure this shim edit the following file:\n%s\n", "TBD");
+            "To configure this shim edit the following file:\n${project.path()}/activestate.yaml\n");
 
-        sub map {
+        sub mapcmds {
             my (%entries) = @_;
             while ((my $from, my $to) = each(%entries)) {
                 if ($ARGV[0] eq $from) {
-                    printf("Shimming command to 'state %s', to configure this shim edit the following file:\n%s\n", $to, "TBD");
+                    printf("Shimming command to 'state %s', to configure this shim edit the following file:\n${project.path()}/activestate.yaml\n\n", $to);
                     system("state", $to, @ARGV[1 .. $#ARGV]);
                     exit($?);
                 }
