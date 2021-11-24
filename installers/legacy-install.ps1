@@ -1,4 +1,4 @@
-﻿# Copyright 2019 ActiveState Software Inc. All rights reserved.
+﻿# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
 <#
 .DESCRIPTION
 Install the ActiveState state.exe tool.  Must be run as admin OR install State Tool to
@@ -30,6 +30,8 @@ Set-StrictMode -Off
 
 # ignore project file if we are already in an activated environment
 $Env:ACTIVESTATE_PROJECT=""
+# disable auto-updates to prevent that the State Tool automatically updates to the latest version
+$Env:ACTIVESTATE_CLI_DISABLE_UPDATES = "true"
 
 $script:NOPROMPT = $n
 $script:FORCEOVERWRITE = $f
@@ -84,9 +86,9 @@ function isAdmin
 
 function promptYN([string]$msg)
 {
-    $response = Read-Host -Prompt $msg" [y/N]`n"
+    $response = Read-Host -Prompt $msg" [Y/n]`n"
 
-    if ( -Not ($response.ToLower() -eq "y") )
+    if ($response.ToLower() -eq "n")
     {
         return $False
     }
@@ -184,7 +186,8 @@ function warningIfadmin() {
 }
 
 function runPreparationStep($installDirectory) {
-    &$installDirectory\$script:STATEEXE _prepare | Write-Host
+    $env:ACTIVESTATE_UPDATE_TAG = $script:UPDATE_TAG
+    & $installDirectory\$script:STATEEXE _prepare | Write-Host
     return $LASTEXITCODE
 }
 
@@ -197,23 +200,24 @@ By running the State Tool installer you consent to the Privacy Policy. This is r
     Write-Host $consentText
 }
 
-function fetchArtifacts($downloadDir, $statejson, $statepkg) {
+function fetchArtifacts($downloadDir, $statepkg) {
     # State Tool binary base dir
-    $STATEURL="https://state-tool.s3.amazonaws.com/update/state"
+    $FILE_URL= "https://state-tool.s3.amazonaws.com/update/state"
+    $jsonURL= "https://platform.activestate.com/sv/state-update/api/v1/info/legacy?channel=$script:BRANCH&platform=windows&source=install&target-version=$script:VERSION"
     
     Write-Host "Preparing for installation...`n"
 
     # Get version and checksum
-    $jsonurl = "$STATEURL/$script:BRANCH/$script:VERSION/$statejson"
     Write-Host "Fetching version info...`n"
     try{
-        $versionedJson = ConvertFrom-Json -InputObject (download $jsonurl)
+        $versionedJson = ConvertFrom-Json -InputObject (download $jsonURL)
     } catch [System.Exception] {
-        Write-Warning "Unable to retrieve version info from $jsonurl"
+        Write-Warning "Unable to retrieve version info from $jsonURL"
         Write-Error $_.Exception.Message
         return 1
     }
     $latestChecksum = $versionedJson.Sha256v2
+    $script:UPDATE_TAG = $versionedJson.Tag
 
     # Download pkg file
     $zipPath = Join-Path $downloadDir $statepkg
@@ -222,7 +226,7 @@ function fetchArtifacts($downloadDir, $statejson, $statepkg) {
         Remove-Item $downloadDir -Recurse
     }
     New-Item -Path $downloadDir -ItemType Directory | Out-Null # There is output from this command, don't show the user.
-    $zipURL = "$STATEURL/$script:BRANCH/$script:VERSION/$statepkg"
+    $zipURL = "$FILE_URL/$script:BRANCH/$script:VERSION/$statepkg"
     Write-Host "Fetching archive for version: $script:VERSION...`n"
     try{
         download $zipURL $zipPath
@@ -362,7 +366,7 @@ function install() {
     # Install binary
     Write-Host "`nInstalling to '$installDir'...`n" -ForegroundColor Yellow
     if ( -Not $script:NOPROMPT ) {
-        if( -Not (promptYN "Continue?") ) {
+        if( -Not (promptYN "Accept terms and proceed with install?") ) {
             return 2
         }
     }
@@ -384,7 +388,7 @@ function install() {
     }
 
     $tmpParentPath = Join-Path $env:TEMP "ActiveState"
-    $err = fetchArtifacts $tmpParentPath $statejson $statepkg
+    $err = fetchArtifacts $tmpParentPath $statepkg
     if ($err -eq 1){
         return 1
     }
@@ -427,7 +431,7 @@ function install() {
             $envTarget = [EnvironmentVariableTarget]::Machine
             $envTargetName = "system"
         }
-        
+
         Write-Host "Updating environment...`n"
         Write-Host "Adding $installDir to $envTargetName PATH`n"
         # This only sets it in the registry and it will NOT be accessible in the current session

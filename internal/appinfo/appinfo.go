@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -16,11 +17,20 @@ type AppInfo struct {
 	executable string
 }
 
-func execDir(baseDir ...string) string {
+func execDir(baseDir ...string) (resultPath string) {
+	defer func() {
+		// Account for legacy use-case that wasn't using the correct bin dir
+		binDir := filepath.Join(resultPath, "bin")
+		if fileutils.DirExists(binDir) {
+			resultPath = binDir
+		}
+	}()
+
 	if len(baseDir) > 0 {
 		return baseDir[0]
 	}
-	if condition.InTest() {
+
+	if condition.InUnitTest() {
 		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 		rootPath := environment.GetRootPathUnsafe()
 		return filepath.Join(rootPath, "build")
@@ -65,6 +75,10 @@ func SvcApp(baseDir ...string) *AppInfo {
 
 func UpdateDialogApp(baseDir ...string) *AppInfo {
 	return newAppInfo(constants.UpdateDialogName, "state-update-dialog", baseDir...)
+}
+
+func InstallerApp(baseDir ...string) *AppInfo {
+	return newAppInfo(constants.StateInstallerCmd, "state-installer", baseDir...)
 }
 
 func (a *AppInfo) Name() string {

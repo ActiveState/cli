@@ -27,7 +27,6 @@ const (
 )
 
 type signupInput struct {
-	Name      string
 	Email     string
 	Username  string
 	Password  string
@@ -180,11 +179,6 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 		return locale.NewError(locErrMsgID)
 	}
 
-	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
-	if err != nil {
-		return err
-	}
-
 	input.Email, err = prompter.Input("", locale.T("email_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
@@ -199,7 +193,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 		Email:        input.Email,
 		Username:     input.Username,
 		Password:     input.Password,
-		Name:         input.Name,
+		Name:         input.Username,
 		EULAAccepted: &eulaHelper,
 	})
 	addUserOK, err := mono.Get().Users.AddUser(params)

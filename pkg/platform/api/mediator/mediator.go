@@ -9,6 +9,8 @@ import (
 func New(auth *authentication.Auth) *gqlclient.Client {
 	url := api.GetServiceURL(api.ServiceMediator)
 	c := gqlclient.New(url.String(), 0)
-	c.SetTokenProvider(auth)
+	if auth != nil {
+		c.SetTokenProvider(auth)
+	}
 	return c
 }

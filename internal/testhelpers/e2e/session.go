@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -40,11 +42,12 @@ type Session struct {
 	env        []string
 	retainDirs bool
 	// users created during session
-	users   []string
-	t       *testing.T
-	Exe     string
-	SvcExe  string
-	TrayExe string
+	users        []string
+	t            *testing.T
+	Exe          string
+	SvcExe       string
+	TrayExe      string
+	InstallerExe string
 }
 
 // Options for spawning a testable terminal process
@@ -60,7 +63,7 @@ var (
 	PersistentUsername string
 	PersistentPassword string
 
-	defaultTimeout = 20 * time.Second
+	defaultTimeout = 40 * time.Second
 	authnTimeout   = 40 * time.Second
 )
 
@@ -132,22 +135,33 @@ func (s *Session) UseDistinctStateExes() {
 	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
+	s.InstallerExe = s.copyExeToBinDir(s.InstallerExe)
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
-func executablePaths(t *testing.T) (string, string, string) {
+func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
 	stateInfo := appinfo.StateApp(buildDir)
 	svcInfo := appinfo.SvcApp(buildDir)
 	trayInfo := appinfo.TrayApp(buildDir)
+	installInfo := appinfo.InstallerApp(buildDir)
 
 	if !fileutils.FileExists(stateInfo.Exec()) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
+	if !fileutils.FileExists(svcInfo.Exec()) {
+		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
+	}
+	if !fileutils.FileExists(trayInfo.Exec()) {
+		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
+	}
+	if !fileutils.FileExists(installInfo.Exec()) {
+		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
+	}
 
-	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec()
+	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -164,6 +178,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.CacheEnvVarName + "=" + dirs.Cache,
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
+		constants.E2ETestEnvVarName + "=true",
 	}...)
 
 	if updatePath {
@@ -178,9 +193,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	// add session environment variables
 	env = append(env, extraEnv...)
-	exe, svcExe, trayExe := executablePaths(t)
+	exe, svcExe, trayExe, installExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe}
+	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe, InstallerExe: installExe}
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -257,6 +272,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	if !pOpts.BackgroundProcess {
 		s.cp = console
 	}
+
+	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
 
 	return console
 }
@@ -341,8 +358,6 @@ func (s *Session) CreateNewUser() string {
 	p.Send(password)
 	p.Expect("again:")
 	p.Send(password)
-	p.Expect("name:")
-	p.Send(username)
 	p.Expect("email:")
 	p.Send(email)
 	p.Expect("account has been registered", authnTimeout)
@@ -404,5 +419,5 @@ func (s *Session) Close() error {
 }
 
 func RunningOnCI() bool {
-	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
+	return condition.OnCI()
 }

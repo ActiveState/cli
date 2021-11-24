@@ -185,21 +185,21 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectRe("(?:Bundle added|project is currently building)", 45*time.Second)
+		cp.ExpectRe("(?:Bundle added|being built)", 45*time.Second)
 		cp.Wait()
 	})
 
 	/* Our bundles have only one version currently.
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities@0.7.6")
-		cp.ExpectRe("(?:bundle updated|project is currently building)")
+		cp.ExpectRe("(?:bundle updated|being built)")
 		cp.ExpectExitCode(1)
 	})
 	*/
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("(?:Bundle removed|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Bundle removed|being built)", 30*time.Second)
 		cp.Wait()
 	})
 }

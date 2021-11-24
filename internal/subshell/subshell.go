@@ -9,7 +9,6 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -83,7 +82,7 @@ type SubShell interface {
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
-func New(cfg *config.Instance) SubShell {
+func New(cfg sscommon.Configurable) SubShell {
 	binary := DetectShellBinary(cfg)
 
 	// try to find the binary on the PATH
@@ -143,7 +142,7 @@ func New(cfg *config.Instance) SubShell {
 	return subs
 }
 
-func DetectShellBinary(cfg *config.Instance) (binary string) {
+func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
 	configured := cfg.GetString(ConfigKeyShell)
 	defer func() {
 		// do not re-write shell binary to config, if the value did not change.

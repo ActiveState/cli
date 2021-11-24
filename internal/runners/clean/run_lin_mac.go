@@ -46,6 +46,11 @@ func (u *Uninstall) runUninstall() error {
 
 	}
 
+	err = removeEnvPaths(u.cfg)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
+	}
+
 	if aggErr != nil {
 		return aggErr
 	}
@@ -97,6 +102,12 @@ func removeInstall(cfg configurable) error {
 				continue
 			}
 			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
+		}
+	}
+
+	if transitionalStatePath := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStatePath != "" {
+		if err := os.Remove(transitionalStatePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", transitionalStatePath, err)
 		}
 	}
 

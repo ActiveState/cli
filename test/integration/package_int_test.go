@@ -167,7 +167,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"Name",
 		"requests",
 		"2.26.0",
-		"+ 9 older versions",
+		"older versions",
 	}
 	for _, expectation := range expectations {
 		cp.ExpectLongString(expectation)
@@ -182,7 +182,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -225,7 +225,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "numpy", "--language=perl")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -332,33 +332,30 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
-	cp.ExpectLongString("default project?")
-	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.Expect("Could not match json")
+		cp.Expect("No results found for search term")
 		cp.Expect("json2")
-		cp.ExpectLongString("to see more results run `state search json`")
 		cp.Wait()
 	})
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 50*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 }
@@ -379,8 +376,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
-	cp.ExpectLongString("default project?")
-	cp.Send("n")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
@@ -397,19 +392,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 

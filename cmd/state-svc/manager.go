@@ -1,10 +1,16 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 
@@ -13,8 +19,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/pkg/platform/api/svc"
 )
 
 var ErrSvcAlreadyRunning error = errs.New("Service is already running")
@@ -49,7 +55,8 @@ func (s *serviceManager) Start(args ...string) error {
 	})
 	if err != nil {
 		if proc != nil {
-			if err := proc.Signal(os.Interrupt); err != nil {
+			err := rtutils.Timeout(func() error { return proc.Signal(os.Kill) }, time.Second)
+			if err != nil {
 				logging.Errorf("Could not cleanup process: %v", err)
 				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 			}
@@ -70,19 +77,42 @@ func (s *serviceManager) Stop() error {
 		return nil
 	}
 
-	// Ensure that port number has been written to configuration file ie., that the server is ready to talk
-	svcmgr := svcmanager.New(s.cfg)
-
-	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
-	defer cancel()
-	svcm, err := model.NewSvcModel(ctx, s.cfg, svcmgr)
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize svc model")
-	}
-
-	if err := svcm.StopServer(); err != nil {
+	if err := stopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
+	return nil
+}
+
+func stopServer(cfg *config.Instance) error {
+	htClient := retryhttp.DefaultClient.StandardClient()
+
+	client, err := svc.New(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize svc client")
+	}
+
+	quitAddress := fmt.Sprintf("%s/__quit", client.BaseUrl())
+	logging.Debug("Sending quit request to %s", quitAddress)
+	req, err := http.NewRequest("GET", quitAddress, nil)
+	if err != nil {
+		return errs.Wrap(err, "Could not create request to quit svc")
+	}
+
+	res, err := htClient.Do(req)
+	if err != nil {
+		return errs.Wrap(err, "Request to quit svc failed")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errs.Wrap(err, "Request to quit svc responded with status %s", res.Status)
+		}
+		return errs.New("Request to quit svc responded with status: %s, response: %s", res.Status, body)
+	}
+
 	return nil
 }
 
@@ -91,13 +121,22 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if pid == 0 {
 		return nil, nil
 	}
-	pidExists, err := process.PidExists(int32(pid))
+	p, err := process.NewProcess(int32(pid))
 	if err != nil {
+		if errors.Is(err, process.ErrorProcessNotRunning) {
+			return nil, nil
+		}
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
-	if !pidExists {
+
+	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
+	exe, err := p.Exe()
+	if err != nil {
+		logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+	} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
 		return nil, nil
 	}
 
-	return &pid, nil
+	var rpid = int(p.Pid)
+	return &rpid, nil
 }

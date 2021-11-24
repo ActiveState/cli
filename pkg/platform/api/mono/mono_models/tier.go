@@ -20,14 +20,14 @@ type Tier struct {
 	// description
 	Description string `json:"description,omitempty"`
 
-	// grants security and compliance
-	GrantsSecurityAndCompliance bool `json:"grantsSecurityAndCompliance,omitempty"`
-
 	// is default
 	IsDefault bool `json:"isDefault,omitempty"`
 
 	// is personal
 	IsPersonal bool `json:"isPersonal,omitempty"`
+
+	// limit active runtimes
+	LimitActiveRuntimes int64 `json:"limitActiveRuntimes,omitempty"`
 
 	// limit minimum users
 	LimitMinimumUsers int64 `json:"limitMinimumUsers,omitempty"`
@@ -37,6 +37,9 @@ type Tier struct {
 
 	// limit nodes per threshold
 	LimitNodesPerThreshold int64 `json:"limitNodesPerThreshold,omitempty"`
+
+	// limit static runtimes
+	LimitStaticRuntimes int64 `json:"limitStaticRuntimes,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`

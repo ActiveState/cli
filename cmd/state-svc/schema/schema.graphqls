@@ -18,20 +18,24 @@ type AvailableUpdate {
   sha256: String!
 }
 
-type DeferredUpdate {
-  channel: String!
-  version: String!
-  logfile: String!
-}
-
 type Project {
   namespace: String!
   locations: [String!]!
 }
 
+type AnalyticsEventResponse {
+  sent: Boolean!
+}
+
+type RuntimeUsageResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
-  update(channel: String, version: String): DeferredUpdate
   projects: [Project]!
+  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
 }
+

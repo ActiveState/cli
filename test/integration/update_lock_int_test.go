@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -20,11 +22,15 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
 	// Ensure we always use a unique exe for updates
 	ts.UseDistinctStateExes()
 
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
+	pjfile.Save(cfg)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("update", "lock"),
@@ -34,15 +40,15 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	cp.Expect("Version locked at")
 	cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, false, false, constants.Version, suite.NotEqual)
+	suite.versionCompare(ts, constants.Version, suite.NotEqual)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
+	suite.OnlyRunForTags(tagsuite.Update)
 	targetBranch := "release"
 	if constants.BranchName == "release" {
 		targetBranch = "master"
 	}
-	suite.OnlyRunForTags(tagsuite.Update)
 	tests := []struct {
 		name            string
 		lock            string
@@ -52,13 +58,13 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 		{
 			"oldVersion",
 			oldUpdateVersion,
-			false,
+			true,
 			"beta",
 		},
 		{
 			"channel",
 			targetBranch,
-			false,
+			true,
 			targetBranch,
 		},
 		{
@@ -77,12 +83,16 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
 
 			yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 			pjfile.SetPath(yamlPath)
-			pjfile.Save(suite.cfg)
+			pjfile.Save(cfg)
 
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs("update", "lock", "--set-channel", tt.lock),
@@ -99,12 +109,9 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			if tt.expectLockError {
 				cp = ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(true, false)...))
 				cp.Expect("This project is locked at State Tool version")
-				cp.ExpectLongString("Run state update --set-version")
 				cp.ExpectExitCode(1)
 				return
 			}
-
-			suite.branchCompare(ts, false, false, tt.expectedChannel, suite.Equal)
 		})
 	}
 }
@@ -134,11 +141,15 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
+			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+			suite.Require().NoError(err)
+			defer cfg.Close()
+
 			// Ensure we always use a unique exe for updates
 			ts.UseDistinctStateExes()
 
 			pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-			pjfile.Save(suite.cfg)
+			pjfile.Save(cfg)
 
 			args := []string{"update", "lock"}
 			if tt.Forced {

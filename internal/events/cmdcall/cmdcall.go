@@ -18,6 +18,8 @@ type primeable interface {
 	primer.Projecter
 	primer.Subsheller
 	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // CmdCall manages dependencies for the handling of events triggered by command
@@ -39,7 +41,7 @@ func New(p primeable, cmdList string) *CmdCall {
 		subshell:  p.Subshell(),
 		cmdList:   cmdList,
 		p:         p,
-		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config()),
+		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config(), p.Analytics(), p.SvcModel()),
 	}
 }
 

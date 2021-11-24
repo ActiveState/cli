@@ -2,11 +2,11 @@ package shortcut
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -67,9 +67,12 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
-	cmd := exec.Command("gio", "set", path, "metadata::trusted", "true")
-	if err := cmd.Run(); err != nil {
-		logging.Errorf("Could not set desktop file as trusted: %v", err)
+	stdoutText, stderrText, err := exeutils.ExecSimple("gio", "set", path, "metadata::trusted", "true")
+	if err != nil {
+		logging.Errorf(
+			"Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)",
+			errs.JoinMessage(err), stdoutText, stderrText,
+		)
 	}
 
 	return path, nil

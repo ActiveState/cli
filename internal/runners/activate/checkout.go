@@ -3,6 +3,7 @@ package activate
 import (
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -23,10 +24,11 @@ import (
 type Checkout struct {
 	repo git.Repository
 	output.Outputer
+	analytics analytics.Dispatcher
 }
 
 func NewCheckout(repo git.Repository, prime primeable) *Checkout {
-	return &Checkout{repo, prime.Output()}
+	return &Checkout{repo, prime.Output(), prime.Analytics()}
 }
 
 func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) error {
@@ -62,7 +64,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 
 	// Clone the related repo, if it is defined
 	if pj.RepoURL != nil && *pj.RepoURL != "" {
-		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer)
+		err := r.repo.CloneProject(ns.Owner, ns.Project, targetPath, r.Outputer, r.analytics)
 		if err != nil {
 			return err
 		}

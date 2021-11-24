@@ -108,7 +108,7 @@ func getProjectHost(service Service) *string {
 		return &apiHost
 	}
 
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		testingPlatform := string(service) + ".testing.tld"
 		return &testingPlatform
 	}

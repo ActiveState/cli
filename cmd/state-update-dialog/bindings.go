@@ -3,16 +3,15 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/cmd/state-update-dialog/internal/lockedprj"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/wailsapp/wails"
 )
 
@@ -58,8 +57,7 @@ func (b *Bindings) Changelog() string {
 
 func (b *Bindings) Install() error {
 	logging.Debug("Bindings:Install called")
-	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	proc, err := b.update.InstallWithProgress(installTargetPath, func(output string, done bool) {
+	proc, err := b.update.InstallWithProgress("", func(output string, done bool) {
 		b.installLog = b.installLog + "\n" + output
 		b.installDone = done
 	})
@@ -89,6 +87,12 @@ func (b *Bindings) Exit() {
 func (b *Bindings) DebugMode() bool {
 	args := strings.Join(os.Args, "")
 	return strings.Contains(args, "wails.BuildMode=debug") || strings.Contains(args, "go-build")
+}
+
+func (b *Bindings) OpenURL(url string) {
+	if err := open.Run(url); err != nil {
+		logging.Error("Could not open URL: %s", errs.JoinMessage(err))
+	}
 }
 
 func formatError(err error, message string) error {

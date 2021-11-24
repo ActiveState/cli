@@ -7,7 +7,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httpreq"
+	"github.com/ActiveState/cli/internal/logging"
 )
+
+const CfgUpdateTag = "update_tag"
 
 type Fetcher struct {
 	httpreq *httpreq.Client
@@ -18,7 +21,8 @@ func NewFetcher() *Fetcher {
 }
 
 func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
-	b, err := f.httpreq.Get(update.url)
+	logging.Debug("Fetching update: %s", update.url)
+	b, _, err := f.httpreq.Get(update.url)
 	if err != nil {
 		return errs.Wrap(err, "Fetch %s failed", update.url)
 	}
@@ -27,6 +31,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 		return errs.Wrap(err, "Could not verify sha256")
 	}
 
+	logging.Debug("Preparing target dir: %s", targetDir)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 		return errs.Wrap(err, "Could not create target dir: %s", targetDir)
 	}

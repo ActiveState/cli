@@ -1,15 +1,19 @@
 package resolver
 
 import (
+	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
-	"github.com/ActiveState/cli/internal/appinfo"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -21,17 +25,27 @@ import (
 )
 
 type Resolver struct {
-	cfg   *config.Instance
-	cache *cache.Cache
+	cfg            *config.Instance
+	cache          *cache.Cache
+	projectIDCache *projectcache.ID
+	an             *sync.Client
+	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance) *Resolver {
+func New(cfg *config.Instance, an *sync.Client) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
+		projectcache.NewID(),
+		an,
+		rtwatcher.New(cfg, an),
 	}
+}
+
+func (r *Resolver) Close() error {
+	return r.rtwatch.Close()
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -39,6 +53,7 @@ func New(cfg *config.Instance) *Resolver {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
 		State: &graph.StateVersion{
@@ -52,6 +67,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
@@ -64,7 +80,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	var availableUpdate *graph.AvailableUpdate
 	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
 
-	update, err := updater.DefaultChecker.Check()
+	update, err := updater.NewDefaultChecker(r.cfg).Check()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
 	}
@@ -83,37 +99,8 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	return availableUpdate, nil
 }
 
-func (r *Resolver) Update(ctx context.Context, channel *string, version *string) (*graph.DeferredUpdate, error) {
-	logging.Debug("Update resolver")
-	ch := ""
-	ver := ""
-	if channel != nil {
-		ch = *channel
-	}
-	if version != nil {
-		ver = *version
-	}
-	up, err := updater.DefaultChecker.CheckFor(ch, ver)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to check for specified update: %w", errs.Join(err, ": "))
-	}
-	if up == nil {
-		return &graph.DeferredUpdate{}, nil
-	}
-	installTargetPath := filepath.Dir(appinfo.StateApp().Exec())
-	proc, err := up.InstallDeferred(installTargetPath)
-	if err != nil {
-		return nil, fmt.Errorf("Deferring update failed: %w", errs.Join(err, ": "))
-	}
-
-	return &graph.DeferredUpdate{
-		Channel: up.Channel,
-		Version: up.Version,
-		Logfile: logging.FilePathForCmd(constants.StateInstallerCmd, proc.Pid),
-	}, nil
-}
-
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
@@ -128,4 +115,47 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	})
 
 	return projects, nil
+}
+
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
+	logging.Debug("Analytics event resolver")
+
+	label := ""
+	if _label != nil {
+		label = *_label
+	}
+
+	var dims *dimensions.Values
+	if err := json.Unmarshal([]byte(dimensionsJson), &dims); err != nil {
+		return &graph.AnalyticsEventResponse{Sent: false}, errs.Wrap(err, "Could not unmarshal")
+	}
+
+	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
+	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
+		values.ProjectID = nil
+		if values.ProjectNameSpace == nil {
+			return nil
+		}
+		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve project ID")
+		}
+		values.ProjectID = &id
+		return nil
+	})
+
+	r.an.EventWithLabel(category, action, label, dims)
+
+	return &graph.AnalyticsEventResponse{Sent: true}, nil
+}
+
+func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+	var dims *dimensions.Values
+	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
+		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
+	}
+
+	r.rtwatch.Watch(pid, exec, dims)
+
+	return &graph.RuntimeUsageResponse{Received: true}, nil
 }

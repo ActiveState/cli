@@ -27,8 +27,6 @@ function {{$K}} {
 export -f {{$K}}
 {{end}}
 
-echo "{{.ActivateEventMessage}}"
+echo "{{.ActivatedMessage}}"
 
 {{.UserScripts}}
-
-echo "{{.ActivatedMessage}}"

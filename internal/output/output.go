@@ -31,6 +31,7 @@ var ErrNotRecognized = errs.New("Not Recognized")
 
 // Outputer is the initialized formatter
 type Outputer interface {
+	Fprint(writer io.Writer, value interface{})
 	Print(value interface{})
 	Error(value interface{})
 	Notice(value interface{})

@@ -1,6 +1,7 @@
 package branch
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -8,13 +9,16 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Switch struct {
-	auth    *authentication.Auth
-	out     output.Outputer
-	project *project.Project
+	auth      *authentication.Auth
+	out       output.Outputer
+	project   *project.Project
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type SwitchParams struct {
@@ -23,9 +27,11 @@ type SwitchParams struct {
 
 func NewSwitch(prime primeable) *Switch {
 	return &Switch{
-		auth:    prime.Auth(),
-		out:     prime.Output(),
-		project: prime.Project(),
+		auth:      prime.Auth(),
+		out:       prime.Output(),
+		project:   prime.Project(),
+		analytics: prime.Analytics(),
+		svcModel:  prime.SvcModel(),
 	}
 }
 
@@ -56,7 +62,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.project, storage.CachePath(), *branch.CommitID, false)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), *branch.CommitID, false, target.TriggerBranch, s.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

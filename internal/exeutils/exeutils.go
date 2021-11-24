@@ -97,6 +97,7 @@ func ExecSimple(bin string, args ...string) (string, string, error) {
 }
 
 func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) {
+	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %v", dir, bin, args)
 	c := exec.Command(bin, args...)
 	if dir != "" {
 		c.Dir = dir
@@ -135,8 +136,6 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 
 // ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
 func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
-	logging.Debug("Executing command and piping std: %s, %v", command, arg)
-
 	return Execute(command, arg, func(cmd *exec.Cmd) error {
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, env...)
@@ -169,4 +168,14 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 	}()
 
 	return cmd.Process, nil
+}
+
+// DecodeCmd takes an encoded command and decodes it by returning a shell variant based on the OS we're on
+func DecodeCmd(cmd string) (string, []string) {
+	switch runtime.GOOS {
+	case "windows":
+		return "cmd", []string{"/C", cmd}
+	default:
+		return "sh", []string{"-c", cmd}
+	}
 }

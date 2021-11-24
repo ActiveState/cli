@@ -16,8 +16,7 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		"invite",
 		locale.Tl("invite_title", "Inviting New Members"),
 		locale.Tl("invite_description", "Invite new members to an organization"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "organization",
@@ -31,7 +30,7 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		[]*captain.Argument{
-			&captain.Argument{
+			{
 				Name:        "email1,[email2,..]",
 				Description: locale.Tl("invite_arg_emails", "Email addresses to send the invitations to"),
 				Required:    true,

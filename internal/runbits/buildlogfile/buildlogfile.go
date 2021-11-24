@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -15,6 +16,7 @@ type BuildLogFile struct {
 	out     output.Outputer
 	logFile *os.File
 }
+
 
 // verboseLogging is true if the user provided an environment variable for it
 var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
@@ -129,4 +131,22 @@ func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, arti
 
 func (bl *BuildLogFile) Close() error {
 	return nil
+}
+
+func (bl *BuildLogFile) SolverStart() error {
+	return bl.writeMessage("Solving recipe")
+}
+
+func (bl *BuildLogFile) SolverSuccess() error {
+	return bl.writeMessage("Recipe solved")
+}
+
+func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {
+	if err := bl.writeMessage(locale.Tr("solver_err", "", serr.Error())); err != nil {
+		return err
+	}
+	if !serr.IsTransient() {
+		return nil
+	}
+	return bl.writeMessage(locale.Tr("transient_solver_tip"))
 }

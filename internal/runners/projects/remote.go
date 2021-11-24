@@ -55,7 +55,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 		for _, project := range platformOrgProjects {
 			p := projectWithOrg{
 				Name:         project.Name,
-				Organization: org.Name,
+				Organization: org.DisplayName,
 			}
 
 			// Description can be non-nil but also empty

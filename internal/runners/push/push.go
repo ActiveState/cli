@@ -2,6 +2,7 @@ package push
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -162,8 +163,9 @@ func (r *Push) Run(params PushParams) error {
 
 	// Detect the target branch
 	var branch *mono_models.Branch
-	if r.project.BranchName() == "" {
+	if projectCreated || r.project.BranchName() == "" {
 		// https://www.pivotaltracker.com/story/show/176806415
+		// If we have created an empty project the only existing branch will be the default one
 		branch, err = model.DefaultBranchForProject(targetPjm)
 		if err != nil {
 			return locale.NewInputError("err_no_default_branch")
@@ -232,6 +234,8 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
+	projectfile.StoreProjectMapping(r.config, targetNamespace.String(), filepath.Dir(r.project.Source().Path()))
+
 	if projectCreated {
 		r.out.Notice(locale.Tr("push_project_created", r.project.URL()))
 	} else {
@@ -247,6 +251,7 @@ func (r *Push) verifyInput() error {
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}
+		r.out.Notice("") // Add line break to ensure output doesn't stick together
 	}
 
 	// Check if as.yaml exists

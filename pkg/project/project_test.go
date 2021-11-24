@@ -129,6 +129,24 @@ func (suite *ProjectTestSuite) TestEvents() {
 	}
 }
 
+func (suite *ProjectTestSuite) TestEventByName() {
+	var name string
+	switch runtime.GOOS {
+	case "linux":
+		name = "foo"
+	case "windows":
+		name = "bar"
+	case "darwin":
+		name = "baz"
+	}
+
+	event := suite.project.EventByName(name)
+	suite.Equal(name, event.Name())
+
+	event = suite.project.EventByName("not-there")
+	suite.Nil(event)
+}
+
 func (suite *ProjectTestSuite) TestLanguages() {
 	languages := suite.project.Languages()
 	suite.Equal(2, len(languages), "Should match 2 out of three constrained items")

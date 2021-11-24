@@ -4,9 +4,9 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,7 +22,7 @@ import (
 func main() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
@@ -40,7 +40,7 @@ func main() {
 	err := run()
 	if err != nil {
 		exitCode = 1
-		logging.Error("Update Dialog Failure: " + errs.Join(err, ": ").Error())
+		logging.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
 		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
 		return
 	}
@@ -53,7 +53,6 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 

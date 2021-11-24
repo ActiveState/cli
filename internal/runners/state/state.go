@@ -52,11 +52,12 @@ func (s *State) Run(usageFunc func() error) error {
 }
 
 type versionData struct {
-	License  string `json:"license"`
-	Version  string `json:"version"`
-	Branch   string `json:"branch"`
-	Revision string `json:"revision"`
-	Date     string `json:"date"`
+	License     string `json:"license"`
+	Version     string `json:"version"`
+	Branch      string `json:"branch"`
+	Revision    string `json:"revision"`
+	Date        string `json:"date"`
+	BuiltViaCI  bool   `json:"builtViaCI"'`
 }
 
 func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr *svcmanager.Manager, out output.Outputer) error {
@@ -71,6 +72,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMgr
 			constants.BranchName,
 			constants.RevisionHash,
 			constants.Date,
+			constants.OnCI == "true",
 		}
 		out.Print(
 			output.NewFormatter(vd).

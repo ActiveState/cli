@@ -9,8 +9,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/termutils"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/vbauerster/mpb/v6"
+	"github.com/vbauerster/mpb/v7"
 )
 
 // progressBarWidth is the width for the progress bar display
@@ -35,6 +36,7 @@ type artifactStepBar struct {
 type RuntimeProgress struct {
 	prg            *mpb.Progress
 	maxWidth       int
+	solveBar       *mpb.Bar
 	buildBar       *mpb.Bar
 	installBar     *mpb.Bar
 	artifactStates map[artifact.ArtifactID]map[string]*artifactStepBar
@@ -53,6 +55,7 @@ func NewRuntimeProgress(w io.Writer) *RuntimeProgress {
 		mpb.WithWidth(progressBarWidth),
 		mpb.WithOutput(w),
 	)
+
 	return &RuntimeProgress{
 		prg:              prg,
 		maxWidth:         maxNameWidth(),
@@ -214,6 +217,21 @@ func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID,
 	}
 
 	as.bar.SetTotal(0, true)
+	return nil
+}
+
+func (rp *RuntimeProgress) SolverStart() error {
+	rp.solveBar = rp.addSpinnerBar(locale.Tl("progress_solve", "Resolving dependencies"))
+	return nil
+}
+
+func (rp *RuntimeProgress) SolverSuccess() error {
+	rp.solveBar.Abort(true)
+	return nil
+}
+
+func (rp *RuntimeProgress) SolverError(serr *model.SolverError) error {
+	rp.solveBar.Abort(true)
 	return nil
 }
 

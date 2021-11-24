@@ -3,12 +3,12 @@ package scriptrun
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -20,31 +20,36 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
-	auth    *authentication.Auth
-	out     output.Outputer
-	sub     subshell.SubShell
-	project *project.Project
-	cfg     *config.Instance
+	auth      *authentication.Auth
+	out       output.Outputer
+	sub       subshell.SubShell
+	project   *project.Project
+	cfg       *config.Instance
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
 		subs,
 		proj,
 		cfg,
+		analytics,
+		svcModel,
 
 		false,
 
@@ -62,7 +67,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	rt, err := runtime.New(runtime.NewProjectTarget(s.project, storage.CachePath(), nil))
+	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -127,7 +132,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 		}
 
 		logging.Debug("Checking for %s on %s", execPath, searchPath)
-		if pathProvidesExec(searchPath, execPath) {
+		if PathProvidesExec(searchPath, execPath) {
 			lang = l
 			logging.Debug("Found %s", execPath)
 			break
@@ -191,43 +196,6 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	return nil
 }
 
-func pathProvidesExec(path, exec string) bool {
-	paths := splitPath(path)
-	paths = applySuffix(exec, paths)
-	for _, p := range paths {
-		if isExecutableFile(p) {
-			return true
-		}
-	}
-	return false
-}
-
-func splitPath(path string) []string {
-	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func applySuffix(suffix string, paths []string) []string {
-	for i, v := range paths {
-		paths[i] = filepath.Join(v, suffix)
-	}
-	return paths
-}
-
-func isExecutableFile(name string) bool {
-	// TODO: We want a better way to find the executable on Windows.
-	// Follow up filed here: https://www.pivotaltracker.com/n/projects/2203557/stories/177934469
-	if !fileutils.FileExists(name) {
-		name = executor.NameForExe(name)
-	}
-
-	f, err := os.Stat(name)
-	if err != nil { // unlikely unless file does not exist
-		return false
-	}
-
-	if rt.GOOS == "windows" {
-		return f.Mode()&0400 != 0
-	}
-
-	return f.Mode()&0110 != 0
+func PathProvidesExec(path, exec string) bool {
+	return exeutils.FindExeInside(exec, path) != ""
 }

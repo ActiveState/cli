@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
@@ -13,15 +14,17 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -44,15 +47,28 @@ const latestVersion = "latest"
 
 func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
+	var langVersion string
+
+	out := prime.Output()
+	var pg *output.DotProgress
+	defer func() {
+		if pg != nil && !pg.Stopped() {
+			pg.Stop(locale.T("progress_fail"))
+		}
+	}()
+
 	var err error
 	pj := prime.Project()
 	if pj == nil {
+		pg = output.NewDotProgress(out, locale.Tl("progress_project", "", packageName), 10*time.Second)
 		pj, err = initializeProject()
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
+		pg.Stop(locale.T("progress_success"))
+
 		defer func() {
-			if rerr != nil {
+			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
 				if err := os.Remove(pj.Source().Path()); err != nil {
 					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
 				}
@@ -65,19 +81,53 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
+	var validatePkg = operation == model.OperationAdded
 	if !ns.IsValid() {
-		packageName, ns, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType)
+		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", packageName), 10*time.Second)
+
+		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
+		}
+
+		packageName, ns, langVersion, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
+		validatePkg = false
+
+		pg.Stop(locale.T("progress_found"))
 	}
 
 	if strings.ToLower(packageVersion) == latestVersion {
 		packageVersion = ""
 	}
 
+	if validatePkg {
+		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", packageName), 10*time.Second)
+
+		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
+		if err != nil {
+			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+		}
+		if len(packages) == 0 {
+			suggestions, err := getSuggestions(ns, packageName)
+			if err != nil {
+				logging.Error("Failed to retrieve suggestions: %v", err)
+			}
+			if len(suggestions) == 0 {
+				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", packageName)
+			}
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "", packageName, strings.Join(suggestions, "\n"))
+		}
+
+		pg.Stop(locale.T("progress_found"))
+	}
+
 	parentCommitID := pj.CommitUUID()
 	hasParentCommit := parentCommitID != ""
+
+	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded && parentCommitID != "" {
@@ -91,33 +141,17 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	if !hasParentCommit {
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, nil, "")
+		languageFromNs := model.LanguageFromNamespace(ns.String())
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
 	}
 
 	var commitID strfmt.UUID
-	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion, machineid.UniqID())
+	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
-	}
-
-	// Verify that the provided package actually exists (the vcs API doesn't care)
-	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil && !inventory.IsPlatformError(err) {
-		rerr := &inventory_operations.ResolveRecipesBadRequest{}
-		if errors.As(err, &rerr) {
-			suggestions, serr := getSuggestions(ns, packageName)
-			if serr != nil {
-				logging.Error("Failed to retrieve suggestions: %v", err)
-			}
-			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
-			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
-		}
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", packageName)
 	}
 
 	orderChanged := !hasParentCommit
@@ -136,14 +170,15 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
+	pg.Stop(locale.T("progress_success"))
+
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), pj, storage.CachePath(), commitID, orderChanged)
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel())
 	if err != nil {
 		return err
 	}
 
 	// Print the result
-	out := prime.Output()
 	if !hasParentCommit {
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
@@ -159,44 +194,44 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	return nil
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType) (string, model.Namespace, error) {
+func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
+	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
+}
+
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, string, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
 	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false, false)
 	if err != nil {
-		return "", ns, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
+		return "", ns, "", locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
-	// If no ingredients matched we give the user an error that provides some alternative suggestions
-	if len(ingredients) == 0 {
-		suggestions, serr := getSuggestions(ns, packageName)
-		if serr != nil {
-			logging.Error("Failed to retrieve suggestions: %v", err)
-		}
-		if len(suggestions) == 0 {
-			return "", ns, locale.WrapInputError(err, "package_ingredient_nomatch", "Could not match {{.V0}}.", packageName)
-		}
-		return "", ns, locale.WrapError(err, "err_pkgop_search",
-			"Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", packageName, strings.Join(suggestions, "\n"))
+	ingredients, err = model.FilterSupportedIngredients(supported, ingredients)
+	if err != nil {
+		return "", ns, "", errs.Wrap(err, "Failed to filter out unsupported packages")
 	}
 
-	//
 	choices := []string{}
 	values := map[string][]string{}
 	for _, i := range ingredients {
 		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
 
-		// If we only have one ingredient match we're done; return it.
-		// This is inside the loop just to make use of the language variable
-		if len(ingredients) == 1 {
-			return *i.Ingredient.Name, model.NewNamespacePkgOrBundle(language, nsType), nil
-		}
-
 		// Generate ingredient choices to present to the user
 		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
 		choices = append(choices, name)
 		values[name] = []string{*i.Ingredient.Name, language}
+	}
+
+	if len(choices) == 0 {
+		return "", ns, "", locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
+	}
+
+	// If we only have one ingredient match we're done; return it.
+	if len(choices) == 1 {
+		language := values[choices[0]][1]
+		version := supportedLanguageByName(supported, language).DefaultVersion
+		return values[choices[0]][0], model.NewNamespacePkgOrBundle(language, nsType), version, nil
 	}
 
 	// Prompt the user with the ingredient choices
@@ -206,11 +241,13 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		choices, &choices[0],
 	)
 	if err != nil {
-		return "", ns, locale.WrapError(err, "err_pkgop_select", "Need a selection.")
+		return "", ns, "", locale.WrapError(err, "err_pkgop_select", "Need a selection.")
 	}
 
 	// Return the user selected ingredient
-	return values[choice][0], model.NewNamespacePkgOrBundle(values[choice][1], nsType), nil
+	language := values[choice][1]
+	version := supportedLanguageByName(supported, language).DefaultVersion
+	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), version, nil
 }
 
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {
@@ -219,19 +256,14 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
 
-	moreResults := false
 	maxResults := 5
 	if len(results) > maxResults {
 		results = results[:maxResults]
-		moreResults = true
 	}
 
 	suggestions := make([]string, 0, maxResults+1)
 	for _, result := range results {
 		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
-	}
-	if moreResults {
-		suggestions = append(suggestions, locale.Tr("ingredient_alternatives_more", name))
 	}
 
 	return suggestions, nil

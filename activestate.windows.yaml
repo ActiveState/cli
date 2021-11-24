@@ -1,8 +1,6 @@
 constants:
   - name: BUILD_TARGET
     value: state.exe
-  - name: BUILD_TRANSITION_TARGET
-    value: state-transition-update.exe
   - name: BUILD_DAEMON_TARGET
     value: state-svc.exe
   - name: BUILD_INSTALLER_TARGET
@@ -15,21 +13,9 @@ constants:
     value: -ldflags="-s -w -H=windowsgui"
   - name: UPDLG_BUILDFLAGS
     value: -ldflags "-extldflags=-static -w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
+  - name: SCRIPT_EXT
+    value: .ps1
 scripts:
-  - name: build-install-scripts
-    language: bash
-    standalone: true
-    if: eq .OS.Name "Windows"
-    description: Copies install scripts to build dir, this script exists for transparency with CI behavior
-    value: |
-
-      BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-      INSTALLERS_DIR=build/installers/${BRANCH#release}
-      mkdir -p $INSTALLERS_DIR
-
-      cp installers/install.ps1 $INSTALLERS_DIR/install.ps1
-      cp installers/legacy-install.ps1 $INSTALLERS_DIR/legacy-install.ps1
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
@@ -81,6 +67,18 @@ scripts:
       mkdir -p build/msi
       cp build/msi-language/en-us/Deploy.msi "build/msi/base.msi"
       rm -Rf build/msi-language
+  - name: ci-build-languages-msi
+    standalone: true
+    language: bash
+    value: |
+      echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+      export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+      export SHELL=bash
+      state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
+      state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
+      signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
+      state run build-base-language-msi
   - name: run-updlg
     description: Runs the update dialog in debug mode
     standalone: true

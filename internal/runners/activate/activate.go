@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,21 +18,19 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/promptable"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -42,10 +41,12 @@ type Activate struct {
 	auth             *authentication.Auth
 	out              output.Outputer
 	svcMgr           *svcmanager.Manager
+	svcModel         *model.SvcModel
 	config           *config.Instance
 	proj             *project.Project
 	subshell         subshell.SubShell
 	prompt           prompt.Prompter
+	analytics        analytics.Dispatcher
 }
 
 type ActivateParams struct {
@@ -65,19 +66,23 @@ type primeable interface {
 	primer.Prompter
 	primer.Configurer
 	primer.Svcer
+	primer.SvcModeler
+	primer.Analyticer
 }
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config(), prime),
+		NewNamespaceSelect(prime.Config()),
 		NewCheckout(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
 		prime.SvcManager(),
+		prime.SvcModel(),
 		prime.Config(),
 		prime.Project(),
 		prime.Subshell(),
 		prime.Prompt(),
+		prime.Analytics(),
 	}
 }
 
@@ -90,7 +95,7 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	checker.RunUpdateNotifier(r.svcMgr, r.config, r.out)
 
-	r.out.Notice(txtstyle.NewTitle(locale.T("info_activating_state")))
+	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -112,7 +117,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace.String(), params.PreferredPath)
+	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -158,7 +163,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	}
 
 	// Have to call this once the project has been set
-	analytics.Event(analytics.CatActivationFlow, "start")
+	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
 	// on --replace, replace namespace and commit id in as.yaml
 	if params.ReplaceWith.IsValid() {
@@ -172,22 +177,18 @@ func (r *Activate) run(params *ActivateParams) error {
 	activatedKey := fmt.Sprintf("activated_%s", proj.Namespace().String())
 	setDefault := params.Default
 	firstActivate := r.config.GetString(constants.GlobalDefaultPrefname) == "" && !r.config.GetBool(activatedKey)
-	isPromptable, promptableKey := promptable.IsPromptableOnce, promptable.DefaultProject
-	if !setDefault && firstActivate && isPromptable(r.prompt, r.config, promptableKey) {
-		var err error
-		setDefault, err = r.prompt.Confirm(
-			locale.Tl("activate_default_prompt_title", "Default Project"),
-			locale.Tr("activate_default_prompt", proj.Namespace().String()),
-			new(bool),
-		)
-		if err != nil {
-			return locale.WrapInputError(err, "err_activate_cancel", "Activation cancelled")
+	if firstActivate {
+		if setDefault {
+			r.out.Notice(locale.Tl(
+				"activate_default_explain_msg",
+				"This project will be set as the default, meaning you can use it from anywhere on your system without activating.",
+			))
+		} else {
+			r.out.Notice(locale.Tl(
+				"activate_default_optin_msg",
+				"To use this project without activating it in the future, make it your default by running your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
+			))
 		}
-
-		r.out.Notice(locale.Tl(
-			"global_default_modify_note",
-			"You can switch your default project at any time by passing the `[ACTIONABLE]--default[/RESET]` flag to `[ACTIONABLE]state activate[/RESET]`.",
-		))
 	}
 
 	if params.Command != "" {
@@ -200,12 +201,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(runtime.NewProjectTarget(proj, storage.CachePath(), nil))
+	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(r.out)
+		eh, err := runbits.ActivateRuntimeEventHandler(r.out)
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
@@ -238,17 +239,12 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
 
-		r.out.Notice(output.Heading(locale.Tl("global_default_heading", "Global Default")))
-		r.out.Notice(locale.Tl("global_default_set", "Successfully configured [NOTICE]{{.V0}}[/RESET] as the global default project.", proj.Namespace().String()))
-
 		warningForAdministrator(r.out)
 
 		if alreadyActivated {
 			return nil
 		}
 	}
-
-	updater.DefaultChecker.PrintUpdateMessage(proj.Source().Path(), r.out)
 
 	if proj.CommitID() == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
@@ -298,9 +294,9 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(namespace string, preferredPath string) (string, error) {
+func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
 	switch {
-	case namespace != "":
+	case namespace != nil && namespace.String() != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
 		return r.namespaceSelect.Run(namespace, preferredPath)
 	case preferredPath != "":
@@ -328,7 +324,7 @@ func warningForAdministrator(out output.Outputer) {
 		return
 	}
 
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if run as administrator.")
 	}

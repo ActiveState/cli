@@ -17,6 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
+var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+
 func (r *Prepare) prepareOS() {
 	err := setStateProtocol()
 	if err != nil {
@@ -24,20 +26,17 @@ func (r *Prepare) prepareOS() {
 	}
 
 	if err := r.prepareStartShortcut(); err != nil {
-		r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
+		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
-
-	return
 }
 
 func (r *Prepare) prepareStartShortcut() error {
-	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
-	if err := fileutils.MkdirUnlessExists(dir); err != nil {
-		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", dir)
+	if err := fileutils.MkdirUnlessExists(shortcutDir); err != nil {
+		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
 	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
@@ -59,7 +58,7 @@ const (
 type createKeyFunc = func(path string) (osutils.RegistryKey, bool, error)
 
 func setStateProtocol() error {
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Could not check for windows administrator privileges: %v", err)
 	}
@@ -114,12 +113,15 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 	trayInfo := appinfo.TrayApp()
 	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-	sc, err := autostart.New(name, exec, cfg).Path()
+	as, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
-		logging.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if sc != "" {
-		files = append(files, sc)
+		logging.Error("Failed to determine autostart path for removal: %v", err)
+	} else if as != "" {
+		files = append(files, as)
 	}
+	appInfo := appinfo.TrayApp()
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+	files = append(files, filepath.Dir(sc.Path()))
 
 	return files
 }

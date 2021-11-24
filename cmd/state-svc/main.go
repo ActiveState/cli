@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
+	"runtime/debug"
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,35 +20,29 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 )
 
-type command string
-
 const (
-	CmdStart      = "start"
-	CmdStop       = "stop"
-	CmdStatus     = "status"
-	CmdForeground = "foreground"
+	cmdStart      = "start"
+	cmdStop       = "stop"
+	cmdStatus     = "status"
+	cmdForeground = "foreground"
 )
-
-var commands = []command{
-	CmdStart,
-	CmdStop,
-	CmdStatus,
-	CmdForeground,
-}
 
 func main() {
 	var exitCode int
+
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -60,7 +57,7 @@ func main() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logger := logging.Error
+		logger := logging.Critical
 		if locale.IsInputError(err) {
 			logger = logging.Debug
 		}
@@ -72,10 +69,7 @@ func main() {
 }
 
 func run() (rerr error) {
-	var cmd command = ""
-	if len(os.Args) > 1 {
-		cmd = command(os.Args[1])
-	}
+	args := os.Args
 
 	cfg, err := config.New()
 	if err != nil {
@@ -83,34 +77,80 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
+	an := anaSvc.New(cfg, authentication.LegacyGet())
+	defer an.Wait()
 
-	switch cmd {
-	case CmdStart:
-		logging.Debug("Running CmdStart")
-		return runStart(cfg)
-	case CmdStop:
-		logging.Debug("Running CmdStop")
-		return runStop(cfg)
-	case CmdStatus:
-		logging.Debug("Running CmdStatus")
-		return runStatus(cfg)
-	case CmdForeground:
-		logging.Debug("Running CmdForeground")
-		return runForeground(cfg)
-	}
+	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
-	return errs.New("Expected one of following commands: %v", commands)
+	out, err := output.New("", &output.Config{
+		OutWriter: os.Stdout,
+		ErrWriter: os.Stderr,
+	})
+
+	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
+
+	cmd := captain.NewCommand(
+		path.Base(os.Args[0]), "", "", p, nil, nil,
+		func(ccmd *captain.Command, args []string) error {
+			fmt.Println("top level")
+			return nil
+		},
+	)
+
+	cmd.AddChildren(
+		captain.NewCommand(
+			cmdStart,
+			"Starting the ActiveState Service",
+			"Start the ActiveState Service (Background)",
+			p, nil, nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStart")
+				return runStart(cfg)
+			},
+		),
+		captain.NewCommand(
+			cmdStop,
+			"Stopping the ActiveState Service",
+			"Stop the ActiveState Service",
+			p, nil, nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStop")
+				return runStop(cfg)
+			},
+		),
+		captain.NewCommand(
+			cmdStatus,
+			"Starting the ActiveState Service",
+			"Display the Status of the ActiveState Service",
+			p, nil, nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdStatus")
+				return runStatus(cfg)
+			},
+		),
+		captain.NewCommand(
+			cmdForeground,
+			"Starting the ActiveState Service",
+			"Start the ActiveState Service (Foreground)",
+			p, nil, nil,
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdForeground")
+				return runForeground(cfg, an)
+			},
+		),
+	)
+
+	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
 	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, shutdown)
+	p := NewService(cfg, an, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
@@ -149,7 +189,7 @@ func runForeground(cfg *config.Instance) error {
 
 func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
-	if err := s.Start(os.Args[0], CmdForeground); err != nil {
+	if err := s.Start(os.Args[0], cmdForeground); err != nil {
 		if errors.Is(err, ErrSvcAlreadyRunning) {
 			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
 		}

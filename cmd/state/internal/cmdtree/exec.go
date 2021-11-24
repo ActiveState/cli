@@ -18,8 +18,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 		"exec",
 		"",
 		locale.T("exec_description"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "path",

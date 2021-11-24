@@ -496,7 +496,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 	defer rtutils.Closer(cfg.Close, &rerr)
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
+	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -701,7 +701,7 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -754,7 +754,7 @@ func (p *Project) SetBranch(branch string) error {
 
 	pf.SetBranch(branch)
 
-	if !condition.InTest() || p.path != "" {
+	if !condition.InUnitTest() || p.path != "" {
 		if err := pf.Save(p.path); err != nil {
 			return errs.Wrap(err, "Could not save activestate.yaml")
 		}
@@ -927,16 +927,16 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner           string
-	Project         string
-	CommitID        *strfmt.UUID
-	BranchName      string
-	Directory       string
-	Content         string
-	Language        string
-	Private         bool
-	path            string
-	ProjectURL      string
+	Owner      string
+	Project    string
+	CommitID   *strfmt.UUID
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -1019,10 +1019,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":         params.ProjectURL,
-		"CommitID":        commitID,
-		"Content":         content,
-		"Private":         params.Private,
+		"Project":  params.ProjectURL,
+		"CommitID": commitID,
+		"Content":  content,
+		"Private":  params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
@@ -1273,9 +1273,9 @@ func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
 	return paths
 }
 
-// storeProjectMapping associates the namespace with the project
+// StoreProjectMapping associates the namespace with the project
 // path in the config
-func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 	err := cfg.SetWithLock(
 		LocalProjectsConfigKey,
 		func(v interface{}) (interface{}, error) {
@@ -1284,7 +1284,29 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
 
-			projectPath = filepath.Clean(projectPath)
+			projectPath, err = fileutils.ResolveUniquePath(projectPath)
+			if err != nil {
+				logging.Errorf("Could not resolve uniqe project path, %v", err)
+				projectPath = filepath.Clean(projectPath)
+			}
+
+			for name, paths := range projects {
+				for i, path := range paths {
+					path, err = fileutils.ResolveUniquePath(path)
+					if err != nil {
+						logging.Errorf("Could not resolve unique path, :%v", err)
+						path = filepath.Clean(path)
+					}
+
+					if path == projectPath {
+						projects[name] = sliceutils.RemoveFromStrings(projects[name], i)
+					}
+
+					if len(projects[name]) == 0 {
+						delete(projects, name)
+					}
+				}
+			}
 
 			paths := projects[namespace]
 			if paths == nil {
@@ -1325,6 +1347,7 @@ func CleanProjectMapping(cfg ConfigGetter) {
 						removals = append(removals, i)
 					}
 				}
+
 				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
 				if _, ok := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
 					delete(projects, namespace)
@@ -1337,6 +1360,6 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		},
 	)
 	if err != nil {
-		logging.Debug("Could not set clean project mapping in config, error: %v", err)
+		logging.Debug("Could not clean project mapping in config, error: %v", err)
 	}
 }

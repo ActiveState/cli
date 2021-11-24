@@ -4,10 +4,11 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -23,11 +24,13 @@ import (
 )
 
 type Pull struct {
-	prompt  prompt.Prompter
-	project *project.Project
-	auth    *authentication.Auth
-	out     output.Outputer
-	cfg     *config.Instance
+	prompt    prompt.Prompter
+	project   *project.Project
+	auth      *authentication.Auth
+	out       output.Outputer
+	analytics analytics.Dispatcher
+	cfg       *config.Instance
+	svcModel  *model.SvcModel
 }
 
 type PullParams struct {
@@ -40,7 +43,9 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
+	primer.Analyticer
 	primer.Configurer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Pull {
@@ -49,7 +54,9 @@ func New(prime primeable) *Pull {
 		prime.Project(),
 		prime.Auth(),
 		prime.Output(),
+		prime.Analytics(),
 		prime.Config(),
+		prime.SvcModel(),
 	}
 }
 
@@ -155,7 +162,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.project, storage.CachePath(), *resultingCommit, true)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull, p.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}
@@ -170,7 +177,7 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))
 
 	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), p.project.CommitID())
-	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, machineid.UniqID(), strategies.OverwriteChanges)
+	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}

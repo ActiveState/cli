@@ -14,8 +14,7 @@ func newResetCommand(prime *primer.Values) *captain.Command {
 		"reset",
 		locale.Tl("reset_title", "Reset to Same Commit as Platform Project"),
 		locale.Tl("reset_description", "Reset local checkout to be equal to the project on the platform."),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

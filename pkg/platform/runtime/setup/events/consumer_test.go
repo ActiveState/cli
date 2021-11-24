@@ -3,6 +3,7 @@ package events
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,6 +73,16 @@ func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, 
 	return nil
 }
 func (mpo *mockProgressOutput) StillBuilding(numCompleted, numTotal int) error {
+	return nil
+}
+func (mpo *mockProgressOutput) SolverStart() error {
+	return nil
+}
+
+func (mpo *mockProgressOutput) SolverSuccess() error {
+	return nil
+}
+func (mpo *mockProgressOutput) SolverError(serr *model.SolverError) error {
 	return nil
 }
 func (mpo *mockProgressOutput) Close() error { return nil }

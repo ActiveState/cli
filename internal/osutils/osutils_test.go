@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -117,5 +118,12 @@ func TestEnvMapToSlice(t *testing.T) {
 				t.Errorf("EnvMapToSlice() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecutableName(t *testing.T) {
+	name := ExecutableName()
+	if fileutils.TargetExists(name) {
+		t.Fatalf("Executable name should return a filename, not a filepath. Returned: %s", name)
 	}
 }

@@ -3,10 +3,10 @@ package packages
 import (
 	"io/ioutil"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -55,8 +56,10 @@ type Import struct {
 	auth *authentication.Auth
 	out  output.Outputer
 	prompt.Prompter
-	proj *project.Project
-	cfg  configurable
+	proj      *project.Project
+	cfg       configurable
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
@@ -65,6 +68,8 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // NewImport prepares an importation execution context for use.
@@ -75,6 +80,8 @@ func NewImport(prime primeable) *Import {
 		prime.Prompt(),
 		prime.Project(),
 		prime.Config(),
+		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -121,7 +128,7 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.proj, storage.CachePath(), commitID, true)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {
@@ -158,7 +165,7 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
-	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, machineid.UniqID(), changeset)
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
 	if err != nil {
 		return "", locale.WrapError(err, "err_packages_removed")
 	}

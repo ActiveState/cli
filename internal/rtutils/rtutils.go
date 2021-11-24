@@ -3,6 +3,7 @@ package rtutils
 import (
 	"fmt"
 	"runtime"
+	"time"
 )
 
 // Returns path of currently running Go file
@@ -34,5 +35,20 @@ func Closer(closer func() error, rerr *error) {
 		} else {
 			*rerr = err
 		}
+	}
+}
+
+var ErrTimeout = fmt.Errorf("Timed out")
+
+func Timeout(cb func() error, t time.Duration) error {
+	err := make(chan error, 1)
+	go func() {
+		err <- cb()
+	}()
+	select {
+	case errv := <-err:
+		return errv
+	case <-time.After(t):
+		return ErrTimeout
 	}
 }

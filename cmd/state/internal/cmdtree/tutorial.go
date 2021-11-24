@@ -1,7 +1,7 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,8 +14,7 @@ func newTutorialCommand(prime *primer.Values) *captain.Command {
 		"tutorial",
 		locale.Tl("tutorial_title", "Running Tutorial"),
 		locale.Tl("tutorial_description", "Learn how to use the State Tool"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		nil,
 		nil,
 		func(ccmd *captain.Command, args []string) error {
@@ -37,8 +36,7 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 		"new-project",
 		locale.Tl("tutorial_new_project", `Running "New Project" Tutorial`),
 		locale.Tl("tutorial_description", "Learn how to create new projects. (ie. virtual environments)"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "skip-intro",
@@ -55,9 +53,9 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			err := runner.RunNewProject(params)
 			if err != nil {
-				analytics.EventWithLabel(analytics.CatTutorial, "error", errs.Join(err, " :: ").Error())
+				prime.Analytics().EventWithLabel(constants.CatTutorial, "error", errs.Join(err, " :: ").Error())
 			} else {
-				analytics.Event(analytics.CatTutorial, "completed")
+				prime.Analytics().Event(constants.CatTutorial, "completed")
 			}
 			return err
 		},

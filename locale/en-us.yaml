@@ -78,7 +78,7 @@ version_info:
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
     Branch [NOTICE]{{.Branch}}[/RESET]
-    Built [NOTICE]{{.Date}}[/RESET]
+    Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
 update_complete:
   other: Update completed successfully
 update_hash_mismatch:
@@ -104,7 +104,7 @@ err_artifact_no_parent:
 err_invalid_status_code:
   other: "Invalid status code: [NOTICE]{{.V0}}[/RESET]"
 info_activating_state:
-  other: "Activating Virtual Environment"
+  other: "Creating a Virtual Environment for your Project's Packages"
 info_state_active_repoexists:
   other: "Repo already exists: [NOTICE]{{.Path}}[/RESET]"
 panic_couldnt_detect_wd:
@@ -685,15 +685,7 @@ keypairs_err_override_with_delete:
 err_command_requires_auth:
   other: You need to be authenticated to run this command. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 warn_script_name_in_use:
-  other: |
-    The following scripts should be renamed:
-
-      [DISABLED]-[/RESET] {{.V0}}
-
-    These scripts were not aliased during activation but can still be run using [ACTIONABLE]`state run`[/RESET], eg. [ACTIONABLE]`state run {{.V1}}`[/RESET].
-
-    Note that you can also access scripts by prefixing their script with your project name, eg. [ACTIONABLE]`{{.V2}}`[/RESET]
-
+  other: "[ERROR]WARNING:[/RESET] The following scripts collide with existing commands and should be renamed: [NOTICE]{{.V0}}[/RESET]."
 warn_move_incompatible_modes:
   other: "Permissions of files [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET] differ. Using permissions of [NOTICE]{{.V0}}[/RESET]"
 warn_move_destination_overwritten:
@@ -723,10 +715,12 @@ forward_fail_info:
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
-  other: |
-    Your version: [NOTICE]{{.V0}}[/RESET]
-    Available Version: [NOTICE]{{.V1}}[/RESET]
-    You can update by running [ACTIONABLE]`state update`[/RESET]
+   other: |
+     Your version: [NOTICE]{{.V0}}[/RESET]
+     Available Version: [NOTICE]{{.V1}}[/RESET]
+     You can update by running [ACTIONABLE]`state update`[/RESET]
+update_none_found:
+  other: No new update available.
 runtime_update_notice_known_count:
   other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
@@ -790,6 +784,8 @@ build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
+build_status_in_progress_headless:
+  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress (you may have to first convert your runtime to a project)."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1629,8 +1625,6 @@ err_read_projectfile:
   other: The activestate.yaml at {{.V0}} could not be read.
 err_auth_fail_totp:
   other: A two-factor authentication code is required.
-ingredient_alternatives_more:
-  other: " - .. (to see more results run `state search {{.V0}}`)"
 err_lock_version_invalid:
   other: "The locked version '{{.V0}}' could not be verified, are you sure it's valid?"
 config_get_error:
@@ -1675,7 +1669,7 @@ err_revert_refresh:
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_no_packages:
-  other: No packages in our catalogue are an exact match for [NOTICE]"{{.V0}}"[/RESET].
+  other: No packages in our catalog are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
   other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
 package_info_request:
@@ -1697,7 +1691,99 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-    Run [ACTIONABLE]state history[/RESET] to review your local changes.
 err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
+solver_err:
+  other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
+transient_solver_tip:
+  other: You may want to retry this command if the failure was related to a resourcing or networking issue.
+warning_git_project_mismatch:
+  other: |
+    [ERROR]Warning:[/RESET] The activestate.yaml used on "[NOTICE]{{.V0}}[/RESET]" does not match your project; "[NOTICE]{{.V1}}[/RESET]".
+    We're updating it to match your current project. For more information check out {{.V2}}.
+auto_update_permission_err:
+  other: |
+    Could not update the state tool due to insufficient permissions.
+    To manually update, run 'state update' as a privileged user.
+    If your installation has become corrupted, please re-install using the instructions on {{.V0}}.
+    If you want the state tool to auto-update, please re-install it in a user-writable directory.
+    Error received: {{.V1}}
+update_permission_err:
+  other: |
+    Could not update the state tool due to insufficient permissions.
+    If your installation has become corrupted, please re-install using the instructions on {{.V0}}.
+    Error received: {{.V1}}
+err_update_in_progress:
+  other: |
+    A State Tool update appears to already be running.
+    If this issue persists please manually delete [ACTIONABLE]{{.V0}}[/RESET].
+auto_update_to_version:
+  other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
+auto_update_relaunch:
+  other: Update installed. Forwarding input to updated State Tool.
+lock_update_legacy_version:
+  other: See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.
+lock_version_mismatch:
+  other: This project is locked at State Tool version [NOTICE]{{.V0}}[/RESET]. Your current State Tool version is [NOTICE]{{.V1}}@{{.V2}}[/RESET].
+lock_update_lock:
+  other: You can lock the project to the running State Tool version with `[ACTIONABLE]state update lock[/RESET]`.
+err_ping_version_mismatch:
+  other: |
+    The installed version of the State Tool Service does not match that of the client.
+    Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
+    If this issue persists please reinstall the State Tool.
+err_learn_open:
+  other: "Could not open cheat sheet in browser"
+err_get_wd:
+  other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
+err_directory_in_use:
+  other: | 
+    Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
+    To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
+err_jwt_not_authenticated:
+  other: |
+    You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
+err_recursion_limit:
+  other: |
+    Recursion detected in command:
+
+    {{.V0}}
+
+    To increase the recursion limit set the [ACTIONABLE]{{.V1}}[/RESET] environment variable.
+err_exec_recursion:
+  other: |
+    Recursion detected. Your feedback could help us fix this. Please consider reporting your issue on our forums: {{.V0}}.
+
+    To allow recursion, set [ACTIONABLE]{{.V1}}=true[/RESET]
+package_ingredient_alternatives:
+  other: |
+    No results found for search term "[NOTICE]{{.V0}}[/RESET]", did you mean:
+
+    {{.V1}}
+
+    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to see more suggestions.
+package_ingredient_alternatives_nosuggest:
+  other: |
+    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
+
+    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
+package_ingredient_alternatives_nolang:
+  other: |
+    No results found for search term "[NOTICE]{{.V0}}[/RESET]".
+
+    This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
+progress_project:
+  other: " • Initializing Project"
+progress_search:
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+progress_success:
+  other: " [SUCCESS]✔ Done[/RESET]"
+progress_found:
+  other: " [SUCCESS]✔ Found[/RESET]"
+progress_fail:
+  other: " [ERROR]x Failed[/RESET]"
+progress_commit:
+  other: " • Creating commit"
+progress_pkg_nolang:
+  other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"

@@ -1,6 +1,7 @@
 package primer
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
@@ -8,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -22,9 +24,15 @@ type Values struct {
 	conditional *constraints.Conditional
 	config      *config.Instance
 	svcMgr      *svcmanager.Manager
+	svcModel    *model.SvcModel
+	analytics   analytics.Dispatcher
 }
 
-func New(project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance, svcMgr *svcmanager.Manager) *Values {
+func New(
+	project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter,
+	subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance,
+	svcMgr *svcmanager.Manager, svcModel *model.SvcModel, an analytics.Dispatcher) *Values {
+
 	v := &Values{
 		output:      output,
 		auth:        auth,
@@ -33,6 +41,8 @@ func New(project *project.Project, output output.Outputer, auth *authentication.
 		conditional: conditional,
 		config:      config,
 		svcMgr:      svcMgr,
+		svcModel:    svcModel,
+		analytics:   an,
 	}
 	if project != nil {
 		v.project = project
@@ -67,6 +77,14 @@ type Configurer interface {
 
 type Svcer interface {
 	SvcManager() *svcmanager.Manager
+}
+
+type SvcModeler interface {
+	SvcModel() *model.SvcModel
+}
+
+type Analyticer interface {
+	Analytics() analytics.Dispatcher
 }
 
 type Subsheller interface {
@@ -105,10 +123,18 @@ func (v *Values) SvcManager() *svcmanager.Manager {
 	return v.svcMgr
 }
 
+func (v *Values) SvcModel() *model.SvcModel {
+	return v.svcModel
+}
+
 func (v *Values) Conditional() *constraints.Conditional {
 	return v.conditional
 }
 
 func (v *Values) Config() *config.Instance {
 	return v.config
+}
+
+func (v *Values) Analytics() analytics.Dispatcher {
+	return v.analytics
 }

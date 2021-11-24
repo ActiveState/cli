@@ -3,10 +3,15 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -20,6 +25,28 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
+
+type SolverError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *SolverError) Error() string {
+	return "solver_error"
+}
+
+func (e *SolverError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *SolverError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *SolverError) IsTransient() bool {
+	return e.isTransient
+}
 
 // HostPlatform stores a reference to current platform
 var HostPlatform string
@@ -37,6 +64,9 @@ type OrderAnnotations struct {
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
+	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
+		HostPlatform = osName
+	}
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
@@ -177,16 +207,24 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
-		return locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", *serr.Payload.Message)
+		return &SolverError{
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
+			isTransient: p.PBool(serr.GetPayload().IsTransient),
+		}
 	case *iop.ResolveRecipesBadRequest:
-		err = locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", *serr.Payload.SolverError.Message)
+		var validationErrors []string
 		for _, verr := range serr.Payload.ValidationErrors {
 			if verr.Error == nil {
 				continue
 			}
-			err = locale.WrapError(err, "", *verr.Error)
+			lines := strings.Split(*verr.Error, "\n")
+			validationErrors = append(validationErrors, lines...)
 		}
-		return err
+		return &SolverError{
+			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
+			validationErrors: validationErrors,
+			isTransient:      p.PBool(serr.GetPayload().IsTransient),
+		}
 	default:
 		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")
 	}
@@ -293,4 +331,14 @@ func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UU
 	}
 
 	return deps
+}
+
+// IsPlatformError returns true if the error is a solver error due to a missing build image for the requested platform
+func IsPlatformError(err error) bool {
+	// todo: replace with error codes once we have a solution -- https://www.pivotaltracker.com/story/show/178865201
+	serr := &SolverError{}
+	if !errors.As(err, &serr) {
+		return false
+	}
+	return strings.Contains(strings.Join(serr.ValidationErrors(), ""), "build image for platform")
 }

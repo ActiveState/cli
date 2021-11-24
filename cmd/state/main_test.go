@@ -5,16 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constants/version"
-	depMock "github.com/ActiveState/cli/internal/deprecation/mock"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,44 +23,6 @@ func (suite *MainTestSuite) cleanDeprecationFile() {
 	err = os.Remove(filepath.Join(cfg.ConfigPath(), "deprecation.json"))
 	if err != nil && !os.IsNotExist(err) {
 		suite.T().Logf("Could not remove deprecation file")
-	}
-}
-
-func (suite *MainTestSuite) TestDeprecated() {
-	suite.cleanDeprecationFile()
-	mock := depMock.Init()
-	defer mock.Close()
-	mock.MockDeprecated()
-
-	catcher := outputhelper.NewCatcher()
-	err := run([]string{""}, true, catcher.Outputer)
-	exitCode := errs.UnwrapExitCode(err)
-	suite.Require().NoError(err)
-	suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
-
-	if version.NumberIsProduction(constants.VersionNumber) {
-		suite.Require().Contains(catcher.CombinedOutput(), colorize.StripColorCodes(locale.Tr("warn_deprecation", "")[0:50]))
-	}
-}
-
-func (suite *MainTestSuite) TestExpired() {
-	suite.cleanDeprecationFile()
-
-	mock := depMock.Init()
-	defer mock.Close()
-	mock.MockExpired()
-
-	catcher := outputhelper.NewCatcher()
-	err := run([]string{""}, true, catcher.Outputer)
-	exitCode := errs.UnwrapExitCode(err)
-
-	if version.NumberIsProduction(constants.VersionNumber) {
-		suite.Require().Error(err)
-		suite.Require().Equal(1, exitCode, "Should exit with code 1, output: %s", catcher.CombinedOutput())
-		suite.Require().Contains(err.Error(), locale.Tr("err_deprecation", "")[0:50])
-	} else {
-		suite.Require().NoError(err)
-		suite.Require().Equal(0, exitCode, "Should exit with code 0, output: %s", catcher.CombinedOutput())
 	}
 }
 

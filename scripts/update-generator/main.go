@@ -15,8 +15,10 @@ import (
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -30,7 +32,7 @@ func printUsage() {
 }
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		err := run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.Join(err, ":"))
@@ -92,7 +94,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
-	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath))
+	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath), "")
 	b, err := json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
@@ -113,9 +115,32 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	return nil
 }
 
+func createInstaller(outputPath, channel, platform string) error {
+	root := environment.GetRootPathUnsafe()
+	installer := filepath.Join(root, "build", "state-installer"+osutils.ExeExt)
+	if !fileutils.FileExists(installer) {
+		return errs.New("state-installer does not exist in build dir")
+	}
+
+	archive, archiveExt := archiveMeta()
+	relArchivePath := filepath.Join(channel, platform, "state-installer"+archiveExt)
+	archivePath := filepath.Join(outputPath, relArchivePath)
+
+	// Remove archive path if it already exists
+	_ = os.Remove(archivePath)
+	// Create main archive
+	fmt.Printf("Creating %s\n", archivePath)
+	err := archive.Archive([]string{installer}, archivePath)
+	if err != nil {
+		return errs.Wrap(err, "Archiving failed")
+	}
+
+	return nil
+}
+
 func run() error {
 	flag.Parse()
-	if flag.NArg() < 1 && !condition.InTest() {
+	if flag.NArg() < 1 && !condition.InUnitTest() {
 		flag.Usage()
 		printUsage()
 		exit(0)
@@ -135,5 +160,13 @@ func run() error {
 	outputDir := *outputDirFlag
 	os.MkdirAll(outputDir, 0755)
 
-	return createUpdate(outputDir, branch, version, platform, target)
+	if err := createUpdate(outputDir, branch, version, platform, target); err != nil {
+		return err
+	}
+
+	if err := createInstaller(outputDir, branch, platform); err != nil {
+		return err
+	}
+
+	return nil
 }

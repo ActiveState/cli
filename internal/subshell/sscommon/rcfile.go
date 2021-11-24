@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -47,6 +47,7 @@ var (
 type Configurable interface {
 	Set(string, interface{}) error
 	GetBool(string) bool
+	GetString(string) string
 	GetStringMap(string) map[string]interface{}
 }
 
@@ -106,6 +107,9 @@ func WriteRcData(data string, path string, identification RcIdentification) erro
 
 // RemoveLegacyInstallPath removes the PATH modification statement added to the shell-rc file by the legacy install script
 func RemoveLegacyInstallPath(path string) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
 	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
@@ -134,6 +138,9 @@ func RemoveLegacyInstallPath(path string) error {
 }
 
 func CleanRcFile(path string, data RcIdentification) error {
+	if err := fileutils.Touch(path); err != nil {
+		return err
+	}
 	readFile, err := os.Open(path)
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
@@ -217,16 +224,22 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
-	for _, event := range prj.Events() {
-		v, err := event.Value()
-		if err != nil {
-			return nil, errs.Wrap(err, "Misc failure")
+	for _, eventType := range project.ActivateEvents() {
+		event := prj.EventByName(eventType.String())
+		if event == nil {
+			continue
 		}
 
-		if strings.ToLower(event.Name()) == "first-activate" && !cfg.GetBool(activatedKey) {
+		v, err := event.Value()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get event value")
+		}
+
+		if strings.ToLower(event.Name()) == project.FirstActivate.String() && !cfg.GetBool(activatedKey) {
 			userScripts = v + "\n" + userScripts
 		}
-		if strings.ToLower(event.Name()) == "activate" {
+
+		if strings.ToLower(event.Name()) == project.Activate.String() {
 			userScripts = userScripts + "\n" + v
 		}
 	}
@@ -238,12 +251,17 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	inuse := []string{}
 	scripts := map[string]string{}
 	var explicitName string
+	globalBinDir := filepath.Clean(storage.GlobalBinDir())
 
 	// Prepare script map to be parsed by template
 	for _, cmd := range prj.Scripts() {
 		explicitName = fmt.Sprintf("%s_%s", prj.NormalizedName(), cmd.Name())
 
-		_, err := exec.LookPath(cmd.Name())
+		path, err := exec.LookPath(cmd.Name())
+		dir := filepath.Clean(filepath.Dir(path))
+		if dir == globalBinDir {
+			continue
+		}
 		if err == nil {
 			// Do not overwrite commands that are already in use and
 			// keep track of those commands to warn to the user
@@ -256,8 +274,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 
 	if len(inuse) > 0 {
-		out.Notice(output.Heading(locale.Tl("warn_scriptinuse_title", "Warning: Script Names Already In Use")))
-		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "\n  [DISABLED]-[/RESET] "), inuse[0], explicitName))
+		out.Notice(locale.Tr("warn_script_name_in_use", strings.Join(inuse, "[/RESET],[NOTICE] "), inuse[0], explicitName))
 	}
 
 	wd, err := osutils.Getwd()
@@ -267,37 +284,43 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	activatedMessage := txtstyle.NewTitle(locale.Tl("youre_activated", "You're Activated!"))
-	activatedMessage.ColorCode = "SUCCESS"
+	var activatedMessage string
+	if !prj.IsHeadless() {
+		activatedMessage = locale.Tl("project_activated",
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
+	} else {
+		activatedMessage = locale.Tl("headless_project_activated",
+			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
+	}
 
-	var activateEvtMessage string
-	if userScripts != "" {
-		activateEvtMessage = output.Heading(locale.Tl("activate_event_message", "Running Activation Events")).String()
+	actualEnv := map[string]string{}
+	for k, v := range env {
+		if strings.Contains(v, "\n") {
+			logging.Warning("Env key %s has a multi-line value, which is not supported", k)
+			continue
+		}
+		actualEnv[k] = v
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":                prj.Owner(),
-		"Name":                 prj.Name(),
-		"Env":                  env,
-		"WD":                   wd,
-		"UserScripts":          userScripts,
-		"Scripts":              scripts,
-		"ExecName":             constants.CommandName,
-		"ActivatedMessage":     "\n" + colorize.ColorizedOrStrip(activatedMessage.String(), isConsole),
-		"ActivateEventMessage": colorize.ColorizedOrStrip(activateEvtMessage, isConsole),
+		"Owner":            prj.Owner(),
+		"Name":             prj.Name(),
+		"Env":              actualEnv,
+		"WD":               wd,
+		"UserScripts":      userScripts,
+		"Scripts":          scripts,
+		"ExecName":         constants.CommandName,
+		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
 	}
 
-	currExecAbsPath, err := osutils.Executable()
-	if err != nil {
-		return nil, errs.Wrap(err, "OS failure")
-	}
-	currExecAbsDir := filepath.Dir(currExecAbsPath)
+	currExec := osutils.Executable()
+	currExecAbsDir := filepath.Dir(currExec)
 
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]
 	inPathList, err := fileutils.PathInList(listSep, pathList, currExecAbsDir)
 	if !ok || !inPathList {
-		rcData["ExecAlias"] = currExecAbsPath // alias {ExecName}={ExecAlias}
+		rcData["ExecAlias"] = currExec // alias {ExecName}={ExecAlias}
 	}
 
 	t := template.New("rcfile")

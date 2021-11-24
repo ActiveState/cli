@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 type ErrorTips interface {
@@ -28,9 +28,12 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	}
 
 	var outLines []string
+	isInputError := locale.IsInputError(o.error)
 
 	// Print what happened
-	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+	if !isInputError {
+		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+	}
 
 	errs := locale.UnwrapError(o.error)
 	if len(errs) == 0 {
@@ -38,6 +41,14 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		errs = []error{o.error}
 	}
 	for _, errv := range errs {
+		if isInputError && locale.IsInputErrorNonRecursive(errv) {
+			outLines = []string{
+				"[/RESET]", // This achieves two goals: Adding an empty line and not printing the input error in red
+				locale.ErrorMessage(errv),
+			}
+			break // We only want the actual input error in this case
+		}
+		// If this is an input error then we just want to show the error itself without alarming the user too much
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
 
@@ -50,7 +61,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		}
 		err = errors.Unwrap(err)
 	}
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "Visit the Forum → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
 	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
@@ -91,7 +102,7 @@ func unwrapError(err error) (int, error) {
 
 	// Log error if this isn't a user input error
 	if !locale.IsInputError(err) {
-		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
@@ -112,7 +123,7 @@ func unwrapError(err error) (int, error) {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if !rtutils.BuiltViaCI {
+		if ! condition.BuiltViaCI() {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}

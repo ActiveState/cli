@@ -7,6 +7,8 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 	"github.com/gobuffalo/packr"
 
@@ -45,11 +47,13 @@ func RequiresAdministratorRights(step Step, userScope bool) bool {
 }
 
 type Deploy struct {
-	auth     *authentication.Auth
-	output   output.Outputer
-	subshell subshell.SubShell
-	step     Step
-	cfg      *config.Instance
+	auth      *authentication.Auth
+	output    output.Outputer
+	subshell  subshell.SubShell
+	step      Step
+	cfg       *config.Instance
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
@@ -57,6 +61,8 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewDeploy(step Step, prime primeable) *Deploy {
@@ -66,12 +72,14 @@ func NewDeploy(step Step, prime primeable) *Deploy {
 		prime.Subshell(),
 		step,
 		prime.Config(),
+		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
 func (d *Deploy) Run(params *Params) error {
 	if RequiresAdministratorRights(d.step, params.UserScope) {
-		isAdmin, err := osutils.IsWindowsAdmin()
+		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
 		}
@@ -85,7 +93,8 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	rtTarget := runtime.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path) /* TODO: handle empty path */
+	// Headless argument is simply false here as you cannot deploy a headless project
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 
@@ -144,7 +153,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) error {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err == nil {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
@@ -179,7 +188,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -215,7 +224,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -331,7 +340,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")

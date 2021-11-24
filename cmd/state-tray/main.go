@@ -5,11 +5,11 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -51,7 +51,7 @@ func main() {
 func onReady() {
 	var exitCode int
 	defer func() {
-		if panics.HandlePanics(recover()) {
+		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
@@ -64,7 +64,7 @@ func onReady() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logging.Error("Systray encountered an error: %v", errMsg)
+		logging.Critical("Systray encountered an error: %v", errMsg)
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
@@ -77,7 +77,6 @@ func run() (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	analytics.Configure(cfg)
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
@@ -100,10 +99,7 @@ func run() (rerr error) {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
-	if err != nil {
-		return errs.Wrap(err, "Could not create new service model")
-	}
+	model := model.NewSvcModel(cfg, svcm)
 
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 
@@ -114,12 +110,12 @@ func run() (rerr error) {
 	logging.Debug("hiding systray menu")
 	mUpdate.Hide()
 
-	updNotice := updateNotice{
-		item: mUpdate,
-	}
+	// updNotice := updateNotice{
+	//	item: mUpdate,
+	// }
 
-	closeUpdateSupervision := superviseUpdate(model, &updNotice)
-	defer closeUpdateSupervision()
+	// closeUpdateSupervision := superviseUpdate(model, &updNotice)
+	// defer closeUpdateSupervision()
 
 	mAbout := systray.AddMenuItem(
 		locale.Tl("tray_about_title", "About State Tool"),

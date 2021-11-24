@@ -2,6 +2,7 @@ package events
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -151,6 +152,39 @@ func (mp *MultiPlexedProgress) ArtifactStepFailure(artifactID artifact.ArtifactI
 	var aggErr error
 	for _, d := range mp.digesters {
 		err := d.ArtifactStepFailure(artifactID, artifactName, step, errorMessage)
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "ArtifactStepFailure event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
+func (mp *MultiPlexedProgress) SolverStart() error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.SolverStart()
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "SolverStart event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
+func (mp *MultiPlexedProgress) SolverSuccess() error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.SolverSuccess()
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "SolverStart event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
+func (mp *MultiPlexedProgress) SolverError(serr *model.SolverError) error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.SolverError(serr)
 		if err != nil {
 			aggErr = errs.Wrap(aggErr, "ArtifactStepFailure event error: %v", err)
 		}

@@ -9,12 +9,13 @@ import (
 
 	"github.com/dave/jennifer/jen"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants/preprocess"
 )
 
+var inTest = false
+
 func main() {
-	if !condition.InTest() {
+	if ! inTest {
 		run(os.Args)
 	}
 }

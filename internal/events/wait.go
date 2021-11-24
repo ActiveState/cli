@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ActiveState/cli/internal/profile"
@@ -21,8 +22,11 @@ func WaitForEvents(t time.Duration, events ...func()) error {
 	defer profile.Measure("event:WaitForEvents", time.Now())
 	wg := make(chan struct{})
 	go func() {
-		for _, event := range events {
-			event()
+		for n, event := range events {
+			func() {
+				defer profile.Measure(fmt.Sprintf("event:WaitForEvents:%d", n), time.Now())
+				event()
+			}()
 		}
 		close(wg)
 	}()
@@ -34,3 +38,4 @@ func WaitForEvents(t time.Duration, events ...func()) error {
 		return nil
 	}
 }
+

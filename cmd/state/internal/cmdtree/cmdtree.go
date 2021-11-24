@@ -3,6 +3,7 @@ package cmdtree
 import (
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -170,6 +171,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newResetCommand(prime),
 		secretsCmd,
 		branchCmd,
+		newLearnCommand(prime),
 	)
 
 	return &CmdTree{
@@ -206,8 +208,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"state",
 		"",
 		locale.T("state_description"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -222,7 +223,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Description: locale.T("flag_state_verbose_description"),
 				Persist:     true,
 				OnUse: func() {
-					if !condition.InTest() {
+					if !condition.InUnitTest() {
 						logging.CurrentHandler().SetVerbose(true)
 					}
 				},
@@ -271,6 +272,10 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
+	cmdCall := cmdcall.New(prime)
+
+	cmd.SetInterceptChain(cmdCall.InterceptExec)
+
 	return cmd
 }
 
@@ -295,8 +300,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		name,
 		aliased.Title(),
 		aliased.Description(),
-		a.prime.Output(),
-		a.prime.Config(),
+		a.prime,
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {
@@ -316,4 +320,3 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 
 	a.parent.AddChildren(cmd)
 }
-

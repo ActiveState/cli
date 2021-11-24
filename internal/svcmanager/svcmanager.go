@@ -2,6 +2,7 @@ package svcmanager
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -19,6 +20,8 @@ import (
 
 // MinimalTimeout is the minimum timeout required for requests that are meant to be near-instant
 const MinimalTimeout = 500 * time.Millisecond
+
+var errVersionMismatch = locale.NewError("err_ping_version_mismatch")
 
 type Manager struct {
 	ready bool
@@ -49,54 +52,53 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) WaitWithContext(ctx context.Context) error {
-	waitDone := make(chan struct{})
-	var err error
-	go func() {
-		err = m.Wait()
-		waitDone <- struct{}{}
-	}()
-	select {
-	case <-waitDone:
-	case <-ctx.Done():
-		break
+	defer profile.Measure("svcmanager:WaitWithContext", time.Now())
+
+	logging.Debug("Waiting for state-svc")
+	for try := 1; try <= 10; try++ {
+		logging.Debug("Attempt %d", try)
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			ready, err := m.Ready()
+			if err != nil {
+				return errs.Wrap(err, "Ready check failed")
+			}
+			if ready {
+				return nil
+			}
+		}
+		time.Sleep(250 * time.Millisecond)
 	}
-	return err
+
+	return locale.NewError("err_svcmanager_wait")
 }
 
 func (m *Manager) Wait() error {
-	defer profile.Measure("svcmanager:Wait", time.Now())
-	logging.Debug("Waiting for state-svc")
-	try := 1
-	for {
-		logging.Debug("Attempt %d", try)
-		if m.Ready() {
-			return nil
-		}
-		if try == 10 {
-			return locale.NewError("err_svcmanager_wait")
-		}
-		time.Sleep(time.Duration(try*100) * time.Millisecond)
-		try = try + 1
-	}
+	return m.WaitWithContext(context.Background())
 }
 
-func (m *Manager) Ready() bool {
+func (m *Manager) Ready() (bool, error) {
 	if m.ready {
-		return true
+		return false, nil
 	}
 
 	if m.cfg.GetInt(constants.SvcConfigPort) == 0 {
-		return false
+		return false, nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), MinimalTimeout)
 	defer cancel()
 	if err := m.ping(ctx); err != nil {
+		if errors.Is(err, errVersionMismatch) {
+			return false, errs.Wrap(err, "Incorrect State Service version")
+		}
 		logging.Debug("Ping failed, assuming we're not ready: %v", errs.JoinMessage(err))
-		return false
+		return false, nil
 	}
 
-	return true
+	return true, nil
 }
 
 func (m *Manager) ping(ctx context.Context) error {
@@ -109,5 +111,10 @@ func (m *Manager) ping(ctx context.Context) error {
 	if err := client.RunWithContext(ctx, r, &resp); err != nil {
 		return err
 	}
+
+	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
+		return errVersionMismatch
+	}
+
 	return nil
 }
