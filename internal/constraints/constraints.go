@@ -11,6 +11,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/sysinfo"
 	"github.com/thoas/go-funk"
 
@@ -94,7 +95,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjBranch    string
 		pjPath      string
 	)
-	if pj != nil {
+	if !p.IsNil(pj) {
 		pjOwner = pj.Owner()
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()

@@ -1,5 +1,7 @@
 package p
 
+import "reflect"
+
 func StrP(v string) *string {
 	return &v
 }
@@ -20,4 +22,9 @@ func PBool(v *bool) bool {
 		return false
 	}
 	return *v
+}
+
+// IsNil asserts whether the underlying type is nil, which `interface{} == nil` does not
+func IsNil(i interface{}) bool {
+	return i == nil || reflect.ValueOf(i).IsNil()
 }
