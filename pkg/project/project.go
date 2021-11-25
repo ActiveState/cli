@@ -234,6 +234,11 @@ func (p *Project) BranchName() string {
 	return p.projectfile.BranchName()
 }
 
+// Path returns the project path
+func (p *Project) Path() string {
+	return p.projectfile.Path()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -260,6 +265,11 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+}
+
+// NamespaceString is a convenience function to make interfaces simpler
+func (p *Project) NamespaceString() string {
+	return p.Namespace().String()
 }
 
 // Environments returns project environment

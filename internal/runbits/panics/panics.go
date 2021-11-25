@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 )
 
@@ -15,8 +16,9 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Error: %v
-Check the error log for more information.
-Your error log is located at: %s`, recovered, logging.FilePath()))
+Stack trace: %s
+Check the error log for more information: %s
+Please consider reportins your issue on the forums: %s`, recovered, string(stack), logging.FilePath(), constants.ForumsURL))
 		return true
 	}
 	return false

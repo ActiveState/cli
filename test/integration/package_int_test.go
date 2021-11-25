@@ -182,7 +182,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -225,7 +225,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "numpy", "--language=perl")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
