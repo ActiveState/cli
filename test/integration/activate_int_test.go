@@ -149,6 +149,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", namespace),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv("VERBOSE=true"),
 		e2e.AppendEnv(extraEnv...),
 	)
 
