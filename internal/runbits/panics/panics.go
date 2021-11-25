@@ -15,8 +15,8 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 
 		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Error: %v
-Check the error log for more information.
-Your error log is located at: %s`, recovered, logging.FilePath()))
+Stack trace: %s
+Check the error log for more information: %s`, recovered, string(stack), logging.FilePath()))
 		return true
 	}
 	return false
