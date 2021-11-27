@@ -12,13 +12,9 @@ import (
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/github"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/ingredients"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/invoices"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/languages"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/licenses"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/limits"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/platforms"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/status"
@@ -71,13 +67,9 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli.Transport = transport
 	cli.Authentication = authentication.New(transport, formats)
 	cli.Github = github.New(transport, formats)
-	cli.Ingredients = ingredients.New(transport, formats)
 	cli.Invoices = invoices.New(transport, formats)
-	cli.Languages = languages.New(transport, formats)
-	cli.Licenses = licenses.New(transport, formats)
 	cli.Limits = limits.New(transport, formats)
 	cli.Organizations = organizations.New(transport, formats)
-	cli.Platforms = platforms.New(transport, formats)
 	cli.Projects = projects.New(transport, formats)
 	cli.S3 = s3.New(transport, formats)
 	cli.Status = status.New(transport, formats)
@@ -132,19 +124,11 @@ type Mono struct {
 
 	Github github.ClientService
 
-	Ingredients ingredients.ClientService
-
 	Invoices invoices.ClientService
-
-	Languages languages.ClientService
-
-	Licenses licenses.ClientService
 
 	Limits limits.ClientService
 
 	Organizations organizations.ClientService
-
-	Platforms platforms.ClientService
 
 	Projects projects.ClientService
 
@@ -166,13 +150,9 @@ func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Authentication.SetTransport(transport)
 	c.Github.SetTransport(transport)
-	c.Ingredients.SetTransport(transport)
 	c.Invoices.SetTransport(transport)
-	c.Languages.SetTransport(transport)
-	c.Licenses.SetTransport(transport)
 	c.Limits.SetTransport(transport)
 	c.Organizations.SetTransport(transport)
-	c.Platforms.SetTransport(transport)
 	c.Projects.SetTransport(transport)
 	c.S3.SetTransport(transport)
 	c.Status.SetTransport(transport)
