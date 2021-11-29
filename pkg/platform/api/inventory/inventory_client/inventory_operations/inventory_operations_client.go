@@ -56,6 +56,8 @@ type ClientService interface {
 
 	AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientCreated, error)
 
+	AddIngredientAndVersions(params *AddIngredientAndVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientAndVersionsCreated, error)
+
 	AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetCreated, error)
 
 	AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetRevisionOK, error)
@@ -768,6 +770,44 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*AddIngredientDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  AddIngredientAndVersions Add multiple new versions, and add the ingredient if it doesn't exist
+*/
+func (a *Client) AddIngredientAndVersions(params *AddIngredientAndVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientAndVersionsCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAddIngredientAndVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "addIngredientAndVersions",
+		Method:             "POST",
+		PathPattern:        "/v1/ingredients/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &AddIngredientAndVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AddIngredientAndVersionsCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AddIngredientAndVersionsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

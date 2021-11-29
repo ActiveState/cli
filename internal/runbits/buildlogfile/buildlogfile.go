@@ -17,6 +17,7 @@ type BuildLogFile struct {
 	logFile *os.File
 }
 
+
 // verboseLogging is true if the user provided an environment variable for it
 var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
 
@@ -130,6 +131,14 @@ func (bl *BuildLogFile) ArtifactStepFailure(artifactID artifact.ArtifactID, arti
 
 func (bl *BuildLogFile) Close() error {
 	return nil
+}
+
+func (bl *BuildLogFile) SolverStart() error {
+	return bl.writeMessage("Solving recipe")
+}
+
+func (bl *BuildLogFile) SolverSuccess() error {
+	return bl.writeMessage("Recipe solved")
 }
 
 func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {

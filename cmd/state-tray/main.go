@@ -99,10 +99,7 @@ func run() (rerr error) {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model, err := model.NewSvcModel(context.Background(), cfg, svcm)
-	if err != nil {
-		return errs.Wrap(err, "Could not create new service model")
-	}
+	model := model.NewSvcModel(cfg, svcm)
 
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path"
@@ -13,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -39,13 +37,12 @@ const (
 
 func main() {
 	var exitCode int
-	an := anaSvc.NewAnalytics()
 
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, an.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -57,13 +54,7 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	// Temporary hack to facilitate non-blocking events from the client
-	if len(os.Args) == 3 && os.Args[1] == "_event" {
-		fireEvent(os.Args[2])
-		return
-	}
-
-	err := run(an)
+	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logger := logging.Critical
@@ -77,7 +68,7 @@ func main() {
 	}
 }
 
-func run(an *anaSvc.Analytics) (rerr error) {
+func run() (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -88,7 +79,8 @@ func run(an *anaSvc.Analytics) (rerr error) {
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	an.Configure(cfg, authentication.LegacyGet())
+	an := anaSvc.New(cfg, authentication.LegacyGet())
+	defer an.Wait()
 
 	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
@@ -97,7 +89,7 @@ func run(an *anaSvc.Analytics) (rerr error) {
 		ErrWriter: os.Stderr,
 	})
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, an)
+	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]), "", "", p, nil, nil,
@@ -153,7 +145,7 @@ func run(an *anaSvc.Analytics) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSvc.Analytics) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
@@ -236,19 +228,4 @@ func runStatus(cfg *config.Instance) error {
 	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
-}
-
-func fireEvent(query string) {
-	pixelURL, err := url.Parse("https://state-tool.s3.amazonaws.com/pixel")
-	if err != nil {
-		logging.Error("Invalid URL for analytics S3 pixel")
-		return
-	}
-	pixelURL.RawQuery = query
-
-	//logging.Debug("Using S3 pixel URL: %v", pixelURL.String())
-	_, err = http.Head(pixelURL.String())
-	if err != nil {
-		logging.Error("Could not download S3 pixel: %v", err)
-	}
 }

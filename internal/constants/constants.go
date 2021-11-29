@@ -93,6 +93,12 @@ const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 // NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
 const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
 
+// E2ETestEnvVarName is the name of the environment variable that specifies that we are running under E2E tests
+const E2ETestEnvVarName = "ACTIVESTATE_E2E_TEST"
+
+// HeartbeatIntervalEnvVarName is the name of the environment variable used to override the heartbeat interval
+const HeartbeatIntervalEnvVarName = "ACTIVESTATE_HEARTBEAT_INTERVAL"
+
 // OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
 const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
 

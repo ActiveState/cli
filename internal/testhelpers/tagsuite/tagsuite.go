@@ -11,6 +11,7 @@ import (
 
 const (
 	Activate       = "activate"
+	Analytics      = "analytics"
 	Alternative    = "alternative"
 	Auth           = "auth"
 	Branches       = "branches"
@@ -70,11 +71,11 @@ type Suite struct {
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
+	setTags := strings.Split(setTagsString, ":")
 	// if no tags are defined and we're not on CI; run the test
-	if setTagsString == "" && !condition.OnCI() {
+	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
 		return
 	}
-	setTags := strings.Split(setTagsString, ":")
 
 	for _, tag := range tags {
 		if funk.Contains(setTags, tag) {

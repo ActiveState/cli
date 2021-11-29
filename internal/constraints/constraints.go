@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/sysinfo"
 	"github.com/thoas/go-funk"
 
@@ -19,6 +21,20 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
+
+var cache = make(map[string]interface{})
+
+func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
+	if v, ok := cache[key]; ok {
+		return v, nil
+	}
+	v, err := getter()
+	if err != nil {
+		return nil, err
+	}
+	cache[key] = v
+	return v, err
+}
 
 // For testing.
 var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
@@ -59,12 +75,51 @@ func NewConditional(a *authentication.Auth) *Conditional {
 	return c
 }
 
-func NewPrimeConditional(auth *authentication.Auth, pjOwner, pjName, pjNamespace, subshellName string) *Conditional {
+type projectable interface {
+	Owner() string
+	Name() string
+	NamespaceString() string
+	CommitID() string
+	BranchName() string
+	Path() string
+	URL() string
+}
+
+func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
+	var (
+		pjOwner     string
+		pjName      string
+		pjNamespace string
+		pjURL       string
+		pjCommit    string
+		pjBranch    string
+		pjPath      string
+	)
+	if !p.IsNil(pj) {
+		pjOwner = pj.Owner()
+		pjName = pj.Name()
+		pjNamespace = pj.NamespaceString()
+		pjURL = pj.URL()
+		pjCommit = pj.CommitID()
+		pjBranch = pj.BranchName()
+		pjPath = pj.Path()
+		if pjPath != "" {
+			pjPath = filepath.Dir(pjPath)
+		}
+	}
+
 	c := NewConditional(auth)
 	c.RegisterParam("Project", map[string]string{
+		"Owner":     pjOwner,
+		"Name":      pjName,
+		"Namespace": pjNamespace,
+		"Url":       pjURL,
+		"Commit":    pjCommit,
+		"Branch":    pjBranch,
+		"Path":      pjPath,
+
+		// Legacy
 		"NamespacePrefix": pjNamespace,
-		"Name":            pjName,
-		"Owner":           pjOwner,
 	})
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
@@ -114,7 +169,8 @@ func osMatches(os string) bool {
 // equal to the given one (presumably the constraint).
 // An example version constraint is "4.1.0".
 func osVersionMatches(version string) bool {
-	osVersion, err := sysinfo.OSVersion()
+	osVersionI, osVersionErr := getCache("osVersion", func() (interface{}, error) { return sysinfo.OSVersion() })
+	osVersion := osVersionI.(*sysinfo.OSVersionInfo)
 
 	if osVersionMatchesGlobbed(osVersion.Version, version) {
 		return true
@@ -126,9 +182,9 @@ func osVersionMatches(version string) bool {
 		osVersion = &sysinfo.OSVersionInfo{}
 		fmt.Sscanf(osVersionOverride, "%d.%d.%d %s", &osVersion.Major, &osVersion.Minor, &osVersion.Micro, &osVersion.Name)
 		osVersion.Version = fmt.Sprintf("%d.%d.%d", osVersion.Major, osVersion.Minor, osVersion.Micro)
-		err = nil
+		osVersionErr = nil
 	}
-	if err != nil {
+	if osVersionErr != nil {
 		return false
 	}
 	osVersionParts := []int{osVersion.Major, osVersion.Minor, osVersion.Micro}
@@ -212,7 +268,9 @@ func archMatches(arch string) bool {
 // equal to the given one.
 // An example Libc constraint is "glibc 2.23".
 func libcMatches(libc string) bool {
-	osLibc, err := sysinfo.Libc()
+	osLibcI, osLibcErr := getCache("osLibc", func() (interface{}, error) { return sysinfo.Libc() })
+	osLibc := osLibcI.(*sysinfo.LibcInfo)
+
 	if libcOverride != "" {
 		osLibc = &sysinfo.LibcInfo{}
 		var name string
@@ -227,9 +285,9 @@ func libcMatches(libc string) bool {
 		} else {
 			osLibc.Name = sysinfo.UnknownLibc
 		}
-		err = nil
+		osLibcErr = nil
 	}
-	if err != nil {
+	if osLibcErr != nil {
 		return false
 	}
 	regex := regexp.MustCompile("^([[:alpha:]]+)\\W+(\\d+)\\D(\\d+)")
@@ -261,7 +319,9 @@ func libcMatches(libc string) bool {
 // than or equal to the given one.
 // An example compiler constraint is "gcc 7".
 func compilerMatches(compiler string) bool {
-	osCompilers, err := sysinfo.Compilers()
+	osCompilersI, osCompilersErr := getCache("osCompiler", func() (interface{}, error) { return sysinfo.Compilers() })
+	osCompilers := osCompilersI.([]*sysinfo.CompilerInfo)
+
 	if compilerOverride != "" {
 		osCompilers = []*sysinfo.CompilerInfo{&sysinfo.CompilerInfo{}}
 		var name string
@@ -276,9 +336,9 @@ func compilerMatches(compiler string) bool {
 		} else if name == strings.ToLower(sysinfo.Clang.String()) {
 			osCompilers[0].Name = sysinfo.Clang
 		}
-		err = nil
+		osCompilersErr = nil
 	}
-	if err != nil {
+	if osCompilersErr != nil {
 		return false
 	}
 	regex := regexp.MustCompile("^([[:alpha:]]+)\\W+(\\d+)\\D?(\\d*)")

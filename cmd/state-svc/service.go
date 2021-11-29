@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
-	anaSvc "github.com/ActiveState/cli/internal/analytics/service"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,12 +17,12 @@ import (
 
 type service struct {
 	cfg      *config.Instance
-	an       *anaSvc.Analytics
+	an       *anaSvc.Client
 	shutdown context.CancelFunc
 	server   *server.Server
 }
 
-func NewService(cfg *config.Instance, an *anaSvc.Analytics, shutdown context.CancelFunc) *service {
+func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
 	return &service{cfg: cfg, an: an, shutdown: shutdown}
 }
 
@@ -63,12 +63,12 @@ func (s *service) Stop() error {
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
 		setPid := cast.ToInt(setPidI)
 		if setPid != os.Getpid() {
-			return nil, errs.New("PID in configuration file does not match PID of server shutting down")
+			logging.Warning("PID in configuration file does not match PID of server shutting down")
 		}
 		return "", nil
 	})
 	if err != nil {
-		return errs.Wrap(err, "Could not unset State Service PID in configuration file")
+		logging.Warning("Could not unset State Service PID in configuration file")
 	}
 
 	return nil

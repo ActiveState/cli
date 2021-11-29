@@ -15,13 +15,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 )
 
 // datadir is the base directory at which the log is saved
@@ -123,7 +122,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && rtutils.BuiltViaCI {
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && condition.BuiltViaCI() {
 			data := map[string]interface{}{}
 
 			if l.file != nil {
@@ -165,9 +164,9 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 			}
 
 			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(errs.New(rollbarMsg), data)
+				rollbar.Critical(fmt.Errorf(rollbarMsg), data)
 			} else {
-				rollbar.Error(errs.New(rollbarMsg), data)
+				rollbar.Error(fmt.Errorf(rollbarMsg), data)
 			}
 		}
 	}()
@@ -179,15 +178,15 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	if l.file == nil {
 		if err := l.reopenLogfile(); err != nil {
-			return errs.Wrap(err, "Failed to reopen log-file")
+			return fmt.Errorf("Failed to reopen log-file: %w", err)
 		}
 
 		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-			return errs.Wrap(err, "Could not ensure dir exists")
+			return fmt.Errorf("Could not ensure dir exists: %w", err)
 		}
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			return errs.Wrap(err, "Could not open log file for writing: %s", filename)
+			return fmt.Errorf("Could not open log file for writing: %s: %w", filename, err)
 		}
 		l.file = f
 	}
@@ -196,10 +195,10 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	if err != nil {
 		// try to reopen the log file once:
 		if rerr := l.reopenLogfile(); rerr != nil {
-			return errs.Wrap(err, "Failed to write log line and reopen failed with err: %v", rerr)
+			return fmt.Errorf("Failed to write log line and reopen failed with err: %v: %w", rerr, err)
 		}
 		if _, err2 := l.file.WriteString(message + "\n"); err2 != nil {
-			return errs.Wrap(err2, "Failed to write log line twice. First error was: %v", err)
+			return fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2)
 		}
 	}
 
@@ -216,11 +215,11 @@ func (l *fileHandler) Printf(msg string, args ...interface{}) {
 func (l *fileHandler) reopenLogfile() error {
 	filename := FilePath()
 	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-		return errs.Wrap(err, "Could not ensure dir exists")
+		return fmt.Errorf("Could not ensure dir exists: %w", err)
 	}
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		return errs.Wrap(err, "Could not open log file for writing: %s", filename)
+		return fmt.Errorf("Could not open log file for writing: %s: %w", filename, err)
 	}
 	l.file = f
 	return nil

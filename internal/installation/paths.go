@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // CfgInstallPath is the configuration key for the path where the State Tool is installed
@@ -20,9 +20,13 @@ const CfgTransitionalStateToolPath = "transitional_installation_path"
 
 const BinDirName = "bin"
 
+func DefaultInstallPath() (string, error) {
+	return InstallPathForBranch(constants.BranchName)
+}
+
 func InstallPath() (string, error) {
 	// Facilitate use-case of running executables from the build dir while developing
-	if !rtutils.BuiltViaCI && strings.Contains(os.Args[0], "/build/") {
+	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
 		return filepath.Dir(os.Args[0]), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
@@ -63,16 +67,13 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	return installPath, nil
 }
 
-func Installed() (bool, error) {
-	return InstalledOnPath("")
-}
-
-func InstalledOnPath(installPath string) (bool, error) {
+func InstalledOnPath(installPath string) (bool, string, error) {
 	binPath, err := BinPathFromInstallPath(installPath)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
 	}
-	return fileutils.TargetExists(appinfo.StateApp(binPath).Exec()), nil
+	path := appinfo.StateApp(binPath).Exec()
+	return fileutils.TargetExists(path), path, nil
 }
 
 func LauncherInstallPath() (string, error) {

@@ -83,9 +83,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 				cp.Expect("ActiveState Software Inc.")
-
-				cp.SendLine("exit")
 			}
+
+			cp.SendLine("state --version")
+			cp.Expect("Branch")
+			cp.Expect("Built")
+			cp.SendLine("exit")
 
 			cp.ExpectExitCode(0)
 
@@ -135,7 +138,6 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 	return target
 }
-
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")

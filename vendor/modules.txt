@@ -54,7 +54,7 @@ github.com/PuerkitoBio/urlesc
 # github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d
 ## explicit
 github.com/StackExchange/wmi
-# github.com/VividCortex/ewma v1.1.1
+# github.com/VividCortex/ewma v1.2.0
 github.com/VividCortex/ewma
 # github.com/abadojack/whatlanggo v1.0.1
 github.com/abadojack/whatlanggo
@@ -269,10 +269,6 @@ github.com/hashicorp/go-version
 ## explicit
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
-# github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
-## explicit
-github.com/hectane/go-acl
-github.com/hectane/go-acl/api
 # github.com/hpcloud/tail v1.0.0
 ## explicit
 github.com/hpcloud/tail
@@ -280,9 +276,6 @@ github.com/hpcloud/tail/ratelimiter
 github.com/hpcloud/tail/util
 github.com/hpcloud/tail/watch
 github.com/hpcloud/tail/winfile
-# github.com/iafan/cwalk v0.0.0-20191125092548-dd7f505d2f66
-## explicit
-github.com/iafan/cwalk
 # github.com/imdario/mergo v0.3.11
 ## explicit
 github.com/imdario/mergo
@@ -305,8 +298,6 @@ github.com/josharian/intern
 # github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 ## explicit
 github.com/kami-zh/go-capturer
-# github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
-## explicit
 # github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 github.com/kballard/go-shellquote
 # github.com/kennygrant/sanitize v1.2.4
@@ -352,7 +343,7 @@ github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.13
 ## explicit
 github.com/mattn/go-isatty
-# github.com/mattn/go-runewidth v0.0.10
+# github.com/mattn/go-runewidth v0.0.13
 ## explicit
 github.com/mattn/go-runewidth
 # github.com/mattn/go-sqlite3 v1.14.7
@@ -363,8 +354,6 @@ github.com/mgutz/ansi
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
-# github.com/mitchellh/go-ps v1.0.0
-## explicit
 # github.com/mitchellh/mapstructure v1.4.1
 github.com/mitchellh/mapstructure
 # github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
@@ -401,7 +390,6 @@ github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 github.com/pkg/browser
 # github.com/pkg/errors v0.9.1
-## explicit
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
@@ -470,12 +458,12 @@ github.com/ulikunitz/xz/lzma
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v1.2.1
 github.com/valyala/fasttemplate
-# github.com/vbauerster/mpb/v6 v6.0.2
+# github.com/vbauerster/mpb/v7 v7.1.5
 ## explicit
-github.com/vbauerster/mpb/v6
-github.com/vbauerster/mpb/v6/cwriter
-github.com/vbauerster/mpb/v6/decor
-github.com/vbauerster/mpb/v6/internal
+github.com/vbauerster/mpb/v7
+github.com/vbauerster/mpb/v7/cwriter
+github.com/vbauerster/mpb/v7/decor
+github.com/vbauerster/mpb/v7/internal
 # github.com/vektah/gqlparser/v2 v2.1.0
 ## explicit
 github.com/vektah/gqlparser/v2
@@ -587,7 +575,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+# golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader

@@ -159,6 +159,28 @@ func (mp *MultiPlexedProgress) ArtifactStepFailure(artifactID artifact.ArtifactI
 	return aggErr
 }
 
+func (mp *MultiPlexedProgress) SolverStart() error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.SolverStart()
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "SolverStart event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
+func (mp *MultiPlexedProgress) SolverSuccess() error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.SolverSuccess()
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "SolverStart event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
 func (mp *MultiPlexedProgress) SolverError(serr *model.SolverError) error {
 	var aggErr error
 	for _, d := range mp.digesters {

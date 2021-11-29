@@ -19,6 +19,12 @@ import (
 // swagger:model OrganizationMutation
 type OrganizationMutation struct {
 
+	// active runtimes added or subtracted
+	ActiveRuntimesDelta int64 `json:"activeRuntimesDelta,omitempty"`
+
+	// active runtimes added or subtracted from the override
+	ActiveRuntimesOverrideDelta int64 `json:"activeRuntimesOverrideDelta,omitempty"`
+
 	// the date and time at which this mutation was created
 	// Format: date-time
 	Added strfmt.DateTime `json:"added,omitempty"`
@@ -54,6 +60,12 @@ type OrganizationMutation struct {
 	// indicated whether customer org is managed by a reseller
 	ResellerManaged *bool `json:"resellerManaged,omitempty"`
 
+	// static runtimes added or subtracted
+	StaticRuntimesDelta int64 `json:"staticRuntimesDelta,omitempty"`
+
+	// static runtimes added or subtracted from the override
+	StaticRuntimesOverrideDelta int64 `json:"staticRuntimesOverrideDelta,omitempty"`
+
 	// Invoiced subscription ID newly associated with the org as of this mutation
 	SubscriptionID string `json:"subscriptionID,omitempty"`
 
@@ -66,7 +78,7 @@ type OrganizationMutation struct {
 	// identifier for the mutating user
 	UserName string `json:"userName,omitempty"`
 
-	// users added or substracted
+	// users added or subtracted
 	UsersDelta int64 `json:"usersDelta,omitempty"`
 }
 

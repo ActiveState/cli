@@ -27,10 +27,15 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
+type RuntimeUsageResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, projectNameSpace: String, output: String, userID: String): AnalyticsEventResponse
+  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
 }
 

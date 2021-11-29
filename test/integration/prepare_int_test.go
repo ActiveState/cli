@@ -14,9 +14,9 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/stretchr/testify/suite"
 )
 

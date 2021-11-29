@@ -10,13 +10,13 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/service"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -29,10 +29,10 @@ type Server struct {
 	listener    net.Listener
 	httpServer  *echo.Echo
 	port        int
-	analytics   *service.Analytics
+	analytics   *sync.Client
 }
 
-func New(cfg *config.Instance, an *service.Analytics, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *sync.Client, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
@@ -78,6 +78,9 @@ func (s *Server) Shutdown() error {
 	defer cancel()
 	if err := s.httpServer.Shutdown(ctx); err != nil {
 		return errs.Wrap(err, "Could not close http server")
+	}
+	if err := s.resolver.Close(); err != nil {
+		return errs.Wrap(err, "Could not close resolver")
 	}
 
 	return nil

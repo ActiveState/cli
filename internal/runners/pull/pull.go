@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -27,8 +28,9 @@ type Pull struct {
 	project   *project.Project
 	auth      *authentication.Auth
 	out       output.Outputer
-	analytics analytics.AnalyticsDispatcher
+	analytics analytics.Dispatcher
 	cfg       *config.Instance
+	svcModel  *model.SvcModel
 }
 
 type PullParams struct {
@@ -43,6 +45,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Analyticer
 	primer.Configurer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Pull {
@@ -53,6 +56,7 @@ func New(prime primeable) *Pull {
 		prime.Output(),
 		prime.Analytics(),
 		prime.Config(),
+		prime.SvcModel(),
 	}
 }
 
@@ -158,7 +162,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull, p.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

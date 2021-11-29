@@ -178,6 +178,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.CacheEnvVarName + "=" + dirs.Cache,
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
+		constants.E2ETestEnvVarName + "=true",
 	}...)
 
 	if updatePath {
