@@ -56,13 +56,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			if tt.Version != "" {
 				argsPlain = append(argsPlain, "-v", tt.Version)
 			}
-			if tt.Command != "" {
-				argsPlain = append(argsPlain, "-c", tt.Command)
-			}
 
 			argsWithActive := append(argsPlain, "-f")
 			if tt.Activate != "" {
 				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
+			}
+
+			if tt.Command != "" {
+				argsPlain = append(argsPlain, "-c", tt.Command)
 			}
 
 			var cp *termtest.ConsoleProcess
