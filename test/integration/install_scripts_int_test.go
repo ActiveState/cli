@@ -30,17 +30,17 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
 	tests := []struct {
-		Name     string
-		Version  string
-		Channel  string
-		Activate string
-		Command  string
+		Name              string
+		Version           string
+		Channel           string
+		Activate          string
+		ActivateByCommand string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
 		{"install-prbranch", "", constants.BranchName, "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
-		//{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "state activate ActiveState-CLI/small-python"},
+		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
@@ -61,8 +61,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			if tt.Activate != "" {
 				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
 			}
-			if tt.Command != "" {
-				argsWithActive = append(argsWithActive, "-c", tt.Command)
+			if tt.ActivateByCommand != "" {
+				argsWithActive = append(argsWithActive, "-c", "state activate "+tt.ActivateByCommand)
 			}
 
 			var cp *termtest.ConsoleProcess
@@ -80,7 +80,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			expectStateToolInstallation(cp)
 
-			if tt.Activate != "" {
+			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
 				cp.Expect("Quick Start", time.Second*60)
 				// ensure that shell is functional
