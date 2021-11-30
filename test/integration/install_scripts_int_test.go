@@ -64,6 +64,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			if tt.Command != "" {
 				argsPlain = append(argsPlain, "-c", tt.Command)
+				argsWithActive = append(argsWithActive, "-c", tt.Command)
 			}
 
 			var cp *termtest.ConsoleProcess
