@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -44,12 +43,6 @@ func SetupRollbar(token string) {
 	}
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
-
-	dateTime := constants.Date
-	t, err := time.Parse(constants.DateTimeFormatRecord, constants.Date)
-	if err == nil {
-		dateTime = t.Format("2006-01-02T15:04:05-0700") // ISO 8601
-	}
 
 	rollbar.SetCodeVersion(constants.Version)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
