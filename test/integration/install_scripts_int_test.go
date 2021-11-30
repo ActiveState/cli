@@ -63,9 +63,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			if tt.ActivateByCommand != "" {
 				cmd := fmt.Sprintf("state activate %s", tt.ActivateByCommand)
-				if runtime.GOOS == "windows" {
-					cmd = "'" + cmd + "'"
-				}
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
