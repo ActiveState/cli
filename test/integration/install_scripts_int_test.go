@@ -40,7 +40,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		{"install-prbranch", "", constants.BranchName, "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
-		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "state activate ActiveState-CLI/small-python"},
+		//{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "state activate ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
