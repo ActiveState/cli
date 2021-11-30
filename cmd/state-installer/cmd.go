@@ -345,6 +345,9 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	// Execute provided --command
 	case params.command != "":
 		an.Event(AnalyticsFunnelCat, "forward-command")
+		for _, arg := range os.Args {
+			fmt.Println(arg)
+		}
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
