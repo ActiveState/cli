@@ -61,9 +61,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			if tt.Activate != "" {
 				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
 			}
-
 			if tt.Command != "" {
-				argsPlain = append(argsPlain, "-c", tt.Command)
 				argsWithActive = append(argsWithActive, "-c", tt.Command)
 			}
 
