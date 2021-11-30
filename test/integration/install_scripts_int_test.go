@@ -82,7 +82,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			expectStateToolInstallation(cp)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
-				cp.Expect("Creating a Virtual Environment")
+				cp.Expect("Creating a Virtual Environmentx")
 				cp.Expect("Quick Start", time.Second*60)
 				// ensure that shell is functional
 				cp.WaitForInput()
