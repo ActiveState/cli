@@ -62,7 +62,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
 			}
 			if tt.ActivateByCommand != "" {
-				argsWithActive = append(argsWithActive, "-c", "state activate "+tt.ActivateByCommand)
+				cmd := fmt.Sprintf("'state activate %s'", tt.ActivateByCommand)
+				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
 			var cp *termtest.ConsoleProcess
