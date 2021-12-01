@@ -6,8 +6,8 @@ exerr() {
   [ "${code}" -gt 0 ] && echo >&2 "${msg}" && exit "${code}"
 }
 
-state run lint-current
-exerr $? "Lint Failed"
+state run lint-staged
+exerr $? "Linting of staged files has failed"
 
 # Copyright 2012 The Go Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
