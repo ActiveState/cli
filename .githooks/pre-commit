@@ -1,21 +1,13 @@
 #!/bin/sh
-gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
-[ -z "$gofiles" ] && exit 0
 
-# go lint
-failed=""
-for f in $gofiles; do
-  lint_results="$(golint $f)"
-  if test -n "$lint_results" ; then
-    failed=1
-    echo -e "Linting failed: \n$lint_results"
-  fi
-done
+exerr() {
+  local code="${1}"
+  local msg="${2}"
+  [ "${code}" -gt 0 ] && echo >&2 "${msg}" && exit "${code}"
+}
 
-if test -n "$failed" ; then
-  echo -e "Linting failed"
-  exit 1
-fi
+state run lint-current
+exerr $? "Lint Failed"
 
 # Copyright 2012 The Go Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style
@@ -35,7 +27,7 @@ unformatted=$(gofmt -l $gofiles)
 
 echo >&2 "Go files must be formatted with gofmt. Please run:"
 for fn in $unformatted; do
-	echo >&2 "  gofmt -w $PWD/$fn"
+  echo >&2 "  gofmt -w $PWD/$fn"
 done
 
 exit 1

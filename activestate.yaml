@@ -339,6 +339,14 @@ scripts:
       export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
       export PT_DAYS_AGED=190 # set this value to control cleanup
       python3 ./scripts/story-cleanup/story-cleanup.py
+  - name: lint-current
+    language: bash
+    description: "Runs linting for current set of changes"
+    value: golangci-lint run --new-from-rev=HEAD~
+  - name: lint
+    language: bash
+    description: "Runs linting for all files"
+    value: golangci-lint run --no-config
 events:
   - name: activate
     if: ne .Shell "cmd"
