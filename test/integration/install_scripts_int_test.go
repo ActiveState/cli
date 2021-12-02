@@ -66,6 +66,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			for _, a := range argsWithActive {
+				fmt.Println(a)
+			}
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
@@ -79,11 +82,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
 			}
-			cp.Expect("about a command")
-			for _, a := range argsWithActive {
-				cp.SendLine("echo " + a)
-			}
-			cp.Expect("junk")
 
 			expectStateToolInstallation(cp)
 
