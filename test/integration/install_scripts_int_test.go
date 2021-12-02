@@ -73,7 +73,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
 			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
+				cp = ts.SpawnCmdWithOpts(
+					"powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
@@ -82,6 +83,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			expectStateToolInstallation(cp)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
+				for _, a := range argsWithActive {
+					cp.SendLine("echo " + a)
+				}
 				cp.Expect("Creating a Virtual Environmentx")
 				cp.Expect("Quick Start", time.Second*60)
 				// ensure that shell is functional
