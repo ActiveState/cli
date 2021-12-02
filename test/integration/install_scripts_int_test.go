@@ -79,6 +79,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
 			}
+			cp.Expect("about a command")
 			for _, a := range argsWithActive {
 				cp.SendLine("echo " + a)
 			}
