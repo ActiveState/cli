@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
 

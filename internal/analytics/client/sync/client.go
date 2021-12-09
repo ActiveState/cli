@@ -20,8 +20,8 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
 )
 
 type Reporter interface {

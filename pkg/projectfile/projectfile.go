@@ -15,7 +15,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
