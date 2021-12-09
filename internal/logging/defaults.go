@@ -1,10 +1,10 @@
+//go:build !test
 // +build !test
 
 package logging
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -15,9 +15,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -31,6 +29,8 @@ var timestamp int64
 // CurrentCmd holds the value of the current command being invoked
 // it's a quick hack to allow us to log the command to rollbar without risking exposing sensitive info
 var CurrentCmd string
+
+const FileNameSuffix = ".log"
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.
 type Logger func(msg string, args ...interface{})
@@ -50,25 +50,6 @@ func (s *safeBool) setValue(v bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.v = v
-}
-
-type fileHandler struct {
-	formatter Formatter
-	file      *os.File
-	mu        sync.Mutex
-	verbose   safeBool
-}
-
-func (l *fileHandler) SetFormatter(f Formatter) {
-	l.formatter = f
-}
-
-func (l *fileHandler) SetVerbose(v bool) {
-	l.verbose.setValue(v)
-}
-
-func (l *fileHandler) Output() io.Writer {
-	return l.file
 }
 
 func FileName() string {
@@ -107,128 +88,10 @@ func FilePathForCmd(cmd string, pid int) string {
 	return FilePathFor(FileNameForCmd(cmd, pid))
 }
 
-const FileNameSuffix = ".log"
-
-func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	defer handlePanics(recover())
-	// In this function we close and open the file handle to the log file. In
-	// order to ensure this is safe to be called across threads, we just
-	// synchronize the entire function
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	filename := FilePath()
-	originalMessage := fmt.Sprintf(message, args...)
-
-	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && condition.BuiltViaCI() {
-			data := map[string]interface{}{}
-
-			if l.file != nil {
-				if err := l.file.Close(); err != nil {
-					data["log_file_close_error"] = err.Error()
-				} else {
-					logDatab, err := ioutil.ReadFile(filename)
-					if err != nil {
-						data["log_file_read_error"] = err.Error()
-					} else {
-						logData := string(logDatab)
-						if len(logData) > 5000 {
-							logData = "<truncated>\n" + logData[len(logData)-5000:]
-						}
-						data["log_file_data"] = logData
-					}
-				}
-				l.file = nil // unset so that it is reset later in this func
-			}
-
-			exec := CurrentCmd
-			if exec == "" {
-				exec = strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
-			}
-			flags := []string{}
-			for _, arg := range os.Args[1:] {
-				if strings.HasPrefix(arg, "-") {
-					idx := strings.Index(arg, "=")
-					if idx != -1 {
-						arg = arg[0:idx]
-					}
-					flags = append(flags, arg)
-				}
-			}
-
-			rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, originalMessage)
-			if len(rollbarMsg) > 1000 {
-				rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
-			}
-
-			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(fmt.Errorf(rollbarMsg), data)
-			} else {
-				rollbar.Error(fmt.Errorf(rollbarMsg), data)
-			}
-		}
-	}()
-
-	message = l.formatter.Format(ctx, message, args...)
-	if l.verbose.value() {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("(PID %d) %s", os.Getpid(), message))
-	}
-
-	if l.file == nil {
-		if err := l.reopenLogfile(); err != nil {
-			return fmt.Errorf("Failed to reopen log-file: %w", err)
-		}
-
-		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-			return fmt.Errorf("Could not ensure dir exists: %w", err)
-		}
-		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("Could not open log file for writing: %s: %w", filename, err)
-		}
-		l.file = f
-	}
-
-	_, err := l.file.WriteString(message + "\n")
-	if err != nil {
-		// try to reopen the log file once:
-		if rerr := l.reopenLogfile(); rerr != nil {
-			return fmt.Errorf("Failed to write log line and reopen failed with err: %v: %w", rerr, err)
-		}
-		if _, err2 := l.file.WriteString(message + "\n"); err2 != nil {
-			return fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2)
-		}
-	}
-
-	return nil
-}
-
-// Printf satifies a Logger interface allowing us to funnel our
-// logging handlers to 3rd party libraries
-func (l *fileHandler) Printf(msg string, args ...interface{}) {
-	logMsg := fmt.Sprintf("Third party log message: %s", msg)
-	l.Emit(getContext("DEBUG", 1), logMsg, args...)
-}
-
-func (l *fileHandler) reopenLogfile() error {
-	filename := FilePath()
-	if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-		return fmt.Errorf("Could not ensure dir exists: %w", err)
-	}
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("Could not open log file for writing: %s: %w", filename, err)
-	}
-	l.file = f
-	return nil
-}
-
 func init() {
 	defer handlePanics(recover())
 	timestamp = time.Now().UnixNano()
-	handler := &fileHandler{DefaultFormatter, nil, sync.Mutex{}, safeBool{}}
+	handler := newFileHandler()
 	SetHandler(handler)
 
 	log.SetOutput(&writer{})

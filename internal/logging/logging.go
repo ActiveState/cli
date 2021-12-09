@@ -127,6 +127,7 @@ type LoggingHandler interface {
 	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 	Printf(msg string, args ...interface{})
+	Close()
 }
 
 type strandardHandler struct {
@@ -156,6 +157,8 @@ func (l *strandardHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
+
+func (l *strandardHandler) Close() {}
 
 var currentHandler LoggingHandler = &strandardHandler{
 	DefaultFormatter,
@@ -318,6 +321,10 @@ func Panic(msg string, args ...interface{}) {
 	log.Println(string(debug.Stack()))
 	log.Panicf(msg, args...)
 
+}
+
+func Close() {
+	currentHandler.Close()
 }
 
 func init() {
