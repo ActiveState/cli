@@ -74,3 +74,6 @@ const CatMisc = "misc"
 
 // CatStateSvc is for state-svc events
 const CatStateSvc = "state-svc"
+
+// CatPackageOp is for `state packages` events
+const CatPackageOp = "package-operation"
