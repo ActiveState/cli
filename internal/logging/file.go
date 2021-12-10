@@ -28,7 +28,6 @@ type fileHandler struct {
 	mu        sync.Mutex
 	verbose   safeBool
 	wg        *sync.WaitGroup
-	errs      chan error
 	queue     chan entry
 	quit      chan struct{}
 }
@@ -40,7 +39,6 @@ func newFileHandler() *fileHandler {
 		sync.Mutex{},
 		safeBool{},
 		&sync.WaitGroup{},
-		make(chan error),
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 	}
@@ -82,13 +80,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 	}
 	l.queue <- e
 	l.wg.Add(1)
-
-	select {
-	case err := <-l.errs:
-		return err
-	default:
-		return nil
-	}
+	return nil
 }
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
@@ -160,15 +152,15 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 
 	if l.file == nil {
 		if err := l.reopenLogfile(); err != nil {
-			l.errs <- fmt.Errorf("Failed to reopen log-file: %w", err)
+			printLogError(fmt.Errorf("Failed to reopen log-file: %w", err), ctx, message, args...)
 		}
 
 		if err := os.MkdirAll(filepath.Dir(filename), os.ModePerm); err != nil {
-			l.errs <- fmt.Errorf("Could not ensure dir exists: %w", err)
+			printLogError(fmt.Errorf("Could not ensure dir exists: %w", err), ctx, message, args...)
 		}
 		f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
-			l.errs <- fmt.Errorf("Could not open log file for writing: %s: %w", filename, err)
+			printLogError(fmt.Errorf("Could not open log file for writing: %s: %w", filename, err), ctx, message, args...)
 		}
 		l.file = f
 	}
@@ -177,10 +169,10 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 	if err != nil {
 		// try to reopen the log file once:
 		if rerr := l.reopenLogfile(); rerr != nil {
-			l.errs <- fmt.Errorf("Failed to write log line and reopen failed with err: %v: %w", rerr, err)
+			printLogError(fmt.Errorf("Failed to write log line and reopen failed with err: %v: %w", rerr, err), ctx, message, args...)
 		}
 		if _, err2 := l.file.WriteString(message + "\n"); err2 != nil {
-			l.errs <- fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2)
+			printLogError(fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2), ctx, message, args...)
 		}
 	}
 }
@@ -208,6 +200,5 @@ func (l *fileHandler) reopenLogfile() error {
 func (l *fileHandler) Close() {
 	defer close(l.quit)
 	defer close(l.queue)
-	defer close(l.errs)
 	l.wg.Wait()
 }

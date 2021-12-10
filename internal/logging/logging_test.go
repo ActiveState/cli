@@ -45,6 +45,8 @@ func (l *Test1Handler) Len() int {
 	return len(l.messages)
 }
 
+func (l *Test1Handler) Close() {}
+
 func logAllLevels(msg string) {
 	Debug(msg)
 	Info(msg)
@@ -153,6 +155,8 @@ func (l *TestHandler) SetVerbose(v bool) {
 
 func (l *TestHandler) Printf(msg string, args ...interface{}) {
 }
+
+func (l *TestHandler) Close() {}
 
 func Test_Handler(t *testing.T) {
 

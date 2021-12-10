@@ -232,19 +232,23 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
-		errMsg := err.Error()
-		errw := err
-		for {
-			errw = errors.Unwrap(errw)
-			if errw == nil {
-				break
-			}
-			errMsg += ": " + errw.Error()
-		}
-		fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
-		fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
+		printLogError(err, ctx, msg, args...)
 	}
 
+}
+
+func printLogError(err error, ctx *MessageContext, msg string, args ...interface{}) {
+	errMsg := err.Error()
+	errw := err
+	for {
+		errw = errors.Unwrap(errw)
+		if errw == nil {
+			break
+		}
+		errMsg += ": " + errw.Error()
+	}
+	fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
+	fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 }
 
 //output INFO level messages
