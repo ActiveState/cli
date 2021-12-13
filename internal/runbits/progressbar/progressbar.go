@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -134,7 +135,8 @@ func (bl *RuntimeProgress) BuildArtifactProgress(_ artifact.ArtifactID, _ string
 // BuildCompleted ensures that the build progress bar is in a completed state
 func (rp *RuntimeProgress) BuildCompleted(anyFailures bool) error {
 	if rp.buildBar == nil {
-		return errs.New("Build bar has not been initialized yet.")
+		logging.Debug("BuildCompleted: Build bar has not been initialized yet. This can happen if the build was already known to be failing.")
+		return nil
 	}
 
 	// ensure that the build bar reports a completion event even if some builds have failed
