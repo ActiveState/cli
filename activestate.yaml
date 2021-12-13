@@ -56,7 +56,7 @@ scripts:
   - name: install-deps
     language: bash
     value: |
-      tmpdir="$(mktemp --directory --tmpdir="${PWD}")"
+      tmpdir="$(mktemp --directory "${PWD}/tmp.XXXXXXX")"
       cleanup() { rm -rf "${tmpdir}"; }
       pushd "${tmpdir}" && trap "cleanup" EXIT
       go mod init deps
