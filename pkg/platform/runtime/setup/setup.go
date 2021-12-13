@@ -274,14 +274,6 @@ func (s *Setup) update() error {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
-	// Install PPM Shim if any of the installed artifacts provide the Perl executable
-	if edGlobal.FindBinPathFor(constants.ActivePerlExecutable) != "" {
-		err = installPPMShim(execPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to install the PPM shim command at %s", execPath)
-		}
-	}
-
 	// clean up temp directory
 	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	err = os.RemoveAll(tempDir)
