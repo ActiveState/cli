@@ -215,7 +215,7 @@ func (s *Setup) update() error {
 
 	if buildResult.BuildStatus == headchef.Failed {
 		s.events.BuildFinished()
-		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+		return locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
 	oldRecipe, err := s.store.Recipe()
