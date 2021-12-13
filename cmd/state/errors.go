@@ -104,7 +104,7 @@ func unwrapError(err error) (int, error) {
 	if !locale.IsInputError(err) {
 		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
-		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Error("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
