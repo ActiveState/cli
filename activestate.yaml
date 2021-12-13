@@ -56,6 +56,7 @@ scripts:
   - name: install-deps
     language: bash
     value: |
+      export GO111MODULE=on
       goflags="${GOFLAGS}"; unset GOFLAGS
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
