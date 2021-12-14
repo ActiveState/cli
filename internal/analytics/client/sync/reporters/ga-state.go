@@ -1,13 +1,10 @@
 package reporters
 
 import (
-	"strings"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
@@ -48,10 +45,6 @@ func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Valu
 	}
 	err := r.ga.Send(event)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such host") {
-			logging.Debug("Cannot send Google Analytics event as the hostname appears to be blocked.")
-			return nil
-		}
 		return errs.Wrap(err, "Could not send GA Event")
 	}
 
