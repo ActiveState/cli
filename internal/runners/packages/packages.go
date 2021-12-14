@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -48,6 +49,7 @@ const latestVersion = "latest"
 func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
+	langName := "undetermined"
 
 	out := prime.Output()
 	var pg *output.DotProgress
@@ -77,7 +79,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	} else {
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
-			ns = model.NewNamespacePkgOrBundle(language.Name, nsType)
+			langName = language.Name
+			ns = model.NewNamespacePkgOrBundle(langName, nsType)
 		}
 	}
 
@@ -90,10 +93,14 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
 		}
 
-		packageName, ns, langVersion, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType, supported)
+		var supportedLang *medmodel.SupportedLanguage
+		packageName, ns, supportedLang, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
+		langVersion = supportedLang.DefaultVersion
+		langName = supportedLang.Name
+
 		validatePkg = false
 
 		pg.Stop(locale.T("progress_found"))
@@ -139,6 +146,10 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			operation = model.OperationUpdated
 		}
 	}
+
+	prime.Analytics().EventWithLabel(
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), packageName,
+	)
 
 	if !hasParentCommit {
 		languageFromNs := model.LanguageFromNamespace(ns.String())
@@ -198,18 +209,18 @@ func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName st
 	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, string, error) {
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
 	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false, false)
 	if err != nil {
-		return "", ns, "", locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
+		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
 	ingredients, err = model.FilterSupportedIngredients(supported, ingredients)
 	if err != nil {
-		return "", ns, "", errs.Wrap(err, "Failed to filter out unsupported packages")
+		return "", ns, nil, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}
 
 	choices := []string{}
@@ -224,14 +235,14 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	}
 
 	if len(choices) == 0 {
-		return "", ns, "", locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
+		return "", ns, nil, locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
 	}
 
 	// If we only have one ingredient match we're done; return it.
 	if len(choices) == 1 {
 		language := values[choices[0]][1]
-		version := supportedLanguageByName(supported, language).DefaultVersion
-		return values[choices[0]][0], model.NewNamespacePkgOrBundle(language, nsType), version, nil
+		supportedLang := supportedLanguageByName(supported, language)
+		return values[choices[0]][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
 	}
 
 	// Prompt the user with the ingredient choices
@@ -241,13 +252,13 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		choices, &choices[0],
 	)
 	if err != nil {
-		return "", ns, "", locale.WrapError(err, "err_pkgop_select", "Need a selection.")
+		return "", ns, nil, locale.WrapError(err, "err_pkgop_select", "Need a selection.")
 	}
 
 	// Return the user selected ingredient
 	language := values[choice][1]
-	version := supportedLanguageByName(supported, language).DefaultVersion
-	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), version, nil
+	supportedLang := supportedLanguageByName(supported, language)
+	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
 }
 
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {

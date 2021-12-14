@@ -114,6 +114,9 @@ const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
 // ForceUpdateEnvVarName is used to force state tool to update, regardless of whether the update is equal to the current version
 const ForceUpdateEnvVarName = "ACTIVESTATE_FORCE_UPDATE"
 
+// ShimEnvVarName is used to instruct State Tool that it's being executed as part of a shim
+const ShimEnvVarName = "ACTIVESTATE_SHIM"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 

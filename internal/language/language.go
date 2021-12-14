@@ -23,6 +23,7 @@ const (
 	Perl
 	Python3
 	Python2
+	Ruby
 )
 
 // UnrecognizedLanguageError contains info related to the usage of an
@@ -96,6 +97,10 @@ var lookup = [...]languageData{
 	{
 		"python2", "Python 2", ".py", true, "python", "2.7.14",
 		Executable{constants.ActivePython2Executable, false},
+	},
+	{
+		"ruby", "Ruby", ".rb", true, "ruby", "3.0.1",
+		Executable{constants.RubyExecutable, false},
 	},
 }
 

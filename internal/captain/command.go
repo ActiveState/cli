@@ -507,6 +507,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	// Send  GA events unless they are handled in the runners...
 	if c.analytics != nil {
 		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
+			c.analytics.Event(anaConsts.CatShim, shim)
+		}
 	}
 
 	// Run OnUse functions for non-persistent flags
@@ -561,7 +564,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
 		if c.analytics != nil {
-			if err != nil && subCommandString == "install" {
+			if err != nil && (subCommandString == "install" || subCommandString == "activate") {
 				// This is a temporary hack; proper implementation: https://activestatef.atlassian.net/browse/DX-495
 				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, errs.JoinMessage(err))
 			}

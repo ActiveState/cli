@@ -32,6 +32,11 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	}
 
 	filepath := keypairs.LocalKeyFilename(p.cfg.ConfigPath(), constants.KeypairLocalFileName)
+	if !fileutils.FileExists(filepath) {
+		return locale.NewError("err_privkey_nofile",
+			"No private key file exists. Please make sure you have authenticated with your password. Authenticating with an API key is not sufficient.")
+	}
+
 	contents, err := fileutils.ReadFile(filepath)
 	if err != nil {
 		return err

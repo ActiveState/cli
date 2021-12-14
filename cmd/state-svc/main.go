@@ -57,11 +57,11 @@ func main() {
 	err := run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
-		logger := logging.Critical
 		if locale.IsInputError(err) {
-			logger = logging.Debug
+			logging.Error("state-svc errored out due to input: %s", errMsg)
+		} else {
+			logging.Critical("state-svc errored out: %s", errMsg)
 		}
-		logger("state-svc errored out: %s", errMsg)
 
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
