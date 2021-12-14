@@ -6,7 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.30.1
+## 0.32.0
+
+### Added
+
+* Added PPM and PIP shims to help educate people about the State Tool.
+* Added support for Ruby projects
+
+## 0.31.1
+
+### Fixed
+
+* Fixed issue where a failed solve was reported incorrectly.
+
+## 0.31.0
 
 ### Changed
 

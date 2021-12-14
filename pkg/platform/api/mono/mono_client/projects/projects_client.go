@@ -32,39 +32,19 @@ type ClientOption func(*runtime.ClientOperation)
 type ClientService interface {
 	AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBranchOK, error)
 
-	AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddDistroOK, error)
-
-	AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddFormatOK, error)
-
 	AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddProjectOK, error)
-
-	AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddReleaseOK, error)
 
 	DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error)
 
 	EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditProjectOK, error)
 
-	EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditReleaseOK, error)
-
 	ForkProject(params *ForkProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForkProjectOK, error)
-
-	GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDistroOK, error)
-
-	GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetFormatOK, error)
 
 	GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error)
 
 	GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectByIDOK, error)
 
-	GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error)
-
-	ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDistrosOK, error)
-
-	ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListFormatsOK, error)
-
 	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error)
-
-	ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -111,88 +91,6 @@ func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  AddDistro creates a distro
-
-  Add a distro to an existing project release
-*/
-func (a *Client) AddDistro(params *AddDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddDistroOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAddDistroParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "addDistro",
-		Method:             "POST",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &AddDistroReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*AddDistroOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for addDistro: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  AddFormat adds a format
-
-  Add a format to an existing distro
-*/
-func (a *Client) AddFormat(params *AddFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddFormatOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAddFormatParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "addFormat",
-		Method:             "POST",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &AddFormatReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*AddFormatOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for addFormat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
   AddProject creates a project
 
   Add a new project to an organization
@@ -230,47 +128,6 @@ func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAut
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for addProject: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  AddRelease cuts a release
-
-  Add a release to an existing project
-*/
-func (a *Client) AddRelease(params *AddReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddReleaseOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAddReleaseParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "addRelease",
-		Method:             "POST",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &AddReleaseReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*AddReleaseOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for addRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -357,47 +214,6 @@ func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientA
 }
 
 /*
-  EditRelease edits a release
-
-  Edit a release
-*/
-func (a *Client) EditRelease(params *EditReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditReleaseOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewEditReleaseParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "editRelease",
-		Method:             "POST",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &EditReleaseReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*EditReleaseOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for editRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
   ForkProject forks a project
 
   Fork a project
@@ -435,88 +251,6 @@ func (a *Client) ForkProject(params *ForkProjectParams, authInfo runtime.ClientA
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for forkProject: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  GetDistro releases distro
-
-  fetch a specific distro for a release
-*/
-func (a *Client) GetDistro(params *GetDistroParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDistroOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetDistroParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getDistro",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &GetDistroReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetDistroOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for getDistro: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  GetFormat releases distro format
-
-  fetch a specific format for a distro
-*/
-func (a *Client) GetFormat(params *GetFormatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetFormatOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetFormatParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getFormat",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats/{formatID}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &GetFormatReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetFormatOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for getFormat: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -603,129 +337,6 @@ func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.C
 }
 
 /*
-  GetRelease projects release info
-
-  Get release details
-*/
-func (a *Client) GetRelease(params *GetReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetReleaseOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewGetReleaseParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "getRelease",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &GetReleaseReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*GetReleaseOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for getRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  ListDistros releases distros
-
-  Return a list of distros for a release
-*/
-func (a *Client) ListDistros(params *ListDistrosParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDistrosOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListDistrosParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "listDistros",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &ListDistrosReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListDistrosOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for listDistros: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  ListFormats releases formats for a distro
-
-  Return a list of formats for a specific distro
-*/
-func (a *Client) ListFormats(params *ListFormatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListFormatsOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListFormatsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "listFormats",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases/{releaseID}/distros/{distroID}/formats",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &ListFormatsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListFormatsOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for listFormats: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
   ListProjects organizations projects
 
   Return a list of projects for an organization
@@ -763,47 +374,6 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for listProjects: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-  ListReleases projects releases
-
-  Return a list of releases for a project
-*/
-func (a *Client) ListReleases(params *ListReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListReleasesOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListReleasesParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "listReleases",
-		Method:             "GET",
-		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/releases",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"http", "https"},
-		Params:             params,
-		Reader:             &ListReleasesReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListReleasesOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for listReleases: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

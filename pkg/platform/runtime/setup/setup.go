@@ -215,7 +215,7 @@ func (s *Setup) update() error {
 
 	if buildResult.BuildStatus == headchef.Failed {
 		s.events.BuildFinished()
-		return locale.NewInputError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+		return locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -272,14 +272,6 @@ func (s *Setup) update() error {
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
 	if err := exec.Update(exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
-	}
-
-	// Install PPM Shim if any of the installed artifacts provide the Perl executable
-	if edGlobal.FindBinPathFor(constants.ActivePerlExecutable) != "" {
-		err = installPPMShim(execPath)
-		if err != nil {
-			return errs.Wrap(err, "Failed to install the PPM shim command at %s", execPath)
-		}
 	}
 
 	// clean up temp directory
