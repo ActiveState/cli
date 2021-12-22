@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -22,12 +21,11 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary          string
-	rcFile          *os.File
-	cmd             *exec.Cmd
-	env             map[string]string
-	errs            chan error
-	activateCommand *string
+	binary string
+	rcFile *os.File
+	cmd    *exec.Cmd
+	env    map[string]string
+	errs   chan error
 }
 
 const Name string = "cmd"
@@ -132,11 +130,6 @@ func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
-// SetActivateCommand - see subshell.SetActivateCommand
-func (v *SubShell) SetActivateCommand(cmd string) {
-	v.activateCommand = &cmd
-}
-
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
@@ -157,12 +150,6 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 		shellArgs = append(shellArgs, "/K", v.rcFile.Name())
 	} else {
 		directEnv = sscommon.EnvSlice(v.env)
-	}
-
-	if v.activateCommand != nil {
-		if err := fileutils.AppendToFile(v.rcFile.Name(), []byte("\r\n"+*v.activateCommand+"\r\nexit")); err != nil {
-			return err
-		}
 	}
 
 	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)

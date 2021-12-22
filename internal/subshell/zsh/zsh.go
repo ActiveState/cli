@@ -29,12 +29,11 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary          string
-	rcFile          *os.File
-	cmd             *exec.Cmd
-	env             map[string]string
-	errs            chan error
-	activateCommand *string
+	binary string
+	rcFile *os.File
+	cmd    *exec.Cmd
+	env    map[string]string
+	errs   chan error
 }
 
 const Name string = "zsh"
@@ -137,11 +136,6 @@ func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
-// SetActivateCommand - see subshell.SetActivateCommand
-func (v *SubShell) SetActivateCommand(cmd string) {
-	v.activateCommand = &cmd
-}
-
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
@@ -192,12 +186,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	var shellArgs []string
-	if v.activateCommand != nil {
-		shellArgs = append(shellArgs, "-c", *v.activateCommand)
-	}
-
-	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
+	cmd := sscommon.NewCommand(v.Binary(), nil, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
