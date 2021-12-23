@@ -2,6 +2,7 @@ package activate
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"path/filepath"
 	rt "runtime"
@@ -97,8 +98,29 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
+	// Detect target path
+	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+	}
+
+	// Detect target project
+	proj, err := r.pathToProject(pathToUse)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+	}
+
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
+		activated, err := activatedProjectName()
+		if err != nil {
+			return errs.Wrap(err, "Could not get activated project details")
+		}
+		if activated == params.Namespace.String() || activated == proj.NamespaceString() {
+			r.out.Print(locale.Tl("already_activate", "Your project is already active"))
+			return nil
+		}
+
 		if !params.Default {
 			err := locale.NewInputError("err_already_activated",
 				"You cannot activate a new project when you are already in an activated state. "+
@@ -114,18 +136,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		if params.Namespace == nil || params.Namespace.IsValid() {
 			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
 		}
-	}
-
-	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
-	}
-
-	// Detect target project
-	proj, err := r.pathToProject(pathToUse)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 	}
 
 	if proj != nil && params.Branch != "" {
@@ -340,4 +350,13 @@ func warningForAdministrator(out output.Outputer) {
 			u.Username,
 		))
 	}
+}
+
+func activatedProjectName() (string, error) {
+	path := os.Getenv(constants.ProjectEnvVarName)
+	proj, err := project.FromExactPath(filepath.Dir(path))
+	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
+		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
+	}
+	return proj.NamespaceString(), nil
 }
