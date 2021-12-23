@@ -102,7 +102,7 @@ func newOSVersionInfoFromRegistry() (*OSVersionInfo, error) {
 		}
 	}
 
-	if ! hasVersionInfo {
+	if !hasVersionInfo {
 		return newOSVersionInfoFromLegacyRegistry(key)
 	}
 
@@ -146,12 +146,12 @@ func newOSVersionInfoFromLegacyRegistry(key registry.Key) (*OSVersionInfo, error
 	versions := re.FindAllString(productName, -1)
 	if len(versions) > 0 {
 		if major64, err = strconv.ParseUint(versions[0], 10, 64); err != nil {
-			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, err)
+			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, productName, err)
 		}
 	}
 	if len(versions) > 1 {
 		if minor64, err = strconv.ParseUint(versions[1], 10, 64); err != nil {
-			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, err)
+			return nil, fmt.Errorf("Invalid int '%v' returned from product name: '%s', error: %v", versions, productName, err)
 		}
 	}
 
