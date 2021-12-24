@@ -172,9 +172,6 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
-	cp.SendLine("state activate")
-	cp.ExpectLongString("You cannot activate a new project when you are already in an activated state")
-
 	cp.SendLine("state activate --default something/else")
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
 
