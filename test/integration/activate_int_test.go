@@ -515,3 +515,69 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine("state activate")
+	cp.Expect("Your project is already active")
+	cp.WaitForInput()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_SameNamespace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine(fmt.Sprintf("state activate %s", namespace))
+	cp.Expect("Your project is already active")
+	cp.WaitForInput()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentNamespace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine(fmt.Sprintf("state activate %s", "ActiveState-CLI/Perl-5.32"))
+	cp.Expect("You cannot activate a new project when you are already in an activated state")
+	cp.WaitForInput()
+}

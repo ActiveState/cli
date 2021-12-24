@@ -116,7 +116,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not get activated project details")
 		}
-		if activated == params.Namespace.String() || activated == proj.NamespaceString() {
+		if (params.Namespace != nil && activated == params.Namespace.String()) || (proj != nil && activated == proj.NamespaceString()) {
 			r.out.Print(locale.Tl("already_activate", "Your project is already active"))
 			return nil
 		}
@@ -131,9 +131,7 @@ func (r *Activate) run(params *ActivateParams) error {
 				"Close Activated State → [ACTIONABLE]exit[/RESET]",
 			)
 			return errs.AddTips(err, tipMsg)
-		}
-
-		if params.Namespace == nil || params.Namespace.IsValid() {
+		} else if params.Namespace == nil || params.Namespace.IsValid() {
 			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
 		}
 	}
