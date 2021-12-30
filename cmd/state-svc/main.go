@@ -42,7 +42,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -58,7 +58,7 @@ func main() {
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		if locale.IsInputError(err) {
-			logging.Error("state-svc errored out due to input: %s", errMsg)
+			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {
 			logging.Critical("state-svc errored out: %s", errMsg)
 		}
