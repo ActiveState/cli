@@ -55,7 +55,7 @@ func onReady() {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
-		if err := events.WaitForEvents(1*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
