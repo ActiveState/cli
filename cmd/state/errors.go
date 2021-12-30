@@ -104,7 +104,7 @@ func unwrapError(err error) (int, error) {
 	if !locale.IsInputError(err) {
 		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
-		logging.Error("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
@@ -123,7 +123,7 @@ func unwrapError(err error) (int, error) {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if ! condition.BuiltViaCI() {
+		if !condition.BuiltViaCI() {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
