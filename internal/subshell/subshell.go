@@ -74,9 +74,6 @@ type SubShell interface {
 	// SetEnv sets the environment up for the given subshell
 	SetEnv(env map[string]string)
 
-	// SetActivateCommand sets the command that should be ran once activated
-	SetActivateCommand(string)
-
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
 }
