@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
