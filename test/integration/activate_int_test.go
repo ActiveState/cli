@@ -289,7 +289,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("DBD.pm")
 
 	// Expect PPM shim to be installed
-	cp.SendLine("ppm packages")
+	cp.SendLine("ppm list")
 	cp.Expect("Shimming command")
 
 	cp.SendLine("exit")
