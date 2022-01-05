@@ -112,17 +112,18 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
-		activated, err := activatedProjectName()
-		if err != nil {
-			return errs.Wrap(err, "Could not get activated project details")
-		}
-		if (params.Namespace != nil && activated == params.Namespace.String()) || (proj != nil && activated == proj.NamespaceString()) {
-			r.out.Print(locale.Tl("already_activate", "Your project is already active"))
-			return nil
-		}
-
 		if !params.Default {
-			err := locale.NewInputError("err_already_activated",
+			activated, err := activatedProjectName()
+			if err != nil {
+				return errs.Wrap(err, "Could not get activated project details")
+			}
+
+			if (params.Namespace != nil && activated == params.Namespace.String()) || (proj != nil && activated == proj.NamespaceString()) {
+				r.out.Print(locale.Tl("already_activate", "Your project is already active"))
+				return nil
+			}
+
+			err = locale.NewInputError("err_already_activated",
 				"You cannot activate a new project when you are already in an activated state. "+
 					"To exit your activated state simply close your current shell by running [ACTIONABLE]exit[/RESET].",
 			)
@@ -131,7 +132,9 @@ func (r *Activate) run(params *ActivateParams) error {
 				"Close Activated State → [ACTIONABLE]exit[/RESET]",
 			)
 			return errs.AddTips(err, tipMsg)
-		} else if params.Namespace == nil || params.Namespace.IsValid() {
+		}
+
+		if params.Namespace == nil || params.Namespace.IsValid() {
 			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
 		}
 	}

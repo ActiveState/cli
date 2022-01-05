@@ -176,13 +176,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
 
 	cp.SendLine("state activate --default")
-	cp.ExpectLongString(fmt.Sprintf("Creating a Virtual Environment"))
+	cp.ExpectLongString("Creating a Virtual Environment")
 	cp.WaitForInput(40 * time.Second)
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {
 		pythonShim = pythonExe + ".bat"
 	}
-	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonShim), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
