@@ -10,3 +10,6 @@ const ActivePython3Executable = "python3"
 
 // ActivePerlExecutable represents the ActivePerl executable.
 const ActivePerlExecutable = "perl"
+
+// RubyExecutable represents the ActivePerl executable.
+const RubyExecutable = "ruby"

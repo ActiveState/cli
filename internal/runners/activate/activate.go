@@ -53,7 +53,6 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
-	Command       string
 	ReplaceWith   *project.Namespaced
 	Default       bool
 	Branch        string
@@ -200,10 +199,6 @@ func (r *Activate) run(params *ActivateParams) error {
 				"To use this project without activating it in the future, make it your default by running your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
 			))
 		}
-	}
-
-	if params.Command != "" {
-		r.subshell.SetActivateCommand(params.Command)
 	}
 
 	// Determine branch name

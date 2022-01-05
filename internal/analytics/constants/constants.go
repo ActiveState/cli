@@ -6,6 +6,9 @@ const CfgSessionToken = "sessionToken"
 // CatRunCmd is the event category used for running commands
 const CatRunCmd = "run-command"
 
+// CatShim is the event category used for shimmed commands
+const CatShim = "shim"
+
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
@@ -74,3 +77,6 @@ const CatMisc = "misc"
 
 // CatStateSvc is for state-svc events
 const CatStateSvc = "state-svc"
+
+// CatPackageOp is for `state packages` events
+const CatPackageOp = "package-operation"

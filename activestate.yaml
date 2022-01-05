@@ -56,10 +56,13 @@ scripts:
   - name: install-deps
     language: bash
     value: |
+      export GO111MODULE=on
+      goflags="${GOFLAGS}"; unset GOFLAGS
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         go install github.com/gobuffalo/packr/packr@v1.30.1
       fi
+      GOFLAGS="${goflags}"
       $scripts.install-deps-os
   - name: install-deps-os
     language: bash
@@ -162,7 +165,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
 
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
@@ -339,6 +342,22 @@ scripts:
       export PT_PROJID_STORAGE=$secrets.project.PT_PROJID_STORAGE
       export PT_DAYS_AGED=190 # set this value to control cleanup
       python3 ./scripts/story-cleanup/story-cleanup.py
+  - name: lint
+    language: bash
+    description: "Runs linting for untracked and unstaged changes (if any), or staged changes"
+    value: golangci-lint run --new
+  - name: lint-staged
+    language: bash
+    description: "Runs linting for staged changes (skipping untracked and unstaged-only files)"
+    value: |
+      golangci-lint run \
+        --new-from-rev=HEAD~ \
+        --skip-files="$(git ls-files --others --exclude-standard -z | xargs -0 -I{} echo "^"{})" \
+        --skip-files="$(comm -13 <(git diff --cached --name-only | sort) <(git diff --name-only | sort))"
+  - name: lint-all
+    language: bash
+    description: "Runs linting for all files"
+    value: golangci-lint run --no-config
 events:
   - name: activate
     if: ne .Shell "cmd"
@@ -346,6 +365,10 @@ events:
       if ! type "go" &> /dev/null; then
         echo "go is not installed. Please install Go version 1.11 or above."
         exit 1
+      fi
+      if ! type "golangci-lint" &> /dev/null; then
+        echo "golangci-lint was not found on your PATH, installing .."
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
       fi
       git config core.hooksPath .githooks
       if ! type "swagger" &> /dev/null; then
