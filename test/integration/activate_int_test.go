@@ -290,7 +290,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	// Expect PPM shim to be installed
 	cp.SendLine("ppm")
-	cp.Expect("Your command is being forwarded to `state packages`.")
+	cp.Expect("Shimming command")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
