@@ -1,3 +1,4 @@
+//go:build !test
 // +build !test
 
 package logging
@@ -17,6 +18,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/rollbar/rollbar-go"
 	"github.com/thoas/go-funk"
 
@@ -158,7 +160,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 				}
 			}
 
-			rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, originalMessage)
+			rollbarMsg := fmt.Sprintf("(INSTANCE %s)%s %s: %s", instanceid.ID(), exec, flags, originalMessage)
 			if len(rollbarMsg) > 1000 {
 				rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
 			}
