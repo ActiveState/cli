@@ -82,8 +82,6 @@ func run() (rerr error) {
 	an := anaSvc.New(cfg, authentication.LegacyGet())
 	defer an.Wait()
 
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
-
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,

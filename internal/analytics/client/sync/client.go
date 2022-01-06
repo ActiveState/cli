@@ -129,7 +129,7 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {
-			logging.Error(
+			logging.Debug(
 				"Reporter failed: %s, category: %s, action: %s, error: %s",
 				reporter.ID(), category, action, errs.JoinMessage(err),
 			)
