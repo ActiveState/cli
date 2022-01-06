@@ -118,8 +118,6 @@ func main() {
 	an = sync.New(cfg, nil)
 	an.Event(AnalyticsFunnelCat, "start")
 
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
-
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
