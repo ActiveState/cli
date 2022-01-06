@@ -288,11 +288,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("cache")
 	cp.Expect("DBD.pm")
 
-	if runtime.GOOS == "windows" {
-		cp.SendLine("more activestate.yaml")
-		fmt.Println("Output:", cp.Snapshot())
-	}
-
 	// Expect PPM shim to be installed
 	cp.SendLine("ppm list")
 	cp.Expect("Shimming command")
