@@ -188,8 +188,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 		}
 	}()
 
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
-
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
