@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
@@ -66,6 +67,7 @@ func SetupRollbar(token string) {
 
 	rollbar.SetCustom(map[string]interface{}{
 		"install_source": source,
+		"instance_id":    instanceid.ID(),
 	})
 }
 
