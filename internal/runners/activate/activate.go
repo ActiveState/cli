@@ -112,7 +112,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
 		if !params.Default {
-			activated, err := activatedProjectName()
+			activated, err := parentNamespace()
 			if err != nil {
 				return errs.Wrap(err, "Could not get activated project details")
 			}
@@ -348,7 +348,7 @@ func warningForAdministrator(out output.Outputer) {
 	}
 }
 
-func activatedProjectName() (string, error) {
+func parentNamespace() (string, error) {
 	path := os.Getenv(constants.ProjectEnvVarName)
 	proj, err := project.FromExactPath(filepath.Dir(path))
 	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
