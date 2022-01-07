@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/imdario/mergo"
 )
 

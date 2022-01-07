@@ -20,8 +20,8 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	ga "github.com/ActiveState/go-ogle-analytics"
-	"github.com/ActiveState/sysinfo"
 )
 
 type Reporter interface {
@@ -129,7 +129,10 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {
-			logging.Error("Reporter failed: %s, error: %s", reporter.ID(), errs.JoinMessage(err))
+			logging.Debug(
+				"Reporter failed: %s, category: %s, action: %s, error: %s",
+				reporter.ID(), category, action, errs.JoinMessage(err),
+			)
 		}
 	}
 }

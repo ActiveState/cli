@@ -9,11 +9,9 @@ require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/ActiveState/archiver v3.1.1+incompatible
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/sysinfo v0.0.0-20200619170619-0582d42daf27
 	github.com/ActiveState/termtest v0.7.1
 	github.com/ActiveState/termtest/expect v0.7.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
-	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
@@ -29,7 +27,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gammazero/workerpool v1.1.1
 	github.com/getlantern/systray v1.1.0
-	github.com/go-ole/go-ole v1.2.4
+	github.com/go-ole/go-ole v1.2.6
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/runtime v0.19.29
@@ -68,7 +66,7 @@ require (
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
 	github.com/rollbar/rollbar-go v1.1.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
-	github.com/shirou/gopsutil v2.19.12+incompatible
+	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
 	github.com/spf13/cast v1.3.0
 	github.com/spf13/cobra v1.1.1
@@ -76,16 +74,18 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/thoas/go-funk v0.8.0
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vbauerster/mpb/v7 v7.1.5
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/wailsapp/wails v1.16.3
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yuin/goldmark v1.3.5
+	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
 	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.36.0 // indirect

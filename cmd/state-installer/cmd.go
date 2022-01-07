@@ -64,7 +64,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Close, an.Wait); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, an.Wait); err != nil {
 			logging.Error("state-installer failed to wait for events: %v", err)
 		}
 		os.Exit(exitCode)
@@ -117,8 +117,6 @@ func main() {
 
 	an = sync.New(cfg, nil)
 	an.Event(AnalyticsFunnelCat, "start")
-
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
 	params := newParams()
 	cmd := captain.NewCommand(

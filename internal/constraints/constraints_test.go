@@ -9,7 +9,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 

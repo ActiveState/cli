@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
 
@@ -61,7 +61,7 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(5*time.Second, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
@@ -192,8 +192,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 	}()
-
-	logging.SetupRollbarReporter(func(msg string) { an.Event("rollbar", msg) })
 
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)

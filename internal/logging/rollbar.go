@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
@@ -19,12 +20,12 @@ func (s *RollbarLogger) Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-type RollbarErrorLogger struct{
+type RollbarErrorLogger struct {
 	reporter func(string)
 }
 
 func (s *RollbarErrorLogger) Printf(format string, args ...interface{}) {
-	if ! strings.HasPrefix(format, "Rollbar") { // All rollbar errors I observed are prefixed with "Rollbar"
+	if !strings.HasPrefix(format, "Rollbar") { // All rollbar errors I observed are prefixed with "Rollbar"
 		return
 	}
 
@@ -41,6 +42,7 @@ func SetupRollbar(token string) {
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
+	rollbar.SetRetryAttempts(1)
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
 
@@ -65,6 +67,7 @@ func SetupRollbar(token string) {
 
 	rollbar.SetCustom(map[string]interface{}{
 		"install_source": source,
+		"instance_id":    instanceid.ID(),
 	})
 }
 

@@ -22,12 +22,11 @@ func init() {
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
 type SubShell struct {
-	binary          string
-	rcFile          *os.File
-	cmd             *exec.Cmd
-	env             map[string]string
-	errs            chan error
-	activateCommand *string
+	binary string
+	rcFile *os.File
+	cmd    *exec.Cmd
+	env    map[string]string
+	errs   chan error
 }
 
 const Name string = "tcsh"
@@ -104,11 +103,6 @@ func (v *SubShell) SetEnv(env map[string]string) {
 	v.env = env
 }
 
-// SetActivateCommand - see subshell.SetActivateCommand
-func (v *SubShell) SetActivateCommand(cmd string) {
-	v.activateCommand = &cmd
-}
-
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
@@ -136,15 +130,8 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 		}
 
 		shellArgs = []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
-		if v.activateCommand != nil {
-			shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
-		}
 	} else {
 		directEnv = sscommon.EnvSlice(v.env)
-	}
-
-	if v.activateCommand != nil {
-		shellArgs = []string{"-c", *v.activateCommand}
 	}
 
 	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)

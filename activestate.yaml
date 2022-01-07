@@ -56,14 +56,11 @@ scripts:
   - name: install-deps
     language: bash
     value: |
+      export GO111MODULE=on
       goflags="${GOFLAGS}"; unset GOFLAGS
       if ! type "packr" &> /dev/null; then
         echo "packr was not found on your PATH, installing .."
         go install github.com/gobuffalo/packr/packr@v1.30.1
-      fi
-      if ! type "golangci-lint" &> /dev/null; then
-        echo "golangci-lint was not found on your PATH, installing .."
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
       fi
       GOFLAGS="${goflags}"
       $scripts.install-deps-os
@@ -168,7 +165,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
 
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
@@ -368,6 +365,10 @@ events:
       if ! type "go" &> /dev/null; then
         echo "go is not installed. Please install Go version 1.11 or above."
         exit 1
+      fi
+      if ! type "golangci-lint" &> /dev/null; then
+        echo "golangci-lint was not found on your PATH, installing .."
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
       fi
       git config core.hooksPath .githooks
       if ! type "swagger" &> /dev/null; then

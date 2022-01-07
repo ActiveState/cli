@@ -37,12 +37,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.PreferredPath,
 			},
 			{
-				Name:        "command",
-				Shorthand:   "c",
-				Description: locale.Tl("flag_state_activate_cmd_description", "Run given command in the activated shell"),
-				Value:       &params.Command,
-			},
-			{
 				Name:        "replace",
 				Description: locale.Tl("flag_state_activate_replace_description", "Replace project url for this project."),
 				Value:       params.ReplaceWith,

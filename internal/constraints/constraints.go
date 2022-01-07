@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/sysinfo"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"

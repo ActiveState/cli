@@ -123,7 +123,7 @@ func unwrapError(err error) (int, error) {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if ! condition.BuiltViaCI() {
+		if !condition.BuiltViaCI() {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
