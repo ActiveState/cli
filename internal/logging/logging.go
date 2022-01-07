@@ -34,7 +34,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
