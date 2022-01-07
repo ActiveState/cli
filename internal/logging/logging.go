@@ -238,7 +238,7 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 			}
 			errMsg += ": " + errw.Error()
 		}
-		fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
+		fmt.Fprintf(os.Stderr, "Error writing log message, please contact support: %s\n", errMsg)
 		fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 	}
 

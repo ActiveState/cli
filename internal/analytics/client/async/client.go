@@ -122,7 +122,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 		defer a.eventWaitGroup.Done()
 
 		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, string(dimMarshalled)); err != nil {
-			logging.Error("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
+			logging.Debug("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
 	return nil
