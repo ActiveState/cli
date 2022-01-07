@@ -34,6 +34,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
@@ -238,7 +239,7 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 			}
 			errMsg += ": " + errw.Error()
 		}
-		fmt.Fprintf(os.Stderr, "Error writing log message, please contact support: %s\n", errMsg)
+		fmt.Fprintf(os.Stderr, "Error writing log message, please contact support via %s\nError received: %s\n", constants.ForumsURL, errMsg)
 		fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 	}
 
