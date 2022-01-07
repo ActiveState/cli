@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -61,12 +60,8 @@ func main() {
 		}
 
 		// ensure rollbar messages are called
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
-		}
-
-		if err := events.WaitForEvents(1*time.Second, logging.Close); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to wait for logging to close: %v", err)
 		}
 
 		// exit with exitCode
