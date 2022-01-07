@@ -34,6 +34,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
@@ -233,6 +234,7 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
 		printLogError(err, ctx, msg, args...)
+
 	}
 
 }
