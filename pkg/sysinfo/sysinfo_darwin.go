@@ -6,7 +6,11 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+
+	"github.com/patrickmn/go-cache"
 )
+
+var sysinfoCache *cache.Cache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
 // OS returns the system's OS
 func OS() OsInfo {
@@ -19,6 +23,11 @@ var (
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
+	cached, found := sysinfoCache.Get(osVersionInfoCacheKey)
+	if found {
+		return cached.(*OSVersionInfo), nil
+	}
+
 	// Fetch OS version.
 	version, err := getDarwinProductVersion()
 	if err != nil {
@@ -50,11 +59,18 @@ func OSVersion() (*OSVersionInfo, error) {
 	}
 	// Fetch OS name.
 	name, err := exec.Command("sw_vers", "-productName").Output()
-	return &OSVersionInfo{version, major, minor, micro, string(name)}, nil
+	info := &OSVersionInfo{version, major, minor, micro, string(name)}
+	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
+	return info, nil
 }
 
 // Libc returns the system's C library.
 func Libc() (*LibcInfo, error) {
+	cached, found := sysinfoCache.Get(libcInfoCacheKey)
+	if found {
+		return cached.(*LibcInfo), nil
+	}
+
 	version, err := exec.Command("clang", "--version").Output()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to fetch libc version: %s", err)
@@ -71,11 +87,18 @@ func Libc() (*LibcInfo, error) {
 	}
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])
-	return &LibcInfo{BsdLibc, major, minor}, nil
+	info := &LibcInfo{BsdLibc, major, minor}
+	sysinfoCache.Set(libcInfoCacheKey, info, cache.NoExpiration)
+	return info, nil
 }
 
 // Compilers returns the system's available compilers.
 func Compilers() ([]*CompilerInfo, error) {
+	cached, found := sysinfoCache.Get(compilersCacheKey)
+	if found {
+		return cached.([]*CompilerInfo), nil
+	}
+
 	compilers := []*CompilerInfo{}
 
 	// Map of compiler commands to CompilerNameInfos.
@@ -91,6 +114,7 @@ func Compilers() ([]*CompilerInfo, error) {
 		}
 	}
 
+	sysinfoCache.Set(compilersCacheKey, compilers, cache.NoExpiration)
 	return compilers, nil
 }
 

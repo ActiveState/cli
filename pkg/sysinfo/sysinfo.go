@@ -7,6 +7,13 @@ import (
 	"strconv"
 )
 
+// Cache keys used for storing/retrieving computed system information.
+const (
+	osVersionInfoCacheKey = "osVersionInfo"
+	libcInfoCacheKey      = "libcInfo"
+	compilersCacheKey     = "compilers"
+)
+
 // OsInfo represents an OS returned by OS().
 type OsInfo int
 
