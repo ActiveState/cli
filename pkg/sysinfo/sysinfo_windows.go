@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
+
+	"github.com/patrickmn/go-cache"
 )
 
 // OS returns the system's OS
@@ -61,8 +63,13 @@ func newOSVersionInfo(major, minor, micro int) *OSVersionInfo {
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
+	if cached, found := sysinfoCache.Get(osVersionInfoCacheKey); found {
+		return cached.(*OSVersionInfo), nil
+	}
+
 	osvi, err := newOSVersionInfoFromRegistry()
 	if err == nil {
+		sysinfoCache.Set(osVersionInfoCacheKey, osvi, cache.NoExpiration)
 		return osvi, nil
 	}
 	regErr := err
@@ -72,6 +79,7 @@ func OSVersion() (*OSVersionInfo, error) {
 		return nil, fmt.Errorf("From DLL error: %v.\nFrom Registry error: %v", err, regErr)
 	}
 
+	sysinfoCache.Set(osVersionInfoCacheKey, osvi, cache.NoExpiration)
 	return osvi, nil
 }
 
@@ -174,6 +182,10 @@ func newOSVersionInfoFromDLL() (*OSVersionInfo, error) {
 
 // Libc returns the system's C library.
 func Libc() (*LibcInfo, error) {
+	if cached, found := sysinfoCache.Get(libcInfoCacheKey); found {
+		return cached.(*LibcInfo), nil
+	}
+
 	// Use Windows powershell in order to query the version information from
 	// msvcrt.dll. This works on Windows 7 and higher.
 	// Note: cannot easily use version.dll's GetFileVersionInfo function since its
@@ -199,11 +211,17 @@ func Libc() (*LibcInfo, error) {
 	}
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])
-	return &LibcInfo{Msvcrt, major, minor}, nil
+	info := &LibcInfo{Msvcrt, major, minor}
+	sysinfoCache.Set(libcInfoCacheKey, info, cache.NoExpiration)
+	return info, nil
 }
 
 // Compilers returns the system's available compilers.
 func Compilers() ([]*CompilerInfo, error) {
+	if cached, found := sysinfoCache.Get(compilersCacheKey); found {
+		return cached.([]*CompilerInfo), nil
+	}
+
 	compilers := []*CompilerInfo{}
 
 	// Map of compiler commands to CompilerNameInfos.
@@ -235,5 +253,6 @@ func Compilers() ([]*CompilerInfo, error) {
 		}
 	}
 
+	sysinfoCache.Set(compilersCacheKey, compilers, cache.NoExpiration)
 	return compilers, nil
 }
