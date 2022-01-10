@@ -11,13 +11,16 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
+
 func SetupRollbar(token string) {
 	defer handlePanics(recover())
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
+
 	rollbar.SetRetryAttempts(0)
+
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
 
