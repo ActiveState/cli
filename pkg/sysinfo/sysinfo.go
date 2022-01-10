@@ -5,7 +5,11 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+
+	"github.com/patrickmn/go-cache"
 )
+
+var sysinfoCache *cache.Cache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
 // Cache keys used for storing/retrieving computed system information.
 const (

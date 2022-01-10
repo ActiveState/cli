@@ -15,8 +15,6 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-var sysinfoCache *cache.Cache = cache.New(cache.NoExpiration, cache.NoExpiration)
-
 // OS returns the system's OS
 func OS() OsInfo {
 	return Windows
@@ -65,8 +63,7 @@ func newOSVersionInfo(major, minor, micro int) *OSVersionInfo {
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
-	cached, found := sysinfoCache.Get(osVersionInfoCacheKey)
-	if found {
+	if cached, found := sysinfoCache.Get(osVersionInfoCacheKey); found {
 		return cached.(*OSVersionInfo), nil
 	}
 
@@ -185,8 +182,7 @@ func newOSVersionInfoFromDLL() (*OSVersionInfo, error) {
 
 // Libc returns the system's C library.
 func Libc() (*LibcInfo, error) {
-	cached, found := sysinfoCache.Get(libcInfoCacheKey)
-	if found {
+	if cached, found := sysinfoCache.Get(libcInfoCacheKey); found {
 		return cached.(*LibcInfo), nil
 	}
 
@@ -222,8 +218,7 @@ func Libc() (*LibcInfo, error) {
 
 // Compilers returns the system's available compilers.
 func Compilers() ([]*CompilerInfo, error) {
-	cached, found := sysinfoCache.Get(compilersCacheKey)
-	if found {
+	if cached, found := sysinfoCache.Get(compilersCacheKey); found {
 		return cached.([]*CompilerInfo), nil
 	}
 
