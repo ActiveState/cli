@@ -28,6 +28,7 @@ type fileHandler struct {
 	mu        sync.Mutex
 	verbose   safeBool
 	wg        *sync.WaitGroup
+	counter   int
 	queue     chan entry
 	quit      chan struct{}
 }
@@ -39,6 +40,7 @@ func newFileHandler() *fileHandler {
 		sync.Mutex{},
 		safeBool{},
 		&sync.WaitGroup{},
+		0,
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 	}
@@ -51,6 +53,9 @@ func (l *fileHandler) start() {
 		select {
 		case entry := <-l.queue:
 			l.emit(entry.ctx, entry.message, entry.args)
+			fmt.Println("counter done:", l.counter)
+			l.wg.Done()
+			l.counter--
 		case <-l.quit:
 			return
 		}
@@ -78,13 +83,14 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 		args:    a,
 	}
 	l.queue <- e
+	fmt.Println("counter add:", l.counter)
 	l.wg.Add(1)
+	l.counter++
 	return nil
 }
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
 	defer handlePanics(recover())
-	defer l.wg.Done()
 	// In this function we close and open the file handle to the log file. In
 	// order to ensure this is safe to be called across threads, we just
 	// synchronize the entire function
@@ -204,7 +210,7 @@ func (l *fileHandler) reopenLogfile() error {
 }
 
 func (l *fileHandler) Close() {
+	l.wg.Wait()
 	defer close(l.quit)
 	defer close(l.queue)
-	l.wg.Wait()
 }
