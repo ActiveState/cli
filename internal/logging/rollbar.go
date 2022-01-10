@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"os"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,11 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
 	"github.com/rollbar/rollbar-go"
-)
-
-var (
-	hostname, _ = os.Hostname()
-	rb          = rollbar.NewAsync("", "development", "", hostname, "")
 )
 
 func SetupRollbar(token string) {
