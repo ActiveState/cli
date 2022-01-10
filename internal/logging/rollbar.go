@@ -18,7 +18,7 @@ func SetupRollbar(token string) {
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
-	rollbar.SetRetryAttempts(1)
+	rollbar.SetRetryAttempts(0)
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
 
