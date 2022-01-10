@@ -122,7 +122,13 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch) && condition.BuiltViaCI() {
+		isPublicChannel := (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch)
+
+		// All rollbar errors I observed are prefixed with "Rollbar"
+		// This is meant to help guard against recursion issues
+		isRollbarMsg := strings.HasPrefix(message, "Rollbar")
+		
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
 			data := map[string]interface{}{}
 
 			if l.file != nil {
