@@ -28,7 +28,6 @@ type fileHandler struct {
 	mu        sync.Mutex
 	verbose   safeBool
 	wg        *sync.WaitGroup
-	counter   int
 	queue     chan entry
 	quit      chan struct{}
 }
@@ -40,7 +39,6 @@ func newFileHandler() *fileHandler {
 		sync.Mutex{},
 		safeBool{},
 		&sync.WaitGroup{},
-		0,
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 	}
@@ -53,9 +51,7 @@ func (l *fileHandler) start() {
 		select {
 		case entry := <-l.queue:
 			l.emit(entry.ctx, entry.message, entry.args)
-			fmt.Println("counter done:", l.counter)
 			l.wg.Done()
-			l.counter--
 		case <-l.quit:
 			return
 		}
@@ -82,10 +78,8 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 		message: message,
 		args:    a,
 	}
-	l.queue <- e
-	fmt.Println("counter add:", l.counter)
 	l.wg.Add(1)
-	l.counter++
+	l.queue <- e
 	return nil
 }
 
