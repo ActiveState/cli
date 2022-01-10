@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -12,13 +13,18 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
+var (
+	hostname, _ = os.Hostname()
+	rb          = rollbar.NewAsync("", "development", "", hostname, "")
+)
+
 func SetupRollbar(token string) {
 	defer handlePanics(recover())
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
 	}
-	rollbar.SetRetryAttempts(1)
+	rollbar.SetRetryAttempts(0)
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment(constants.BranchName)
 
