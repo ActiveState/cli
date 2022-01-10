@@ -51,7 +51,6 @@ func (l *fileHandler) start() {
 		select {
 		case entry := <-l.queue:
 			l.emit(entry.ctx, entry.message, entry.args)
-			l.wg.Done()
 		case <-l.quit:
 			return
 		}
@@ -85,6 +84,7 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
 	defer handlePanics(recover())
+	defer l.wg.Done()
 	// In this function we close and open the file handle to the log file. In
 	// order to ensure this is safe to be called across threads, we just
 	// synchronize the entire function
