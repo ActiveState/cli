@@ -204,7 +204,7 @@ func (l *fileHandler) reopenLogfile() error {
 }
 
 func (l *fileHandler) Close() {
-	l.wg.Wait()
 	defer close(l.quit)
 	defer close(l.queue)
+	l.wg.Wait()
 }
