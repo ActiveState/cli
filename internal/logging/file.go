@@ -14,7 +14,7 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-var defaultMaxEntries = 100000
+var defaultMaxEntries = 1000
 
 type entry struct {
 	ctx     *MessageContext
