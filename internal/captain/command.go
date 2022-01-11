@@ -40,6 +40,11 @@ var appEventPrefix string = func() string {
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
+const (
+	ppmShim = "ppm"
+	pipShim = "pip"
+)
+
 type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
 }
@@ -502,11 +507,16 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 
 	subCommandString := c.UseFull()
-	logging.CurrentCmd = appEventPrefix+subCommandString
+	logging.CurrentCmd = appEventPrefix + subCommandString
 
-	// Send  GA events unless they are handled in the runners...
+	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {
-		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+		var label string
+		if len(args) > 0 && args[0] == pipShim || args[0] == ppmShim {
+			label = args[0]
+		}
+		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, label)
+
 		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
 			c.analytics.Event(anaConsts.CatShim, shim)
 		}
