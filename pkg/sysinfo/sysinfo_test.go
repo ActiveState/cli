@@ -24,7 +24,7 @@ func TestCompilersCached(t *testing.T) {
 	compilers1, _ := Compilers()
 	compilers2, _ := Compilers()
 	assert.True(t, compilers1 != nil, "Compilers should not be nil")
-	for i, _ := range compilers1 {
+	for i := range compilers1 {
 		assert.True(t, compilers1[i] == compilers2[i], "Pointers should be equal")
 	}
 }
