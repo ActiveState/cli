@@ -41,7 +41,7 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
 	}
 
-	icon, err := assets.readFileBytes("icon.ico")
+	icon, err := assets.ReadFileBytes("icon.ico")
 	if err != nil {
 		return err
 	}
