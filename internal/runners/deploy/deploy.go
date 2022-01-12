@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
-	"github.com/gobuffalo/packr"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -175,9 +175,11 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	_, _ = rti.Env(false, false)
 
 	if rt.GOOS == "windows" {
-		box := packr.NewBox("../../../assets/scripts")
-		contents := box.Bytes("setenv.bat")
-		err := fileutils.WriteFile(filepath.Join(rtTarget.Dir(), "setenv.bat"), contents)
+		contents, err := assets.ReadFileBytes("scripts/setenv.bat")
+		if err != nil {
+			return err
+		}
+		err = fileutils.WriteFile(filepath.Join(rtTarget.Dir(), "setenv.bat"), contents)
 		if err != nil {
 			return locale.WrapError(err, "err_deploy_write_setenv", "Could not create setenv batch scriptfile at path: %s", rtTarget.Dir())
 		}

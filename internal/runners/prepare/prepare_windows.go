@@ -6,9 +6,8 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/gobuffalo/packr"
-
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -42,8 +41,12 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
 	}
 
-	box := packr.NewBox("../../../assets")
-	if err := sc.SetIconBlob(box.Bytes("icon.ico")); err != nil {
+	icon, err := assets.readFileBytes("icon.ico")
+	if err != nil {
+		return err
+	}
+	err = sc.SetIconBlob(icon)
+	if err != nil {
 		return locale.WrapError(err, "err_preparestart_icon", "Could not set icon for shortcut file")
 	}
 

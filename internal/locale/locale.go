@@ -4,6 +4,7 @@ package locale
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"log"
 	"os"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/thoas/go-funk"
 
@@ -32,6 +32,9 @@ var translateFunction func(translationID string, args ...interface{}) string
 
 var args = os.Args[1:]
 var exit = os.Exit
+
+//go:embed *.yaml
+var localeFiles embed.FS
 
 func init() {
 	defer profile.Measure("locale:init", time.Now())
@@ -56,12 +59,15 @@ func init() {
 	}
 
 	path := getLocalePath()
-	box := packr.NewBox("../../locale")
 
 	funk.ForEach(Supported, func(x string) {
 		filename := strings.ToLower(x) + ".yaml"
 		filepath := path + filename
-		err := i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
+		bytes, err := localeFiles.ReadFile(filename)
+		if err != nil {
+			panic(fmt.Sprintf("Could not read asset %s: %v", filename, err))
+		}
+		err = i18n.ParseTranslationFileBytes(filepath, bytes)
 		if err != nil {
 			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
 		}
@@ -73,10 +79,10 @@ func init() {
 }
 
 // getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being ran
-// this just returns `locale/`
+// this just returns `internal/locale/`
 func getLocalePath() string {
 	pathsep := string(os.PathSeparator)
-	path := "locale" + pathsep
+	path := "internal/locale" + pathsep
 
 	rootpath, err := environment.GetRootPath()
 
@@ -119,7 +125,7 @@ func Set(localeName string) (rerr error) {
 		return errs.Wrap(err, "Could not get configuration to store updated locale")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
-	
+
 	err = cfg.Set("Locale", localeName)
 	if err != nil {
 		return errs.Wrap(err, "Could not set locale in config")

@@ -1,4 +1,4 @@
-// +build windows
+//go:build windows
 
 package clean
 
@@ -9,9 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gobuffalo/packr"
-
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -99,9 +98,11 @@ func removeInstall(logFile, configPath, transitionalStateTool string) error {
 func removePaths(logFile string, paths ...string) error {
 	logging.Debug("Removing paths: %v", paths)
 	scriptName := "removePaths"
-	box := packr.NewBox("../../../assets/scripts/")
-	scriptBlock := box.String(fmt.Sprintf("%s.bat", scriptName))
-	sf, err := scriptfile.New(language.Batch, scriptName, scriptBlock)
+	scriptBlock, err := assets.ReadFileBytes(fmt.Sprintf("scripts/%s.bat", scriptName))
+	if err != nil {
+		return err
+	}
+	sf, err := scriptfile.New(language.Batch, scriptName, string(scriptBlock))
 	if err != nil {
 		return locale.WrapError(err, "err_clean_script", "Could not create new scriptfile")
 	}

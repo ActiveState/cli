@@ -1,18 +1,18 @@
 package executor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
 
-	"github.com/gobuffalo/packr"
-
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -149,12 +149,14 @@ func (f *Executor) createExecutor(exe string) error {
 		"targetPath": f.targetPath,
 		"denote":     []string{executorDenoter, denoteTarget},
 	}
-	box := packr.NewBox("../../../../assets/executors")
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
 		boxFile = "executor.bat"
 	}
-	fwBytes := box.Bytes(boxFile)
+	fwBytes, err := assets.ReadFileBytes(fmt.Sprintf("executors/%s", boxFile))
+	if err != nil {
+		return errs.Wrap(err, "Failed to read asset")
+	}
 	fwStr, err := strutils.ParseTemplate(string(fwBytes), tplParams)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s template", boxFile)

@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cast"
@@ -1004,14 +1004,15 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		shell = "batch"
 	}
 
-	box := packr.NewBox("../../assets/")
-
 	content := params.Content
 	if content == "" {
-		var err error
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
+		template, err := assets.ReadFileBytes(tplName)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not read asset")
+		}
 		content, err = strutils.ParseTemplate(
-			box.String(tplName),
+			string(template),
 			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse %s", tplName)
@@ -1026,7 +1027,11 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	tplName := "activestate.yaml.tpl"
-	fileContents, err := strutils.ParseTemplate(box.String(tplName), data)
+	tplContents, err := assets.ReadFileBytes(tplName)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read asset")
+	}
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse %s", tplName)
 	}
