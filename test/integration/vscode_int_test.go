@@ -161,8 +161,8 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	}
 
 	var po []PackageOutput
-	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
-	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
+	err := json.Unmarshal([]byte(strings.TrimSpace(cp.Snapshot())), &po)
+	suite.Require().NoError(err, "Could not parse JSON from: %s", strings.TrimSpace(cp.Snapshot()))
 
 	suite.Len(po, 2)
 }
