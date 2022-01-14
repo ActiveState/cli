@@ -60,7 +60,7 @@ func IsWritable(path string) bool {
 		logging.Error("Could not read asset: %s", filename)
 		return false
 	}
-	scriptFile, err := WriteTempFile("", "IsWritable*.ps1", contents, 0700)
+	scriptFile, err := WriteTempFile("", filename, contents, 0700)
 	if err != nil {
 		logging.Error("Could not create temporary powershell file: %v", err)
 		return false

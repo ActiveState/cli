@@ -1,12 +1,14 @@
-// Holds embeddable assets for the state tool.
 package assets
 
-import "embed"
+import (
+	"embed"
+	"path/filepath"
+)
 
-//go:embed *
+//go:embed contents
 var fs embed.FS
 
-// Reads and returns bytes from the given file in this package's embedded assets.
+// ReadFileBytes reads and returns bytes from the given file in this package's embedded assets.
 func ReadFileBytes(filename string) ([]byte, error) {
-	return fs.ReadFile(filename)
+	return fs.ReadFile(filepath.Join("contents", filename))
 }

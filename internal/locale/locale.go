@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ var translateFunction func(translationID string, args ...interface{}) string
 var args = os.Args[1:]
 var exit = os.Exit
 
-//go:embed *.yaml
+//go:embed locales
 var localeFiles embed.FS
 
 func init() {
@@ -58,18 +59,18 @@ func init() {
 		}
 	}
 
-	path := getLocalePath()
+	localePath := getLocalePath()
 
 	funk.ForEach(Supported, func(x string) {
-		filename := strings.ToLower(x) + ".yaml"
-		filepath := path + filename
-		bytes, err := localeFiles.ReadFile(filename)
+		localeFile := filepath.Join("locales", strings.ToLower(x)+".yaml")
+		bytes, err := localeFiles.ReadFile(localeFile)
 		if err != nil {
-			panic(fmt.Sprintf("Could not read asset %s: %v", filename, err))
+			panic(fmt.Sprintf("Could not read asset %s: %v", localeFile, err))
 		}
-		err = i18n.ParseTranslationFileBytes(filepath, bytes)
+		path := filepath.Join(localePath, localeFile)
+		err = i18n.ParseTranslationFileBytes(path, bytes)
 		if err != nil {
-			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
+			panic(fmt.Sprintf("Could not load %s: %v", path, err))
 		}
 	})
 
@@ -78,20 +79,15 @@ func init() {
 	}
 }
 
-// getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being ran
+// getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being run
 // this just returns `internal/locale/`
 func getLocalePath() string {
-	pathsep := string(os.PathSeparator)
-	path := "internal/locale" + pathsep
-
 	rootpath, err := environment.GetRootPath()
-
 	if err != nil {
 		log.Panic(err)
 		return ""
 	}
-
-	return rootpath + path
+	return filepath.Join(rootpath, "internal", "locale")
 }
 
 // getLocaleFlag manually parses the input args looking for `--locale` or `-l` and retrieving its value
