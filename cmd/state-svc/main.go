@@ -199,7 +199,6 @@ func runStart(cfg *config.Instance) error {
 
 func runStop(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
-	logging.Debug("Calling stop")
 	if err := s.Stop(); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
 	}

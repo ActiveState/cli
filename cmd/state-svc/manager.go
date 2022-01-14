@@ -37,13 +37,11 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
-		logging.Debug("Old PID: %s", oldPidI)
 		oldPid := cast.ToInt(oldPidI)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
 			return nil, ErrSvcAlreadyRunning
 		}
-		logging.Debug("Current PID: %s", curPid)
 
 		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
 		if err != nil {
@@ -54,7 +52,6 @@ func (s *serviceManager) Start(args ...string) error {
 			return nil, errs.New("Could not obtain process information after starting serviceManager")
 		}
 
-		logging.Debug("Proc PID:", proc.Pid)
 		return proc.Pid, nil
 	})
 	if err != nil {
@@ -138,8 +135,6 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
 	if runtime.GOOS == "windows" {
 		exe, err := p.Exe()
-		logging.Debug("exe: %s", exe)
-		logging.Debug("osutils exe: %s", osutils.Executable())
 		if err != nil {
 			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
 		} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
