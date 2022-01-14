@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package fileutils
@@ -12,9 +13,9 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
 )
@@ -53,11 +54,13 @@ func IsWritable(path string) bool {
 		return false
 	}
 
-	box := packr.NewBox("../../assets/scripts")
-	contents := box.String("IsWritable.ps1")
-	scriptFile, err := WriteTempFile(
-		"", "IsWritable*.ps1", []byte(contents), 0700,
-	)
+	const filename = "IsWritable.ps1"
+	contents, err := assets.ReadFileBytes(filename)
+	if err != nil {
+		logging.Error("Could not read asset: %s", filename)
+		return false
+	}
+	scriptFile, err := WriteTempFile("", filename, contents, 0700)
 	if err != nil {
 		logging.Error("Could not create temporary powershell file: %v", err)
 		return false

@@ -215,9 +215,6 @@ github.com/go-openapi/validate
 github.com/go-playground/colors
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
-# github.com/gobuffalo/packr v1.10.7
-## explicit
-github.com/gobuffalo/packr
 # github.com/gofrs/flock v0.8.1
 ## explicit
 github.com/gofrs/flock

@@ -4,11 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/gobuffalo/packr"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -37,8 +37,10 @@ func (a *App) enable() error {
 	}
 	iconsPath := filepath.Join(iconsDir, constants.TrayIconFileName)
 
-	box := packr.NewBox("../../../assets")
-	iconData := box.Bytes(constants.TrayIconFileSource)
+	iconData, err := assets.ReadFileBytes(constants.TrayIconFileSource)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
 
 	scutOpts := shortcut.SaveOpts{
 		Name:        a.Name,
