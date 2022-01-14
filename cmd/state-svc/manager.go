@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"syscall"
+	"runtime"
 	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
@@ -35,7 +35,6 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 }
 
 func (s *serviceManager) Start(args ...string) error {
-	// TODO: Can I build and get this to run via the built state tool
 	var proc *os.Process
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
 		logging.Debug("Old PID: %s", oldPidI)
@@ -78,24 +77,13 @@ func (s *serviceManager) Stop() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
 	}
-	logging.Debug("PID in stop: %d", pid)
 	if pid == nil {
+		logging.Debug("State service is not running. Nothing to stop")
 		return nil
 	}
 
 	if err := stopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
-	}
-
-	logging.Debug("Looking for process: %d", *pid)
-	proc, err := process.NewProcess(int32(*pid))
-	if err != nil {
-		return errs.Wrap(err, "Could not get process from pid %s", pid)
-	}
-
-	err = proc.SendSignal(syscall.SIGINT)
-	if err != nil {
-		return errs.Wrap(err, "Could not send signal to process")
 	}
 
 	return nil
@@ -147,16 +135,16 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
 
-	// TODO: Check on windows if the same mismatch is happening with the processes
-
 	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
-	exe, err := p.Exe()
-	logging.Debug("exe: %s", exe)
-	logging.Debug("osutils exe: %s", osutils.Executable())
-	if err != nil {
-		logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
-	} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
-		return nil, nil
+	if runtime.GOOS == "windows" {
+		exe, err := p.Exe()
+		logging.Debug("exe: %s", exe)
+		logging.Debug("osutils exe: %s", osutils.Executable())
+		if err != nil {
+			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+		} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
+			return nil, nil
+		}
 	}
 
 	var rpid = int(p.Pid)

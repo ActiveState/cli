@@ -1,8 +1,9 @@
 package installation
 
 import (
-	"fmt"
+	"context"
 	"syscall"
+	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
@@ -22,7 +23,20 @@ func StopRunning(installPath string) (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	svcInfo := appinfo.SvcApp(installPath)
+	err = stopTray(installPath, cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not stop tray")
+	}
+
+	err = stopSvc(installPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not stop service")
+	}
+
+	return nil
+}
+
+func stopTray(installPath string, cfg *config.Instance) error {
 	trayInfo := appinfo.TrayApp(installPath)
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
@@ -30,10 +44,13 @@ func StopRunning(installPath string) (rerr error) {
 	if err := StopTrayApp(cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
 	}
+	return nil
+}
 
-	fmt.Println("Looking for exec at:", svcInfo.Exec())
+func stopSvc(installPath string) error {
+	svcInfo := appinfo.SvcApp(installPath)
+
 	if fileutils.FileExists(svcInfo.Exec()) {
-		fmt.Println(fmt.Sprintf("running command: %s %s", svcInfo.Exec(), "stop"))
 		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
 		if err != nil {
 			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
@@ -56,13 +73,37 @@ func StopRunning(installPath string) (rerr error) {
 		}
 
 		if n == constants.ServiceCommandName {
-			fmt.Println("Found running proc")
-			err = p.SendSignal(syscall.SIGINT)
+			logging.Debug("Found running state service process: %d", p.Pid)
+			err = stopSvcProcess(p)
 			if err != nil {
-				return errs.Wrap(err, "Could not stop state-svc process")
+				return errs.Wrap(err, "Could not stop service process")
 			}
 		}
 	}
 
 	return nil
+}
+
+func stopSvcProcess(proc *process.Process) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	done := make(chan error)
+	go func() {
+		done <- proc.SendSignal(syscall.SIGTERM)
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			return errs.Wrap(err, "Could not send SIGTERM to service process")
+		}
+		return nil
+	case <-ctx.Done():
+		err := proc.SendSignal(syscall.SIGKILL)
+		if err != nil {
+			return errs.Wrap(err, "Could not kill service process")
+		}
+		return nil
+	}
 }
