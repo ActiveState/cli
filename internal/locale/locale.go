@@ -62,8 +62,8 @@ func init() {
 	localePath := getLocalePath()
 
 	funk.ForEach(Supported, func(x string) {
-		localeFile := filepath.Join("locales", strings.ToLower(x)+".yaml")
-		bytes, err := localeFiles.ReadFile(localeFile)
+		localeFile := strings.ToLower(x)+".yaml")
+		bytes, err := localeFiles.ReadFile("locales/"+localeFile) // need '/' for go:embed, even on Windows
 		if err != nil {
 			panic(fmt.Sprintf("Could not read asset %s: %v", localeFile, err))
 		}
