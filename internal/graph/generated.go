@@ -19,6 +19,10 @@ type Project struct {
 	Locations []string `json:"locations"`
 }
 
+type QuitResponse struct {
+	Received bool `json:"received"`
+}
+
 type RuntimeUsageResponse struct {
 	Received bool `json:"received"`
 }

@@ -58,7 +58,7 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		logging.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
 	}
-	if err := installation.StopRunning(i.path); err != nil {
+	if err := installation.StopRunning(i.path, i.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 

@@ -44,7 +44,7 @@ func (s *serviceManager) Start(args ...string) error {
 
 		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
 		if err != nil {
-			return nil, errs.New("Could not start serviceManager")
+			return nil, errs.New("Could not start svc")
 		}
 
 		if proc == nil {

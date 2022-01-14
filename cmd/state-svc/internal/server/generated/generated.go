@@ -63,8 +63,13 @@ type ComplexityRoot struct {
 		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
 		AvailableUpdate func(childComplexity int) int
 		Projects        func(childComplexity int) int
+		Quit            func(childComplexity int) int
 		RuntimeUsage    func(childComplexity int, pid int, exec string, dimensionsJSON string) int
 		Version         func(childComplexity int) int
+	}
+
+	QuitResponse struct {
+		Received func(childComplexity int) int
 	}
 
 	RuntimeUsageResponse struct {
@@ -90,6 +95,7 @@ type QueryResolver interface {
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
+	Quit(ctx context.Context) (*graph.QuitResponse, error)
 }
 
 type executableSchema struct {
@@ -189,6 +195,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Projects(childComplexity), true
 
+	case "Query.quit":
+		if e.complexity.Query.Quit == nil {
+			break
+		}
+
+		return e.complexity.Query.Quit(childComplexity), true
+
 	case "Query.runtimeUsage":
 		if e.complexity.Query.RuntimeUsage == nil {
 			break
@@ -207,6 +220,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Version(childComplexity), true
+
+	case "QuitResponse.received":
+		if e.complexity.QuitResponse.Received == nil {
+			break
+		}
+
+		return e.complexity.QuitResponse.Received(childComplexity), true
 
 	case "RuntimeUsageResponse.received":
 		if e.complexity.RuntimeUsageResponse.Received == nil {
@@ -340,12 +360,17 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
+type QuitResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  quit: QuitResponse
 }
 
 `, BuiltIn: false},
@@ -941,6 +966,38 @@ func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graph
 	return ec.marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_quit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Quit(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.QuitResponse)
+	fc.Result = res
+	return ec.marshalOQuitResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐQuitResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1010,6 +1067,41 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _QuitResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.QuitResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "QuitResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Received, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageResponse) (ret graphql.Marshaler) {
@@ -2531,10 +2623,48 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_runtimeUsage(ctx, field)
 				return res
 			})
+		case "quit":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_quit(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var quitResponseImplementors = []string{"QuitResponse"}
+
+func (ec *executionContext) _QuitResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.QuitResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, quitResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("QuitResponse")
+		case "received":
+			out.Values[i] = ec._QuitResponse_received(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3286,6 +3416,13 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcli�
 		return graphql.Null
 	}
 	return ec._Project(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOQuitResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐQuitResponse(ctx context.Context, sel ast.SelectionSet, v *graph.QuitResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._QuitResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeUsageResponse) graphql.Marshaler {

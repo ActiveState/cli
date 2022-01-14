@@ -31,11 +31,16 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
+type QuitResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  quit: QuitResponse
 }
 

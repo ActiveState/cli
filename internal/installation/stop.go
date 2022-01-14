@@ -7,15 +7,16 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/svcmanager"
 )
 
-func StopRunning(installPath string) (rerr error) {
+func StopRunning(installPath string, cfg *config.Instance) (rerr error) {
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not get config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
-	
+
 	svcInfo := appinfo.SvcApp(installPath)
 	trayInfo := appinfo.TrayApp(installPath)
 
@@ -33,6 +34,11 @@ func StopRunning(installPath string) (rerr error) {
 		if exitCode != 0 {
 			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
 		}
+	}
+
+	svcm := svcmanager.New(cfg)
+	if svcm.Ready() {
+
 	}
 
 	return nil

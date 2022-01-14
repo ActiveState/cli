@@ -51,6 +51,14 @@ func (m *Manager) Start() error {
 	return nil
 }
 
+func (m *Manager) Stop() error {
+	ready, err := m.Ready()
+	if !ready && !errors.Is(err, errVersionMismatch) {
+		return nil
+	}
+
+}
+
 func (m *Manager) WaitWithContext(ctx context.Context) error {
 	defer profile.Measure("svcmanager:WaitWithContext", time.Now())
 
@@ -114,6 +122,21 @@ func (m *Manager) ping(ctx context.Context) error {
 
 	if resp.Version.State.Version != constants.Version && resp.Version.State.Branch != constants.BranchName {
 		return errVersionMismatch
+	}
+
+	return nil
+}
+
+func (m *Manager) quit(ctx context.Context) error {
+	client, err := svc.New(m.cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize non-retrying svc client")
+	}
+
+	r := request.NewQuitRequest()
+	resp := graph.QuitResponse{}
+	if err := client.RunWithContext(ctx, r, &resp); err != nil {
+		return err
 	}
 
 	return nil
