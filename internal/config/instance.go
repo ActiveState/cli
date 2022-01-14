@@ -86,7 +86,7 @@ func (i *Instance) Close() error {
 	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	
+
 	if i.closed {
 		return nil
 	}
@@ -124,6 +124,7 @@ func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{})
 		return errs.Wrap(err, "Could not marshal config value: %v", v)
 	}
 
+	logging.Debug("Value marshalled: %s", string(valueMarshaled))
 	_, err = q.Exec(key, valueMarshaled)
 	if err != nil {
 		return errs.Wrap(err, "Could not store setting")
@@ -173,6 +174,9 @@ func (i *Instance) GetString(key string) string {
 
 // GetInt retrieves an int for a given key
 func (i *Instance) GetInt(key string) int {
+	result := i.get(key)
+	logging.Debug("Result: %s", result)
+	logging.Debug("Result cast: %d", cast.ToInt(result))
 	return cast.ToInt(i.get(key))
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/osutils"
@@ -34,13 +35,16 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 }
 
 func (s *serviceManager) Start(args ...string) error {
+	// TODO: Can I build and get this to run via the built state tool
 	var proc *os.Process
 	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
+		logging.Debug("Old PID: %s", oldPidI)
 		oldPid := cast.ToInt(oldPidI)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
 			return nil, ErrSvcAlreadyRunning
 		}
+		logging.Debug("Current PID: %s", curPid)
 
 		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
 		if err != nil {
@@ -51,6 +55,7 @@ func (s *serviceManager) Start(args ...string) error {
 			return nil, errs.New("Could not obtain process information after starting serviceManager")
 		}
 
+		logging.Debug("Proc PID:", proc.Pid)
 		return proc.Pid, nil
 	})
 	if err != nil {
@@ -73,6 +78,7 @@ func (s *serviceManager) Stop() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
 	}
+	logging.Debug("PID in stop: %d", pid)
 	if pid == nil {
 		return nil
 	}
@@ -80,6 +86,18 @@ func (s *serviceManager) Stop() error {
 	if err := stopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
+
+	logging.Debug("Looking for process: %d", *pid)
+	proc, err := process.NewProcess(int32(*pid))
+	if err != nil {
+		return errs.Wrap(err, "Could not get process from pid %s", pid)
+	}
+
+	err = proc.SendSignal(syscall.SIGINT)
+	if err != nil {
+		return errs.Wrap(err, "Could not send signal to process")
+	}
+
 	return nil
 }
 
@@ -116,7 +134,7 @@ func stopServer(cfg *config.Instance) error {
 	return nil
 }
 
-// CheckPid checks if the given pid revers to an existing process
+// CheckPid checks if the given pid refers to an existing process
 func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if pid == 0 {
 		return nil, nil
@@ -129,8 +147,12 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
 
+	// TODO: Check on windows if the same mismatch is happening with the processes
+
 	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
 	exe, err := p.Exe()
+	logging.Debug("exe: %s", exe)
+	logging.Debug("osutils exe: %s", osutils.Executable())
 	if err != nil {
 		logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
 	} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
