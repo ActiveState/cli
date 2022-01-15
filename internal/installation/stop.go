@@ -65,6 +65,9 @@ func stopSvc(installPath string) error {
 		return errs.Wrap(err, "Could not get list of running processes")
 	}
 
+	// This is a bit heavy handed but ensure that there are
+	// no running state-svc processes which could lead to
+	// errors when updating
 	for _, p := range procs {
 		n, err := p.Name()
 		if err != nil {
