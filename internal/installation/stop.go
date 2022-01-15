@@ -91,13 +91,13 @@ func stopSvcProcess(proc *process.Process) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	done := make(chan error)
+	signalErrs := make(chan error)
 	go func() {
-		done <- proc.SendSignal(syscall.SIGTERM)
+		signalErrs <- proc.SendSignal(syscall.SIGTERM)
 	}()
 
 	select {
-	case err := <-done:
+	case err := <-signalErrs:
 		if err != nil {
 			return errs.Wrap(err, "Could not send SIGTERM to service process")
 		}
