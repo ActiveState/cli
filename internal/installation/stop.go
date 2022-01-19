@@ -2,6 +2,7 @@ package installation
 
 import (
 	"context"
+	"strings"
 	"syscall"
 	"time"
 
@@ -75,7 +76,13 @@ func stopSvc(installPath string) error {
 			continue
 		}
 
-		if n == constants.ServiceCommandName {
+		exe, err := p.Exe()
+		if err != nil {
+			logging.Error("Could not get process exectuable path: %v", err)
+			continue
+		}
+
+		if n == constants.ServiceCommandName && strings.Contains(strings.ToLower(exe), "activestate") {
 			logging.Debug("Found running state service process: %d", p.Pid)
 			err = stopSvcProcess(p)
 			if err != nil {
