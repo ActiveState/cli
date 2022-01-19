@@ -448,7 +448,6 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Installing Package")
-	cp.ExpectLongString("An activestate.yaml has been created")
 	cp.ExpectExitCode(0)
 
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
