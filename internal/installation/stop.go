@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
@@ -31,7 +32,7 @@ func StopRunning(installPath string) (rerr error) {
 
 	err = stopSvc(installPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not stop service")
+		return locale.NewError("err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
 	return nil
