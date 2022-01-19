@@ -137,7 +137,7 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 		exe, err := p.Exe()
 		if err != nil {
 			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
-		} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
+		} else if filepath.Base(exe) != filepath.Base(osutils.Executable()) {
 			return nil, nil
 		}
 	}
