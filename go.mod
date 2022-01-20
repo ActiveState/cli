@@ -34,7 +34,6 @@ require (
 	github.com/go-openapi/strfmt v0.20.1
 	github.com/go-openapi/swag v0.19.15
 	github.com/go-openapi/validate v0.20.2
-	github.com/gobuffalo/packr v1.10.7
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/uuid v1.1.2

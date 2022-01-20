@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,8 +17,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/gobuffalo/packr"
 )
 
 // RunParams stores run func parameters.
@@ -144,8 +143,11 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		}
 
 		if params.Style == SkeletonEditor {
-			box := packr.NewBox("../../../assets/")
-			createParams.Content = box.String("activestate.yaml.editor.tpl")
+			content, err := assets.ReadFileBytes("activestate.yaml.editor.tpl")
+			if err != nil {
+				return "", err
+			}
+			createParams.Content = string(content)
 		}
 
 		pjfile, err := projectfile.Create(createParams)

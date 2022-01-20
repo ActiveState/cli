@@ -1,7 +1,7 @@
 package docs
 
 import (
-	"github.com/gobuffalo/packr"
+	_ "embed"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/output"
@@ -23,12 +23,13 @@ func New(primer primeable) *Docs {
 	return &Docs{primer.Output()}
 }
 
+//go:embed docs.md.tpl
+var tpl string
+
 func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	stateCmd := cmd.TopParent()
 	children := grabChildren(stateCmd)
 
-	box := packr.NewBox(".")
-	tpl := box.String("docs.md.tpl")
 	out, err := strutils.ParseTemplate(tpl, map[string]interface{}{
 		"Commands": children,
 	})

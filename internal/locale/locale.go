@@ -4,9 +4,11 @@ package locale
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,7 +17,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/gobuffalo/packr"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/thoas/go-funk"
 
@@ -32,6 +33,9 @@ var translateFunction func(translationID string, args ...interface{}) string
 
 var args = os.Args[1:]
 var exit = os.Exit
+
+//go:embed locales
+var localeFiles embed.FS
 
 func init() {
 	defer profile.Measure("locale:init", time.Now())
@@ -55,15 +59,18 @@ func init() {
 		}
 	}
 
-	path := getLocalePath()
-	box := packr.NewBox("../../locale")
+	localePath := getLocalePath()
 
 	funk.ForEach(Supported, func(x string) {
-		filename := strings.ToLower(x) + ".yaml"
-		filepath := path + filename
-		err := i18n.ParseTranslationFileBytes(filepath, box.Bytes(filename))
+		localeFile := strings.ToLower(x) + ".yaml"
+		bytes, err := localeFiles.ReadFile("locales/" + localeFile) // need '/' for go:embed, even on Windows
 		if err != nil {
-			panic(fmt.Sprintf("Could not load %s: %v", filepath, err))
+			panic(fmt.Sprintf("Could not read asset %s: %v", localeFile, err))
+		}
+		path := filepath.Join(localePath, localeFile)
+		err = i18n.ParseTranslationFileBytes(path, bytes)
+		if err != nil {
+			panic(fmt.Sprintf("Could not load %s: %v", path, err))
 		}
 	})
 
@@ -72,20 +79,15 @@ func init() {
 	}
 }
 
-// getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being ran
-// this just returns `locale/`
+// getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being run
+// this just returns `internal/locale/`
 func getLocalePath() string {
-	pathsep := string(os.PathSeparator)
-	path := "locale" + pathsep
-
 	rootpath, err := environment.GetRootPath()
-
 	if err != nil {
 		log.Panic(err)
 		return ""
 	}
-
-	return rootpath + path
+	return filepath.Join(rootpath, "internal", "locale")
 }
 
 // getLocaleFlag manually parses the input args looking for `--locale` or `-l` and retrieving its value
@@ -119,7 +121,7 @@ func Set(localeName string) (rerr error) {
 		return errs.Wrap(err, "Could not get configuration to store updated locale")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
-	
+
 	err = cfg.Set("Locale", localeName)
 	if err != nil {
 		return errs.Wrap(err, "Could not set locale in config")

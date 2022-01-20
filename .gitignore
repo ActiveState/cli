@@ -7,7 +7,6 @@ internal/constants/generated.go
 __PYCACHE__
 *.log
 .vscode
-*-packr.go
 .env
 .idea
 .vs
