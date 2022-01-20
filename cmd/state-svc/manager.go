@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
@@ -137,7 +137,7 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 		exe, err := p.Exe()
 		if err != nil {
 			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
-		} else if filepath.Base(exe) != filepath.Base(osutils.Executable()) {
+		} else if filepath.Base(exe) != constants.ServiceCommandName && strings.Contains(strings.ToLower(exe), "activestate") {
 			return nil, nil
 		}
 	}
