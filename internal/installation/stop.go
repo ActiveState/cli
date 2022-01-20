@@ -32,6 +32,7 @@ func StopRunning(installPath string) (rerr error) {
 
 	err = stopSvc(installPath)
 	if err != nil {
+		logging.Critical("Could not stop running service, error: %v", err)
 		return locale.NewError("err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
@@ -79,7 +80,7 @@ func stopSvc(installPath string) error {
 
 		exe, err := p.Exe()
 		if err != nil {
-			logging.Error("Could not get process exectuable path: %v", err)
+			logging.Error("Could not get executable path for process %s, error: %v", err)
 			continue
 		}
 
