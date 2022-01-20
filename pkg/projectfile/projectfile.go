@@ -1005,11 +1005,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	content := params.Content
-	if content == "" {
+	if content == "" && lang.String() != "" {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
-		if lang.String() == "" {
-			tplName = "activestate.yaml.tpl"
-		}
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not read asset")
