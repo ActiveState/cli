@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package autostart
@@ -6,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/gobuffalo/packr"
 	"github.com/mitchellh/go-homedir"
 )
 
@@ -29,8 +30,11 @@ func (a *App) enable() error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	box := packr.NewBox("../../../assets")
-	err = fileutils.WriteFile(path, box.Bytes(launchFileMacOS))
+	launchFile, err := assets.ReadFileBytes(launchFileMacOS)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+	err = fileutils.WriteFile(path, launchFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not write launch file")
 	}
