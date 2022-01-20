@@ -1010,6 +1010,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	if content == "" {
 		var err error
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
+		if lang.String() == "" {
+			tplName = "activestate.yaml.tpl"
+		}
 		content, err = strutils.ParseTemplate(
 			box.String(tplName),
 			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
