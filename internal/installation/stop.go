@@ -80,7 +80,7 @@ func stopSvc(installPath string) error {
 
 		exe, err := p.Exe()
 		if err != nil {
-			logging.Error("Could not get executable path for process %s, error: %v", err)
+			logging.Error("Could not get executable path for process %s, error: %v", n, err)
 			continue
 		}
 
