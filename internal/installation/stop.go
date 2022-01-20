@@ -86,6 +86,7 @@ func stopSvc(installPath string) error {
 			}
 
 			if !strings.Contains(strings.ToLower(exe), "activestate") {
+				logging.Error("Found state-svc process in unexpected directory: %s", exe)
 				continue
 			}
 
