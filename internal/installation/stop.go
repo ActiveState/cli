@@ -78,14 +78,18 @@ func stopSvc(installPath string) error {
 			continue
 		}
 
-		exe, err := p.Exe()
-		if err != nil {
-			logging.Error("Could not get executable path for process %s, error: %v", n, err)
-			continue
-		}
+		if n == constants.ServiceCommandName {
+			exe, err := p.Exe()
+			if err != nil {
+				logging.Error("Could not get executable path for state-svc process, error: %v", err)
+				continue
+			}
 
-		if n == constants.ServiceCommandName && strings.Contains(strings.ToLower(exe), "activestate") {
-			logging.Debug("Found running state service process: %d", p.Pid)
+			if !strings.Contains(strings.ToLower(exe), "activestate") {
+				continue
+			}
+
+			logging.Debug("Found running state-svc process: %d", p.Pid)
 			err = stopSvcProcess(p)
 			if err != nil {
 				return errs.Wrap(err, "Could not stop service process")
@@ -110,12 +114,14 @@ func stopSvcProcess(proc *process.Process) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not send SIGTERM to service process")
 		}
+		logging.Debug("Stopped state-svc process with SIGTERM")
 		return nil
 	case <-ctx.Done():
 		err := proc.SendSignal(syscall.SIGKILL)
 		if err != nil {
 			return errs.Wrap(err, "Could not kill service process")
 		}
+		logging.Debug("Stopped state-svc process with SIGKILL")
 		return nil
 	}
 }
