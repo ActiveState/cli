@@ -60,8 +60,8 @@ func (s *service) Stop() error {
 		return errs.Wrap(err, "Failed to stop server")
 	}
 
-	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
-		setPid := cast.ToInt(setPidI)
+	err := s.cfg.GetThenSet(constants.SvcConfigPid, func(currentValue interface{}) (interface{}, error) {
+		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			logging.Warning("PID in configuration file does not match PID of server shutting down")
 		}

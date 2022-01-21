@@ -86,7 +86,7 @@ func (i *Instance) Close() error {
 	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	
+
 	if i.closed {
 		return nil
 	}
@@ -97,17 +97,17 @@ func (i *Instance) Close() error {
 	return i.db.Close()
 }
 
-// SetWithLock updates a value at the given key. The valueF argument returns the
-// new value based on the previous one.  If the function returns with an error, the
+// GetThenSet updates a value at the given key. The valueF argument returns the
+// new value to set based on the previous one.  If the function returns with an error, the
 // update is cancelled.  The function ensures that no-other process or thread can modify
 // the key between reading of the old value and setting the new value.
-func (i *Instance) SetWithLock(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) (interface{}, error)) error {
 	return i.thread.Run(func() error {
 		return i.setWithCallback(key, valueF)
 	})
 }
 
-func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{}) (interface{}, error)) error {
+func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) error {
 	v, err := valueF(i.get(key))
 	if err != nil {
 		return errs.Wrap(err, "valueF failed")
@@ -134,7 +134,7 @@ func (i *Instance) setWithCallback(key string, valueF func(oldvalue interface{})
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	return i.SetWithLock(key, func(_ interface{}) (interface{}, error) {
+	return i.GetThenSet(key, func(_ interface{}) (interface{}, error) {
 		return value, nil
 	})
 }
