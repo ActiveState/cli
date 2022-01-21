@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"fmt"
 	"strings"
 	"syscall"
 	"time"
@@ -81,6 +82,7 @@ func stopSvc(installPath string) error {
 				logging.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
+			fmt.Println("Exe:", exe)
 
 			if !strings.Contains(strings.ToLower(exe), "activestate") {
 				logging.Error("Found state-svc process in unexpected directory: %s", exe)
@@ -110,6 +112,15 @@ func stopSvcProcess(proc *process.Process, name string) error {
 			logging.Error("Could not send SIGTERM to %s process, error: %v", name, err)
 			return killProcess(proc, name)
 		}
+
+		running, err := proc.IsRunning()
+		if err != nil {
+			return errs.Wrap(err, "Could not check if %s is still running, error: %v", name, err)
+		}
+		if running {
+			return killProcess(proc, name)
+		}
+
 		logging.Debug("Stopped %s process with SIGTERM", name)
 		return nil
 	case <-time.After(time.Second):
