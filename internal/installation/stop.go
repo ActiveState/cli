@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -75,7 +76,11 @@ func stopSvc(installPath string) error {
 			continue
 		}
 
-		if n == constants.ServiceCommandName {
+		svcName := constants.ServiceCommandName
+		if runtime.GOOS == "windows" {
+			svcName = svcName + ".exe"
+		}
+		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
 				logging.Error("Could not get executable path for state-svc process, error: %v", err)
