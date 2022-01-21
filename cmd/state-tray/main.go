@@ -257,8 +257,8 @@ func onExit() {
 			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
 	}()
-	err = cfg.SetWithLock(installation.ConfigKeyTrayPid, func(setPidI interface{}) (interface{}, error) {
-		setPid := cast.ToInt(setPidI)
+	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
+		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
 		}

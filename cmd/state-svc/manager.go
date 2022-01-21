@@ -35,8 +35,8 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 
 func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
-	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
-		oldPid := cast.ToInt(oldPidI)
+	err := s.cfg.GetThenSet(constants.SvcConfigPid, func(currentValue interface{}) (interface{}, error) {
+		oldPid := cast.ToInt(currentValue)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
 			return nil, ErrSvcAlreadyRunning
