@@ -127,10 +127,23 @@ func stopSvcProcess(proc *process.Process, name string) error {
 }
 
 func killProcess(proc *process.Process, name string) error {
-	err := proc.SendSignal(syscall.SIGKILL)
+	children, err := proc.Children()
+	if err != nil {
+		return errs.Wrap(err, "Could not get child processes")
+	}
+
+	for _, c := range children {
+		err = c.Kill()
+		if err != nil {
+			return errs.Wrap(err, "Could not kill child process of %s", name)
+		}
+	}
+
+	err = proc.Kill()
 	if err != nil {
 		return errs.Wrap(err, "Could not kill %s process", name)
 	}
+
 	logging.Debug("Stopped %s process with SIGKILL", name)
 	return nil
 }
