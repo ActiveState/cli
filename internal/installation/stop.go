@@ -1,7 +1,6 @@
 package installation
 
 import (
-	"fmt"
 	"strings"
 	"syscall"
 	"time"
@@ -82,14 +81,13 @@ func stopSvc(installPath string) error {
 				logging.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
-			fmt.Println("Exe:", exe)
 
 			if !strings.Contains(strings.ToLower(exe), "activestate") {
 				logging.Error("Found state-svc process in unexpected directory: %s", exe)
 				continue
 			}
 
-			logging.Debug("Found running state-svc process: %d", p.Pid)
+			logging.Debug("Found running state-svc process with PID %d, at %s", p.Pid, exe)
 			err = stopSvcProcess(p, n)
 			if err != nil {
 				return errs.Wrap(err, "Could not stop service process")
