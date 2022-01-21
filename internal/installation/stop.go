@@ -1,7 +1,6 @@
 package installation
 
 import (
-	"context"
 	"strings"
 	"syscall"
 	"time"
@@ -89,7 +88,7 @@ func stopSvc(installPath string) error {
 			}
 
 			logging.Debug("Found running state-svc process: %d", p.Pid)
-			err = stopSvcProcess(p)
+			err = stopSvcProcess(p, n)
 			if err != nil {
 				return errs.Wrap(err, "Could not stop service process")
 			}
@@ -99,10 +98,7 @@ func stopSvc(installPath string) error {
 	return nil
 }
 
-func stopSvcProcess(proc *process.Process) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
+func stopSvcProcess(proc *process.Process, name string) error {
 	signalErrs := make(chan error)
 	go func() {
 		signalErrs <- proc.SendSignal(syscall.SIGTERM)
@@ -111,16 +107,21 @@ func stopSvcProcess(proc *process.Process) error {
 	select {
 	case err := <-signalErrs:
 		if err != nil {
-			return errs.Wrap(err, "Could not send SIGTERM to service process")
+			logging.Error("Could not send SIGTERM to %s process, error: %v", name, err)
+			return killProcess(proc, name)
 		}
-		logging.Debug("Stopped state-svc process with SIGTERM")
+		logging.Debug("Stopped %s process with SIGTERM", name)
 		return nil
-	case <-ctx.Done():
-		err := proc.SendSignal(syscall.SIGKILL)
-		if err != nil {
-			return errs.Wrap(err, "Could not kill service process")
-		}
-		logging.Debug("Stopped state-svc process with SIGKILL")
-		return nil
+	case <-time.After(time.Second):
+		return killProcess(proc, name)
 	}
+}
+
+func killProcess(proc *process.Process, name string) error {
+	err := proc.SendSignal(syscall.SIGKILL)
+	if err != nil {
+		return errs.Wrap(err, "Could not kill %s process", name)
+	}
+	logging.Debug("Stopped %s process with SIGKILL", name)
+	return nil
 }
