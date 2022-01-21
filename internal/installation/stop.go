@@ -107,7 +107,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 	select {
 	case err := <-signalErrs:
 		if err != nil {
-			logging.Error("Could not send SIGTERM to %s process, error: %v", name, err)
+			logging.Error("Could not send SIGTERM to %s  process, error: %v", name, err)
 			return killProcess(proc, name)
 		}
 
