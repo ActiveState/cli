@@ -114,7 +114,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp.ExpectExitCode(0)
 }
 
-
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
@@ -126,7 +125,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.testUpdate(ts, ts.Dirs.Bin)
 }
 
-func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts... e2e.SpawnOptions) {
+func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	defer cfg.Close()
@@ -144,17 +143,15 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
-	cp.Expect("Done")
-	cp.ExpectExitCode(0)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	tests := []struct {
-		Name       string
-		Channel    string
-		Version    string
+		Name    string
+		Channel string
+		Version string
 	}{
 		{"release-channel", "release", ""},
 		{"specific-update", targetBranch, specificVersion},
@@ -187,7 +184,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 		})
 	}
 }
-
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	// Disabled, waiting for - https://www.pivotaltracker.com/story/show/179646813
@@ -236,7 +232,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	suite.testAutoUpdate(ts, ts.Dirs.Bin)
 }
 
-func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts... e2e.SpawnOptions) {
+func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
 	stateExe := appinfo.StateApp(baseDir)
 
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
@@ -256,10 +252,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.Expect("Update installed")
-	cp.ExpectExitCode(0)
 }
-
-
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
 	var cp *termtest.ConsoleProcess
@@ -280,7 +273,6 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 		)
 	}
 	cp.Expect("Installation Complete", time.Second*30)
-	cp.ExpectExitCode(0)
 
 	suite.FileExists(appinfo.StateApp(dir).Exec())
 }

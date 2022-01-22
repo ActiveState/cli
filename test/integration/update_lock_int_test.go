@@ -165,7 +165,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 				cp.Expect("Version locked at")
 			} else {
 				cp.Send("n")
-				cp.Expect("not confirm")
+				cp.Expect("Cancelling")
 			}
 			cp.ExpectNotExitCode(0)
 		})
