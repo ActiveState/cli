@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -49,17 +51,17 @@ func stopTray(installPath string, cfg *config.Instance) error {
 }
 
 func stopSvc(installPath string) error {
-	// svcInfo := appinfo.SvcApp(installPath)
+	svcInfo := appinfo.SvcApp(installPath)
 
-	// if fileutils.FileExists(svcInfo.Exec()) {
-	// 	exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
-	// 	if err != nil {
-	// 		return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
-	// 	}
-	// 	if exitCode != 0 {
-	// 		return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
-	// 	}
-	// }
+	if fileutils.FileExists(svcInfo.Exec()) {
+		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
+		if err != nil {
+			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
+		}
+		if exitCode != 0 {
+			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+		}
+	}
 
 	procs, err := process.Processes()
 	if err != nil {
