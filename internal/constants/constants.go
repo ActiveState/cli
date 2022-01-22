@@ -15,6 +15,9 @@ const LibraryLicense = "BSD 3"
 // CommandName holds the name of our command
 const CommandName = "state"
 
+// ServiceCommandName holds the name of our service command
+const ServiceCommandName = "state-svc"
+
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
