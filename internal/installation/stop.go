@@ -104,6 +104,11 @@ func stopSvc(installPath string) error {
 }
 
 func stopSvcProcess(proc *process.Process, name string) error {
+	// Process library does not have support for sending signals to Windows processes
+	if runtime.GOOS == "windows" {
+		return killProcess(proc, name)
+	}
+
 	signalErrs := make(chan error)
 	go func() {
 		signalErrs <- proc.SendSignal(syscall.SIGTERM)
