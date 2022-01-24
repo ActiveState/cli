@@ -73,7 +73,7 @@ func stopSvc(installPath string) error {
 	for _, p := range procs {
 		n, err := p.Name()
 		if err != nil {
-			logging.Error("Could not get process name: %v", err)
+			logging.Debug("Could not get process name: %v", err)
 			continue
 		}
 
