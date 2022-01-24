@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -12,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
@@ -22,7 +23,7 @@ var (
 )
 
 // Checkpoint represents a collection of requirements
-type Checkpoint []*model.Requirement
+type Checkpoint []*mono_models.Checkpoint
 
 // Language represents a langauge requirement
 type Language struct {
@@ -31,7 +32,7 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*model.Requirement, error) {
+func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*gqlModel.Requirement, error) {
 	chkPt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
@@ -69,13 +70,13 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 }
 
 // FetchCheckpointForCommit fetches the checkpoint for the given commit
-func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime, error) {
+func FetchCheckpointForCommit(commitID strfmt.UUID) ([]*gqlModel.Requirement, strfmt.DateTime, error) {
 	logging.Debug("fetching checkpoint (%s)", commitID.String())
 
 	request := request.CheckpointByCommit(commitID)
 
 	gql := graphql.New()
-	response := model.Checkpoint{}
+	response := gqlModel.Checkpoint{}
 	err := gql.Run(request, &response)
 	if err != nil {
 		return nil, strfmt.DateTime{}, errs.Wrap(err, "gql.Run failed")
@@ -90,15 +91,23 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) (Checkpoint, strfmt.DateTime
 	return response.Requirements, response.Commit.AtTime, nil
 }
 
+func GqlReqsToMonoCheckpoint(requirements []*gqlModel.Requirement) []*mono_models.Checkpoint {
+	var result = make([]*mono_models.Checkpoint, 0)
+	for _, req := range requirements {
+		result = append(result, &req.Checkpoint)
+	}
+	return result
+}
+
 // FilterCheckpointPackages filters a Checkpoint removing requirements that
 // are not packages. If nil data is provided, a nil slice is returned. If no
 // packages remain after filtering, an empty slice is returned.
-func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
+func FilterCheckpointPackages(chkPt []*gqlModel.Requirement) []*gqlModel.Requirement {
 	if chkPt == nil {
 		return nil
 	}
 
-	checkpoint := Checkpoint{}
+	checkpoint := []*gqlModel.Requirement{}
 	for _, requirement := range chkPt {
 		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) && !NamespaceMatch(requirement.Namespace, NamespaceBundlesMatch) {
 			continue
@@ -111,8 +120,8 @@ func FilterCheckpointPackages(chkPt Checkpoint) Checkpoint {
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef
-func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1OrderRequirementsItems {
-	result := []*inventory_models.V1OrderRequirementsItems{}
+func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.OrderRequirement {
+	result := []*inventory_models.OrderRequirement{}
 
 	for _, req := range checkpoint {
 		if NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
@@ -122,7 +131,7 @@ func CheckpointToRequirements(checkpoint Checkpoint) []*inventory_models.V1Order
 			continue
 		}
 
-		result = append(result, &inventory_models.V1OrderRequirementsItems{
+		result = append(result, &inventory_models.OrderRequirement{
 			Feature:             &req.Requirement,
 			Namespace:           &req.Namespace,
 			VersionRequirements: versionRequirement(req.VersionConstraint),
@@ -150,23 +159,23 @@ func CheckpointToCamelFlags(checkpoint Checkpoint) []string {
 // versionRequirement returns nil if the version constraint is empty otherwise it will return a valid
 // list for a V1OrderRequirements' VersionRequirements. The VersionRequirements can be omitted however
 // if it is present then the Version string must be populated with at least one character.
-func versionRequirement(versionConstraint string) []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems {
+func versionRequirement(versionConstraint string) []*inventory_models.VersionRequirement {
 	if versionConstraint == "" {
 		return nil
 	}
 
 	var eq = "eq"
-	return []*inventory_models.V1OrderRequirementsItemsVersionRequirementsItems{{
+	return []*inventory_models.VersionRequirement{{
 		Comparator: &eq,
 		Version:    &versionConstraint,
 	}}
 }
 
 // CheckpointToPlatforms strips platforms from a checkpoint
-func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
+func CheckpointToPlatforms(requirements []*gqlModel.Requirement) []strfmt.UUID {
 	result := []strfmt.UUID{}
 
-	for _, req := range checkpoint {
+	for _, req := range requirements {
 		if !NamespaceMatch(req.Namespace, NamespacePlatformMatch) {
 			continue
 		}
@@ -177,8 +186,8 @@ func CheckpointToPlatforms(checkpoint Checkpoint) []strfmt.UUID {
 }
 
 // CheckpointToLanguage returns the language from a checkpoint
-func CheckpointToLanguage(checkpoint Checkpoint) (*Language, error) {
-	for _, req := range checkpoint {
+func CheckpointToLanguage(requirements []*gqlModel.Requirement) (*Language, error) {
+	for _, req := range requirements {
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
 		}
@@ -214,7 +223,7 @@ func hostPlatformToPlatformID(os string) (string, error) {
 	}
 }
 
-func hostPlatformToKernelName(os string) string {
+func HostPlatformToKernelName(os string) string {
 	switch strings.ToLower(os) {
 	case strings.ToLower(sysinfo.Linux.String()):
 		return "Linux"

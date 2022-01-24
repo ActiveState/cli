@@ -25,7 +25,7 @@ var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 var sess *session.Session
 
 func main() {
-	if !condition.InTest() {
+	if !condition.InUnitTest() {
 		if len(os.Args) != 5 {
 			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
 		}
@@ -53,13 +53,30 @@ func run() {
 	}
 }
 
+type logger struct{}
+
+func (l *logger) Log(v ...interface{}) {
+	fmt.Printf("AWS Log: %v", v)
+}
+
 func createSession() {
 	// Specify profile to load for the session's config
 	var err error
-	sess, err = session.NewSessionWithOptions(session.Options{
-		Profile: awsProfileName,
-		Config:  aws.Config{Region: aws.String(awsRegionName)},
-	})
+	var verboseErr = true
+	var logLevel = aws.LogDebug
+	_ = logLevel
+	opts := session.Options{
+		Config: aws.Config{
+			CredentialsChainVerboseErrors: &verboseErr,
+			Region:                        aws.String(awsRegionName),
+			/*Logger:                        &logger{},*/
+			/*LogLevel:                      &logLevel,*/
+		},
+	}
+	if runtime.GOOS == "windows" && !condition.OnCI() {
+		opts.Profile = "mfa" // For some reason on windows workstations this is necessary
+	}
+	sess, err = session.NewSessionWithOptions(opts)
 	if err != nil {
 		log.Fatalf("failed to create session, %s", err.Error())
 		os.Exit(1)

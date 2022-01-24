@@ -4,11 +4,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/config"
 	_ "github.com/ActiveState/cli/internal/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInitAndT(t *testing.T) {
@@ -27,18 +24,4 @@ func TestGetLocaleFlag(t *testing.T) {
 	assert.Equal(t, "zz-ZZ", flag, "Locale flag should be detected")
 }
 
-func TestSet(t *testing.T) {
-	cfg, err := config.Get()
-	require.NoError(t, err)
-	err = Set("nl-NL")
-	assert.NoError(t, err)
-	assert.Equal(t, "nl-NL", cfg.GetString("Locale"), "Locale should be set to nl-NL")
 
-	err = Set("en-US")
-	assert.NoError(t, err)
-	assert.Equal(t, "en-US", cfg.GetString("Locale"), "Locale should be set to en-US")
-
-	err = Set("zz-ZZ")
-	assert.Error(t, err)
-	assert.NotEqual(t, "zz-ZZ", cfg.GetString("Locale"), "Locale should not be set to zz-ZZ")
-}

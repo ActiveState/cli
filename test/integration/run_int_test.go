@@ -101,8 +101,8 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
-	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
-		suite.T().Skip("Windows CI does not support ctrl-c events")
+	if runtime.GOOS != "linux" && e2e.RunningOnCI() {
+		suite.T().Skip("Windows CI does not support ctrl-c events, mac CI has Golang build issues")
 	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -110,10 +110,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Default Project")
-	cp.Expect("y/N")
-	cp.Send("n")
-	cp.Expect("You're Activated")
+	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -134,6 +131,27 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	)
 }
 
+// tests that convenience commands for activestate.yaml scripts are available
+// in bash subshells from the activated state
+func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
+	suite.OnlyRunForTags(tagsuite.Run)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts, 3)
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"), e2e.AppendEnv("SHELL=bash"))
+	cp.Expect("Activated")
+	cp.WaitForInput(10 * time.Second)
+
+	cp.SendLine("helloWorld")
+	cp.Expect("Hello World!")
+	cp.SendLine("bash -c helloWorld")
+	cp.Expect("Hello World!")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt, tagsuite.Critical)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
@@ -142,9 +160,6 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts, 3)
-
-	ts.LoginAsPersistentUser()
-	defer ts.LogoutUser()
 
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
@@ -217,10 +232,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Default Project")
-	cp.Expect("y/N")
-	cp.Send("n")
-
-	cp.Expect("You're Activated")
+	cp.Expect("Activated")
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))

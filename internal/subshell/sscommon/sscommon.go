@@ -26,17 +26,28 @@ func (se silentExitCodeError) IsSilent() bool {
 	return true
 }
 
+func NewCommand(command string, args []string, env []string) *exec.Cmd {
+	cmd := exec.Command(command, args...)
+	if env != nil {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, env...)
+	}
+	return cmd
+}
+
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
 // returns a channel to monitor errors on.
 func Start(cmd *exec.Cmd) chan error {
+	logging.Debug("Starting subshell with cmd: %s", cmd.String())
+
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 
 	cmd.Start()
 
-	errs := make(chan error, 1)
+	errors := make(chan error, 1)
 
 	go func() {
-		defer close(errs)
+		defer close(errors)
 
 		if err := cmd.Wait(); err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
@@ -51,16 +62,16 @@ func Start(cmd *exec.Cmd) chan error {
 					return
 				}
 
-				errs <- silentExitCodeError{eerr}
+				errors <- silentExitCodeError{eerr}
 				return
 			}
 
-			errs <- err
+			errors <- errs.Wrap(err, "Command Failed: %s", cmd.String())
 			return
 		}
 	}()
 
-	return errs
+	return errors
 }
 
 // Stop signals the provided command to terminate.
@@ -122,34 +133,20 @@ func runWithCmd(env []string, name string, args ...string) error {
 		args = append([]string{"-file", name}, args...)
 		name = "powershell"
 	case ".sh":
-		linPath, err := winPathToLinPath(name)
+		bashPath, err := osutils.BashifyPath(name)
 		if err != nil {
 			return locale.WrapError(
 				err, "err_sscommon_cannot_translate_path",
 				"Cannot translate Windows path ({{.V0}}) to bash path.", name,
 			)
 		}
-		args = append([]string{linPath}, args...)
+		args = append([]string{bashPath}, args...)
 		name = "bash"
 	default:
 		return locale.NewInputError("err_sscommon_unsupported_language", "", ext)
 	}
 
 	return runDirect(env, name, args...)
-}
-
-func winPathToLinPath(name string) (string, error) {
-	cmd := exec.Command("bash", "-c", "pwd")
-	cmd.Dir = filepath.Dir(name)
-
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	path := strings.TrimSpace(string(out)) + "/" + filepath.Base(name)
-
-	return path, nil
 }
 
 func binaryPathCmd(env []string, name string) (string, error) {

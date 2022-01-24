@@ -1,13 +1,9 @@
 package prompt
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/ActiveState/cli/internal/output"
 )
 
 func TestInputRequired(t *testing.T) {
@@ -20,29 +16,4 @@ func TestInputRequired(t *testing.T) {
 func TestFormatMessageByCols(t *testing.T) {
 	assert.Equal(t, "aa\naa\naa", formatMessageByCols("aaaaaa", 3), "Adds linebreaks at col limit")
 	assert.Equal(t, "a\naa\naa\na", formatMessageByCols("a\naaaaa", 3), "Adds linebreaks at col limit")
-}
-
-func TestPrompts(t *testing.T) {
-	output.New(string(output.PlainFormatName), &output.Config{
-		OutWriter:   os.Stdout,
-		ErrWriter:   os.Stderr,
-		Colored:     true,
-		Interactive: true,
-	})
-	p := New(true)
-
-	fmt.Println("# SELECT")
-	selectDefault := "choice 1"
-	p.Select("Title", "This is the message", []string{"choice 1", "choice 2", "choice 3"}, &selectDefault)
-
-	fmt.Println("# CONFIRM")
-	confirmDefault := true
-	p.Confirm("Title", "This is the message", &confirmDefault)
-
-	fmt.Println("# INPUT")
-	inputDefault := "Default response"
-	p.Input("Title", "This is the message", &inputDefault)
-
-	fmt.Println("# SECRET")
-	p.InputSecret("Title", "This is the message")
 }

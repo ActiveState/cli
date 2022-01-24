@@ -16,56 +16,72 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewGetCheckpointParams creates a new GetCheckpointParams object
-// with the default values initialized.
+// NewGetCheckpointParams creates a new GetCheckpointParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewGetCheckpointParams() *GetCheckpointParams {
-	var ()
 	return &GetCheckpointParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewGetCheckpointParamsWithTimeout creates a new GetCheckpointParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewGetCheckpointParamsWithTimeout(timeout time.Duration) *GetCheckpointParams {
-	var ()
 	return &GetCheckpointParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewGetCheckpointParamsWithContext creates a new GetCheckpointParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewGetCheckpointParamsWithContext(ctx context.Context) *GetCheckpointParams {
-	var ()
 	return &GetCheckpointParams{
-
 		Context: ctx,
 	}
 }
 
 // NewGetCheckpointParamsWithHTTPClient creates a new GetCheckpointParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewGetCheckpointParamsWithHTTPClient(client *http.Client) *GetCheckpointParams {
-	var ()
 	return &GetCheckpointParams{
 		HTTPClient: client,
 	}
 }
 
-/*GetCheckpointParams contains all the parameters to send to the API endpoint
-for the get checkpoint operation typically these are written to a http.Request
+/* GetCheckpointParams contains all the parameters to send to the API endpoint
+   for the get checkpoint operation.
+
+   Typically these are written to a http.Request.
 */
 type GetCheckpointParams struct {
 
-	/*CommitID*/
+	// CommitID.
+	//
+	// Format: uuid
 	CommitID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the get checkpoint params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetCheckpointParams) WithDefaults() *GetCheckpointParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the get checkpoint params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *GetCheckpointParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the get checkpoint params

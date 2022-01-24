@@ -2,15 +2,18 @@ package update
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-var _ captain.FlagMarshaler = &StateToolChannelVersion{}
+//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 
 type StateToolChannelVersion struct {
 	captain.NameVersion
@@ -37,6 +40,7 @@ type Lock struct {
 	project *project.Project
 	out     output.Outputer
 	prompt  prompt.Prompter
+	cfg     updater.Configurable
 }
 
 func NewLock(prime primeable) *Lock {
@@ -44,6 +48,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Config(),
 	}
 }
 
@@ -52,8 +57,13 @@ func (l *Lock) Run(params *LockParams) error {
 
 	if l.project.IsLocked() && !params.Force {
 		if err := confirmLock(l.prompt); err != nil {
-			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to update.")
+			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
+	}
+
+	// invalidate the installer version lock if `state update lock` is requested
+	if err := l.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
+		logging.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
 	}
 
 	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()
@@ -69,13 +79,13 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	_, info, err := fetchUpdater(version, channel)
-	if err != nil || info == nil {
-		return errs.Wrap(err, "fetchUpdater failed, info: %v", info)
+	exactVersion, err := fetchExactVersion(l.cfg, version, channel)
+	if err != nil {
+		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
 
 	if lockVersion == "" {
-		lockVersion = info.Version
+		lockVersion = exactVersion
 	}
 
 	err = projectfile.AddLockInfo(l.project.Source().Path(), channel, lockVersion)
@@ -100,4 +110,20 @@ func confirmLock(prom prompt.Prompter) error {
 	}
 
 	return nil
+}
+
+func fetchExactVersion(cfg updater.Configurable, version, channel string) (string, error) {
+	if channel != constants.BranchName {
+		version = "" // force update
+	}
+	info, err := updater.NewDefaultChecker(cfg).CheckFor(channel, version)
+	if err != nil {
+		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
+	}
+
+	if info == nil { // if info is empty, we are at the current version
+		return constants.Version, nil
+	}
+
+	return info.Version, nil
 }

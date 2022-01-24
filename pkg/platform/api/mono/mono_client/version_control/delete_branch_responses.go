@@ -47,9 +47,8 @@ func (o *DeleteBranchReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewDeleteBranchOK() *DeleteBranchOK {
 	return &DeleteBranchOK{}
 }
 
-/*DeleteBranchOK handles this case with default header values.
+/* DeleteBranchOK describes a response with status code 200, with default header values.
 
 Branch deleted successfully
 */
@@ -69,7 +68,6 @@ type DeleteBranchOK struct {
 func (o *DeleteBranchOK) Error() string {
 	return fmt.Sprintf("[DELETE /vcs/branch/{branchID}][%d] deleteBranchOK  %+v", 200, o.Payload)
 }
-
 func (o *DeleteBranchOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -91,7 +89,7 @@ func NewDeleteBranchForbidden() *DeleteBranchForbidden {
 	return &DeleteBranchForbidden{}
 }
 
-/*DeleteBranchForbidden handles this case with default header values.
+/* DeleteBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -102,7 +100,6 @@ type DeleteBranchForbidden struct {
 func (o *DeleteBranchForbidden) Error() string {
 	return fmt.Sprintf("[DELETE /vcs/branch/{branchID}][%d] deleteBranchForbidden  %+v", 403, o.Payload)
 }
-
 func (o *DeleteBranchForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -124,7 +121,7 @@ func NewDeleteBranchNotFound() *DeleteBranchNotFound {
 	return &DeleteBranchNotFound{}
 }
 
-/*DeleteBranchNotFound handles this case with default header values.
+/* DeleteBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -135,7 +132,6 @@ type DeleteBranchNotFound struct {
 func (o *DeleteBranchNotFound) Error() string {
 	return fmt.Sprintf("[DELETE /vcs/branch/{branchID}][%d] deleteBranchNotFound  %+v", 404, o.Payload)
 }
-
 func (o *DeleteBranchNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -157,7 +153,7 @@ func NewDeleteBranchInternalServerError() *DeleteBranchInternalServerError {
 	return &DeleteBranchInternalServerError{}
 }
 
-/*DeleteBranchInternalServerError handles this case with default header values.
+/* DeleteBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -168,7 +164,6 @@ type DeleteBranchInternalServerError struct {
 func (o *DeleteBranchInternalServerError) Error() string {
 	return fmt.Sprintf("[DELETE /vcs/branch/{branchID}][%d] deleteBranchInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *DeleteBranchInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

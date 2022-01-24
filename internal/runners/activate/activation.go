@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	rt "runtime"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,7 +26,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		return err
 	}
 
-	ve, err := venv.GetEnv(false, filepath.Dir(projectfile.Get().Path()))
+	ve, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
 	}
@@ -68,7 +68,7 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 	defer fe.Close()
 
-	analytics.Event(analytics.CatActivationFlow, "before-subshell")
+	r.analytics.Event(constants.CatActivationFlow, "before-subshell")
 
 	err = <-r.subshell.Errors()
 	if err != nil {

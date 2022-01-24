@@ -3,6 +3,7 @@ scripts:
     language: bash
     description: Generates the mono-api client files
     value: |
+      echo "IMPORTANT!!! mono API and inventory API have to be in sync.  Consider running state run generate-inventory-client"
       WD=$(pwd)
       pushd pkg/platform/api/mono
       swagger generate client -f ${WD}/../TheHomeRepot/service/api/swagger/swagger.yaml -A mono -a mono_operations -m mono_models -c mono_client
@@ -35,6 +36,7 @@ scripts:
     language: bash
     description: Generates the inventory-api client files
     value: |
+      echo "IMPORTANT!!! mono API and inventory API have to be in sync.  Consider running state run generate-api-client"
       WD=$(pwd)
       pushd pkg/platform/api/inventory
       swagger generate client --with-flatten full -f ${WD}/../TheHomeRepot/service/inventory-api-v1/swagger.json -A inventory -a inventory_operations -m inventory_models -c inventory_client
@@ -51,37 +53,84 @@ scripts:
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
-  - name: generate-version
-    language: bash
-    description: Generate version file
-    value: |
-      mkdir -p build/update
-      wget -O build/update/version.json https://state-tool.s3.amazonaws.com/update/state/version.json
   - name: generate-update
     language: bash
     description: Generate update files
     value: |
       set -e
-      $constants.SET_ENV
-
       export GOARCH=${1:-amd64}
-      export TARGET_SUFFIX=${1:-}
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET${TARGET_SUFFIX}
-  - name: generate-update-32bit
-    language: bash
-    description: Generate update files
-    value: |
-      set -e
       $constants.SET_ENV
 
-      export GOARCH=386
+      echo "# Create temp dir to generate bits"
+      TEMPDIR=$BUILD_TARGET_DIR/state-install
+      mkdir -p $TEMPDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
 
-      mkdir -p build/update
-      go run scripts/update-generator/main.go -o build/update $constants.BUILD_TARGET_32BIT
+      echo "# Copy targets to temp dir"
+      BINDIR=$TEMPDIR/bin
+      mkdir -p $TEMPDIR/bin
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
+
+      echo "# Create update dir"
+      mkdir -p ./build/update
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        echo "# Copy systray app"
+        mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP
+        cp -r $BUILD_TARGET_DIR/$constants.SYSTRAY_APP $TEMPDIR/system
+      fi
+
+      echo "# Generate update from temp dir"
+      go run scripts/update-generator/main.go -o ./build/update $TEMPDIR
+
+      echo "# Remove temp dir"
+      rm -rf $TEMPDIR
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
     value: |
-      cd cmd/state-svc
-      go run github.com/99designs/gqlgen
+      type gqlgen &>/dev/null || go install github.com/99designs/gqlgen@v0.13.0
+      cd ./cmd/state-svc && gqlgen
+  - name: generate-test-update
+    language: bash
+    standalone: true
+    description: |
+      Generate tests update files. These can be safely uploaded to s3, and can be used to test an installation/update
+    value: |
+      set -e
+      $constants.SET_ENV
+      mkdir -p ./build/test/state-install/bin
+      mkdir -p ./build/test-update
+      TEST_VERSION="99.99.9999"
+      TEST_CHANNEL=${1:-test-channel}
+
+      TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
+      TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
+      TEST_STATE_TRAY=./build/test/state-install/bin/$constants.BUILD_SYSTRAY_TARGET
+      TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
+      go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
+      cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
+      cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
+
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        TEST_AS_DESKTOP=./build/test/state-install/system/$constants.SYSTRAY_APP
+        mkdir -p "$TEST_AS_DESKTOP"
+        cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
+      fi
+
+      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+
+      echo "compile ${TEST_CHANNEL} update"
+      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
+      cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
+      cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
+
+      if [ ! -z $constants.SYSTRAY_APP ]; then
+        TEST_AS_DESKTOP=./build/test/state-install/system/$constants.SYSTRAY_APP
+        mkdir -p "$TEST_AS_DESKTOP"
+        cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
+      fi
+
+      go run scripts/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install

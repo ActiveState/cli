@@ -16,6 +16,7 @@ import (
 
 type Configurable interface {
 	ConfigPath() string
+	Close() error
 }
 
 // Load will attempt to load a Keypair using private and public-key files from

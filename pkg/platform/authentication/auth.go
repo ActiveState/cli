@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -44,12 +46,13 @@ type Auth struct {
 type Configurable interface {
 	Set(string, interface{}) error
 	GetString(string) string
+	Close() error
 }
 
-// Get returns a cached version of Auth
-func Get() *Auth {
+// LegacyGet returns a cached version of Auth
+func LegacyGet() *Auth {
 	if persist == nil {
-		cfg, err := config.Get()
+		cfg, err := config.New()
 		if err != nil {
 			// TODO: We need to get rid of this Get() function altogether...
 			logging.Error("Could not get configuration required by auth: %v", err)
@@ -60,14 +63,21 @@ func Get() *Auth {
 	return persist
 }
 
+func LegacyClose() {
+	if persist == nil {
+		return
+	}
+	persist.Close()
+}
+
 // Client is a shortcut for calling Client() on the persisted auth
 func Client() *mono_client.Mono {
-	return Get().Client()
+	return LegacyGet().Client()
 }
 
 // ClientAuth is a shortcut for calling ClientAuth() on the persisted auth
 func ClientAuth() runtime.ClientAuthInfoWriter {
-	return Get().ClientAuth()
+	return LegacyGet().ClientAuth()
 }
 
 // Reset clears the cache
@@ -77,12 +87,13 @@ func Reset() {
 
 // Logout will remove the stored apiToken
 func Logout() {
-	Get().Logout()
+	LegacyGet().Logout()
 	Reset()
 }
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
+	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
 	}
@@ -93,6 +104,13 @@ func New(cfg Configurable) *Auth {
 	}
 
 	return auth
+}
+
+func (s *Auth) Close() error {
+	if err := s.cfg.Close(); err != nil {
+		return errs.Wrap(err, "Could not close cfg from Auth")
+	}
+	return nil
 }
 
 // Authenticated checks whether we are currently authenticated
@@ -144,9 +162,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	loginOK, err := mono.Get().Authentication.PostLogin(params)
 	if err != nil {
 		tips := []string{
-			locale.T("relog_tip", "If you're having trouble authenticating try logging out and logging back in again."),
-			locale.T("logout_tip", "Logout with [ACTIONABLE]`state auth logout`[/RESET]."),
-			locale.T("logout_tip", "Login with [ACTIONABLE]`state auth`[/RESET]."),
+			locale.Tl("relog_tip", "If you're having trouble authenticating try logging out and logging back in again."),
+			locale.Tl("logout_tip", "Logout with [ACTIONABLE]`state auth logout`[/RESET]."),
+			locale.Tl("logout_tip", "Login with [ACTIONABLE]`state auth`[/RESET]."),
 		}
 
 		switch err.(type) {
@@ -203,6 +221,19 @@ func (s *Auth) WhoAmI() string {
 		return s.user.Username
 	}
 	return ""
+}
+
+func (s *Auth) CanWrite(organization string) bool {
+	if s.user == nil {
+		return false
+	}
+	for _, org := range s.user.Organizations {
+		if org.URLname != organization {
+			continue
+		}
+		return org.Role == string(mono_models.RoleAdmin) || org.Role == string(mono_models.RoleEditor)
+	}
+	return false
 }
 
 // Email return the email of the authenticated user

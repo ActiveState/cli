@@ -41,9 +41,8 @@ func (o *GetUserByIDReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetUserByIDOK() *GetUserByIDOK {
 	return &GetUserByIDOK{}
 }
 
-/*GetUserByIDOK handles this case with default header values.
+/* GetUserByIDOK describes a response with status code 200, with default header values.
 
 User Record
 */
@@ -63,7 +62,6 @@ type GetUserByIDOK struct {
 func (o *GetUserByIDOK) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdOK  %+v", 200, o.Payload)
 }
-
 func (o *GetUserByIDOK) GetPayload() *mono_models.User {
 	return o.Payload
 }
@@ -85,7 +83,7 @@ func NewGetUserByIDNotFound() *GetUserByIDNotFound {
 	return &GetUserByIDNotFound{}
 }
 
-/*GetUserByIDNotFound handles this case with default header values.
+/* GetUserByIDNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -96,7 +94,6 @@ type GetUserByIDNotFound struct {
 func (o *GetUserByIDNotFound) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdNotFound  %+v", 404, o.Payload)
 }
-
 func (o *GetUserByIDNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -118,7 +115,7 @@ func NewGetUserByIDInternalServerError() *GetUserByIDInternalServerError {
 	return &GetUserByIDInternalServerError{}
 }
 
-/*GetUserByIDInternalServerError handles this case with default header values.
+/* GetUserByIDInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -129,7 +126,6 @@ type GetUserByIDInternalServerError struct {
 func (o *GetUserByIDInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /users/id/{userID}][%d] getUserByIdInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetUserByIDInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

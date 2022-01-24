@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -16,6 +18,12 @@ import (
 //
 // swagger:model OrganizationMutation
 type OrganizationMutation struct {
+
+	// active runtimes added or subtracted
+	ActiveRuntimesDelta int64 `json:"activeRuntimesDelta,omitempty"`
+
+	// active runtimes added or subtracted from the override
+	ActiveRuntimesOverrideDelta int64 `json:"activeRuntimesOverrideDelta,omitempty"`
 
 	// the date and time at which this mutation was created
 	// Format: date-time
@@ -52,6 +60,12 @@ type OrganizationMutation struct {
 	// indicated whether customer org is managed by a reseller
 	ResellerManaged *bool `json:"resellerManaged,omitempty"`
 
+	// static runtimes added or subtracted
+	StaticRuntimesDelta int64 `json:"staticRuntimesDelta,omitempty"`
+
+	// static runtimes added or subtracted from the override
+	StaticRuntimesOverrideDelta int64 `json:"staticRuntimesOverrideDelta,omitempty"`
+
 	// Invoiced subscription ID newly associated with the org as of this mutation
 	SubscriptionID string `json:"subscriptionID,omitempty"`
 
@@ -64,7 +78,7 @@ type OrganizationMutation struct {
 	// identifier for the mutating user
 	UserName string `json:"userName,omitempty"`
 
-	// users added or substracted
+	// users added or subtracted
 	UsersDelta int64 `json:"usersDelta,omitempty"`
 }
 
@@ -87,7 +101,6 @@ func (m *OrganizationMutation) Validate(formats strfmt.Registry) error {
 }
 
 func (m *OrganizationMutation) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -100,7 +113,6 @@ func (m *OrganizationMutation) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *OrganizationMutation) validateOrganizationID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.OrganizationID) { // not required
 		return nil
 	}
@@ -109,6 +121,11 @@ func (m *OrganizationMutation) validateOrganizationID(formats strfmt.Registry) e
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this organization mutation based on context it is used
+func (m *OrganizationMutation) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

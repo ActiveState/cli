@@ -7,13 +7,11 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/logging"
-
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -40,25 +38,21 @@ func TestCmdExitCode(t *testing.T) {
 	assert.Equal(t, 255, CmdExitCode(cmd), "Exits with code 255")
 }
 
-func TestExecuteAndPipeStd(t *testing.T) {
-	out, err := osutil.CaptureStdout(func() {
-		logging.SetLevel(logging.NOTHING)
-		defer logging.SetLevel(logging.NORMAL)
-		ExecuteAndPipeStd("printenv", []string{"FOO"}, []string{"FOO=--out--"})
-	})
-	require.NoError(t, err)
-	assert.Equal(t, "--out--\n", out, "captures output")
-}
-
 func TestBashifyPath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skipf("Bashify path only runs on windows")
+	}
 	bashify := func(value string) string {
 		result, err := BashifyPath(value)
 		require.NoError(t, err)
 		return result
 	}
-	assert.Equal(t, "/c/temp", bashify(`C:\temp`))
-	assert.Equal(t, "/c/temp\\ temp", bashify(`C:\temp temp`))
+	res := bashify(`C:\temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp"), "Expected suffix '/c/temp', got %s", res)
+	res = bashify(`C:\temp temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp\\ temp"), "Expected suffix 'c/temp\\ temp', got %s", res)
 	assert.Equal(t, "/foo", bashify(`/foo`))
+
 	_, err := BashifyPath("not a valid path")
 	require.Error(t, err)
 	_, err = BashifyPath("../relative/path")
@@ -124,5 +118,12 @@ func TestEnvMapToSlice(t *testing.T) {
 				t.Errorf("EnvMapToSlice() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecutableName(t *testing.T) {
+	name := ExecutableName()
+	if fileutils.TargetExists(name) {
+		t.Fatalf("Executable name should return a filename, not a filepath. Returned: %s", name)
 	}
 }

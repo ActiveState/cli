@@ -3,22 +3,21 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Cache struct {
 	output  output.Outputer
-	config  project.ConfigAble
+	config  configurable
 	confirm confirmAble
 	path    string
-	cfg     *config.Instance
 }
 
 type CacheParams struct {
@@ -35,7 +34,7 @@ func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Ca
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
-		path:    cfg.CachePath(),
+		path:    storage.CachePath(),
 	}
 }
 
@@ -44,8 +43,16 @@ func (c *Cache) Run(params *CacheParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
+	if err := stopServices(c.config, c.output, params.Force); err != nil {
+		return errs.Wrap(err, "Failed to stop services.")
+	}
+
 	if params.Project != "" {
 		paths := projectfile.GetProjectPaths(c.config, params.Project)
+
+		if len(paths) == 0 {
+			return locale.NewInputError("err_cache_no_project", "Could not determine path to project {{.V0}}", params.Project)
+		}
 
 		for _, projectPath := range paths {
 			err := c.removeProjectCache(projectPath, params.Project, params.Force)
@@ -53,6 +60,7 @@ func (c *Cache) Run(params *CacheParams) error {
 				return err
 			}
 		}
+		return nil
 	}
 
 	return c.removeCache(c.path, params.Force)
@@ -84,8 +92,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 		}
 	}
 
-	projectInstallPath := runtime.ProjectDirToTargetDir(projectDir, c.cfg.CachePath())
-
+	projectInstallPath := target.ProjectDirToTargetDir(projectDir, storage.CachePath())
 	logging.Debug("Remove project path: %s", projectInstallPath)
 	err := os.RemoveAll(projectInstallPath)
 	if err != nil {

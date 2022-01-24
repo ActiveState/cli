@@ -1,34 +1,32 @@
 package globaldefault
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/executor"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 )
 
 type DefaultConfigurer interface {
 	sscommon.Configurable
-	CachePath() string
 }
 
 // BinDir returns the global binary directory
-func BinDir(cfg DefaultConfigurer) string {
-	return filepath.Join(cfg.CachePath(), "bin")
+func BinDir() string {
+	return storage.GlobalBinDir()
 }
 
 func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
-	binDir := BinDir(cfg)
+	binDir := BinDir()
 
-	isWindowsAdmin, err := osutils.IsWindowsAdmin()
+	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if we are running as administrator: %v", err)
 	}
@@ -49,7 +47,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.Default, true); err != nil {
+	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true); err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
 	}
 
@@ -64,12 +62,12 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
-	exes, err := runtime.Executables()
+	exes, err := runtime.ExecutablePaths()
 	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	fw := executor.NewWithBinPath(projectPath, BinDir(cfg))
+	fw := executor.NewWithBinPath(projectPath, BinDir())
 	if err := fw.Update(exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}

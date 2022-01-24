@@ -18,58 +18,75 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewUpdateBuildScriptParams creates a new UpdateBuildScriptParams object
-// with the default values initialized.
+// NewUpdateBuildScriptParams creates a new UpdateBuildScriptParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewUpdateBuildScriptParams() *UpdateBuildScriptParams {
-	var ()
 	return &UpdateBuildScriptParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewUpdateBuildScriptParamsWithTimeout creates a new UpdateBuildScriptParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewUpdateBuildScriptParamsWithTimeout(timeout time.Duration) *UpdateBuildScriptParams {
-	var ()
 	return &UpdateBuildScriptParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewUpdateBuildScriptParamsWithContext creates a new UpdateBuildScriptParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewUpdateBuildScriptParamsWithContext(ctx context.Context) *UpdateBuildScriptParams {
-	var ()
 	return &UpdateBuildScriptParams{
-
 		Context: ctx,
 	}
 }
 
 // NewUpdateBuildScriptParamsWithHTTPClient creates a new UpdateBuildScriptParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewUpdateBuildScriptParamsWithHTTPClient(client *http.Client) *UpdateBuildScriptParams {
-	var ()
 	return &UpdateBuildScriptParams{
 		HTTPClient: client,
 	}
 }
 
-/*UpdateBuildScriptParams contains all the parameters to send to the API endpoint
-for the update build script operation typically these are written to a http.Request
+/* UpdateBuildScriptParams contains all the parameters to send to the API endpoint
+   for the update build script operation.
+
+   Typically these are written to a http.Request.
 */
 type UpdateBuildScriptParams struct {
 
-	/*BuildScript*/
+	// BuildScript.
 	BuildScript *inventory_models.BuildScriptCore
-	/*BuildScriptID*/
+
+	// BuildScriptID.
+	//
+	// Format: uuid
 	BuildScriptID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the update build script params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBuildScriptParams) WithDefaults() *UpdateBuildScriptParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the update build script params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *UpdateBuildScriptParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the update build script params
@@ -134,7 +151,6 @@ func (o *UpdateBuildScriptParams) WriteToRequest(r runtime.ClientRequest, reg st
 		return err
 	}
 	var res []error
-
 	if o.BuildScript != nil {
 		if err := r.SetBodyParam(o.BuildScript); err != nil {
 			return err

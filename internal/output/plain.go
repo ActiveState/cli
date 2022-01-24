@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
-	"github.com/mitchellh/go-wordwrap"
 	"github.com/thoas/go-funk"
 )
 
@@ -55,6 +54,11 @@ func NewPlain(config *Config) (Plain, error) {
 // Type tells callers what type of outputer we are
 func (f *Plain) Type() Format {
 	return PlainFormatName
+}
+
+// Fprint allows printing to a specific writer, using all the conveniences of the output package
+func (f *Plain) Fprint(writer io.Writer, v interface{}) {
+	f.write(writer, v)
 }
 
 // Print will marshal and print the given value to the output writer
@@ -100,8 +104,11 @@ func (f *Plain) writeNow(writer io.Writer, value string) {
 }
 
 func wordWrap(text string) string {
-	termWidth := termutils.GetWidth()
-	return wordwrap.WrapString(text, uint(termWidth))
+	return wordWrapWithWidth(text, termutils.GetWidth())
+}
+
+func wordWrapWithWidth(text string, width int) string {
+	return colorize.GetCroppedText(text, width, true).String()
 }
 
 const nilText = "<nil>"

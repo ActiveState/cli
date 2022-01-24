@@ -25,9 +25,12 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	SignS3URI(params *SignS3URIParams) (*SignS3URIOK, error)
+	SignS3URI(params *SignS3URIParams, opts ...ClientOption) (*SignS3URIOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -37,13 +40,12 @@ type ClientService interface {
 
   Returns a signed, limited-duration S3 URI
 */
-func (a *Client) SignS3URI(params *SignS3URIParams) (*SignS3URIOK, error) {
+func (a *Client) SignS3URI(params *SignS3URIParams, opts ...ClientOption) (*SignS3URIOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSignS3URIParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "signS3URI",
 		Method:             "GET",
 		PathPattern:        "/s3/sign/{URI}",
@@ -54,7 +56,12 @@ func (a *Client) SignS3URI(params *SignS3URIParams) (*SignS3URIOK, error) {
 		Reader:             &SignS3URIReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

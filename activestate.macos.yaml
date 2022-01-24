@@ -1,0 +1,14 @@
+constants:
+  - name: SYSTRAY_APP
+    if: eq .OS.Name "MacOS"
+    value: ActiveState\ Desktop\ \(Preview\).app
+scripts:
+  - name: build-systray-app
+    language: bash
+    standalone: true
+    if: eq .OS.Name "MacOS"
+    description: Copies the MacOS application directory to the build dir
+    value: |
+      mkdir -p build/${constants.SYSTRAY_APP}
+
+      cp -r installers/${constants.SYSTRAY_APP} build/

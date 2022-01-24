@@ -15,8 +15,7 @@ func newProtocolCommand(prime *primer.Values) *captain.Command {
 		"_protocol",
 		"",
 		locale.Tl("protocol_description", "Process URLs that use the state protocol"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{

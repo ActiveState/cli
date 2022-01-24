@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -43,22 +45,6 @@ func CmdString(c *exec.Cmd) string {
 	return b.String()
 }
 
-// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
-func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
-	logging.Debug("Executing command and piping std: %s, %v", command, arg)
-
-	cmd := exec.Command(command, arg...)
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, env...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		logging.Debug("Executing command returned error: %v", err)
-	}
-	return CmdExitCode(cmd), cmd, err
-}
-
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
 func BashifyPath(absolutePath string) (string, error) {
@@ -72,10 +58,33 @@ func BashifyPath(absolutePath string) (string, error) {
 		return "", errs.New("Unrecognized absolute path format: %s", absolutePath)
 	}
 
-	absolutePath = strings.ToLower(absolutePath[0:1]) + absolutePath[2:]
-	absolutePath = strings.Replace(absolutePath, `\`, `/`, -1)  // backslash to forward slash
-	absolutePath = strings.Replace(absolutePath, ` `, `\ `, -1) // escape space
-	return "/" + absolutePath, nil
+	winPath, err := winPathToLinPath(absolutePath)
+	if err == nil {
+		winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
+		return winPath, nil
+	}
+	logging.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
+
+	vol := filepath.VolumeName(absolutePath)
+	absolutePath = absolutePath[len(vol):]
+	vol = strings.Replace(vol, ":", "", 1)
+	winPath = "/" + vol + filepath.ToSlash(absolutePath)
+	winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
+	return winPath, nil
+}
+
+func winPathToLinPath(name string) (string, error) {
+	cmd := exec.Command("bash", "-c", "pwd")
+	cmd.Dir = filepath.Dir(name)
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	path := strings.TrimSpace(string(out)) + "/" + filepath.Base(name)
+
+	return path, nil
 }
 
 // Getwd is an alias of osutils.Getwd which wraps the error in our localized error message and FailGetWd, which is user facing (doesn't get logged)
@@ -109,11 +118,24 @@ func EnvMapToSlice(envMap map[string]string) []string {
 }
 
 // Executable returns the resolved path to the currently running executable.
-func Executable() (string, error) {
+func Executable() string {
 	exec, err := os.Executable()
 	if err != nil {
-		return "", err
+		exec = os.Args[0]
 	}
 
-	return fileutils.ResolvePath(exec)
+	resolved, err := fileutils.ResolvePath(exec)
+	if err != nil {
+		return exec
+	}
+
+	return resolved
+}
+
+// ExecutableName returns the name of the executable called with the extension
+// removed and falls back to the command used to call the executable.
+func ExecutableName() string {
+	name := filepath.Base(Executable())
+	name = strings.TrimSuffix(name, path.Ext(name))
+	return name
 }

@@ -3,11 +3,13 @@ package scriptrun
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -17,28 +19,37 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // ScriptRun manages the context required to run a script.
 type ScriptRun struct {
-	out     output.Outputer
-	sub     subshell.SubShell
-	project *project.Project
-	cfg     *config.Instance
+	auth      *authentication.Auth
+	out       output.Outputer
+	sub       subshell.SubShell
+	project   *project.Project
+	cfg       *config.Instance
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
 	return &ScriptRun{
+		auth,
 		out,
 		subs,
 		proj,
 		cfg,
+		analytics,
+		svcModel,
 
 		false,
 
@@ -56,25 +67,29 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
-	rt, err := runtime.New(runtime.NewProjectTarget(s.project, s.cfg.CachePath(), nil))
+	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		if err := rt.Update(runbits.DefaultRuntimeEventHandler(s.out)); err != nil {
+		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
+		if err != nil {
+			return locale.WrapError(err, "err_initialize_runtime_event_handler")
+		}
+		if err := rt.Update(s.auth, eh); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, filepath.Dir(s.project.Source().Path()))
+	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
 	if err != nil {
 		return err
 	}
 	s.sub.SetEnv(env)
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, "")
+	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}
@@ -108,20 +123,24 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	}
 
 	var attempted []string
+	var attempted3rdParty []string
 	for _, l := range script.Languages() {
-		execPath := l.Executable().Name()
+		execPath := l.Executable().Filename()
 		searchPath := s.venvExePath
 		if l.Executable().CanUseThirdParty() {
 			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")
 		}
 
 		logging.Debug("Checking for %s on %s", execPath, searchPath)
-		if pathProvidesExec(searchPath, execPath) {
+		if PathProvidesExec(searchPath, execPath) {
 			lang = l
 			logging.Debug("Found %s", execPath)
 			break
 		}
 		attempted = append(attempted, l.String())
+		if l.Executable().CanUseThirdParty() {
+			attempted3rdParty = append(attempted3rdParty, l.Executable().Filename())
+		}
 	}
 
 	if script.Standalone() && !lang.Executable().CanUseThirdParty() {
@@ -130,12 +149,16 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 
 	if lang == language.Unknown {
 		if len(attempted) > 0 {
-			return locale.NewInputError(
+			err := locale.NewInputError(
 				"err_run_unknown_language_fallback",
 				"The language for this script is not supported or not available on your system. Attempted script execution with: {{.V0}}. Please configure the 'language' field with an available option (one, or more, of: {{.V1}})",
 				strings.Join(attempted, ", "),
 				strings.Join(language.RecognizedNames(), ", "),
 			)
+			if len(attempted3rdParty) == 0 {
+				return err
+			}
+			return errs.AddTips(err, locale.Tl("unknown_language_check_path", "Please ensure that one of these executables is on your PATH: [ACTIONABLE]{{.V0}}[/RESET]", strings.Join(attempted3rdParty, ", ")))
 		}
 		return locale.NewInputError(
 			"err_run_unknown_language",
@@ -173,37 +196,6 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	return nil
 }
 
-func pathProvidesExec(path, exec string) bool {
-	paths := splitPath(path)
-	paths = applySuffix(exec, paths)
-	for _, p := range paths {
-		if isExecutableFile(p) {
-			return true
-		}
-	}
-	return false
-}
-
-func splitPath(path string) []string {
-	return strings.Split(path, string(os.PathListSeparator))
-}
-
-func applySuffix(suffix string, paths []string) []string {
-	for i, v := range paths {
-		paths[i] = filepath.Join(v, suffix)
-	}
-	return paths
-}
-
-func isExecutableFile(name string) bool {
-	f, err := os.Stat(name)
-	if err != nil { // unlikely unless file does not exist
-		return false
-	}
-
-	if rt.GOOS == "windows" {
-		return f.Mode()&0400 != 0
-	}
-
-	return f.Mode()&0110 != 0
+func PathProvidesExec(path, exec string) bool {
+	return exeutils.FindExeInside(exec, path) != ""
 }

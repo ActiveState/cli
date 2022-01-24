@@ -4,8 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/packr"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -15,8 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+
+	"github.com/gobuffalo/packr"
 )
 
 // RunParams stores run func parameters.
@@ -124,7 +125,10 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if isHeadless {
-		proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		err = proj.Source().SetNamespace(params.Namespace.Owner, params.Namespace.Project)
+		if err != nil {
+			return "", locale.WrapError(err, "err_init_set_namespace", "Could not set namespace in project file")
+		}
 	} else {
 		// Sanitize rest of params
 		if err := sanitize(params); err != nil {
@@ -132,12 +136,11 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		}
 
 		createParams := &projectfile.CreateParams{
-			Owner:           params.Namespace.Owner,
-			Project:         params.Namespace.Project,
-			Language:        params.language.String(),
-			LanguageVersion: params.version,
-			Directory:       params.Path,
-			Private:         params.Private,
+			Owner:     params.Namespace.Owner,
+			Project:   params.Namespace.Project,
+			Language:  params.language.String(),
+			Directory: params.Path,
+			Private:   params.Private,
 		}
 
 		if params.Style == SkeletonEditor {
@@ -145,10 +148,28 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 			createParams.Content = box.String("activestate.yaml.editor.tpl")
 		}
 
-		err = projectfile.Create(createParams)
+		pjfile, err := projectfile.Create(createParams)
 		if err != nil {
+			return "", locale.WrapError(err, "err_init_pjfile", "Could not create project file")
+		}
+		if proj, err = project.New(pjfile, out); err != nil {
 			return "", err
 		}
+	}
+
+	err = params.language.Validate()
+	if err != nil {
+		return "", locale.WrapError(err, "err_init_lang", "Invalid language for project creation")
+	}
+
+	version := deriveVersion(params.language.Language, params.version)
+	commitID, err := model.CommitInitial(model.HostPlatform, params.language.Requirement(), version)
+	if err != nil {
+		return "", locale.WrapError(err, "err_init_commit", "Could not create initial commit")
+	}
+
+	if err := proj.SetCommit(commitID.String()); err != nil {
+		return "", locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
 	}
 
 	out.Notice(locale.Tr(
@@ -159,4 +180,25 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	))
 
 	return params.Path, nil
+}
+
+func deriveVersion(lang language.Language, version string) string {
+	if version != "" {
+		return version
+	}
+
+	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+	if err != nil {
+		logging.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+		return lang.RecommendedVersion()
+	}
+
+	for _, l := range langs {
+		if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+			return l.DefaultVersion
+		}
+	}
+
+	logging.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+	return lang.RecommendedVersion()
 }

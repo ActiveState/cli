@@ -10,12 +10,32 @@ type StateVersion {
   date: String!
 }
 
+type AvailableUpdate {
+  version: String!
+  channel: String!
+  path: String!
+  platform: String!
+  sha256: String!
+}
+
 type Project {
   namespace: String!
   locations: [String!]!
 }
 
+type AnalyticsEventResponse {
+  sent: Boolean!
+}
+
+type RuntimeUsageResponse {
+  received: Boolean!
+}
+
 type Query {
   version: Version
+  availableUpdate: AvailableUpdate
   projects: [Project]!
+  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
 }
+

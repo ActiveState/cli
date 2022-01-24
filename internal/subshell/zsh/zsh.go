@@ -65,6 +65,28 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return sscommon.WriteRcFile("zshrc_append.sh", rcFile, envType, env)
 }
 
+func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile failure")
+	}
+
+	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
+	}
+
+	return nil
+}
+
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile-failure")
+	}
+
+	return sscommon.RemoveLegacyInstallPath(rcFile)
+}
+
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	dir := "/usr/local/share/zsh/site-functions"
 	if fpath := os.Getenv("FPATH"); fpath != "" {
@@ -127,48 +149,55 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg); err != nil {
-		return err
-	}
+	var directEnv []string
 
-	path, err := ioutil.TempDir("", "state-zsh")
-	if err != nil {
-		return errs.Wrap(err, "OS failure")
-	}
-
-	activeZsrcPath := filepath.Join(path, ".zshrc")
-	err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
-	if err != nil {
-		return err
-	}
-
-	// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
-	// and if it hasn't been set, user $HOME as that is often a default for zsh setup
-	// commands.
-	userzdotdir := os.Getenv("ZDOTDIR")
-	if userzdotdir == "" {
-		u, err := user.Current()
-		if err != nil {
-			log.Println(locale.T("Warning: Could not load home directory for current user"))
-		} else {
-			userzdotdir = u.HomeDir
+	// available project files require more intensive modification of shell envs
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg); err != nil {
+			return err
 		}
+
+		path, err := ioutil.TempDir("", "state-zsh")
+		if err != nil {
+			return errs.Wrap(err, "OS failure")
+		}
+
+		activeZsrcPath := filepath.Join(path, ".zshrc")
+		err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
+		if err != nil {
+			return err
+		}
+
+		// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
+		// and if it hasn't been set, user $HOME as that is often a default for zsh setup
+		// commands.
+		userzdotdir := os.Getenv("ZDOTDIR")
+		if userzdotdir == "" {
+			u, err := user.Current()
+			if err != nil {
+				log.Println(locale.T("Warning: Could not load home directory for current user"))
+			} else {
+				userzdotdir = u.HomeDir
+			}
+		}
+
+		err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
+		if err != nil {
+			return err
+		}
+		os.Setenv("ZDOTDIR", path)
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
-	if err != nil {
-		return err
-	}
-	os.Setenv("ZDOTDIR", path)
-
-	shellArgs := []string{}
+	var shellArgs []string
 	if v.activateCommand != nil {
 		shellArgs = append(shellArgs, "-c", *v.activateCommand)
 	}
-	cmd := exec.Command(v.Binary(), shellArgs...)
 
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil

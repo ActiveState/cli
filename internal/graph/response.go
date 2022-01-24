@@ -7,3 +7,7 @@ type VersionResponse struct {
 type ProjectsResponse struct {
 	Projects []*Project `json:"projects"`
 }
+
+type AvailableUpdateResponse struct {
+	AvailableUpdate AvailableUpdate `json:"availableUpdate"`
+}

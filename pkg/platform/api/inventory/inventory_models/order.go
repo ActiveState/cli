@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -24,6 +25,9 @@ type Order struct {
 	// Additional information about the request that may be logged for debugging
 	Annotations interface{} `json:"annotations,omitempty"`
 
+	// The builds flags to include in this order and their values.
+	BuildFlags []*OrderBuildFlag `json:"build_flags"`
+
 	// Camel-specific flags for controlling the build.
 	CamelFlags []string `json:"camel_flags"`
 
@@ -31,9 +35,6 @@ type Order struct {
 	// Required: true
 	// Format: uuid
 	OrderID *strfmt.UUID `json:"order_id"`
-
-	// The builds flags (if any) for each platform ID. Keys must be platform IDs contained in the `platforms` field.
-	PlatformBuildFlags map[string][]OrderPlatformBuildFlag `json:"platform_build_flags,omitempty"`
 
 	// List of platform IDs for the order
 	// Required: true
@@ -60,11 +61,11 @@ type Order struct {
 func (m *Order) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateOrderID(formats); err != nil {
+	if err := m.validateBuildFlags(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validatePlatformBuildFlags(formats); err != nil {
+	if err := m.validateOrderID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +91,30 @@ func (m *Order) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Order) validateBuildFlags(formats strfmt.Registry) error {
+	if swag.IsZero(m.BuildFlags) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.BuildFlags); i++ {
+		if swag.IsZero(m.BuildFlags[i]) { // not required
+			continue
+		}
+
+		if m.BuildFlags[i] != nil {
+			if err := m.BuildFlags[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flags" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *Order) validateOrderID(formats strfmt.Registry) error {
 
 	if err := validate.Required("order_id", "body", m.OrderID); err != nil {
@@ -98,34 +123,6 @@ func (m *Order) validateOrderID(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("order_id", "body", "uuid", m.OrderID.String(), formats); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (m *Order) validatePlatformBuildFlags(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.PlatformBuildFlags) { // not required
-		return nil
-	}
-
-	for k := range m.PlatformBuildFlags {
-
-		if err := validate.Required("platform_build_flags"+"."+k, "body", m.PlatformBuildFlags[k]); err != nil {
-			return err
-		}
-
-		for i := 0; i < len(m.PlatformBuildFlags[k]); i++ {
-
-			if err := m.PlatformBuildFlags[k][i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("platform_build_flags" + "." + k + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-
-		}
-
 	}
 
 	return nil
@@ -184,16 +181,15 @@ func (m *Order) validateRequirements(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateSolverVersion(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SolverVersion) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("solver_version", "body", int64(*m.SolverVersion), 0, false); err != nil {
+	if err := validate.MinimumInt("solver_version", "body", *m.SolverVersion, 0, false); err != nil {
 		return err
 	}
 
-	if err := validate.MaximumInt("solver_version", "body", int64(*m.SolverVersion), 1, false); err != nil {
+	if err := validate.MaximumInt("solver_version", "body", *m.SolverVersion, 1, false); err != nil {
 		return err
 	}
 
@@ -208,6 +204,60 @@ func (m *Order) validateTimestamp(formats strfmt.Registry) error {
 
 	if err := validate.FormatOf("timestamp", "body", "date-time", m.Timestamp.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this order based on the context it is used
+func (m *Order) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBuildFlags(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Order) contextValidateBuildFlags(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.BuildFlags); i++ {
+
+		if m.BuildFlags[i] != nil {
+			if err := m.BuildFlags[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flags" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Order) contextValidateRequirements(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Requirements); i++ {
+
+		if m.Requirements[i] != nil {
+			if err := m.Requirements[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("requirements" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

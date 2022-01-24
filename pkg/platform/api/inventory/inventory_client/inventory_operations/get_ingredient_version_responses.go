@@ -46,25 +46,24 @@ func NewGetIngredientVersionOK() *GetIngredientVersionOK {
 	return &GetIngredientVersionOK{}
 }
 
-/*GetIngredientVersionOK handles this case with default header values.
+/* GetIngredientVersionOK describes a response with status code 200, with default header values.
 
 The retrieved ingredient version
 */
 type GetIngredientVersionOK struct {
-	Payload *inventory_models.IngredientVersion
+	Payload *inventory_models.IngredientVersionRevision
 }
 
 func (o *GetIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersionOK  %+v", 200, o.Payload)
 }
-
-func (o *GetIngredientVersionOK) GetPayload() *inventory_models.IngredientVersion {
+func (o *GetIngredientVersionOK) GetPayload() *inventory_models.IngredientVersionRevision {
 	return o.Payload
 }
 
 func (o *GetIngredientVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.IngredientVersion)
+	o.Payload = new(inventory_models.IngredientVersionRevision)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
@@ -81,7 +80,7 @@ func NewGetIngredientVersionDefault(code int) *GetIngredientVersionDefault {
 	}
 }
 
-/*GetIngredientVersionDefault handles this case with default header values.
+/* GetIngredientVersionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -99,7 +98,6 @@ func (o *GetIngredientVersionDefault) Code() int {
 func (o *GetIngredientVersionDefault) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersion default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *GetIngredientVersionDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

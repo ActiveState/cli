@@ -18,61 +18,76 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditUserParams creates a new EditUserParams object
-// with the default values initialized.
+// NewEditUserParams creates a new EditUserParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditUserParams() *EditUserParams {
-	var ()
 	return &EditUserParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditUserParamsWithTimeout creates a new EditUserParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditUserParamsWithTimeout(timeout time.Duration) *EditUserParams {
-	var ()
 	return &EditUserParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEditUserParamsWithContext creates a new EditUserParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditUserParamsWithContext(ctx context.Context) *EditUserParams {
-	var ()
 	return &EditUserParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEditUserParamsWithHTTPClient creates a new EditUserParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditUserParamsWithHTTPClient(client *http.Client) *EditUserParams {
-	var ()
 	return &EditUserParams{
 		HTTPClient: client,
 	}
 }
 
-/*EditUserParams contains all the parameters to send to the API endpoint
-for the edit user operation typically these are written to a http.Request
+/* EditUserParams contains all the parameters to send to the API endpoint
+   for the edit user operation.
+
+   Typically these are written to a http.Request.
 */
 type EditUserParams struct {
 
-	/*User*/
+	// User.
 	User *mono_models.UserEditable
-	/*Username
-	  username of desired User
 
+	/* Username.
+
+	   username of desired User
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditUserParams) WithDefaults() *EditUserParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit user params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditUserParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the edit user params
@@ -137,7 +152,6 @@ func (o *EditUserParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Regi
 		return err
 	}
 	var res []error
-
 	if o.User != nil {
 		if err := r.SetBodyParam(o.User); err != nil {
 			return err

@@ -53,9 +53,8 @@ func (o *ChangePasswordReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewChangePasswordOK() *ChangePasswordOK {
 	return &ChangePasswordOK{}
 }
 
-/*ChangePasswordOK handles this case with default header values.
+/* ChangePasswordOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type ChangePasswordOK struct {
 func (o *ChangePasswordOK) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordOK  %+v", 200, o.Payload)
 }
-
 func (o *ChangePasswordOK) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewChangePasswordBadRequest() *ChangePasswordBadRequest {
 	return &ChangePasswordBadRequest{}
 }
 
-/*ChangePasswordBadRequest handles this case with default header values.
+/* ChangePasswordBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type ChangePasswordBadRequest struct {
 func (o *ChangePasswordBadRequest) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *ChangePasswordBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewChangePasswordForbidden() *ChangePasswordForbidden {
 	return &ChangePasswordForbidden{}
 }
 
-/*ChangePasswordForbidden handles this case with default header values.
+/* ChangePasswordForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type ChangePasswordForbidden struct {
 func (o *ChangePasswordForbidden) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordForbidden  %+v", 403, o.Payload)
 }
-
 func (o *ChangePasswordForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewChangePasswordNotFound() *ChangePasswordNotFound {
 	return &ChangePasswordNotFound{}
 }
 
-/*ChangePasswordNotFound handles this case with default header values.
+/* ChangePasswordNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type ChangePasswordNotFound struct {
 func (o *ChangePasswordNotFound) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordNotFound  %+v", 404, o.Payload)
 }
-
 func (o *ChangePasswordNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewChangePasswordInternalServerError() *ChangePasswordInternalServerError {
 	return &ChangePasswordInternalServerError{}
 }
 
-/*ChangePasswordInternalServerError handles this case with default header values.
+/* ChangePasswordInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type ChangePasswordInternalServerError struct {
 func (o *ChangePasswordInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /change-password][%d] changePasswordInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *ChangePasswordInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

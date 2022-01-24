@@ -10,6 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -22,6 +23,8 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/pkg/project"
 )
+
+const ConfigKeyShell = "shell"
 
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
@@ -50,6 +53,12 @@ type SubShell interface {
 	// WriteUserEnv writes the given env map to the users environment
 	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
 
+	// CleanUserEnv removes the environment setting identified
+	CleanUserEnv(sscommon.Configurable, sscommon.RcIdentification, bool) error
+
+	// RemoveLegacyInstallPath removes the install path added to shell configuration by the legacy install scripts
+	RemoveLegacyInstallPath(sscommon.Configurable) error
+
 	// WriteCompletionScript writes the completions script for the current shell
 	WriteCompletionScript(string) error
 
@@ -73,18 +82,8 @@ type SubShell interface {
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
-func New() SubShell {
-	binary := os.Getenv("SHELL")
-	if binary == "" {
-		if runtime.GOOS == "windows" {
-			binary = os.Getenv("ComSpec")
-			if binary == "" {
-				binary = "cmd.exe"
-			}
-		} else {
-			binary = "bash"
-		}
-	}
+func New(cfg sscommon.Configurable) SubShell {
+	binary := DetectShellBinary(cfg)
 
 	// try to find the binary on the PATH
 	binaryPath, err := exec.LookPath(binary)
@@ -141,4 +140,41 @@ func New() SubShell {
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs
+}
+
+func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
+	configured := cfg.GetString(ConfigKeyShell)
+	defer func() {
+		// do not re-write shell binary to config, if the value did not change.
+		if configured == binary {
+			return
+		}
+		// We save and use the detected shell to our config so that we can use it when running code through
+		// a non-interactive shell
+		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
+			logging.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+		}
+	}()
+
+	if binary := os.Getenv("SHELL"); binary != "" {
+		return binary
+	}
+
+	if runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
+		if binary != "" {
+			return binary
+		}
+	}
+
+	fallback := configured
+	if fallback == "" {
+		if runtime.GOOS == "windows" {
+			fallback = "cmd.exe"
+		} else {
+			fallback = "bash"
+		}
+	}
+
+	return fallback
 }

@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -15,11 +17,17 @@ import (
 // swagger:model AddOn
 type AddOn struct {
 
+	// category
+	Category *string `json:"category,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
+
+	// is default
+	IsDefault *bool `json:"isDefault,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`
@@ -27,6 +35,11 @@ type AddOn struct {
 
 // Validate validates this add on
 func (m *AddOn) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this add on based on context it is used
+func (m *AddOn) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

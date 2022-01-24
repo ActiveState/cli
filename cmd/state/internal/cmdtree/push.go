@@ -19,13 +19,12 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		"push",
 		locale.Tl("push_title", "Pushing Local Project"),
 		locale.T("push_description"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("arg_state_push_namespace", "name"),
-				Description: locale.Tl("arg_state_push_namespace_description", "The project name to push a headless commit to."),
+				Name:        locale.Tl("arg_state_push_namespace", "owner/name"),
+				Description: locale.Tl("arg_state_push_namespace_description", "The project to push to (uses project under current dir otherwise)."),
 				Value:       params.Namespace,
 				Required:    false,
 			},

@@ -35,6 +35,9 @@ type MetaData struct {
 	// Env is a key value map containing all the env vars, values can contain the RelocationDir value (which will be replaced)
 	Env map[string]string `json:"env"`
 
+	// PathListEnv is a key value map containing all env vars, where the value is a list of paths that we have to prepend to the existing environment
+	PathListEnv map[string]string `json:"path_list_env"`
+
 	// BinaryLocations are locations that we should add to the PATH
 	BinaryLocations []MetaDataBinary `json:"binaries_in"`
 
@@ -79,6 +82,10 @@ func InitMetaData(rootDir string) (*MetaData, error) {
 
 	if metaData.Env == nil {
 		metaData.Env = map[string]string{}
+	}
+
+	if metaData.PathListEnv == nil {
+		metaData.PathListEnv = map[string]string{}
 	}
 
 	var relInstallDir string
@@ -136,12 +143,6 @@ func (m *MetaData) hasBinaryFile(root string, executable string) bool {
 }
 
 func (m *MetaData) setPythonEnv() {
-	if _, exists := m.Env["PYTHONPATH"]; !exists {
-		m.Env["PYTHONPATH"] = "{{.ProjectDir}}"
-	} else {
-		logging.Debug("Not setting PYTHONPATH as the user already has it set")
-	}
-
 	// This is broken for two reasons:
 	// 1. Checking in the OS environment will only happen on installation, but at a later point, the OS environment might have changed, and we will overwrite the user's choice here
 	// 2. python code does not need to depend on PYTHONIOENCODING as pointed out here: https://stackoverflow.com/a/9942822

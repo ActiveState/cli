@@ -71,12 +71,12 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.platformMock.Register("POST", "/login")
 	suite.platformMock.Register("GET", "/organizations/SecretOrg/members")
-	authentication.Get().AuthenticateWithToken("")
+	authentication.LegacyGet().AuthenticateWithToken("")
 
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 }
 
@@ -85,6 +85,7 @@ func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
 	projectfile.Reset()
 	osutil.RemoveConfigFile(suite.cfg.ConfigPath(), constants.KeypairLocalFileName+".key")
 	suite.graphMock.Close()
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.ExpanderFunc {
@@ -117,27 +118,6 @@ func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
 	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
 	suite.Error(err)
 	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestNoAuth() {
-	authentication.Get().Logout()
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
-	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, suite.project)
-	suite.Error(err)
-	suite.Zero(value)
-}
-
-func (suite *SecretsExpanderTestSuite) TestDecodingFailed() {
-	suite.assertExpansionFailure("bad-base64-encoded-secret")
-}
-
-func (suite *SecretsExpanderTestSuite) TestDecryptionFailed() {
-	suite.assertExpansionFailure("invalid-encryption-secret")
-}
-
-func (suite *SecretsExpanderTestSuite) TestSecretHasNoValue() {
-	// secret is defined in the project, but not in the database
-	suite.assertExpansionFailure("undefined-secret")
 }
 
 func (suite *SecretsExpanderTestSuite) TestProjectSecret() {

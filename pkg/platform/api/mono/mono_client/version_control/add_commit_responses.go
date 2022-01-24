@@ -59,9 +59,8 @@ func (o *AddCommitReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewAddCommitOK() *AddCommitOK {
 	return &AddCommitOK{}
 }
 
-/*AddCommitOK handles this case with default header values.
+/* AddCommitOK describes a response with status code 200, with default header values.
 
 Create a new commit
 */
@@ -81,7 +80,6 @@ type AddCommitOK struct {
 func (o *AddCommitOK) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitOK  %+v", 200, o.Payload)
 }
-
 func (o *AddCommitOK) GetPayload() *mono_models.Commit {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewAddCommitBadRequest() *AddCommitBadRequest {
 	return &AddCommitBadRequest{}
 }
 
-/*AddCommitBadRequest handles this case with default header values.
+/* AddCommitBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type AddCommitBadRequest struct {
 func (o *AddCommitBadRequest) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddCommitBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewAddCommitForbidden() *AddCommitForbidden {
 	return &AddCommitForbidden{}
 }
 
-/*AddCommitForbidden handles this case with default header values.
+/* AddCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -147,7 +144,6 @@ type AddCommitForbidden struct {
 func (o *AddCommitForbidden) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddCommitForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewAddCommitNotFound() *AddCommitNotFound {
 	return &AddCommitNotFound{}
 }
 
-/*AddCommitNotFound handles this case with default header values.
+/* AddCommitNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -180,7 +176,6 @@ type AddCommitNotFound struct {
 func (o *AddCommitNotFound) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitNotFound  %+v", 404, o.Payload)
 }
-
 func (o *AddCommitNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewAddCommitConflict() *AddCommitConflict {
 	return &AddCommitConflict{}
 }
 
-/*AddCommitConflict handles this case with default header values.
+/* AddCommitConflict describes a response with status code 409, with default header values.
 
 Commit changes conflict with checkpoint
 */
@@ -213,7 +208,6 @@ type AddCommitConflict struct {
 func (o *AddCommitConflict) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddCommitConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewAddCommitInternalServerError() *AddCommitInternalServerError {
 	return &AddCommitInternalServerError{}
 }
 
-/*AddCommitInternalServerError handles this case with default header values.
+/* AddCommitInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type AddCommitInternalServerError struct {
 func (o *AddCommitInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /vcs/commit][%d] addCommitInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddCommitInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

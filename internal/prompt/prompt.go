@@ -1,14 +1,19 @@
 package prompt
 
 import (
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 )
+
+type EventDispatcher interface {
+	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+}
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
 type Prompter interface {
@@ -29,12 +34,13 @@ var _ Prompter = &Prompt{}
 // Prompt is our main prompting struct
 type Prompt struct {
 	out           output.Outputer
+	analytics     EventDispatcher
 	isInteractive bool
 }
 
 // New creates a new prompter
-func New(isInteractive bool) Prompter {
-	return &Prompt{output.Get(), isInteractive}
+func New(isInteractive bool, an EventDispatcher) Prompter {
+	return &Prompt{output.Get(), an, isInteractive}
 }
 
 // IsInteractive checks if the prompts can be interactive or should just return default values
@@ -149,7 +155,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 		p.out.Notice(output.SubHeading(title))
 	}
 
-	analytics.EventWithLabel(analytics.CatPrompt, title, "present")
+	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
 
 	var defChoice bool
 	if defaultChoice != nil {
@@ -163,11 +169,11 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {
-			analytics.EventWithLabel(analytics.CatPrompt, title, "interrupt")
+			p.analytics.EventWithLabel(constants.CatPrompt, title, "interrupt")
 		}
 		return false, locale.NewInputError(err.Error())
 	}
-	analytics.EventWithLabel(analytics.CatPrompt, title, translateConfirm(resp))
+	p.analytics.EventWithLabel(constants.CatPrompt, title, translateConfirm(resp))
 
 	return resp, nil
 }

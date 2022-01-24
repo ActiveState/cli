@@ -46,7 +46,7 @@ func NewReadinessCheckOK() *ReadinessCheckOK {
 	return &ReadinessCheckOK{}
 }
 
-/*ReadinessCheckOK handles this case with default header values.
+/* ReadinessCheckOK describes a response with status code 200, with default header values.
 
 Indicates whether the server is ready
 */
@@ -57,7 +57,6 @@ type ReadinessCheckOK struct {
 func (o *ReadinessCheckOK) Error() string {
 	return fmt.Sprintf("[GET /readiness-check][%d] readinessCheckOK  %+v", 200, o.Payload)
 }
-
 func (o *ReadinessCheckOK) GetPayload() bool {
 	return o.Payload
 }
@@ -79,7 +78,7 @@ func NewReadinessCheckDefault(code int) *ReadinessCheckDefault {
 	}
 }
 
-/*ReadinessCheckDefault handles this case with default header values.
+/* ReadinessCheckDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
@@ -97,7 +96,6 @@ func (o *ReadinessCheckDefault) Code() int {
 func (o *ReadinessCheckDefault) Error() string {
 	return fmt.Sprintf("[GET /readiness-check][%d] readinessCheck default  %+v", o._statusCode, o.Payload)
 }
-
 func (o *ReadinessCheckDefault) GetPayload() *inventory_models.RestAPIError {
 	return o.Payload
 }

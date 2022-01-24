@@ -27,7 +27,6 @@ const (
 )
 
 type signupInput struct {
-	Name      string
 	Email     string
 	Username  string
 	Password  string
@@ -38,8 +37,8 @@ type signupInput struct {
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	input := &signupInput{}
 
-	if authentication.Get().Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.Get().WhoAmI())
+	if authentication.LegacyGet().Authenticated() {
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet().WhoAmI())
 	}
 
 	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
@@ -59,7 +58,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 		return err
 	}
 
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
@@ -180,11 +179,6 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 		return locale.NewError(locErrMsgID)
 	}
 
-	input.Name, err = prompter.Input("", locale.T("name_prompt"), new(string), prompt.InputRequired)
-	if err != nil {
-		return err
-	}
-
 	input.Email, err = prompter.Input("", locale.T("email_prompt"), new(string), prompt.InputRequired)
 	if err != nil {
 		return err
@@ -199,7 +193,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 		Email:        input.Email,
 		Username:     input.Username,
 		Password:     input.Password,
-		Name:         input.Name,
+		Name:         input.Username,
 		EULAAccepted: &eulaHelper,
 	})
 	addUserOK, err := mono.Get().Users.AddUser(params)

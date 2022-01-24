@@ -53,7 +53,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 		}
 	}
 
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		secretsapi.InitializeClient()
 		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
@@ -66,7 +66,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
 func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		return nil
 	}
 
@@ -98,7 +98,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 		}
 	}
 
-	if !authentication.Get().Authenticated() {
+	if !authentication.LegacyGet().Authenticated() {
 		return locale.NewInputError("err_auth_required")
 	}
 
@@ -125,7 +125,7 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
 func AuthenticateWithCredentials(credentials *mono_models.Credentials) error {
-	auth := authentication.Get()
+	auth := authentication.LegacyGet()
 	err := auth.AuthenticateWithModel(credentials)
 	if err != nil {
 		return err

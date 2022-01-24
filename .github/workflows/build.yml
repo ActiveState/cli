@@ -1,426 +1,372 @@
 name: Build-Test-Deploy
+
+# === Triggers ===
 "on":
   push:
     branches:
-    - master
-    - beta
-    - release
+      - master
+      - beta
+      - release
   pull_request:
     types:
-    - labeled
-    - opened
-    - synchronize
-    - reopened
-jobs:
-  prepare:
-    name: Prepare
-    runs-on: ubuntu-latest
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Generate Version
-      shell: bash
-      run: state run generate-version
-    - name: Upload Shared Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
-  build:
-    name: Build
-    needs:
-    - prepare
-    strategy:
-      matrix:
-        go-version:
-        - 1.15.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.platform }}
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Download Shared Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
-    - name: Build
-      shell: bash
-      run: state run build
-    - name: Build (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: state run build-32bit
-    - name: Build Install Scripts
-      shell: bash
-      run: state run build-install-scripts
-    - name: Sign
-      shell: bash
-      if: runner.os == 'Windows'
-      run: "echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12\nexport PATH=/c/Program\\ Files\\ \\(x86\\)/WiX\\ Toolset\\ v3.11/bin/:/c/Program\\ Files\\ \\(x86\\)/Windows\\ Kits/10/bin/10.0.16299.0/x86/:$PATH\n\nsigntool.exe sign -d \"ActiveState State Tool\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state.exe \nsigntool.exe sign -d \"ActiveState State Tool (32bit)\" -f \"Cert.p12\" -p ${CODE_SIGNING_PASSWD} ./build/state32.exe \n"
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Sign install.PS1
-      if: runner.os == 'Windows'
-      shell: powershell
-      run: |
-        $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-        $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-        Set-AuthenticodeSignature -FilePath build\install.ps1 -Certificate $cert
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-    - name: Generate Update
-      shell: bash
-      run: state run generate-update
-    - name: Generate Update (32bit)
-      shell: bash
-      if: runner.os == 'Windows'
-      run: state run generate-update-32bit
-    - name: Build State MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-state
-        signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} build/msi/state_tool.msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Build Languages MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-        state run build-base-language-msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Upload Session Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: session-build-${{ matrix.platform }}
-        path: build/
-  unittest:
-    name: Unit Test
-    strategy:
-      matrix:
-        go-version:
-        - 1.15.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.platform }}
-    needs:
-    - prepare
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 10
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Download Shared Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
-    - name: Unit Tests
-      shell: bash
-      run: |
-        go test `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray`
-  inttest_critical:
-    if: github.ref != 'refs/heads/master' && github.ref != 'refs/heads/beta' && github.ref != 'refs/heads/release'
-    name: Critical Integration Test
-    strategy:
-      matrix:
-        go-version:
-        - 1.15.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.platform }}
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 25
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
-    - name: Build
-      shell: bash
-      run: state run build
-    - name: Generate Update
-      shell: bash
-      run: state run generate-update
-    - name: Build Languages MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-        state run build-base-language-msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Critical Integration Tests
-      shell: bash
-      run: |
-        export SHELL=''
-        set +e
-        go test -timeout 10m github.com/ActiveState/cli/test/integration -test.v -test.run "^TestLanguageMsiActivePerl|TestDeployIntegrationTestSuite|TestInitIntegrationTestSuite|TestPushIntegrationTestSuite|TestUpdateIntegrationTestSuite|PrepareIntegrationTestSuite|InstallScriptsIntegrationTestSuite|ShowIntegrationTestSuite$"
-        testCode=$?
-        head -n-0 build/*log 2>/dev/null
-        exit ${testCode}
-      env:
-        INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
-        INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
-        PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-  inttest:
-    if: contains(github.event.pull_request.labels.*.name, 'run integration tests')
-    name: Integration Test
-    strategy:
-      matrix:
-        go-version:
-        - 1.15.x
-        platform:
-        - ubuntu-latest
-        - macos-latest
-        - windows-latest
-      fail-fast: false
-    runs-on: ${{ matrix.platform }}
-    needs:
-    - prepare
-    env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
-      SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 25
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Download Shared Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: session-shared-build
-        path: build/
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
-    - name: Build
-      shell: bash
-      run: state run build
-    - name: Generate Update
-      shell: bash
-      run: state run generate-update
-    - name: Build Languages MSI
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |
-        echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        export PATH=/c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Enterprise/MSBuild/Current/Bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-        export SHELL=bash
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.26 5.26.3001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.26.msi
-        state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
-        signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
-        state run build-base-language-msi
-      env:
-        CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-        MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-    - name: Integration Tests
-      shell: bash
-      run: |
-        LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-        IFS=',' read -r -a TESTS <<< "$LABELS"
-        TEST_SUITE_TAGS=""
-        for i in "${TESTS[@]}"
-        do
-          :
-          START=${i%:*}
-          if [ "$START" == "run-int-test-only" ]; then
-            TEST_SUITE=${i##*:}
-            TEST_SUITE_TAGS="$TEST_SUITE:$TEST_SUITE_TAGS"
-          fi
-        done
+      - labeled
+      - opened
+      - synchronize
+      - reopened
 
-        export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-        SHELL='' go test -timeout 20m ./test/integration -v
-      env:
-        INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
-        INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
-        PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+# === JOBS ===
+jobs:
+
+  # === OS Specific Job (runs on each OS) ===
+  os_specific:
+    name: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        go-version:
+          - 1.16.x
+        platform:
+          - ubuntu-20.04
+          - macos-11
+          - windows-latest
+      fail-fast: false
+    runs-on: ${{ matrix.platform }}
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 30
+
+    # === OS Specific Steps ===
+    steps:
+
+      - # Checkout Code
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+
+          if [ -x "$(command -v apt-get)" ]; then
+            sudo apt-get update
+            sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
+          fi
+
+          printenv
+
+      - # === Setup Windows ===
+        name: Setup (Windows)
+        shell: pwsh
+        run: |
+          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess
+
+      - # === Parallel Tasks ===
+        name: Parallel Tasks
+        shell: bash
+        timeout-minutes: 15
+        run: |
+          export PATH="$(pwd)/.github/deps/${{ runner.os }}/bin:$PATH"
+          parallelize "$(cat <<'EOF'
+          [
+            {
+                "ID": "Unit-Tests",
+                "Args": ["state", "run", "test"]
+            },
+            {
+                "ID": "Build-CLI",
+                "Args": ["state", "run", "build"]
+            },
+            {
+                "ID": "Build-Service",
+                "Args": ["state", "run", "build-svc"]
+            },
+            {
+                "ID": "Build-Tray",
+                "Args": ["state", "run", "build-tray"]
+            },
+            {
+                "ID": "Build-Systray-App",
+                "Args": ["state", "run", "build-systray-app"],
+                "If": "eq .OS.Name \"MacOS\""
+            },
+            {
+                "ID": "Build-Installer",
+                "Args": ["state", "run", "build-installer"]
+            },
+            {
+                "ID": "Build-Install-Scripts",
+                "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Languages-MSI",
+                "Args": ["state", "run", "ci-build-languages-msi"],
+                "If": "eq .OS.Name \"Windows\""
+            }
+          ]
+          EOF
+          )"
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Unit Tests (Raw) ===
+        name: Unit Tests (Raw Results)
+        shell: bash
+        run: |
+          set +e
+          parallelize results Unit-Tests
+          exit 0
+
+      - # === Unit Tests ===
+        name: Unit Tests
+        shell: bash
+        run: parallelize results Unit-Tests | gotestfmt
+
+      - # === "Build: CLI" ===
+        name: "Build: CLI"
+        shell: bash
+        run: parallelize results Build-CLI
+
+      - # === "Build: Service" ===
+        name: "Build: Service"
+        shell: bash
+        run: parallelize results Build-Service
+
+      - # === "Build: Tray App" ===
+        name: "Build: Tray App"
+        shell: bash
+        run: parallelize results Build-Tray
+
+      - # === "Build: Installer" ===
+        name: "Build: Installer"
+        shell: bash
+        run: parallelize results Build-Installer
+
+      - # === "Build: Install Scripts" ===
+        name: "Build: Install Scripts"
+        shell: bash
+        run: parallelize results Build-Install-Scripts
+
+      - # === "Build: Systray App" ===
+        name: "Build: Systray App"
+        shell: bash
+        if: runner.os == 'macOS'
+        run: parallelize results Build-Systray-App
+
+      - # === "Build: Languages MSI" ===
+        name: "Build: Languages MSI"
+        if: runner.os == 'Windows'
+        shell: bash
+        run: parallelize results Build-Languages-MSI
+
+      - # === Sign Binaries (Windows only) ===
+        name: Sign Binaries (Windows only)
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+
+          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
+          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
+          signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
+          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Sign Install Scripts (Windows only) ===
+        name: Sign Install Scripts (Windows only)
+        shell: powershell
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+        run: |
+          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
+          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
+          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Generate Update ===
+        name: Generate Update
+        shell: bash
+        run: state run generate-update
+
+      - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
+        name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
+        if: github.ref != 'refs/heads/release'
+        shell: bash
+        run: |
+          set +e
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          set -e
+          echo "Labels: $LABELS"
+          echo "Target Branch: $TARGET_BRANCH"
+
+          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+            echo "Not running because no test labels were set nor beta or release were targeted."
+            exit 0
+          fi
+
+          state run deploy-updates
+          state run deploy-installers
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Integration Tests ===
+        name: Integration Tests
+        if: github.ref != 'refs/heads/release'
+        shell: bash
+        run: |
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          IFS=',' read -r -a TESTS <<< "$LABELS"
+          TEST_SUITE_TAGS=""
+          for i in "${TESTS[@]}"; do
+            START=${i%:*}
+            if [ "$START" == "Test" ]; then
+              TAG=${i##*:}
+              TAG=$(echo $TAG | xargs)
+              TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
+            fi
+          done
+
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+          echo "Target branch: $TARGET_BRANCH"
+
+          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+            echo "Not running because no test labels were set nor beta or release were targeted."
+            exit 0
+          fi
+
+          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
+
+          export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+          set +e
+          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          CODE=$?
+          cat build/integration-tests.out | gotestfmt
+          exit $CODE
+        env:
+          INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
+          INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Upload Session Artifacts ===
+        name: Upload Session Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: session-build-${{ matrix.platform }}
+          path: build/
+
+  # === Deploy job (runs once with combined artifacts from OS specific job) ===
   deploy:
     name: Deploy
     needs:
-    - build
-    - unittest
-    runs-on: ubuntu-latest
+      - os_specific
+    runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+
+    # === Deploy Steps ===
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
-    - name: Setup
-      shell: bash
-      run: |
-        bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-        echo "Adding $bin to PATH"
-        echo "$bin" >> $GITHUB_PATH
-        printenv
-    - name: Download All Session Artifacts
-      uses: actions/download-artifact@v2
-      with:
-        path: build/
-    - name: Sanitize All Session Artifacts
-      shell: bash
-      run: |
-        cd build
-        rm -Rf session-shared-build
-        find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
-        rm -Rf session*
-    - name: Preprocess
-      shell: bash
-      run: |
-        state run preprocess
-    - name: Cleanup Build Dir
-      shell: bash
-      run: rm build/state* || true
-    - name: Deploy
-      shell: bash
-      if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
-      run: |
-        state run deploy-updates
-        state run deploy-installers
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    - name: Cleanup Session Artifacts
-      uses: geekyeggo/delete-artifact@v1
-      with:
-        name: |
-          session-shared-build
-          session-build-ubuntu-latest
-          session-build-macos-latest
-          session-build-windows-latest
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: build
-        path: build/
+
+      - # === Checkout code ===
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+          ls -ahl $bin
+          printenv
+
+      - # === Download All Build Session Artifacts ===
+        name: Download All Build Session Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: build/
+
+      - # === Sanitize All Session Artifacts ===
+        name: Sanitize All Session Artifacts
+        shell: bash
+        run: |
+          cd build
+          rm -Rf session-shared-build
+          find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+          rm -Rf session*
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess
+
+      - # === Cleanup Build Dir ===
+        name: Cleanup Build Dir
+        shell: bash
+        run: rm build/state* || true
+
+      - # === Deploy ===
+        name: Deploy
+        shell: bash
+        run: |
+          state run deploy-updates
+          state run deploy-installers
+          state run deploy-msi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Cleanup Session Artifacts ===
+        name: Cleanup Session Artifacts
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: |
+            session-shared-build
+            session-build-ubuntu-20.04
+            session-build-macos-11
+            session-build-windows-latest
+
+      - # === Upload Artifacts ===
+        name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: build/

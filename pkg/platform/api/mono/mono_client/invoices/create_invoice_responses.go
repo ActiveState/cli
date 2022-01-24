@@ -53,9 +53,8 @@ func (o *CreateInvoiceReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewCreateInvoiceOK() *CreateInvoiceOK {
 	return &CreateInvoiceOK{}
 }
 
-/*CreateInvoiceOK handles this case with default header values.
+/* CreateInvoiceOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type CreateInvoiceOK struct {
 func (o *CreateInvoiceOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/invoices][%d] createInvoiceOK  %+v", 200, o.Payload)
 }
-
 func (o *CreateInvoiceOK) GetPayload() string {
 	return o.Payload
 }
@@ -95,7 +93,7 @@ func NewCreateInvoiceBadRequest() *CreateInvoiceBadRequest {
 	return &CreateInvoiceBadRequest{}
 }
 
-/*CreateInvoiceBadRequest handles this case with default header values.
+/* CreateInvoiceBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -106,7 +104,6 @@ type CreateInvoiceBadRequest struct {
 func (o *CreateInvoiceBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/invoices][%d] createInvoiceBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *CreateInvoiceBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -128,7 +125,7 @@ func NewCreateInvoiceForbidden() *CreateInvoiceForbidden {
 	return &CreateInvoiceForbidden{}
 }
 
-/*CreateInvoiceForbidden handles this case with default header values.
+/* CreateInvoiceForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -139,7 +136,6 @@ type CreateInvoiceForbidden struct {
 func (o *CreateInvoiceForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/invoices][%d] createInvoiceForbidden  %+v", 403, o.Payload)
 }
-
 func (o *CreateInvoiceForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -161,7 +157,7 @@ func NewCreateInvoiceNotFound() *CreateInvoiceNotFound {
 	return &CreateInvoiceNotFound{}
 }
 
-/*CreateInvoiceNotFound handles this case with default header values.
+/* CreateInvoiceNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -172,7 +168,6 @@ type CreateInvoiceNotFound struct {
 func (o *CreateInvoiceNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/invoices][%d] createInvoiceNotFound  %+v", 404, o.Payload)
 }
-
 func (o *CreateInvoiceNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -194,7 +189,7 @@ func NewCreateInvoiceInternalServerError() *CreateInvoiceInternalServerError {
 	return &CreateInvoiceInternalServerError{}
 }
 
-/*CreateInvoiceInternalServerError handles this case with default header values.
+/* CreateInvoiceInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -205,7 +200,6 @@ type CreateInvoiceInternalServerError struct {
 func (o *CreateInvoiceInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationIdentifier}/invoices][%d] createInvoiceInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *CreateInvoiceInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

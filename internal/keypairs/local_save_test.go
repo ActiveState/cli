@@ -20,8 +20,12 @@ type KeypairLocalSaveTestSuite struct {
 
 func (suite *KeypairLocalSaveTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
+}
+
+func (suite *KeypairLocalSaveTestSuite) AfterTest(suiteName, testName string) {
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *KeypairLocalSaveTestSuite) TestSave_Success() {
@@ -71,8 +75,9 @@ func (suite *KeypairLocalLoadTestSuite) TestSaveWithDefaults_Override() {
 }
 
 func (suite *KeypairLocalSaveTestSuite) statConfigDirFile(keyFile string) os.FileInfo {
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	suite.Require().NoError(err)
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	keyFileStat, err := osutil.StatConfigFile(cfg.ConfigPath(), keyFile)
 	suite.Require().NoError(err)
 	return keyFileStat

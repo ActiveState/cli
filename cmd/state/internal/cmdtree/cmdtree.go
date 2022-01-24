@@ -1,17 +1,17 @@
 package cmdtree
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/runners/state"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // CmdTree manages a tree of captain.Command instances.
@@ -21,6 +21,8 @@ type CmdTree struct {
 
 // New prepares a CmdTree.
 func New(prime *primer.Values, args ...string) *CmdTree {
+	defer profile.Measure("cmdtree:New", time.Now())
+
 	globals := newGlobalOptions()
 
 	authCmd := newAuthCommand(prime)
@@ -166,8 +168,10 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newProtocolCommand(prime),
 		newExecCommand(prime, args...),
 		newRevertCommand(prime),
+		newResetCommand(prime),
 		secretsCmd,
 		branchCmd,
+		newLearnCommand(prime),
 	)
 
 	return &CmdTree{
@@ -204,8 +208,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		"state",
 		"",
 		locale.T("state_description"),
-		prime.Output(),
-		prime.Config(),
+		prime,
 		[]*captain.Flag{
 			{
 				Name:        "locale",
@@ -220,7 +223,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Description: locale.T("flag_state_verbose_description"),
 				Persist:     true,
 				OnUse: func() {
-					if !condition.InTest() {
+					if !condition.InUnitTest() {
 						logging.CurrentHandler().SetVerbose(true)
 					}
 				},
@@ -271,13 +274,14 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 	cmdCall := cmdcall.New(prime)
 
-	cmd.SetInterceptChain(cmdCall.InterceptExec, interceptAddHeadlessNotify(prime.Output(), prime.Project()))
+	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
 }
 
 // Execute runs the CmdTree using the provided CLI arguments.
 func (ct *CmdTree) Execute(args []string) error {
+	defer profile.Measure("cmdtree:Execute", time.Now())
 	return ct.cmd.Execute(args)
 }
 
@@ -296,8 +300,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		name,
 		aliased.Title(),
 		aliased.Description(),
-		a.prime.Output(),
-		a.prime.Config(),
+		a.prime,
 		aliased.Flags(),
 		aliased.Arguments(),
 		func(c *captain.Command, args []string) error {
@@ -316,17 +319,4 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 	cmd.SetHidden(true)
 
 	a.parent.AddChildren(cmd)
-}
-
-func interceptAddHeadlessNotify(out output.Outputer, pj *project.Project) captain.InterceptFunc {
-	return func(next captain.ExecuteFunc) captain.ExecuteFunc {
-		return func(cmd *captain.Command, args []string) error {
-			if pj != nil && pj.IsHeadless() && (cmd.Group() == PackagesGroup || cmd.Name() == activateCmdName) {
-				out.Notice(output.Heading(locale.Tr("headless_notify_title")))
-				out.Notice(locale.Tr("headless_notify", pj.URL(), constants.DocumentationURLHeadless))
-			}
-
-			return next(cmd, args)
-		}
-	}
 }

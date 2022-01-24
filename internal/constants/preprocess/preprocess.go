@@ -16,7 +16,7 @@ import (
 
 // Constants holds constants that will be preprocessed, meaning the key value parts here will be built into the constants
 // package as actual constants, using the build-time interpretations
-var Constants = map[string]func() string{}
+var Constants = map[string]func() interface{}{}
 
 func init() {
 	branchName, commitRef := branchName()
@@ -26,22 +26,23 @@ func init() {
 		commitRef = sha
 	}
 
-	newVersion, err := version.ParseVersion(buildEnvironment())
+	newVersion, err := version.Detect()
 	if err != nil {
 		log.Fatalf("Could not parse new version: %s", err)
 	}
 
-	Constants["BranchName"] = func() string { return branchName }
-	Constants["BuildNumber"] = func() string { return buildNumber }
-	Constants["RevisionHash"] = func() string { return getCmdOutput("git rev-parse --verify " + commitRef) }
-	Constants["RevisionHashShort"] = func() string { return getCmdOutput("git rev-parse --short " + commitRef) }
-	Constants["Version"] = func() string { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]()) }
-	Constants["VersionNumber"] = func() string { return newVersion.String() }
-	Constants["Date"] = func() string { return time.Now().Format(constants.DateTimeFormatRecord) }
-	Constants["UserAgent"] = func() string {
+	Constants["BranchName"] = func() interface{} { return branchName }
+	Constants["BuildNumber"] = func() interface{} { return buildNumber }
+	Constants["RevisionHash"] = func() interface{} { return getCmdOutput("git rev-parse --verify " + commitRef) }
+	Constants["RevisionHashShort"] = func() interface{} { return getCmdOutput("git rev-parse --short " + commitRef) }
+	Constants["Version"] = func() interface{} { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]().(string)) }
+	Constants["VersionNumber"] = func() interface{} { return newVersion.String() }
+	Constants["Date"] = func() interface{} { return time.Now().Format(constants.DateTimeFormatRecord) }
+	Constants["UserAgent"] = func() interface{} {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
 	}
-	Constants["APITokenName"] = func() string { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
+	Constants["APITokenName"] = func() interface{} { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
+	Constants["OnCI"] = func() interface{} { return os.Getenv("CI") }
 }
 
 // gitBranchName returns the branch name of the current git commit / PR
@@ -63,10 +64,6 @@ func gitBranchName() string {
 func branchName() (string, string) {
 	branch := gitBranchName()
 	releaseName := strings.TrimPrefix(branch, "origin/")
-
-	if releaseOverride, isset := os.LookupEnv("BRANCH_OVERRIDE"); isset {
-		releaseName = releaseOverride
-	}
 
 	return releaseName, branch
 }
@@ -91,21 +88,6 @@ func getCmdOutput(cmdString string) string {
 		os.Exit(1)
 	}
 	return strings.Trim(out.String(), "\n")
-}
-
-func buildEnvironment() version.Env {
-	if !onCI() {
-		return version.LocalEnv
-	}
-
-	return version.RemoteEnv
-}
-
-func onCI() bool {
-	if os.Getenv("CI") != "" {
-		return true
-	}
-	return false
 }
 
 func mustVersionWithRevision(ver *semver.Version, revision string) string {

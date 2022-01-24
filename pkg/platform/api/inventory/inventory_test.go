@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	inventoryMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 func TestNew(t *testing.T) {
@@ -15,7 +16,7 @@ func TestNew(t *testing.T) {
 	mock.MockPlatforms()
 	defer mock.Close()
 
-	client, _ := inventory.Init()
+	client, _ := inventory.Init(authentication.LegacyGet())
 	_, err := client.GetPlatforms(inventory_operations.NewGetPlatformsParams())
 	assert.NoError(t, err)
 }

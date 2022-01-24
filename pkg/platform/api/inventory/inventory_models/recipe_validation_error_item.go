@@ -6,15 +6,19 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 )
 
-// RecipeValidationErrorItem A single validation error
+// RecipeValidationErrorItem Recipe Validation Error Item
 //
-// swagger:model RecipeValidationErrorItem
+// A single validation error
+//
+// swagger:model recipeValidationErrorItem
 type RecipeValidationErrorItem struct {
 
 	// Human-readable message describing the error
@@ -42,6 +46,11 @@ func (m *RecipeValidationErrorItem) validateError(formats strfmt.Registry) error
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this recipe validation error item based on context it is used
+func (m *RecipeValidationErrorItem) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

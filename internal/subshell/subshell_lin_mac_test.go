@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -28,7 +29,9 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	os.Setenv("SHELL", "bash")
 	os.Setenv("ACTIVESTATE_PROJECT", "SHOULD NOT BE SET")
 
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 
 	data := []byte("#!/usr/bin/env bash\necho $ACTIVESTATE_PROJECT")
 	filename, err := fileutils.WriteTempFile("", "testRunCommand", data, 0700)
@@ -54,9 +57,11 @@ func TestRunCommandError(t *testing.T) {
 
 	os.Setenv("SHELL", "bash")
 
-	subs := New()
+	cfg, err := config.New()
+	require.NoError(t, err)
+	subs := New(cfg)
 
-	err := subs.Run("some-file-that-doesnt-exist")
+	err = subs.Run("some-file-that-doesnt-exist")
 	assert.Error(t, err, "Returns an error")
 
 	data := []byte("#!/usr/bin/env bash\nexit 2")

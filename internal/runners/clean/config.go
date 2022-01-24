@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -13,7 +14,12 @@ import (
 type configurable interface {
 	project.ConfigAble
 	ConfigPath() string
-	CachePath() string
+	GetInt(string) int
+	Set(string, interface{}) error
+	IsSet(string) bool
+	GetStringMap(string) map[string]interface{}
+	GetBool(string) bool
+	GetString(string) string
 }
 
 type Config struct {
@@ -53,6 +59,13 @@ func (c *Config) Run(params *ConfigParams) error {
 		}
 	}
 
-	logging.Debug("Removing config directory: %s", c.cfg.ConfigPath())
-	return removeConfig(c.cfg)
+	if err := stopServices(c.cfg, c.output, params.Force); err != nil {
+		return errs.Wrap(err, "Failed to stop services.")
+	}
+
+	dir := c.cfg.ConfigPath()
+	c.cfg.Close()
+
+	logging.Debug("Removing config directory: %s", dir)
+	return removeConfig(dir, c.output)
 }

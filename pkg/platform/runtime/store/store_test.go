@@ -23,10 +23,9 @@ func TestUpdateEnviron(t *testing.T) {
 			},
 		}}}
 	}
-	s, err := New("/installPath")
-	require.NoError(t, err)
-
+	s := New("/installPath")
 	rt, err := s.updateEnviron(artifactIDs, artifacts)
+	require.NoError(t, err)
 	env := rt.GetEnv(false)
 	assert.Equal(t, map[string]string{
 		"vars": "1:2:3",

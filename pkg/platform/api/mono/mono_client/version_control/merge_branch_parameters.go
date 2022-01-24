@@ -16,70 +16,88 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewMergeBranchParams creates a new MergeBranchParams object
-// with the default values initialized.
+// NewMergeBranchParams creates a new MergeBranchParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewMergeBranchParams() *MergeBranchParams {
-	var (
-		strategyDefault = string("preview")
-	)
 	return &MergeBranchParams{
-		Strategy: strategyDefault,
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewMergeBranchParamsWithTimeout creates a new MergeBranchParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewMergeBranchParamsWithTimeout(timeout time.Duration) *MergeBranchParams {
-	var (
-		strategyDefault = string("preview")
-	)
 	return &MergeBranchParams{
-		Strategy: strategyDefault,
-
 		timeout: timeout,
 	}
 }
 
 // NewMergeBranchParamsWithContext creates a new MergeBranchParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewMergeBranchParamsWithContext(ctx context.Context) *MergeBranchParams {
-	var (
-		strategyDefault = string("preview")
-	)
 	return &MergeBranchParams{
-		Strategy: strategyDefault,
-
 		Context: ctx,
 	}
 }
 
 // NewMergeBranchParamsWithHTTPClient creates a new MergeBranchParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewMergeBranchParamsWithHTTPClient(client *http.Client) *MergeBranchParams {
-	var (
-		strategyDefault = string("preview")
-	)
 	return &MergeBranchParams{
-		Strategy:   strategyDefault,
 		HTTPClient: client,
 	}
 }
 
-/*MergeBranchParams contains all the parameters to send to the API endpoint
-for the merge branch operation typically these are written to a http.Request
+/* MergeBranchParams contains all the parameters to send to the API endpoint
+   for the merge branch operation.
+
+   Typically these are written to a http.Request.
 */
 type MergeBranchParams struct {
 
-	/*BranchID*/
+	// BranchID.
+	//
+	// Format: uuid
 	BranchID strfmt.UUID
-	/*Strategy*/
+
+	// Strategy.
+	//
+	// Default: "preview"
 	Strategy string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the merge branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *MergeBranchParams) WithDefaults() *MergeBranchParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the merge branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *MergeBranchParams) SetDefaults() {
+	var (
+		strategyDefault = string("preview")
+	)
+
+	val := MergeBranchParams{
+		Strategy: strategyDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the merge branch params
@@ -154,6 +172,7 @@ func (o *MergeBranchParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	qrStrategy := o.Strategy
 	qStrategy := qrStrategy
 	if qStrategy != "" {
+
 		if err := r.SetQueryParam("strategy", qStrategy); err != nil {
 			return err
 		}

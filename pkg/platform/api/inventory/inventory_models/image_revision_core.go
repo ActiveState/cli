@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -19,7 +21,7 @@ import (
 type ImageRevisionCore struct {
 	VersionInfo
 
-	Revision
+	RevisionedFeatureProvider
 
 	ImageRevisionCoreAllOf2
 }
@@ -34,11 +36,11 @@ func (m *ImageRevisionCore) UnmarshalJSON(raw []byte) error {
 	m.VersionInfo = aO0
 
 	// AO1
-	var aO1 Revision
+	var aO1 RevisionedFeatureProvider
 	if err := swag.ReadJSON(raw, &aO1); err != nil {
 		return err
 	}
-	m.Revision = aO1
+	m.RevisionedFeatureProvider = aO1
 
 	// AO2
 	var aO2 ImageRevisionCoreAllOf2
@@ -60,7 +62,7 @@ func (m ImageRevisionCore) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 
-	aO1, err := swag.WriteJSON(m.Revision)
+	aO1, err := swag.WriteJSON(m.RevisionedFeatureProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +84,35 @@ func (m *ImageRevisionCore) Validate(formats strfmt.Registry) error {
 	if err := m.VersionInfo.Validate(formats); err != nil {
 		res = append(res, err)
 	}
-	// validation for a type composition with Revision
-	if err := m.Revision.Validate(formats); err != nil {
+	// validation for a type composition with RevisionedFeatureProvider
+	if err := m.RevisionedFeatureProvider.Validate(formats); err != nil {
 		res = append(res, err)
 	}
 	// validation for a type composition with ImageRevisionCoreAllOf2
 	if err := m.ImageRevisionCoreAllOf2.Validate(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+// ContextValidate validate this image revision core based on the context it is used
+func (m *ImageRevisionCore) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	// validation for a type composition with VersionInfo
+	if err := m.VersionInfo.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with RevisionedFeatureProvider
+	if err := m.RevisionedFeatureProvider.ContextValidate(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+	// validation for a type composition with ImageRevisionCoreAllOf2
+	if err := m.ImageRevisionCoreAllOf2.ContextValidate(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 

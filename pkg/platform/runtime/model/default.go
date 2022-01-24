@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -16,19 +17,21 @@ import (
 // var _ runtime.ClientProvider = &Default{}
 
 // Model is the default client that actually talks to the backend
-type Model struct{}
+type Model struct {
+	auth *authentication.Auth
+}
 
 // NewDefault is the constructor for the Model client
-func NewDefault() *Model {
-	return &Model{}
+func NewDefault(auth *authentication.Auth) *Model {
+	return &Model{auth}
 }
 
 func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
 	return model.ResolveRecipe(commitID, owner, projectName)
 }
 
-func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.BuildStatusResponse, error) {
-	return model.RequestBuild(recipeID, commitID, owner, project)
+func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
+	return model.RequestBuild(m.auth, recipeID, commitID, owner, project)
 }
 
 func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
@@ -39,7 +42,7 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
-	BuildStatusResponse *headchef_models.BuildStatusResponse
+	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }

@@ -18,69 +18,85 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditMemberParams creates a new EditMemberParams object
-// with the default values initialized.
+// NewEditMemberParams creates a new EditMemberParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditMemberParams() *EditMemberParams {
-	var ()
 	return &EditMemberParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditMemberParamsWithTimeout creates a new EditMemberParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditMemberParamsWithTimeout(timeout time.Duration) *EditMemberParams {
-	var ()
 	return &EditMemberParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEditMemberParamsWithContext creates a new EditMemberParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditMemberParamsWithContext(ctx context.Context) *EditMemberParams {
-	var ()
 	return &EditMemberParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEditMemberParamsWithHTTPClient creates a new EditMemberParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditMemberParamsWithHTTPClient(client *http.Client) *EditMemberParams {
-	var ()
 	return &EditMemberParams{
 		HTTPClient: client,
 	}
 }
 
-/*EditMemberParams contains all the parameters to send to the API endpoint
-for the edit member operation typically these are written to a http.Request
+/* EditMemberParams contains all the parameters to send to the API endpoint
+   for the edit member operation.
+
+   Typically these are written to a http.Request.
 */
 type EditMemberParams struct {
 
-	/*MemberAttrs
-	  Member Attributes
+	/* MemberAttrs.
 
+	   Member Attributes
 	*/
 	MemberAttrs *mono_models.MemberEditable
-	/*OrganizationName
-	  organizationID of desired organization
 
+	/* OrganizationName.
+
+	   organizationID of desired organization
 	*/
 	OrganizationName string
-	/*Username
-	  username to join
 
+	/* Username.
+
+	   username to join
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit member params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditMemberParams) WithDefaults() *EditMemberParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit member params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditMemberParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the edit member params
@@ -156,7 +172,6 @@ func (o *EditMemberParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 		return err
 	}
 	var res []error
-
 	if o.MemberAttrs != nil {
 		if err := r.SetBodyParam(o.MemberAttrs); err != nil {
 			return err

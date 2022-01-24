@@ -99,7 +99,7 @@ func Get() *Client {
 // is a valid one and return the user's UID in the response. Otherwise, this function will return
 // a Failure.
 func (client *Client) AuthenticatedUserID() (strfmt.UUID, error) {
-	resOk, err := client.Authentication.GetWhoami(nil, authentication.Get().ClientAuth())
+	resOk, err := client.Authentication.GetWhoami(nil, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return "", locale.NewInputError("err_api_not_authenticated")
@@ -118,7 +118,7 @@ func (client *Client) Persist() {
 func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.UserSecret, error) {
 	params := secretsapiClient.NewGetAllUserSecretsParams()
 	params.OrganizationID = org.OrganizationID
-	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.Get().ClientAuth())
+	getOk, err := client.Secrets.Secrets.GetAllUserSecrets(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -134,7 +134,7 @@ func FetchAll(client *Client, org *mono_models.Organization) ([]*secretsModels.U
 func FetchDefinitions(client *Client, projectID strfmt.UUID) ([]*secretsModels.SecretDefinition, error) {
 	params := secretsapiClient.NewGetDefinitionsParams()
 	params.ProjectID = projectID
-	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.Get().ClientAuth())
+	getOk, err := client.Secrets.Secrets.GetDefinitions(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		switch statusCode := api.ErrorCode(err); statusCode {
 		case 401:
@@ -151,7 +151,7 @@ func SaveSecretShares(client *Client, org *mono_models.Organization, user *mono_
 	params.OrganizationID = org.OrganizationID
 	params.UserID = user.UserID
 	params.UserSecrets = shares
-	_, err := client.Secrets.Secrets.ShareUserSecrets(params, authentication.Get().ClientAuth())
+	_, err := client.Secrets.Secrets.ShareUserSecrets(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		logging.Debug("error sharing user secrets with %s: %v", user.Username, err)
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())

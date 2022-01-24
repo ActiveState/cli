@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -355,6 +357,67 @@ func (ed *EnvironmentDefinition) GetEnv(inherit bool) map[string]string {
 		panic(fmt.Sprintf("Could not inherit OS environment variable: %v", err))
 	}
 	return res
+}
+
+func FilterPATH(env map[string]string, excludes ...string) {
+	PATH, exists := env["PATH"]
+	if !exists {
+		return
+	}
+
+	newPaths := []string{}
+	paths := strings.Split(PATH, string(os.PathListSeparator))
+	for _, p := range paths {
+		pc := filepath.Clean(p)
+		for _, exclude := range excludes {
+			if pc == filepath.Clean(exclude) {
+				continue
+			}
+			newPaths = append(newPaths, p)
+		}
+	}
+
+	env["PATH"] = strings.Join(newPaths, string(os.PathListSeparator))
+}
+
+type ExecutablePaths []string
+
+func (ed *EnvironmentDefinition) ExecutablePaths() (ExecutablePaths, error) {
+	env := ed.GetEnv(false)
+
+	// Retrieve artifact binary directory
+	var bins []string
+	if p, ok := env["PATH"]; ok {
+		bins = strings.Split(p, string(os.PathListSeparator))
+	}
+
+	exes, err := exeutils.Executables(bins)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect executables")
+	}
+
+	// Remove duplicate executables as per PATH and PATHEXT
+	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
+	}
+
+	return exes, nil
+}
+
+func (ed *EnvironmentDefinition) ExecutableDirs() (ExecutablePaths, error) {
+	exes, err := ed.ExecutablePaths()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get executable paths")
+	}
+
+	var dirs ExecutablePaths
+	for _, p := range exes {
+		dirs = append(dirs, filepath.Dir(p))
+	}
+	dirs = funk.UniqString(dirs)
+
+	return dirs, nil
 }
 
 // FindBinPathFor returns the PATH directory in which the executable can be found.

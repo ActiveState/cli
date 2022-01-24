@@ -59,9 +59,8 @@ func (o *AddProjectReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewAddProjectOK() *AddProjectOK {
 	return &AddProjectOK{}
 }
 
-/*AddProjectOK handles this case with default header values.
+/* AddProjectOK describes a response with status code 200, with default header values.
 
 Project Added
 */
@@ -81,7 +80,6 @@ type AddProjectOK struct {
 func (o *AddProjectOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *AddProjectOK) GetPayload() *mono_models.Project {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewAddProjectBadRequest() *AddProjectBadRequest {
 	return &AddProjectBadRequest{}
 }
 
-/*AddProjectBadRequest handles this case with default header values.
+/* AddProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type AddProjectBadRequest struct {
 func (o *AddProjectBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *AddProjectBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewAddProjectForbidden() *AddProjectForbidden {
 	return &AddProjectForbidden{}
 }
 
-/*AddProjectForbidden handles this case with default header values.
+/* AddProjectForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -147,7 +144,6 @@ type AddProjectForbidden struct {
 func (o *AddProjectForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectForbidden  %+v", 403, o.Payload)
 }
-
 func (o *AddProjectForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewAddProjectNotFound() *AddProjectNotFound {
 	return &AddProjectNotFound{}
 }
 
-/*AddProjectNotFound handles this case with default header values.
+/* AddProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -180,7 +176,6 @@ type AddProjectNotFound struct {
 func (o *AddProjectNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectNotFound  %+v", 404, o.Payload)
 }
-
 func (o *AddProjectNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewAddProjectConflict() *AddProjectConflict {
 	return &AddProjectConflict{}
 }
 
-/*AddProjectConflict handles this case with default header values.
+/* AddProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type AddProjectConflict struct {
 func (o *AddProjectConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectConflict  %+v", 409, o.Payload)
 }
-
 func (o *AddProjectConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewAddProjectInternalServerError() *AddProjectInternalServerError {
 	return &AddProjectInternalServerError{}
 }
 
-/*AddProjectInternalServerError handles this case with default header values.
+/* AddProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type AddProjectInternalServerError struct {
 func (o *AddProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects][%d] addProjectInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *AddProjectInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

@@ -41,9 +41,8 @@ func (o *GetOrganizationInvitationsReader) ReadResponse(response runtime.ClientR
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -52,7 +51,7 @@ func NewGetOrganizationInvitationsOK() *GetOrganizationInvitationsOK {
 	return &GetOrganizationInvitationsOK{}
 }
 
-/*GetOrganizationInvitationsOK handles this case with default header values.
+/* GetOrganizationInvitationsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -63,7 +62,6 @@ type GetOrganizationInvitationsOK struct {
 func (o *GetOrganizationInvitationsOK) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/invitations][%d] getOrganizationInvitationsOK  %+v", 200, o.Payload)
 }
-
 func (o *GetOrganizationInvitationsOK) GetPayload() []*mono_models.Invitation {
 	return o.Payload
 }
@@ -83,7 +81,7 @@ func NewGetOrganizationInvitationsForbidden() *GetOrganizationInvitationsForbidd
 	return &GetOrganizationInvitationsForbidden{}
 }
 
-/*GetOrganizationInvitationsForbidden handles this case with default header values.
+/* GetOrganizationInvitationsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -94,7 +92,6 @@ type GetOrganizationInvitationsForbidden struct {
 func (o *GetOrganizationInvitationsForbidden) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/invitations][%d] getOrganizationInvitationsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *GetOrganizationInvitationsForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -116,7 +113,7 @@ func NewGetOrganizationInvitationsInternalServerError() *GetOrganizationInvitati
 	return &GetOrganizationInvitationsInternalServerError{}
 }
 
-/*GetOrganizationInvitationsInternalServerError handles this case with default header values.
+/* GetOrganizationInvitationsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -127,7 +124,6 @@ type GetOrganizationInvitationsInternalServerError struct {
 func (o *GetOrganizationInvitationsInternalServerError) Error() string {
 	return fmt.Sprintf("[GET /organizations/{organizationName}/invitations][%d] getOrganizationInvitationsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *GetOrganizationInvitationsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

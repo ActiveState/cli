@@ -28,7 +28,8 @@ func CreateCurrentUserKey(path string) (RegistryKey, bool, error) {
 	panic("Not supported outside of Windows, this only exists to facilitate unit tests")
 }
 
-func PropagateEnv() {
+func PropagateEnv() error {
+	return nil
 }
 
 func SetStringValue(key RegistryKey, name string, valType uint32, value string) error {

@@ -18,66 +18,82 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
-// NewEditProjectParams creates a new EditProjectParams object
-// with the default values initialized.
+// NewEditProjectParams creates a new EditProjectParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewEditProjectParams() *EditProjectParams {
-	var ()
 	return &EditProjectParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewEditProjectParamsWithTimeout creates a new EditProjectParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewEditProjectParamsWithTimeout(timeout time.Duration) *EditProjectParams {
-	var ()
 	return &EditProjectParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewEditProjectParamsWithContext creates a new EditProjectParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewEditProjectParamsWithContext(ctx context.Context) *EditProjectParams {
-	var ()
 	return &EditProjectParams{
-
 		Context: ctx,
 	}
 }
 
 // NewEditProjectParamsWithHTTPClient creates a new EditProjectParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewEditProjectParamsWithHTTPClient(client *http.Client) *EditProjectParams {
-	var ()
 	return &EditProjectParams{
 		HTTPClient: client,
 	}
 }
 
-/*EditProjectParams contains all the parameters to send to the API endpoint
-for the edit project operation typically these are written to a http.Request
+/* EditProjectParams contains all the parameters to send to the API endpoint
+   for the edit project operation.
+
+   Typically these are written to a http.Request.
 */
 type EditProjectParams struct {
 
-	/*OrganizationName
-	  organizationName of desired organization
+	/* OrganizationName.
 
+	   organizationName of desired organization
 	*/
 	OrganizationName string
-	/*Project*/
-	Project *mono_models.ProjectEditable
-	/*ProjectName
-	  projectName of desired project
 
+	// Project.
+	Project *mono_models.ProjectEditable
+
+	/* ProjectName.
+
+	   projectName of desired project
 	*/
 	ProjectName string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the edit project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditProjectParams) WithDefaults() *EditProjectParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the edit project params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *EditProjectParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the edit project params
@@ -158,7 +174,6 @@ func (o *EditProjectParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	if err := r.SetPathParam("organizationName", o.OrganizationName); err != nil {
 		return err
 	}
-
 	if o.Project != nil {
 		if err := r.SetBodyParam(o.Project); err != nil {
 			return err

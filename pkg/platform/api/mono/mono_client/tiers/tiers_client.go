@@ -25,25 +25,70 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error)
+	GetAddOns(params *GetAddOnsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddOnsOK, error)
 
-	GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error)
+	GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersOK, error)
+
+	GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error)
+
+	SetAddOnDefault(params *SetAddOnDefaultParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAddOnDefaultOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
+  GetAddOns gets information about all available add ons
+*/
+func (a *Client) GetAddOns(params *GetAddOnsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddOnsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAddOnsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getAddOns",
+		Method:             "GET",
+		PathPattern:        "/addons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetAddOnsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetAddOnsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getAddOns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   GetTiers gets information about all available tiers
 */
-func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersOK, error) {
+func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetTiersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getTiers",
 		Method:             "GET",
 		PathPattern:        "/tiers",
@@ -55,7 +100,12 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +122,12 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 /*
   GetTiersPricing gets information about all available tiers including their price in cents per user per year
 */
-func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter) (*GetTiersPricingOK, error) {
+func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetTiersPricingParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getTiersPricing",
 		Method:             "GET",
 		PathPattern:        "/tiers/pricing",
@@ -90,7 +139,12 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +155,45 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for getTiersPricing: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  SetAddOnDefault sets default state of add on for a tier
+*/
+func (a *Client) SetAddOnDefault(params *SetAddOnDefaultParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAddOnDefaultOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSetAddOnDefaultParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "setAddOnDefault",
+		Method:             "POST",
+		PathPattern:        "/addons/{tierName}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &SetAddOnDefaultReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*SetAddOnDefaultOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for setAddOnDefault: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

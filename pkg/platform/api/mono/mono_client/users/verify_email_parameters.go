@@ -16,69 +16,85 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewVerifyEmailParams creates a new VerifyEmailParams object
-// with the default values initialized.
+// NewVerifyEmailParams creates a new VerifyEmailParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewVerifyEmailParams() *VerifyEmailParams {
-	var ()
 	return &VerifyEmailParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewVerifyEmailParamsWithTimeout creates a new VerifyEmailParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewVerifyEmailParamsWithTimeout(timeout time.Duration) *VerifyEmailParams {
-	var ()
 	return &VerifyEmailParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewVerifyEmailParamsWithContext creates a new VerifyEmailParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewVerifyEmailParamsWithContext(ctx context.Context) *VerifyEmailParams {
-	var ()
 	return &VerifyEmailParams{
-
 		Context: ctx,
 	}
 }
 
 // NewVerifyEmailParamsWithHTTPClient creates a new VerifyEmailParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewVerifyEmailParamsWithHTTPClient(client *http.Client) *VerifyEmailParams {
-	var ()
 	return &VerifyEmailParams{
 		HTTPClient: client,
 	}
 }
 
-/*VerifyEmailParams contains all the parameters to send to the API endpoint
-for the verify email operation typically these are written to a http.Request
+/* VerifyEmailParams contains all the parameters to send to the API endpoint
+   for the verify email operation.
+
+   Typically these are written to a http.Request.
 */
 type VerifyEmailParams struct {
 
-	/*Email
-	  email address to change
+	/* Email.
 
+	   email address to change
 	*/
 	Email string
-	/*Username
-	  username of desired User
 
+	/* Username.
+
+	   username of desired User
 	*/
 	Username string
-	/*VerifyCode
-	  verification code for email
 
+	/* VerifyCode.
+
+	   verification code for email
 	*/
 	VerifyCode string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the verify email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *VerifyEmailParams) WithDefaults() *VerifyEmailParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the verify email params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *VerifyEmailParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the verify email params
@@ -169,6 +185,7 @@ func (o *VerifyEmailParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 	qrVerifyCode := o.VerifyCode
 	qVerifyCode := qrVerifyCode
 	if qVerifyCode != "" {
+
 		if err := r.SetQueryParam("verifyCode", qVerifyCode); err != nil {
 			return err
 		}

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -76,6 +77,25 @@ func (suite *EnvironmentTestSuite) TestMerge() {
 	suite.Assert().NoError(err)
 	require.NotNil(suite.T(), ed1)
 	suite.Assert().Equal(expected, *ed1)
+}
+
+func (suite *EnvironmentTestSuite) TestInheritPath() {
+	ed1 := &envdef.EnvironmentDefinition{}
+
+	err := json.Unmarshal([]byte(`{
+			"env": [{"env_name": "PATH", "values": ["NEWVALUE"]}],
+			"join": "prepend",
+			"inherit": true,
+			"separator": ":"
+		}`), ed1)
+	require.NoError(suite.T(), err)
+
+	env, err := ed1.GetEnvBasedOn(func(k string) (string, bool) {
+		return "OLDVALUE", true
+	})
+	require.NoError(suite.T(), err)
+	suite.True(strings.HasPrefix(env["PATH"], "NEWVALUE"), "%s does not start with NEWVALUE", env["PATH"])
+	suite.True(strings.HasSuffix(env["PATH"], "OLDVALUE"), "%s does not end with OLDVALUE", env["PATH"])
 }
 
 func (suite *EnvironmentTestSuite) TestSharedTests() {
@@ -176,4 +196,48 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 
 func TestEnvironmentTestSuite(t *testing.T) {
 	suite.Run(t, new(EnvironmentTestSuite))
+}
+
+func TestFilterPATH(t *testing.T) {
+	s := string(os.PathListSeparator)
+	type args struct {
+		env      map[string]string
+		excludes []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"Filters out matching path",
+			args{
+				map[string]string{"PATH": "/path/to/key1" + s + "/path/to/key2" + s + "/path/to/key3"},
+				[]string{"/path/to/key2"},
+			},
+			"/path/to/key1" + s + "/path/to/key3",
+		},
+		{
+			"Filters out matching path despite malformed paths",
+			args{
+				map[string]string{"PATH": "/path/to/key1" + s + "/path//to/key2" + s + "/path/to/key3"},
+				[]string{"/path/to//key2"},
+			},
+			"/path/to/key1" + s + "/path/to/key3",
+		},
+		{
+			"Preserve original version of PATH, even if it's malformed",
+			args{
+				map[string]string{"PATH": "/path//to/key1" + s + "/path//to/key2" + s + "/path/to//key3"},
+				[]string{"/path/to//key2"},
+			},
+			"/path//to/key1" + s + "/path/to//key3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envdef.FilterPATH(tt.args.env, tt.args.excludes...)
+			require.Equal(t, tt.want, tt.args.env["PATH"])
+		})
+	}
 }

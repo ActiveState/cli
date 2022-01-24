@@ -1,31 +1,28 @@
 package checker
 
 import (
+	"context"
 	"errors"
+	"net"
 	"strconv"
+	"time"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
-	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
-	if err != nil {
-		logging.Error("Can not get branch info for %s/%s", p.Owner(), p.Name())
-		return
-	}
-
-	if latestCommitID == nil {
-		logging.Debug("Latest commit is nil")
-		return
-	}
-
-	count, err := model.CommitsBehind(*latestCommitID, p.CommitUUID())
+func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
+	count, err := CommitsBehind(p)
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
@@ -41,4 +38,43 @@ func RunCommitsBehindNotifier(p *project.Project,out output.Outputer) {
 		out.Notice(output.Heading(locale.Tr("runtime_update_notice_known_count", ct)))
 		out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 	}
+}
+
+func CommitsBehind(p *project.Project) (int, error) {
+	if p.IsHeadless() {
+		return 0, nil
+	}
+
+	latestCommitID, err := model.BranchCommitID(p.Owner(), p.Name(), p.BranchName())
+	if err != nil {
+		return 0, locale.WrapError(err, "Could not get branch information for {{.V0}}/{{.V1}}", p.Owner(), p.Name())
+	}
+
+	if latestCommitID == nil {
+		return 0, locale.NewError("err_latest_commit", "Latest commit ID is nil")
+	}
+
+	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
+}
+
+func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out output.Outputer) {
+	defer profile.Measure("RunUpdateNotifier", time.Now())
+	svc := model.NewSvcModel(cfg, svcManager)
+	ctx, cancel := context.WithTimeout(context.Background(), svcmanager.MinimalTimeout)
+	defer cancel()
+	up, err := svc.CheckUpdate(ctx)
+	if err != nil {
+		var timeoutErr net.Error
+		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {
+			logging.Debug("CheckUpdate timed out")
+			return
+		}
+		logging.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
+		return
+	}
+	if up == nil {
+		return
+	}
+	out.Notice(output.Heading(locale.Tr("update_available_header")))
+	out.Notice(locale.Tr("update_available", constants.VersionNumber, up.Version))
 }

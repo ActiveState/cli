@@ -59,9 +59,8 @@ func (o *UpdateBranchReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewUpdateBranchOK() *UpdateBranchOK {
 	return &UpdateBranchOK{}
 }
 
-/*UpdateBranchOK handles this case with default header values.
+/* UpdateBranchOK describes a response with status code 200, with default header values.
 
 Branch was updated, returns resulting branch
 */
@@ -81,7 +80,6 @@ type UpdateBranchOK struct {
 func (o *UpdateBranchOK) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchOK  %+v", 200, o.Payload)
 }
-
 func (o *UpdateBranchOK) GetPayload() *mono_models.Branch {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewUpdateBranchBadRequest() *UpdateBranchBadRequest {
 	return &UpdateBranchBadRequest{}
 }
 
-/*UpdateBranchBadRequest handles this case with default header values.
+/* UpdateBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type UpdateBranchBadRequest struct {
 func (o *UpdateBranchBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *UpdateBranchBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewUpdateBranchForbidden() *UpdateBranchForbidden {
 	return &UpdateBranchForbidden{}
 }
 
-/*UpdateBranchForbidden handles this case with default header values.
+/* UpdateBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -147,7 +144,6 @@ type UpdateBranchForbidden struct {
 func (o *UpdateBranchForbidden) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchForbidden  %+v", 403, o.Payload)
 }
-
 func (o *UpdateBranchForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewUpdateBranchNotFound() *UpdateBranchNotFound {
 	return &UpdateBranchNotFound{}
 }
 
-/*UpdateBranchNotFound handles this case with default header values.
+/* UpdateBranchNotFound describes a response with status code 404, with default header values.
 
 Branch Not Found
 */
@@ -180,7 +176,6 @@ type UpdateBranchNotFound struct {
 func (o *UpdateBranchNotFound) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchNotFound  %+v", 404, o.Payload)
 }
-
 func (o *UpdateBranchNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewUpdateBranchConflict() *UpdateBranchConflict {
 	return &UpdateBranchConflict{}
 }
 
-/*UpdateBranchConflict handles this case with default header values.
+/* UpdateBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type UpdateBranchConflict struct {
 func (o *UpdateBranchConflict) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchConflict  %+v", 409, o.Payload)
 }
-
 func (o *UpdateBranchConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewUpdateBranchInternalServerError() *UpdateBranchInternalServerError {
 	return &UpdateBranchInternalServerError{}
 }
 
-/*UpdateBranchInternalServerError handles this case with default header values.
+/* UpdateBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type UpdateBranchInternalServerError struct {
 func (o *UpdateBranchInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /vcs/branch/{branchID}][%d] updateBranchInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *UpdateBranchInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

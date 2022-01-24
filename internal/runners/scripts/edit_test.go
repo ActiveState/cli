@@ -30,7 +30,7 @@ type EditTestSuite struct {
 
 func (suite *EditTestSuite) BeforeTest(suiteName, testName string) {
 	var err error
-	suite.cfg, err = config.Get()
+	suite.cfg, err = config.New()
 	suite.Require().NoError(err)
 
 	suite.projectFile = &projectfile.Project{}
@@ -74,6 +74,7 @@ func (suite *EditTestSuite) AfterTest(suiteName, testName string) {
 	}
 
 	os.Setenv("EDITOR", suite.originalEditor)
+	suite.Require().NoError(suite.cfg.Close())
 }
 
 func (suite *EditTestSuite) TestCreateScriptFile() {

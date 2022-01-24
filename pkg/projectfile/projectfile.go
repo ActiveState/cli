@@ -11,11 +11,15 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/sysinfo"
 	"github.com/gobuffalo/packr"
 	"github.com/google/uuid"
 	"github.com/imdario/mergo"
+	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-openapi/strfmt"
@@ -444,7 +448,7 @@ type Jobs []Job
 var persistentProject *Project
 
 // Parse the given filepath, which should be the full path to an activestate.yaml file
-func Parse(configFilepath string) (*Project, error) {
+func Parse(configFilepath string) (_ *Project, rerr error) {
 	projectDir := filepath.Dir(configFilepath)
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
@@ -468,7 +472,7 @@ func Parse(configFilepath string) (*Project, error) {
 		keyword := l(match[1])
 		if (keyword == l(sysinfo.Linux.String()) || keyword == l(sysinfo.Mac.String()) || keyword == l(sysinfo.Windows.String())) &&
 			keyword != l(sysinfo.OS().String()) {
-			logging.Debug("Not merging %s as we're not on %s", file.Name(), sysinfo.OS().String())
+			logging.Debug("Not merging %s because we are on %s", file.Name(), sysinfo.OS().String())
 			continue
 		}
 
@@ -485,13 +489,14 @@ func Parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "project.Init failed")
 	}
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read configuration required by projectfile parser.")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
 
 	namespace := fmt.Sprintf("%s/%s", project.parsedURL.Owner, project.parsedURL.Name)
-	storeProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
+	StoreProjectMapping(cfg, namespace, filepath.Dir(project.Path()))
 
 	return project, nil
 }
@@ -671,51 +676,6 @@ func parseURL(rawURL string) (projectURL, error) {
 	return p, nil
 }
 
-func removeTemporaryLanguage(data []byte) ([]byte, error) {
-	languageLine := regexp.MustCompile("(?m)^languages:")
-	firstNonIndentedLine := regexp.MustCompile("(?m)^[^ \t]")
-
-	startLoc := languageLine.FindIndex(data)
-	if startLoc == nil {
-		return data, nil // language is already gone
-	}
-	endLoc := firstNonIndentedLine.FindIndex(data[startLoc[1]:])
-	if endLoc == nil {
-		return data[:startLoc[0]], nil
-	}
-
-	end := startLoc[1] + endLoc[0]
-	return append(data[:startLoc[0]], data[end:]...), nil
-}
-
-// RemoveTemporaryLanguage removes the temporary language field from the as.yaml file during state push
-func (p *Project) RemoveTemporaryLanguage() error {
-	fp, err := GetProjectFilePath()
-	if err != nil {
-		return errs.Wrap(err, "Could not find the project file location.")
-	}
-
-	data, err := ioutil.ReadFile(fp)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read project file.")
-	}
-
-	out, err := removeTemporaryLanguage(data)
-	if err != nil {
-		return errs.Wrap(err, "Failed to remove language field from project file.")
-	}
-
-	if err := ioutil.WriteFile(fp, out, 0664); err != nil {
-		return errs.Wrap(err, "Failed to write update project file.")
-	}
-
-	err = p.Reload()
-	if err != nil {
-		return errs.Wrap(err, "Failed to reload project file.")
-	}
-	return nil
-}
-
 // Save the project to its activestate.yaml file
 func (p *Project) save(cfg ConfigGetter, path string) error {
 	dat, err := yaml.Marshal(p)
@@ -741,7 +701,7 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 		return errs.Wrap(err, "f.Write %s failed", path)
 	}
 
-	storeProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
+	StoreProjectMapping(cfg, fmt.Sprintf("%s/%s", p.parsedURL.Owner, p.parsedURL.Name), filepath.Dir(p.Path()))
 
 	return nil
 }
@@ -794,7 +754,7 @@ func (p *Project) SetBranch(branch string) error {
 
 	pf.SetBranch(branch)
 
-	if !condition.InTest() || p.path != "" {
+	if !condition.InUnitTest() || p.path != "" {
 		if err := pf.Save(p.path); err != nil {
 			return errs.Wrap(err, "Could not save activestate.yaml")
 		}
@@ -807,6 +767,7 @@ func (p *Project) SetBranch(branch string) error {
 
 // GetProjectFilePath returns the path to the project activestate.yaml
 func GetProjectFilePath() (string, error) {
+	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
@@ -850,11 +811,13 @@ func getProjectFilePathFromWd() (string, error) {
 	return path, nil
 }
 
-func getProjectFilePathFromDefault() (string, error) {
-	cfg, err := config.Get()
+func getProjectFilePathFromDefault() (_ string, rerr error) {
+	cfg, err := config.New()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
+
 	defaultProjectPath := cfg.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectPath == "" {
 		return "", nil
@@ -920,6 +883,7 @@ func GetOnce() (*Project, error) {
 
 // FromPath will return the projectfile that's located at the given path (this will walk up the directory tree until it finds the project)
 func FromPath(path string) (*Project, error) {
+	defer profile.Measure("projectfile:FromPath", time.Now())
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
@@ -963,41 +927,35 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner           string
-	Project         string
-	CommitID        *strfmt.UUID
-	BranchName      string
-	Directory       string
-	Content         string
-	Language        string
-	LanguageVersion string
-	Private         bool
-	path            string
-	projectURL      string
+	Owner      string
+	Project    string
+	CommitID   *strfmt.UUID
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
 func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
 	return createCustom(&CreateParams{
-		projectURL: projectURL,
+		ProjectURL: projectURL,
 		Directory:  path,
 	}, language.Python3)
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
-func Create(params *CreateParams) error {
+func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
-	err := validateCreateParams(params, lang)
+	err := validateCreateParams(params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = createCustom(params, lang)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return createCustom(params, lang)
 }
 
 func createCustom(params *CreateParams, lang language.Language) (*Project, error) {
@@ -1007,7 +965,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	var commitID string
-	if params.projectURL == "" {
+	if params.ProjectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
@@ -1023,7 +981,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 
 		u.RawQuery = q.Encode()
-		params.projectURL = u.String()
+		params.ProjectURL = u.String()
 	}
 
 	params.path = filepath.Join(params.Directory, constants.ConfigFileName)
@@ -1031,11 +989,11 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, locale.NewInputError("err_projectfile_exists")
 	}
 
-	err = ValidateProjectURL(params.projectURL)
+	err = ValidateProjectURL(params.ProjectURL)
 	if err != nil {
 		return nil, err
 	}
-	match := ProjectURLRe.FindStringSubmatch(params.projectURL)
+	match := ProjectURLRe.FindStringSubmatch(params.ProjectURL)
 	if len(match) < 3 {
 		return nil, locale.NewInputError("err_projectfile_invalid_url")
 	}
@@ -1061,12 +1019,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":         params.projectURL,
-		"LanguageName":    params.Language,
-		"LanguageVersion": params.LanguageVersion,
-		"CommitID":        commitID,
-		"Content":         content,
-		"Private":         params.Private,
+		"Project":  params.ProjectURL,
+		"CommitID": commitID,
+		"Content":  content,
+		"Private":  params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
@@ -1083,14 +1039,11 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	return Parse(params.path)
 }
 
-func validateCreateParams(params *CreateParams, lang language.Language) error {
-	langValidErr := lang.Validate()
+func validateCreateParams(params *CreateParams) error {
 	switch {
-	case langValidErr != nil:
-		return errs.Wrap(langValidErr, "Language validation failed")
 	case params.Directory == "":
 		return locale.NewInputError("err_project_require_path")
-	case params.projectURL != "":
+	case params.ProjectURL != "":
 		return nil // Owner and Project not required when projectURL is set
 	case params.Owner == "":
 		return locale.NewInputError("err_project_require_owner")
@@ -1211,6 +1164,8 @@ type ConfigGetter interface {
 	AllKeys() []string
 	GetStringSlice(string) []string
 	Set(string, interface{}) error
+	SetWithLock(string, func(interface{}) (interface{}, error)) error
+	Close() error
 }
 
 func GetProjectMapping(config ConfigGetter) map[string][]string {
@@ -1223,7 +1178,31 @@ func GetProjectMapping(config ConfigGetter) map[string][]string {
 	return projects
 }
 
-func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
+func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
+	projects := GetProjectMapping(config)
+
+	res := make(map[string][]*Project)
+	for name, paths := range projects {
+		if name == "/" {
+			continue
+		}
+		var pFiles []*Project
+		for _, path := range paths {
+			prj, err := FromExactPath(path)
+			if err != nil {
+				logging.Error("Could not read project file at %s: %v", path, err)
+				continue
+			}
+			pFiles = append(pFiles, prj)
+		}
+		if len(pFiles) > 0 {
+			res[name] = pFiles
+		}
+	}
+	return res
+}
+
+func GetCachedProjectNameForPath(config ConfigGetter, projectPath string) string {
 	projects := GetProjectMapping(config)
 
 	for name, paths := range projects {
@@ -1242,36 +1221,46 @@ func GetProjectNameForPath(config ConfigGetter, projectPath string) string {
 	return ""
 }
 
-func addDeprecatedProjectMappings(config ConfigGetter) {
-	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
-	keys := funk.FilterString(config.AllKeys(), func(v string) bool {
-		return strings.HasPrefix(v, "project_")
-	})
+func addDeprecatedProjectMappings(cfg ConfigGetter) {
+	var unsets []string
 
-	if len(keys) == 0 {
-		return
-	}
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil && v != nil { // don't report if error due to nil input
+				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+			}
 
-	for _, key := range keys {
-		namespace := strings.TrimPrefix(key, "project_")
-		newPaths := projects[namespace]
-		paths := config.GetStringSlice(key)
-		projects[namespace] = funk.UniqString(append(newPaths, paths...))
-		err := config.Set(key, nil)
-		if err != nil {
-			logging.Error("Could not clear config entry for key %s, error: %v", key, err)
-		}
-	}
+			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
+				return strings.HasPrefix(v, "project_")
+			})
 
-	err := config.Set(LocalProjectsConfigKey, projects)
+			for _, key := range keys {
+				namespace := strings.TrimPrefix(key, "project_")
+				newPaths := projects[namespace]
+				paths := cfg.GetStringSlice(key)
+				projects[namespace] = funk.UniqString(append(newPaths, paths...))
+				unsets = append(unsets, key)
+			}
+
+			return projects, nil
+		},
+	)
 	if err != nil {
 		logging.Error("Could not update project mapping in config, error: %v", err)
 	}
+	for _, unset := range unsets {
+		if err := cfg.Set(unset, nil); err != nil {
+			logging.Error("Could not clear config entry for key %s, error: %v", unset, err)
+		}
+	}
+
 }
 
 // GetProjectPaths returns the paths of all projects associated with the namespace
-func GetProjectPaths(config ConfigGetter, namespace string) []string {
-	projects := GetProjectMapping(config)
+func GetProjectPaths(cfg ConfigGetter, namespace string) []string {
+	projects := GetProjectMapping(cfg)
 
 	// match case-insensitively
 	var paths []string
@@ -1284,30 +1273,55 @@ func GetProjectPaths(config ConfigGetter, namespace string) []string {
 	return paths
 }
 
-// storeProjectMapping associates the namespace with the project
+// StoreProjectMapping associates the namespace with the project
 // path in the config
-func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
-	projectMapMutex.Lock()
-	defer projectMapMutex.Unlock()
+func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil && v != nil { // don't report if error due to nil input
+				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+			}
 
-	projectPath = filepath.Clean(projectPath)
+			projectPath, err = fileutils.ResolveUniquePath(projectPath)
+			if err != nil {
+				logging.Errorf("Could not resolve uniqe project path, %v", err)
+				projectPath = filepath.Clean(projectPath)
+			}
 
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	if projects == nil {
-		projects = make(map[string][]string)
-	}
+			for name, paths := range projects {
+				for i, path := range paths {
+					path, err = fileutils.ResolveUniquePath(path)
+					if err != nil {
+						logging.Errorf("Could not resolve unique path, :%v", err)
+						path = filepath.Clean(path)
+					}
 
-	paths := projects[namespace]
-	if paths == nil {
-		paths = make([]string, 0)
-	}
+					if path == projectPath {
+						projects[name] = sliceutils.RemoveFromStrings(projects[name], i)
+					}
 
-	if !funk.Contains(paths, projectPath) {
-		paths = append(paths, projectPath)
-	}
+					if len(projects[name]) == 0 {
+						delete(projects, name)
+					}
+				}
+			}
 
-	projects[namespace] = paths
-	err := cfg.Set(LocalProjectsConfigKey, projects)
+			paths := projects[namespace]
+			if paths == nil {
+				paths = make([]string, 0)
+			}
+
+			if !funk.Contains(paths, projectPath) {
+				paths = append(paths, projectPath)
+			}
+
+			projects[namespace] = paths
+
+			return projects, nil
+		},
+	)
 	if err != nil {
 		logging.Error("Could not set project mapping in config, error: %v", err)
 	}
@@ -1316,26 +1330,36 @@ func storeProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 // CleanProjectMapping removes projects that no longer exist
 // on a user's filesystem from the projects config entry
 func CleanProjectMapping(cfg ConfigGetter) {
-	projects := cfg.GetStringMapStringSlice(LocalProjectsConfigKey)
-	seen := map[string]bool{}
-
-	for namespace, paths := range projects {
-		var removals []int
-		for i, path := range paths {
-			if !fileutils.DirExists(path) {
-				removals = append(removals, i)
+	err := cfg.SetWithLock(
+		LocalProjectsConfigKey,
+		func(v interface{}) (interface{}, error) {
+			projects, err := cast.ToStringMapStringSliceE(v)
+			if err != nil && v != nil { // don't report if error due to nil input
+				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
 			}
-		}
-		projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
-		if ok, _ := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
-			delete(projects, namespace)
-			continue
-		}
-		seen[strings.ToLower(namespace)] = true
-	}
 
-	err := cfg.Set("projects", projects)
+			seen := make(map[string]struct{})
+
+			for namespace, paths := range projects {
+				var removals []int
+				for i, path := range paths {
+					if !fileutils.DirExists(path) {
+						removals = append(removals, i)
+					}
+				}
+
+				projects[namespace] = sliceutils.RemoveFromStrings(projects[namespace], removals...)
+				if _, ok := seen[strings.ToLower(namespace)]; ok || len(projects[namespace]) == 0 {
+					delete(projects, namespace)
+					continue
+				}
+				seen[strings.ToLower(namespace)] = struct{}{}
+			}
+
+			return projects, nil
+		},
+	)
 	if err != nil {
-		logging.Debug("Could not set clean project mapping in config, error: %v", err)
+		logging.Debug("Could not clean project mapping in config, error: %v", err)
 	}
 }

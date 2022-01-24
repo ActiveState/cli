@@ -3,10 +3,15 @@ package model
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"runtime"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/sysinfo"
@@ -21,11 +26,33 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
+type SolverError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *SolverError) Error() string {
+	return "solver_error"
+}
+
+func (e *SolverError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *SolverError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *SolverError) IsTransient() bool {
+	return e.isTransient
+}
+
 // HostPlatform stores a reference to current platform
 var HostPlatform string
 
 // Recipe aliases recipe model
-type Recipe = inventory_models.V1RecipeResponseRecipesItems
+type Recipe = inventory_models.Recipe
 
 // OrderAnnotations are sent with every order for analytical purposes described here:
 // https://docs.google.com/document/d/1nXeNCRWX-4ULtk20t3C7kTZDCSBJchJJHhzz-lQuVsU/edit#heading=h.o93wm4bt5ul9
@@ -37,6 +64,9 @@ type OrderAnnotations struct {
 
 func init() {
 	HostPlatform = sysinfo.OS().String()
+	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
+		HostPlatform = osName
+	}
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
@@ -67,7 +97,7 @@ func ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_
 }
 
 func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, error) {
-	_, transport := inventory.Init()
+	_, transport := inventory.Init(authentication.LegacyGet())
 
 	var err error
 	params := iop.NewResolveRecipesParams()
@@ -95,19 +125,10 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		if err2 != nil {
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
-		switch rrErr := err.(type) {
-		case *iop.ResolveRecipesDefault:
-			msg := *rrErr.Payload.Message
-			logging.Error("Could not resolve order, error: %s, order: %s", msg, string(orderBody))
-			return "", locale.WrapInputError(err, "err_solve_order", "", msg)
-		case *iop.ResolveRecipesBadRequest:
-			msg := *rrErr.Payload.Message
-			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return "", locale.WrapError(err, "err_order_bad_request", "", commitID.String(), msg)
-		default:
-			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return "", locale.WrapError(err, "err_order_unknown")
-		}
+
+		serr := resolveSolverError(err)
+		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		return "", serr
 	}
 
 	return recipe, nil
@@ -149,7 +170,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, errs.Wrap(err, "commitToOrder failed")
 	}
 
-	client, _ := inventory.Init()
+	client, _ := inventory.Init(authentication.LegacyGet())
 
 	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
@@ -158,19 +179,9 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		}
 
 		orderBody, _ := json.Marshal(params.Order)
-		switch rrErr := err.(type) {
-		case *iop.ResolveRecipesDefault:
-			msg := *rrErr.Payload.Message
-			logging.Error("Could not solve order, error: %s, order: %s", msg, string(orderBody))
-			return nil, locale.WrapInputError(err, "err_solve_order", "", msg)
-		case *iop.ResolveRecipesBadRequest:
-			msg := *rrErr.Payload.Message
-			logging.Error("Bad request while resolving order, error: %s, order: %s", msg, string(orderBody))
-			return nil, locale.WrapError(err, "err_order_bad_request", "", commitID.String(), msg)
-		default:
-			logging.Error("Unknown error while resolving order, error: %v, order: %s", err, string(orderBody))
-			return nil, locale.WrapError(err, "err_order_unknown")
-		}
+		serr := resolveSolverError(err)
+		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		return nil, serr
 	}
 
 	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
@@ -191,6 +202,32 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	}
 
 	return nil, locale.NewInputError("err_recipe_not_found")
+}
+
+func resolveSolverError(err error) error {
+	switch serr := err.(type) {
+	case *iop.ResolveRecipesDefault:
+		return &SolverError{
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
+			isTransient: p.PBool(serr.GetPayload().IsTransient),
+		}
+	case *iop.ResolveRecipesBadRequest:
+		var validationErrors []string
+		for _, verr := range serr.Payload.ValidationErrors {
+			if verr.Error == nil {
+				continue
+			}
+			lines := strings.Split(*verr.Error, "\n")
+			validationErrors = append(validationErrors, lines...)
+		}
+		return &SolverError{
+			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
+			validationErrors: validationErrors,
+			isTransient:      p.PBool(serr.GetPayload().IsTransient),
+		}
+	default:
+		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")
+	}
 }
 
 func IngredientVersionMap(recipe *inventory_models.Recipe) map[strfmt.UUID]*inventory_models.ResolvedIngredient {
@@ -294,4 +331,14 @@ func recursiveDeps(deps []strfmt.UUID, directdeptree map[strfmt.UUID][]strfmt.UU
 	}
 
 	return deps
+}
+
+// IsPlatformError returns true if the error is a solver error due to a missing build image for the requested platform
+func IsPlatformError(err error) bool {
+	// todo: replace with error codes once we have a solution -- https://www.pivotaltracker.com/story/show/178865201
+	serr := &SolverError{}
+	if !errors.As(err, &serr) {
+		return false
+	}
+	return strings.Contains(strings.Join(serr.ValidationErrors(), ""), "build image for platform")
 }

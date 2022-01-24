@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -39,7 +40,7 @@ type Organization struct {
 	MemberCount int64 `json:"memberCount,omitempty"`
 
 	// Deprecated; use displayName instead.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// organization ID
 	// Format: uuid
@@ -50,6 +51,9 @@ type Organization struct {
 
 	// personal
 	Personal bool `json:"personal,omitempty"`
+
+	// role
+	Role *Role `json:"role,omitempty"`
 
 	// subscription status
 	// Enum: [active cancelled expired]
@@ -75,6 +79,10 @@ func (m *Organization) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateRole(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateSubscriptionStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -86,7 +94,6 @@ func (m *Organization) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Organization) validateAddOns(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AddOns) { // not required
 		return nil
 	}
@@ -108,7 +115,6 @@ func (m *Organization) validateAddOns(formats strfmt.Registry) error {
 }
 
 func (m *Organization) validateAdded(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Added) { // not required
 		return nil
 	}
@@ -121,13 +127,29 @@ func (m *Organization) validateAdded(formats strfmt.Registry) error {
 }
 
 func (m *Organization) validateOrganizationID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.OrganizationID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("organizationID", "body", "uuid", m.OrganizationID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *Organization) validateRole(formats strfmt.Registry) error {
+	if swag.IsZero(m.Role) { // not required
+		return nil
+	}
+
+	if m.Role != nil {
+		if err := m.Role.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("role")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -159,14 +181,13 @@ const (
 
 // prop value enum
 func (m *Organization) validateSubscriptionStatusEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, organizationTypeSubscriptionStatusPropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, organizationTypeSubscriptionStatusPropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *Organization) validateSubscriptionStatus(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SubscriptionStatus) { // not required
 		return nil
 	}
@@ -174,6 +195,53 @@ func (m *Organization) validateSubscriptionStatus(formats strfmt.Registry) error
 	// value enum
 	if err := m.validateSubscriptionStatusEnum("subscriptionStatus", "body", *m.SubscriptionStatus); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this organization based on the context it is used
+func (m *Organization) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAddOns(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRole(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Organization) contextValidateAddOns(ctx context.Context, formats strfmt.Registry) error {
+
+	for k := range m.AddOns {
+
+		if val, ok := m.AddOns[k]; ok {
+			if err := val.ContextValidate(ctx, formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Organization) contextValidateRole(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Role != nil {
+		if err := m.Role.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("role")
+			}
+			return err
+		}
 	}
 
 	return nil

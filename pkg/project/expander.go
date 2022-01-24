@@ -1,10 +1,13 @@
 package project
 
 import (
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -33,7 +36,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
 
-	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w-]+)?(\(\))?}?`)
+	regex := regexp.MustCompile(`\${?(\w+)\.?([\w-]+)?\.?([\w\.-]+)?(\(\))?}?`)
 	var err error
 	expanded := rxutils.ReplaceAllStringSubmatchFunc(regex, s, func(groups []string) string {
 		if err != nil {
@@ -54,7 +57,8 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		if len(groups) > 3 {
 			meta = groups[3]
 		}
-		if len(groups) > 4 {
+		lastGroup := groups[len(groups)-1]
+		if strings.HasPrefix(lastGroup, "(") && strings.HasSuffix(lastGroup, ")") {
 			isFunction = true
 		}
 
@@ -134,9 +138,21 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 		return "", nil
 	}
 
-	if meta == "path" && isFunction {
-		return expandPath(name, script)
+	if !isFunction {
+		return script.Raw(), nil
 	}
+
+	switch meta {
+	case "path":
+		return expandPath(name, script)
+	case "path._posix":
+		path, err := expandPath(name, script)
+		if err != nil {
+			return "", err
+		}
+		return osutils.BashifyPath(path)
+	}
+
 	return script.Raw(), nil
 }
 
@@ -212,6 +228,36 @@ func ConstantExpander(_ string, name string, meta string, isFunction bool, proje
 			return projectfile.MakeConstantsFromConstrainedEntities([]projectfile.ConstrainedEntity{v})[0].Value, nil
 		}
 	}
+	return "", nil
+}
+
+// ProjectExpander expands constants defined in the project-file.
+func ProjectExpander(_ string, name string, _ string, isFunction bool, project *Project) (string, error) {
+	if !isFunction {
+		return "", nil
+	}
+
+	switch name {
+	case "url":
+		return project.URL(), nil
+	case "commit":
+		return project.CommitID(), nil
+	case "branch":
+		return project.BranchName(), nil
+	case "owner":
+		return project.Namespace().Owner, nil
+	case "name":
+		return project.Namespace().Project, nil
+	case "namespace":
+		return project.Namespace().String(), nil
+	case "path":
+		path := project.Source().Path()
+		if path == "" {
+			return path, nil
+		}
+		return filepath.Dir(path), nil
+	}
+
 	return "", nil
 }
 

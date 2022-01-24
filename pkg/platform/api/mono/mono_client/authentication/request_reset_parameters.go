@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewRequestResetParams creates a new RequestResetParams object
-// with the default values initialized.
+// NewRequestResetParams creates a new RequestResetParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewRequestResetParams() *RequestResetParams {
-	var ()
 	return &RequestResetParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewRequestResetParamsWithTimeout creates a new RequestResetParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewRequestResetParamsWithTimeout(timeout time.Duration) *RequestResetParams {
-	var ()
 	return &RequestResetParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewRequestResetParamsWithContext creates a new RequestResetParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewRequestResetParamsWithContext(ctx context.Context) *RequestResetParams {
-	var ()
 	return &RequestResetParams{
-
 		Context: ctx,
 	}
 }
 
 // NewRequestResetParamsWithHTTPClient creates a new RequestResetParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewRequestResetParamsWithHTTPClient(client *http.Client) *RequestResetParams {
-	var ()
 	return &RequestResetParams{
 		HTTPClient: client,
 	}
 }
 
-/*RequestResetParams contains all the parameters to send to the API endpoint
-for the request reset operation typically these are written to a http.Request
+/* RequestResetParams contains all the parameters to send to the API endpoint
+   for the request reset operation.
+
+   Typically these are written to a http.Request.
 */
 type RequestResetParams struct {
 
-	/*Email
-	  User email address
+	/* Email.
 
+	   User email address
 	*/
 	Email string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the request reset params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RequestResetParams) WithDefaults() *RequestResetParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the request reset params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *RequestResetParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the request reset params

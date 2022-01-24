@@ -18,65 +18,80 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
-// NewAddIngredientVersionRevisionParams creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized.
+// NewAddIngredientVersionRevisionParams creates a new AddIngredientVersionRevisionParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddIngredientVersionRevisionParams() *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithTimeout creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddIngredientVersionRevisionParamsWithTimeout(timeout time.Duration) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithContext creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddIngredientVersionRevisionParamsWithContext(ctx context.Context) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddIngredientVersionRevisionParamsWithHTTPClient creates a new AddIngredientVersionRevisionParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddIngredientVersionRevisionParamsWithHTTPClient(client *http.Client) *AddIngredientVersionRevisionParams {
-	var ()
 	return &AddIngredientVersionRevisionParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddIngredientVersionRevisionParams contains all the parameters to send to the API endpoint
-for the add ingredient version revision operation typically these are written to a http.Request
+/* AddIngredientVersionRevisionParams contains all the parameters to send to the API endpoint
+   for the add ingredient version revision operation.
+
+   Typically these are written to a http.Request.
 */
 type AddIngredientVersionRevisionParams struct {
 
-	/*IngredientID*/
+	// IngredientID.
+	//
+	// Format: uuid
 	IngredientID strfmt.UUID
-	/*IngredientVersionID*/
-	IngredientVersionID strfmt.UUID
-	/*IngredientVersionRevision*/
-	IngredientVersionRevision *inventory_models.IngredientVersionRevisionCreate
-	/*IsDefaultProviderBehavior
-	  How setting of is_default_provider should be handled for the features provided by the thing being created. The options are: 'override' - if is_default_provider is set to true for a provided feature then replace the existing default provider of that feature (if one exists); 'if-new' - set is_default_provider to true if this is an entirely new feature, otherwise false
 
-	*/
-	IsDefaultProviderBehavior *string
+	// IngredientVersionID.
+	//
+	// Format: uuid
+	IngredientVersionID strfmt.UUID
+
+	// IngredientVersionRevision.
+	IngredientVersionRevision *inventory_models.IngredientVersionRevisionCreate
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add ingredient version revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddIngredientVersionRevisionParams) WithDefaults() *AddIngredientVersionRevisionParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add ingredient version revision params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddIngredientVersionRevisionParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add ingredient version revision params
@@ -145,17 +160,6 @@ func (o *AddIngredientVersionRevisionParams) SetIngredientVersionRevision(ingred
 	o.IngredientVersionRevision = ingredientVersionRevision
 }
 
-// WithIsDefaultProviderBehavior adds the isDefaultProviderBehavior to the add ingredient version revision params
-func (o *AddIngredientVersionRevisionParams) WithIsDefaultProviderBehavior(isDefaultProviderBehavior *string) *AddIngredientVersionRevisionParams {
-	o.SetIsDefaultProviderBehavior(isDefaultProviderBehavior)
-	return o
-}
-
-// SetIsDefaultProviderBehavior adds the isDefaultProviderBehavior to the add ingredient version revision params
-func (o *AddIngredientVersionRevisionParams) SetIsDefaultProviderBehavior(isDefaultProviderBehavior *string) {
-	o.IsDefaultProviderBehavior = isDefaultProviderBehavior
-}
-
 // WriteToRequest writes these params to a swagger request
 func (o *AddIngredientVersionRevisionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -173,27 +177,10 @@ func (o *AddIngredientVersionRevisionParams) WriteToRequest(r runtime.ClientRequ
 	if err := r.SetPathParam("ingredient_version_id", o.IngredientVersionID.String()); err != nil {
 		return err
 	}
-
 	if o.IngredientVersionRevision != nil {
 		if err := r.SetBodyParam(o.IngredientVersionRevision); err != nil {
 			return err
 		}
-	}
-
-	if o.IsDefaultProviderBehavior != nil {
-
-		// query param is_default_provider_behavior
-		var qrIsDefaultProviderBehavior string
-		if o.IsDefaultProviderBehavior != nil {
-			qrIsDefaultProviderBehavior = *o.IsDefaultProviderBehavior
-		}
-		qIsDefaultProviderBehavior := qrIsDefaultProviderBehavior
-		if qIsDefaultProviderBehavior != "" {
-			if err := r.SetQueryParam("is_default_provider_behavior", qIsDefaultProviderBehavior); err != nil {
-				return err
-			}
-		}
-
 	}
 
 	if len(res) > 0 {

@@ -33,7 +33,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
-		Tier:     "free",
+		Tier:     "free_legacy",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
@@ -121,7 +121,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free",
+		"free_legacy",
 		false,
 	}
 
@@ -170,8 +170,7 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 	)
 	cp.ExpectExitCode(0)
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push", "--output", "editor.v0"), e2e.WithWorkDirectory(wd))
 	cp.ExpectExitCode(0)
 }
 
@@ -197,7 +196,7 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 	suite.setupConfigFile(ts)
 
 	cp := ts.Spawn("scripts", "--output", "editor.v0")
-	cp.Expect(`[{"name":"first-script"},{"name":"second-script"}]`)
+	cp.Expect(`[{"name":"first-script"},{"name":"second-script"},{"name":"super-script"}]`)
 	cp.ExpectExitCode(0)
 }
 

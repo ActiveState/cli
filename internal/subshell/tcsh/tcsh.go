@@ -58,6 +58,28 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return sscommon.WriteRcFile("tcshrc_append.sh", rcFile, envType, env)
 }
 
+func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile failure")
+	}
+
+	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
+	}
+
+	return nil
+}
+
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile-failure")
+	}
+
+	return sscommon.RemoveLegacyInstallPath(rcFile)
+}
+
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }
@@ -102,18 +124,30 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// The exec'd shell does not inherit 'prompt' from the calling terminal since
 	// tcsh does not export prompt.  This may be intractable.  I couldn't figure out a
 	// hack to make it work.
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+	var directEnv []string
+
+	// available project files require more intensive modification of shell envs
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
+		if v.activateCommand != nil {
+			shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
+		}
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	shellArgs := []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
 	if v.activateCommand != nil {
-		shellArgs[len(shellArgs)-1] = shellArgs[len(shellArgs)-1] + " && " + *v.activateCommand
+		shellArgs = []string{"-c", *v.activateCommand}
 	}
-	cmd := exec.Command(v.Binary(), shellArgs...)
 
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil

@@ -1,105 +1,98 @@
 package updater
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"io"
-	"path/filepath"
-	"runtime"
-	"strings"
+	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/ActiveState/cli/internal/testhelpers/updatemocks"
 )
 
-var configPath = filepath.Join(environment.GetRootPathUnsafe(), "internal", "updater", "testdata", constants.ConfigFileName)
-var configPathWithVersion = filepath.Join(environment.GetRootPathUnsafe(), "internal", "updater", "testdata", "withversion", constants.ConfigFileName)
-
-func TestUpdaterWithEmptyPayloadErrorNoUpdate(t *testing.T) {
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
-	httpmock.RegisterWithResponseBody("GET", updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("%s-%s.json", runtime.GOOS, runtime.GOARCH)), 200, "{}")
-
-	updater := createUpdater()
-
-	out := outputhelper.NewCatcher()
-	err := updater.Run(out.Outputer, false)
-	assert.Error(t, err, "Should fail because there is no update")
-	assert.Equal(t, "", strings.TrimSpace(out.CombinedOutput()))
+type httpGetMock struct {
+	UrlCalled      string
+	MockedResponse []byte
 }
 
-func TestUpdaterInfoDesiredVersion(t *testing.T) {
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
-	httpmock.RegisterWithResponseBody(
-		"GET",
-		updatemocks.CreateRequestPath(constants.BranchName, fmt.Sprintf("1.2.3-456/%s-%s.json", runtime.GOOS, runtime.GOARCH)),
-		200,
-		`{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
+func (m *httpGetMock) Get(url string) ([]byte, int, error) {
+	m.UrlCalled = url
+	return m.MockedResponse, 0, nil
+}
 
-	updater := createUpdater()
-	updater.DesiredVersion = "1.2.3-456"
-	info, err := updater.Info(context.Background())
+func mockUpdate(channel, version, tag string) *AvailableUpdate {
+	return NewAvailableUpdate(version, channel, "platform", "path/to/zipfile.zip", "123456", tag)
+}
+
+func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
+	up := mockUpdate(channel, version, tag)
+
+	b, err := json.Marshal(up)
 	require.NoError(t, err)
-
-	assert.NotNil(t, info, "Returns update info")
-	assert.Equal(t, "1.2.3-456", info.Version, "Should return expected version")
+	return &httpGetMock{MockedResponse: b}
 }
 
-func TestPrintUpdateMessage(t *testing.T) {
-	setup(t, true)
+type configMock struct{}
 
-	httpmock.Activate(constants.APIUpdateURL)
-	defer httpmock.DeActivate()
-
-	requestPath := fmt.Sprintf("%s/%s/%s-%s.json", constants.CommandName, constants.BranchName, runtime.GOOS, runtime.GOARCH)
-	httpmock.RegisterWithResponseBody("GET", requestPath, 200, `{"Version": "1.2.3-456", "Sha256v2": "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08"}`)
-
-	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(configPathWithVersion, out)
-
-	assert.Contains(t, out.CombinedOutput(), colorize.StripColorCodes(locale.Tr("update_available", constants.Version, "1.2.3-456")), "Should print an update message")
+func (cm *configMock) GetString(string) string {
+	return ""
 }
 
-func TestPrintUpdateMessageEmpty(t *testing.T) {
-	setup(t, false)
-
-	out := outputhelper.NewCatcher()
-	PrintUpdateMessage(configPath, out)
-
-	assert.Empty(t, out.ErrorOutput(), "Should not print an update message because the version is not locked")
-}
-
-func createUpdater() *Updater {
-	return &Updater{
-		CurrentVersion: "1.2",
-		APIURL:         constants.APIUpdateURL,
-		CmdName:        constants.CommandName, // app name
-	}
-}
-
-type testReadCloser struct {
-	buffer *bytes.Buffer
-}
-
-func newTestReaderCloser(payload string) io.ReadCloser {
-	return &testReadCloser{buffer: bytes.NewBufferString(payload)}
-}
-
-func (trc *testReadCloser) Read(p []byte) (n int, err error) {
-	return trc.buffer.Read(p)
-}
-
-func (trc *testReadCloser) Close() error {
+func (cm *configMock) Set(string, interface{}) error {
 	return nil
+}
+
+func TestCheckerCheckFor(t *testing.T) {
+	tests := []struct {
+		Name           string
+		MockChannel    string
+		MockVersion    string
+		MockTag        string
+		CheckChannel   string
+		CheckVersion   string
+		ExpectedResult *AvailableUpdate
+	}{
+		{
+			Name:        "same-version",
+			MockChannel: "master", MockVersion: "1.2.3",
+			CheckChannel: "", CheckVersion: "",
+			ExpectedResult: nil,
+		},
+		{
+			Name:        "updated-version",
+			MockChannel: "master", MockVersion: "2.3.4",
+			CheckChannel: "", CheckVersion: "",
+			ExpectedResult: mockUpdate("master", "2.3.4", ""),
+		},
+		{
+			Name:        "check-different-channel",
+			MockChannel: "release", MockVersion: "1.2.3", MockTag: "experiment",
+			CheckChannel: "release", CheckVersion: "",
+			ExpectedResult: mockUpdate("release", "1.2.3", "experiment"),
+		},
+		{
+			Name:        "specific-version",
+			MockChannel: "master", MockVersion: "0.1.2",
+			CheckChannel: "master", CheckVersion: "0.1.2",
+			ExpectedResult: mockUpdate("master", "0.1.2", ""),
+		},
+		{
+			Name:        "check-same-version",
+			MockChannel: "master", MockVersion: "1.2.3",
+			CheckChannel: "master", CheckVersion: "1.2.3",
+			ExpectedResult: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
+			check := NewChecker(&configMock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
+			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
+			require.NoError(t, err)
+			if res != nil {
+				res.url = ""
+			}
+			assert.Equal(t, tt.ExpectedResult, res)
+		})
+	}
 }

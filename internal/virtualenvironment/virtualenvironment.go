@@ -2,6 +2,7 @@ package virtualenvironment
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -28,13 +29,13 @@ func New(runtime *runtime.Runtime) *VirtualEnvironment {
 }
 
 // GetEnv returns a map of the cumulative environment variables for all active virtual environments
-func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string]string, error) {
+func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir string) (map[string]string, error) {
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
 	if v.runtime != runtime.DisabledRuntime {
 		var err error
-		envMap, err = v.runtime.Environ(inherit, projectDir)
+		envMap, err = v.runtime.Env(inherit, useExecutors)
 		if err != nil {
 			return envMap, err
 		}
@@ -50,8 +51,8 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 			return envMap, err
 		}
 		for _, constant := range pj.Constants() {
-			var err error
-			envMap[constant.Name()], err = constant.Value()
+			v, err := constant.Value()
+			envMap[constant.Name()] = strings.Replace(v, "\n", `\n`, -1)
 			if err != nil {
 				return nil, locale.WrapError(err, "err_venv_constant_val", "Could not retrieve value for constant: `{{.V0}}`.", constant.Name())
 			}
@@ -59,7 +60,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, projectDir string) (map[string
 	}
 
 	if inherit {
-		return inheritEnv(envMap), nil
+		envMap = inheritEnv(envMap)
 	}
 
 	return envMap, nil

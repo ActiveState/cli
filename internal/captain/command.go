@@ -12,25 +12,41 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/gobuffalo/packr"
-	"github.com/rollbar/rollbar-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/output/txtstyle"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 )
+
+// appEventPrefix is used for all executables except for the State Tool itself.
+var appEventPrefix string = func() string {
+	execName := osutils.ExecutableName()
+	if execName == constants.CommandName {
+		return ""
+	}
+	return execName + " "
+}()
 
 var cobraMapping map[*cobra.Command]*Command = make(map[*cobra.Command]*Command)
 
 type cobraCommander interface {
 	GetCobraCmd() *cobra.Command
+}
+
+type primer interface {
+	Output() output.Outputer
+	Analytics() analytics.Dispatcher
 }
 
 type ExecuteFunc func(cmd *Command, args []string) error
@@ -77,11 +93,11 @@ type Command struct {
 
 	skipChecks bool
 
-	out output.Outputer
-	cfg analytics.Configurable
+	out       output.Outputer
+	analytics analytics.Dispatcher
 }
 
-func NewCommand(name, title, description string, out output.Outputer, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -99,8 +115,8 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 		arguments: args,
 		flags:     flags,
 		commands:  make([]*Command, 0),
-		out:       out,
-		cfg:       cfg,
+		out:       prime.Output(),
+		analytics: prime.Analytics(),
 	}
 
 	short := description
@@ -121,7 +137,7 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 	}
 
 	if err := cmd.setFlags(flags); err != nil {
-		panic(errs.Join(err, "\n").Error())
+		panic(errs.JoinMessage(err))
 	}
 
 	cmd.cobra.SetUsageFunc(func(c *cobra.Command) error {
@@ -141,7 +157,7 @@ func NewCommand(name, title, description string, out output.Outputer, cfg analyt
 // PPM Shim.  Differences to NewCommand() are:
 // - the entrypoint is hidden in the help text
 // - calling the help for a subcommand will execute this subcommand
-func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
+func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
@@ -157,7 +173,8 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 		execute:   execute,
 		arguments: args,
 		flags:     flags,
-		cfg:       cfg,
+		out:       prime.Output(),
+		analytics: prime.Analytics(),
 	}
 
 	cmd.cobra = &cobra.Command{
@@ -185,10 +202,9 @@ func NewHiddenShimCommand(name string, cfg analytics.Configurable, flags []*Flag
 
 // NewShimCommand is a very specialized function that is used to support sub-commands for a hidden shim command.
 // It has only a name a description and function to execute.  All flags and arguments are ignored.
-func NewShimCommand(name, description string, cfg analytics.Configurable, execute ExecuteFunc) *Command {
+func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 	cmd := &Command{
 		execute: execute,
-		cfg:     cfg,
 	}
 
 	short := description
@@ -228,6 +244,7 @@ func (c *Command) ShortDescription() string {
 }
 
 func (c *Command) Execute(args []string) error {
+	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
@@ -306,11 +323,14 @@ func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
 
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
+		defer profile.Measure("captain:intercepter", time.Now())
 		for i := len(c.interceptChain) - 1; i >= 0; i-- {
 			if c.interceptChain[i] == nil {
 				continue
 			}
+			start := time.Now()
 			fn = c.interceptChain[i](fn)
+			profile.Measure(fmt.Sprintf("captain:intercepter:%d", i), start)
 		}
 		return fn
 	}
@@ -479,16 +499,18 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	analytics.SetDeferred(c.cfg, c.deferAnalytics)
+	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 
-	outputFlag := cobraCmd.Flag("output")
-	if outputFlag != nil && outputFlag.Changed {
-		analytics.CustomDimensions.SetOutput(outputFlag.Value.String())
-	}
 	subCommandString := c.UseFull()
+	logging.CurrentCmd = appEventPrefix+subCommandString
 
 	// Send  GA events unless they are handled in the runners...
-	analytics.Event(analytics.CatRunCmd, subCommandString)
+	if c.analytics != nil {
+		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
+			c.analytics.Event(anaConsts.CatShim, shim)
+		}
+	}
 
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
@@ -516,7 +538,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.out != nil && c.title != "" {
-		c.out.Notice(txtstyle.NewTitle(c.title))
+		c.out.Notice(output.Title(c.title))
 	}
 
 	intercept := c.interceptFunc()
@@ -528,6 +550,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer sighandler.Pop()
 
 	err := as.WaitForFunc(func() error {
+		defer profile.Measure("captain:cmd:execute", time.Now())
 		return execute(c, args)
 	})
 
@@ -535,30 +558,21 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, "interrupt")
+		if c.analytics != nil {
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
+		}
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
-		analytics.EventWithLabel(analytics.CatCommandExit, subCommandString, strconv.Itoa(exitCode))
+		if c.analytics != nil {
+			if err != nil && (subCommandString == "install" || subCommandString == "activate") {
+				// This is a temporary hack; proper implementation: https://activestatef.atlassian.net/browse/DX-495
+				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, errs.JoinMessage(err))
+			}
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
+		}
 	}
-	waitForAllEvents(time.Second * 1)
 
 	return err
-}
-
-func waitForAllEvents(t time.Duration) {
-	wg := make(chan struct{})
-	go func() {
-		analytics.Wait()
-		rollbar.Wait()
-		close(wg)
-	}()
-
-	select {
-	case <-time.After(t):
-		return
-	case <-wg:
-		return
-	}
 }
 
 func (c *Command) runFlags(persistOnly bool) {

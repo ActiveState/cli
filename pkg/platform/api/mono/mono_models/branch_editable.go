@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -58,7 +59,6 @@ func (m *BranchEditable) Validate(formats strfmt.Registry) error {
 }
 
 func (m *BranchEditable) validateCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.CommitID) { // not required
 		return nil
 	}
@@ -96,14 +96,13 @@ const (
 
 // prop value enum
 func (m *BranchEditable) validateTrackingTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, branchEditableTypeTrackingTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, branchEditableTypeTrackingTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *BranchEditable) validateTrackingType(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.TrackingType) { // not required
 		return nil
 	}
@@ -117,7 +116,6 @@ func (m *BranchEditable) validateTrackingType(formats strfmt.Registry) error {
 }
 
 func (m *BranchEditable) validateTracks(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Tracks) { // not required
 		return nil
 	}
@@ -126,6 +124,11 @@ func (m *BranchEditable) validateTracks(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this branch editable based on context it is used
+func (m *BranchEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

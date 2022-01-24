@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -14,6 +16,18 @@ import (
 //
 // swagger:model OrganizationMutationEditable
 type OrganizationMutationEditable struct {
+
+	// set the number of active runtimes to a specific value
+	ActiveRuntimes int64 `json:"activeRuntimes,omitempty"`
+
+	// add or subtract active runtimes
+	ActiveRuntimesDelta int64 `json:"activeRuntimesDelta,omitempty"`
+
+	// set the active runtimes override to a specific value
+	ActiveRuntimesOverride int64 `json:"activeRuntimesOverride,omitempty"`
+
+	// add or subtract from the active runtimes override
+	ActiveRuntimesOverrideDelta int64 `json:"activeRuntimesOverrideDelta,omitempty"`
 
 	// set the next billing date to a specific value
 	BillingDate string `json:"billingDate,omitempty"`
@@ -51,6 +65,18 @@ type OrganizationMutationEditable struct {
 	// indicated whether customer org is managed by a reseller
 	ResellerManaged *bool `json:"resellerManaged,omitempty"`
 
+	// set the number of static runtimes to a specific value
+	StaticRuntimes int64 `json:"staticRuntimes,omitempty"`
+
+	// add or subtract static runtimes
+	StaticRuntimesDelta int64 `json:"staticRuntimesDelta,omitempty"`
+
+	// set the static runtimes override to a specific value
+	StaticRuntimesOverride int64 `json:"staticRuntimesOverride,omitempty"`
+
+	// add or subtract from the static runtimes override
+	StaticRuntimesOverrideDelta int64 `json:"staticRuntimesOverrideDelta,omitempty"`
+
 	// Invoiced subscription ID newly associated with the org as of this mutation
 	SubscriptionID string `json:"subscriptionID,omitempty"`
 
@@ -63,12 +89,17 @@ type OrganizationMutationEditable struct {
 	// set the number of users to a specific value
 	Users int64 `json:"users,omitempty"`
 
-	// add or substract users
+	// add or subtract users
 	UsersDelta int64 `json:"usersDelta,omitempty"`
 }
 
 // Validate validates this organization mutation editable
 func (m *OrganizationMutationEditable) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this organization mutation editable based on context it is used
+func (m *OrganizationMutationEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

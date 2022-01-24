@@ -7,11 +7,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -26,7 +29,15 @@ import (
 
 var (
 	ErrCommitCountUnknowable = errs.New("Commit count is unknowable")
+
+	ErrMergeFastForward = errs.New("No merge required")
+
+	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
 )
+
+type ErrOrderAuth struct{ *locale.LocalizedError }
+
+type ErrUpdateBranchAuth struct{ *locale.LocalizedError }
 
 type ProjectInfo interface {
 	Owner() string
@@ -59,16 +70,19 @@ const (
 	NamespaceLanguageMatch = `^language$`
 
 	// NamespacePackageMatch is the namespace used for language package requirements
-	NamespacePackageMatch = `^language\/\w+$`
+	NamespacePackageMatch = `^language\/(\w+)$`
 
 	// NamespaceBundlesMatch is the namespace used for bundle package requirements
-	NamespaceBundlesMatch = `^bundles\/\w+$`
+	NamespaceBundlesMatch = `^bundles\/(\w+)$`
 
 	// NamespacePrePlatformMatch is the namespace used for pre-platform bits
 	NamespacePrePlatformMatch = `^pre-platform-installer$`
 
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
+
+	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
+	NamespaceSharedMatch = `^shared$`
 )
 
 type TrackingType string
@@ -115,6 +129,7 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
 	NamespaceLanguage = NamespaceType{"language", ""}
 	NamespacePlatform = NamespaceType{"platform", ""}
+	NamespaceBlank    = NamespaceType{"", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -129,6 +144,10 @@ func (t NamespaceType) Prefix() string {
 type Namespace struct {
 	nsType NamespaceType
 	value  string
+}
+
+func (n Namespace) IsValid() bool {
+	return n.nsType.name != "" && n.nsType != NamespaceBlank && n.value != ""
 }
 
 func (n Namespace) Type() NamespaceType {
@@ -151,6 +170,10 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
+func NewBlankNamespace() Namespace {
+	return Namespace{NamespaceBlank, ""}
+}
+
 // NewNamespaceBundle creates a new bundles namespace
 func NewNamespaceBundle(language string) Namespace {
 	return Namespace{NamespaceBundle, fmt.Sprintf("bundles/%s", language)}
@@ -164,6 +187,33 @@ func NewNamespaceLanguage() Namespace {
 // NewNamespacePlatform provides the base platform namespace.
 func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
+}
+
+func LanguageFromNamespace(ns string) string {
+	values := strings.Split(ns, "/")
+	if len(values) != 2 {
+		return ""
+	}
+	return values[1]
+}
+
+// FilterSupportedIngredients filters a list of ingredients, returning only those that are currently supported (such that they can be built) by the Platform
+func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients []*IngredientAndVersion) ([]*IngredientAndVersion, error) {
+	var res []*IngredientAndVersion
+
+	for _, i := range ingredients {
+		language := LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+
+		for _, l := range supported {
+			if l.Name != language {
+				continue
+			}
+			res = append(res, i)
+			break
+		}
+	}
+
+	return res, nil
 }
 
 // BranchCommitID returns the latest commit id by owner and project names. It
@@ -214,7 +264,8 @@ func commitHistory(commitID strfmt.UUID) ([]*mono_models.Commit, error) {
 			return commits, err
 		}
 		commits = append(commits, payload.Commits...)
-		cont = payload.TotalCommits > (offset + limit)
+		offset += limit
+		cont = payload.TotalCommits > offset
 	}
 
 	return commits, nil
@@ -229,7 +280,7 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 
 	var res *vcsClient.GetCommitHistoryOK
 	var err error
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		res, err = authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
 	} else {
 		res, err = mono.New().VersionControl.GetCommitHistory(params, nil)
@@ -239,6 +290,59 @@ func CommitHistoryPaged(commitID strfmt.UUID, offset, limit int64) (*mono_models
 	}
 
 	return res.Payload, nil
+}
+
+// CommonParent returns the first commit id which both provided commit id
+// histories have in common.
+func CommonParent(commit1, commit2 *strfmt.UUID) (*strfmt.UUID, error) {
+	if commit1 == nil || commit2 == nil {
+		return nil, nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1, nil
+	}
+
+	history1, err := CommitHistoryFromID(*commit1)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit1.String())
+	}
+
+	history2, err := CommitHistoryFromID(*commit2)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get commit history for %s", commit2.String())
+	}
+
+	return commonParentWithHistory(commit1, commit2, history1, history2), nil
+}
+
+func commonParentWithHistory(commit1, commit2 *strfmt.UUID, history1, history2 []*mono_models.Commit) *strfmt.UUID {
+	if commit1 == nil || commit2 == nil {
+		return nil
+	}
+
+	if *commit1 == *commit2 {
+		return commit1
+	}
+
+	for _, c := range history1 {
+		if c.CommitID == *commit2 {
+			return commit2 // commit1 history contains commit2
+		}
+		for _, c2 := range history2 {
+			if c.CommitID == c2.CommitID {
+				return &c.CommitID // commit1 and commit2 have a common parent
+			}
+		}
+	}
+
+	for _, c2 := range history2 {
+		if c2.CommitID == *commit1 {
+			return commit1 // commit2 history contains commit1
+		}
+	}
+
+	return nil
 }
 
 // CommitsBehind compares the provided commit id with the latest commit
@@ -259,7 +363,7 @@ func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
 
 	params := vcsClient.NewGetCommitHistoryParams()
 	params.SetCommitID(latestCID)
-	res, err := authentication.Client().VersionControl.GetCommitHistory(params, authentication.ClientAuth())
+	res, err := mono.Get().VersionControl.GetCommitHistory(params, nil)
 	if err != nil {
 		return 0, locale.WrapError(err, "err_get_commit_history", "", err.Error())
 	}
@@ -272,14 +376,15 @@ func CommitsBehind(latestCID, currentCommitID strfmt.UUID) (int, error) {
 type Changeset = []*mono_models.CommitChangeEditable
 
 // AddChangeset creates a new commit with multiple changes as provided. This is lower level than CommitChangeset.
-func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID string, changeset Changeset) (*mono_models.Commit, error) {
+func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Changeset) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 
 	commit := &mono_models.CommitEditable{
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
-		AnonID:         anonymousID,
+		AnonID:         machineid.UniqID(),
+		UniqueDeviceID: uniqid.Text(),
 	}
 
 	params.SetCommit(commit)
@@ -293,7 +398,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, anonymousID 
 }
 
 // AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string, anonymousID string) (*mono_models.Commit, error) {
+func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, error) {
 	changeset := []*mono_models.CommitChangeEditable{
 		{
 			Operation:         string(operation),
@@ -303,7 +408,7 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 		},
 	}
 
-	return AddChangeset(parentCommitID, commitMessage, anonymousID, changeset)
+	return AddChangeset(parentCommitID, commitMessage, changeset)
 }
 
 func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
@@ -354,12 +459,7 @@ func updateBranch(branchID strfmt.UUID, changeset *mono_models.BranchEditable) e
 	_, err := authentication.Client().VersionControl.UpdateBranch(params, authentication.ClientAuth())
 	if err != nil {
 		if _, ok := err.(*version_control.UpdateBranchForbidden); ok {
-			err = locale.WrapError(
-				err,
-				"err_update_branch_permissions",
-				"You do not have permission to modify the requirements for this project. You will either need to be invited to the project or you can fork it by running [ACTIONABLE]state fork <project namespace>[/RESET].",
-			)
-			return errs.AddTips(err, "Run [ACTIONABLE]state fork <project namespace>[/RESET] to make changes to this project")
+			return &ErrUpdateBranchAuth{locale.NewInputError("err_branch_update_auth", "Branch update failed with authentication error")}
 		}
 		return locale.NewError("err_update_branch", "", api.ErrorMessageFromPayload(err))
 	}
@@ -379,17 +479,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 }
 
 // CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName, packageNamespace, packageVersion string, anonymousID string) (strfmt.UUID, error) {
-	var commitID strfmt.UUID
-	languages, err := FetchLanguagesForCommit(parentCommitID)
-	if err != nil {
-		return commitID, err
-	}
-
-	if len(languages) == 0 {
-		return commitID, locale.NewError("err_project_no_languages")
-	}
-
+func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string) (strfmt.UUID, error) {
 	var message string
 	switch operation {
 	case OperationAdded:
@@ -400,18 +490,13 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName,
 		message = "commit_message_removed_package"
 	}
 
-	namespace := NewNamespacePackage(languages[0].Name)
-	if strings.HasPrefix(packageNamespace, NamespaceBundle.Prefix()) {
-		namespace = NewNamespaceBundle(languages[0].Name)
-	}
-
 	commit, err := AddCommit(
 		parentCommitID, locale.Tr(message, packageName, packageVersion),
 		operation, namespace,
-		packageName, packageVersion, anonymousID,
+		packageName, packageVersion,
 	)
 	if err != nil {
-		return commitID, err
+		return "", err
 	}
 	return commit.CommitID, nil
 }
@@ -441,7 +526,7 @@ func UpdateProjectBranchCommitWithModel(pjm *mono_models.Project, branchName str
 }
 
 // CommitChangeset commits multiple changes in one commit
-func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID string, changeset Changeset) (strfmt.UUID, error) {
+func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, changeset Changeset) (strfmt.UUID, error) {
 	var commitID strfmt.UUID
 	languages, err := FetchLanguagesForCommit(parentCommitID)
 	if err != nil {
@@ -452,7 +537,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 		return commitID, locale.NewError("err_project_no_languages")
 	}
 
-	commit, err := AddChangeset(parentCommitID, commitMsg, anonymousID, changeset)
+	commit, err := AddChangeset(parentCommitID, commitMsg, changeset)
 	if err != nil {
 		return commitID, err
 	}
@@ -460,15 +545,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, anonymousID s
 }
 
 // CommitInitial creates a root commit for a new branch
-func CommitInitial(hostPlatform string, lang *language.Supported, langVersion string) (strfmt.UUID, error) {
-	var language string
-	if lang != nil {
-		language = lang.Requirement()
-		if langVersion == "" {
-			langVersion = lang.RecommendedVersion()
-		}
-	}
-
+func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UUID, error) {
 	platformID, err := hostPlatformToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err
@@ -476,11 +553,11 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 
 	var changes []*mono_models.CommitChangeEditable
 
-	if language != "" {
+	if langName != "" {
 		c := &mono_models.CommitChangeEditable{
 			Operation:         string(OperationAdded),
 			Namespace:         NewNamespaceLanguage().String(),
-			Requirement:       language,
+			Requirement:       langName,
 			VersionConstraint: langVersion,
 		}
 		changes = append(changes, c)
@@ -501,7 +578,7 @@ func CommitInitial(hostPlatform string, lang *language.Supported, langVersion st
 	params := vcsClient.NewAddCommitParams()
 	params.SetCommit(commit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
@@ -595,7 +672,7 @@ func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int
 	platformID := platform.PlatformID.String()
 
 	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "", "")
+	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "")
 	if err != nil {
 		return err
 	}
@@ -637,7 +714,7 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version, "")
+	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
 	if err != nil {
 		return err
 	}
@@ -645,7 +722,7 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
 }
 
-func ChangesetFromRequirements(op Operation, reqs Checkpoint) Changeset {
+func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
 	var changeset Changeset
 
 	for _, req := range reqs {
@@ -670,14 +747,21 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 
 	var res *vcsClient.GetOrderOK
 	var err error
-	if auth.Get().Authenticated() {
+	if auth.LegacyGet().Authenticated() {
 		res, err = mono.New().VersionControl.GetOrder(params, authentication.ClientAuth())
+		if err != nil {
+			return nil, errors.New(api.ErrorMessageFromPayload(err))
+		}
 	} else {
 		// Allow activation of public projects if user is not authenticated
 		res, err = mono.New().VersionControl.GetOrder(params, nil)
-	}
-	if err != nil {
-		return nil, errors.New(api.ErrorMessageFromPayload(err))
+		if err != nil {
+			code := api.ErrorCode(err)
+			if code == 401 || code == 403 {
+				return nil, &ErrOrderAuth{locale.NewInputError("err_order_auth", "Fetch order failed with authentication error")}
+			}
+			return nil, errors.New(api.ErrorMessageFromPayload(err))
+		}
 	}
 
 	return res.Payload, err
@@ -755,7 +839,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	params.SetCommitToID(to)
 
 	client := mono.New()
-	if authentication.Get().Authenticated() {
+	if authentication.LegacyGet().Authenticated() {
 		client = authentication.Client()
 	}
 	res, err := client.VersionControl.GetRevertCommit(params, authentication.ClientAuth())
@@ -766,33 +850,49 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
-func RevertCommit(pj ProjectInfo, to strfmt.UUID) error {
-	revertCommit, err := GetRevertCommit(pj.CommitUUID(), to)
+func RevertCommit(from strfmt.UUID, to strfmt.UUID) (*mono_models.Commit, error) {
+	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return addCommit, nil
+}
 
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.MergeStrategies, error) {
+	params := vcsClient.NewMergeCommitsParams()
+	params.SetCommitReceivingChanges(commitReceiving)
+	params.SetCommitWithChanges(commitWithChanges)
+	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+
+	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
 	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
+		if api.ErrorCodeFromPayload(err) == 409 {
+			logging.Debug("Received 409 from MergeCommit: %s", err.Error())
+			return nil, ErrMergeCommitInHistory
+		}
+		return nil, locale.WrapError(err, "err_api_mergecommit", api.ErrorMessageFromPayload(err))
+	}
+	if noContent != nil {
+		return nil, ErrMergeFastForward
 	}
 
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
+	return res.Payload, nil
+}
+
+func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error) {
+	_, err := MergeCommit(commitReceiving, commitWithChanges)
 	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
+		if errors.Is(err, ErrMergeFastForward) || errors.Is(err, ErrMergeCommitInHistory) {
+			return false, nil
+		}
+		return false, err
 	}
-
-	err = UpdateBranchCommit(branch.BranchID, addCommit.CommitID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return true, nil
 }
 
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {

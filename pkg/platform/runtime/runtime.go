@@ -2,29 +2,39 @@ package runtime
 
 import (
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/ActiveState/cli/pkg/project"
+	"golang.org/x/net/context"
 )
 
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
-	model       *model.Model
 	envAccessed bool
+	analytics   analytics.Dispatcher
+	svcm        *model.SvcModel
 }
-
-type Executables []string
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
 var DisabledRuntime = &Runtime{}
@@ -37,39 +47,48 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter) (*Runtime, error) {
-	rt := &Runtime{target: target}
-	rt.model = model.NewDefault()
-
-	var err error
-	if rt.store, err = store.New(target.Dir()); err != nil {
-		return nil, errs.Wrap(err, "Could not create runtime store")
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel) (*Runtime, error) {
+	rt := &Runtime{
+		target:    target,
+		store:     store.New(target.Dir()),
+		analytics: an,
+		svcm:      svcModel,
 	}
 
-	if !rt.store.MatchesCommit(target.CommitUUID()) {
-		return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+	if !rt.store.MarkerIsValid(target.CommitUUID()) {
+		if target.OnlyUseCache() {
+			logging.Debug("Using forced cache")
+		} else {
+			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
 	}
 
 	return rt, nil
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		return DisabledRuntime, nil
 	}
-	analytics.Event(analytics.CatRuntime, analytics.ActRuntimeStart)
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+		Trigger:          p.StrP(target.Trigger().String()),
+		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
+		CommitID:         p.StrP(target.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
+	})
 
-	r, err := newRuntime(target)
+	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		analytics.Event(analytics.CatRuntime, analytics.ActRuntimeCache)
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache)
 	}
 	return r, err
 }
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
+func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...
@@ -78,11 +97,11 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	go func() {
 		defer prod.Close()
 
-		if err := setup.New(r.target, prod).Update(); err != nil {
+		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
-		rt, err := newRuntime(r.target)
+		rt, err := newRuntime(r.target, r.analytics, r.svcm)
 		if err != nil {
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
@@ -97,53 +116,91 @@ func (r *Runtime) Update(msgHandler *events.RuntimeEventHandler) error {
 	}
 
 	// when the msg handler returns, *r and setupErr are updated.
-
-	return setupErr
+	return msgHandler.AddHints(setupErr)
 }
 
-// Environ returns a key-value map of the environment variables that need to be set for this runtime
-// inherit includes environment variables set on the system
-// projectDir is only used for legacy camel builds
-func (r *Runtime) Environ(inherit bool, projectDir string) (map[string]string, error) {
-	if r == DisabledRuntime {
-		return nil, errs.New("Called Environ() on a disabled runtime.")
-	}
-	env, err := r.store.Environ(inherit)
+// Env returns a key-value map of the environment variables that need to be set for this runtime
+// It's different from envDef in that it merges in the current active environment and points the PATH variable to the
+// Executors directory if requested
+func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
+	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
+
+	envDef, err := r.envDef()
 	if !r.envAccessed {
 		if err != nil {
-			analytics.EventWithLabel(analytics.CatRuntime, analytics.ActRuntimeFailure, analytics.LblRtFailEnv)
+			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
 		} else {
-			analytics.Event(analytics.CatRuntime, analytics.ActRuntimeSuccess)
+			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
+			if r.target.Trigger().IndicatesUsage() {
+				r.recordUsage()
+			}
 		}
 		r.envAccessed = true
 	}
-	return injectProjectDir(env, projectDir), err
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab environment definitions")
+	}
+
+	env := envDef.GetEnv(inherit)
+
+	execDir := filepath.Clean(setup.ExecDir(r.target.Dir()))
+	if useExecutors {
+		// Override PATH entry with exec path
+		pathEntries := []string{execDir}
+		if inherit {
+			pathEntries = append(pathEntries, os.Getenv("PATH"))
+		}
+		env["PATH"] = strings.Join(pathEntries, string(os.PathListSeparator))
+	} else {
+		// Ensure we aren't inheriting the executor paths from something like an activated state
+		envdef.FilterPATH(env, execDir, storage.GlobalBinDir())
+	}
+
+	return env, nil
 }
 
-func (r *Runtime) Executables() (Executables, error) {
-	env, err := r.Environ(false, "")
+func (r *Runtime) recordUsage() {
+	dims := &dimensions.Values{
+		Trigger:          p.StrP(r.target.Trigger().String()),
+		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
+		CommitID:         p.StrP(r.target.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
+	}
+	dimsJson, err := dims.Marshal()
+	if err != nil {
+		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
+	}
+	if r.svcm != nil {
+		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	}
+}
+
+func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
+	if r == DisabledRuntime {
+		return nil, errs.New("Called envDef() on a disabled runtime.")
+	}
+	env, err := r.store.EnvDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "store.EnvDef failed")
+	}
+	return env, nil
+}
+
+func (r *Runtime) ExecutablePaths() (envdef.ExecutablePaths, error) {
+	env, err := r.envDef()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
+	return env.ExecutablePaths()
+}
 
-	// Retrieve artifact binary directory
-	var bins []string
-	if p, ok := env["PATH"]; ok {
-		bins = strings.Split(p, string(os.PathListSeparator))
-	}
-
-	exes, err := exeutils.Executables(bins)
+func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
+	env, err := r.envDef()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect executables")
+		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
-
-	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
-	}
-
-	return exes, nil
+	return env.ExecutableDirs()
 }
 
 // Artifacts returns a map of artifact information extracted from the recipe
@@ -154,4 +211,8 @@ func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, 
 	}
 	artifacts := artifact.NewMapFromRecipe(recipe)
 	return artifacts, nil
+}
+
+func IsRuntimeDir(dir string) bool {
+	return store.New(dir).HasMarker()
 }

@@ -53,9 +53,8 @@ func (o *EditOrganizationLimitsReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -64,7 +63,7 @@ func NewEditOrganizationLimitsOK() *EditOrganizationLimitsOK {
 	return &EditOrganizationLimitsOK{}
 }
 
-/*EditOrganizationLimitsOK handles this case with default header values.
+/* EditOrganizationLimitsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +74,6 @@ type EditOrganizationLimitsOK struct {
 func (o *EditOrganizationLimitsOK) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsOK  %+v", 200, o.Payload)
 }
-
 func (o *EditOrganizationLimitsOK) GetPayload() *mono_models.Limits {
 	return o.Payload
 }
@@ -97,7 +95,7 @@ func NewEditOrganizationLimitsBadRequest() *EditOrganizationLimitsBadRequest {
 	return &EditOrganizationLimitsBadRequest{}
 }
 
-/*EditOrganizationLimitsBadRequest handles this case with default header values.
+/* EditOrganizationLimitsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -108,7 +106,6 @@ type EditOrganizationLimitsBadRequest struct {
 func (o *EditOrganizationLimitsBadRequest) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditOrganizationLimitsBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -130,7 +127,7 @@ func NewEditOrganizationLimitsForbidden() *EditOrganizationLimitsForbidden {
 	return &EditOrganizationLimitsForbidden{}
 }
 
-/*EditOrganizationLimitsForbidden handles this case with default header values.
+/* EditOrganizationLimitsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -141,7 +138,6 @@ type EditOrganizationLimitsForbidden struct {
 func (o *EditOrganizationLimitsForbidden) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditOrganizationLimitsForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -163,7 +159,7 @@ func NewEditOrganizationLimitsNotFound() *EditOrganizationLimitsNotFound {
 	return &EditOrganizationLimitsNotFound{}
 }
 
-/*EditOrganizationLimitsNotFound handles this case with default header values.
+/* EditOrganizationLimitsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -174,7 +170,6 @@ type EditOrganizationLimitsNotFound struct {
 func (o *EditOrganizationLimitsNotFound) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditOrganizationLimitsNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -196,7 +191,7 @@ func NewEditOrganizationLimitsInternalServerError() *EditOrganizationLimitsInter
 	return &EditOrganizationLimitsInternalServerError{}
 }
 
-/*EditOrganizationLimitsInternalServerError handles this case with default header values.
+/* EditOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -207,7 +202,6 @@ type EditOrganizationLimitsInternalServerError struct {
 func (o *EditOrganizationLimitsInternalServerError) Error() string {
 	return fmt.Sprintf("[PUT /organizations/{organizationIdentifier}/limits][%d] editOrganizationLimitsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditOrganizationLimitsInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

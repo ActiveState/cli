@@ -6,6 +6,186 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.32.2
+
+### Fixed
+
+* Fixed issue where auto-update could not complete for certain older versions
+
+## 0.32.1
+
+### Fixed
+
+* Fixed issue that could sometimes cause recursion in our logging
+
+## 0.32.0
+
+### Added
+
+* Added PPM and PIP shims to help educate people about the State Tool.
+* Added support for Ruby projects
+
+## 0.31.1
+
+### Fixed
+
+* Fixed issue where a failed solve was reported incorrectly.
+
+## 0.31.0
+
+### Changed
+
+* More progress indicators are now given when sourcing runtimes and installing
+  packages.
+* Package operations are now much faster
+* Binary sizes have been significantly reduced
+* You no longer need to start a new shell when installing the State Tool (
+  provided you're running an interactive session)
+
+## 0.30.7
+
+### Fixed
+
+* Fixed issue where environment would not always be sourced properly
+
+## 0.30.6
+
+### Fixed
+
+* Fixed issue where certain runtime executables could not be resolved
+
+## 0.30.5
+
+### Changed
+
+* Recursion has been disabled while we improve the mechanic for a future version
+
+## 0.30.4
+
+### Fixed
+
+* Fixed recursion issue when running certain State Tool commands
+
+## 0.30.3
+
+### Changed
+
+* Enriched the installer with analytics to allow us to diagnose installation failures
+
+## 0.30.2
+
+### Fixed
+
+* Fixed issue where State Tool sometimes could not identify its service daemon
+
+## 0.30.1
+
+### Fixed
+
+* Fixed issue where our analytics events would send the full executable paths
+
+## 0.30.0
+
+### Added
+
+* New Command: `state learn`. Opens
+  the [State Tool Cheat Sheet](https://platform.activestate.com/state-tool-cheat-sheet)
+  in your browser.
+
+### Changed
+
+* The install and activate user experience have been overhauled to be much more
+  concise and avoid unnecessary prompts.
+* Several performance enhancements have been made. Note that some of these will
+  require at least one more release before they can realise their potential.
+* Running `state update` will now immediately perform the update, rather than
+deferring it to a background process.
+* State Tool should now attempt to use the latest version available for a given
+language, when initializing a project.
+
+### Fixed
+
+* Fixed issue where on macOS the `state` executable would sometimes not be added
+to your PATH.
+* Resolved issue where `state exec` or certain invocations of the language
+  runtime could lead to recursion errors.
+* Fixed issues where sometimes State Tool would say it have a new version
+  available when it didn't.
+
+## 0.29.5
+
+### Fixed
+
+- Fixed race condition in anonymized analytics
+
+## 0.29.4
+
+### Changed
+
+- Improved error reporting to help direct stability improvements
+
+## 0.29.3
+
+### Fixed
+
+- Fixed race condition that could lead to logs being written to stderr
+
+## 0.29.2
+
+### Fixed
+
+- Uninstalling no longer leaves a stale executable
+
+## 0.29.1
+
+### Fixed
+
+- Auto updating from earlier versions no longer results in error
+
+## 0.29.0
+
+### Added
+
+- Package management is now performed only locally, meaning you have
+  to `state push` your changes back to your project when you are ready to save
+  them.
+- Enhanced error reporting when attempting package operations on an out of sync
+  project ([PR #1353](https://github.com/ActiveState/cli/pull/1353))
+- Enhanced error reporting for errors that occur when cloning a project's
+  associated git
+  repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
+- The State Tool now comes with a preview of the ActiveState Desktop
+  application, which facilitates shortcuts to commonly used actions, including
+  activating your projects.
+- You can now switch to specific State Tool versions by
+  running `state update --set-version <version>` ([PR #1385](https://github.com/ActiveState/cli/pull/1385))
+
+### Changed
+
+- Enhanced error reporting for errors that occur when cloning a project's
+  associated git
+  repository ([PR #1351](https://github.com/ActiveState/cli/pull/1351))
+
+### Removed
+
+- We no longer produce 32bit Windows builds of the State Tool
+
+### Fixed
+
+- Removed unwanted output (eg. `%!s(<nil>)`) when running scripts
+  ([PR #1354](https://github.com/ActiveState/cli/pull/1354))
+- Fixed issue where `state clean uninstall` would not remove expected files on
+  Windows ([PR #1349](https://github.com/ActiveState/cli/pull/1349))
+- Fixed a rare case where the configuration file can get corrupted when two processes access it
+  simultaneously.  ([PR #1370] (https://github.com/ActiveState/cli/pull/1370))
+
+## 0.28.1
+
+### Fixed
+
+* Fixed package installs / uninstalls not using the
+  cache ([PR #1331](https://github.com/ActiveState/cli/pull/1331))
+
 ## 0.28.0
 
 ### Changed

@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -19,22 +20,25 @@ import (
 // swagger:model CommitEditable
 type CommitEditable struct {
 
-	// an anonymous id used to help track the creator of headless commits
+	// An anonymous id used to help track the creator of headless commits.
 	AnonID string `json:"anonID,omitempty"`
 
 	// When resolving depdencies, updates made after this time will be ignored.
 	// Format: date-time
 	AtTime *strfmt.DateTime `json:"atTime,omitempty"`
 
-	// what changed in this commit
+	// What changed in this commit.
 	Changeset []*CommitChangeEditable `json:"changeset"`
 
-	// A message that describes what was changed in this commit
+	// A message that describes what was changed in this commit.
 	Message string `json:"message,omitempty"`
 
 	// The parent commit ID that this commit originates from.
 	// Format: uuid
 	ParentCommitID strfmt.UUID `json:"parentCommitID,omitempty"`
+
+	// An id populated by the state tool.
+	UniqueDeviceID string `json:"uniqueDeviceID,omitempty"`
 }
 
 // Validate validates this commit editable
@@ -60,7 +64,6 @@ func (m *CommitEditable) Validate(formats strfmt.Registry) error {
 }
 
 func (m *CommitEditable) validateAtTime(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.AtTime) { // not required
 		return nil
 	}
@@ -73,7 +76,6 @@ func (m *CommitEditable) validateAtTime(formats strfmt.Registry) error {
 }
 
 func (m *CommitEditable) validateChangeset(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Changeset) { // not required
 		return nil
 	}
@@ -98,13 +100,44 @@ func (m *CommitEditable) validateChangeset(formats strfmt.Registry) error {
 }
 
 func (m *CommitEditable) validateParentCommitID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ParentCommitID) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("parentCommitID", "body", "uuid", m.ParentCommitID.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this commit editable based on the context it is used
+func (m *CommitEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateChangeset(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CommitEditable) contextValidateChangeset(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Changeset); i++ {
+
+		if m.Changeset[i] != nil {
+			if err := m.Changeset[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("changeset" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

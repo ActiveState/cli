@@ -16,61 +16,78 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewAddBranchParams creates a new AddBranchParams object
-// with the default values initialized.
+// NewAddBranchParams creates a new AddBranchParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewAddBranchParams() *AddBranchParams {
-	var ()
 	return &AddBranchParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewAddBranchParamsWithTimeout creates a new AddBranchParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewAddBranchParamsWithTimeout(timeout time.Duration) *AddBranchParams {
-	var ()
 	return &AddBranchParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewAddBranchParamsWithContext creates a new AddBranchParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewAddBranchParamsWithContext(ctx context.Context) *AddBranchParams {
-	var ()
 	return &AddBranchParams{
-
 		Context: ctx,
 	}
 }
 
 // NewAddBranchParamsWithHTTPClient creates a new AddBranchParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewAddBranchParamsWithHTTPClient(client *http.Client) *AddBranchParams {
-	var ()
 	return &AddBranchParams{
 		HTTPClient: client,
 	}
 }
 
-/*AddBranchParams contains all the parameters to send to the API endpoint
-for the add branch operation typically these are written to a http.Request
+/* AddBranchParams contains all the parameters to send to the API endpoint
+   for the add branch operation.
+
+   Typically these are written to a http.Request.
 */
 type AddBranchParams struct {
 
-	/*Body*/
+	// Body.
 	Body AddBranchBody
-	/*ProjectID
-	  project ID
 
+	/* ProjectID.
+
+	   project ID
+
+	   Format: uuid
 	*/
 	ProjectID strfmt.UUID
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the add branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBranchParams) WithDefaults() *AddBranchParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the add branch params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *AddBranchParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the add branch params
@@ -135,7 +152,6 @@ func (o *AddBranchParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Body); err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package projectfile
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -244,16 +243,18 @@ func TestSave(t *testing.T) {
 	tmpfile, err := ioutil.TempFile("", "test")
 	require.NoError(t, err, errs.Join(err, "\n").Error())
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	project.path = tmpfile.Name()
 	project.Save(cfg)
 
 	stat, err := tmpfile.Stat()
 	assert.NoError(t, err, "Should be able to stat file")
 
-	cfg, err = config.Get()
+	cfg2, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg2.Close()) }()
 
 	projectURL := project.Project
 	project.Project = "thisisnotatallaprojectURL"
@@ -308,8 +309,9 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")
@@ -371,41 +373,6 @@ func TestParseVersionInfo(t *testing.T) {
 	versionInfo, err = ParseVersionInfo(filepath.Join(path, constants.ConfigFileName))
 	require.NoError(t, err)
 	assert.Nil(t, versionInfo, "No version exists, because no project file exists")
-}
-
-func TestRemoveTemporaryLanguage(t *testing.T) {
-	languageBlock := (`languages: # some comment
-   name: abc
-   version:
-`)
-
-	oneLineLanguageBlock := `languages: { "name": "abc", "version": "" }
-`
-
-	exampleYaml := (`junk: xgarbage
-%smorejunk: moregarbage`)
-
-	atEndOfFile := `junk: xgarbage
-%s`
-
-	cases := []struct {
-		name     string
-		data     string
-		expected string
-	}{
-		{"block", fmt.Sprintf(exampleYaml, languageBlock), fmt.Sprintf(exampleYaml, "")},
-		{"one-liner", fmt.Sprintf(exampleYaml, oneLineLanguageBlock), fmt.Sprintf(exampleYaml, "")},
-		{"atEOF", fmt.Sprintf(atEndOfFile, oneLineLanguageBlock), fmt.Sprintf(atEndOfFile, "")},
-		{"atEOF/one-liner", fmt.Sprintf(atEndOfFile, oneLineLanguageBlock), fmt.Sprintf(atEndOfFile, "")},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(tt *testing.T) {
-			res, err := removeTemporaryLanguage([]byte(c.data))
-			require.NoError(tt, err)
-			assert.Equal(tt, c.expected, string(res))
-		})
-	}
 }
 
 func TestNewProjectfile(t *testing.T) {

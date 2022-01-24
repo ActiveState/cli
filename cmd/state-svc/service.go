@@ -1,32 +1,36 @@
 package main
 
 import (
+	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
+	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/spf13/cast"
 )
 
 type service struct {
-	cfg    *config.Instance
-	server *server.Server
+	cfg      *config.Instance
+	an       *anaSvc.Client
+	shutdown context.CancelFunc
+	server   *server.Server
 }
 
-func NewService(cfg *config.Instance) *service {
-	return &service{cfg: cfg}
+func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
+	return &service{cfg: cfg, an: an, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New()
+	s.server, err = server.New(s.cfg, s.an, s.shutdown)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -34,6 +38,8 @@ func (s *service) Start() error {
 	if err := s.cfg.Set(constants.SvcConfigPort, s.server.Port()); err != nil {
 		return errs.Wrap(err, "Could not save config")
 	}
+
+	logging.Debug("Server starting on port: %d", s.server.Port())
 
 	if err := s.server.Start(); err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
@@ -51,7 +57,19 @@ func (s *service) Stop() error {
 	}
 
 	if err := s.server.Shutdown(); err != nil {
-		fmt.Fprintf(os.Stderr, "Closing server failed: %v", err)
+		return errs.Wrap(err, "Failed to stop server")
 	}
+
+	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(setPidI interface{}) (interface{}, error) {
+		setPid := cast.ToInt(setPidI)
+		if setPid != os.Getpid() {
+			logging.Warning("PID in configuration file does not match PID of server shutting down")
+		}
+		return "", nil
+	})
+	if err != nil {
+		logging.Warning("Could not unset State Service PID in configuration file")
+	}
+
 	return nil
 }

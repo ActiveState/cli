@@ -52,6 +52,10 @@ type Project struct {
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
 
+func (p *Project) SetCommit(commitID string) error {
+	return p.Source().SetCommit(commitID, p.IsHeadless())
+}
+
 // Platforms gets platforms
 func (p *Project) Platforms() []*Platform {
 	platforms := []*Platform{}
@@ -144,12 +148,23 @@ func (p *Project) Events() []*Event {
 	if err != nil {
 		logging.Warning("Could not filter unconstrained events: %v", err)
 	}
+
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
 		events = append(events, &Event{e, p})
 	}
 	return events
+}
+
+// EventByName returns a reference to a projectfile.Script with a given name.
+func (p *Project) EventByName(name string) *Event {
+	for _, event := range p.Events() {
+		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+			return event
+		}
+	}
+	return nil
 }
 
 // Scripts returns a reference to projectfile.Scripts
@@ -219,6 +234,11 @@ func (p *Project) BranchName() string {
 	return p.projectfile.BranchName()
 }
 
+// Path returns the project path
+func (p *Project) Path() string {
+	return p.projectfile.Path()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -229,7 +249,7 @@ func (p *Project) NormalizedName() string {
 	return strings.ToLower(normalizeRx.ReplaceAllString(p.Name(), ""))
 }
 
-// Version returns project version
+// Version returns the locked state tool version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
 // VersionBranch returns branch that we're pinned to (useless unless version is also set)
@@ -245,6 +265,11 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+}
+
+// NamespaceString is a convenience function to make interfaces simpler
+func (p *Project) NamespaceString() string {
+	return p.Namespace().String()
 }
 
 // Environments returns project environment

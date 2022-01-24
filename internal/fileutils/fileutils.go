@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -16,11 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iafan/cwalk"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/gofrs/flock"
 )
 
 // nullByte represents the null-terminator byte
@@ -52,16 +52,12 @@ type includeFunc func(path string, contents []byte) (include bool)
 
 // ReplaceAll replaces all instances of search text with replacement text in a
 // file, which may be a binary file.
-func ReplaceAll(filename, find string, replace string, include includeFunc) error {
+func ReplaceAll(filename, find, replace string) error {
 	// Read the file's bytes and create find and replace byte arrays for search
 	// and replace.
 	fileBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
-	}
-
-	if !include(filename, fileBytes) {
-		return nil
 	}
 
 	changed, byts, err := replaceInFile(fileBytes, find, replace)
@@ -126,22 +122,6 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
 
 	return !bytes.Equal(replaced, buf), replaced, nil
-}
-
-// ReplaceAllInDirectory walks the given directory and invokes ReplaceAll on each file
-func ReplaceAllInDirectory(path, find string, replace string, include includeFunc) error {
-	err := cwalk.Walk(path, func(subpath string, f os.FileInfo, err error) error {
-		if f.IsDir() {
-			return nil
-		}
-		return ReplaceAll(filepath.Join(path, subpath), find, replace, include)
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // IsSymlink checks if a path is a symlink
@@ -335,6 +315,20 @@ func WriteFile(filePath string, data []byte) error {
 	return nil
 }
 
+func AmendFileLocked(filePath string, data []byte, flag AmendOptions) error {
+	locker := flock.New(filePath + ".lock")
+
+	if err := locker.Lock(); err != nil {
+		return errs.Wrap(err, "Could not acquire file lock")
+	}
+
+	if err := AmendFile(filePath, data, flag); err != nil {
+		return errs.Wrap(err, "Could not write to file")
+	}
+
+	return locker.Unlock()
+}
+
 // AppendToFile appends the data to the file (if it exists) with the given data, if the file doesn't exist
 // it is created and the data is written
 func AppendToFile(filepath string, data []byte) error {
@@ -475,9 +469,9 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 	for _, fileInfo := range fileInfos {
 		subFromPath := filepath.Join(fromPath, fileInfo.Name())
 		subToPath := filepath.Join(toPath, fileInfo.Name())
-		toInfo, err := os.Stat(subToPath)
+		toInfo, err := os.Lstat(subToPath)
 		// if stat returns, the destination path exists (either file or directory)
-		toPathExists := err == nil
+		toPathExists := toInfo != nil && err == nil
 		// handle case where destination exists
 		if toPathExists {
 			if fileInfo.IsDir() != toInfo.IsDir() {
@@ -486,8 +480,30 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 			if fileInfo.Mode() != toInfo.Mode() {
 				logging.Warning(locale.Tr("warn_move_incompatible_modes", "", subFromPath, subToPath))
 			}
+
+			if !toInfo.IsDir() {
+				// If the subToPath file exists, we remove it first - in order to ensure compatibility between platforms:
+				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
+				err = os.Remove(subToPath)
+				if err != nil {
+					logging.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
+				}
+			}
 		}
-		if toPathExists && toInfo.IsDir() {
+
+		// If we are moving to a directory, call function recursively to overwrite and add files in that directory
+		if fileInfo.IsDir() {
+			// create target directories that don't exist yet
+			if !toPathExists {
+				err = Mkdir(subToPath)
+				if err != nil {
+					return locale.WrapError(err, "err_move_create_directory", "Failed to create directory {{.V0}}", subToPath)
+				}
+				err = os.Chmod(subToPath, fileInfo.Mode())
+				if err != nil {
+					return locale.WrapError(err, "err_move_set_dir_permissions", "Failed to set file mode for directory {{.V0}}", subToPath)
+				}
+			}
 			err := MoveAllFilesRecursively(subFromPath, subToPath, cb)
 			if err != nil {
 				return err
@@ -497,12 +513,85 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 			if err != nil {
 				return errs.Wrap(err, "os.Remove %s failed", subFromPath)
 			}
-		} else {
-			err = os.Rename(subFromPath, subToPath)
-			if err != nil {
-				return errs.Wrap(err, "os.Rename %s:%s failed", subFromPath, subToPath)
-			}
+
 			cb(subFromPath, subToPath)
+			continue
+		}
+
+		err = os.Rename(subFromPath, subToPath)
+		if err != nil {
+			var mode fs.FileMode
+			if toPathExists {
+				mode = toInfo.Mode()
+			}
+			return errs.Wrap(err, "os.Rename %s:%s failed (file mode: %#o)", subFromPath, subToPath, mode)
+		}
+		cb(subFromPath, subToPath)
+	}
+	return nil
+}
+
+// CopyAndRenameFiles copies files from fromDir to toDir.
+// If the target file exists already, the source file is first copied next to the target file, and then overwrites the target by renaming the source.
+// This method is more robust and than copying directly, in case the target file is opened or executed.
+func CopyAndRenameFiles(fromPath, toPath string) error {
+	logging.Debug("Copying files from %s to %s", fromPath, toPath)
+
+	if !DirExists(fromPath) {
+		return locale.NewError("err_os_not_a_directory", "", fromPath)
+	} else if !DirExists(toPath) {
+		return locale.NewError("err_os_not_a_directory", "", toPath)
+	}
+
+	// read all child files and dirs
+	files, err := ListDir(fromPath, true)
+	if err != nil {
+		return errs.Wrap(err, "Could not ListDir %s", fromPath)
+	}
+
+	// any found files and dirs
+	for _, file := range files {
+		rpath := file.RelativePath()
+		fromPath := filepath.Join(fromPath, rpath)
+		toPath := filepath.Join(toPath, rpath)
+
+		if file.IsDir() {
+			if err := MkdirUnlessExists(toPath); err != nil {
+				return errs.Wrap(err, "Could not create dir: %s", toPath)
+			}
+			continue
+		}
+
+		finfo, err := file.Info()
+		if err != nil {
+			return errs.Wrap(err, "Could not get file info for %s", file.RelativePath())
+		}
+
+		if TargetExists(toPath) {
+			tmpToPath := fmt.Sprintf("%s.new", toPath)
+			err := CopyFile(fromPath, tmpToPath)
+			if err != nil {
+				return errs.Wrap(err, "failed to copy %s -> %s", fromPath, tmpToPath)
+			}
+			err = os.Chmod(tmpToPath, finfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
+			}
+			err = os.Rename(tmpToPath, toPath)
+			if err != nil {
+				// cleanup
+				_ = os.Remove(tmpToPath)
+				return errs.Wrap(err, "os.Rename %s -> %s failed", tmpToPath, toPath)
+			}
+		} else {
+			err := CopyFile(fromPath, toPath)
+			if err != nil {
+				return errs.Wrap(err, "Copy %s -> %s failed", fromPath, toPath)
+			}
+			err = os.Chmod(toPath, finfo.Mode())
+			if err != nil {
+				return errs.Wrap(err, "failed to set file permissions for %s", toPath)
+			}
 		}
 	}
 	return nil
@@ -839,11 +928,14 @@ func SymlinkTarget(symlink string) (string, error) {
 	return evalDest, nil
 }
 
-// ListDir recursively lists filepaths under the given sourcePath
+// ListDirSimple recursively lists filepaths under the given sourcePath
 // This does not follow symlinks
-func ListDir(sourcePath string, includeDirs bool) []string {
+func ListDirSimple(sourcePath string, includeDirs bool) []string {
 	result := []string{}
-	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+	filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
+		if err != nil {
+			return errs.Wrap(err, "Could not walk path: %s", path)
+		}
 		if includeDirs == false && f.IsDir() {
 			return nil
 		}
@@ -851,6 +943,44 @@ func ListDir(sourcePath string, includeDirs bool) []string {
 		return nil
 	})
 	return result
+}
+
+type DirEntry struct {
+	fs.DirEntry
+	absolutePath string
+	rootPath     string
+}
+
+func (d DirEntry) Path() string {
+	return d.absolutePath
+}
+
+func (d DirEntry) RelativePath() string {
+	// This is a bit awkward, but fs.DirEntry does not give us a relative path to the originally queried dir
+	return strings.TrimPrefix(d.absolutePath, d.rootPath)
+}
+
+// ListDir recursively lists filepaths under the given sourcePath
+// This does not follow symlinks
+func ListDir(sourcePath string, includeDirs bool) ([]DirEntry, error) {
+	result := []DirEntry{}
+	sourcePath = filepath.Clean(sourcePath)
+	if err := filepath.WalkDir(sourcePath, func(path string, f fs.DirEntry, err error) error {
+		if path == sourcePath {
+			return nil // I don't know why WalkDir feels the need to include the very dir I queried..
+		}
+		if err != nil {
+			return errs.Wrap(err, "Could not walk path: %s", path)
+		}
+		if includeDirs == false && f.IsDir() {
+			return nil
+		}
+		result = append(result, DirEntry{f, path, sourcePath + string(filepath.Separator)})
+		return nil
+	}); err != nil {
+		return result, errs.Wrap(err, "Could not walk dir: %s", sourcePath)
+	}
+	return result, nil
 }
 
 // PathInList returns whether the provided path list contains the provided

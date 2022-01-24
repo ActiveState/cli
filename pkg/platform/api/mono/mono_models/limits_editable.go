@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -15,14 +17,20 @@ import (
 // swagger:model LimitsEditable
 type LimitsEditable struct {
 
-	// clear security and compliance override
-	ClearSecurityAndComplianceOverride bool `json:"clearSecurityAndComplianceOverride,omitempty"`
+	// active runtimes limit
+	ActiveRuntimesLimit *int64 `json:"activeRuntimesLimit,omitempty"`
+
+	// active runtimes override
+	ActiveRuntimesOverride *int64 `json:"activeRuntimesOverride,omitempty"`
 
 	// nodes limit
 	NodesLimit *int64 `json:"nodesLimit,omitempty"`
 
-	// security and compliance override
-	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
+	// static runtimes limit
+	StaticRuntimesLimit *int64 `json:"staticRuntimesLimit,omitempty"`
+
+	// static runtimes override
+	StaticRuntimesOverride *int64 `json:"staticRuntimesOverride,omitempty"`
 
 	// users limit
 	UsersLimit *int64 `json:"usersLimit,omitempty"`
@@ -30,6 +38,11 @@ type LimitsEditable struct {
 
 // Validate validates this limits editable
 func (m *LimitsEditable) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this limits editable based on context it is used
+func (m *LimitsEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

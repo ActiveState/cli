@@ -8,43 +8,36 @@ import (
 
 	"github.com/gobuffalo/packr"
 
-	"github.com/ActiveState/cli/cmd/state-tray/pkg/autostart"
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
-func (r *Prepare) prepareOS() error {
+var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
+
+func (r *Prepare) prepareOS() {
 	err := setStateProtocol()
 	if err != nil {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
 	}
 
-	if !rtutils.BuiltViaCI { // disabled while we're still testing this functionality
-		if err := autostart.New().Enable(); err != nil {
-			r.reportError(locale.Tr("err_prepare_autostart", "Could not enable auto-start, error received: {{.V0}}.", err.Error()), err)
-		}
-
-		if err := prepareStartShortcut(); err != nil {
-			r.reportError(locale.Tr("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
-		}
+	if err := r.prepareStartShortcut(); err != nil {
+		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
-
-	return nil
 }
 
-func prepareStartShortcut() error {
-	dir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
-	if err := fileutils.MkdirUnlessExists(dir); err != nil {
-		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", dir)
+func (r *Prepare) prepareStartShortcut() error {
+	if err := fileutils.MkdirUnlessExists(shortcutDir); err != nil {
+		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc, err := shortcut.New(dir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
 	}
@@ -65,7 +58,7 @@ const (
 type createKeyFunc = func(path string) (osutils.RegistryKey, bool, error)
 
 func setStateProtocol() error {
-	isAdmin, err := osutils.IsWindowsAdmin()
+	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Could not check for windows administrator privileges: %v", err)
 	}
@@ -112,4 +105,23 @@ func setStateProtocol() error {
 	}
 
 	return nil
+}
+
+// InstalledPreparedFiles returns the files installed by the state _prepare command
+func InstalledPreparedFiles(cfg autostart.Configurable) []string {
+	var files []string
+	trayInfo := appinfo.TrayApp()
+	name, exec := trayInfo.Name(), trayInfo.Exec()
+
+	as, err := autostart.New(name, exec, cfg).Path()
+	if err != nil {
+		logging.Error("Failed to determine autostart path for removal: %v", err)
+	} else if as != "" {
+		files = append(files, as)
+	}
+	appInfo := appinfo.TrayApp()
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+	files = append(files, filepath.Dir(sc.Path()))
+
+	return files
 }

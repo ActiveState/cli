@@ -6,6 +6,8 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -21,13 +23,6 @@ type ProvidedFeatureAllOf0 struct {
 	// Required: true
 	Feature *string `json:"feature"`
 
-	// If this is true then it means that we assigned a version to this feature ourselves rather than getting it directly from metadata in the source ingredient.
-	IsActivestateVersion *bool `json:"is_activestate_version,omitempty"`
-
-	// Whether the provider of this feature is the default provider. There can only be one default provider per feature namespace, name, and version.
-	// Required: true
-	IsDefaultProvider *bool `json:"is_default_provider"`
-
 	// namespace
 	// Required: true
 	Namespace *string `json:"namespace"`
@@ -38,10 +33,6 @@ func (m *ProvidedFeatureAllOf0) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFeature(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateIsDefaultProvider(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -64,21 +55,17 @@ func (m *ProvidedFeatureAllOf0) validateFeature(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ProvidedFeatureAllOf0) validateIsDefaultProvider(formats strfmt.Registry) error {
-
-	if err := validate.Required("is_default_provider", "body", m.IsDefaultProvider); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *ProvidedFeatureAllOf0) validateNamespace(formats strfmt.Registry) error {
 
 	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this provided feature all of0 based on context it is used
+func (m *ProvidedFeatureAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

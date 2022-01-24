@@ -25,43 +25,48 @@ type Client struct {
 	formats   strfmt.Registry
 }
 
+// ClientOption is the option for Client methods
+type ClientOption func(*runtime.ClientOperation)
+
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter) (*AddEmailOK, error)
+	AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddEmailOK, error)
 
-	AddUser(params *AddUserParams) (*AddUserOK, error)
+	AddUser(params *AddUserParams, opts ...ClientOption) (*AddUserOK, error)
 
-	DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEmailOK, error)
+	DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEmailOK, error)
 
-	DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserOK, error)
+	DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserOK, error)
 
-	EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserOK, error)
+	EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserOK, error)
 
-	GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailVerificationLinkOK, error)
+	GetDomainsByUser(params *GetDomainsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDomainsByUserOK, error)
 
-	GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailsByUserOK, error)
+	GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailVerificationLinkOK, error)
 
-	GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetInvitationByCodeOK, error)
+	GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailsByUserOK, error)
 
-	GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserOK, error)
+	GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationByCodeOK, error)
 
-	GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserByIDOK, error)
+	GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserOK, error)
 
-	ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInvitationsOK, error)
+	GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserByIDOK, error)
 
-	ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter) (*ListUsersOK, error)
+	ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInvitationsOK, error)
 
-	SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchEmailsOK, error)
+	ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListUsersOK, error)
 
-	SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter) (*SearchUsernamesOK, error)
+	SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchEmailsOK, error)
 
-	SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter) (*SendEmailVerificationOK, error)
+	SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchUsernamesOK, error)
 
-	SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter) (*SetPreferredEmailOK, error)
+	SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SendEmailVerificationOK, error)
 
-	UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK, error)
+	SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetPreferredEmailOK, error)
 
-	VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter) (*VerifyEmailOK, error)
+	UniqueUsername(params *UniqueUsernameParams, opts ...ClientOption) (*UniqueUsernameOK, error)
+
+	VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyEmailOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -71,13 +76,12 @@ type ClientService interface {
 
   Create new email
 */
-func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter) (*AddEmailOK, error) {
+func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddEmailOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddEmailParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addEmail",
 		Method:             "POST",
 		PathPattern:        "/users/{username}/emails",
@@ -89,7 +93,12 @@ func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -108,13 +117,12 @@ func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInf
 
   Create a new user
 */
-func (a *Client) AddUser(params *AddUserParams) (*AddUserOK, error) {
+func (a *Client) AddUser(params *AddUserParams, opts ...ClientOption) (*AddUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewAddUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "addUser",
 		Method:             "POST",
 		PathPattern:        "/users",
@@ -125,7 +133,12 @@ func (a *Client) AddUser(params *AddUserParams) (*AddUserOK, error) {
 		Reader:             &AddUserReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +157,12 @@ func (a *Client) AddUser(params *AddUserParams) (*AddUserOK, error) {
 
   Delete email
 */
-func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEmailOK, error) {
+func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEmailOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteEmailParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteEmail",
 		Method:             "DELETE",
 		PathPattern:        "/users/{username}/emails",
@@ -162,7 +174,12 @@ func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -181,13 +198,12 @@ func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientA
 
   Delete a user
 */
-func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteUserOK, error) {
+func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewDeleteUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "deleteUser",
 		Method:             "DELETE",
 		PathPattern:        "/users/{username}",
@@ -199,7 +215,12 @@ func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAut
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -218,13 +239,12 @@ func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAut
 
   Edit a user record
 */
-func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter) (*EditUserOK, error) {
+func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewEditUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "editUser",
 		Method:             "POST",
 		PathPattern:        "/users/{username}",
@@ -236,7 +256,12 @@ func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInf
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -251,17 +276,57 @@ func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInf
 }
 
 /*
+  GetDomainsByUser retrieves a user s verified domains
+
+  Return a list of domains suitable for auto-invite
+*/
+func (a *Client) GetDomainsByUser(params *GetDomainsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDomainsByUserOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetDomainsByUserParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getDomainsByUser",
+		Method:             "GET",
+		PathPattern:        "/users/{username}/domains",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetDomainsByUserReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetDomainsByUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getDomainsByUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   GetEmailVerificationLink gets the verification link for the given unverified email
 
   Returns the link needed to verify ownership of the provided email address, if it exists and is unverified. Only available to superusers.
 */
-func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailVerificationLinkOK, error) {
+func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailVerificationLinkOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetEmailVerificationLinkParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getEmailVerificationLink",
 		Method:             "GET",
 		PathPattern:        "/users/verification/{email}",
@@ -273,7 +338,12 @@ func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -292,13 +362,12 @@ func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams
 
   Return a list of emails matching username
 */
-func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetEmailsByUserOK, error) {
+func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailsByUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetEmailsByUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getEmailsByUser",
 		Method:             "GET",
 		PathPattern:        "/users/{username}/emails",
@@ -310,7 +379,12 @@ func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -329,13 +403,12 @@ func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime
 
   Returns the invitation with the corresponding code
 */
-func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter) (*GetInvitationByCodeOK, error) {
+func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationByCodeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetInvitationByCodeParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getInvitationByCode",
 		Method:             "GET",
 		PathPattern:        "/invitations/code/{code}",
@@ -347,7 +420,12 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -366,13 +444,12 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 
   Return a specific user matching username
 */
-func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserOK, error) {
+func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetUserParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getUser",
 		Method:             "GET",
 		PathPattern:        "/users/{username}",
@@ -384,7 +461,12 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -403,13 +485,12 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 
   Return a specific user matching user ID
 */
-func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter) (*GetUserByIDOK, error) {
+func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserByIDOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewGetUserByIDParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "getUserByID",
 		Method:             "GET",
 		PathPattern:        "/users/id/{userID}",
@@ -421,7 +502,12 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -440,13 +526,12 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 
   Has this email address been invited to any orginzations
 */
-func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInvitationsOK, error) {
+func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInvitationsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListInvitationsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listInvitations",
 		Method:             "GET",
 		PathPattern:        "/invitations/{email}",
@@ -458,7 +543,12 @@ func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -477,13 +567,12 @@ func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime
 
   Retrieve all users from the system that the user has access to
 */
-func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter) (*ListUsersOK, error) {
+func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListUsersOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewListUsersParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "listUsers",
 		Method:             "GET",
 		PathPattern:        "/users",
@@ -495,7 +584,12 @@ func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthI
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -512,13 +606,12 @@ func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthI
 /*
   SearchEmails Search for users by email address, requires superuser
 */
-func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter) (*SearchEmailsOK, error) {
+func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchEmailsOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSearchEmailsParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "searchEmails",
 		Method:             "POST",
 		PathPattern:        "/users/search_emails",
@@ -530,7 +623,12 @@ func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.Clien
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -547,13 +645,12 @@ func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.Clien
 /*
   SearchUsernames Search for users, requires superuser
 */
-func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter) (*SearchUsernamesOK, error) {
+func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchUsernamesOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSearchUsernamesParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "searchUsernames",
 		Method:             "POST",
 		PathPattern:        "/users/search_usernames",
@@ -565,7 +662,12 @@ func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -584,13 +686,12 @@ func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime
 
   Send a verification email to user
 */
-func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter) (*SendEmailVerificationOK, error) {
+func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SendEmailVerificationOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSendEmailVerificationParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "sendEmailVerification",
 		Method:             "POST",
 		PathPattern:        "/users/{username}/emails/{email}/verification/send",
@@ -602,7 +703,12 @@ func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, auth
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -621,13 +727,12 @@ func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, auth
 
   Update preferred email
 */
-func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter) (*SetPreferredEmailOK, error) {
+func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetPreferredEmailOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewSetPreferredEmailParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "setPreferredEmail",
 		Method:             "PATCH",
 		PathPattern:        "/users/{username}/emails/{email}/preferred",
@@ -639,7 +744,12 @@ func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo run
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -658,13 +768,12 @@ func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo run
 
   Is the supplied username already assigned
 */
-func (a *Client) UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK, error) {
+func (a *Client) UniqueUsername(params *UniqueUsernameParams, opts ...ClientOption) (*UniqueUsernameOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewUniqueUsernameParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "uniqueUsername",
 		Method:             "GET",
 		PathPattern:        "/users/uniqueUsername/{username}",
@@ -675,7 +784,12 @@ func (a *Client) UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK
 		Reader:             &UniqueUsernameReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}
@@ -694,13 +808,12 @@ func (a *Client) UniqueUsername(params *UniqueUsernameParams) (*UniqueUsernameOK
 
   Verify the designated email
 */
-func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter) (*VerifyEmailOK, error) {
+func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyEmailOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewVerifyEmailParams()
 	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
+	op := &runtime.ClientOperation{
 		ID:                 "verifyEmail",
 		Method:             "POST",
 		PathPattern:        "/users/{username}/emails/{email}/verification/check",
@@ -712,7 +825,12 @@ func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientA
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
-	})
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
 	if err != nil {
 		return nil, err
 	}

@@ -129,6 +129,24 @@ func (suite *ProjectTestSuite) TestEvents() {
 	}
 }
 
+func (suite *ProjectTestSuite) TestEventByName() {
+	var name string
+	switch runtime.GOOS {
+	case "linux":
+		name = "foo"
+	case "windows":
+		name = "bar"
+	case "darwin":
+		name = "baz"
+	}
+
+	event := suite.project.EventByName(name)
+	suite.Equal(name, event.Name())
+
+	event = suite.project.EventByName("not-there")
+	suite.Nil(event)
+}
+
 func (suite *ProjectTestSuite) TestLanguages() {
 	languages := suite.project.Languages()
 	suite.Equal(2, len(languages), "Should match 2 out of three constrained items")
@@ -278,8 +296,9 @@ func (suite *ProjectTestSuite) TestConstants() {
 func (suite *ProjectTestSuite) TestSecrets() {
 	prj, err := project.GetSafe()
 	suite.NoError(err, "Run without failure")
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	suite.Require().NoError(err)
+	defer func() { suite.Require().NoError(cfg.Close()) }()
 	secrets := prj.Secrets(cfg)
 	suite.Len(secrets, 2)
 

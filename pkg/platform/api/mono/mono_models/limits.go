@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -15,14 +17,14 @@ import (
 // swagger:model Limits
 type Limits struct {
 
+	// active runtimes limit
+	ActiveRuntimesLimit int64 `json:"activeRuntimesLimit,omitempty"`
+
 	// nodes limit
 	NodesLimit int64 `json:"nodesLimit,omitempty"`
 
-	// security and compliance enabled
-	SecurityAndComplianceEnabled bool `json:"securityAndComplianceEnabled,omitempty"`
-
-	// security and compliance override
-	SecurityAndComplianceOverride *bool `json:"securityAndComplianceOverride,omitempty"`
+	// static runtimes limit
+	StaticRuntimesLimit int64 `json:"staticRuntimesLimit,omitempty"`
 
 	// users limit
 	UsersLimit int64 `json:"usersLimit,omitempty"`
@@ -30,6 +32,11 @@ type Limits struct {
 
 // Validate validates this limits
 func (m *Limits) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this limits based on context it is used
+func (m *Limits) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

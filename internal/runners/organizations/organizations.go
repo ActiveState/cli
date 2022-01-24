@@ -61,19 +61,33 @@ func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 	if err != nil {
 		return nil, err
 	}
-	tiersToPrivMap := make(map[string]bool)
+
+	type tierInfo struct {
+		private bool
+		title   string
+	}
+	tiersLookup := make(map[string]tierInfo)
 	for _, t := range tiers {
-		tiersToPrivMap[t.Name] = t.RequiresPayment
+		tiersLookup[t.Name] = tierInfo{
+			private: t.RequiresPayment,
+			title:   t.Description,
+		}
 	}
 
 	orgDatas := make([]orgData, len(orgs))
 	for i, org := range orgs {
-		priv, _ := tiersToPrivMap[org.Tier]
+		var tierPrivate bool
+		tierTitle := "Unknown"
+		t, ok := tiersLookup[org.Tier]
+		if ok {
+			tierPrivate = t.private
+			tierTitle = t.title
+		}
 		orgDatas[i] = orgData{
-			Name:            org.Name,
+			Name:            org.DisplayName,
 			URLName:         org.URLname,
-			Tier:            org.Tier,
-			PrivateProjects: priv,
+			Tier:            tierTitle,
+			PrivateProjects: tierPrivate,
 		}
 	}
 	return orgDatas, nil

@@ -18,9 +18,14 @@ func NewSetup(s *store.Store) *Setup {
 	return &Setup{s}
 }
 
-func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _ store.StoredArtifactMap) error {
-	err := os.RemoveAll(s.store.InstallPath())
-	logging.Error("Error removing previous camel installation: %v", err)
+// DeleteOutdatedArtifacts deletes the entire installation directory, unless alreadyInstalled is not zero, which can happen when the executors directory needs to be re-generated.
+func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, alreadyInstalled store.StoredArtifactMap) error {
+	if len(alreadyInstalled) != 0 {
+		return nil
+	}
+	if err := os.RemoveAll(s.store.InstallPath()); err != nil {
+		logging.Error("Error removing previous camel installation: %v", err)
+	}
 	return nil
 }
 
@@ -28,6 +33,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
+func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
 	return artifact.NewDownloadsFromCamelBuild(buildStatus)
 }

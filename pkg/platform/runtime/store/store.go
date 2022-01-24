@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,24 +30,26 @@ type Store struct {
 type StoredArtifact struct {
 	ArtifactID artifact.ArtifactID           `json:"artifactID"`
 	Files      []string                      `json:"files"`
+	Dirs       []string                      `json:"dirs"`
 	EnvDef     *envdef.EnvironmentDefinition `json:"envdef"`
 }
 
-func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
+func NewStoredArtifact(artifactID artifact.ArtifactID, files []string, dirs []string, envDef *envdef.EnvironmentDefinition) StoredArtifact {
 	return StoredArtifact{
 		ArtifactID: artifactID,
 		Files:      files,
+		Dirs:       dirs,
 		EnvDef:     envDef,
 	}
 }
 
 type StoredArtifactMap = map[artifact.ArtifactID]StoredArtifact
 
-func New(installPath string) (*Store, error) {
+func New(installPath string) *Store {
 	return &Store{
 		installPath,
 		filepath.Join(installPath, constants.LocalRuntimeEnvironmentDirectory),
-	}, nil
+	}
 }
 
 func (s *Store) markerFile() string {
@@ -61,8 +64,15 @@ func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
 }
 
-// MatchesCommit checks if stored runtime is complete and can be loaded
-func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
+func (s *Store) HasMarker() bool {
+	if fileutils.FileExists(s.markerFile()) {
+		return true
+	}
+	return false
+}
+
+// MarkerIsValid checks if stored runtime is complete and can be loaded
+func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 	marker := s.markerFile()
 	if !fileutils.FileExists(marker) {
 		logging.Debug("Marker does not exist: %s", marker)
@@ -71,12 +81,31 @@ func (s *Store) MatchesCommit(commitID strfmt.UUID) bool {
 
 	contents, err := fileutils.ReadFile(marker)
 	if err != nil {
-		logging.Error("Could not read marker: %v", err)
+		logging.Error("Could not read marker file %s: %v", marker, err)
+	}
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < 1 {
+		logging.Debug("Expected commit ID in marker file, but was empty")
+		return false
+	}
+	parsedCommitID := strings.TrimSpace(lines[0])
+	if len(lines) < 2 {
+		logging.Debug("Expected State Tool version in marker file")
+		return false
+	}
+	parsedStateToolVersion := strings.TrimSpace(lines[1])
+
+	if parsedCommitID != commitID.String() {
+		logging.Debug("Could not match commitID in %s, expected: %s, got: %s", marker, commitID.String(), parsedCommitID)
 		return false
 	}
 
-	logging.Debug("MatchesCommit for %s, %s==%s", marker, string(contents), commitID.String())
-	return strings.TrimSpace(string(contents)) == commitID.String()
+	if parsedStateToolVersion != constants.Version {
+		logging.Debug("Could not match State Tool version in %s, expected: %s, got: %s", marker, constants.Version, parsedStateToolVersion)
+		return false
+	}
+
+	return true
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
@@ -87,7 +116,7 @@ func (s *Store) MarkInstallationComplete(commitID strfmt.UUID) error {
 	if err != nil {
 		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	err = fileutils.WriteFile(markerFile, []byte(commitID.String()))
+	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s", commitID.String(), constants.Version)))
 	if err != nil {
 		return errs.Wrap(err, "could not set completion marker")
 	}
@@ -206,7 +235,7 @@ func (s *Store) StoreArtifact(artf StoredArtifact) error {
 	return nil
 }
 
-func (s *Store) Environ(inherit bool) (map[string]string, error) {
+func (s *Store) EnvDef() (*envdef.EnvironmentDefinition, error) {
 	mergedRuntimeDefinitionFile := filepath.Join(s.storagePath, constants.RuntimeDefinitionFilename)
 	envDef, err := envdef.NewEnvironmentDefinition(mergedRuntimeDefinitionFile)
 	if err != nil {
@@ -215,6 +244,14 @@ func (s *Store) Environ(inherit bool) (map[string]string, error) {
 			"Your installation seems corrupted.\nPlease try to re-run this command, as it may fix the problem.  If the problem persists, please report it in our forum: {{.V0}}",
 			constants.ForumsURL,
 		)
+	}
+	return envDef, nil
+}
+
+func (s *Store) Environ(inherit bool) (map[string]string, error) {
+	envDef, err := s.EnvDef()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not grab EnvDef")
 	}
 	return envDef.GetEnv(inherit), nil
 }

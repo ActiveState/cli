@@ -6,8 +6,17 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"runtime/debug"
 	"strings"
+	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/sysinfo"
 	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
@@ -18,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -33,20 +43,39 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func main() {
-	// Set up logging
-	logging.SetupRollbar()
-	defer rollbar.Close()
+type ConfigurableAnalytics interface {
+	analytics.Dispatcher
+	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
+}
 
-	// Handle panics gracefully
-	defer handlePanics(os.Exit)
+func main() {
+	var exitCode int
+	// Set up logging
+	logging.SetupRollbar(constants.StateToolRollbarToken)
+
+	defer func() {
+		// Handle panics gracefully, and ensure that we exit with non-zero code
+		if panics.HandlePanics(recover(), debug.Stack()) {
+			exitCode = 1
+		}
+
+		// ensure rollbar messages are called
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+			logging.Warning("Failed waiting for events: %v", err)
+		}
+
+		// exit with exitCode
+		os.Exit(exitCode)
+	}()
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
 	out, err := initOutput(outFlags, "")
 	if err != nil {
+		logging.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	if runtime.GOOS == "windows" {
@@ -65,15 +94,16 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractive)) != "true" &&
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
 		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd()))
+		terminal.IsTerminal(int(os.Stdin.Fd())) &&
+		out.Type() != output.EditorV0FormatName &&
+		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	code := 0
 	err = run(os.Args, isInteractive, out)
 	if err != nil {
-		code, err = unwrapError(err)
-		if !isSilent(err) {
+		exitCode, err = unwrapError(err)
+		if err != nil {
 			out.Error(err)
 		}
 
@@ -88,11 +118,11 @@ func main() {
 			br.ReadLine()
 		}
 	}
-
-	os.Exit(code)
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) error {
+func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+	defer profile.Measure("main:run", time.Now())
+
 	// Set up profiling
 	if os.Getenv(constants.CPUProfileEnvVarName) != "" {
 		cleanup, err := profile.CPU()
@@ -105,17 +135,24 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg, err := config.Get()
+	cfg, err := config.New()
 	if err != nil {
 		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
 	}
+	defer rtutils.Closer(cfg.Close, &rerr)
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
-	logging.Debug("CachePath: %s", cfg.CachePath())
+	logging.Debug("CachePath: %s", storage.CachePath())
 
 	// set global configuration instances
-	machineid.SetConfiguration(cfg)
+	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	logging.UpdateConfig(cfg)
+
+	svcm := svcmanager.New(cfg)
+	if err := svcm.Start(); err != nil {
+		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+	}
+
+	svcmodel := model.NewSvcModel(cfg, svcm)
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
@@ -123,9 +160,6 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
 		return err
 	}
-
-	// Set up prompter
-	prompter := prompt.New(isInteractive)
 
 	// Set up project (if we have a valid path)
 	var pj *project.Project
@@ -140,33 +174,33 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 		}
 	}
 
-	// Forward call to specific state tool version, if warranted
-	forward, err := forwardFn(cfg.ConfigPath(), args, out, pj)
-	if err != nil {
-		return err
-	}
-	if forward != nil {
-		return forward()
+	pjNamespace := ""
+	if pj != nil {
+		pjNamespace = pj.Namespace().String()
 	}
 
-	pjOwner := ""
-	pjNamespace := ""
-	pjName := ""
-	if pj != nil {
-		pjOwner = pj.Owner()
-		pjNamespace = pj.Namespace().String()
-		pjName = pj.Name()
-	}
+	auth := authentication.LegacyGet()
+
+	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
+	defer func() {
+		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
+			logging.Warning("Failed waiting for events: %v", err)
+		}
+	}()
+
+	// Set up prompter
+	prompter := prompt.New(isInteractive, an)
+
 	// Set up conditional, which accesses a lot of primer data
-	sshell := subshell.New()
-	auth := authentication.Get()
-	conditional := constraints.NewPrimeConditional(auth, pjOwner, pjName, pjNamespace, sshell.Shell())
+	sshell := subshell.New(cfg)
+
+	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {
@@ -174,8 +208,8 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 	}
 
 	if childCmd != nil && !childCmd.SkipChecks() {
-		// Auto update to latest state tool version, only runs once per day
-		if updated, err := autoUpdate(args, out, pjPath); err != nil || updated {
+		// Auto update to latest state tool version
+		if updated, err := autoUpdate(args, cfg, out); err != nil || updated {
 			return err
 		}
 
@@ -193,13 +227,24 @@ func run(args []string, isInteractive bool, out output.Outputer) error {
 				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
 			}
 		}
+
+		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
+			if (pj.Version() != "" && pj.Version() != constants.Version) ||
+				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
+				return errs.AddTips(
+					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
+					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.T("lock_update_lock"),
+				)
+			}
+		}
 	}
 
 	err = cmds.Execute(args[1:])
 	if err != nil {
 		cmdName := ""
 		if childCmd != nil {
-			cmdName = childCmd.Use() + " "
+			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 	}

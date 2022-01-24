@@ -1,14 +1,19 @@
 package revert
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 
@@ -16,9 +21,12 @@ import (
 )
 
 type Revert struct {
-	out     output.Outputer
-	prompt  prompt.Prompter
-	project *project.Project
+	out       output.Outputer
+	prompt    prompt.Prompter
+	project   *project.Project
+	auth      *authentication.Auth
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type Params struct {
@@ -29,6 +37,9 @@ type primeable interface {
 	primer.Outputer
 	primer.Prompter
 	primer.Projecter
+	primer.Auther
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Revert {
@@ -36,6 +47,9 @@ func New(prime primeable) *Revert {
 		prime.Output(),
 		prime.Prompt(),
 		prime.Project(),
+		prime.Auth(),
+		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -56,21 +70,22 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_no_project")
 	}
 	commitID := strfmt.UUID(params.CommitID)
-	revertCommit, err := model.GetCommit(strfmt.UUID(params.CommitID))
+	revertToCommit, err := model.GetCommit(commitID)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
 
 	var orgs []gqlmodel.Organization
-	if revertCommit.Author != nil {
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertCommit.Author})
+	if revertToCommit.Author != nil {
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertToCommit.Author})
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
-	commit.PrintCommit(r.out, revertCommit, orgs)
+	r.out.Print(locale.Tl("revert_info", "You are about to revert to the following commit:"))
+	commit.PrintCommit(r.out, revertToCommit, orgs)
 
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Revert to commit: {{.V0}}?", params.CommitID), new(bool))
+	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
@@ -78,7 +93,7 @@ func (r *Revert) Run(params *Params) error {
 		return nil
 	}
 
-	err = model.RevertCommit(r.project, commitID)
+	revertCommit, err := model.RevertCommit(r.project.CommitUUID(), commitID)
 	if err != nil {
 		return locale.WrapError(
 			err,
@@ -88,8 +103,18 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
+	if err != nil {
+		return locale.WrapError(err, "err_refresh_runtime")
+	}
+
+	err = r.project.SetCommit(revertCommit.CommitID.String())
+	if err != nil {
+		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
+	}
+
 	r.out.Print(locale.Tl("revert_success", "Sucessfully reverted to commit: {{.V0}}", params.CommitID))
-	r.out.Print(locale.T("update_config"))
+	r.out.Print(locale.T("operation_success_local"))
 	return nil
 }
 

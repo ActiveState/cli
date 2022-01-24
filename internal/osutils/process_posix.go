@@ -10,3 +10,9 @@ func SysProcAttrForNewProcessGroup() *syscall.SysProcAttr {
 		Setsid: true,
 	}
 }
+
+func SysProcAttrForBackgroundProcess() *syscall.SysProcAttr {
+	return &syscall.SysProcAttr{
+		Setsid: true,
+	}
+}

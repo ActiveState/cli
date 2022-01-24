@@ -9,6 +9,6 @@ import (
 func New() *gqlclient.Client {
 	url := api.GetServiceURL(api.ServiceGraphQL)
 	c := gqlclient.New(url.String(), 0)
-	c.SetTokenProvider(authentication.Get())
+	c.SetTokenProvider(authentication.LegacyGet())
 	return c
 }

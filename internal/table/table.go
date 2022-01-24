@@ -164,7 +164,7 @@ func renderRow(providedColumns []string, colWidths []int) string {
 
 	croppedColumns := []colorize.CroppedLines{}
 	for n, column := range providedColumns {
-		croppedColumns = append(croppedColumns, colorize.GetCroppedText(column, widths[n]-(padding*2)))
+		croppedColumns = append(croppedColumns, colorize.GetCroppedText(column, widths[n]-(padding*2), false))
 	}
 
 	var rendered = true

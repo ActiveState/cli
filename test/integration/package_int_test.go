@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -164,8 +166,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.25.0",
-		"+ 8 older versions",
+		"2.26.0",
+		"older versions",
 	}
 	for _, expectation := range expectations {
 		cp.ExpectLongString(expectation)
@@ -180,7 +182,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -223,7 +225,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "numpy", "--language=perl")
-	cp.ExpectLongString("No packages in our catalogue match")
+	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -249,8 +251,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.Expect("Authors")
 	cp.Expect(" - ")
 	cp.Expect(" - ")
-	cp.Expect("License")
-	cp.Expect("GPL")
 	cp.Expect("Version")
 	cp.Expect("Available")
 	cp.Expect("4.8.0")
@@ -269,10 +269,10 @@ Flask-Cors==3.0.8
 itsdangerous==1.1.0
 Jinja2==2.10.3
 MarkupSafe==1.1.1
-packaging==20.1
+packaging==20.3
 pyparsing==2.4.6
 six==1.14.0
-Werkzeug==0.16.0
+Werkzeug==0.15.6
 `
 	badReqsData = `Click==7.0
 garbage---<<001.X
@@ -292,15 +292,12 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
-	cp.Expect(fmt.Sprintf("Creating project Python3 under %s", username))
+	cp.ExpectLongString("You are about to create the project")
+	cp.Send("y")
+	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
-
-	suite.Run("uninstalled import fails", func() {
-		cp := ts.Spawn("run", "test-pyparsing")
-		cp.ExpectNotExitCode(0, time.Second*60)
-	})
 
 	suite.Run("invalid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
@@ -313,20 +310,15 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.Expect("state pull")
 		cp.ExpectExitCode(0, time.Second*60)
 
-		suite.Run("uninstalled import fails", func() {
-			cp := ts.Spawn("run", "test-pyparsing")
-			cp.ExpectExitCode(0, time.Second*60)
-		})
+		cp = ts.Spawn("push")
+		cp.ExpectExitCode(0, time.Second*60)
 
-		suite.Run("already added", func() {
-			cp := ts.Spawn("import", "requirements.txt")
-			cp.Expect("Are you sure you want to do this")
-			cp.Send("n")
-			cp.ExpectNotExitCode(0, time.Second*60)
-		})
+		cp = ts.Spawn("import", "requirements.txt")
+		cp.Expect("Are you sure you want to do this")
+		cp.Send("n")
+		cp.ExpectNotExitCode(0, time.Second*60)
 	})
 }
 
@@ -344,32 +336,26 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("install", "json")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
-		cp.Expect("Could not match json")
+		cp.Expect("No results found for search term")
 		cp.Expect("json2")
-		cp.ExpectLongString("to see more results run `state search json`")
 		cp.Wait()
 	})
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectLongString("Do you want to continue as an anonymous user?")
-		cp.Send("Y")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectLongString("Any changes you make are local only")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 50*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 50*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 }
@@ -406,19 +392,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectRe("(?:Package added|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectRe("(?:Package updated|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectRe("(?:Package uninstalled|project is currently building)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
@@ -445,6 +431,34 @@ scripts:
       print(Word(alphas).parseString("TEST"))
 `
 	ts.PrepareActiveStateYAML(asyData)
+}
+
+func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("install", "JSON"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Installing Runtime")
+	cp.ExpectLongString("An activestate.yaml has been created")
+	cp.ExpectExitCode(0)
+
+	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
+	suite.Require().FileExists(configFilepath)
+
+	content, err := ioutil.ReadFile(configFilepath)
+	suite.Require().NoError(err)
+	if !suite.Contains(string(content), constants.DashboardCommitURL) {
+		suite.Fail("activestate.yaml does not contain dashboard commit URL")
+	}
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

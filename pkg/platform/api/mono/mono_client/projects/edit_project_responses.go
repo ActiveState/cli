@@ -59,9 +59,8 @@ func (o *EditProjectReader) ReadResponse(response runtime.ClientResponse, consum
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -70,7 +69,7 @@ func NewEditProjectOK() *EditProjectOK {
 	return &EditProjectOK{}
 }
 
-/*EditProjectOK handles this case with default header values.
+/* EditProjectOK describes a response with status code 200, with default header values.
 
 Project updated
 */
@@ -81,7 +80,6 @@ type EditProjectOK struct {
 func (o *EditProjectOK) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectOK  %+v", 200, o.Payload)
 }
-
 func (o *EditProjectOK) GetPayload() *mono_models.Project {
 	return o.Payload
 }
@@ -103,7 +101,7 @@ func NewEditProjectBadRequest() *EditProjectBadRequest {
 	return &EditProjectBadRequest{}
 }
 
-/*EditProjectBadRequest handles this case with default header values.
+/* EditProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -114,7 +112,6 @@ type EditProjectBadRequest struct {
 func (o *EditProjectBadRequest) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EditProjectBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -136,7 +133,7 @@ func NewEditProjectForbidden() *EditProjectForbidden {
 	return &EditProjectForbidden{}
 }
 
-/*EditProjectForbidden handles this case with default header values.
+/* EditProjectForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -147,7 +144,6 @@ type EditProjectForbidden struct {
 func (o *EditProjectForbidden) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectForbidden  %+v", 403, o.Payload)
 }
-
 func (o *EditProjectForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -169,7 +165,7 @@ func NewEditProjectNotFound() *EditProjectNotFound {
 	return &EditProjectNotFound{}
 }
 
-/*EditProjectNotFound handles this case with default header values.
+/* EditProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -180,7 +176,6 @@ type EditProjectNotFound struct {
 func (o *EditProjectNotFound) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectNotFound  %+v", 404, o.Payload)
 }
-
 func (o *EditProjectNotFound) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -202,7 +197,7 @@ func NewEditProjectConflict() *EditProjectConflict {
 	return &EditProjectConflict{}
 }
 
-/*EditProjectConflict handles this case with default header values.
+/* EditProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -213,7 +208,6 @@ type EditProjectConflict struct {
 func (o *EditProjectConflict) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectConflict  %+v", 409, o.Payload)
 }
-
 func (o *EditProjectConflict) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -235,7 +229,7 @@ func NewEditProjectInternalServerError() *EditProjectInternalServerError {
 	return &EditProjectInternalServerError{}
 }
 
-/*EditProjectInternalServerError handles this case with default header values.
+/* EditProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -246,7 +240,6 @@ type EditProjectInternalServerError struct {
 func (o *EditProjectInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /organizations/{organizationName}/projects/{projectName}][%d] editProjectInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *EditProjectInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

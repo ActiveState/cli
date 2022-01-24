@@ -1,79 +1,107 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
+	"github.com/spf13/cast"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/pkg/platform/api/svc"
 )
 
+var ErrSvcAlreadyRunning error = errs.New("Service is already running")
+
 type serviceManager struct {
-	cfg    *config.Instance
-	lockFp string
+	cfg *config.Instance
 }
 
 func NewServiceManager(cfg *config.Instance) *serviceManager {
-	return &serviceManager{cfg, filepath.Join(cfg.ConfigPath(), "state-svc.lock")}
+	return &serviceManager{cfg}
 }
 
 func (s *serviceManager) Start(args ...string) error {
-	curPid, err := s.Pid()
-	if err == nil && curPid != nil {
-		return errs.New("Service is already running")
-	}
+	var proc *os.Process
+	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
+		oldPid := cast.ToInt(oldPidI)
+		curPid, err := s.CheckPid(oldPid)
+		if err == nil && curPid != nil {
+			return nil, ErrSvcAlreadyRunning
+		}
 
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Start()
+		proc, err = exeutils.ExecuteAndForget(args[0], args[1:])
+		if err != nil {
+			return nil, errs.New("Could not start serviceManager")
+		}
 
-	if cmd.Process == nil {
-		return errs.New("Could not obtain process information after starting serviceManager")
-	}
+		if proc == nil {
+			return nil, errs.New("Could not obtain process information after starting serviceManager")
+		}
 
-	if err := s.cfg.Set(constants.SvcConfigPid, cmd.Process.Pid); err != nil {
-		if err := cmd.Process.Signal(os.Interrupt); err != nil {
-			logging.Errorf("Could not cleanup process: %v", err)
-			fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", cmd.Process.Pid)
+		return proc.Pid, nil
+	})
+	if err != nil {
+		if proc != nil {
+			err := rtutils.Timeout(func() error { return proc.Signal(os.Kill) }, time.Second)
+			if err != nil {
+				logging.Errorf("Could not cleanup process: %v", err)
+				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
+			}
 		}
 		return errs.Wrap(err, "Could not store pid")
 	}
 
-	logging.Debug("Process started using pid %d", cmd.Process.Pid)
-
+	logging.Debug("Process started using pid %d", proc.Pid)
 	return nil
 }
 
 func (s *serviceManager) Stop() error {
-	pid, err := s.Pid()
+	pid, err := s.CheckPid(s.cfg.GetInt(constants.SvcConfigPid))
 	if err != nil {
 		return errs.Wrap(err, "Could not get pid")
 	}
 	if pid == nil {
+		logging.Debug("State service is not running. Nothing to stop")
 		return nil
 	}
 
-	port := s.cfg.GetInt(constants.SvcConfigPort)
-	quitAddress := fmt.Sprintf("http://127.0.0.1:%d%s", port, server.QuitRoute)
+	if err := stopServer(s.cfg); err != nil {
+		return errs.Wrap(err, "Failed to stop server")
+	}
+
+	return nil
+}
+
+func stopServer(cfg *config.Instance) error {
+	htClient := retryhttp.DefaultClient.StandardClient()
+
+	client, err := svc.New(cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not initialize svc client")
+	}
+
+	quitAddress := fmt.Sprintf("%s/__quit", client.BaseUrl())
 	logging.Debug("Sending quit request to %s", quitAddress)
 	req, err := http.NewRequest("GET", quitAddress, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not create request to quit svc")
 	}
 
-	client := &http.Client{
-		Timeout: time.Second * 120,
-	}
-	res, err := client.Do(req)
+	res, err := htClient.Do(req)
 	if err != nil {
 		return errs.Wrap(err, "Request to quit svc failed")
 	}
@@ -91,19 +119,29 @@ func (s *serviceManager) Stop() error {
 	return nil
 }
 
-func (s *serviceManager) Pid() (*int, error) {
-	pid := s.cfg.GetInt(constants.SvcConfigPid)
-	if pid <= 0 {
+// CheckPid checks if the given pid refers to an existing process
+func (s *serviceManager) CheckPid(pid int) (*int, error) {
+	if pid == 0 {
 		return nil, nil
 	}
-
-	pidExists, err := process.PidExists(int32(pid))
+	p, err := process.NewProcess(int32(pid))
 	if err != nil {
+		if errors.Is(err, process.ErrorProcessNotRunning) {
+			return nil, nil
+		}
 		return nil, errs.Wrap(err, "Could not verify if pid exists")
 	}
-	if !pidExists {
-		return nil, nil
+
+	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
+	if runtime.GOOS == "windows" {
+		exe, err := p.Exe()
+		if err != nil {
+			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+		} else if filepath.Base(exe) != constants.ServiceCommandName && strings.Contains(strings.ToLower(exe), "activestate") {
+			return nil, nil
+		}
 	}
 
-	return &pid, nil
+	var rpid = int(p.Pid)
+	return &rpid, nil
 }

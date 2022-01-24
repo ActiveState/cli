@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/thoas/go-funk"
 )
 
 type Vulnerability model.Vulnerability
@@ -63,7 +64,22 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 		return nil, locale.NewError("commit_vulnerability_err", "Request to retrieve vulnerability information for commit {{.V0}} failed with error: {{.V1}}", commitID, *msg)
 	}
 
-	return &resp.CommitVulnerabilities, nil
+	return removeModerateSeverity(resp.CommitVulnerabilities), nil
+}
+
+func removeModerateSeverity(cv model.CommitVulnerabilities) *model.CommitVulnerabilities {
+	res := cv
+	res.VulnerabilityHistogram = funk.Filter(cv.VulnerabilityHistogram, func(sc model.SeverityCount) bool {
+		return sc.Severity != "MODERATE"
+	}).([]model.SeverityCount)
+	res.Sources = funk.Map(cv.Sources, func(sv model.SourceVulnerability) model.SourceVulnerability {
+		res := sv
+		res.Vulnerabilities = funk.Filter(sv.Vulnerabilities, func(v model.Vulnerability) bool {
+			return v.Severity != "MODERATE"
+		}).([]model.Vulnerability)
+		return res
+	}).([]model.SourceVulnerability)
+	return &res
 }
 
 func ExtractPackageVulnerabilities(sources []model.SourceVulnerability) []PackageVulnerability {

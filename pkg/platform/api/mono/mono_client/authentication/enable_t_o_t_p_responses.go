@@ -35,9 +35,8 @@ func (o *EnableTOTPReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -46,7 +45,7 @@ func NewEnableTOTPOK() *EnableTOTPOK {
 	return &EnableTOTPOK{}
 }
 
-/*EnableTOTPOK handles this case with default header values.
+/* EnableTOTPOK describes a response with status code 200, with default header values.
 
 Enabled
 */
@@ -57,7 +56,6 @@ type EnableTOTPOK struct {
 func (o *EnableTOTPOK) Error() string {
 	return fmt.Sprintf("[POST /totp][%d] enableTOTPOK  %+v", 200, o.Payload)
 }
-
 func (o *EnableTOTPOK) GetPayload() *mono_models.User {
 	return o.Payload
 }
@@ -79,7 +77,7 @@ func NewEnableTOTPBadRequest() *EnableTOTPBadRequest {
 	return &EnableTOTPBadRequest{}
 }
 
-/*EnableTOTPBadRequest handles this case with default header values.
+/* EnableTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -90,7 +88,6 @@ type EnableTOTPBadRequest struct {
 func (o *EnableTOTPBadRequest) Error() string {
 	return fmt.Sprintf("[POST /totp][%d] enableTOTPBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *EnableTOTPBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }

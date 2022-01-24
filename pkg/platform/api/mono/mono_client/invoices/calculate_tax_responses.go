@@ -47,9 +47,8 @@ func (o *CalculateTaxReader) ReadResponse(response runtime.ClientResponse, consu
 			return nil, err
 		}
 		return nil, result
-
 	default:
-		return nil, runtime.NewAPIError("unknown error", response, response.Code())
+		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
 }
 
@@ -58,7 +57,7 @@ func NewCalculateTaxOK() *CalculateTaxOK {
 	return &CalculateTaxOK{}
 }
 
-/*CalculateTaxOK handles this case with default header values.
+/* CalculateTaxOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -69,7 +68,6 @@ type CalculateTaxOK struct {
 func (o *CalculateTaxOK) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxOK  %+v", 200, o.Payload)
 }
-
 func (o *CalculateTaxOK) GetPayload() int64 {
 	return o.Payload
 }
@@ -89,7 +87,7 @@ func NewCalculateTaxBadRequest() *CalculateTaxBadRequest {
 	return &CalculateTaxBadRequest{}
 }
 
-/*CalculateTaxBadRequest handles this case with default header values.
+/* CalculateTaxBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -100,7 +98,6 @@ type CalculateTaxBadRequest struct {
 func (o *CalculateTaxBadRequest) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxBadRequest  %+v", 400, o.Payload)
 }
-
 func (o *CalculateTaxBadRequest) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -122,7 +119,7 @@ func NewCalculateTaxForbidden() *CalculateTaxForbidden {
 	return &CalculateTaxForbidden{}
 }
 
-/*CalculateTaxForbidden handles this case with default header values.
+/* CalculateTaxForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -133,7 +130,6 @@ type CalculateTaxForbidden struct {
 func (o *CalculateTaxForbidden) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxForbidden  %+v", 403, o.Payload)
 }
-
 func (o *CalculateTaxForbidden) GetPayload() *mono_models.Message {
 	return o.Payload
 }
@@ -155,7 +151,7 @@ func NewCalculateTaxInternalServerError() *CalculateTaxInternalServerError {
 	return &CalculateTaxInternalServerError{}
 }
 
-/*CalculateTaxInternalServerError handles this case with default header values.
+/* CalculateTaxInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -166,7 +162,6 @@ type CalculateTaxInternalServerError struct {
 func (o *CalculateTaxInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *CalculateTaxInternalServerError) GetPayload() *mono_models.Message {
 	return o.Payload
 }

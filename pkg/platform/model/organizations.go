@@ -50,7 +50,7 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
 func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	authClient, err := authentication.Get().ClientSafe()
+	authClient, err := authentication.LegacyGet().ClientSafe()
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +73,7 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 			return member, nil
 		}
 	}
+
 	return nil, locale.WrapError(ErrMemberNotFound, "err_api_member_not_found")
 }
 
@@ -87,7 +88,7 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 	params := clientOrgs.NewInviteOrganizationParams()
 	body := clientOrgs.InviteOrganizationBody{
 		AddedOnly: true,
-		AsOwner:   asOwner,
+		AsOwner:   &asOwner,
 	}
 	params.SetOrganizationName(orgName)
 	params.SetAttributes(body)

@@ -40,39 +40,43 @@ func NewPidLock(path string) (pl *PidLock, err error) {
 	}, nil
 }
 
-// TryLock attempts to lock the created lock file. If the lock cannot be acquired, it returns false and an error.
-func (pl *PidLock) TryLock() (locked bool, err error) {
+// TryLock attempts to lock the created lock file.
+func (pl *PidLock) TryLock() (err error) {
 	err = LockFile(pl.file)
 	if err != nil {
-		// if lock cannot be acquired it usually means that another process is holding the lock
-		return false, NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
+		// if lock cannot be acquired it means that another process is holding the lock
+		return NewAlreadyLockedError(err, pl.path, "cannot acquire exclusive lock")
 	}
 
 	// check if PID can be read and if so, if the process is running
 	b := make([]byte, 100)
 	n, err := pl.file.Read(b)
 	if err != nil && err != io.EOF {
-		return false, errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
+		LockRelease(pl.file)
+		return errs.Wrap(err, "failed to read PID from lockfile %s", pl.path)
 	}
 	if n > 0 {
 		pid, err := strconv.ParseInt(string(b[:n]), 10, 64)
 		if err != nil {
-			return false, errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
+			LockRelease(pl.file)
+			return errs.Wrap(err, "failed to parse PID from lockfile %s", pl.path)
 		}
 		if PidExists(int(pid)) {
+			LockRelease(pl.file)
 			err := fmt.Errorf("pid %d exists", pid)
-			return false, NewAlreadyLockedError(err, pl.path, "pid parsed")
+			return NewAlreadyLockedError(err, pl.path, "pid parsed")
 		}
 	}
 
 	// write PID into lock file
 	_, err = pl.file.Write([]byte(fmt.Sprintf("%d", os.Getpid())))
 	if err != nil {
-		return false, errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
+		LockRelease(pl.file)
+		return errs.Wrap(err, "failed to write pid to lockfile %s", pl.path)
 	}
 
 	pl.locked = true
-	return true, nil
+	return nil
 }
 
 // Close removes the lock file and releases the lock
@@ -99,16 +103,17 @@ func (pl *PidLock) Close(keepFile ...bool) error {
 func (pl *PidLock) WaitForLock(timeout time.Duration) error {
 	expiration := time.Now().Add(timeout)
 	for {
-		_, err := pl.TryLock()
+		err := pl.TryLock()
 		if err != nil {
 			if !errs.Matches(err, &AlreadyLockedError{}) {
 				return errs.Wrap(err, "Could not acquire lock")
 			}
 
 			if time.Now().After(expiration) {
-				return err
+				return errs.Wrap(err, "Timed out trying to acquire lock")
 			}
 			time.Sleep(100 * time.Millisecond)
+			continue
 		}
 		return nil
 	}

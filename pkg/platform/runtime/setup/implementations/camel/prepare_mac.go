@@ -52,8 +52,10 @@ func (m *MetaData) Prepare(installRoot string) error {
 		}
 	}
 
-	if fileutils.DirExists(sitePackages) {
-		m.Env["PYTHONPATH"] = m.Env["PYTHONPATH"] + string(os.PathListSeparator) + sitePackages
+	if pythonpath, ok := os.LookupEnv("PYTHONPATH"); ok {
+		m.PathListEnv["PYTHONPATH"] = pythonpath
+	} else if fileutils.DirExists(sitePackages) {
+		m.PathListEnv["PYTHONPATH"] = sitePackages
 	}
 
 	if m.TargetedRelocations == nil {

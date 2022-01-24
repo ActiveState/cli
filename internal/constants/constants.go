@@ -15,7 +15,10 @@ const LibraryLicense = "BSD 3"
 // CommandName holds the name of our command
 const CommandName = "state"
 
-// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileName
+// ServiceCommandName holds the name of our service command
+const ServiceCommandName = "state-svc"
+
+// ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
@@ -27,26 +30,29 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
-// ExecEnvVarName is the env var used to find out if we are shimming recursively
-const ExecEnvVarName = "ACTIVESTATE_CLI_SHIMMED_COMMAND"
+// LogEnvVarName is the env var used to override the log file path
+const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 
-// DisableUpdates is the env var used to disable auto update
-const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
+// LogBuildVerboseEnvVarName is the env var used to enable verbose build logging
+const LogBuildVerboseEnvVarName = "ACTIVESTATE_CLI_BUILD_VERBOSE"
 
 // DisableRuntime is the env var used to disable downloading of runtimes, useful for CI or testing
 const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 
+// DisableUpdates is the env var used to disable automatic updates
+const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
-// UpdateHailFileName is the file name used to pass messages from sub-processes to the parent.
-const UpdateHailFileName = "hail-update"
+// InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
+const InternalConfigFileNameLegacy = "config.yaml"
 
-// AutoUpdateTimeoutEnvVarName is the env var that is used to override the timeout for auto update checks
-const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT"
+// InternalConfigFileName is the filename used for our sqlite based settings db
+const InternalConfigFileName = "config.db"
 
-// InternalConfigFileName is effectively the same as InternalConfigName, but includes our preferred extension
-const InternalConfigFileName = "config.yaml"
+// AutoUpdateTimeoutEnvVarName is the name of the environment variable that can be set to override the allowed timeout to check for an available auto-update
+const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 
 // EnvironmentEnvVarName is the name of the environment variable that specifies the current environment (dev, qa, prod, etc.)
 const EnvironmentEnvVarName = "ACTIVESTATE_ENVIRONMENT"
@@ -78,11 +84,47 @@ const APIInsecureEnvVarName = "ACTIVESTATE_API_INSECURE"
 // CPUProfileEnvVarName is the name of the environment variable that specifies whether CPU profiling should be run.
 const CPUProfileEnvVarName = "ACTIVESTATE_PROFILE_CPU"
 
-// NonInteractive is the name of the environment variable that specifies whether to run the State Tool without prompts
-const NonInteractive = "ACTIVESTATE_NONINTERACTIVE"
+// ProfileEnvVarName is the name of the environment variable that specifies whether profiling should be run.
+const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 
-// APIUpdateURL is the URL for our update server
-const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/"
+// SessionTokenEnvVarName records the session token
+const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
+
+// UpdateTagEnvVarName
+const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
+
+// NonInteractiveEnvVarName is the name of the environment variable that specifies whether to run the State Tool without prompts
+const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
+
+// E2ETestEnvVarName is the name of the environment variable that specifies that we are running under E2E tests
+const E2ETestEnvVarName = "ACTIVESTATE_E2E_TEST"
+
+// HeartbeatIntervalEnvVarName is the name of the environment variable used to override the heartbeat interval
+const HeartbeatIntervalEnvVarName = "ACTIVESTATE_HEARTBEAT_INTERVAL"
+
+// OverwriteDefaultInstallationPathEnvVarName is the environment variable name to overwrite the default installation path FOR TESTING PURPOSES ONLY
+const OverwriteDefaultInstallationPathEnvVarName = "ACTIVESTATE_TEST_INSTALL_PATH"
+
+// OverwriteDefaultSystemPathEnvVarName is the environment variable name to overwrite the system app installation directory updates FOR TESTING PURPOSES ONLY
+const OverwriteDefaultSystemPathEnvVarName = "ACTIVESTATE_TEST_SYSTEM_PATH"
+
+// OverrideOSNameEnvVarName is used to override the OS name used when initializing projects
+const OverrideOSNameEnvVarName = "ACTIVESTATE_OVERRIDE_OS_NAME"
+
+// TestAutoUpdateEnvVarName is used to test auto updates, when set to true will always attempt to auto update
+const TestAutoUpdateEnvVarName = "ACTIVESTATE_TEST_AUTO_UPDATE"
+
+// ForceUpdateEnvVarName is used to force state tool to update, regardless of whether the update is equal to the current version
+const ForceUpdateEnvVarName = "ACTIVESTATE_FORCE_UPDATE"
+
+// ShimEnvVarName is used to instruct State Tool that it's being executed as part of a shim
+const ShimEnvVarName = "ACTIVESTATE_SHIM"
+
+// APIUpdateInfoURL is the URL for our update info server
+const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
+
+// APIUpdateURL is the URL for our update files
+const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
@@ -173,17 +215,35 @@ const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
+// TrayDocumentationURL is the url for the state tool documentation to be used in the state tray application
+const TrayDocumentationURL = "http://docs.activestate.com/platform/state/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
 // DocumentationURLHeadless is the documentation URL for headless state docs
 const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
+// DocumentationURLGetStarted is the documentation URL for creating projects
+const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
+// DocumentationURLMismatch is the documentation URL for the project mismatch warning
+const DocumentationURLMismatch = DocumentationURL + "troubleshooting/git-project-mismatch/"
+
+// DocumentationURLLocking is the documentation URL for locking
+const DocumentationURLLocking = DocumentationURL + "advanced-topics/locking/"
+
 // ActiveStateBlogURL is the URL for the ActiveState Blog
-const ActiveStateBlogURL = "https://www.activestate.com/blog/"
+const ActiveStateBlogURL = "https://www.activestate.com/blog/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
 // ActiveStateSupportURL is the URL for the AciveState support page
-const ActiveStateSupportURL = "https://www.activestate.com/support/"
+const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
+// ActiveStateDashboardURL is the URL for the ActiveState account preferences page
+const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
+
+// DashboardCommitURL is the URL used to inspect commits
+const DashboardCommitURL = "https://platform.activestate.com/commit/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -194,14 +254,27 @@ const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architect
 // PlatformURL is the base domain for the production platform
 const PlatformURL = "platform.activestate.com"
 
-// RollbarToken is the token used to talk to rollbar
-const RollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+// CheatSheetURL is the URL for the State Tool Cheat Sheet
+const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
+
+// StateToolRollbarToken is the token used by the State Tool to talk to rollbar
+const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+
+// StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
+const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+
+// StateServiceRollbarToken is the token used by the State Service to talk to rollbar
+const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+
+// StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
+// Todo It is currently the same as the State Tool's
+const StateInstallerRollbarToken = "276678f6090d4f17a4b2d4d35be00ca9"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
 const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
-	LinuxBit64UUID = "681d5381-518c-5f4c-b367-df05c8d525e2"
+	LinuxBit64UUID = "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
 	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
 	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
@@ -258,6 +331,12 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
+// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
+
+// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
@@ -274,7 +353,38 @@ const SvcConfigPort = "svc-port"
 const SvcConfigPid = "svc-pid"
 
 // TrayAppName is the name we give our systray application
-const TrayAppName = "ActiveState Platform"
+const TrayAppName = "ActiveState Desktop (Preview)"
+
+// SvcAppName is the name we give our state-svc application
+const SvcAppName = "State Service"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
+
+// StateInstallerCmd is the name of the state installer binary
+const StateInstallerCmd = "state-installer"
+
+// UpdateDialogName is the name we give our state-update-dialog executable
+const UpdateDialogName = "State Update Dialog"
+
+// ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
+// Cf., https://www.pivotaltracker.com/story/show/177781411
+const ToplevelInstallArchiveDir = "state-install"
+
+// FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
+const FirstMultiFileStateToolVersion = "0.29.0"
+
+// ExecRecursionLevelEnvVarName is an environment variable storing the number of times the executor has been called recursively
+const ExecRecursionLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_LEVEL"
+
+// ExecRecursionEnvVarName is an environment variable storing a string representation of the current recursion
+const ExecRecursionEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION"
+
+// ExecRecursionAllowEnvVarName is an environment variable overriding the recursion allowance
+const ExecRecursionAllowEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_ALLOW"
+
+// ExecRecursionMaxLevelEnvVarName is an environment variable storing the number of times the executor may be called recursively
+const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_LEVEL"
+
+// InstallSourceFile is the file we use to record what installed the state tool
+const InstallSourceFile = "installsource.txt"

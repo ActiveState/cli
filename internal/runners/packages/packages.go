@@ -3,22 +3,29 @@ package packages
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -35,37 +42,103 @@ func (pv *PackageVersion) Set(arg string) error {
 
 type configurable interface {
 	keypairs.Configurable
-	CachePath() string
 }
 
 const latestVersion = "latest"
 
-func executePackageOperation(pj *project.Project, cfg configurable, out output.Outputer, authentication *authentication.Auth, prompt prompt.Prompter, name, version string, operation model.Operation, ns model.Namespace) error {
-	isHeadless := pj.IsHeadless()
-	if !isHeadless && !authentication.Authenticated() {
-		anonConfirmDefault := true
-		anonymousOk, err := prompt.Confirm(locale.Tl("continue_anon", "Continue Anonymously?"), locale.T("prompt_headless_anonymous"), &anonConfirmDefault)
-		if err != nil {
-			return locale.WrapInputError(err, "Authentication cancelled.")
+func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+	var ns model.Namespace
+	var langVersion string
+	langName := "undetermined"
+
+	out := prime.Output()
+	var pg *output.DotProgress
+	defer func() {
+		if pg != nil && !pg.Stopped() {
+			pg.Stop(locale.T("progress_fail"))
 		}
-		isHeadless = anonymousOk
+	}()
+
+	var err error
+	pj := prime.Project()
+	if pj == nil {
+		pg = output.NewDotProgress(out, locale.Tl("progress_project", "", packageName), 10*time.Second)
+		pj, err = initializeProject()
+		if err != nil {
+			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
+		}
+		pg.Stop(locale.T("progress_success"))
+
+		defer func() {
+			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
+				if err := os.Remove(pj.Source().Path()); err != nil {
+					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
+				}
+			}
+		}()
+	} else {
+		language, err := model.LanguageByCommit(pj.CommitUUID())
+		if err == nil {
+			langName = language.Name
+			ns = model.NewNamespacePkgOrBundle(langName, nsType)
+		}
 	}
 
-	// Note: User also lands here if answering No to the question about anonymous commit.
-	if !isHeadless {
-		err := auth.RequireAuthentication(locale.T("auth_required_activate"), cfg, out, prompt)
+	var validatePkg = operation == model.OperationAdded
+	if !ns.IsValid() {
+		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", packageName), 10*time.Second)
+
+		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
-			return locale.WrapInputError(err, "err_auth_required")
+			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
 		}
+
+		var supportedLang *medmodel.SupportedLanguage
+		packageName, ns, supportedLang, err = resolvePkgAndNamespace(prime.Prompt(), packageName, nsType, supported)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve pkg and namespace")
+		}
+		langVersion = supportedLang.DefaultVersion
+		langName = supportedLang.Name
+
+		validatePkg = false
+
+		pg.Stop(locale.T("progress_found"))
 	}
 
-	if strings.ToLower(version) == latestVersion {
-		version = ""
+	if strings.ToLower(packageVersion) == latestVersion {
+		packageVersion = ""
 	}
+
+	if validatePkg {
+		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", packageName), 10*time.Second)
+
+		packages, err := model.SearchIngredientsStrict(ns, packageName, false, false)
+		if err != nil {
+			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
+		}
+		if len(packages) == 0 {
+			suggestions, err := getSuggestions(ns, packageName)
+			if err != nil {
+				logging.Error("Failed to retrieve suggestions: %v", err)
+			}
+			if len(suggestions) == 0 {
+				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", packageName)
+			}
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "", packageName, strings.Join(suggestions, "\n"))
+		}
+
+		pg.Stop(locale.T("progress_found"))
+	}
+
+	parentCommitID := pj.CommitUUID()
+	hasParentCommit := parentCommitID != ""
+
+	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded {
-		req, err := model.GetRequirement(pj.CommitUUID(), ns.String(), name)
+	if operation == model.OperationAdded && parentCommitID != "" {
+		req, err := model.GetRequirement(parentCommitID, ns.String(), packageName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
@@ -74,68 +147,122 @@ func executePackageOperation(pj *project.Project, cfg configurable, out output.O
 		}
 	}
 
-	parentCommitID := pj.CommitUUID()
-	commitID, err := model.CommitPackage(parentCommitID, operation, name, ns.String(), version, machineid.UniqID())
+	prime.Analytics().EventWithLabel(
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), packageName,
+	)
+
+	if !hasParentCommit {
+		languageFromNs := model.LanguageFromNamespace(ns.String())
+		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
+		if err != nil {
+			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
+		}
+	}
+
+	var commitID strfmt.UUID
+	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
-	revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
-	if err != nil {
-		return errs.Wrap(err, "Could not get revert commit to check if changes were indeed made")
+	orderChanged := !hasParentCommit
+	if hasParentCommit {
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_revert_refresh")
+		}
+		orderChanged = len(revertCommit.Changeset) > 0
 	}
-
-	orderChanged := len(revertCommit.Changeset) > 0
 
 	logging.Debug("Order changed: %v", orderChanged)
-
-	// Verify that the provided package actually exists (the vcs API doesn't care)
-	_, err = model.FetchRecipe(commitID, pj.Owner(), pj.Name(), &model.HostPlatform)
-	if err != nil {
-		rerr := &inventory_operations.ResolveRecipesBadRequest{}
-		if errors.As(err, &rerr) {
-			suggestions, serr := getSuggestions(ns, name)
-			if serr != nil {
-				logging.Error("Failed to retrieve suggestions: %v", err)
-			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "Could not match {{.V0}}. Did you mean:\n\n{{.V1}}", name, strings.Join(suggestions, "\n"))
-		}
-		return locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
-	}
-
-	// Update project references to the new commit, if changes were indeed made (otherwise we effectively drop the new commit)
 	if orderChanged {
-		if !isHeadless {
-			err := model.UpdateProjectBranchCommit(pj, commitID)
-			if err != nil {
-				return locale.WrapError(err, "err_package_"+string(operation))
-			}
-		}
-		if err := pj.Source().SetCommit(commitID.String(), isHeadless); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
-	} else {
-		commitID = parentCommitID
 	}
 
-	// refresh runtime
-	err = runbits.RefreshRuntime(out, pj, cfg.CachePath(), commitID, orderChanged)
+	pg.Stop(locale.T("progress_success"))
+
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel())
 	if err != nil {
 		return err
 	}
 
 	// Print the result
-	if version != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), name, version))
-	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), name))
+	if !hasParentCommit {
+		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
+
+	if packageVersion != "" {
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), packageName, packageVersion))
+	} else {
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), packageName))
+	}
+
+	out.Print(locale.T("operation_success_local"))
 
 	return nil
 }
 
+func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
+	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
+}
+
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
+	ns := model.NewBlankNamespace()
+
+	// Find ingredients that match the input query
+	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false, false)
+	if err != nil {
+		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
+	}
+
+	ingredients, err = model.FilterSupportedIngredients(supported, ingredients)
+	if err != nil {
+		return "", ns, nil, errs.Wrap(err, "Failed to filter out unsupported packages")
+	}
+
+	choices := []string{}
+	values := map[string][]string{}
+	for _, i := range ingredients {
+		language := model.LanguageFromNamespace(*i.Ingredient.PrimaryNamespace)
+
+		// Generate ingredient choices to present to the user
+		name := fmt.Sprintf("%s (%s)", *i.Ingredient.Name, language)
+		choices = append(choices, name)
+		values[name] = []string{*i.Ingredient.Name, language}
+	}
+
+	if len(choices) == 0 {
+		return "", ns, nil, locale.WrapInputError(err, "package_ingredient_alternatives_nolang", "", packageName)
+	}
+
+	// If we only have one ingredient match we're done; return it.
+	if len(choices) == 1 {
+		language := values[choices[0]][1]
+		supportedLang := supportedLanguageByName(supported, language)
+		return values[choices[0]][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
+	}
+
+	// Prompt the user with the ingredient choices
+	choice, err := prompt.Select(
+		locale.Tl("prompt_pkgop_ingredient", "Multiple Matches"),
+		locale.Tl("prompt_pkgop_ingredient_msg", "Your query has multiple matches, which one would you like to use?"),
+		choices, &choices[0],
+	)
+	if err != nil {
+		return "", ns, nil, locale.WrapError(err, "err_pkgop_select", "Need a selection.")
+	}
+
+	// Return the user selected ingredient
+	language := values[choice][1]
+	supportedLang := supportedLanguageByName(supported, language)
+	return values[choice][0], model.NewNamespacePkgOrBundle(language, nsType), &supportedLang, nil
+}
+
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {
-	results, err := model.SearchIngredients(ns, name)
+	results, err := model.SearchIngredients(ns, name, false)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}
@@ -149,7 +276,25 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	for _, result := range results {
 		suggestions = append(suggestions, fmt.Sprintf(" - %s", *result.Ingredient.Name))
 	}
-	suggestions = append(suggestions, locale.Tr(fmt.Sprintf("%s_ingredient_alternatives_more", ns.Type()), name))
 
 	return suggestions, nil
+}
+
+func initializeProject() (*project.Project, error) {
+	target, err := os.Getwd()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
+	}
+
+	createParams := &projectfile.CreateParams{
+		ProjectURL: constants.DashboardCommitURL,
+		Directory:  target,
+	}
+
+	_, err = projectfile.Create(createParams)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
+	}
+
+	return project.FromPath(target)
 }

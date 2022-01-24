@@ -3,32 +3,38 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 )
 
 type UpdateIntegrationTestSuite struct {
 	tagsuite.Suite
-	cfg projectfile.ConfigGetter
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
 
-var targetBranch = "release"
+// Todo https://www.pivotaltracker.com/story/show/177863116
+// Update to release branch when possible
+var targetBranch = "beta"
+var testBranch = "test-channel"
+var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
+var oldReleaseUpdateVersion = "0.28.2-SHAbdac00e"
+var specificVersion = "0.29.0-SHA9f570a0"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -36,17 +42,11 @@ func init() {
 	}
 }
 
-func (suite *UpdateIntegrationTestSuite) BeforeTest(suiteName, testName string) {
-	var err error
-	suite.cfg, err = config.Get()
-	suite.Require().NoError(err)
-}
-
-func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
-	env := []string{
-		"ACTIVESTATE_CLI_AUTO_UPDATE_TIMEOUT=10",
-		"ACTIVESTATE_CLI_UPDATE_BRANCH=" + targetBranch,
-	}
+// env prepares environment variables for the test
+// disableUpdates prevents all update code from running
+// testUpdate directs to the locally running update directory and requires that a test update bundles has been generated with `state run generate-test-update`
+func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) []string {
+	env := []string{}
 
 	if disableUpdates {
 		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=true")
@@ -54,18 +54,23 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates bool) []string {
 		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
 	}
 
+	if forceUpdate {
+		env = append(env, "ACTIVESTATE_FORCE_UPDATE=true")
+	}
+
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+	env = append(env, fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir))
+
 	return env
 }
 
-func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
+func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expected string, matcher matcherFunc) {
 	type versionData struct {
 		Version string `json:"version"`
 	}
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
 	cp.ExpectExitCode(0)
 
 	version := versionData{}
@@ -75,16 +80,13 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, disable
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
 }
 
-func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableUpdates bool, expected string, matcher matcherFunc) {
+func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected string, matcher matcherFunc) {
 	type branchData struct {
 		Branch string `json:"branch"`
 	}
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(disableUpdates)...))
-	cp.ExpectExitCode(0)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
+	cp.ExpectExitCode(0, 30*time.Second)
 
 	branch := branchData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
@@ -93,296 +95,121 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, disableU
 	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))
 }
 
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdateDisabled() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	suite.versionCompare(ts, true, constants.Version, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestNoAutoUpdate() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// update should not run because the exe is less than a day old
-	suite.versionCompare(ts, false, constants.Version, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// use unique exe
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
-
-	// update should run because the exe is more than a day old
-	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestAutoUpdateNoPermissions() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// use unique exe
-	ts.UseDistinctStateExe()
-
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false)...), e2e.NonWriteableBinDir())
-	cp.Expect("insufficient permissions")
-	cp.Expect("ActiveState CLI")
-	cp.Expect("Revision")
-	cp.ExpectExitCode(0)
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
-
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
-
-	suite.Equal(constants.Version, resultVersions[len(resultVersions)-1], "Did not expect updated version, output:\n\n%s", cp.Snapshot())
-}
-
-func (suite *UpdateIntegrationTestSuite) TestLocked() {
-	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.Expect("Version locked at")
+	// Technically state tool automatically starts the state-svc, but the update notification only happens if the svc
+	// happens to already be running and fails silently if not, so in this case we want to ensure the svc is running
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, false, constants.Version, suite.NotEqual)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
-	suite.T().SkipNow() // https://www.pivotaltracker.com/story/show/176926586
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--set-channel", targetBranch),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.Expect("Version locked at")
-	cp.Expect(targetBranch + "@")
-	cp.ExpectExitCode(0)
-
-	suite.branchCompare(ts, false, targetBranch, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestLockedChannelVersion() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-	pjfile.SetPath(yamlPath)
-	pjfile.Save(suite.cfg)
-
-	lock := targetBranch + "@latest"
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--set-channel", lock),
-		e2e.AppendEnv(suite.env(false)...),
-	)
-
-	cp.Expect("Version locked at")
-	cp.Expect(targetBranch + "@")
-	cp.ExpectExitCode(0)
-
-	yamlContents, err := fileutils.ReadFile(yamlPath)
-	suite.Require().NoError(err)
-	suite.Contains(string(yamlContents), lock)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationNegative() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("sure you want")
-	cp.Send("n")
-	cp.Expect("not confirm")
-	cp.ExpectNotExitCode(0)
-}
-
-// TestUpdateLockedConfirmationPositive does not verify the effects of the
-// update behavior. That is left to TestUpdate.
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationPositive() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("sure you want")
-	cp.Send("y")
-	cp.Expect("Version locked at")
-	cp.ExpectExitCode(0)
-}
-
-// TestUpdateLockedConfirmationForce does not verify the effects of the
-// update behavior. That is left to TestUpdate.
-func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmationForce() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	pjfile := projectfile.Project{
-		Project: lockedProjectURL(),
-		Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
-	pjfile.Save(suite.cfg)
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--force"),
-		e2e.AppendEnv(suite.env(true)...),
-	)
-	cp.Expect("Version locked at")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
+	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
+
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
+	ts.UseDistinctStateExes()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating state tool:  Downloading latest version")
-	cp.Expect("Version updated", 60*time.Second)
-	cp.ExpectExitCode(0)
+	suite.testUpdate(ts, ts.Dirs.Bin)
+}
 
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-(SHA)?[a-f0-9]+`)
-	resultVersions := regex.FindAllString(cp.TrimmedSnapshot(), -1)
+func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
 
-	suite.GreaterOrEqual(len(resultVersions), 1,
-		fmt.Sprintf("Must have more than 0 matches (the first one being the 'Updating from X to Y' message, matched versions: %v, output:\n\n%s", resultVersions, cp.Snapshot()),
-	)
+	stateExe := appinfo.StateApp(baseDir)
 
-	suite.NotEqual(constants.Version, resultVersions[len(resultVersions)-1], fmt.Sprintf("Expected to update to a new a new version:\n\n%s", cp.Snapshot()))
+	spawnOpts := []e2e.SpawnOptions{
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(false, true)...),
+	}
+	if opts != nil {
+		spawnOpts = append(spawnOpts, opts...)
+	}
 
-	suite.versionCompare(ts, true, constants.Version, suite.NotEqual)
+	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect("Installing Update")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExe()
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update", "--set-channel", targetBranch), e2e.AppendEnv(suite.env(false)...))
-	cp.Expect("Updating state tool:  Downloading latest version")
-	cp.Expect("Version updated", 60*time.Second)
-	cp.Expect(targetBranch+"@", 60*time.Second)
-	cp.ExpectExitCode(0)
-
-	suite.branchCompare(ts, false, targetBranch, suite.Equal)
-}
-
-func (suite *UpdateIntegrationTestSuite) TestUpdateNoPermissions() {
-	suite.OnlyRunForTags(tagsuite.Update)
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipping permission test on Windows, as CI on Windows is running as Administrator and is allowed to do EVERYTHING")
+	tests := []struct {
+		Name    string
+		Channel string
+		Version string
+	}{
+		{"release-channel", "release", ""},
+		{"specific-update", targetBranch, specificVersion},
 	}
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
 
-	// use unique exe
-	ts.UseDistinctStateExe()
+	for _, tt := range tests {
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
 
-	// Spoof modtime
-	t := time.Now().Add(-25 * time.Hour)
-	os.Chtimes(ts.ExecutablePath(), t, t)
+			// Ensure we always use a unique exe for updates
+			ts.UseDistinctStateExes()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("update"), e2e.AppendEnv(suite.env(true)...), e2e.NonWriteableBinDir())
-	cp.Expect("Update failed due to permission error")
-	cp.ExpectNotExitCode(0)
+			updateArgs := []string{"update", "--set-channel", tt.Channel}
+			if tt.Version != "" {
+				updateArgs = append(updateArgs, "--set-version", tt.Version)
+			}
+			cp := ts.SpawnWithOpts(
+				e2e.WithArgs(updateArgs...),
+				e2e.AppendEnv(suite.env(false, false)...),
+			)
+			cp.Expect("Updating")
+			cp.ExpectExitCode(0)
 
-	suite.versionCompare(ts, true, constants.Version, suite.Equal)
+			suite.branchCompare(ts, tt.Channel, suite.Equal)
+
+			if tt.Version != "" {
+				suite.versionCompare(ts, tt.Version, suite.Equal)
+			}
+		})
+	}
 }
 
+func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
+	// Disabled, waiting for - https://www.pivotaltracker.com/story/show/179646813
+	suite.T().Skip("Disabled for now")
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	tests := []struct {
+		name          string
+		tagged        bool
+		expectSuccess bool
+	}{
+		{"update-to-tag", false, true},
+		{"update-with-tag", true, false},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+			// use unique exe
+			ts.UseDistinctStateExes()
+
+			// ..
+		})
+	}
+}
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
@@ -392,4 +219,92 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 
 func lockedProjectURL() string {
 	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.UseDistinctStateExes()
+
+	suite.testAutoUpdate(ts, ts.Dirs.Bin)
+}
+
+func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
+	stateExe := appinfo.StateApp(baseDir)
+
+	fakeHome := filepath.Join(ts.Dirs.Work, "home")
+	suite.Require().NoError(fileutils.Mkdir(fakeHome))
+
+	spawnOpts := []e2e.SpawnOptions{
+		e2e.WithArgs("--version"),
+		e2e.AppendEnv(suite.env(false, true)...),
+		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
+		e2e.AppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
+	}
+	if opts != nil {
+		spawnOpts = append(spawnOpts, opts...)
+	}
+
+	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp.Expect("Auto Update")
+	cp.Expect("Updating State Tool")
+	cp.Expect("Update installed")
+}
+
+func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s", dir)
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs("-c", oneLiner),
+		)
+	} else {
+		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		suite.Require().NoError(err)
+
+		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
+		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
+
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir),
+			e2e.AppendEnv("SHELL="),
+		)
+	}
+	cp.Expect("Installation Complete", time.Second*30)
+
+	suite.FileExists(appinfo.StateApp(dir).Exec())
+}
+
+func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	installDir := filepath.Join(ts.Dirs.Work, "install")
+	fileutils.MkdirUnlessExists(installDir)
+
+	suite.installLatestReleaseVersion(ts, installDir)
+
+	suite.testAutoUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
+	if strings.HasPrefix(constants.Version, "0.30") {
+		// Feel free to drop this once the release channel is no longer on 0.29
+		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
+	}
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	installDir := filepath.Join(ts.Dirs.Work, "install")
+	fileutils.MkdirUnlessExists(installDir)
+
+	suite.installLatestReleaseVersion(ts, installDir)
+
+	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
 }

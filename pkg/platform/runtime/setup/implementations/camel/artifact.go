@@ -2,6 +2,7 @@ package camel
 
 import (
 	"bytes"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -97,6 +98,15 @@ func convertToEnvVars(metadata *MetaData) []envdef.EnvironmentVariable {
 			Inherit: false,
 		})
 	}
+	for k, v := range metadata.PathListEnv {
+		res = append(res, envdef.EnvironmentVariable{
+			Name:      k,
+			Values:    []string{v},
+			Join:      envdef.Prepend,
+			Separator: string(os.PathListSeparator),
+			Inherit:   true,
+		})
+	}
 	var binPaths []string
 
 	// set up PATH according to binary locations
@@ -184,6 +194,11 @@ func fileTransformsInDir(instDir string, searchDir string, searchString string, 
 	err := filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		// skip symlinks
+		if (info.Mode() & fs.ModeSymlink) == fs.ModeSymlink {
+			return nil
 		}
 
 		if info.IsDir() {

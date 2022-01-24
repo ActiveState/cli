@@ -59,7 +59,7 @@ func (s *Sync) Run() error {
 		return locale.WrapError(err, "secrets_err_sync", "Cannot synchronize secrets")
 	}
 
-	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.Name))
+	s.out.Print(locale.Tr("secrets_sync_results_message", strconv.Itoa(updatedCount), org.DisplayName))
 
 	return nil
 }
@@ -86,14 +86,14 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 			params := secretsapiClient.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID
-			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.Get().ClientAuth())
+			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.LegacyGet().ClientAuth())
 
 			if err != nil {
 				switch statusCode := api.ErrorCode(err); statusCode {
 				case 404:
 					continue // nothing to do when no diff for a user, move on to next one
 				case 401:
-					return updatedCtr, locale.NewError("err_api_not_authenticated")
+					return updatedCtr, locale.NewInputError("err_api_not_authenticated")
 				default:
 					logging.Debug("unknown error diffing user secrets with %s: %v", member.User.UserID.String(), err)
 					return updatedCtr, errs.Wrap(err, "Unknown failure")

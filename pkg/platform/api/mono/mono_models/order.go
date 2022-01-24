@@ -6,6 +6,7 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -21,6 +22,9 @@ type Order struct {
 
 	// annotations
 	Annotations *OrderAnnotations `json:"annotations,omitempty"`
+
+	// Platform build flags
+	BuildFlags []*BuildFlag `json:"build_flags"`
 
 	// Flags for camel
 	CamelFlags []string `json:"camel_flags"`
@@ -51,6 +55,10 @@ func (m *Order) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateBuildFlags(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOrderID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -74,7 +82,6 @@ func (m *Order) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateAnnotations(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Annotations) { // not required
 		return nil
 	}
@@ -91,8 +98,31 @@ func (m *Order) validateAnnotations(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Order) validateOrderID(formats strfmt.Registry) error {
+func (m *Order) validateBuildFlags(formats strfmt.Registry) error {
+	if swag.IsZero(m.BuildFlags) { // not required
+		return nil
+	}
 
+	for i := 0; i < len(m.BuildFlags); i++ {
+		if swag.IsZero(m.BuildFlags[i]) { // not required
+			continue
+		}
+
+		if m.BuildFlags[i] != nil {
+			if err := m.BuildFlags[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flags" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Order) validateOrderID(formats strfmt.Registry) error {
 	if swag.IsZero(m.OrderID) { // not required
 		return nil
 	}
@@ -105,7 +135,6 @@ func (m *Order) validateOrderID(formats strfmt.Registry) error {
 }
 
 func (m *Order) validatePlatforms(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Platforms) { // not required
 		return nil
 	}
@@ -122,7 +151,6 @@ func (m *Order) validatePlatforms(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateRequirements(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Requirements) { // not required
 		return nil
 	}
@@ -147,13 +175,84 @@ func (m *Order) validateRequirements(formats strfmt.Registry) error {
 }
 
 func (m *Order) validateTimestamp(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Timestamp) { // not required
 		return nil
 	}
 
 	if err := validate.FormatOf("timestamp", "body", "date-time", m.Timestamp.String(), formats); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this order based on the context it is used
+func (m *Order) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateAnnotations(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateBuildFlags(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRequirements(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Order) contextValidateAnnotations(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Annotations != nil {
+		if err := m.Annotations.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("annotations")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Order) contextValidateBuildFlags(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.BuildFlags); i++ {
+
+		if m.BuildFlags[i] != nil {
+			if err := m.BuildFlags[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("build_flags" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *Order) contextValidateRequirements(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Requirements); i++ {
+
+		if m.Requirements[i] != nil {
+			if err := m.Requirements[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("requirements" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil

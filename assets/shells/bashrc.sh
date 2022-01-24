@@ -21,11 +21,12 @@ alias {{.ExecName}}='{{.ExecAlias}}'
 {{ end }}
 
 {{range $K, $CMD := .Scripts}}
-alias {{$K}}='{{$.ExecName}} run {{$CMD}}'
+function {{$K}} {
+    {{$.ExecName}} run {{$CMD}} "$@"
+}
+export -f {{$K}}
 {{end}}
 
-echo "{{.ActivateEventMessage}}"
+echo "{{.ActivatedMessage}}"
 
 {{.UserScripts}}
-
-echo "{{.ActivatedMessage}}"

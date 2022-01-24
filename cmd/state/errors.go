@@ -3,17 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"runtime/debug"
 	"strings"
-	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 type ErrorTips interface {
@@ -30,9 +28,12 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	}
 
 	var outLines []string
+	isInputError := locale.IsInputError(o.error)
 
 	// Print what happened
-	outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+	if !isInputError {
+		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+	}
 
 	errs := locale.UnwrapError(o.error)
 	if len(errs) == 0 {
@@ -40,6 +41,14 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		errs = []error{o.error}
 	}
 	for _, errv := range errs {
+		if isInputError && locale.IsInputErrorNonRecursive(errv) {
+			outLines = []string{
+				"[/RESET]", // This achieves two goals: Adding an empty line and not printing the input error in red
+				locale.ErrorMessage(errv),
+			}
+			break // We only want the actual input error in this case
+		}
+		// If this is an input error then we just want to show the error itself without alarming the user too much
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
 
@@ -52,7 +61,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		}
 		err = errors.Unwrap(err)
 	}
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "Visit the Forum → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
 	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
@@ -93,39 +102,33 @@ func unwrapError(err error) (int, error) {
 
 	// Log error if this isn't a user input error
 	if !locale.IsInputError(err) {
-		logging.Error("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+	}
+
+	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
+	if errors.As(err, &llerr) {
+		key, base := llerr.Localization()
+		if key != "" && base != "" {
+			err = locale.WrapError(err, key, base)
+		}
+		reportMsg := llerr.ReportMessage()
+		if reportMsg != "" {
+			logging.Error(reportMsg)
+		}
 	}
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if !rtutils.BuiltViaCI {
-			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", err.Error(), stack))
+		if !condition.BuiltViaCI() {
+			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
 
 	return code, &OutputError{err}
-}
-
-func handlePanics(exiter func(int)) {
-	if r := recover(); r != nil {
-		if msg, ok := r.(string); ok && msg == "exiter" {
-			panic(r) // don't capture exiter panics
-		}
-
-		logging.Error("%v - caught panic", r)
-		logging.Debug("Panic: %v\n%s", r, string(debug.Stack()))
-
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
-Check the error log for more information.
-Your error log is located at: %s`, logging.FilePath()))
-
-		time.Sleep(time.Second) // Give rollbar a second to complete its async request (switching this to sync isnt simple)
-		exiter(1)
-	}
 }
 
 type SilencedError struct{ error }

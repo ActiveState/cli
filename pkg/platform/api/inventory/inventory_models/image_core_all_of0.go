@@ -6,6 +6,7 @@ package inventory_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -30,7 +31,7 @@ type ImageCoreAllOf0 struct {
 
 	// The type of the image.
 	// Required: true
-	// Enum: [Docker Mac MacChroot WindowsDocker WindowsInstance]
+	// Enum: [Docker Mac MacSandbox WindowsDocker WindowsInstance]
 	Type *string `json:"type"`
 }
 
@@ -82,7 +83,7 @@ var imageCoreAllOf0TypeTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["Docker","Mac","MacChroot","WindowsDocker","WindowsInstance"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["Docker","Mac","MacSandbox","WindowsDocker","WindowsInstance"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -98,8 +99,8 @@ const (
 	// ImageCoreAllOf0TypeMac captures enum value "Mac"
 	ImageCoreAllOf0TypeMac string = "Mac"
 
-	// ImageCoreAllOf0TypeMacChroot captures enum value "MacChroot"
-	ImageCoreAllOf0TypeMacChroot string = "MacChroot"
+	// ImageCoreAllOf0TypeMacSandbox captures enum value "MacSandbox"
+	ImageCoreAllOf0TypeMacSandbox string = "MacSandbox"
 
 	// ImageCoreAllOf0TypeWindowsDocker captures enum value "WindowsDocker"
 	ImageCoreAllOf0TypeWindowsDocker string = "WindowsDocker"
@@ -110,7 +111,7 @@ const (
 
 // prop value enum
 func (m *ImageCoreAllOf0) validateTypeEnum(path, location string, value string) error {
-	if err := validate.Enum(path, location, value, imageCoreAllOf0TypeTypePropEnum); err != nil {
+	if err := validate.EnumCase(path, location, value, imageCoreAllOf0TypeTypePropEnum, true); err != nil {
 		return err
 	}
 	return nil
@@ -127,6 +128,11 @@ func (m *ImageCoreAllOf0) validateType(formats strfmt.Registry) error {
 		return err
 	}
 
+	return nil
+}
+
+// ContextValidate validates this image core all of0 based on context it is used
+func (m *ImageCoreAllOf0) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 

@@ -16,56 +16,70 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewSearchUsernamesParams creates a new SearchUsernamesParams object
-// with the default values initialized.
+// NewSearchUsernamesParams creates a new SearchUsernamesParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewSearchUsernamesParams() *SearchUsernamesParams {
-	var ()
 	return &SearchUsernamesParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewSearchUsernamesParamsWithTimeout creates a new SearchUsernamesParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewSearchUsernamesParamsWithTimeout(timeout time.Duration) *SearchUsernamesParams {
-	var ()
 	return &SearchUsernamesParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewSearchUsernamesParamsWithContext creates a new SearchUsernamesParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewSearchUsernamesParamsWithContext(ctx context.Context) *SearchUsernamesParams {
-	var ()
 	return &SearchUsernamesParams{
-
 		Context: ctx,
 	}
 }
 
 // NewSearchUsernamesParamsWithHTTPClient creates a new SearchUsernamesParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewSearchUsernamesParamsWithHTTPClient(client *http.Client) *SearchUsernamesParams {
-	var ()
 	return &SearchUsernamesParams{
 		HTTPClient: client,
 	}
 }
 
-/*SearchUsernamesParams contains all the parameters to send to the API endpoint
-for the search usernames operation typically these are written to a http.Request
+/* SearchUsernamesParams contains all the parameters to send to the API endpoint
+   for the search usernames operation.
+
+   Typically these are written to a http.Request.
 */
 type SearchUsernamesParams struct {
 
-	/*Body*/
+	// Body.
 	Body SearchUsernamesBody
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the search usernames params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SearchUsernamesParams) WithDefaults() *SearchUsernamesParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the search usernames params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *SearchUsernamesParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the search usernames params
@@ -119,7 +133,6 @@ func (o *SearchUsernamesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 	var res []error
-
 	if err := r.SetBodyParam(o.Body); err != nil {
 		return err
 	}

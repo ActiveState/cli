@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -44,12 +46,37 @@ func (m *Checkpoint) Validate(formats strfmt.Registry) error {
 }
 
 func (m *Checkpoint) validateVersionConstraints(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.VersionConstraints) { // not required
 		return nil
 	}
 
 	if err := m.VersionConstraints.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("version_constraints")
+		}
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this checkpoint based on the context it is used
+func (m *Checkpoint) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateVersionConstraints(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Checkpoint) contextValidateVersionConstraints(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.VersionConstraints.ContextValidate(ctx, formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("version_constraints")
 		}

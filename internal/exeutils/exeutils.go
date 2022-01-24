@@ -2,6 +2,7 @@ package exeutils
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
@@ -19,17 +22,20 @@ func Executables(bins []string) ([]string, error) {
 	exes := []string{}
 
 	for _, bin := range bins {
-		err := filepath.Walk(bin, func(fpath string, info os.FileInfo, err error) error {
-			// Filter out files that are not executable
-			if info == nil || info.IsDir() || !fileutils.IsExecutable(fpath) { // check if executable by anyone
-				return nil // not executable
-			}
+		if !fileutils.DirExists(bin) {
+			continue
+		}
 
-			exes = append(exes, fpath)
-			return nil
-		})
+		entries, err := ioutil.ReadDir(bin)
 		if err != nil {
-			return exes, errs.Wrap(err, "Error while walking path")
+			return nil, errs.Wrap(err, "Could not read directory: %s", bin)
+		}
+
+		for _, entry := range entries {
+			fpath := filepath.Join(bin, entry.Name())
+			if fileutils.IsExecutable(fpath) {
+				exes = append(exes, fpath)
+			}
 		}
 	}
 
@@ -91,10 +97,12 @@ func ExecSimple(bin string, args ...string) (string, string, error) {
 }
 
 func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) {
+	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %v", dir, bin, args)
 	c := exec.Command(bin, args...)
 	if dir != "" {
 		c.Dir = dir
 	}
+	c.Env = os.Environ()
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	c.Stdout = &stdout
@@ -105,4 +113,69 @@ func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) 
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+// Execute will run the given command and with optional settings for the exec.Cmd struct
+func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
+	logging.Debug("Executing command: %s, %v", command, arg)
+
+	cmd := exec.Command(command, arg...)
+
+	if optSetter != nil {
+		if err := optSetter(cmd); err != nil {
+			return -1, nil, err
+		}
+	}
+
+	err := cmd.Run()
+	if err != nil {
+		logging.Debug("Executing command returned error: %v", err)
+	}
+	return osutils.CmdExitCode(cmd), cmd, err
+}
+
+// ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
+func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.Cmd, error) {
+	return Execute(command, arg, func(cmd *exec.Cmd) error {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, env...)
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		return nil
+	})
+}
+
+// ExecuteAndForget will run the given command in the background, returning immediately.
+func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd) error) (*os.Process, error) {
+	logging.Debug("Executing: %s %v", command, args)
+	cmd := exec.Command(command, args...)
+
+	for _, optSetter := range opts {
+		if err := optSetter(cmd); err != nil {
+			return nil, err
+		}
+	}
+
+	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
+	if err := cmd.Start(); err != nil {
+		return nil, errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+	cmd.Stdin = nil
+
+	// Wait for the command to finish in a go-routine.  If we do not do that, and the parent process keeps running,
+	// the launched process will keep around flagged <defunct> (at least on Linux)
+	go func() {
+		cmd.Wait()
+	}()
+
+	return cmd.Process, nil
+}
+
+// DecodeCmd takes an encoded command and decodes it by returning a shell variant based on the OS we're on
+func DecodeCmd(cmd string) (string, []string) {
+	switch runtime.GOOS {
+	case "windows":
+		return "cmd", []string{"/C", cmd}
+	default:
+		return "sh", []string{"-c", cmd}
+	}
 }

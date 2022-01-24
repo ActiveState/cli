@@ -16,59 +16,73 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// NewLoginAsParams creates a new LoginAsParams object
-// with the default values initialized.
+// NewLoginAsParams creates a new LoginAsParams object,
+// with the default timeout for this client.
+//
+// Default values are not hydrated, since defaults are normally applied by the API server side.
+//
+// To enforce default values in parameter, use SetDefaults or WithDefaults.
 func NewLoginAsParams() *LoginAsParams {
-	var ()
 	return &LoginAsParams{
-
 		timeout: cr.DefaultTimeout,
 	}
 }
 
 // NewLoginAsParamsWithTimeout creates a new LoginAsParams object
-// with the default values initialized, and the ability to set a timeout on a request
+// with the ability to set a timeout on a request.
 func NewLoginAsParamsWithTimeout(timeout time.Duration) *LoginAsParams {
-	var ()
 	return &LoginAsParams{
-
 		timeout: timeout,
 	}
 }
 
 // NewLoginAsParamsWithContext creates a new LoginAsParams object
-// with the default values initialized, and the ability to set a context for a request
+// with the ability to set a context for a request.
 func NewLoginAsParamsWithContext(ctx context.Context) *LoginAsParams {
-	var ()
 	return &LoginAsParams{
-
 		Context: ctx,
 	}
 }
 
 // NewLoginAsParamsWithHTTPClient creates a new LoginAsParams object
-// with the default values initialized, and the ability to set a custom HTTPClient for a request
+// with the ability to set a custom HTTPClient for a request.
 func NewLoginAsParamsWithHTTPClient(client *http.Client) *LoginAsParams {
-	var ()
 	return &LoginAsParams{
 		HTTPClient: client,
 	}
 }
 
-/*LoginAsParams contains all the parameters to send to the API endpoint
-for the login as operation typically these are written to a http.Request
+/* LoginAsParams contains all the parameters to send to the API endpoint
+   for the login as operation.
+
+   Typically these are written to a http.Request.
 */
 type LoginAsParams struct {
 
-	/*Username
-	  Username to login as
+	/* Username.
 
+	   Username to login as
 	*/
 	Username string
 
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
+}
+
+// WithDefaults hydrates default values in the login as params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LoginAsParams) WithDefaults() *LoginAsParams {
+	o.SetDefaults()
+	return o
+}
+
+// SetDefaults hydrates default values in the login as params (not the query body).
+//
+// All values with no default are reset to their zero value.
+func (o *LoginAsParams) SetDefaults() {
+	// no default values defined for this parameter
 }
 
 // WithTimeout adds the timeout to the login as params

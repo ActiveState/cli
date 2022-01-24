@@ -6,6 +6,8 @@ package mono_models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -143,6 +145,52 @@ func (m *InvoiceInfo) validateUsers(formats strfmt.Registry) error {
 
 	if err := validate.Required("users", "body", m.Users); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this invoice info based on the context it is used
+func (m *InvoiceInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateBillingAddress(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateShippingAddress(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *InvoiceInfo) contextValidateBillingAddress(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.BillingAddress != nil {
+		if err := m.BillingAddress.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("billingAddress")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *InvoiceInfo) contextValidateShippingAddress(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ShippingAddress != nil {
+		if err := m.ShippingAddress.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("shippingAddress")
+			}
+			return err
+		}
 	}
 
 	return nil

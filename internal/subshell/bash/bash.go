@@ -18,6 +18,8 @@ import (
 
 var escaper *osutils.ShellEscape
 
+var rcFileName = ".bashrc"
+
 func init() {
 	escaper = osutils.NewBashEscaper()
 }
@@ -60,6 +62,28 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return sscommon.WriteRcFile("bashrc_append.sh", rcFile, envType, env)
 }
 
+func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile-failure")
+	}
+
+	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
+	}
+
+	return nil
+}
+
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "RcFile-failure")
+	}
+
+	return sscommon.RemoveLegacyInstallPath(rcFile)
+}
+
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	dir := "/usr/local/etc/bash_completion.d/"
 	if runtime.GOOS != "darwin" {
@@ -82,7 +106,16 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, ".bashrc"), nil
+	rcFilePath := filepath.Join(homeDir, rcFileName)
+	// Ensure the .bashrc file exists. On some platforms it is not created by default
+	if !fileutils.TargetExists(rcFilePath) {
+		err = fileutils.Touch(rcFilePath)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
+		}
+	}
+
+	return rcFilePath, nil
 }
 
 // SetupShellRcFile - subshell.SubShell
@@ -108,18 +141,27 @@ func (v *SubShell) Quote(value string) string {
 
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
-	env := sscommon.EscapeEnv(v.env)
-	var err error
-	if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
-		return err
+	var shellArgs []string
+	var directEnv []string
+
+	// available project files require more intensive modification of shell envs
+	if proj != nil {
+		env := sscommon.EscapeEnv(v.env)
+		var err error
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
+			return err
+		}
+
+		shellArgs = append(shellArgs, "--rcfile", v.rcFile.Name())
+	} else {
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	shellArgs := []string{"--rcfile", v.rcFile.Name()}
 	if v.activateCommand != nil {
 		shellArgs = append(shellArgs, "-c", *v.activateCommand)
 	}
-	cmd := exec.Command(v.Binary(), shellArgs...)
 
+	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
