@@ -172,20 +172,16 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
-	cp.SendLine("state activate")
-	cp.ExpectLongString("You cannot activate a new project when you are already in an activated state")
-
 	cp.SendLine("state activate --default something/else")
 	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
 
 	cp.SendLine("state activate --default")
-	cp.ExpectLongString(fmt.Sprintf("Creating a Virtual Environment"))
+	cp.ExpectLongString("Creating a Virtual Environment")
 	cp.WaitForInput(40 * time.Second)
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {
 		pythonShim = pythonExe + ".bat"
 	}
-	suite.Assert().FileExistsf(filepath.Join(ts.Dirs.DefaultBin, pythonShim), "Expected shim to be created:\n%s", cp.TrimmedSnapshot())
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
@@ -292,9 +288,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("cache")
 	cp.Expect("DBD.pm")
 
-	// Expect PPM shim to be installed
-	cp.SendLine("ppm")
-	cp.Expect("Your command is being forwarded to `state packages`.")
+	// Currently CI is searching for PPM in the @INC first before attempting
+	// to execute a script. https://activestatef.atlassian.net/browse/DX-620
+	if runtime.GOOS != "windows" {
+		// Expect PPM shim to be installed
+		cp.SendLine("ppm list")
+		cp.Expect("Shimming command")
+	}
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -514,4 +514,70 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine("state activate")
+	cp.Expect("Your project is already active")
+	cp.WaitForInput()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_SameNamespace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine(fmt.Sprintf("state activate %s", namespace))
+	cp.Expect("Your project is already active")
+	cp.WaitForInput()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentNamespace() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Python3"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	// ensure that shell is functional
+	cp.WaitForInput()
+
+	cp.SendLine(fmt.Sprintf("state activate %s", "ActiveState-CLI/Perl-5.32"))
+	cp.Expect("You cannot activate a new project when you are already in an activated state")
+	cp.WaitForInput()
 }
