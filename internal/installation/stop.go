@@ -3,7 +3,6 @@ package installation
 import (
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -113,7 +112,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 
 	signalErrs := make(chan error)
 	go func() {
-		signalErrs <- proc.SendSignal(syscall.SIGTERM)
+		signalErrs <- sendSigTerm(proc)
 	}()
 
 	select {
