@@ -5,6 +5,8 @@ package installation
 import (
 	"syscall"
 
+	"github.com/ActiveState/cli/internal/errs"
+
 	"github.com/shirou/gopsutil/process"
 )
 
