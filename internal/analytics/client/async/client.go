@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -104,11 +103,9 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
-	dim := &dimensions.Values{
-		ProjectNameSpace: p.StrP(a.projectNameSpace),
-		OutputType:       p.StrP(a.output),
-		UserID:           p.StrP(userID),
-	}
+	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
+	dim.OutputType = &a.output
+	dim.UserID = &userID
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()

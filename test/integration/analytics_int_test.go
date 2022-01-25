@@ -87,6 +87,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
 
+	// Ensure any analytics events from the state tool have the instance ID set
+	for _, e := range events {
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") {
+			continue
+		}
+		suite.NotEmpty(e.Dimensions.InstanceID)
+	}
+
 	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
 	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 }
