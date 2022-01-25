@@ -3,7 +3,6 @@ package installation
 import (
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -74,7 +73,7 @@ func stopSvc(installPath string) error {
 	for _, p := range procs {
 		n, err := p.Name()
 		if err != nil {
-			logging.Error("Could not get process name: %v", err)
+			logging.Debug("Could not get process name: %v", err)
 			continue
 		}
 
@@ -113,7 +112,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 
 	signalErrs := make(chan error)
 	go func() {
-		signalErrs <- proc.SendSignal(syscall.SIGTERM)
+		signalErrs <- sendSigTerm(proc)
 	}()
 
 	select {
