@@ -42,7 +42,11 @@ func newFileHandler() *fileHandler {
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 	}
-	go handler.start()
+	handler.wg.Add(1)
+	go func() {
+		defer handler.wg.Done()
+		handler.start()
+	}()
 	return &handler
 }
 
@@ -50,9 +54,12 @@ func (l *fileHandler) start() {
 	for {
 		select {
 		case entry := <-l.queue:
-			l.emit(entry.ctx, entry.message, entry.args)
-			l.wg.Done()
+			l.emit(entry.ctx, entry.message, entry.args...)
 		case <-l.quit:
+			close(l.queue)
+			for entry := range l.queue {
+				l.emit(entry.ctx, entry.message, entry.args...)
+			}
 			return
 		}
 	}
@@ -78,8 +85,12 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 		message: message,
 		args:    a,
 	}
-	l.wg.Add(1)
-	l.queue <- e
+	select {
+	case <-l.quit:
+		return nil
+	default:
+		l.queue <- e
+	}
 	return nil
 }
 
@@ -204,7 +215,6 @@ func (l *fileHandler) reopenLogfile() error {
 }
 
 func (l *fileHandler) Close() {
-	defer close(l.quit)
-	defer close(l.queue)
+	close(l.quit)
 	l.wg.Wait()
 }
