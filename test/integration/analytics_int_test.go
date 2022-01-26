@@ -29,9 +29,20 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	// We want to do a clean test without an activate event, so we have to manually seed the yaml
-	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+	// // We want to do a clean test without an activate event, so we have to manually seed the yaml
+	// url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
+	// suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+
+	asyData := strings.TrimSpace(`
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+scripts:
+  - name: pip
+    language: bash
+    standalone: true
+    value: echo "pip"
+`)
+
+	ts.PrepareActiveStateYAML(asyData)
 
 	heartbeatInterval := 5000 // in milliseconds
 
@@ -131,6 +142,47 @@ func (suite *AnalyticsIntegrationTestSuite) parseEvents() []reporters.TestLogEnt
 	}
 
 	return result
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestShim() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// We want to do a clean test without an activate event, so we have to manually seed the yaml
+	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
+	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+		),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	cp = ts.Spawn("run", "pip")
+	cp.Wait()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := suite.parseEvents()
+
+	var found int
+	for _, event := range events {
+		if event.Category == anaConst.CatRunCmd && event.Action == "run" {
+			found++
+			suite.Equal(constants.PipShim, event.Label)
+		}
+	}
+
+	if found <= 0 {
+		suite.Fail("Did not find shim event")
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
