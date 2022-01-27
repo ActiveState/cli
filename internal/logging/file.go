@@ -51,6 +51,7 @@ func newFileHandler() *fileHandler {
 }
 
 func (l *fileHandler) start() {
+	defer handlePanics(recover())
 	for {
 		select {
 		case entry := <-l.queue:
@@ -95,7 +96,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 }
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
-	defer handlePanics(recover())
 	// In this function we close and open the file handle to the log file. In
 	// order to ensure this is safe to be called across threads, we just
 	// synchronize the entire function
