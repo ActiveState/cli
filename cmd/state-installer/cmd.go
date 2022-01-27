@@ -64,7 +64,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, an.Wait); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, an.Wait, logging.Close); err != nil {
 			logging.Error("state-installer failed to wait for events: %v", err)
 		}
 		os.Exit(exitCode)

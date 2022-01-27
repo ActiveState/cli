@@ -25,7 +25,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failed to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
