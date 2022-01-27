@@ -1005,7 +1005,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	content := params.Content
-	if content == "" && lang != language.Unset {
+	if content == "" && lang.String() != "" {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {
