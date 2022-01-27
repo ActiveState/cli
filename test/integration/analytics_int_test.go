@@ -29,7 +29,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	// // We want to do a clean test without an activate event, so we have to manually seed the yaml
+	// We want to do a clean test without an activate event, so we have to manually seed the yaml
 	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
