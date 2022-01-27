@@ -388,3 +388,9 @@ const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_
 
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"
+
+// PpmShim is the name of the ppm shim
+const PpmShim = "ppm"
+
+// PipShim is the name of the pip shim
+const PipShim = "pip"
