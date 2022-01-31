@@ -96,12 +96,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 }
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
-	// In this function we close and open the file handle to the log file. In
-	// order to ensure this is safe to be called across threads, we just
-	// synchronize the entire function
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	filename := FilePath()
 	originalMessage := fmt.Sprintf(message, args...)
 
