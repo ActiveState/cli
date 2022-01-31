@@ -12,9 +12,9 @@ const (
 )
 
 type configMeta struct {
-	Type     configType
-	getEvent event
-	setEvent event
+	allowedType configType
+	getEvent    event
+	setEvent    event
 }
 
 var meta = map[string]configMeta{

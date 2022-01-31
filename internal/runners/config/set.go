@@ -34,7 +34,7 @@ func (s *Set) Run(params SetParams) error {
 	var value interface{}
 	value = params.Value
 	if v, ok := meta[strings.ToLower(params.Key)]; ok {
-		switch v.Type {
+		switch v.allowedType {
 		case Bool:
 			value = cast.ToBool(value)
 		case Int:
