@@ -28,7 +28,7 @@ func NewSet(prime primeable) *Set {
 func (s *Set) Run(params SetParams) error {
 	err := validateKey(params.Key)
 	if err != nil {
-		return locale.WrapError(err, "err_config_invalid_key", "Invalid config key")
+		return locale.WrapInputError(err, "err_config_invalid_key", "Invalid config key")
 	}
 
 	var value interface{}

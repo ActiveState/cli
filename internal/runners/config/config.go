@@ -33,7 +33,7 @@ func (c *Config) Run(usageFunc func() error) error {
 func validateKey(key string) error {
 	regex := regexp.MustCompile(`^[A-Za-z0-9\.]+$`)
 	if !regex.MatchString(key) {
-		return locale.NewInputError("err_config_invalid_key", "The config can only consist of alphanumeric characters and a '.'")
+		return locale.NewInputError("err_config_invalid_key", "The config key can only consist of alphanumeric characters and a '.'")
 	}
 	return nil
 }
