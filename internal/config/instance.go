@@ -107,10 +107,16 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 	})
 }
 
+const CancelSet = "__CANCEL__"
+
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) error {
 	v, err := valueF(i.get(key))
 	if err != nil {
 		return errs.Wrap(err, "valueF failed")
+	}
+
+	if v == CancelSet {
+		return nil
 	}
 
 	q, err := i.db.Prepare(`INSERT OR REPLACE INTO config(key, value) VALUES(?,?)`)
