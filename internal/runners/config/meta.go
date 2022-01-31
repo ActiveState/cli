@@ -4,11 +4,11 @@ import "github.com/ActiveState/cli/internal/constants"
 
 type event func() error
 
-type configType string
+type configType int
 
-var (
-	Int  configType = "int"
-	Bool configType = "bool"
+const (
+	Int configType = iota
+	Bool
 )
 
 type configMeta struct {
