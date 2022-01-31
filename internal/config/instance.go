@@ -108,7 +108,7 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 }
 
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) error {
-	v, err := valueF(i.get(key))
+	v, err := valueF(i.Get(key))
 	if err != nil {
 		return errs.Wrap(err, "valueF failed")
 	}
@@ -140,10 +140,10 @@ func (i *Instance) Set(key string, value interface{}) error {
 }
 
 func (i *Instance) IsSet(key string) bool {
-	return i.get(key) != nil
+	return i.Get(key) != nil
 }
 
-func (i *Instance) get(key string) interface{} {
+func (i *Instance) Get(key string) interface{} {
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		logging.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
@@ -168,12 +168,12 @@ func (i *Instance) get(key string) interface{} {
 
 // GetString retrieves a string for a given key
 func (i *Instance) GetString(key string) string {
-	return cast.ToString(i.get(key))
+	return cast.ToString(i.Get(key))
 }
 
 // GetInt retrieves an int for a given key
 func (i *Instance) GetInt(key string) int {
-	return cast.ToInt(i.get(key))
+	return cast.ToInt(i.Get(key))
 }
 
 // AllKeys returns all of the curent config keys
@@ -195,27 +195,27 @@ func (i *Instance) AllKeys() []string {
 
 // GetStringMapStringSlice retrieves a map of string slices for a given key
 func (i *Instance) GetStringMapStringSlice(key string) map[string][]string {
-	return cast.ToStringMapStringSlice(i.get(key))
+	return cast.ToStringMapStringSlice(i.Get(key))
 }
 
 // GetBool retrieves a boolean value for a given key
 func (i *Instance) GetBool(key string) bool {
-	return cast.ToBool(i.get(key))
+	return cast.ToBool(i.Get(key))
 }
 
 // GetStringSlice retrieves a slice of strings for a given key
 func (i *Instance) GetStringSlice(key string) []string {
-	return cast.ToStringSlice(i.get(key))
+	return cast.ToStringSlice(i.Get(key))
 }
 
 // GetTime retrieves a time instance for a given key
 func (i *Instance) GetTime(key string) time.Time {
-	return cast.ToTime(i.get(key))
+	return cast.ToTime(i.Get(key))
 }
 
 // GetStringMap retrieves a map of strings to values for a given key
 func (i *Instance) GetStringMap(key string) map[string]interface{} {
-	return cast.ToStringMap(i.get(key))
+	return cast.ToStringMap(i.Get(key))
 }
 
 // ConfigPath returns the path at which our configuration is stored
