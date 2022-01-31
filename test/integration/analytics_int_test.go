@@ -87,6 +87,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
 
+	// Ensure any analytics events from the state tool have the instance ID set
+	for _, e := range events {
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") {
+			continue
+		}
+		suite.NotEmpty(e.Dimensions.InstanceID)
+	}
+
 	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
 	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 }
@@ -131,6 +139,54 @@ func (suite *AnalyticsIntegrationTestSuite) parseEvents() []reporters.TestLogEnt
 	}
 
 	return result
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestShim() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	asyData := strings.TrimSpace(`
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+scripts:
+  - name: pip
+    language: bash
+    standalone: true
+    value: echo "pip"
+`)
+
+	ts.PrepareActiveStateYAML(asyData)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+		),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	cp = ts.Spawn("run", "pip")
+	cp.Wait()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := suite.parseEvents()
+
+	var found int
+	for _, event := range events {
+		if event.Category == anaConst.CatRunCmd && event.Action == "run" {
+			found++
+			suite.Equal(constants.PipShim, event.Label)
+		}
+	}
+
+	if found <= 0 {
+		suite.Fail("Did not find shim event")
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

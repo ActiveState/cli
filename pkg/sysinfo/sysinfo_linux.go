@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+
+	"github.com/patrickmn/go-cache"
 )
 
 // OS returns the system's OS
@@ -20,6 +22,10 @@ var (
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
+	if cached, found := sysinfoCache.Get(osVersionInfoCacheKey); found {
+		return cached.(*OSVersionInfo), nil
+	}
+
 	// Fetch kernel version.
 	osrelFile := "/proc/sys/kernel/osrelease"
 	osrelData, err := ioutil.ReadFile(osrelFile)
@@ -58,11 +64,17 @@ func OSVersion() (*OSVersionInfo, error) {
 			name = []byte("Unknown")
 		}
 	}
-	return &OSVersionInfo{version, major, minor, micro, string(name)}, nil
+	info := &OSVersionInfo{version, major, minor, micro, string(name)}
+	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
+	return info, nil
 }
 
 // Libc returns the system's C library.
 func Libc() (*LibcInfo, error) {
+	if cached, found := sysinfoCache.Get(libcInfoCacheKey); found {
+		return cached.(*LibcInfo), nil
+	}
+
 	// Assume glibc for now, which exposes a "getconf" command.
 	libc, err := exec.Command("getconf", "GNU_LIBC_VERSION").Output()
 	if err != nil {
@@ -75,11 +87,17 @@ func Libc() (*LibcInfo, error) {
 	}
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])
-	return &LibcInfo{Glibc, major, minor}, nil
+	info := &LibcInfo{Glibc, major, minor}
+	sysinfoCache.Set(libcInfoCacheKey, info, cache.NoExpiration)
+	return info, nil
 }
 
 // Compilers returns the system's available compilers.
 func Compilers() ([]*CompilerInfo, error) {
+	if cached, found := sysinfoCache.Get(compilersCacheKey); found {
+		return cached.([]*CompilerInfo), nil
+	}
+
 	compilers := []*CompilerInfo{}
 
 	// Map of compiler commands to CompilerNameInfos.
@@ -96,5 +114,6 @@ func Compilers() ([]*CompilerInfo, error) {
 		}
 	}
 
+	sysinfoCache.Set(compilersCacheKey, compilers, cache.NoExpiration)
 	return compilers, nil
 }

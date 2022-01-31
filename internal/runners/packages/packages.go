@@ -173,13 +173,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 		orderChanged = len(revertCommit.Changeset) > 0
 	}
-
 	logging.Debug("Order changed: %v", orderChanged)
-	if orderChanged {
-		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
-	}
 
 	pg.Stop(locale.T("progress_success"))
 
@@ -187,6 +181,12 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel())
 	if err != nil {
 		return err
+	}
+
+	if orderChanged {
+		if err := pj.SetCommit(commitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_pjfile")
+		}
 	}
 
 	// Print the result

@@ -14,10 +14,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/gobuffalo/packr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -502,11 +502,16 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
 
 	subCommandString := c.UseFull()
-	logging.CurrentCmd = appEventPrefix+subCommandString
+	logging.CurrentCmd = appEventPrefix + subCommandString
 
-	// Send  GA events unless they are handled in the runners...
+	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {
-		c.analytics.Event(anaConsts.CatRunCmd, appEventPrefix+subCommandString)
+		var label string
+		if len(args) > 0 && (args[0] == constants.PpmShim || args[0] == constants.PipShim) {
+			label = args[0]
+		}
+		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, label)
+
 		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
 			c.analytics.Event(anaConsts.CatShim, shim)
 		}
@@ -700,10 +705,12 @@ func (cmd *Command) Usage() error {
 		"childCommands": childCommands,
 	})
 
-	box := packr.NewBox("../../assets")
-
-	var err error
-	if tpl, err = tpl.Parse(box.String("usage.tpl")); err != nil {
+	contents, err := assets.ReadFileBytes("usage.tpl")
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+	tpl, err = tpl.Parse(string(contents))
+	if err != nil {
 		return errs.Wrap(err, "Could not parse template")
 	}
 

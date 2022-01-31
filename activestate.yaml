@@ -58,10 +58,6 @@ scripts:
     value: |
       export GO111MODULE=on
       goflags="${GOFLAGS}"; unset GOFLAGS
-      if ! type "packr" &> /dev/null; then
-        echo "packr was not found on your PATH, installing .."
-        go install github.com/gobuffalo/packr/packr@v1.30.1
-      fi
       GOFLAGS="${goflags}"
       $scripts.install-deps-os
   - name: install-deps-os
@@ -79,7 +75,7 @@ scripts:
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
-        if [ -n "${pkgs}" ]; then 
+        if [ -n "${pkgs}" ]; then
           echo Installing packages "${pkgs}"
           sudo apt-get update && sudo apt-get install ${pkgs} -y
         fi
@@ -92,12 +88,8 @@ scripts:
       set -e
       $scripts.install-deps
       $constants.SET_ENV
-      packr
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
-  - name: packr
-    language: bash
-    value: packr
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -106,7 +98,7 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-      
+
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
       fi
@@ -136,7 +128,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      
+
       # Explicitly enable CGO for systray app. We need CGO for the web bindings
       export CGO_ENABLED=1
 
@@ -376,5 +368,5 @@ events:
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
   - name: file-changed
-    scope: [ "locale" ]
-    value: packr
+    scope: [ "internal/locale/locales" ]
+    value: build

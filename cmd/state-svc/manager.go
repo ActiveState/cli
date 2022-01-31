@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
@@ -35,8 +36,8 @@ func NewServiceManager(cfg *config.Instance) *serviceManager {
 
 func (s *serviceManager) Start(args ...string) error {
 	var proc *os.Process
-	err := s.cfg.SetWithLock(constants.SvcConfigPid, func(oldPidI interface{}) (interface{}, error) {
-		oldPid := cast.ToInt(oldPidI)
+	err := s.cfg.GetThenSet(constants.SvcConfigPid, func(currentValue interface{}) (interface{}, error) {
+		oldPid := cast.ToInt(currentValue)
 		curPid, err := s.CheckPid(oldPid)
 		if err == nil && curPid != nil {
 			return nil, ErrSvcAlreadyRunning
@@ -74,12 +75,14 @@ func (s *serviceManager) Stop() error {
 		return errs.Wrap(err, "Could not get pid")
 	}
 	if pid == nil {
+		logging.Debug("State service is not running. Nothing to stop")
 		return nil
 	}
 
 	if err := stopServer(s.cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
+
 	return nil
 }
 
@@ -116,7 +119,7 @@ func stopServer(cfg *config.Instance) error {
 	return nil
 }
 
-// CheckPid checks if the given pid revers to an existing process
+// CheckPid checks if the given pid refers to an existing process
 func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if pid == 0 {
 		return nil, nil
@@ -130,11 +133,13 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	}
 
 	// Try to verify that the matching pid is actually our process, because Windows aggressively reuses PIDs
-	exe, err := p.Exe()
-	if err != nil {
-		logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
-	} else if filepath.Clean(exe) != filepath.Clean(osutils.Executable()) {
-		return nil, nil
+	if runtime.GOOS == "windows" {
+		exe, err := p.Exe()
+		if err != nil {
+			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+		} else if filepath.Base(exe) != constants.ServiceCommandName && strings.Contains(strings.ToLower(exe), "activestate") {
+			return nil, nil
+		}
 	}
 
 	var rpid = int(p.Pid)

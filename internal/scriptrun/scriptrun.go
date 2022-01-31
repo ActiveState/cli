@@ -125,7 +125,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 	var attempted []string
 	var attempted3rdParty []string
 	for _, l := range script.Languages() {
-		execPath := l.Executable().Filename()
+		execPath := l.Executable().Name()
 		searchPath := s.venvExePath
 		if l.Executable().CanUseThirdParty() {
 			searchPath = searchPath + string(os.PathListSeparator) + os.Getenv("PATH")

@@ -15,7 +15,7 @@ func TestInitAndT(t *testing.T) {
 
 func TestGetLocalePath(t *testing.T) {
 	path := getLocalePath()
-	assert.Regexp(t, regexp.MustCompile(`[/locale/|\\locale\\]`), path, "Should detect locale path")
+	assert.Regexp(t, regexp.MustCompile(`[/internal/locale/|\\internal\\locale\\]`), path, "Should detect locale path")
 }
 
 func TestGetLocaleFlag(t *testing.T) {
@@ -23,5 +23,3 @@ func TestGetLocaleFlag(t *testing.T) {
 	flag := getLocaleFlag()
 	assert.Equal(t, "zz-ZZ", flag, "Locale flag should be detected")
 }
-
-

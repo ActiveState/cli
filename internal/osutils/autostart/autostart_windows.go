@@ -5,8 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/packr"
-
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
@@ -28,8 +27,12 @@ func (a *App) enable() error {
 	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
-	box := packr.NewBox("../../../assets")
-	if err := s.SetIconBlob(box.Bytes("icon.ico")); err != nil {
+	icon, err := assets.ReadFileBytes("icon.ico")
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+	err = s.SetIconBlob(icon)
+	if err != nil {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
 	return nil

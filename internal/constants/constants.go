@@ -15,6 +15,9 @@ const LibraryLicense = "BSD 3"
 // CommandName holds the name of our command
 const CommandName = "state"
 
+// ServiceCommandName holds the name of our service command
+const ServiceCommandName = "state-svc"
+
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
@@ -385,3 +388,9 @@ const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_
 
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"
+
+// PpmShim is the name of the ppm shim
+const PpmShim = "ppm"
+
+// PipShim is the name of the pip shim
+const PipShim = "pip"

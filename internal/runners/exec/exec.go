@@ -90,7 +90,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err := project.FromPath(projectDir)
 		if err != nil {
-			logging.Error("Could not get project dir from path: %s", errs.JoinMessage(err))
+			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
 			// as there is no head
 			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
@@ -189,6 +189,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	if err != nil {
 		return locale.WrapError(err, "err_exec_create_scriptfile", "Could not generate script")
 	}
+	defer sf.Clean()
 
 	return s.subshell.Run(sf.Filename(), args[1:]...)
 }

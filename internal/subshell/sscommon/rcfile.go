@@ -11,9 +11,9 @@ import (
 	"text/template"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/gobuffalo/packr"
 	"github.com/mash/go-tempfile-suffix"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -72,10 +72,11 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		return err
 	}
 
-	box := packr.NewBox("../../../assets/shells")
-	tpl := box.String(rcTemplateName)
-
-	t, err := template.New("rcfile_append").Parse(tpl)
+	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", rcTemplateName))
+	if err != nil {
+		return errs.Wrap(err, "Failed to read asset")
+	}
+	t, err := template.New("rcfile_append").Parse(string(tpl))
 	if err != nil {
 		return errs.Wrap(err, "Templating failure")
 	}
@@ -181,19 +182,20 @@ func CleanRcFile(path string, data RcIdentification) error {
 
 // SetupShellRcFile create a rc file to activate a runtime (without a project being present)
 func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.Namespaced) error {
-	box := packr.NewBox("../../../assets/shells")
-	tpl := box.String(templateName)
-
-	rcData := map[string]interface{}{
-		"Env":     env,
-		"Project": namespace.String(),
+	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
+	if err != nil {
+		return errs.Wrap(err, "Failed to read asset")
 	}
-	t, err := template.New("rcfile").Parse(tpl)
+	t, err := template.New("rcfile").Parse(string(tpl))
 	if err != nil {
 		return errs.Wrap(err, "Failed to parse template file.")
 	}
 
 	var out bytes.Buffer
+	rcData := map[string]interface{}{
+		"Env":     env,
+		"Project": namespace.String(),
+	}
 	err = t.Execute(&out, rcData)
 	if err != nil {
 		return errs.Wrap(err, "failed to execute template.")
@@ -217,8 +219,10 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
-	box := packr.NewBox("../../../assets/shells")
-	tpl := box.String(templateName)
+	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to read asset")
+	}
 
 	userScripts := ""
 
@@ -243,7 +247,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 			userScripts = userScripts + "\n" + v
 		}
 	}
-	err := cfg.Set(activatedKey, true)
+	err = cfg.Set(activatedKey, true)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not set activatedKey in config")
 	}
@@ -328,7 +332,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 		"splitLines": func(v string) []string { return strings.Split(v, "\n") },
 	})
 
-	t, err = t.Parse(tpl)
+	t, err = t.Parse(string(tpl))
 	if err != nil {
 		return nil, errs.Wrap(err, "Templating failure")
 	}

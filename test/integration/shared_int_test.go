@@ -5,11 +5,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/gobuffalo/packr"
-
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -32,10 +31,12 @@ func init() {
 	if runtime.GOOS == "windows" {
 		shell = "batch"
 	}
-	var err error
-	box := packr.NewBox("../../assets/")
+	pythonTemplate, err := assets.ReadFileBytes("activestate.yaml.python.tpl")
+	if err != nil {
+		panic(err.Error())
+	}
 	sampleYAMLPython2, err = strutils.ParseTemplate(
-		box.String("activestate.yaml.python.tpl"),
+		string(pythonTemplate),
 		map[string]interface{}{
 			"Owner":    testUser,
 			"Project":  testProject,
@@ -47,7 +48,7 @@ func init() {
 		panic(err.Error())
 	}
 	sampleYAMLPython3, err = strutils.ParseTemplate(
-		box.String("activestate.yaml.python.tpl"),
+		string(pythonTemplate),
 		map[string]interface{}{
 			"Owner":    testUser,
 			"Project":  testProject,
@@ -58,7 +59,11 @@ func init() {
 	if err != nil {
 		panic(err.Error())
 	}
-	sampleYAMLEditor, err = strutils.ParseTemplate(box.String("activestate.yaml.editor.tpl"), nil)
+	editorTemplate, err := assets.ReadFileBytes("activestate.yaml.editor.tpl")
+	if err != nil {
+		panic(err.Error())
+	}
+	sampleYAMLEditor, err = strutils.ParseTemplate(string(editorTemplate), nil)
 	if err != nil {
 		panic(err.Error())
 	}
