@@ -62,7 +62,7 @@ func (s *serviceManager) Start(args ...string) error {
 				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 			}
 		}
-		return errs.Wrap(err, "Could not store pid")
+		return err
 	}
 
 	logging.Debug("Process started using pid %d", proc.Pid)

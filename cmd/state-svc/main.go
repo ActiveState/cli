@@ -42,7 +42,7 @@ func main() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failing to wait for rollbar to close")
 		}
 		os.Exit(exitCode)
@@ -189,7 +189,8 @@ func runStart(cfg *config.Instance) error {
 	s := NewServiceManager(cfg)
 	if err := s.Start(os.Args[0], cmdForeground); err != nil {
 		if errors.Is(err, ErrSvcAlreadyRunning) {
-			err = locale.WrapInputError(err, "svc_start_already_running_err", "A State Service instance is already running in the background.")
+			fmt.Println("A State Service instance is already running in the background.")
+			return nil
 		}
 		return errs.Wrap(err, "Could not start serviceManager")
 	}

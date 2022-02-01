@@ -64,6 +64,7 @@ func (s *service) Stop() error {
 		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			logging.Warning("PID in configuration file does not match PID of server shutting down")
+			return config.CancelSet, nil
 		}
 		return "", nil
 	})
