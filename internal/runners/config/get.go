@@ -46,5 +46,9 @@ func getEvent(key string) error {
 		return nil
 	}
 
+	if value.getEvent == nil {
+		return nil
+	}
+
 	return value.getEvent()
 }

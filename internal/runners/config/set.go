@@ -62,5 +62,9 @@ func setEvent(key string) error {
 		return nil
 	}
 
+	if value.setEvent == nil {
+		return nil
+	}
+
 	return value.setEvent()
 }
