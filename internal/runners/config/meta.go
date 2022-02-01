@@ -18,6 +18,7 @@ type configMeta struct {
 }
 
 var meta = map[string]configMeta{
-	constants.SvcConfigPid:  {Int, nil, nil},
-	constants.SvcConfigPort: {Int, nil, nil},
+	constants.SvcConfigPid:           {Int, nil, nil},
+	constants.SvcConfigPort:          {Int, nil, nil},
+	constants.ReportAnalayticsConfig: {Bool, nil, nil},
 }
