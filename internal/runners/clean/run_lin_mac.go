@@ -1,11 +1,14 @@
+//go:build !windows
 // +build !windows
 
 package clean
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,39 +23,43 @@ func (u *Uninstall) runUninstall() error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
-	err := removeCache(storage.CachePath())
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+	if false {
+		err := removeCache(storage.CachePath())
+		if err != nil {
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+		}
 	}
 
-	err = removeInstall(u.cfg)
+	err := removeInstall(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
-	err = undoPrepare(u.cfg)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
-	}
+	if false {
+		err = undoPrepare(u.cfg)
+		if err != nil {
+			aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+		}
 
-	path := u.cfg.ConfigPath()
-	if err := u.cfg.Close(); err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
-	}
+		path := u.cfg.ConfigPath()
+		if err := u.cfg.Close(); err != nil {
+			aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
+		}
 
-	err = removeConfig(path, u.out)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+		err = removeConfig(path, u.out)
+		if err != nil {
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
 
-	}
+		}
 
-	err = removeEnvPaths(u.cfg)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
-	}
+		err = removeEnvPaths(u.cfg)
+		if err != nil {
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
+		}
 
-	if aggErr != nil {
-		return aggErr
+		if aggErr != nil {
+			return aggErr
+		}
 	}
 
 	u.out.Print(locale.T("clean_success_message"))
@@ -83,25 +90,38 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(cfg configurable) error {
-	stateInfo := appinfo.StateApp()
-	stateSvcInfo := appinfo.SvcApp()
-	stateTrayInfo := appinfo.TrayApp()
-
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installation.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
-	}
-
 	var aggErr error
 
-	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
-		err := os.Remove(info.Exec())
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
+	for i := 0; i < 2; i++ {
+		stateInfo := appinfo.StateApp()
+		stateSvcInfo := appinfo.SvcApp()
+		stateTrayInfo := appinfo.TrayApp()
+
+		// Todo: https://www.pivotaltracker.com/story/show/177585085
+		// Yes this is awkward right now
+		if err := installation.StopTrayApp(cfg); err != nil {
+			return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
+		}
+
+		for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
+			fmt.Println("removing", info.Exec())
+			err := os.Remove(info.Exec())
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+				aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
 			}
-			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
+		}
+
+		// this, and the for loop, should be removed after bin dir
+		// usage is deprecated
+		maybeBinDir := filepath.Dir(stateInfo.Exec())
+		if strings.HasSuffix(maybeBinDir, "bin") { // this is dangerous!
+			fmt.Println(maybeBinDir)
+			if err := os.RemoveAll(maybeBinDir); err != nil {
+				aggErr = errs.Wrap(aggErr, "Could not remove directory %s: %v", maybeBinDir, err)
+			}
 		}
 	}
 
