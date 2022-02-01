@@ -9,9 +9,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -70,16 +72,28 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(logFile, configPath, transitionalStateTool string) error {
-	svcInfo := appinfo.SvcApp()
-	trayInfo := appinfo.TrayApp()
 	var aggErr error
-	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
-		err := os.Remove(info.Exec())
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
+
+	for i := 0; i < 2; i++ {
+		svcInfo := appinfo.SvcApp()
+		trayInfo := appinfo.TrayApp()
+		for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
+			err := os.Remove(info.Exec())
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+				aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
 			}
-			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
+		}
+
+		// this, and the for loop, should be removed after bin dir
+		// usage is deprecated
+		maybeBinDir := filepath.Dir(stateInfo.Exec())
+		if strings.HasSuffix(maybeBinDir, "bin") { // this is dangerous!
+			if err := os.RemoveAll(maybeBinDir); err != nil {
+				aggErr = errs.Wrap(aggErr, "Could not remove directory %s: %v", maybeBinDir, err)
+			}
 		}
 	}
 
