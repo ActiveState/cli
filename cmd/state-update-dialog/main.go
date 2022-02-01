@@ -33,11 +33,19 @@ func main() {
 
 	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
+	cfg, err := config.New()
+	if err != nil {
+		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
+		logging.Debug("Failed to load configuration: %v", err)
+	} else {
+		logging.CurrentHandler().SetConfig(cfg)
+	}
+
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
+	err = run()
 	if err != nil {
 		exitCode = 1
 		logging.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())

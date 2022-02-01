@@ -42,6 +42,14 @@ var iconUpdateFile []byte
 func main() {
 	verbose := os.Getenv("VERBOSE") != ""
 
+	cfg, err := config.New()
+	if err != nil {
+		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
+		logging.Debug("Failed to load configuration: %v", err)
+	} else {
+		logging.CurrentHandler().SetConfig(cfg)
+	}
+
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
 

@@ -53,6 +53,14 @@ func main() {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
+	cfg, err := config.New()
+	if err != nil {
+		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
+		logging.Debug("Failed to load configuration: %v", err)
+	} else {
+		logging.CurrentHandler().SetConfig(cfg)
+	}
+
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
 		if panics.HandlePanics(recover(), debug.Stack()) {

@@ -352,6 +352,9 @@ const SvcConfigPort = "svc-port"
 // SvcConfigPid is the config key used for storing the svc pid
 const SvcConfigPid = "svc-pid"
 
+// ReportErrorsConfig is the config key used to determine if we will send rollbar reports
+const ReportErrorsConfig = "report.errors"
+
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"
 

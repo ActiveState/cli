@@ -84,6 +84,8 @@ func main() {
 	}
 	defer cfg.Close()
 
+	logging.CurrentHandler().SetConfig(cfg)
+
 	// Set up machineid, allowing us to anonymously group errors and analytics
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)

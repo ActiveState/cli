@@ -48,13 +48,21 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
+	cfg, err := config.New()
+	if err != nil {
+		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
+		logging.Debug("Failed to load configuration: %v", err)
+	} else {
+		logging.CurrentHandler().SetConfig(cfg)
+	}
+
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
+	err = run()
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		if locale.IsInputError(err) {
