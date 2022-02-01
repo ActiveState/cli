@@ -34,7 +34,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
@@ -128,6 +127,7 @@ type LoggingHandler interface {
 	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 	Printf(msg string, args ...interface{})
+	Close()
 }
 
 type strandardHandler struct {
@@ -157,6 +157,8 @@ func (l *strandardHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
 	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
+
+func (l *strandardHandler) Close() {}
 
 var currentHandler LoggingHandler = &strandardHandler{
 	DefaultFormatter,
@@ -230,19 +232,24 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
-		errMsg := err.Error()
-		errw := err
-		for {
-			errw = errors.Unwrap(errw)
-			if errw == nil {
-				break
-			}
-			errMsg += ": " + errw.Error()
-		}
-		fmt.Fprintf(os.Stderr, "Error writing log message, please contact support via %s\nError received: %s\n", constants.ForumsURL, errMsg)
-		fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
+		printLogError(err, ctx, msg, args...)
+
 	}
 
+}
+
+func printLogError(err error, ctx *MessageContext, msg string, args ...interface{}) {
+	errMsg := err.Error()
+	errw := err
+	for {
+		errw = errors.Unwrap(errw)
+		if errw == nil {
+			break
+		}
+		errMsg += ": " + errw.Error()
+	}
+	fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
+	fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 }
 
 //output INFO level messages
@@ -319,6 +326,10 @@ func Panic(msg string, args ...interface{}) {
 	log.Println(string(debug.Stack()))
 	log.Panicf(msg, args...)
 
+}
+
+func Close() {
+	currentHandler.Close()
 }
 
 func init() {
