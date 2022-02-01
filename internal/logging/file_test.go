@@ -21,11 +21,13 @@ func TestEmit_Parallel(t *testing.T) {
 	assert.NoError(t, err)
 	fh.file = loggingFile
 
-	for i, message := range messages {
-		t.Run(fmt.Sprintf("Parallel emit %d", i), func(t *testing.T) {
-			t.Parallel()
-			emitErr := fh.Emit(&MessageContext{}, message)
-			assert.NoError(t, emitErr)
-		})
+	for _, message := range messages {
+		for i := 0; i < 10; i++ {
+			t.Run(fmt.Sprintf("Parallel emit %d", i), func(t *testing.T) {
+				t.Parallel()
+				emitErr := fh.Emit(&MessageContext{}, message)
+				assert.NoError(t, emitErr)
+			})
+		}
 	}
 }
