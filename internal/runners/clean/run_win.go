@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
@@ -72,28 +71,22 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(logFile, configPath, transitionalStateTool string) error {
+	svcInfo := appinfo.SvcApp()
+	trayInfo := appinfo.TrayApp()
 	var aggErr error
-
-	for i := 0; i < 2; i++ {
-		svcInfo := appinfo.SvcApp()
-		trayInfo := appinfo.TrayApp()
-		for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
-			err := os.Remove(info.Exec())
-			if err != nil {
-				if errors.Is(err, os.ErrNotExist) {
-					continue
-				}
-				aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
+	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
+		if err := os.Remove(info.LegacyExec()); err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				aggErr = errs.Wrap(aggErr, "Could not remove (legacy) %s: %v", info.LegacyExec(), err)
 			}
 		}
 
-		// this, and the for loop, should be removed after bin dir
-		// usage is deprecated
-		maybeBinDir := filepath.Dir(stateInfo.Exec())
-		if strings.HasSuffix(maybeBinDir, "bin") { // this is dangerous!
-			if err := os.RemoveAll(maybeBinDir); err != nil {
-				aggErr = errs.Wrap(aggErr, "Could not remove directory %s: %v", maybeBinDir, err)
+		err := os.Remove(info.Exec())
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
 			}
+			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
 		}
 	}
 
