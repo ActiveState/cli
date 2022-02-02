@@ -17,7 +17,7 @@ type Set struct {
 }
 
 type SetParams struct {
-	Key   string
+	Key   Key
 	Value string
 }
 
@@ -26,14 +26,9 @@ func NewSet(prime primeable) *Set {
 }
 
 func (s *Set) Run(params SetParams) error {
-	err := validateKey(params.Key)
-	if err != nil {
-		return locale.WrapInputError(err, "err_config_invalid_key", "Invalid config key")
-	}
-
 	var value interface{}
 	value = params.Value
-	if v, ok := meta[strings.ToLower(params.Key)]; ok {
+	if v, ok := meta[strings.ToLower(params.Key.String())]; ok {
 		switch v.allowedType {
 		case Bool:
 			value = cast.ToBool(value)
@@ -42,17 +37,17 @@ func (s *Set) Run(params SetParams) error {
 		}
 	}
 
-	err = s.cfg.Set(params.Key, value)
+	err := s.cfg.Set(params.Key.String(), value)
 	if err != nil {
 		return locale.WrapError(err, "err_cofing_set", fmt.Sprintf("Could not set value %s for key %s", value, params.Key))
 	}
 
-	err = setEvent(params.Key)
+	err = setEvent(params.Key.String())
 	if err != nil {
 		logging.Error("Could not execute additional logic on config set")
 	}
 
-	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key, params.Value))
+	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
 	return nil
 }
 

@@ -13,7 +13,7 @@ type Get struct {
 }
 
 type GetParams struct {
-	Key string
+	Key Key
 }
 
 func NewGet(prime primeable) *Get {
@@ -21,17 +21,12 @@ func NewGet(prime primeable) *Get {
 }
 
 func (g *Get) Run(params GetParams) error {
-	err := validateKey(params.Key)
-	if err != nil {
-		return locale.WrapError(err, "err_config_invalid_key", "Invalid config key")
-	}
-
-	value := g.cfg.Get(params.Key)
+	value := g.cfg.Get(params.Key.String())
 	if value == nil {
-		return locale.NewInputError("err_config_not_found", "No config value for key: {{.V0}}", params.Key)
+		return locale.NewInputError("err_config_not_found", "No config value for key: {{.V0}}", params.Key.String())
 	}
 
-	err = getEvent(params.Key)
+	err := getEvent(params.Key.String())
 	if err != nil {
 		logging.Error("Could not execute additional logic on config set")
 	}
