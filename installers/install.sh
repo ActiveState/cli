@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Copyright 2021 ActiveState Software Inc. All rights reserved.
+# Copyright 2022 ActiveState Software Inc. All rights reserved.
 
 # URL to fetch installer archive from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
