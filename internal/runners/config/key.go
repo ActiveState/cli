@@ -12,7 +12,7 @@ type Key string
 func (k *Key) Set(v string) error {
 	regex := regexp.MustCompile(`^[A-Za-z0-9\.]+$`)
 	if !regex.MatchString(v) {
-		return locale.NewInputError("err_set_invalid_key", "The config key can only consist of alphanumeric characters and a '.'")
+		return locale.NewInputError("err_set_invalid_key", "Invalid config key. The config key can only consist of alphanumeric characters and a '.'")
 	}
 
 	*k = Key(v)
