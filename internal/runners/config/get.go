@@ -26,24 +26,11 @@ func (g *Get) Run(params GetParams) error {
 		return locale.NewInputError("err_config_not_found", "No config value for key: {{.V0}}", params.Key.String())
 	}
 
-	err := getEvent(params.Key.String())
+	err := rules.Get(params.Key).getEvent()
 	if err != nil {
 		logging.Error("Could not execute additional logic on config set")
 	}
 
 	g.out.Print(value)
 	return nil
-}
-
-func getEvent(key string) error {
-	value, ok := meta[key]
-	if !ok {
-		return nil
-	}
-
-	if value.getEvent == nil {
-		return nil
-	}
-
-	return value.getEvent()
 }
