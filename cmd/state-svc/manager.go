@@ -31,6 +31,8 @@ type serviceManager struct {
 }
 
 func NewServiceManager(cfg *config.Instance) *serviceManager {
+	config.NewRule(constants.SvcConfigPid, config.Int, config.EmptyEvent, config.EmptyEvent)
+	config.NewRule(constants.SvcConfigPort, config.Int, config.EmptyEvent, config.EmptyEvent)
 	return &serviceManager{cfg}
 }
 
