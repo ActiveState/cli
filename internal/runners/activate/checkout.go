@@ -84,7 +84,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  targetPath,
-			Language:   language,
+			Language:   language.String(),
 		})
 		if err != nil {
 			return err
@@ -94,15 +94,15 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) er
 	return nil
 }
 
-func getLanguage(commitID strfmt.UUID) (string, error) {
+func getLanguage(commitID strfmt.UUID) (language.Language, error) {
 	modelLanguage, err := model.LanguageByCommit(commitID)
 	if err != nil {
-		return "", err
+		return language.Unset, err
 	}
 
 	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
 	if err != nil {
-		return "", err
+		return language.Unset, err
 	}
-	return lang.String(), nil
+	return lang, nil
 }
