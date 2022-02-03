@@ -186,7 +186,7 @@ func (i *Instance) Get(key string) interface{} {
 
 	err := GetRule(key).GetEvent(result)
 	if err != nil {
-		logging.Error("Could not execute additional logic on config set, err: %w", err)
+		logging.Error("Could not execute additional logic on config get, err: %w", err)
 	}
 
 	return result
