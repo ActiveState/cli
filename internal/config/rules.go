@@ -3,7 +3,8 @@ package config
 type Type int
 
 const (
-	String Type = iota
+	Unset Type = iota
+	String
 	Int
 	Bool
 )
@@ -20,7 +21,7 @@ type Rule struct {
 	SetEvent Event
 }
 
-var defaultRule = Rule{String, EmptyEvent, EmptyEvent}
+var defaultRule = Rule{Unset, EmptyEvent, EmptyEvent}
 
 type Rules map[string]Rule
 

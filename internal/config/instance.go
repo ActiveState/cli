@@ -119,13 +119,14 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 		return nil
 	}
 
+	// Cast to rule type if applicable
 	rule := GetRule(key)
 	switch rule.Type {
 	case Bool:
 		v = cast.ToBool(v)
 	case Int:
 		v = cast.ToInt(v)
-	default:
+	case String:
 		v = cast.ToString(v)
 	}
 
