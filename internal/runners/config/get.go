@@ -29,7 +29,7 @@ func (g *Get) Run(params GetParams) error {
 
 	value, err := configMediator.GetRule(params.Key.String()).GetEvent(value)
 	if err != nil {
-		return locale.WrapError(err, "err_config_get_event", "Could not execute config get event")
+		return locale.WrapError(err, "err_config_get_event", "Could not retrieve config value, if this continues to happen please contact support.")
 	}
 
 	g.out.Print(value)
