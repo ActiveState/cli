@@ -23,6 +23,7 @@ func (suite *ConfigIntegrationTestSuite) TestConfig() {
 
 	cp = ts.Spawn("config", "set", "foo", "bar")
 	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("config", "get", "foo")
 	cp.Expect("bar")

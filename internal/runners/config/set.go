@@ -2,13 +2,14 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/spf13/cast"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 type Set struct {
@@ -17,7 +18,7 @@ type Set struct {
 }
 
 type SetParams struct {
-	Key   string
+	Key   Key
 	Value string
 }
 
@@ -26,45 +27,28 @@ func NewSet(prime primeable) *Set {
 }
 
 func (s *Set) Run(params SetParams) error {
-	err := validateKey(params.Key)
-	if err != nil {
-		return locale.WrapInputError(err, "err_config_invalid_key", "Invalid config key")
-	}
-
+	// Cast to rule type if applicable
 	var value interface{}
-	value = params.Value
-	if v, ok := meta[strings.ToLower(params.Key)]; ok {
-		switch v.allowedType {
-		case Bool:
-			value = cast.ToBool(value)
-		case Int:
-			value = cast.ToInt(value)
-		}
+	rule := configMediator.GetRule(params.Key.String())
+	switch rule.Type {
+	case configMediator.Bool:
+		value = cast.ToBool(params.Value)
+	case configMediator.Int:
+		value = cast.ToInt(params.Value)
+	default:
+		value = params.Value
 	}
 
-	err = s.cfg.Set(params.Key, value)
+	value, err := rule.SetEvent(value)
 	if err != nil {
-		return locale.WrapError(err, "err_cofing_set", fmt.Sprintf("Could not set value %s for key %s", value, params.Key))
+		logging.Error("Could not execute additional logic on config set, err: %w", err)
 	}
 
-	err = setEvent(params.Key)
+	err = s.cfg.Set(params.Key.String(), value)
 	if err != nil {
-		logging.Error("Could not execute additional logic on config set")
+		return locale.WrapError(err, "err_cofing_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
 	}
 
-	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key, params.Value))
+	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
 	return nil
-}
-
-func setEvent(key string) error {
-	value, ok := meta[key]
-	if !ok {
-		return nil
-	}
-
-	if value.setEvent == nil {
-		return nil
-	}
-
-	return value.setEvent()
 }

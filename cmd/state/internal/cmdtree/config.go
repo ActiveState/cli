@@ -28,7 +28,7 @@ func newConfigGetCommand(prime *primer.Values) *captain.Command {
 	params := config.GetParams{}
 	return captain.NewCommand(
 		"get",
-		locale.Tl("config_get_title", "Getting config value"),
+		locale.Tl("config_get_title", "Get config value"),
 		locale.Tl("config_get_description", "Print config values to the terminal"),
 		prime,
 		[]*captain.Flag{},
@@ -50,8 +50,8 @@ func newConfigSetCommand(prime *primer.Values) *captain.Command {
 	params := config.SetParams{}
 	return captain.NewCommand(
 		"set",
-		locale.Tl("config_set_title", "Setting config value"),
-		locale.Tl("config_set_description", "Set config values"),
+		locale.Tl("config_set_title", "Set config value"),
+		"",
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
