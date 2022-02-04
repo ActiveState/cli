@@ -11,7 +11,7 @@ const (
 // Event is run when a user tries to set or get a config value via `state config`
 type Event func(value interface{}) (interface{}, error)
 
-var EmptyEvent = func(value interface{}) (interface{}, error) { return nil, nil }
+var EmptyEvent = func(value interface{}) (interface{}, error) { return value, nil }
 
 // Rule defines what type the config value should be along with any get/set events
 type Rule struct {
