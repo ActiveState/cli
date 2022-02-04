@@ -24,7 +24,7 @@ var defaultRule = Rule{String, EmptyEvent, EmptyEvent}
 
 type Rules map[string]Rule
 
-var rules = make(Rules)
+var rules Rules
 
 func GetRule(key string) Rule {
 	rule, ok := rules[key]
@@ -40,4 +40,8 @@ func NewRule(key string, t Type, get Event, set Event) {
 
 func SetRule(key string, rule Rule) {
 	rules[key] = rule
+}
+
+func init() {
+	rules = make(Rules)
 }
