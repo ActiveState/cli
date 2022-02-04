@@ -11,28 +11,33 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 var ErrSvcAlreadyRunning error = errs.New("Service is already running")
+
+func init() {
+	configMediator.NewRule(constants.SvcConfigPid, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.NewRule(constants.SvcConfigPort, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 type serviceManager struct {
 	cfg *config.Instance
 }
 
 func NewServiceManager(cfg *config.Instance) *serviceManager {
-	config.NewRule(constants.SvcConfigPid, config.Int, config.EmptyEvent, config.EmptyEvent)
-	config.NewRule(constants.SvcConfigPort, config.Int, config.EmptyEvent, config.EmptyEvent)
 	return &serviceManager{cfg}
 }
 

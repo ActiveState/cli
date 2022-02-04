@@ -119,22 +119,6 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 		return nil
 	}
 
-	// Cast to rule type if applicable
-	rule := GetRule(key)
-	switch rule.Type {
-	case Bool:
-		v = cast.ToBool(v)
-	case Int:
-		v = cast.ToInt(v)
-	case String:
-		v = cast.ToString(v)
-	}
-
-	err = rule.SetEvent(v)
-	if err != nil {
-		logging.Error("Could not execute additional logic on config set, err: %w", err)
-	}
-
 	q, err := i.db.Prepare(`INSERT OR REPLACE INTO config(key, value) VALUES(?,?)`)
 	if err != nil {
 		return errs.Wrap(err, "Could not modify settings")
@@ -183,11 +167,6 @@ func (i *Instance) Get(key string) interface{} {
 			logging.Error("config:get unmarshal failed: %s (json err: %s)", errs.JoinMessage(err), errs.JoinMessage(err2))
 			return nil
 		}
-	}
-
-	err := GetRule(key).GetEvent(result)
-	if err != nil {
-		logging.Error("Could not execute additional logic on config get, err: %w", err)
 	}
 
 	return result

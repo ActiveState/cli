@@ -3,16 +3,15 @@ package config
 type Type int
 
 const (
-	Unset Type = iota
-	String
+	String Type = iota
 	Int
 	Bool
 )
 
 // Event is run when a user tries to set or get a config value via `state config`
-type Event func(value interface{}) error
+type Event func(value interface{}) (interface{}, error)
 
-var EmptyEvent = func(value interface{}) error { return nil }
+var EmptyEvent = func(value interface{}) (interface{}, error) { return nil, nil }
 
 // Rule defines what type the config value should be along with any get/set events
 type Rule struct {
@@ -21,11 +20,11 @@ type Rule struct {
 	SetEvent Event
 }
 
-var defaultRule = Rule{Unset, EmptyEvent, EmptyEvent}
+var defaultRule = Rule{String, EmptyEvent, EmptyEvent}
 
 type Rules map[string]Rule
 
-var rules = make(Rules)
+var rules Rules
 
 func GetRule(key string) Rule {
 	rule, ok := rules[key]
@@ -41,4 +40,8 @@ func NewRule(key string, t Type, get Event, set Event) {
 
 func SetRule(key string, rule Rule) {
 	rules[key] = rule
+}
+
+func init() {
+	rules = make(Rules)
 }
