@@ -119,6 +119,10 @@ func MakeByShell(shell string) Language {
 
 // MakeByName will retrieve a language by a given name after lower-casing.
 func MakeByName(name string) Language {
+	if len(name) == 0 {
+		return Unset
+	}
+
 	nameParts := strings.Split(name, "@")
 	for i, data := range lookup {
 		if strings.ToLower(nameParts[0]) == data.name {

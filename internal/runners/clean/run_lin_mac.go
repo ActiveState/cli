@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package clean
@@ -96,6 +97,12 @@ func removeInstall(cfg configurable) error {
 	var aggErr error
 
 	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
+		if err := os.Remove(info.LegacyExec()); err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				aggErr = errs.Wrap(aggErr, "Could not remove (legacy) %s: %v", info.LegacyExec(), err)
+			}
+		}
+
 		err := os.Remove(info.Exec())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {

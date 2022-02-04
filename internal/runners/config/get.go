@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -30,7 +29,7 @@ func (g *Get) Run(params GetParams) error {
 
 	value, err := configMediator.GetRule(params.Key.String()).GetEvent(value)
 	if err != nil {
-		logging.Error("Could not execute additional logic on config get, err: %w", err)
+		return locale.WrapError(err, "err_config_get_event", "Could not retrieve config value, if this continues to happen please contact support.")
 	}
 
 	g.out.Print(value)

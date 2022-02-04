@@ -3,6 +3,7 @@ package appinfo
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,6 +16,7 @@ import (
 type AppInfo struct {
 	name       string
 	executable string
+	legacyExec string
 }
 
 func execDir(baseDir ...string) (resultPath string) {
@@ -55,9 +57,20 @@ func execDir(baseDir ...string) (resultPath string) {
 }
 
 func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
+	dir := execDir(baseDir...)
+
+	var legacyExec string
+	if strings.HasSuffix(dir, "bin") {
+		possibleLegacyExec := filepath.Join(filepath.Dir(dir), executableBase+osutils.ExeExt)
+		if fileutils.FileExists(possibleLegacyExec) {
+			legacyExec = possibleLegacyExec
+		}
+	}
+
 	return &AppInfo{
 		name,
-		filepath.Join(execDir(baseDir...), executableBase+osutils.ExeExt),
+		filepath.Join(dir, executableBase+osutils.ExeExt),
+		legacyExec,
 	}
 }
 
@@ -87,4 +100,8 @@ func (a *AppInfo) Name() string {
 
 func (a *AppInfo) Exec() string {
 	return a.executable
+}
+
+func (a *AppInfo) LegacyExec() string {
+	return a.legacyExec
 }
