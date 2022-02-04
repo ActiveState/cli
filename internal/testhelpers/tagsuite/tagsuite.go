@@ -19,6 +19,7 @@ const (
 	Carlisle       = "carlisle"
 	CLIDeploy      = "cli-deploy"
 	Condition      = "condition"
+	Config         = "config"
 	Critical       = "critical"
 	Cve            = "cve"
 	Deploy         = "deploy"
@@ -55,11 +56,11 @@ const (
 	Secrets        = "secrets"
 	Shell          = "shell"
 	Exec           = "exec"
-	Show          = "show"
-	Uninstall     = "uninstall"
-	Update        = "update"
-	VSCode        = "vscode"
-	Performance   = "performance"
+	Show           = "show"
+	Uninstall      = "uninstall"
+	Update         = "update"
+	VSCode         = "vscode"
+	Performance    = "performance"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests

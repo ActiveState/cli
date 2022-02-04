@@ -132,6 +132,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	prepareCmd := newPrepareCommand(prime)
 	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
 
+	configCmd := newConfigCommand(prime)
+	configCmd.AddChildren(newConfigGetCommand(prime), newConfigSetCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newActivateCommand(prime),
@@ -172,6 +175,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		secretsCmd,
 		branchCmd,
 		newLearnCommand(prime),
+		configCmd,
 	)
 
 	return &CmdTree{
