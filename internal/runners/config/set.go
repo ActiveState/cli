@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/spf13/cast"
 
@@ -41,7 +40,7 @@ func (s *Set) Run(params SetParams) error {
 
 	value, err := rule.SetEvent(value)
 	if err != nil {
-		logging.Error("Could not execute additional logic on config set, err: %w", err)
+		return locale.WrapError(err, "err_config_set_event", "Could not store config value, if this continues to happen please contact support.")
 	}
 
 	err = s.cfg.Set(params.Key.String(), value)
