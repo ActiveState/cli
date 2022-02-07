@@ -13,11 +13,14 @@ import (
 )
 
 type GaCLIReporter struct {
-	ga *ga.Client
+	ga   *ga.Client
+	omit map[string]struct{}
 }
 
 func NewGaCLIReporter(clientID string) (*GaCLIReporter, error) {
-	r := &GaCLIReporter{}
+	r := &GaCLIReporter{
+		omit: make(map[string]struct{}),
+	}
 
 	trackingID := constants.AnalyticsTrackingID
 
@@ -36,7 +39,16 @@ func (r *GaCLIReporter) ID() string {
 	return "GaCLIReporter"
 }
 
+func (r *GaCLIReporter) AddOmitCategory(category string) {
+	r.omit[category] = struct{}{}
+}
+
 func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Values) error {
+	if _, ok := r.omit[category]; ok {
+		logging.Debug("Not sending event with category: %s to Google Analytics", category)
+		return nil
+	}
+
 	r.ga.CustomDimensionMap(legacyDimensionMap(d))
 
 	if category == anaConsts.CatRunCmd {
