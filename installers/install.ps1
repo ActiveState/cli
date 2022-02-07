@@ -1,4 +1,4 @@
-﻿# Copyright 2019-2021 ActiveState Software Inc. All rights reserved.
+﻿# Copyright 2019-2022 ActiveState Software Inc. All rights reserved.
 <#
 .EXAMPLE
 install.ps1 -b branchToInstall
