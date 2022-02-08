@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -25,6 +26,7 @@ func main() {
 	cfg, err := config.New()
 	if err != nil {
 		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		os.Stderr.WriteString(locale.Tr("err_main_config", errs.JoinMessage(err)))
 		exitCode = 1
 		return
 	}

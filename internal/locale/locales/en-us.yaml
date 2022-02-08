@@ -1238,6 +1238,8 @@ err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
+err_main_config:
+  other: "Could not load config, if this problem persists please reinstall the State Tool. Error: {{.V0}}"
 field_name:
   other: Name
 field_description:
