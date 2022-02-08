@@ -35,7 +35,13 @@ const (
 )
 
 // usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
-var usageTriggers = []Trigger{TriggerActivate, TriggerScript, TriggerDeploy, TriggerExec}
+var usageTriggers = []Trigger{
+	TriggerActivate,
+	TriggerScript,
+	TriggerDeploy,
+	TriggerExec,
+	TriggerPackage,
+}
 
 func (t Trigger) IndicatesUsage() bool {
 	for _, trigger := range usageTriggers {
