@@ -30,7 +30,6 @@ type Client struct {
 	output           string
 	projectNameSpace string
 	eventWaitGroup   *sync.WaitGroup
-	cfg              *config.Instance
 	sessionToken     string
 	updateTag        string
 }
@@ -62,7 +61,6 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 		tag = cfg.GetString(updater.CfgUpdateTag)
 	}
 	a.updateTag = tag
-	a.cfg = cfg
 
 	return a
 }
@@ -92,14 +90,6 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
-	send := true
-	if a.cfg != nil && a.cfg.IsSet(constants.ReportAnalayticsConfig) {
-		send = a.cfg.GetBool(constants.ReportAnalayticsConfig)
-	}
-	if !send {
-		return nil
-	}
-
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
