@@ -127,11 +127,7 @@ func (a *Client) Wait() {
 
 // Events returns a channel to feed eventData directly to the report loop
 func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
-	send := true
-	if a.cfg != nil && a.cfg.IsSet(constants.ReportAnalayticsConfig) {
-		send = a.cfg.GetBool(constants.ReportAnalayticsConfig)
-	}
-	if !send {
+	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
 		return
 	}
 
