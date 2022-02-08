@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -55,11 +54,16 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
-		logging.Debug("Failed to load configuration: %v", err)
-	} else {
-		logging.CurrentHandler().SetConfig(cfg)
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
 	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+	}()
+	logging.CurrentHandler().SetConfig(cfg)
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -108,7 +112,7 @@ func main() {
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, out)
+	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
 		exitCode, err = unwrapError(err)
 		if err != nil {
@@ -128,7 +132,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+func run(args []string, isInteractive bool, cfg *config.Instance, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -143,11 +147,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg, err := config.New()
-	if err != nil {
-		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 

@@ -35,17 +35,22 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
-		logging.Debug("Failed to load configuration: %v", err)
-	} else {
-		logging.CurrentHandler().SetConfig(cfg)
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
 	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+	}()
+	logging.CurrentHandler().SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err = run()
+	err = run(cfg)
 	if err != nil {
 		exitCode = 1
 		logging.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
@@ -54,7 +59,7 @@ func main() {
 	}
 }
 
-func run() (rerr error) {
+func run(cfg *config.Instance) (rerr error) {
 	cfg, err := config.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize config")

@@ -50,11 +50,16 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
-		logging.Debug("Failed to load configuration: %v", err)
-	} else {
-		logging.CurrentHandler().SetConfig(cfg)
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
 	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+	}()
+	logging.CurrentHandler().SetConfig(cfg)
 
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
 
@@ -62,7 +67,7 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	runErr := run()
+	runErr := run(cfg)
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
 		if locale.IsInputError(runErr) {
@@ -76,7 +81,7 @@ func main() {
 	}
 }
 
-func run() (rerr error) {
+func run(cfg *config.Instance) (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()

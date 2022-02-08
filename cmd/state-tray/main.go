@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -41,14 +40,6 @@ var iconUpdateFile []byte
 
 func main() {
 	verbose := os.Getenv("VERBOSE") != ""
-
-	cfg, err := config.New()
-	if err != nil {
-		// We do not want to log an error here as we want to avoid potential rollbar reports until we load the config
-		logging.Debug("Failed to load configuration: %v", err)
-	} else {
-		logging.CurrentHandler().SetConfig(cfg)
-	}
 
 	logging.CurrentHandler().SetVerbose(verbose)
 	logging.SetupRollbar(constants.StateTrayRollbarToken)
@@ -69,7 +60,20 @@ func onReady() {
 		os.Exit(exitCode)
 	}()
 
-	err := run()
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	defer func() {
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+	}()
+	logging.CurrentHandler().SetConfig(cfg)
+
+	err = run(cfg)
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logging.Critical("Systray encountered an error: %v", errMsg)
@@ -78,13 +82,7 @@ func onReady() {
 	}
 }
 
-func run() (rerr error) {
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not get new config instance")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
-
+func run(cfg *config.Instance) (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
