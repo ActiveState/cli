@@ -30,9 +30,8 @@ type Client struct {
 	output           string
 	projectNameSpace string
 	eventWaitGroup   *sync.WaitGroup
-
-	sessionToken string
-	updateTag    string
+	sessionToken     string
+	updateTag        string
 }
 
 var _ analytics.Dispatcher = &Client{}

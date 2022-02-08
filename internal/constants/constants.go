@@ -355,6 +355,9 @@ const SvcConfigPid = "svc-pid"
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"
 
+// ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
+const ReportAnalayticsConfig = "report.analytics"
+
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"
 

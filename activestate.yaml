@@ -269,6 +269,7 @@ scripts:
       else
         cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       fi
+      cp installers/stop${constants.SCRIPT_EXT} $INSTALLERS_DIR/stop${constants.SCRIPT_EXT}
   - name: deploy-installers
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.

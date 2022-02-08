@@ -33,6 +33,7 @@ type Reporter interface {
 type Client struct {
 	gaClient         *ga.Client
 	customDimensions *dimensions.Values
+	cfg              *config.Instance
 	eventWaitGroup   *sync.WaitGroup
 	reporters        []Reporter
 }
@@ -75,6 +76,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		if !ok {
 			tag = cfg.GetString(updater.CfgUpdateTag)
 		}
+		a.cfg = cfg
 	}
 
 	userID := ""
@@ -125,6 +127,10 @@ func (a *Client) Wait() {
 
 // Events returns a channel to feed eventData directly to the report loop
 func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
+	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
+		return
+	}
+
 	logging.Debug("Reporting event to %d reporters: %s, %s, %s", len(a.reporters), category, action, label)
 
 	for _, reporter := range a.reporters {
