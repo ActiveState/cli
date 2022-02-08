@@ -210,8 +210,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.Expect("Version")
 	cp.ExpectExitCode(0)
 
+	currentEvents := len(suite.parseEvents())
 	if len(suite.parseEvents()) > initialEvents {
-		suite.Fail("No additional events should be sent")
+		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-initialEvents)
 	}
 }
 
