@@ -62,10 +62,10 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err = run()
-	if err != nil {
-		errMsg := errs.Join(err, ": ").Error()
-		if locale.IsInputError(err) {
+	runErr := run()
+	if runErr != nil {
+		errMsg := errs.Join(runErr, ": ").Error()
+		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {
 			logging.Critical("state-svc errored out: %s", errMsg)
