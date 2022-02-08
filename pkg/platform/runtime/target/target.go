@@ -3,9 +3,9 @@ package target
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -38,7 +38,12 @@ const (
 var usageTriggers = []Trigger{TriggerActivate, TriggerScript, TriggerDeploy, TriggerExec}
 
 func (t Trigger) IndicatesUsage() bool {
-	return funk.Contains(usageTriggers, t)
+	for _, trigger := range usageTriggers {
+		if t == trigger || strings.HasPrefix(string(t), string(trigger)+":") {
+			return true
+		}
+	}
+	return false
 }
 
 func NewExecTrigger(cmd string) Trigger {
@@ -86,9 +91,9 @@ type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
-	dir      string
-	trigger  Trigger
-	headless bool
+	dir        string
+	trigger    Trigger
+	headless   bool
 }
 
 func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
