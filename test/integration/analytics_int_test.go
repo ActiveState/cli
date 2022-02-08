@@ -200,12 +200,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.ExpectExitCode(0)
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
-	fmt.Println("Initial events:", suite.parseEvents())
-	initialEvents := len(suite.parseEvents())
 
 	cp = ts.Spawn("config", "set", constants.ReportAnalayticsConfig, "false")
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
+
+	fmt.Println("Initial events:", suite.parseEvents())
+	initialEvents := len(suite.parseEvents())
 
 	cp = ts.Spawn("--version")
 	cp.Expect("Version")
