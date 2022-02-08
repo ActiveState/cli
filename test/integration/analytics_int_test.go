@@ -189,6 +189,32 @@ scripts:
 	}
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestSend() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.Spawn("--version")
+	cp.Expect("Version")
+	cp.ExpectExitCode(0)
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	initialEvents := len(suite.parseEvents())
+
+	cp = ts.Spawn("config", "set", constants.ReportAnalayticsConfig, "false")
+	cp.Expect("Successfully")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("--version")
+	cp.Expect("Version")
+	cp.ExpectExitCode(0)
+
+	if len(suite.parseEvents()) > initialEvents {
+		suite.Fail("No additional events should be sent")
+	}
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }
