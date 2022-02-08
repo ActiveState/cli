@@ -49,16 +49,6 @@ func main() {
 
 func onReady() {
 	var exitCode int
-	defer func() {
-		if panics.HandlePanics(recover(), debug.Stack()) {
-			exitCode = 1
-		}
-		logging.Debug("onReady is done with exit code %d", exitCode)
-		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failed to wait for rollbar to close")
-		}
-		os.Exit(exitCode)
-	}()
 
 	cfg, err := config.New()
 	if err != nil {
@@ -66,12 +56,23 @@ func onReady() {
 		exitCode = 1
 		return
 	}
+	logging.CurrentHandler().SetConfig(cfg)
+
 	defer func() {
+		if panics.HandlePanics(recover(), debug.Stack()) {
+			exitCode = 1
+		}
+		logging.Debug("onReady is done with exit code %d", exitCode)
+
 		if err := cfg.Close(); err != nil {
 			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
+
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
+			logging.Warning("Failed to wait for rollbar to close")
+		}
+		os.Exit(exitCode)
 	}()
-	logging.CurrentHandler().SetConfig(cfg)
 
 	err = run(cfg)
 	if err != nil {

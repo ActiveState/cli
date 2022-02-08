@@ -38,28 +38,28 @@ const (
 func main() {
 	var exitCode int
 
-	defer func() {
-		if panics.HandlePanics(recover(), debug.Stack()) {
-			exitCode = 1
-		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failing to wait for rollbar to close")
-		}
-		os.Exit(exitCode)
-	}()
-
 	cfg, err := config.New()
 	if err != nil {
 		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		exitCode = 1
 		return
 	}
+	logging.CurrentHandler().SetConfig(cfg)
+
 	defer func() {
+		if panics.HandlePanics(recover(), debug.Stack()) {
+			exitCode = 1
+		}
+
 		if err := cfg.Close(); err != nil {
 			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
+
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
+			logging.Warning("Failing to wait for rollbar to close")
+		}
+		os.Exit(exitCode)
 	}()
-	logging.CurrentHandler().SetConfig(cfg)
 
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
 

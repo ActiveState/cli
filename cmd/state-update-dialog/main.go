@@ -21,17 +21,6 @@ import (
 
 func main() {
 	var exitCode int
-	defer func() {
-		if panics.HandlePanics(recover(), debug.Stack()) {
-			exitCode = 1
-		}
-		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failed to wait for rollbar to close")
-		}
-		os.Exit(exitCode)
-	}()
-
-	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	cfg, err := config.New()
 	if err != nil {
@@ -39,12 +28,24 @@ func main() {
 		exitCode = 1
 		return
 	}
+	logging.CurrentHandler().SetConfig(cfg)
+
 	defer func() {
+		if panics.HandlePanics(recover(), debug.Stack()) {
+			exitCode = 1
+		}
+
 		if err := cfg.Close(); err != nil {
 			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
+
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
+			logging.Warning("Failed to wait for rollbar to close")
+		}
+		os.Exit(exitCode)
 	}()
-	logging.CurrentHandler().SetConfig(cfg)
+
+	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

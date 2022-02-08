@@ -58,17 +58,16 @@ func main() {
 		exitCode = 1
 		return
 	}
-	defer func() {
-		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config after exiting systray: %w", err)
-		}
-	}()
 	logging.CurrentHandler().SetConfig(cfg)
 
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
+		}
+
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
 
 		// ensure rollbar messages are called
