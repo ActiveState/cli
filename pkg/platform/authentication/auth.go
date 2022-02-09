@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/oauth"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
@@ -48,6 +49,8 @@ type Configurable interface {
 	GetString(string) string
 	Close() error
 }
+
+const deviceCodeConfigKey = "deviceCode"
 
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
@@ -98,8 +101,8 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
-	if availableAPIToken(cfg) != "" {
-		logging.Debug("Authenticating with stored API token")
+	if availableAPIToken(cfg) != "" || cfg.GetString(deviceCodeConfigKey) != "" {
+		logging.Debug("Authenticating with stored API token or device code")
 		auth.Authenticate()
 	}
 
@@ -113,9 +116,37 @@ func (s *Auth) Close() error {
 	return nil
 }
 
+func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, response *oauth.AuthDeviceGetOK) error {
+	defer s.updateRollbarPerson()
+	s.user = response.Payload.AccessToken.User
+	s.bearerToken = response.Payload.AccessToken.Token
+	clientAuth := httptransport.BearerToken(s.bearerToken)
+	s.clientAuth = &clientAuth
+	err := s.cfg.Set(deviceCodeConfigKey, deviceCode)
+	if err != nil {
+		return errs.Wrap(err, "Could not set deviceCode credentials in config")
+	}
+	return err
+}
+
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
-	return s.clientAuth != nil
+	if s.clientAuth != nil {
+		return true
+	} else if existingDeviceCode := s.cfg.GetString(deviceCodeConfigKey); existingDeviceCode != "" && s.bearerToken == "" {
+		// Check if the device is still authenticated with the Platform and if so, get a token.
+		deviceCode := strfmt.UUID(existingDeviceCode)
+		params := oauth.NewAuthDeviceGetParams()
+		params.SetDeviceCode(deviceCode)
+		if response, _ := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
+			s.storeAuthenticatedDevice(deviceCode, response)
+		} else {
+			// Either the token for deviceCode has expired, we are rate-limited by the Platform and
+			// have to try again later, or the Platform is unreachable.
+			// Rate limiting can happen during testing.
+		}
+	}
+	return false
 }
 
 // ClientAuth returns the auth type required by swagger api calls
@@ -215,6 +246,47 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	})
 }
 
+// AuthenticateWithDeviceCode posts a request to authenticate this device on the Platform and waits
+// for the user to authorize the request.
+// The given callback function is called when the user should be prompted to authorize the request.
+// Returns an error if authentication cannot be performed (e.g. timeout or Platform is unreachable).
+func (s *Auth) AuthenticateWithDevice(promptCallback func(userCode, uri string)) error {
+	if s.Authenticated() {
+		return nil // nothing to do
+	}
+	// Post the authentication request to the Platform.
+	postParams := oauth.NewAuthDevicePostParams()
+	response, err := mono.Get().Oauth.AuthDevicePost(postParams)
+	if err != nil {
+		logging.Error("Error requesting device authentication: %v", err)
+		return locale.NewError("err_auth_device")
+	}
+	// Prompt the user to authorize the request.
+	promptCallback(*response.Payload.UserCode, *response.Payload.VerificationURIComplete)
+	// Wait for the authorization.
+	deviceCode := strfmt.UUID(*response.Payload.DeviceCode)
+	getParams := oauth.NewAuthDeviceGetParams()
+	getParams.SetDeviceCode(deviceCode)
+	startTime := time.Now()
+	const timeout = 5 * 60 * time.Second
+	for {
+		response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
+		if response != nil {
+			s.storeAuthenticatedDevice(deviceCode, response)
+			break
+		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
+			if *err.(*oauth.AuthDeviceGetBadRequest).Payload.Error == "expired_token" || time.Since(startTime) >= timeout {
+				return locale.NewInputError("auth_device_timeout")
+			}
+			time.Sleep(5 * time.Second) // then try again
+		} else {
+			logging.Error("Error requesting device authentication status: %v", err)
+			return locale.NewError("err_auth_device")
+		}
+	}
+	return nil
+}
+
 // WhoAmI returns the username of the currently authenticated user, or an empty string if not authenticated
 func (s *Auth) WhoAmI() string {
 	if s.user != nil {
@@ -257,6 +329,10 @@ func (s *Auth) Logout() {
 	err := s.cfg.Set("apiToken", "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
+	}
+	err = s.cfg.Set(deviceCodeConfigKey, "")
+	if err != nil {
+		logging.Error("Could not clear deviceCode key in config")
 	}
 	s.client = nil
 	s.clientAuth = nil

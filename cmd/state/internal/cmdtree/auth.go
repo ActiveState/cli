@@ -42,6 +42,12 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("flag_state_auth_totp_description"),
 				Value:       &params.Totp,
 			},
+			{
+				Name:        "interactive",
+				Shorthand:   "",
+				Description: locale.T("flag_state_auth_cli_description"),
+				Value:       &params.Interactive,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {

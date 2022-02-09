@@ -72,13 +72,21 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	out.Print(message)
 
-	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
+	choices := []string{
+		locale.T("prompt_login_web_action"),
+		locale.T("prompt_login_action"),
+		locale.T("prompt_signup_action"),
+		locale.T("prompt_signup_browser_action")}
 	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}
 
 	switch choice {
+	case locale.T("prompt_login_web_action"):
+		if err := AuthenticateWithDevice(out); err != nil {
+			return errs.Wrap(err, "Authenticate failed")
+		}
 	case locale.T("prompt_login_action"):
 		if err := Authenticate(cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
@@ -177,4 +185,20 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 	}
 
 	return nil
+}
+
+// AuthenticateWithDevice attempts to authenticate this device with the Platform.
+func AuthenticateWithDevice(out output.Outputer) error {
+	err := authentication.LegacyGet().AuthenticateWithDevice(func(userCode, uri string) {
+		out.Notice(locale.Tr("auth_device_verify_security_code", userCode))
+		err := OpenURI(uri)
+		if err != nil {
+			logging.Error("Could not open browser: %v", err)
+			out.Notice(locale.Tr("err_browser_open", uri))
+		}
+	})
+	if err == nil {
+		out.Notice(locale.T("auth_device_success"))
+	}
+	return err
 }
