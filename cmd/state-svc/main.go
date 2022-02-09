@@ -45,11 +45,11 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config after exiting systray: %w", err)
+			logging.Error("Failed to close config: %w", err)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failing to wait for rollbar to close")
+			logging.Warning("Failing to wait events")
 		}
 		os.Exit(exitCode)
 	}()
