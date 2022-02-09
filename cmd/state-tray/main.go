@@ -50,15 +50,7 @@ func main() {
 func onReady() {
 	var exitCode int
 
-	cfg, err := config.New()
-	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		os.Stderr.WriteString(locale.Tr("err_main_config", errs.JoinMessage(err)))
-		exitCode = 1
-		return
-	}
-	logging.CurrentHandler().SetConfig(cfg)
-
+	var cfg *config.Instance
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
@@ -74,6 +66,15 @@ func onReady() {
 		}
 		os.Exit(exitCode)
 	}()
+
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
 
 	err = run(cfg)
 	if err != nil {

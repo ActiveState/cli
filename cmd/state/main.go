@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -52,15 +53,7 @@ func main() {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
-	cfg, err := config.New()
-	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		os.Stderr.WriteString(locale.Tr("err_main_config", errs.JoinMessage(err)))
-		exitCode = 1
-		return
-	}
-	logging.CurrentHandler().SetConfig(cfg)
-
+	var cfg *config.Instance
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
 		if panics.HandlePanics(recover(), debug.Stack()) {
@@ -79,6 +72,15 @@ func main() {
 		// exit with exitCode
 		os.Exit(exitCode)
 	}()
+
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)

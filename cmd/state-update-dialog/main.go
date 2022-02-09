@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -23,15 +22,7 @@ import (
 func main() {
 	var exitCode int
 
-	cfg, err := config.New()
-	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		os.Stderr.WriteString(locale.Tr("err_main_config", errs.JoinMessage(err)))
-		exitCode = 1
-		return
-	}
-	logging.CurrentHandler().SetConfig(cfg)
-
+	var cfg *config.Instance
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
@@ -47,6 +38,14 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
 	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
