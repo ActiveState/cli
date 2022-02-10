@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -77,11 +76,6 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
-	// Account for v0.29 installations that use a different PATH entry
-	if err := i.installDeprecationFiles(); err != nil {
-		return errs.Wrap(err, "Could not install deprecation files")
-	}
-
 	// Install Launcher
 	if err := i.installLauncher(); err != nil {
 		return errs.Wrap(err, "Installation of system files failed.")
@@ -116,42 +110,6 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	logging.Debug("Installation was successful")
-
-	return nil
-}
-
-func PredatesBinDir() (bool, error) {
-	installPath, err := installation.InstallPath()
-	if err != nil {
-		return false, err
-	}
-	binPath, err := installation.BinPath()
-	if err != nil {
-		return false, err
-	}
-	logging.Debug("PredatesBinDir: %s vs %s", installPath, binPath)
-	return installPath == binPath, nil
-}
-
-func (i *Installer) installDeprecationFiles() error {
-	installPath := filepath.Clean(i.InstallPath())
-	binPath, err := installation.BinPathFromInstallPath(installPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not detect whether install predates bin dir schema.")
-	}
-	if installPath != binPath {
-		return nil
-	}
-
-	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
-	if err := i.PrepareBinTargets(false); err != nil {
-		return errs.Wrap(err, "Could not prepare for installation")
-	}
-
-	// Copy all the files
-	if err := fileutils.CopyAndRenameFiles(filepath.Join(i.sourcePath, installation.BinDirName), i.path); err != nil {
-		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
-	}
 
 	return nil
 }
