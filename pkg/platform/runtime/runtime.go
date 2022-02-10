@@ -91,6 +91,10 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
+	if r.target.Trigger().IndicatesUsage() {
+		r.recordUsage()
+	}
+
 	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
@@ -40,20 +41,27 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
+	TriggerBranch,
+	TriggerImport,
 	TriggerPackage,
+	TriggerPull,
+	TriggerReset,
+	TriggerRevert,
 }
 
 func (t Trigger) IndicatesUsage() bool {
-	for _, trigger := range usageTriggers {
-		if t == trigger || strings.HasPrefix(string(t), string(trigger)+":") {
-			return true
-		}
+	if funk.Contains(usageTriggers, t) {
+		return true
 	}
-	return false
+	return IsExecTrigger(t) && funk.Contains(usageTriggers, TriggerExec)
 }
 
 func NewExecTrigger(cmd string) Trigger {
 	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
+}
+
+func IsExecTrigger(t Trigger) bool {
+	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
 }
 
 type ProjectTarget struct {
