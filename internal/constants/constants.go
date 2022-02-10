@@ -352,6 +352,9 @@ const SvcConfigPort = "svc-port"
 // SvcConfigPid is the config key used for storing the svc pid
 const SvcConfigPid = "svc-pid"
 
+// ReportErrorsConfig is the config key used to determine if we will send rollbar reports
+const ReportErrorsConfig = "report.errors"
+
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
 

@@ -16,6 +16,11 @@ import (
 
 var defaultMaxEntries = 1000
 
+type config interface {
+	GetBool(key string) bool
+	IsSet(key string) bool
+}
+
 type entry struct {
 	ctx     *MessageContext
 	message string
@@ -25,6 +30,7 @@ type entry struct {
 type fileHandler struct {
 	formatter Formatter
 	file      *os.File
+	cfg       config
 	mu        sync.Mutex
 	verbose   safeBool
 	wg        *sync.WaitGroup
@@ -35,6 +41,7 @@ type fileHandler struct {
 func newFileHandler() *fileHandler {
 	handler := fileHandler{
 		DefaultFormatter,
+		nil,
 		nil,
 		sync.Mutex{},
 		safeBool{},
@@ -78,6 +85,10 @@ func (l *fileHandler) Output() io.Writer {
 	return l.file
 }
 
+func (l *fileHandler) SetConfig(cfg config) {
+	l.cfg = cfg
+}
+
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
 	var a []interface{}
 	a = append(a, args)
@@ -107,7 +118,12 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 		// This is meant to help guard against recursion issues
 		isRollbarMsg := strings.HasPrefix(message, "Rollbar")
 
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
+		report := true
+		if l.cfg != nil && l.cfg.IsSet(constants.ReportErrorsConfig) {
+			report = l.cfg.GetBool(constants.ReportErrorsConfig)
+		}
+
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && report && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
 			data := map[string]interface{}{}
 
 			if l.file != nil {
