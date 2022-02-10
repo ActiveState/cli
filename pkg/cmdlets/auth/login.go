@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -73,17 +72,18 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 	out.Print(message)
 
 	choices := []string{
-		locale.T("prompt_login_web_action"),
+		locale.T("prompt_login_browser_action"),
 		locale.T("prompt_login_action"),
+		locale.T("prompt_signup_browser_action"),
 		locale.T("prompt_signup_action"),
-		locale.T("prompt_signup_browser_action")}
+	}
 	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}
 
 	switch choice {
-	case locale.T("prompt_login_web_action"):
+	case locale.T("prompt_login_browser_action"):
 		if err := AuthenticateWithDevice(out); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
@@ -91,18 +91,13 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 		if err := Authenticate(cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
-	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt); err != nil {
+	case locale.T("prompt_signup_browser_action"):
+		if err := Signup(cfg, out, prompt, false); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
-	case locale.T("prompt_signup_browser_action"):
-		if err := OpenURI(constants.PlatformSignupURL); err != nil {
-			logging.Error("Could not open browser: %v", err)
-			return locale.WrapInputError(err, "err_browser_open", "", constants.PlatformSignupURL)
-		}
-		out.Notice(locale.T("prompt_login_after_browser_signup"))
-		if err := Authenticate(cfg, out, prompt); err != nil {
-			return errs.Wrap(err, "Authenticate failed")
+	case locale.T("prompt_signup_action"):
+		if err := Signup(cfg, out, prompt, true); err != nil {
+			return errs.Wrap(err, "Signup failed")
 		}
 	}
 

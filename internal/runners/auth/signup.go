@@ -17,11 +17,6 @@ func NewSignup(prime primeable) *Signup {
 	return &Signup{prime.Output(), prime.Prompt(), prime.Config()}
 }
 
-func (s *Signup) Run() error {
-	err := authlet.Signup(s.Configurable, s.Outputer, s.Prompter)
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (s *Signup) Run(interactive bool) error {
+	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter, interactive)
 }
