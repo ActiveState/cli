@@ -138,12 +138,15 @@ func (s *Auth) Authenticated() bool {
 		deviceCode := strfmt.UUID(existingDeviceCode)
 		params := oauth.NewAuthDeviceGetParams()
 		params.SetDeviceCode(deviceCode)
-		if response, _ := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
+		if response, err := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
 			s.storeAuthenticatedDevice(deviceCode, response)
 		} else {
 			// Either the token for deviceCode has expired, we are rate-limited by the Platform and
 			// have to try again later, or the Platform is unreachable.
 			// Rate limiting can happen during testing.
+			if badRequest, ok := err.(*oauth.AuthDeviceGetBadRequest); ok && *badRequest.Payload.Error == "slow_down" {
+				logging.Warning("Attempting to query the Platform for device authentication status too frequently.")
+			}
 		}
 	}
 	return false
@@ -268,15 +271,19 @@ func (s *Auth) AuthenticateWithDevice(promptCallback func(userCode, uri string))
 	getParams := oauth.NewAuthDeviceGetParams()
 	getParams.SetDeviceCode(deviceCode)
 	startTime := time.Now()
-	const timeout = 5 * 60 * time.Second
+	const timeout = 6 * 60 * time.Second
 	for {
 		response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
 		if response != nil {
 			s.storeAuthenticatedDevice(deviceCode, response)
 			break
 		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
-			if *err.(*oauth.AuthDeviceGetBadRequest).Payload.Error == "expired_token" || time.Since(startTime) >= timeout {
+			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
+			errorString := *badRequest.Payload.Error
+			if errorString == "expired_token" || time.Since(startTime) >= timeout {
 				return locale.NewInputError("auth_device_timeout")
+			} else if errorString == "slow_down" {
+				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
 			time.Sleep(5 * time.Second) // then try again
 		} else {
