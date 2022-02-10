@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
@@ -47,6 +48,7 @@ type cobraCommander interface {
 type primer interface {
 	Output() output.Outputer
 	Analytics() analytics.Dispatcher
+	Config() *config.Instance
 }
 
 type ExecuteFunc func(cmd *Command, args []string) error
@@ -93,8 +95,11 @@ type Command struct {
 
 	skipChecks bool
 
+	unstable bool
+
 	out       output.Outputer
 	analytics analytics.Dispatcher
+	cfg       *config.Instance
 }
 
 func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
@@ -117,6 +122,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		commands:  make([]*Command, 0),
 		out:       prime.Output(),
 		analytics: prime.Analytics(),
+		cfg:       prime.Config(),
 	}
 
 	short := description
@@ -336,6 +342,12 @@ func (c *Command) interceptFunc() InterceptFunc {
 	}
 }
 
+func (c *Command) SetUnstable(unstable bool) *Command {
+	c.unstable = unstable
+	c.cobra.Hidden = true
+	return c
+}
+
 // SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
 // Realistically only top level commands really need a group.
 func (c *Command) SetGroup(group CommandGroup) *Command {
@@ -499,7 +511,15 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
+	defer profile.Measure("captain:runner", time.Now())
+
+	if c.unstable {
+		if !c.cfg.GetBool(constants.UnstableConfig) {
+			c.out.Print("Unstable message")
+			return nil
+		}
+		c.title = fmt.Sprintf("%s (%s)", c.title, "Unstable")
+	}
 
 	subCommandString := c.UseFull()
 	logging.CurrentCmd = appEventPrefix + subCommandString

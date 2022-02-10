@@ -352,6 +352,9 @@ const SvcConfigPort = "svc-port"
 // SvcConfigPid is the config key used for storing the svc pid
 const SvcConfigPid = "svc-pid"
 
+// UnstableConfig is the config key used to determine if a command is unstable
+const UnstableConfig = "optin.unstable"
+
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
 
