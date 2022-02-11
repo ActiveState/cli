@@ -355,6 +355,9 @@ const SvcConfigPid = "svc-pid"
 // UnstableConfig is the config key used to determine if a command is unstable
 const UnstableConfig = "optin.unstable"
 
+// ReportErrorsConfig is the config key used to determine if we will send rollbar reports
+const ReportErrorsConfig = "report.errors"
+
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
 
