@@ -148,13 +148,23 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	}
 
 	prime.Analytics().EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), packageName,
+		anaConsts.CatPackageOp,
+		fmt.Sprintf("%s-%s", operation, langName),
+		packageName,
 	)
+	anaFinal := func(outcome string) {
+		prime.Analytics().EventWithLabel(
+			anaConsts.CatPackageOp,
+			fmt.Sprintf("%s-%s-%s", operation, langName, outcome),
+			packageName,
+		)
+	}
 
 	if !hasParentCommit {
 		languageFromNs := model.LanguageFromNamespace(ns.String())
 		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
 		if err != nil {
+			anaFinal(anaConsts.ActPackageOpFailure)
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
 		}
 	}
@@ -162,6 +172,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	var commitID strfmt.UUID
 	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion)
 	if err != nil {
+		anaFinal(anaConsts.ActPackageOpFailure)
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
@@ -169,6 +180,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	if hasParentCommit {
 		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
+			anaFinal(anaConsts.ActPackageOpFailure)
 			return locale.WrapError(err, "err_revert_refresh")
 		}
 		orderChanged = len(revertCommit.Changeset) > 0
@@ -180,14 +192,18 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel())
 	if err != nil {
+		anaFinal(anaConsts.ActPackageOpFailure)
 		return err
 	}
 
 	if orderChanged {
 		if err := pj.SetCommit(commitID.String()); err != nil {
+			anaFinal(anaConsts.ActPackageOpFailure)
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
+
+	anaFinal(anaConsts.ActPackageOpSuccess)
 
 	// Print the result
 	if !hasParentCommit {
