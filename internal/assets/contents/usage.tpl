@@ -47,4 +47,8 @@ Additional help topics:
 {{- if .Cobra.HasAvailableSubCommands}}
 
 Use "{{.Cobra.CommandPath}} [command] --help" for more information about a command.
+
+To access the list of full commands, including unstable features still in beta, run:
+
+"state config set optin.unstable true"
 {{- end}}

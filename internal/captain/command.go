@@ -515,10 +515,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	if c.unstable {
 		if !c.cfg.GetBool(constants.UnstableConfig) {
-			c.out.Print("Unstable message")
+			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
-		c.title = fmt.Sprintf("%s (%s)", c.title, "Unstable")
+		c.out.Print(locale.T("beta_feature_banner"))
 	}
 
 	subCommandString := c.UseFull()

@@ -47,7 +47,7 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return authRunner.Run(&params)
 		},
-	).SetGroup(PlatformGroup).SetUnstable(true)
+	).SetGroup(PlatformGroup)
 }
 
 func newSignupCommand(prime *primer.Values) *captain.Command {
