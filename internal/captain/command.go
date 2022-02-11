@@ -342,9 +342,12 @@ func (c *Command) interceptFunc() InterceptFunc {
 	}
 }
 
+// SetUnstable denotes if the command as a beta feature. This will remove the command
+// from state help, disable the commmand for those who haven't opted in to beta features,
+// and add a warning banner for those who have.
 func (c *Command) SetUnstable(unstable bool) *Command {
 	c.unstable = unstable
-	c.cobra.Hidden = true
+	c.cobra.Hidden = unstable
 	return c
 }
 
