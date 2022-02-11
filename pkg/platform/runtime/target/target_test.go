@@ -15,7 +15,7 @@ func TestTrigger_IndicatesUsage(t *testing.T) {
 		},
 		{
 			"Import does not count as usage",
-			TriggerImport,
+			triggerUnknown,
 			false,
 		},
 	}
