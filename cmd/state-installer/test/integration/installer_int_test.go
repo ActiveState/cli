@@ -29,19 +29,18 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.UseDistinctStateExes()
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
-	suite.removeExes(ts)
+	sourceDir := suite.populateSourceDir(ts)
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", filepath.Dir(ts.InstallerExe)),
+		e2e.WithArgs(target, "--source-path", sourceDir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
-	cp.ExpectExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
@@ -83,15 +82,27 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	}
 }
 
-func (suite *InstallerIntegrationTestSuite) removeExes(ts *e2e.Session) {
-	err := os.Remove(ts.Exe)
+func (suite *InstallerIntegrationTestSuite) populateSourceDir(ts *e2e.Session) string {
+	sourceDir := filepath.Join(ts.Dirs.Work, "source")
+	err := fileutils.Mkdir(sourceDir)
 	suite.NoError(err)
 
+	err = fileutils.CopyFile(ts.Exe, filepath.Join(sourceDir, filepath.Base(ts.Exe)))
+	suite.NoError(err)
+	err = os.Remove(ts.Exe)
+	suite.NoError(err)
+
+	err = fileutils.CopyFile(ts.SvcExe, filepath.Join(sourceDir, filepath.Base(ts.SvcExe)))
+	suite.NoError(err)
 	err = os.Remove(ts.SvcExe)
 	suite.NoError(err)
 
+	err = fileutils.CopyFile(ts.TrayExe, filepath.Join(sourceDir, filepath.Base(ts.TrayExe)))
+	suite.NoError(err)
 	err = os.Remove(ts.TrayExe)
 	suite.NoError(err)
+
+	return sourceDir
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
