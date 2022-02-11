@@ -29,6 +29,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.UseDistinctStateExes()
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
+	suite.removeExes(ts)
+
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
@@ -38,6 +40,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Assert output
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
+	cp.Expect("successfully installed")
 	cp.ExpectExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
@@ -78,6 +81,17 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" or \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
 		}
 	}
+}
+
+func (suite *InstallerIntegrationTestSuite) removeExes(ts *e2e.Session) {
+	err := os.Remove(ts.Exe)
+	suite.NoError(err)
+
+	err = os.Remove(ts.SvcExe)
+	suite.NoError(err)
+
+	err = os.Remove(ts.TrayExe)
+	suite.NoError(err)
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
