@@ -28,12 +28,50 @@ import (
 	"golang.org/x/net/context"
 )
 
+type reportOnce struct {
+	d         analytics.Dispatcher
+	svcm      *model.SvcModel
+	concluded bool
+}
+
+func (o *reportOnce) RuntimeConcluded(err error, t setup.Targeter) {
+	if !o.concluded {
+		if err != nil {
+			o.d.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
+		} else {
+			o.d.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
+			if t.Trigger().IndicatesUsage() {
+				o.recordUsage(t)
+			}
+		}
+		o.concluded = true
+	}
+}
+
+// recordUsage should only be called by internal funcs that are protected, so
+// it should not need protection itself.
+func (o *reportOnce) recordUsage(t setup.Targeter) {
+	dims := &dimensions.Values{
+		Trigger:          p.StrP(t.Trigger().String()),
+		Headless:         p.StrP(strconv.FormatBool(t.Headless())),
+		CommitID:         p.StrP(t.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(t.Owner(), t.Name(), t.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
+	}
+	dimsJson, err := dims.Marshal()
+	if err != nil {
+		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
+	}
+	if o.svcm != nil {
+		o.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	}
+}
+
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
 	envAccessed bool
-	analytics   analytics.Dispatcher
-	svcm        *model.SvcModel
+	analytics   *reportOnce
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -47,12 +85,11 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an *reportOnce) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
-		svcm:      svcModel,
 	}
 
 	if !rt.store.MarkerIsValid(target.CommitUUID()) {
@@ -79,7 +116,12 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		InstanceID:       p.StrP(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm)
+	ana := &reportOnce{
+		d:    an,
+		svcm: svcm,
+	}
+
+	r, err := newRuntime(target, ana)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache)
 	}
@@ -91,6 +133,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
+	// TODO: start here: this is "RuntimeStart", probably mirrored by the "start" in setup
 	if r.target.Trigger().IndicatesUsage() {
 		r.recordUsage()
 	}
@@ -101,16 +144,16 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	go func() {
 		defer prod.Close()
 
-		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
+		if err := setup.New(r.target, prod, auth, r.analytics.d).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
-		rt, err := newRuntime(r.target, r.analytics, r.svcm)
+		rt, err := newRuntime(r.target, r.analytics)
 		if err != nil {
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
 		}
-		*r = *rt
+		*r = *rt // hmm. maybe. maybe not.
 	}()
 
 	// ... and handle and wait for the runtime events in the main thread
@@ -130,17 +173,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
 	envDef, err := r.envDef()
-	if !r.envAccessed {
-		if err != nil {
-			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
-		} else {
-			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
-			if r.target.Trigger().IndicatesUsage() {
-				r.recordUsage()
-			}
-		}
-		r.envAccessed = true
-	}
+	r.analytics.RuntimeConcluded(err, r.target)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not grab environment definitions")
 	}
@@ -161,23 +194,6 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	}
 
 	return env, nil
-}
-
-func (r *Runtime) recordUsage() {
-	dims := &dimensions.Values{
-		Trigger:          p.StrP(r.target.Trigger().String()),
-		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
-		CommitID:         p.StrP(r.target.CommitUUID().String()),
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
-	}
-	dimsJson, err := dims.Marshal()
-	if err != nil {
-		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
-	}
-	if r.svcm != nil {
-		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
-	}
 }
 
 func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
