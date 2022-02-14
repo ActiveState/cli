@@ -280,9 +280,15 @@ func (s *Auth) AuthenticateWithDevice(promptCallback func(userCode, uri string))
 		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
 			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
 			errorString := *badRequest.Payload.Error
-			if errorString == "expired_token" || time.Since(startTime) >= timeout {
+			const expiredToken = "expired_token"
+			const invalidClient = "invalid_client"
+			const slowDown = "slow_down"
+			if errorString == expiredToken || time.Since(startTime) >= timeout {
 				return locale.NewInputError("auth_device_timeout")
-			} else if errorString == "slow_down" {
+			} else if errorString == invalidClient {
+				logging.Error("Error requesting device authentication: invalid client") // IP address mismatch
+				return locale.NewError("err_auth_device")
+			} else if errorString == slowDown {
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
 			time.Sleep(5 * time.Second) // then try again
