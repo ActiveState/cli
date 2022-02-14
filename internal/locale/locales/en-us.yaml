@@ -975,6 +975,7 @@ auth_device_verify_security_code:
         {{.V0}}
 
     Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize"
+    After that, it may take a few seconds for the authorization process here to complete
 auth_device_timeout:
   other: Authorization timeout. Please try again.
 auth_device_success:
