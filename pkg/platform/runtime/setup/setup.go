@@ -10,9 +10,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/report"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -38,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 )
 
@@ -114,7 +113,7 @@ type Setup struct {
 	target    Targeter
 	events    Events
 	store     *store.Store
-	analytics analytics.Dispatcher
+	analytics *report.Report
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -140,12 +139,12 @@ type ArtifactSetuper interface {
 }
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
+func New(target Targeter, msgHandler Events, auth *authentication.Auth, an *report.Report) *Setup {
 	return NewWithModel(target, msgHandler, model.NewDefault(auth), an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.Dispatcher) *Setup {
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an *report.Report) *Setup {
 	return &Setup{model, target, msgHandler, store.New(target.Dir()), an}
 }
 
@@ -153,11 +152,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 func (s *Setup) Update() error {
 	err := s.update()
 	if err != nil {
-		category := anaConsts.ActRuntimeFailure
-		if locale.IsInputError(err) {
-			category = anaConsts.ActRuntimeUserFailure
-		}
-		s.analytics.EventWithLabel(anaConsts.CatRuntime, category, anaConsts.LblRtFailUpdate)
+		s.analytics.RuntimeConclusion(err, anaConsts.LblRtFailUpdate)
 		return err
 	}
 	return nil
@@ -205,12 +200,7 @@ func (s *Setup) update() error {
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild)
-		ns := project.Namespaced{
-			Owner:   s.target.Owner(),
-			Project: s.target.Name(),
-		}
-		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String())
+		s.analytics.RuntimeBuild()
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
@@ -245,7 +235,7 @@ func (s *Setup) update() error {
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifacts) != len(alreadyInstalled) {
 		// if we get here, we dowload artifacts
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload)
+		s.analytics.RuntimeDownload()
 	}
 
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
