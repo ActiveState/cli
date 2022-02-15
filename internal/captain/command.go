@@ -521,7 +521,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
-		c.out.Print(locale.T("beta_feature_banner"))
+		c.out.Print(locale.T("unstable_feature_banner"))
 	}
 
 	subCommandString := c.UseFull()

@@ -1787,7 +1787,7 @@ progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
-beta_feature_banner:
+unstable_feature_banner:
   other: "[HEADING]█ Beta Feature: This feature is still in beta and may be unstable.[/RESET]"
 unstable_command_warning:
   other: |
