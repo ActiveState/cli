@@ -86,6 +86,7 @@ type Command struct {
 	commands []*Command
 	parent   *Command
 
+	name  string
 	title string
 
 	group CommandGroup
@@ -121,6 +122,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	}
 
 	cmd := &Command{
+		name:      name,
 		title:     title,
 		execute:   execute,
 		arguments: args,
@@ -292,7 +294,7 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 }
 
 func (c *Command) Name() string {
-	return c.cobra.Name()
+	return c.name
 }
 
 func (c *Command) NameRecursive() string {
@@ -353,7 +355,10 @@ func (c *Command) interceptFunc() InterceptFunc {
 // and add a warning banner for those who have.
 func (c *Command) SetUnstable(unstable bool) *Command {
 	c.unstable = unstable
-	c.cobra.Hidden = unstable
+	if !c.cfg.GetBool(constants.UnstableConfig) {
+		c.cobra.Hidden = unstable
+	}
+	c.name = fmt.Sprintf("%s (Unstable)", c.cobra.Use)
 	return c
 }
 
