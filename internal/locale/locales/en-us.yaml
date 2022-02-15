@@ -1793,4 +1793,4 @@ unstable_command_warning:
   other: |
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
-    state config set optin.unstable true
+    [ACTIONABLE]state config set optin.unstable true[/RESET]
