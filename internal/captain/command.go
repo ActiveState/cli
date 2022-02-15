@@ -28,7 +28,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
+
+func init() {
+	configMediator.NewRule(constants.UnstableConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 // appEventPrefix is used for all executables except for the State Tool itself.
 var appEventPrefix string = func() string {
