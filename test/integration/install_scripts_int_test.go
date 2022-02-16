@@ -94,6 +94,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState Software Inc.")
 			}
 
+			if runtime.GOOS == "windows" {
+				cp.SendLine("echo %PATH%")
+			}
 			cp.SendLine("state --version")
 			cp.Expect("Branch")
 			cp.Expect("Built")
