@@ -147,7 +147,9 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 	}
 
-	prime.Analytics().EventWithLabel(anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), packageName)
+	prime.Analytics().EventWithLabel(
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), packageName,
+	)
 
 	if !hasParentCommit {
 		languageFromNs := model.LanguageFromNamespace(ns.String())
