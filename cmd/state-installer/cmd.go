@@ -377,7 +377,9 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	case !isUpdate:
+		fmt.Println("Starting new subshell")
 		ss := subshell.New(cfg)
+		fmt.Println("Using bin path:", binPath)
 		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
