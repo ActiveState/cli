@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -184,16 +185,24 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 
 // AuthenticateWithDevice attempts to authenticate this device with the Platform.
 func AuthenticateWithDevice(out output.Outputer) error {
-	err := authentication.LegacyGet().AuthenticateWithDevice(func(userCode, uri string) {
-		out.Notice(locale.Tr("auth_device_verify_security_code", userCode))
-		err := OpenURI(uri)
-		if err != nil {
-			logging.Error("Could not open browser: %v", err)
-			out.Notice(locale.Tr("err_browser_open", uri))
-		}
-	})
-	if err == nil {
-		out.Notice(locale.T("auth_device_success"))
+	deviceCode, err := model.RequestDeviceAuthorization()
+	if err != nil {
+		return err
 	}
-	return err
+	out.Notice(locale.Tr("auth_device_verify_security_code", *deviceCode.UserCode))
+	err = OpenURI(*deviceCode.VerificationURIComplete)
+	if err != nil {
+		logging.Error("Could not open browser: %v", err)
+		out.Notice(locale.Tr("err_browser_open", *deviceCode.VerificationURIComplete))
+	}
+	authorization, err := model.WaitForAuthorization(deviceCode)
+	if err != nil {
+		return err
+	}
+	err = authentication.LegacyGet().AuthenticateWithDevice(deviceCode, authorization.AccessToken)
+	if err != nil {
+		return err
+	}
+	out.Notice(locale.T("auth_device_success"))
+	return nil
 }

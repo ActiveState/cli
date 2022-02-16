@@ -116,11 +116,11 @@ func (s *Auth) Close() error {
 	return nil
 }
 
-func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, response *oauth.AuthDeviceGetOK) error {
+func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, accessToken *mono_models.JWT) error {
 	defer s.updateRollbarPerson()
 
-	s.user = response.Payload.AccessToken.User
-	s.bearerToken = response.Payload.AccessToken.Token
+	s.user = accessToken.User
+	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
 
@@ -146,7 +146,7 @@ func (s *Auth) Authenticated() bool {
 	params := oauth.NewAuthDeviceGetParams()
 	params.SetDeviceCode(deviceCode)
 	if response, err := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
-		if err := s.storeAuthenticatedDevice(deviceCode, response); err == nil {
+		if err := s.storeAuthenticatedDevice(deviceCode, response.Payload.AccessToken); err == nil {
 			return true
 		}
 		if err != nil {
@@ -260,55 +260,10 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	})
 }
 
-// AuthenticateWithDeviceCode posts a request to authenticate this device on the Platform and waits
-// for the user to authorize the request.
-// The given callback function is called when the user should be prompted to authorize the request.
-// Returns an error if authentication cannot be performed (e.g. timeout or Platform is unreachable).
-func (s *Auth) AuthenticateWithDevice(promptCallback func(userCode, uri string)) error {
-	if s.Authenticated() {
-		return nil // nothing to do
-	}
-	// Post the authentication request to the Platform.
-	postParams := oauth.NewAuthDevicePostParams()
-	response, err := mono.Get().Oauth.AuthDevicePost(postParams)
-	if err != nil {
-		logging.Error("Error requesting device authentication: %v", err)
-		return locale.NewError("err_auth_device")
-	}
-	// Prompt the user to authorize the request.
-	promptCallback(*response.Payload.UserCode, *response.Payload.VerificationURIComplete)
-	// Wait for the authorization.
-	deviceCode := strfmt.UUID(*response.Payload.DeviceCode)
-	getParams := oauth.NewAuthDeviceGetParams()
-	getParams.SetDeviceCode(deviceCode)
-	startTime := time.Now()
-	const timeout = 6 * 60 * time.Second
-	for {
-		response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
-		if response != nil {
-			err := s.storeAuthenticatedDevice(deviceCode, response)
-			if err != nil {
-				logging.Error("Error storing authenticated device", err.Error())
-			}
-			break
-		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
-			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
-			errorString := *badRequest.Payload.Error
-			if errorString == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken || time.Since(startTime) >= timeout {
-				return locale.NewInputError("auth_device_timeout")
-			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorInvalidClient {
-				logging.Error("Error requesting device authentication: invalid client") // IP address mismatch
-				return locale.NewError("err_auth_device")
-			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
-				logging.Warning("Attempting to check for authorization status too frequently.")
-			}
-			time.Sleep(5 * time.Second) // then try again
-		} else {
-			logging.Error("Error requesting device authentication status: %v", err)
-			return locale.NewError("err_auth_device")
-		}
-	}
-	return nil
+// AuthenticateWithDeviceCode authenticates with the given access token obtained via a Platform
+// device authentication request and response.
+func (s *Auth) AuthenticateWithDevice(deviceCode *mono_models.DeviceCode, accessToken *mono_models.JWT) error {
+	return s.storeAuthenticatedDevice(strfmt.UUID(*deviceCode.DeviceCode), accessToken)
 }
 
 // WhoAmI returns the username of the currently authenticated user, or an empty string if not authenticated
