@@ -120,9 +120,9 @@ flag_state_auth_password_description:
 flag_state_auth_totp_description:
   other: The TOTP code generated via two-factor authentication
 flag_state_auth_interactive_description:
-  other: Prompt for username and password. Otherwise the user is prompted to log into the ActiveState Platform using a web browser.
+  other: Sign in via your terminal, rather than your web browser.
 flag_state_auth_signup_interactive_description:
-  other: Prompt for username and password. Otherwise the user is prompted to sign up for the ActiveState Platform using a web browser.
+  other: Sign up via your terminal, rather than your web browser.
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -879,7 +879,7 @@ auth_required_activate:
 prompt_login_or_signup:
   other: Would you like to login to an existing ActiveState Platform account, or create a new account?
 prompt_login_browser_action:
-  other: Login with my existing account using the ActiveState Platform website
+  other: Login with my existing account using your browser
 prompt_login_action:
   other: Login with my existing account by typing my username and password
 prompt_signup_action:
