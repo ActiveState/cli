@@ -42,12 +42,6 @@ const ActRuntimeFailure = "failure"
 // ActRuntimeUserFailure is the event action sent when a user failure occurred anytime during a runtime operation
 const ActRuntimeUserFailure = "user_failure"
 
-// ActPackageOpSuccess is the event action sent when a package op attempt has succeeded.
-const ActPackageOpSuccess = "success"
-
-// ActPackageOpFailure is the event action sent when a package op attempt has failed.
-const ActPackageOpFailure = "failure"
-
 // LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
 const LblRtFailUpdate = "update"
 
