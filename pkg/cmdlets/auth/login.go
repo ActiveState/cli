@@ -92,11 +92,11 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := Signup(cfg, out, prompt, false); err != nil {
+		if err := AuthenticateWithDevice(out); err != nil { // user can sign up from this page too
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt, true); err != nil {
+		if err := Signup(cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	}

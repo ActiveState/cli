@@ -34,15 +34,7 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, interactive bool) error {
-	if authentication.LegacyGet().Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet().WhoAmI())
-	}
-
-	if !interactive {
-		return AuthenticateWithDevice(out) // user can sign up from this page too
-	}
-
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
 	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
