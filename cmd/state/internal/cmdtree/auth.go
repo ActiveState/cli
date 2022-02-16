@@ -58,7 +58,7 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 
 func newSignupCommand(prime *primer.Values) *captain.Command {
 	signupRunner := auth.NewSignup(prime)
-	interactive := false
+	params := auth.AuthParams{}
 	return captain.NewCommand(
 		"signup",
 		locale.Tl("signup_title", "Signing Up With The ActiveState Platform"),
@@ -69,12 +69,12 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 				Name:        "interactive",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_signup_interactive_description"),
-				Value:       &interactive,
+				Value:       &params.Interactive,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
-			return signupRunner.Run(interactive)
+			return signupRunner.Run(params.Interactive)
 		},
 	)
 }
