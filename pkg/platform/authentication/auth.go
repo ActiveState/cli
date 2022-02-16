@@ -118,14 +118,17 @@ func (s *Auth) Close() error {
 
 func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, response *oauth.AuthDeviceGetOK) error {
 	defer s.updateRollbarPerson()
+
 	s.user = response.Payload.AccessToken.User
 	s.bearerToken = response.Payload.AccessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
+
 	err := s.cfg.Set(deviceCodeConfigKey, deviceCode)
 	if err != nil {
 		return errs.Wrap(err, "Could not set deviceCode credentials in config")
 	}
+
 	return err
 }
 
@@ -133,20 +136,28 @@ func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, response *oauth.
 func (s *Auth) Authenticated() bool {
 	if s.clientAuth != nil {
 		return true
-	} else if existingDeviceCode := s.cfg.GetString(deviceCodeConfigKey); existingDeviceCode != "" && s.bearerToken == "" {
-		// Check if the device is still authenticated with the Platform and if so, get a token.
-		deviceCode := strfmt.UUID(existingDeviceCode)
-		params := oauth.NewAuthDeviceGetParams()
-		params.SetDeviceCode(deviceCode)
-		if response, err := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
-			s.storeAuthenticatedDevice(deviceCode, response)
-		} else {
-			// Either the token for deviceCode has expired, we are rate-limited by the Platform and
-			// have to try again later, or the Platform is unreachable.
-			// Rate limiting can happen during testing.
-			if badRequest, ok := err.(*oauth.AuthDeviceGetBadRequest); ok && *badRequest.Payload.Error == "slow_down" {
-				logging.Warning("Attempting to query the Platform for device authentication status too frequently.")
-			}
+	}
+	existingDeviceCode := s.cfg.GetString(deviceCodeConfigKey)
+	if existingDeviceCode == "" || s.bearerToken != "" {
+		return false
+	}
+	// Check if the device is still authenticated with the Platform and if so, get a token.
+	deviceCode := strfmt.UUID(existingDeviceCode)
+	params := oauth.NewAuthDeviceGetParams()
+	params.SetDeviceCode(deviceCode)
+	if response, err := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
+		if err := s.storeAuthenticatedDevice(deviceCode, response); err == nil {
+			return true
+		}
+		if err != nil {
+			logging.Error("Error storing authenticated device", err.Error())
+		}
+	} else {
+		// Either the token for deviceCode has expired, we are rate-limited by the Platform and
+		// have to try again later, or the Platform is unreachable.
+		// Rate limiting can happen during testing.
+		if badRequest, ok := err.(*oauth.AuthDeviceGetBadRequest); ok && *badRequest.Payload.Error == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
+			logging.Warning("Attempting to query the Platform for device authentication status too frequently.")
 		}
 	}
 	return false
@@ -275,20 +286,20 @@ func (s *Auth) AuthenticateWithDevice(promptCallback func(userCode, uri string))
 	for {
 		response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
 		if response != nil {
-			s.storeAuthenticatedDevice(deviceCode, response)
+			err := s.storeAuthenticatedDevice(deviceCode, response)
+			if err != nil {
+				logging.Error("Error storing authenticated device", err.Error())
+			}
 			break
 		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
 			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
 			errorString := *badRequest.Payload.Error
-			const expiredToken = "expired_token"
-			const invalidClient = "invalid_client"
-			const slowDown = "slow_down"
-			if errorString == expiredToken || time.Since(startTime) >= timeout {
+			if errorString == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken || time.Since(startTime) >= timeout {
 				return locale.NewInputError("auth_device_timeout")
-			} else if errorString == invalidClient {
+			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorInvalidClient {
 				logging.Error("Error requesting device authentication: invalid client") // IP address mismatch
 				return locale.NewError("err_auth_device")
-			} else if errorString == slowDown {
+			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
 			time.Sleep(5 * time.Second) // then try again
