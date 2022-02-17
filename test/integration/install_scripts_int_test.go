@@ -94,6 +94,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState Software Inc.")
 			}
 
+			if runtime.GOOS == "windows" {
+				cp.SendLine("echo %PATH%")
+				fmt.Println("Path contains work dir:", strings.Contains(cp.TrimmedSnapshot(), ts.Dirs.Work))
+			}
 			cp.SendLine("state --version")
 			cp.Expect("Branch")
 			cp.Expect("Built")
