@@ -1,100 +1,105 @@
+--- --- ---
 1.2M ./go-hello/build/go-hello
 
  Performance counter stats for './go-hello/build/go-hello' (100 runs):
 
-              0.58 msec task-clock                #    0.840 CPUs utilized            ( +-  0.76% )
-                 8      context-switches          #   13.563 K/sec                    ( +-  1.53% )
-                 0      cpu-migrations            #  669.543 /sec                     ( +- 20.90% )
-               238      page-faults               #  408.730 K/sec                    ( +-  0.31% )
-         2,305,990      cycles                    #    3.959 GHz                      ( +-  0.82% )
-         2,303,030      instructions              #    1.00  insn per cycle           ( +-  0.19% )
-           429,160      branches                  #  736.772 M/sec                    ( +-  0.18% )
-             5,230      branch-misses             #    1.22% of all branches          ( +-  2.89% )
-        10,273,473      slots                     #   17.637 G/sec                    ( +-  0.93% )
-         2,675,840      topdown-retiring          #     26.0% retiring                ( +-  0.20% )
-           713,978      topdown-bad-spec          #      6.9% bad speculation         ( +-  1.91% )
-         3,573,584      topdown-fe-bound          #     34.8% frontend bound          ( +-  0.91% )
-         3,314,179      topdown-be-bound          #     32.2% backend bound           ( +-  2.49% )
+              0.59 msec task-clock                #    0.832 CPUs utilized            ( +-  0.72% )
+                 8      context-switches          #   13.718 K/sec                    ( +-  1.37% )
+                 0      cpu-migrations            #  426.564 /sec                     ( +- 22.29% )
+               239      page-faults               #  407.897 K/sec                    ( +-  0.31% )
+         2,327,053      cycles                    #    3.971 GHz                      ( +-  0.78% )
+         2,304,082      instructions              #    0.99  insn per cycle           ( +-  0.18% )
+           429,226      branches                  #  732.369 M/sec                    ( +-  0.17% )
+             5,503      branch-misses             #    1.28% of all branches          ( +-  2.55% )
+        10,165,183      slots                     #   17.344 G/sec                    ( +-  0.92% )
+         2,677,092      topdown-retiring          #     26.3% retiring                ( +-  0.21% )
+           722,950      topdown-bad-spec          #      7.1% bad speculation         ( +-  1.68% )
+         3,622,002      topdown-fe-bound          #     35.6% frontend bound          ( +-  0.83% )
+         3,147,982      topdown-be-bound          #     31.0% backend bound           ( +-  2.60% )
 
-        0.00069332 +- 0.00000544 seconds time elapsed  ( +-  0.78% )
+        0.00070429 +- 0.00000610 seconds time elapsed  ( +-  0.87% )
 
+--- --- ---
 504K ./go-hello/build/go-hello-packed
 
  Performance counter stats for './go-hello/build/go-hello-packed' (100 runs):
 
-              6.47 msec task-clock                #    0.978 CPUs utilized            ( +-  0.16% )
-                 8      context-switches          #    1.296 K/sec                    ( +-  1.28% )
-                 0      cpu-migrations            #   10.816 /sec                     ( +- 50.78% )
-               508      page-faults               #   78.478 K/sec                    ( +-  0.10% )
-        27,391,347      cycles                    #    4.232 GHz                      ( +-  0.11% )
-        23,604,814      instructions              #    0.86  insn per cycle           ( +-  0.02% )
-         8,459,460      branches                  #    1.307 G/sec                    ( +-  0.01% )
-           679,042      branch-misses             #    8.03% of all branches          ( +-  0.07% )
-       136,452,086      slots                     #   21.083 G/sec                    ( +-  0.09% )
-        22,476,708      topdown-retiring          #     16.4% retiring                ( +-  0.08% )
-        35,846,698      topdown-bad-spec          #     26.2% bad speculation         ( +-  0.17% )
-        64,452,651      topdown-fe-bound          #     47.1% frontend bound          ( +-  0.11% )
-        14,134,327      topdown-be-bound          #     10.3% backend bound           ( +-  0.66% )
+              6.57 msec task-clock                #    0.975 CPUs utilized            ( +-  0.13% )
+                 9      context-switches          #    1.319 K/sec                    ( +-  1.62% )
+                 0      cpu-migrations            #    6.087 /sec                     ( +- 60.72% )
+               510      page-faults               #   77.554 K/sec                    ( +-  0.10% )
+        27,688,160      cycles                    #    4.214 GHz                      ( +-  0.12% )
+        23,628,288      instructions              #    0.85  insn per cycle           ( +-  0.02% )
+         8,463,886      branches                  #    1.288 G/sec                    ( +-  0.01% )
+           680,347      branch-misses             #    8.04% of all branches          ( +-  0.08% )
+       137,661,553      slots                     #   20.950 G/sec                    ( +-  0.11% )
+        22,552,580      topdown-retiring          #     16.3% retiring                ( +-  0.09% )
+        35,856,745      topdown-bad-spec          #     26.0% bad speculation         ( +-  0.20% )
+        64,834,536      topdown-fe-bound          #     46.9% frontend bound          ( +-  0.12% )
+        14,869,758      topdown-be-bound          #     10.8% backend bound           ( +-  0.85% )
 
-         0.0066170 +- 0.0000111 seconds time elapsed  ( +-  0.17% )
+        0.00674247 +- 0.00000907 seconds time elapsed  ( +-  0.13% )
 
+--- --- ---
 308K ./rust-hello/build/rust-hello
 
  Performance counter stats for './rust-hello/build/rust-hello' (100 runs):
 
-              0.26 msec task-clock                #    0.557 CPUs utilized            ( +-  0.65% )
-                 0      context-switches          #    0.000 /sec                   
+              0.25 msec task-clock                #    0.564 CPUs utilized            ( +-  0.85% )
+                 0      context-switches          #   79.789 /sec                     ( +- 70.35% )
                  0      cpu-migrations            #    0.000 /sec                   
-                74      page-faults               #  283.935 K/sec                    ( +-  0.30% )
-         1,080,509      cycles                    #    4.154 GHz                      ( +-  0.65% )
-         1,264,785      instructions              #    1.17  insn per cycle           ( +-  0.16% )
-           250,830      branches                  #  964.249 M/sec                    ( +-  0.15% )
-             4,949      branch-misses             #    1.97% of all branches          ( +-  1.36% )
-         4,601,327      slots                     #   17.689 G/sec                    ( +-  0.43% )
-         1,375,997      topdown-retiring          #     29.9% retiring                ( +-  0.17% )
-           449,846      topdown-bad-spec          #      9.8% bad speculation         ( +-  1.24% )
-         1,972,784      topdown-fe-bound          #     42.9% frontend bound          ( +-  0.61% )
-           802,698      topdown-be-bound          #     17.4% backend bound           ( +-  1.97% )
+                74      page-faults               #  293.982 K/sec                    ( +-  0.31% )
+         1,040,792      cycles                    #    4.152 GHz                      ( +-  0.85% )
+         1,261,912      instructions              #    1.21  insn per cycle           ( +-  0.14% )
+           250,319      branches                  #  998.631 M/sec                    ( +-  0.13% )
+             5,307      branch-misses             #    2.12% of all branches          ( +-  1.41% )
+         4,690,093      slots                     #   18.711 G/sec                    ( +-  0.47% )
+         1,370,953      topdown-retiring          #     29.2% retiring                ( +-  0.15% )
+           499,343      topdown-bad-spec          #     10.6% bad speculation         ( +-  1.40% )
+         1,917,434      topdown-fe-bound          #     40.9% frontend bound          ( +-  0.84% )
+           902,362      topdown-be-bound          #     19.2% backend bound           ( +-  2.28% )
 
-        0.00046669 +- 0.00000274 seconds time elapsed  ( +-  0.59% )
+        0.00044474 +- 0.00000410 seconds time elapsed  ( +-  0.92% )
 
+--- --- ---
 140K ./rust-hello/build/rust-hello-packed
 
  Performance counter stats for './rust-hello/build/rust-hello-packed' (100 runs):
 
-              2.24 msec task-clock                #    0.925 CPUs utilized            ( +-  0.17% )
-                 0      context-switches          #   13.366 /sec                     ( +- 57.15% )
+              2.28 msec task-clock                #    0.912 CPUs utilized            ( +-  0.21% )
+                 0      context-switches          #   57.066 /sec                     ( +- 32.17% )
                  0      cpu-migrations            #    0.000 /sec                   
-               145      page-faults               #   64.427 K/sec                    ( +-  0.18% )
-         9,402,437      cycles                    #    4.189 GHz                      ( +-  0.17% )
-         7,931,930      instructions              #    0.84  insn per cycle           ( +-  0.03% )
-         2,684,197      branches                  #    1.196 G/sec                    ( +-  0.02% )
-           258,413      branch-misses             #    9.63% of all branches          ( +-  0.13% )
-        46,969,774      slots                     #   20.926 G/sec                    ( +-  0.17% )
-         7,552,082      topdown-retiring          #     16.1% retiring                ( +-  0.07% )
-        14,826,877      topdown-bad-spec          #     31.6% bad speculation         ( +-  0.32% )
-        20,000,615      topdown-fe-bound          #     42.6% frontend bound          ( +-  0.13% )
-         4,590,198      topdown-be-bound          #      9.8% backend bound           ( +-  0.58% )
+               145      page-faults               #   63.752 K/sec                    ( +-  0.17% )
+         9,558,443      cycles                    #    4.196 GHz                      ( +-  0.19% )
+         7,941,911      instructions              #    0.83  insn per cycle           ( +-  0.03% )
+         2,686,041      branches                  #    1.179 G/sec                    ( +-  0.01% )
+           256,664      branch-misses             #    9.56% of all branches          ( +-  0.22% )
+        47,039,032      slots                     #   20.649 G/sec                    ( +-  0.20% )
+         7,562,171      topdown-retiring          #     16.1% retiring                ( +-  0.08% )
+        14,454,671      topdown-bad-spec          #     30.7% bad speculation         ( +-  0.58% )
+        20,466,246      topdown-fe-bound          #     43.5% frontend bound          ( +-  0.32% )
+         4,555,942      topdown-be-bound          #      9.7% backend bound           ( +-  1.37% )
 
-        0.00242780 +- 0.00000407 seconds time elapsed  ( +-  0.17% )
+        0.00249796 +- 0.00000641 seconds time elapsed  ( +-  0.26% )
 
+--- --- ---
 12K ./zig-hello/build/zig-hello
 
  Performance counter stats for './zig-hello/build/zig-hello' (100 runs):
 
-              0.02 msec task-clock                #    0.128 CPUs utilized            ( +-  0.84% )
+              0.02 msec task-clock                #    0.130 CPUs utilized            ( +-  1.17% )
                  0      context-switches          #    0.000 /sec                   
                  0      cpu-migrations            #    0.000 /sec                   
-                 6      page-faults               #  276.151 K/sec                    ( +-  0.68% )
-            88,385      cycles                    #    3.918 GHz                      ( +-  0.97% )
-            94,913      instructions              #    1.07  insn per cycle           ( +-  0.49% )
-            17,278      branches                  #  765.855 M/sec                    ( +-  0.38% )
-               101      branch-misses             #    0.58% of all branches          ( +- 15.45% )
-           441,923      slots                     #   19.589 G/sec                    ( +-  0.97% )
-           111,634      topdown-retiring          #     25.3% retiring                ( +-  0.44% )
-            14,697      topdown-bad-spec          #      3.3% bad speculation         ( +-  7.29% )
-           167,308      topdown-fe-bound          #     37.9% frontend bound          ( +-  1.48% )
-           148,282      topdown-be-bound          #     33.6% backend bound           ( +-  0.82% )
+                 6      page-faults               #  256.170 K/sec                    ( +-  0.70% )
+            95,302      cycles                    #    3.906 GHz                      ( +-  1.20% )
+            95,043      instructions              #    1.00  insn per cycle           ( +-  0.50% )
+            17,278      branches                  #  708.160 M/sec                    ( +-  0.37% )
+               106      branch-misses             #    0.61% of all branches          ( +- 13.11% )
+           437,902      slots                     #   17.948 G/sec                    ( +-  1.18% )
+           111,834      topdown-retiring          #     25.5% retiring                ( +-  0.44% )
+            15,412      topdown-bad-spec          #      3.5% bad speculation         ( +-  6.03% )
+           179,874      topdown-fe-bound          #     41.1% frontend bound          ( +-  1.57% )
+           130,780      topdown-be-bound          #     29.9% backend bound           ( +-  2.93% )
 
-        0.00017633 +- 0.00000133 seconds time elapsed  ( +-  0.75% )
+        0.00018755 +- 0.00000224 seconds time elapsed  ( +-  1.19% )
 

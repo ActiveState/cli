@@ -13,6 +13,7 @@ bins=(
 )
 
 for bin in ${bins[@]}; do
+  echo "--- --- ---"
   ls -lahs ${bin%% *} | cut -d" " -f1,10
   perf stat -r 100 -B ${bin} >/dev/null
 done
