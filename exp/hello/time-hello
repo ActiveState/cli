@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "1" ]]; then
+	sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
+fi
+
+bins=(
+  "./go-hello/build/go-hello"
+  "./rust-hello/target/debug/rust-hello"
+  "./zig-hello/build/hello"
+)
+
+for bin in ${bins[@]}; do
+  perf stat -r 100 -B ${bin} >/dev/null
+done
