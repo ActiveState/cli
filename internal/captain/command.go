@@ -756,10 +756,15 @@ func childCommands(cmd *Command) string {
 			table.AddRow([]string{fmt.Sprintf("%s:", group)})
 		}
 		if !child.cobra.Hidden {
+			amend := ""
 			for _, arg := range child.Arguments() {
-
+				if arg.Required {
+					amend += fmt.Sprintf(" <%s>", arg.Name)
+				} else {
+					amend += fmt.Sprintf(" [%s]", arg.Name)
+				}
 			}
-			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+			table.AddRow([]string{fmt.Sprintf("  %s%s", child.Name(), amend), child.ShortDescription()})
 		}
 	}
 

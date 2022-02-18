@@ -28,6 +28,7 @@ func newVenvCommand(prime *primer.Values) *captain.Command {
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_activate_namespace_description"),
 				Value:       params.Namespace,
+				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {

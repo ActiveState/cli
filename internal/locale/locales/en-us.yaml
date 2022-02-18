@@ -18,7 +18,7 @@ events_header_event:
 events_header_value:
   other: Value
 arg_state_activate_namespace:
-  other: ORG/PROJECT
+  other: "(org/)project"
 arg_state_activate_namespace_description:
   other: The namespace of the project that you wish to activate
 flag_state_init_private_flag_description:
@@ -1582,7 +1582,7 @@ windows_compatibility_warning:
   other: |
     Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
 exec_description:
-  other: Intercept and run a script via a project runtime environment
+  other: Intercept and run a script via the given project
 flag_state_exec_path_description:
   other: The path of the project that you want to use the runtime environment of. If no path is given the current working directory is used.
 artifact_started:
