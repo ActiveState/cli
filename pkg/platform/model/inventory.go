@@ -208,6 +208,10 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return nil, err
 	}
 
+	if hostArch == "arm64" {
+		hostArch = "amd64"
+	}
+
 	var pids []strfmt.UUID
 	for _, platformID := range platformIDs {
 		for _, rtPf := range runtimePlatforms {

@@ -95,6 +95,8 @@ type Command struct {
 
 	out       output.Outputer
 	analytics analytics.Dispatcher
+
+	weight int
 }
 
 func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
@@ -283,6 +285,14 @@ func (c *Command) Name() string {
 	return c.cobra.Name()
 }
 
+func (c *Command) Weight() int {
+	return c.weight
+}
+
+func (c *Command) SetWeight(v int) {
+	c.weight = v
+}
+
 func (c *Command) NameRecursive() string {
 	child := c
 	name := []string{}
@@ -354,6 +364,9 @@ func (c *Command) SkipChecks() bool {
 func (c *Command) SortBefore(c2 *Command) bool {
 	if c.group != c2.group {
 		return c.group.SortBefore(c2.group)
+	}
+	if c.Weight() > 0 {
+		return c.Weight() > c2.Weight()
 	}
 	return c.Name() < c2.Name()
 }
@@ -661,7 +674,7 @@ func pflagFlagErrMsgFlag(errMsg string) string {
 	flagText := strings.TrimPrefix(errMsg, "no such flag ")
 	flagText = strings.TrimPrefix(flagText, "unknown flag: ")
 	flagText = strings.TrimPrefix(flagText, "bad flag syntax: ")
-	//unknown shorthand flag: 'x' in -x
+	// unknown shorthand flag: 'x' in -x
 	flagText = strings.TrimPrefix(flagText, "unknown shorthand flag: ")
 
 	if flagText == errMsg {
@@ -743,6 +756,9 @@ func childCommands(cmd *Command) string {
 			table.AddRow([]string{fmt.Sprintf("%s:", group)})
 		}
 		if !child.cobra.Hidden {
+			for _, arg := range child.Arguments() {
+
+			}
 			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
 		}
 	}

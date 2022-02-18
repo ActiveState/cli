@@ -108,6 +108,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			return err
 		},
 	)
+	cmd.SetAliases("activate")
 	cmd.SetGroup(EnvironmentGroup)
 	return cmd
 }

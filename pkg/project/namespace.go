@@ -21,6 +21,10 @@ type Namespaced struct {
 	CommitID *strfmt.UUID
 }
 
+type NamespacedOptionalOwner struct {
+	Namespaced
+}
+
 type ConfigAble interface {
 	projectfile.ConfigGetter
 }
@@ -53,6 +57,18 @@ func (ns *Namespaced) Set(v string) error {
 	return nil
 }
 
+func (ns *NamespacedOptionalOwner) Set(v string) error {
+	if ns.Namespaced.Set(v) != nil {
+		*ns = NamespacedOptionalOwner{
+			Namespaced{
+				Project: v,
+			},
+		}
+	}
+
+	return nil
+}
+
 // String implements the fmt.Stringer interface.
 func (ns *Namespaced) String() string {
 	if ns == nil {
@@ -74,6 +90,11 @@ func (ns *Namespaced) Type() string {
 // IsValid returns whether or not the namespace is set sufficiently.
 func (ns *Namespaced) IsValid() bool {
 	return ns != nil && ns.Owner != "" && ns.Project != ""
+}
+
+// IsValid returns whether or not the namespace is set sufficiently.
+func (ns *NamespacedOptionalOwner) IsValid() bool {
+	return ns != nil && ns.Project != ""
 }
 
 // Validate returns a failure if the namespace is not valid.
