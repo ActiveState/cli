@@ -6,10 +6,13 @@ fi
 
 bins=(
   "./go-hello/build/go-hello"
-  "./rust-hello/target/debug/rust-hello"
-  "./zig-hello/build/hello"
+  "./go-hello/build/go-hello-packed"
+  "./rust-hello/build/rust-hello"
+  "./rust-hello/build/rust-hello-packed"
+  "./zig-hello/build/zig-hello"
 )
 
 for bin in ${bins[@]}; do
+  ls -lahs ${bin%% *} | cut -d" " -f1,10
   perf stat -r 100 -B ${bin} >/dev/null
 done

@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+
+dir="build"
+file="rust-hello"
+export RUSTFLAGS='-C link-arg=-s'
+cargo -Z unstable-options build --release --out-dir "${dir}" >/dev/null 2>&1
+rm "${dir}/${file}-packed" >/dev/null
+upx "${dir}/${file}" -o "${dir}/${file}-packed" >/dev/null
