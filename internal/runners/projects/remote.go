@@ -16,9 +16,9 @@ import (
 
 // RunRemote runs the remote projects logic.
 func (r *Projects) RunRemote(params *Params) error {
-	projectfile.CleanProjectMapping(r.config)
+	projectfile.CleanProjectMapping(r.Config)
 
-	projectsList, err := r.fetchProjects(params.Local)
+	projectsList, err := r.FetchProjects(params.Local)
 	if err != nil {
 		return locale.WrapError(err, "project_err")
 	}
@@ -32,11 +32,11 @@ func (r *Projects) RunRemote(params *Params) error {
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
+func (r *Projects) FetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
-	orgs, err := r.auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
+	orgs, err := r.Auth.Client().Organizations.ListOrganizations(orgParams, authentication.ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 401 {
 			return nil, locale.NewInputError("err_api_not_authenticated")
@@ -44,7 +44,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 		return nil, errs.Wrap(err, "Unknown failure")
 	}
 	var projects projectWithOrgs = []projectWithOrg{}
-	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	localConfigProjects := r.Config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
 	for _, org := range orgs.Payload {
 		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {

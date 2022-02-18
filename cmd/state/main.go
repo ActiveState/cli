@@ -53,6 +53,12 @@ func main() {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
+	expiry, _ := time.Parse("2006-Jan-02", "2022-Mar-01")
+	if time.Now().After(expiry) {
+		fmt.Fprintln(os.Stderr, "You are using the v1-concept version of the State Tool which has expired, please switch back to the beta channel.")
+		os.Exit(1)
+	}
+
 	var cfg *config.Instance
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code

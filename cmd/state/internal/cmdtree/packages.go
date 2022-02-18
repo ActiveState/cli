@@ -52,7 +52,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.InstallRunParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"install",
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
@@ -70,6 +70,8 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
+	cmd.SetWeight(100)
+	return cmd
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -77,7 +79,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.UninstallRunParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"uninstall",
 		locale.Tl("package_uninstall_title", "Uninstalling Package"),
 		locale.T("package_uninstall_cmd_description"),
@@ -95,6 +97,8 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
+	cmd.SetWeight(90)
+	return cmd
 }
 
 func newImportCommand(prime *primer.Values) *captain.Command {
@@ -133,7 +137,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.SearchRunParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"search",
 		locale.Tl("package_search_title", "Searching Packages"),
 		locale.T("package_search_cmd_description"),
@@ -162,6 +166,8 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
+	cmd.SetWeight(80)
+	return cmd
 }
 
 func newInfoCommand(prime *primer.Values) *captain.Command {
@@ -169,7 +175,7 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.InfoRunParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"info",
 		locale.Tl("package_info_title", "Displaying Package Information"),
 		locale.T("package_info_cmd_description"),
@@ -193,4 +199,6 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
+	cmd.SetWeight(70)
+	return cmd
 }

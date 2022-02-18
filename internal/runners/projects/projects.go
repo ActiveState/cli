@@ -54,9 +54,9 @@ type Params struct {
 }
 
 type Projects struct {
-	auth   *authentication.Auth
+	Auth   *authentication.Auth
 	out    output.Outputer
-	config configGetter
+	Config configGetter
 }
 
 type primeable interface {
@@ -82,7 +82,7 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 }
 
 func (r *Projects) Run(params *Params) error {
-	localProjects := projectfile.GetProjectMapping(r.config)
+	localProjects := projectfile.GetProjectMapping(r.Config)
 
 	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {
