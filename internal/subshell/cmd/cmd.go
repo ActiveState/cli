@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -141,8 +140,8 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 	var shellArgs []string
 	var directEnv []string
 
-	env := sscommon.EscapeEnv(v.env)
 	if prj != nil {
+		env := sscommon.EscapeEnv(v.env)
 		var err error
 		if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg); err != nil {
 			return err
@@ -150,8 +149,7 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 
 		shellArgs = append(shellArgs, "/K", v.rcFile.Name())
 	} else {
-		directEnv = sscommon.EnvSlice(env)
-		fmt.Println("Direct env:", directEnv)
+		directEnv = sscommon.EnvSlice(v.env)
 	}
 
 	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)
