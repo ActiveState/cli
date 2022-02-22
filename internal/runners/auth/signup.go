@@ -19,12 +19,12 @@ func NewSignup(prime primeable) *Signup {
 	return &Signup{prime.Output(), prime.Prompt(), prime.Config()}
 }
 
-func (s *Signup) Run(interactive bool) error {
+func (s *Signup) Run(params *SignupParams) error {
 	if authentication.LegacyGet().Authenticated() {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet().WhoAmI())
 	}
 
-	if !interactive {
+	if !params.Interactive {
 		return authlet.AuthenticateWithDevice(s.Outputer) // user can sign up from this page too
 	} else {
 		return authlet.Signup(s.Configurable, s.Outputer, s.Prompter)

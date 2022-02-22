@@ -37,6 +37,10 @@ type AuthParams struct {
 	Interactive bool
 }
 
+type SignupParams struct {
+	Interactive bool
+}
+
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
