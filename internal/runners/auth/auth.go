@@ -63,7 +63,7 @@ func (a *Auth) Run(params *AuthParams) error {
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
 		var err error
-		if !params.Interactive {
+		if !params.Interactive && params.Username == "" {
 			err = authlet.AuthenticateWithDevice(a.Outputer)
 		} else {
 			err = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter)
