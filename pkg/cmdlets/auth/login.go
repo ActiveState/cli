@@ -185,17 +185,17 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 
 // AuthenticateWithDevice attempts to authenticate this device with the Platform.
 func AuthenticateWithDevice(out output.Outputer) error {
-	deviceCode, err := model.RequestDeviceAuthorization()
+	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return err
 	}
-	out.Notice(locale.Tr("auth_device_verify_security_code", *deviceCode.UserCode))
-	err = OpenURI(*deviceCode.VerificationURIComplete)
+	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
+	err = OpenURI(*response.VerificationURIComplete)
 	if err != nil {
 		logging.Error("Could not open browser: %v", err)
-		out.Notice(locale.Tr("err_browser_open", *deviceCode.VerificationURIComplete))
+		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
-	authorization, err := model.WaitForAuthorization(deviceCode)
+	authorization, err := model.WaitForAuthorization(response)
 	if err != nil {
 		return err
 	}
