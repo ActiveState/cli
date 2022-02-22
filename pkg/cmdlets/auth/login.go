@@ -189,6 +189,10 @@ func AuthenticateWithDevice(out output.Outputer) error {
 	if err != nil {
 		return err
 	}
+	if response.UserCode == nil || response.VerificationURIComplete == nil {
+		logging.Error("Platform API error: device authorization request's response has nil UserCode and/or VerificationURIComplete")
+		return locale.NewInputError("err_auth_device")
+	}
 	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
 	err = OpenURI(*response.VerificationURIComplete)
 	if err != nil {
