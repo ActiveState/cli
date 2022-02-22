@@ -187,11 +187,11 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 func AuthenticateWithDevice(out output.Outputer) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_auth_device")
 	}
 	if response.UserCode == nil || response.VerificationURIComplete == nil {
 		logging.Error("Platform API error: device authorization request's response has nil UserCode and/or VerificationURIComplete")
-		return locale.NewInputError("err_auth_device")
+		return locale.NewError("err_auth_device")
 	}
 	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
 	err = OpenURI(*response.VerificationURIComplete)
@@ -201,11 +201,11 @@ func AuthenticateWithDevice(out output.Outputer) error {
 	}
 	authorization, err := model.WaitForAuthorization(response)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_auth_device")
 	}
 	err = authentication.LegacyGet().AuthenticateWithDevice(authorization.AccessToken)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_auth_device")
 	}
 	out.Notice(locale.T("auth_device_success"))
 	return nil

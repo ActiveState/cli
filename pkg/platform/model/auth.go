@@ -53,8 +53,7 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 			}
 			time.Sleep(6 * time.Second) // then try again (6 seconds is the Platform rate limit)
 		} else {
-			logging.Error("Error requesting device authentication status: %v", err)
-			return nil, locale.NewError("err_auth_device")
+			return nil, locale.WrapError(err, "err_auth_device")
 		}
 	}
 }
