@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -150,6 +151,7 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 		shellArgs = append(shellArgs, "/K", v.rcFile.Name())
 	} else {
 		directEnv = sscommon.EnvSlice(env)
+		fmt.Println("Direct env:", directEnv)
 	}
 
 	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)

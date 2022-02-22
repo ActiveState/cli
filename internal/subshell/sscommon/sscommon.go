@@ -1,6 +1,7 @@
 package sscommon
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,6 +31,11 @@ func NewCommand(command string, args []string, env []string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
+	}
+	for i, v := range cmd.Env {
+		if strings.Contains(strings.ToLower(v), "path=") {
+			fmt.Println(fmt.Sprintf("Found path variable in pos %d value %s", i, v))
+		}
 	}
 	return cmd
 }
