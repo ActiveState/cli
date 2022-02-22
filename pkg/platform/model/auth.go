@@ -38,9 +38,10 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 	const timeout = 5 * 60 * time.Second
 	for {
 		response, err := mono.Get().Oauth.AuthDeviceGet(getParams)
-		if response != nil {
+		switch {
+		case response != nil:
 			return response.Payload, nil
-		} else if errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}) {
+		case errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}):
 			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
 			errorString := *badRequest.Payload.Error
 			if errorString == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken || time.Since(startTime) >= timeout {
@@ -52,7 +53,7 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
 			time.Sleep(6 * time.Second) // then try again (6 seconds is the Platform rate limit)
-		} else {
+		default:
 			return nil, locale.WrapError(err, "err_auth_device")
 		}
 	}

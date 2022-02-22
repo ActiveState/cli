@@ -26,7 +26,6 @@ func (s *Signup) Run(params *SignupParams) error {
 
 	if !params.Interactive {
 		return authlet.AuthenticateWithDevice(s.Outputer) // user can sign up from this page too
-	} else {
-		return authlet.Signup(s.Configurable, s.Outputer, s.Prompter)
 	}
+	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter)
 }
