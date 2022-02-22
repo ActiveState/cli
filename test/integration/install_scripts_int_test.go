@@ -95,7 +95,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			if runtime.GOOS == "windows" {
-				cp.SendLine("echo %PATH%")
 				fmt.Println("Path contains work dir:", strings.Contains(cp.TrimmedSnapshot(), ts.Dirs.Work))
 			}
 			cp.SendLine("state --version")
