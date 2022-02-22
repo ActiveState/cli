@@ -34,7 +34,7 @@ func NewCommand(command string, args []string, env []string) *exec.Cmd {
 	}
 	for i, v := range cmd.Env {
 		if strings.Contains(strings.ToLower(v), "path=") {
-			fmt.Println(fmt.Sprintf("Found path variable in pos %d value %s", i, v))
+			fmt.Println(fmt.Sprintf("Found path variable in pos %d value", i))
 		}
 	}
 	return cmd
