@@ -341,7 +341,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	}
 
 	stateExe := appinfo.StateApp(installPath).Exec()
-	fmt.Println("Install path:", installPath)
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
@@ -379,7 +378,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
-		fmt.Println("Using bin path:", binPath)
 		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
