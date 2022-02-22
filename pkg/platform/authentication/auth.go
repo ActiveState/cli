@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/oauth"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
@@ -50,7 +49,7 @@ type Configurable interface {
 	Close() error
 }
 
-const deviceCodeConfigKey = "deviceCode"
+const ApiTokenConfigKey = "apiToken"
 
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
@@ -101,8 +100,8 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
-	if availableAPIToken(cfg) != "" || cfg.GetString(deviceCodeConfigKey) != "" {
-		logging.Debug("Authenticating with stored API token or device code")
+	if availableAPIToken(cfg) != "" {
+		logging.Debug("Authenticating with stored API token")
 		auth.Authenticate()
 	}
 
@@ -116,51 +115,9 @@ func (s *Auth) Close() error {
 	return nil
 }
 
-func (s *Auth) storeAuthenticatedDevice(deviceCode strfmt.UUID, accessToken *mono_models.JWT) error {
-	defer s.updateRollbarPerson()
-
-	s.user = accessToken.User
-	s.bearerToken = accessToken.Token
-	clientAuth := httptransport.BearerToken(s.bearerToken)
-	s.clientAuth = &clientAuth
-
-	err := s.cfg.Set(deviceCodeConfigKey, deviceCode)
-	if err != nil {
-		return errs.Wrap(err, "Could not set deviceCode credentials in config")
-	}
-
-	return err
-}
-
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
-	if s.clientAuth != nil {
-		return true
-	}
-	existingDeviceCode := s.cfg.GetString(deviceCodeConfigKey)
-	if existingDeviceCode == "" || s.bearerToken != "" {
-		return false
-	}
-	// Check if the device is still authenticated with the Platform and if so, get a token.
-	deviceCode := strfmt.UUID(existingDeviceCode)
-	params := oauth.NewAuthDeviceGetParams()
-	params.SetDeviceCode(deviceCode)
-	if response, err := mono.Get().Oauth.AuthDeviceGet(params); response != nil {
-		if err := s.storeAuthenticatedDevice(deviceCode, response.Payload.AccessToken); err == nil {
-			return true
-		}
-		if err != nil {
-			logging.Error("Error storing authenticated device", err.Error())
-		}
-	} else {
-		// Either the token for deviceCode has expired, we are rate-limited by the Platform and
-		// have to try again later, or the Platform is unreachable.
-		// Rate limiting can happen during testing.
-		if badRequest, ok := err.(*oauth.AuthDeviceGetBadRequest); ok && *badRequest.Payload.Error == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
-			logging.Warning("Attempting to query the Platform for device authentication status too frequently.")
-		}
-	}
-	return false
+	return s.clientAuth != nil
 }
 
 // ClientAuth returns the auth type required by swagger api calls
@@ -231,7 +188,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	s.clientAuth = &clientAuth
 
 	if credentials.Token != "" {
-		setErr := s.cfg.Set("apiToken", credentials.Token)
+		setErr := s.cfg.Set(ApiTokenConfigKey, credentials.Token)
 		if setErr != nil {
 			return errs.Wrap(err, "Could not set API token credentials in config")
 		}
@@ -262,8 +219,24 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 
 // AuthenticateWithDeviceCode authenticates with the given access token obtained via a Platform
 // device authentication request and response.
-func (s *Auth) AuthenticateWithDevice(deviceCode *mono_models.DeviceCode, accessToken *mono_models.JWT) error {
-	return s.storeAuthenticatedDevice(strfmt.UUID(*deviceCode.DeviceCode), accessToken)
+func (s *Auth) AuthenticateWithDevice(accessToken *mono_models.JWT) error {
+	defer s.updateRollbarPerson()
+
+	s.user = accessToken.User
+	s.bearerToken = accessToken.Token
+	clientAuth := httptransport.BearerToken(s.bearerToken)
+	s.clientAuth = &clientAuth
+
+	err := s.cfg.Set(ApiTokenConfigKey, accessToken.Token)
+	if err != nil {
+		return errs.Wrap(err, "Could not set API token credentials in config")
+	}
+	err = s.CreateToken()
+	if err != nil {
+		return errs.Wrap(err, "CreateToken failed")
+	}
+
+	return nil
 }
 
 // WhoAmI returns the username of the currently authenticated user, or an empty string if not authenticated
@@ -305,13 +278,9 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() {
-	err := s.cfg.Set("apiToken", "")
+	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
-	}
-	err = s.cfg.Set(deviceCodeConfigKey, "")
-	if err != nil {
-		logging.Error("Could not clear deviceCode key in config")
 	}
 	s.client = nil
 	s.clientAuth = nil
@@ -374,7 +343,7 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	err = s.cfg.Set("apiToken", token)
+	err = s.cfg.Set(ApiTokenConfigKey, token)
 	if err != nil {
 		return locale.WrapError(err, "err_set_token", "Could not set token in config")
 	}
@@ -414,5 +383,5 @@ func availableAPIToken(cfg Configurable) string {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
-	return cfg.GetString("apiToken")
+	return cfg.GetString(ApiTokenConfigKey)
 }

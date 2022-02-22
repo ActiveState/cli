@@ -199,7 +199,7 @@ func AuthenticateWithDevice(out output.Outputer) error {
 	if err != nil {
 		return err
 	}
-	err = authentication.LegacyGet().AuthenticateWithDevice(deviceCode, authorization.AccessToken)
+	err = authentication.LegacyGet().AuthenticateWithDevice(authorization.AccessToken)
 	if err != nil {
 		return err
 	}
