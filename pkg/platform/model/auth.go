@@ -43,13 +43,13 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 			return response.Payload, nil
 		case errs.Matches(err, &oauth.AuthDeviceGetBadRequest{}):
 			badRequest := err.(*oauth.AuthDeviceGetBadRequest)
-			errorString := *badRequest.Payload.Error
-			if errorString == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken || time.Since(startTime) >= timeout {
+			errorToken := *badRequest.Payload.Error
+			if errorToken == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken || time.Since(startTime) >= timeout {
 				return nil, locale.NewInputError("auth_device_timeout")
-			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorInvalidClient {
+			} else if errorToken == oauth.AuthDeviceGetBadRequestBodyErrorInvalidClient {
 				logging.Error("Error requesting device authentication: invalid client") // IP address mismatch
 				return nil, locale.NewError("err_auth_device")
-			} else if errorString == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
+			} else if errorToken == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
 			time.Sleep(6 * time.Second) // then try again (6 seconds is the Platform rate limit)
