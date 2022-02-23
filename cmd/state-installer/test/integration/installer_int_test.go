@@ -29,7 +29,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts.UseDistinctStateExes()
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
-	sourceDir := suite.populateSourceDir(ts)
+	sourceDir := filepath.Dir(ts.InstallerExe)
+
+	err := fileutils.CopyFile(ts.InstallerExe, filepath.Join(ts.Dirs.Work, "installer", filepath.Base(ts.InstallerExe)))
+	suite.NoError(err)
+	err = os.Remove(ts.InstallerExe)
+	suite.NoError(err)
+	ts.InstallerExe = filepath.Join(ts.Dirs.Work, "installer", filepath.Base(ts.InstallerExe))
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
@@ -80,29 +86,6 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" or \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
 		}
 	}
-}
-
-func (suite *InstallerIntegrationTestSuite) populateSourceDir(ts *e2e.Session) string {
-	sourceDir := filepath.Join(ts.Dirs.Work, "source")
-	err := fileutils.Mkdir(sourceDir)
-	suite.NoError(err)
-
-	err = fileutils.CopyFile(ts.Exe, filepath.Join(sourceDir, filepath.Base(ts.Exe)))
-	suite.NoError(err)
-	err = os.Remove(ts.Exe)
-	suite.NoError(err)
-
-	err = fileutils.CopyFile(ts.SvcExe, filepath.Join(sourceDir, filepath.Base(ts.SvcExe)))
-	suite.NoError(err)
-	err = os.Remove(ts.SvcExe)
-	suite.NoError(err)
-
-	err = fileutils.CopyFile(ts.TrayExe, filepath.Join(sourceDir, filepath.Base(ts.TrayExe)))
-	suite.NoError(err)
-	err = os.Remove(ts.TrayExe)
-	suite.NoError(err)
-
-	return sourceDir
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
