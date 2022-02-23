@@ -227,11 +227,7 @@ func (s *Auth) AuthenticateWithDevice(accessToken *mono_models.JWT) error {
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
 
-	err := s.cfg.Set(ApiTokenConfigKey, accessToken.Token)
-	if err != nil {
-		return errs.Wrap(err, "Could not set API token credentials in config")
-	}
-	err = s.CreateToken()
+	err := s.CreateToken()
 	if err != nil {
 		return errs.Wrap(err, "CreateToken failed")
 	}
