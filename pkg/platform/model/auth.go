@@ -52,7 +52,7 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 			} else if errorToken == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown {
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
-			time.Sleep(6 * time.Second) // then try again (6 seconds is the Platform rate limit)
+			time.Sleep(time.Duration(deviceCodePayload.Interval) * time.Second) // then try again
 		default:
 			return nil, locale.WrapError(err, "err_auth_device")
 		}
