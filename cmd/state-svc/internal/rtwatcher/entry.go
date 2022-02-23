@@ -37,7 +37,7 @@ func (e entry) IsRunning() (bool, error) {
 		return false, errs.New("Process args are empty: %d", e.PID)
 	}
 
-	if filepath.Clean(args[0]) == filepath.Clean(e.Exec) {
+	if filepath.Base(args[0]) == filepath.Base(e.Exec) {
 		logging.Debug("Process %d matched", e.PID)
 		return true, nil
 	}
