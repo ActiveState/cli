@@ -358,7 +358,6 @@ func (c *Command) SetUnstable(unstable bool) *Command {
 	if !c.cfg.GetBool(constants.UnstableConfig) {
 		c.cobra.Hidden = unstable
 	}
-	c.name = fmt.Sprintf("%s (Unstable)", c.cobra.Use)
 	return c
 }
 
@@ -777,7 +776,11 @@ func childCommands(cmd *Command) string {
 			table.AddRow([]string{fmt.Sprintf("%s:", group)})
 		}
 		if !child.cobra.Hidden {
-			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+			if child.unstable {
+				table.AddRow([]string{fmt.Sprintf("  %s (Unstable)", child.Name()), child.ShortDescription()})
+			} else {
+				table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+			}
 		}
 	}
 
