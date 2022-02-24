@@ -44,10 +44,11 @@ func WaitForAuthorization(deviceCodePayload *mono_models.DeviceCode) (*mono_mode
 			errorToken := *badRequest.Payload.Error
 			switch {
 			case errorToken == oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken:
-				return nil, locale.NewInputError("auth_device_timeout")
+				return nil, locale.WrapInputError(err, "auth_device_timeout")
 			case errorToken == oauth.AuthDeviceGetBadRequestBodyErrorInvalidClient:
-				logging.Error("Error requesting device authentication: invalid client") // IP address mismatch, but do not inform the user of this detail
-				return nil, locale.NewError("err_auth_device")
+				// This happens if there is an IP address mismatch, but we don't want to inform the user of
+				// this detail for security reasons. Reporting "invalid client" is fine.
+				return nil, locale.WrapError(err, "err_auth_device")
 			case errorToken == oauth.AuthDeviceGetBadRequestBodyErrorSlowDown:
 				logging.Warning("Attempting to check for authorization status too frequently.")
 			}
