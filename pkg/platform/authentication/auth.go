@@ -179,17 +179,39 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
-	s.AuthenticateWithJWT(loginOK.Payload)
 
-	if credentials.Token != "" {
-		// TODO: this overwrites the ApiTokenConfigKey set in AuthenticateWithJWT(). Is this okay?
-		setErr := s.cfg.Set(ApiTokenConfigKey, credentials.Token)
-		if setErr != nil {
-			return errs.Wrap(err, "Could not set API token credentials in config")
+	if err := s.updateSession(loginOK.Payload); err != nil {
+		return errs.Wrap(err, "Storing JWT failed")
+	}
+
+	if credentials.Token == "" {
+		// If we didn't use an API token for authentication we'll want to create one now
+		if err := s.createToken(); err != nil {
+			return errs.Wrap(err, "CreateToken failed")
 		}
 	}
 
 	return nil
+}
+
+func (s *Auth) AuthenticateWithJWT(accessToken *mono_models.JWT) error {
+	if err := s.updateSession(accessToken); err != nil {
+		return errs.Wrap(err, "Storing JWT failed")
+	}
+
+	// If we didn't use an API token for authentication we'll want to create one now
+	if err := s.createToken(); err != nil {
+		return errs.Wrap(err, "CreateToken failed")
+	}
+
+	return nil
+}
+
+// AuthenticateWithToken will try to authenticate using the given token
+func (s *Auth) AuthenticateWithToken(token string) error {
+	return s.AuthenticateWithModel(&mono_models.Credentials{
+		Token: token,
+	})
 }
 
 // AuthenticateWithUser will try to authenticate using the given credentials
@@ -201,27 +223,15 @@ func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
 	})
 }
 
-// AuthenticateWithToken will try to authenticate using the given token
-func (s *Auth) AuthenticateWithToken(token string) error {
-	return s.AuthenticateWithModel(&mono_models.Credentials{
-		Token: token,
-	})
-}
-
-// AuthenticateWithJWT authenticates with the given access token obtained via a Platform
+// updateSession authenticates with the given access token obtained via a Platform
 // API request and response (e.g. username/password loging or device authentication).
-func (s *Auth) AuthenticateWithJWT(accessToken *mono_models.JWT) error {
+func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
 	defer s.updateRollbarPerson()
 
 	s.user = accessToken.User
 	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
-
-	err := s.CreateToken()
-	if err != nil {
-		return errs.Wrap(err, "CreateToken failed")
-	}
 
 	return nil
 }
@@ -300,8 +310,8 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	return s.client, nil
 }
 
-// CreateToken will create an API token for the current authenticated user
-func (s *Auth) CreateToken() error {
+// createToken will create an API token for the current authenticated user
+func (s *Auth) createToken() error {
 	client, err := s.ClientSafe()
 	if err != nil {
 		return err
