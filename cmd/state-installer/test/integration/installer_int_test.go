@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -29,13 +28,11 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	ts.UseDistinctStateExes()
 	target := filepath.Join(ts.Dirs.Work, "installation")
-	sourceDir := filepath.Dir(ts.InstallerExe)
-	suite.prepareInstaller(ts)
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", sourceDir),
+		e2e.WithArgs(target, "--source-path", ts.Dirs.Bin),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
@@ -81,17 +78,6 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" or \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
 		}
 	}
-}
-
-func (suite *InstallerIntegrationTestSuite) prepareInstaller(ts *e2e.Session) {
-	err := fileutils.CopyFile(ts.InstallerExe, filepath.Join(ts.Dirs.Work, "installer", filepath.Base(ts.InstallerExe)))
-	suite.NoError(err)
-	err = os.Remove(ts.InstallerExe)
-	suite.NoError(err)
-	ts.InstallerExe = filepath.Join(ts.Dirs.Work, "installer", filepath.Base(ts.InstallerExe))
-	permissions, err := permbits.Stat(ts.InstallerExe)
-	permissions.SetUserExecute(true)
-	suite.NoError(err, permbits.Chmod(ts.InstallerExe, permissions))
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
