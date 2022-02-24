@@ -89,7 +89,7 @@ func (suite *InstallerIntegrationTestSuite) prepareInstaller(ts *e2e.Session) {
 	err = os.Remove(ts.InstallerExe)
 	suite.NoError(err)
 	ts.InstallerExe = filepath.Join(ts.Dirs.Work, "installer", filepath.Base(ts.InstallerExe))
-	permissions, _ := permbits.Stat(ts.InstallerExe)
+	permissions, err := permbits.Stat(ts.InstallerExe)
 	permissions.SetUserExecute(true)
 	suite.NoError(err, permbits.Chmod(ts.InstallerExe, permissions))
 }
