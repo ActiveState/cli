@@ -98,24 +98,24 @@ func (s *Session) ExecutablePath() string {
 	return s.Exe
 }
 
-func (s *Session) copyExeToDir(executable, dir string) string {
-	if fileutils.TargetExists(dir) {
-		return dir
+func (s *Session) copyExeToDir(from, to string) string {
+	if fileutils.TargetExists(to) {
+		return to
 	}
 
-	err := fileutils.CopyFile(executable, dir)
+	err := fileutils.CopyFile(from, to)
 	require.NoError(s.t, err)
 
 	// Ensure modTime is the same as source exe
-	stat, err := os.Stat(executable)
+	stat, err := os.Stat(from)
 	require.NoError(s.t, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(dir, t, t))
+	require.NoError(s.t, os.Chtimes(to, t, t))
 
-	permissions, _ := permbits.Stat(dir)
+	permissions, _ := permbits.Stat(to)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(dir, permissions))
-	return dir
+	require.NoError(s.t, permbits.Chmod(to, permissions))
+	return to
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
@@ -138,7 +138,7 @@ func (s *Session) UseDistinctStateExes() {
 	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.copyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.Bin, "installer"))
+	s.InstallerExe = s.copyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.Work, "installer", filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
