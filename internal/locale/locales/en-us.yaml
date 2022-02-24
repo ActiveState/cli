@@ -968,14 +968,16 @@ err_auth_empty_token:
   other: The provided token is empty
 err_auth_device:
   other: Unable to communicate with the ActiveState Platform for login. Please contact support if this problem persists.
+err_auth_device_timeout:
+  other: Timed out waiting for authentication to complete.
 auth_device_verify_security_code:
   other: |
-    Awaiting authorization for this device with security code
+    Awaiting authorization for this device with the following security code:
 
-        {{.V0}}
+        [ACTIONABLE]{{.V0}}[/RESET]
 
-    Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize"
-    After that, it may take a few seconds for the authorization process here to complete
+    Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize".
+    After that, it may take a few seconds for the authorization process here to complete.
 auth_device_timeout:
   other: Authorization timeout. Please try again.
 auth_device_success:

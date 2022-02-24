@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -194,17 +195,29 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
-func (s *Auth) AuthenticateWithJWT(accessToken *mono_models.JWT) error {
-	if err := s.updateSession(accessToken); err != nil {
-		return errs.Wrap(err, "Storing JWT failed")
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Duration) error {
+	for start := time.Now(); time.Since(start) < 5*time.Minute; {
+		token, err := model.CheckDeviceAuthorization(deviceCode)
+		if err != nil {
+			return errs.Wrap(err, "Authorization failed")
+		}
+
+		if token != nil {
+			if err := s.updateSession(token); err != nil {
+				return errs.Wrap(err, "Storing JWT failed")
+			}
+
+			// If we didn't use an API token for authentication we'll want to create one now
+			if err := s.createToken(); err != nil {
+				return errs.Wrap(err, "CreateToken failed")
+			}
+
+			return nil
+		}
+		time.Sleep(interval) // then try again
 	}
 
-	// If we didn't use an API token for authentication we'll want to create one now
-	if err := s.createToken(); err != nil {
-		return errs.Wrap(err, "CreateToken failed")
-	}
-
-	return nil
+	return locale.NewInputError("err_auth_device_timeout")
 }
 
 // AuthenticateWithToken will try to authenticate using the given token

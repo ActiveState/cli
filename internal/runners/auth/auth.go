@@ -70,7 +70,7 @@ func (a *Auth) authenticate(params *AuthParams) error {
 		if params.Interactive || params.Username != "" {
 			err = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 		} else {
-			err = authlet.AuthenticateWithDevice(a.Outputer, a.Auth)
+			err = authlet.AuthenticateWithBrowser(a.Outputer, a.Auth)
 		}
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth")

@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"time"
+
+	"github.com/go-openapi/strfmt"
 	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -14,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -85,7 +88,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	switch choice {
 	case locale.T("prompt_login_browser_action"):
-		if err := AuthenticateWithDevice(out, auth); err != nil {
+		if err := AuthenticateWithBrowser(out, auth); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_login_action"):
@@ -93,7 +96,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := AuthenticateWithDevice(out, auth); err != nil { // user can sign up from this page too
+		if err := AuthenticateWithBrowser(out, auth); err != nil { // user can sign up from this page too
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_action"):
@@ -182,32 +185,31 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 	return nil
 }
 
-// AuthenticateWithDevice attempts to authenticate this device with the Platform.
-func AuthenticateWithDevice(out output.Outputer, auth *authentication.Auth) error {
+// AuthenticateWithBrowser attempts to authenticate this device with the Platform.
+func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
 	}
 
-	if response.UserCode == nil || response.VerificationURIComplete == nil {
-		return locale.NewError("err_auth_device")
+	// Print code to user
+	if response.UserCode == nil {
+		return errs.New("Invalid response: Missing user code.")
 	}
-
 	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
 
+	// Open URL in browser
+	if response.VerificationURIComplete == nil {
+		return errs.New("Invalid response: Missing verification URL.")
+	}
 	err = OpenURI(*response.VerificationURIComplete)
 	if err != nil {
 		logging.Warning("Could not open browser: %v", err)
 		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
 
-	authorization, err := model.WaitForAuthorization(response)
-	if err != nil {
-		return locale.WrapError(err, "err_auth_device")
-	}
-
-	err = auth.AuthenticateWithJWT(authorization.AccessToken)
-	if err != nil {
+	// Wait for user to complete authentication
+	if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
 		return locale.WrapError(err, "err_auth_device")
 	}
 
