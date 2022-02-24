@@ -116,8 +116,10 @@ func (r *Report) recordUsage() {
 		}
 
 		if r.svcm != nil {
-			// TODO: handle error if needed
-			r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson) //nolint
+			err := r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+			if err != nil {
+				logging.Error("Could not record runtime usage: %s", errs.JoinMessage(err))
+			}
 		}
 	}
 }
