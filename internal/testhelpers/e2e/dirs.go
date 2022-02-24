@@ -19,6 +19,8 @@ type Dirs struct {
 	Work string
 	// DefaultBin is the bin directory for our default installation
 	DefaultBin string
+	// InstallerBin is the direcotry where our installer executable is kept
+	InstallerBin string
 }
 
 // NewDirs creates all temporary directories
@@ -36,8 +38,9 @@ func NewDirs(base string) (*Dirs, error) {
 	bin := filepath.Join(base, "bin")
 	work := filepath.Join(base, "work")
 	defaultBin := filepath.Join(base, "cache", "bin")
+	installerBin := filepath.Join(base, "installer")
 
-	subdirs := []string{config, cache, bin, work, defaultBin}
+	subdirs := []string{config, cache, bin, work, defaultBin, installerBin}
 	for _, subdir := range subdirs {
 		if err := os.MkdirAll(subdir, 0700); err != nil {
 			return nil, err
