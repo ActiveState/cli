@@ -179,22 +179,13 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
-	defer s.updateRollbarPerson()
-
-	payload := loginOK.Payload
-	s.user = payload.User
-	s.bearerToken = payload.Token
-	clientAuth := httptransport.BearerToken(s.bearerToken)
-	s.clientAuth = &clientAuth
+	s.AuthenticateWithJWT(loginOK.Payload)
 
 	if credentials.Token != "" {
+		// TODO: this overwrites the ApiTokenConfigKey set in AuthenticateWithJWT(). Is this okay?
 		setErr := s.cfg.Set(ApiTokenConfigKey, credentials.Token)
 		if setErr != nil {
 			return errs.Wrap(err, "Could not set API token credentials in config")
-		}
-	} else {
-		if err := s.CreateToken(); err != nil {
-			return errs.Wrap(err, "CreateToken failed")
 		}
 	}
 
@@ -217,9 +208,9 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	})
 }
 
-// AuthenticateWithDeviceCode authenticates with the given access token obtained via a Platform
-// device authentication request and response.
-func (s *Auth) AuthenticateWithDevice(accessToken *mono_models.JWT) error {
+// AuthenticateWithJWT authenticates with the given access token obtained via a Platform
+// API request and response (e.g. username/password loging or device authentication).
+func (s *Auth) AuthenticateWithJWT(accessToken *mono_models.JWT) error {
 	defer s.updateRollbarPerson()
 
 	s.user = accessToken.User

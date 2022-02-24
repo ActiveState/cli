@@ -22,30 +22,30 @@ import (
 var OpenURI = open.Run
 
 // Authenticate will prompt the user for authentication
-func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	return AuthenticateWithInput("", "", "", cfg, out, prompt)
+func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, auth)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
+func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
-	err := AuthenticateWithCredentials(credentials)
+	err := AuthenticateWithCredentials(credentials, auth)
 	if err != nil {
 		switch {
 		case errs.Matches(err, &authentication.ErrTokenRequired{}):
-			if err := promptToken(credentials, out, prompt); err != nil {
+			if err := promptToken(credentials, out, prompt, auth); err != nil {
 				return errs.Wrap(err, "promptToken failed")
 			}
 		case errs.Matches(err, &authentication.ErrUnauthorized{}):
 			if !uniqueUsername(credentials) {
 				return errs.Wrap(err, "uniqueUsername failed")
 			}
-			if err := promptSignup(credentials, out, prompt); err != nil {
+			if err := promptSignup(credentials, out, prompt, auth); err != nil {
 				return errs.Wrap(err, "promptSignup failed")
 			}
 		default:
@@ -53,7 +53,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 		}
 	}
 
-	if authentication.LegacyGet().Authenticated() {
+	if auth.Authenticated() {
 		secretsapi.InitializeClient()
 		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
@@ -65,8 +65,8 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
-func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	if authentication.LegacyGet().Authenticated() {
+func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+	if auth.Authenticated() {
 		return nil
 	}
 
@@ -85,24 +85,24 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	switch choice {
 	case locale.T("prompt_login_browser_action"):
-		if err := AuthenticateWithDevice(out); err != nil {
+		if err := AuthenticateWithDevice(out, auth); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_login_action"):
-		if err := Authenticate(cfg, out, prompt); err != nil {
+		if err := Authenticate(cfg, out, prompt, auth); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := AuthenticateWithDevice(out); err != nil { // user can sign up from this page too
+		if err := AuthenticateWithDevice(out, auth); err != nil { // user can sign up from this page too
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt); err != nil {
+		if err := Signup(cfg, out, prompt, auth); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	}
 
-	if !authentication.LegacyGet().Authenticated() {
+	if !auth.Authenticated() {
 		return locale.NewInputError("err_auth_required")
 	}
 
@@ -128,8 +128,7 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 }
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
-func AuthenticateWithCredentials(credentials *mono_models.Credentials) error {
-	auth := authentication.LegacyGet()
+func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *authentication.Auth) error {
 	err := auth.AuthenticateWithModel(credentials)
 	if err != nil {
 		return err
@@ -151,20 +150,20 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	loginConfirmDefault := true
 	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
 		return err
 	}
 	if yesSignup {
-		return signupFromLogin(credentials.Username, credentials.Password, out, prompt)
+		return signupFromLogin(credentials.Username, credentials.Password, out, prompt, auth)
 	}
 
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	var err error
 	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {
@@ -175,7 +174,7 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 		return locale.NewInputError("err_auth_empty_token")
 	}
 
-	err = AuthenticateWithCredentials(credentials)
+	err = AuthenticateWithCredentials(credentials, auth)
 	if err != nil {
 		return err
 	}
@@ -184,7 +183,7 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 }
 
 // AuthenticateWithDevice attempts to authenticate this device with the Platform.
-func AuthenticateWithDevice(out output.Outputer) error {
+func AuthenticateWithDevice(out output.Outputer, auth *authentication.Auth) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
@@ -207,7 +206,7 @@ func AuthenticateWithDevice(out output.Outputer) error {
 		return locale.WrapError(err, "err_auth_device")
 	}
 
-	err = authentication.LegacyGet().AuthenticateWithDevice(authorization.AccessToken)
+	err = auth.AuthenticateWithJWT(authorization.AccessToken)
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
 	}

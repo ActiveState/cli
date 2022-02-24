@@ -84,7 +84,7 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return(user.Username, nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, authentication.New(cfg))
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }
@@ -107,7 +107,7 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	err = authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
+	err = authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, authentication.New(cfg))
 
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")
 	require.Error(t, err, "Failure occurred")
@@ -144,7 +144,7 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, authentication.New(cfg))
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 }
@@ -177,7 +177,7 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
-	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock)
+	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, authentication.New(cfg))
 
 	assert.NotNil(t, authentication.ClientAuth(), "Authenticated")
 	assert.True(t, openURICalled, "OpenURI was called")
