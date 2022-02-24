@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -12,22 +12,21 @@ import (
 type Signup struct {
 	output.Outputer
 	prompt.Prompter
-	cfg *config.Instance
+	keypairs.Configurable
+	*authentication.Auth
 }
 
 func NewSignup(prime primeable) *Signup {
-	return &Signup{prime.Output(), prime.Prompt(), prime.Config()}
+	return &Signup{prime.Output(), prime.Prompt(), prime.Config(), prime.Auth()}
 }
 
 func (s *Signup) Run(params *SignupParams) error {
-	auth := authentication.New(s.cfg)
-	defer auth.Close()
-	if auth.Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", auth.WhoAmI())
+	if s.Auth.Authenticated() {
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", s.Auth.WhoAmI())
 	}
 
 	if !params.Interactive {
-		return authlet.AuthenticateWithDevice(s.Outputer) // user can sign up from this page too
+		return authlet.AuthenticateWithDevice(s.Outputer, s.Auth) // user can sign up from this page too
 	}
-	return authlet.Signup(s.cfg, s.Outputer, s.Prompter)
+	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter)
 }
