@@ -1,5 +1,6 @@
 package integration_test
 
+/*
 import (
 	"net/http"
 	"os"
@@ -256,3 +257,4 @@ func TestRequireAuthenticationLoginBrowser(t *testing.T) {
 	assert.NotNil(t, auth.ClientAuth(), "Authenticated")
 	assert.True(t, openURICalled, "OpenURI was called")
 }
+*/
