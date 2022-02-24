@@ -2,7 +2,6 @@ package report
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 
@@ -19,25 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
-)
-
-var (
-	reportLogFile       = os.Getenv("ACTIVESTATE_CLI_REPORT_LOG")
-	appendReportLogFile = func() func(string, ...interface{}) {
-		if reportLogFile == "" {
-			return func(string, ...interface{}) {}
-		}
-		return func(format string, as ...interface{}) {
-			f, err := os.OpenFile(reportLogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-			if err != nil {
-				return
-			}
-			defer f.Close()
-			if _, err := f.WriteString(fmt.Sprintf(format+"\n", as...)); err != nil {
-				return
-			}
-		}
-	}()
 )
 
 type Targeter interface {
@@ -87,14 +67,12 @@ func (r *Report) RuntimeStart() (runtimeCached func()) {
 }
 
 func (r *Report) RuntimeUse() {
-	appendReportLogFile("use (%s)", r.targeter.Trigger())
 	if r.targeter.Trigger().IndicatesUsage() {
 		r.recordUsage()
 	}
 }
 
 func (r *Report) RuntimeResult(err error, failLabel string) {
-	appendReportLogFile("result (%s): %v", r.targeter.Trigger(), err)
 	if err != nil {
 		action := anaConsts.ActRuntimeFailure
 		if locale.IsInputError(err) {
@@ -114,12 +92,10 @@ func (r *Report) RuntimeBuild() {
 		Owner:   r.targeter.Owner(),
 		Project: r.targeter.Name(),
 	}
-	appendReportLogFile("build (%s): %s", r.targeter.Trigger(), ns.String())
 	r.d.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String())
 }
 
 func (r *Report) RuntimeDownload() {
-	appendReportLogFile("download (%s)", r.targeter.Trigger())
 	r.d.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload)
 }
 
