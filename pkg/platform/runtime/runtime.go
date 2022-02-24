@@ -95,7 +95,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
 			return
 		}
-		*r = *rt // hmm. maybe. maybe not.
+		*r = *rt
 	}()
 
 	// ... and handle and wait for the runtime events in the main thread
