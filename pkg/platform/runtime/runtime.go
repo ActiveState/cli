@@ -80,9 +80,6 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	// TODO: correct location? does it have a RuntimeSuccess corollary?
-	r.analytics.RuntimeUse()
-
 	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error
@@ -117,13 +114,13 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
+	r.analytics.RuntimeUse()
+
 	envDef, err := r.envDef()
+	r.analytics.RuntimeResult(err, anaConsts.LblRtFailEnv)
 	if err != nil {
-		r.analytics.RuntimeConclusion(err, anaConsts.LblRtFailEnv)
 		return nil, errs.Wrap(err, "Could not grab environment definitions")
 	}
-	r.analytics.RuntimeSuccess()
-	r.analytics.RuntimeUse()
 
 	env := envDef.GetEnv(inherit)
 

@@ -150,9 +150,11 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an *r
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
+	s.analytics.RuntimeUse()
+
 	err := s.update()
+	s.analytics.RuntimeResult(err, anaConsts.LblRtFailUpdate)
 	if err != nil {
-		s.analytics.RuntimeConclusion(err, anaConsts.LblRtFailUpdate)
 		return err
 	}
 	return nil
