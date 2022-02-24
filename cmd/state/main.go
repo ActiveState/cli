@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -13,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -53,10 +53,15 @@ func main() {
 	// Set up logging
 	logging.SetupRollbar(constants.StateToolRollbarToken)
 
+	var cfg *config.Instance
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
+		}
+
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
 
 		// ensure rollbar messages are called
@@ -67,6 +72,15 @@ func main() {
 		// exit with exitCode
 		os.Exit(exitCode)
 	}()
+
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
@@ -100,7 +114,7 @@ func main() {
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
-	err = run(os.Args, isInteractive, out)
+	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
 		exitCode, err = unwrapError(err)
 		if err != nil {
@@ -120,7 +134,7 @@ func main() {
 	}
 }
 
-func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
+func run(args []string, isInteractive bool, cfg *config.Instance, out output.Outputer) (rerr error) {
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
@@ -135,11 +149,6 @@ func run(args []string, isInteractive bool, out output.Outputer) (rerr error) {
 	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
 	logging.CurrentHandler().SetVerbose(verbose)
 
-	cfg, err := config.New()
-	if err != nil {
-		return locale.WrapError(err, "config_get_error", "Failed to load configuration.")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
