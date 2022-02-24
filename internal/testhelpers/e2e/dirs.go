@@ -48,12 +48,13 @@ func NewDirs(base string) (*Dirs, error) {
 	}
 
 	dirs := Dirs{
-		base:       base,
-		Config:     config,
-		Cache:      cache,
-		Bin:        bin,
-		Work:       work,
-		DefaultBin: defaultBin,
+		base:         base,
+		Config:       config,
+		Cache:        cache,
+		Bin:          bin,
+		Work:         work,
+		DefaultBin:   defaultBin,
+		InstallerBin: installerBin,
 	}
 
 	return &dirs, nil
