@@ -35,6 +35,8 @@ type ErrUnauthorized struct{ *locale.LocalizedError }
 
 type ErrTokenRequired struct{ *locale.LocalizedError }
 
+var ErrNotGranted = locale.NewInputError("err_auth_device_noauth")
+
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
 	client      *mono_client.Mono
@@ -196,23 +198,32 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 }
 
 func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Duration) error {
-	for start := time.Now(); time.Since(start) < 5*time.Minute; {
-		token, err := model.CheckDeviceAuthorization(deviceCode)
-		if err != nil {
-			return errs.Wrap(err, "Authorization failed")
+	token, err := model.CheckDeviceAuthorization(deviceCode)
+	if err != nil {
+		return errs.Wrap(err, "Authorization failed")
+	}
+
+	if token != nil {
+		if err := s.updateSession(token); err != nil {
+			return errs.Wrap(err, "Storing JWT failed")
 		}
 
-		if token != nil {
-			if err := s.updateSession(token); err != nil {
-				return errs.Wrap(err, "Storing JWT failed")
-			}
+		// If we didn't use an API token for authentication we'll want to create one now
+		if err := s.createToken(); err != nil {
+			return errs.Wrap(err, "CreateToken failed")
+		}
 
-			// If we didn't use an API token for authentication we'll want to create one now
-			if err := s.createToken(); err != nil {
-				return errs.Wrap(err, "CreateToken failed")
-			}
+		return nil
+	}
 
-			return nil
+	return ErrNotGranted
+}
+
+func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
+	for start := time.Now(); time.Since(start) < 5*time.Minute; {
+		err := s.AuthenticateWithDevice(deviceCode, interval)
+		if !errors.Is(err, ErrNotGranted) {
+			return errs.Wrap(err, "Device authentication failed")
 		}
 		time.Sleep(interval) // then try again
 	}

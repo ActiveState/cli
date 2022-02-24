@@ -3,6 +3,7 @@ package auth
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
 	"github.com/skratchdot/open-golang/open"
 
@@ -88,7 +89,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 
 	switch choice {
 	case locale.T("prompt_login_browser_action"):
-		if err := AuthenticateWithBrowser(out, auth); err != nil {
+		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_login_action"):
@@ -96,7 +97,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := AuthenticateWithBrowser(out, auth); err != nil { // user can sign up from this page too
+		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil { // user can sign up from this page too
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_action"):
@@ -186,7 +187,7 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 }
 
 // AuthenticateWithBrowser attempts to authenticate this device with the Platform.
-func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth) error {
+func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
@@ -208,9 +209,25 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth) err
 		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
 
-	// Wait for user to complete authentication
-	if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
-		return locale.WrapError(err, "err_auth_device")
+	if !response.Nopoll {
+		// Wait for user to complete authentication
+		if err := auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
+	} else {
+		// This is the non-default behavior. If Nopoll = true we fall back on prompting the user to continue. It is a
+		// failsafe we can use in case polling overloads our API.
+		var cont bool
+		var err error
+		for !cont {
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), p.BoolP(false))
+			if err != nil {
+				return errs.Wrap(err, "Prompt failed")
+			}
+		}
+		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
 	}
 
 	out.Notice(locale.T("auth_device_success"))

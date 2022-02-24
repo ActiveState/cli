@@ -970,6 +970,10 @@ err_auth_device:
   other: Unable to communicate with the ActiveState Platform for login. Please contact support if this problem persists.
 err_auth_device_timeout:
   other: Timed out waiting for authentication to complete.
+err_auth_device_noauth:
+  other: Authorization was not granted.
+auth_press_enter:
+  other: Have you completed authentication in your browser?
 auth_device_verify_security_code:
   other: |
     Awaiting authorization for this device with the following security code:
