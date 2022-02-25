@@ -35,7 +35,7 @@ type ErrUnauthorized struct{ *locale.LocalizedError }
 
 type ErrTokenRequired struct{ *locale.LocalizedError }
 
-var ErrNotYetGranted = locale.NewInputError("err_auth_device_noauth")
+var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
 
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
@@ -204,7 +204,7 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Dura
 	}
 
 	if token == nil {
-		return ErrNotYetGranted
+		return errNotYetGranted
 	}
 
 	if err := s.updateSession(token); err != nil {
@@ -222,7 +222,7 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Dura
 func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
 		err := s.AuthenticateWithDevice(deviceCode, interval)
-		if !errors.Is(err, ErrNotYetGranted) {
+		if !errors.Is(err, errNotYetGranted) {
 			return errs.Wrap(err, "Device authentication failed")
 		}
 		time.Sleep(interval) // then try again
