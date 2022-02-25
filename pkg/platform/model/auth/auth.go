@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/oauth"
@@ -35,6 +36,7 @@ func CheckDeviceAuthorization(deviceCode strfmt.UUID) (*mono_models.JWT, error) 
 			errorToken := err.(*oauth.AuthDeviceGetBadRequest).Payload.Error
 			switch *errorToken {
 			case oauth.AuthDeviceGetBadRequestBodyErrorAuthorizationPending, oauth.AuthDeviceGetBadRequestBodyErrorSlowDown:
+				logging.Debug("Authorization still pending")
 				return nil, nil
 			case oauth.AuthDeviceGetBadRequestBodyErrorExpiredToken:
 				return nil, locale.WrapInputError(err, "auth_device_timeout")
