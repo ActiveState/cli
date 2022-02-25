@@ -222,7 +222,9 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Dura
 func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
 		err := s.AuthenticateWithDevice(deviceCode, interval)
-		if !errors.Is(err, errNotYetGranted) {
+		if err == nil {
+			return nil
+		} else if !errors.Is(err, errNotYetGranted) {
 			return errs.Wrap(err, "Device authentication failed")
 		}
 		time.Sleep(interval) // then try again
