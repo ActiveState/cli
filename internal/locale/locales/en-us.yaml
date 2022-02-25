@@ -219,6 +219,8 @@ logout_description:
   other: Logout
 logged_out:
   other: You have been logged out
+logout_still_have_api_token:
+  other: You still have an API token configured. You will not be completely logged out until you remove it.
 signup_success:
   other: Your account has been registered and a confirmation email has been sent to [NOTICE]{{.Email}}[/RESET], your account will have limited permissions until you confirm it.
 signup_failure:

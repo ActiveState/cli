@@ -103,7 +103,7 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
-	if availableAPIToken(cfg) != "" {
+	if auth.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
 		auth.Authenticate()
 	}
@@ -151,7 +151,7 @@ func (s *Auth) Authenticate() error {
 		return nil
 	}
 
-	apiToken := availableAPIToken(s.cfg)
+	apiToken := s.AvailableAPIToken()
 	if apiToken == "" {
 		return locale.NewInputError("err_no_credentials")
 	}
@@ -392,7 +392,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	return tokenOK.Payload.Token, nil
 }
 
-func availableAPIToken(cfg Configurable) string {
+func (s *Auth) AvailableAPIToken() string {
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
@@ -406,5 +406,5 @@ func availableAPIToken(cfg Configurable) string {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
-	return cfg.GetString(ApiTokenConfigKey)
+	return s.cfg.GetString(ApiTokenConfigKey)
 }
