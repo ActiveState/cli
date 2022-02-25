@@ -90,12 +90,10 @@ func (l *fileHandler) SetConfig(cfg config) {
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	var a []interface{}
-	a = append(a, args)
 	e := entry{
 		ctx:     ctx,
 		message: message,
-		args:    a,
+		args:    args,
 	}
 	select {
 	case <-l.quit:
