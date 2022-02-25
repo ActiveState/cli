@@ -21,7 +21,7 @@ import (
 type OrderInfo struct {
 
 	// annotations
-	Annotations *OrderAnnotations `json:"annotations,omitempty"`
+	Annotations interface{} `json:"annotations,omitempty"`
 
 	// checkpoint
 	Checkpoint []*Checkpoint `json:"checkpoint"`
@@ -35,10 +35,6 @@ type OrderInfo struct {
 func (m *OrderInfo) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateAnnotations(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateCheckpoint(formats); err != nil {
 		res = append(res, err)
 	}
@@ -50,23 +46,6 @@ func (m *OrderInfo) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *OrderInfo) validateAnnotations(formats strfmt.Registry) error {
-	if swag.IsZero(m.Annotations) { // not required
-		return nil
-	}
-
-	if m.Annotations != nil {
-		if err := m.Annotations.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("annotations")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -110,10 +89,6 @@ func (m *OrderInfo) validateTimestamp(formats strfmt.Registry) error {
 func (m *OrderInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateAnnotations(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateCheckpoint(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -121,20 +96,6 @@ func (m *OrderInfo) ContextValidate(ctx context.Context, formats strfmt.Registry
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *OrderInfo) contextValidateAnnotations(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Annotations != nil {
-		if err := m.Annotations.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("annotations")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 

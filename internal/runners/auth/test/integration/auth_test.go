@@ -410,7 +410,7 @@ func TestExecuteToken(t *testing.T) {
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
-	token := cfg.GetString("apiToken")
+	token := cfg.GetString(authentication.ApiTokenConfigKey)
 	authentication.Logout()
 	assert.NoError(t, err, "Executed without error")
 	assert.Nil(t, authentication.ClientAuth(), "Not Authenticated")

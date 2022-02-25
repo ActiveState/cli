@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"time"
+
+	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/go-openapi/strfmt"
 	"github.com/skratchdot/open-golang/open"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -15,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -22,30 +26,30 @@ import (
 var OpenURI = open.Run
 
 // Authenticate will prompt the user for authentication
-func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	return AuthenticateWithInput("", "", "", cfg, out, prompt)
+func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+	return AuthenticateWithInput("", "", "", cfg, out, prompt, auth)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
+func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	logging.Debug("AuthenticateWithInput")
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
-	err := AuthenticateWithCredentials(credentials)
+	err := AuthenticateWithCredentials(credentials, auth)
 	if err != nil {
 		switch {
 		case errs.Matches(err, &authentication.ErrTokenRequired{}):
-			if err := promptToken(credentials, out, prompt); err != nil {
+			if err := promptToken(credentials, out, prompt, auth); err != nil {
 				return errs.Wrap(err, "promptToken failed")
 			}
 		case errs.Matches(err, &authentication.ErrUnauthorized{}):
 			if !uniqueUsername(credentials) {
 				return errs.Wrap(err, "uniqueUsername failed")
 			}
-			if err := promptSignup(credentials, out, prompt); err != nil {
+			if err := promptSignup(credentials, out, prompt, auth); err != nil {
 				return errs.Wrap(err, "promptSignup failed")
 			}
 		default:
@@ -53,7 +57,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 		}
 	}
 
-	if authentication.LegacyGet().Authenticated() {
+	if auth.Authenticated() {
 		secretsapi.InitializeClient()
 		if err := ensureUserKeypair(credentials.Password, cfg, out, prompt); err != nil {
 			return errs.Wrap(err, "ensureUserKeypair failed")
@@ -65,40 +69,44 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
-func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	if authentication.LegacyGet().Authenticated() {
+func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+	if auth.Authenticated() {
 		return nil
 	}
 
 	out.Print(message)
 
-	choices := []string{locale.T("prompt_login_action"), locale.T("prompt_signup_action"), locale.T("prompt_signup_browser_action")}
+	choices := []string{
+		locale.T("prompt_login_browser_action"),
+		locale.T("prompt_login_action"),
+		locale.T("prompt_signup_browser_action"),
+		locale.T("prompt_signup_action"),
+	}
 	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
 		return errs.Wrap(err, "Prompt cancelled")
 	}
 
 	switch choice {
-	case locale.T("prompt_login_action"):
-		if err := Authenticate(cfg, out, prompt); err != nil {
+	case locale.T("prompt_login_browser_action"):
+		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil {
 			return errs.Wrap(err, "Authenticate failed")
 		}
-	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt); err != nil {
-			return errs.Wrap(err, "Signup failed")
+	case locale.T("prompt_login_action"):
+		if err := Authenticate(cfg, out, prompt, auth); err != nil {
+			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := OpenURI(constants.PlatformSignupURL); err != nil {
-			logging.Error("Could not open browser: %v", err)
-			return locale.WrapInputError(err, "err_browser_open", "", constants.PlatformSignupURL)
+		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil { // user can sign up from this page too
+			return errs.Wrap(err, "Signup failed")
 		}
-		out.Notice(locale.T("prompt_login_after_browser_signup"))
-		if err := Authenticate(cfg, out, prompt); err != nil {
-			return errs.Wrap(err, "Authenticate failed")
+	case locale.T("prompt_signup_action"):
+		if err := Signup(cfg, out, prompt, auth); err != nil {
+			return errs.Wrap(err, "Signup failed")
 		}
 	}
 
-	if !authentication.LegacyGet().Authenticated() {
+	if !auth.Authenticated() {
 		return locale.NewInputError("err_auth_required")
 	}
 
@@ -124,8 +132,7 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 }
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
-func AuthenticateWithCredentials(credentials *mono_models.Credentials) error {
-	auth := authentication.LegacyGet()
+func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *authentication.Auth) error {
 	err := auth.AuthenticateWithModel(credentials)
 	if err != nil {
 		return err
@@ -147,20 +154,20 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	return true
 }
 
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
+func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	loginConfirmDefault := true
 	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
 	if err != nil {
 		return err
 	}
 	if yesSignup {
-		return signupFromLogin(credentials.Username, credentials.Password, out, prompt)
+		return signupFromLogin(credentials.Username, credentials.Password, out, prompt, auth)
 	}
 
 	return nil
 }
 
-func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter) error {
+func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	var err error
 	credentials.Totp, err = prompt.Input("", locale.T("totp_prompt"), new(string))
 	if err != nil {
@@ -171,10 +178,59 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 		return locale.NewInputError("err_auth_empty_token")
 	}
 
-	err = AuthenticateWithCredentials(credentials)
+	err = AuthenticateWithCredentials(credentials, auth)
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// AuthenticateWithBrowser attempts to authenticate this device with the Platform.
+func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
+	response, err := model.RequestDeviceAuthorization()
+	if err != nil {
+		return locale.WrapError(err, "err_auth_device")
+	}
+
+	// Print code to user
+	if response.UserCode == nil {
+		return errs.New("Invalid response: Missing user code.")
+	}
+	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
+
+	// Open URL in browser
+	if response.VerificationURIComplete == nil {
+		return errs.New("Invalid response: Missing verification URL.")
+	}
+	err = OpenURI(*response.VerificationURIComplete)
+	if err != nil {
+		logging.Warning("Could not open browser: %v", err)
+		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
+	}
+
+	if !response.Nopoll {
+		// Wait for user to complete authentication
+		if err := auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
+	} else {
+		// This is the non-default behavior. If Nopoll = true we fall back on prompting the user to continue. It is a
+		// failsafe we can use in case polling overloads our API.
+		var cont bool
+		var err error
+		for !cont {
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), p.BoolP(false))
+			if err != nil {
+				return errs.Wrap(err, "Prompt failed")
+			}
+		}
+		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
+	}
+
+	out.Notice(locale.T("auth_device_success"))
 
 	return nil
 }
