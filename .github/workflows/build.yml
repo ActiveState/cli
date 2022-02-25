@@ -27,7 +27,7 @@ jobs:
         platform:
           - ubuntu-20.04
           - macos-11
-          - windows-latest
+          - windows-2019
       fail-fast: false
     runs-on: ${{ matrix.platform }}
     env:
