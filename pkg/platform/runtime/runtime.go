@@ -29,11 +29,13 @@ import (
 )
 
 type Runtime struct {
-	target      setup.Targeter
-	store       *store.Store
-	envAccessed bool
-	analytics   analytics.Dispatcher
-	svcm        *model.SvcModel
+	target    setup.Targeter
+	store     *store.Store
+	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
+
+	completionRecorded bool
+	useRecorded        bool
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -97,7 +99,10 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	go func() {
 		defer prod.Close()
 
+		r.recordUsage()
+
 		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
+			r.recordCompletion(err, anaConsts.LblRtFailUpdate)
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
@@ -126,17 +131,9 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
 	envDef, err := r.envDef()
-	if !r.envAccessed {
-		if err != nil {
-			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
-		} else {
-			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
-			if r.target.Trigger().IndicatesUsage() {
-				r.recordUsage()
-			}
-		}
-		r.envAccessed = true
-	}
+	r.recordUsage()
+	r.recordCompletion(err, anaConsts.LblRtFailEnv)
+
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not grab environment definitions")
 	}
@@ -160,6 +157,11 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 }
 
 func (r *Runtime) recordUsage() {
+	if r.useRecorded || !r.target.Trigger().IndicatesUsage() {
+		return
+	}
+	r.useRecorded = true
+
 	dims := &dimensions.Values{
 		Trigger:          p.StrP(r.target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
@@ -174,6 +176,25 @@ func (r *Runtime) recordUsage() {
 	if r.svcm != nil {
 		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
 	}
+}
+
+func (r *Runtime) recordCompletion(err error, failLabel string) {
+	if r.completionRecorded {
+		return
+	}
+	r.completionRecorded = true
+
+	if err != nil {
+		action := anaConsts.ActRuntimeFailure
+		if locale.IsInputError(err) {
+			action = anaConsts.ActRuntimeUserFailure
+		}
+		r.analytics.EventWithLabel(anaConsts.CatRuntime, action, failLabel)
+
+		return
+	}
+
+	r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
 }
 
 func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
