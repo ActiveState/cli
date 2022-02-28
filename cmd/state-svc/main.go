@@ -48,7 +48,7 @@ func main() {
 			logging.Error("Failed to close config: %w", err)
 		}
 
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failing to wait events")
 		}
 		os.Exit(exitCode)
