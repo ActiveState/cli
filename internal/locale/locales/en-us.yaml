@@ -220,7 +220,7 @@ logout_description:
 logged_out:
   other: You have been logged out
 logout_still_have_api_token:
-  other: You still have an API token configured (environment variable or Google Cloud). You will not be completely logged out until you remove it.
+  other: Logout is incomplete because you have authenticated with an environment variable. To complete logout please unset the '[ACTIONABLE]ACTIVESTATE_API_KEY[/RESET]' environment variable.
 signup_success:
   other: Your account has been registered and a confirmation email has been sent to [NOTICE]{{.Email}}[/RESET], your account will have limited permissions until you confirm it.
 signup_failure:
