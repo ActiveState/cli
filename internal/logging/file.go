@@ -37,6 +37,7 @@ type fileHandler struct {
 	wg        *sync.WaitGroup
 	queue     chan entry
 	quit      chan struct{}
+	report    bool
 }
 
 func newFileHandler() *fileHandler {
@@ -49,6 +50,7 @@ func newFileHandler() *fileHandler {
 		&sync.WaitGroup{},
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
+		true,
 	}
 	handler.wg.Add(1)
 	go func() {
@@ -88,6 +90,9 @@ func (l *fileHandler) Output() io.Writer {
 
 func (l *fileHandler) SetConfig(cfg config) {
 	l.cfg = cfg
+	if l.cfg != nil && !l.cfg.Closed() && l.cfg.IsSet(constants.ReportErrorsConfig) {
+		l.report = l.cfg.GetBool(constants.ReportErrorsConfig)
+	}
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
@@ -119,12 +124,7 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 		// This is meant to help guard against recursion issues
 		isRollbarMsg := strings.HasPrefix(message, "Rollbar")
 
-		report := true
-		if l.cfg != nil && !l.cfg.Closed() && l.cfg.IsSet(constants.ReportErrorsConfig) {
-			report = l.cfg.GetBool(constants.ReportErrorsConfig)
-		}
-
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && report && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
+		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && l.report && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
 			data := map[string]interface{}{}
 
 			if l.file != nil {
