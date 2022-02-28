@@ -25,8 +25,8 @@ func TestReportFilepath() string {
 	return filepath.Join(appdata, TestReportFilename)
 }
 
-func NewTestReporter() *TestReporter {
-	return &TestReporter{TestReportFilepath()}
+func NewTestReporter(path string) *TestReporter {
+	return &TestReporter{path}
 }
 
 func (r *TestReporter) ID() string {
@@ -45,7 +45,7 @@ func (r *TestReporter) Event(category, action, label string, d *dimensions.Value
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}
-	b = append(b, []byte("\x00")...)
+	b = append(b, []byte("\n\x00")...)
 
 	if err := fileutils.AmendFileLocked(r.path, b, fileutils.AmendByAppend); err != nil {
 		return errs.Wrap(err, "Could not write to file")

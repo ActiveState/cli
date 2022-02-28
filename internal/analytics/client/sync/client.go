@@ -103,7 +103,10 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	// Register reporters
 	if condition.InTest() {
 		logging.Debug("Using test reporter")
-		a.NewReporter(reporters.NewTestReporter())
+		a.NewReporter(reporters.NewTestReporter(reporters.TestReportFilepath()))
+		logging.Debug("Using test reporter as instructed by env")
+	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
+		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
 		gar, err := reporters.NewGaCLIReporter(deviceID)
 		if err != nil {
