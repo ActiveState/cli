@@ -59,13 +59,20 @@ func main() {
 
 	var an analytics.Dispatcher
 
+	var cfg *config.Instance
+
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, an.Wait, logging.Close); err != nil {
-			logging.Error("state-installer failed to wait for events: %v", err)
+
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config: %w", err)
+		}
+
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
+			logging.Warning("state-installer failed to wait for events: %v", err)
 		}
 		os.Exit(exitCode)
 	}()
@@ -82,7 +89,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 	}
-	defer cfg.Close()
+
+	logging.CurrentHandler().SetConfig(cfg)
 
 	// Set up machineid, allowing us to anonymously group errors and analytics
 	machineid.Configure(cfg)

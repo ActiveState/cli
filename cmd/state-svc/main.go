@@ -38,26 +38,40 @@ const (
 func main() {
 	var exitCode int
 
+	var cfg *config.Instance
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failing to wait for rollbar to close")
+
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config: %w", err)
+		}
+
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
+			logging.Warning("Failing to wait events")
 		}
 		os.Exit(exitCode)
 	}()
 
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
 	logging.SetupRollbar(constants.StateServiceRollbarToken)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	err := run()
-	if err != nil {
-		errMsg := errs.Join(err, ": ").Error()
-		if locale.IsInputError(err) {
+	runErr := run(cfg)
+	if runErr != nil {
+		errMsg := errs.Join(runErr, ": ").Error()
+		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {
 			logging.Critical("state-svc errored out: %s", errMsg)
@@ -68,7 +82,7 @@ func main() {
 	}
 }
 
-func run() (rerr error) {
+func run(cfg *config.Instance) (rerr error) {
 	args := os.Args
 
 	cfg, err := config.New()

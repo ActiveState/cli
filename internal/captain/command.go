@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
@@ -27,7 +28,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
+
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
+
+func init() {
+	configMediator.NewRule(constants.UnstableConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 // appEventPrefix is used for all executables except for the State Tool itself.
 var appEventPrefix string = func() string {
@@ -47,6 +54,7 @@ type cobraCommander interface {
 type primer interface {
 	Output() output.Outputer
 	Analytics() analytics.Dispatcher
+	Config() *config.Instance
 }
 
 type ExecuteFunc func(cmd *Command, args []string) error
@@ -78,6 +86,7 @@ type Command struct {
 	commands []*Command
 	parent   *Command
 
+	name  string
 	title string
 
 	group CommandGroup
@@ -93,8 +102,11 @@ type Command struct {
 
 	skipChecks bool
 
+	unstable bool
+
 	out       output.Outputer
 	analytics analytics.Dispatcher
+	cfg       *config.Instance
 }
 
 func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
@@ -110,6 +122,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	}
 
 	cmd := &Command{
+		name:      name,
 		title:     title,
 		execute:   execute,
 		arguments: args,
@@ -117,6 +130,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		commands:  make([]*Command, 0),
 		out:       prime.Output(),
 		analytics: prime.Analytics(),
+		cfg:       prime.Config(),
 	}
 
 	short := description
@@ -280,7 +294,7 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 }
 
 func (c *Command) Name() string {
-	return c.cobra.Name()
+	return c.name
 }
 
 func (c *Command) NameRecursive() string {
@@ -334,6 +348,17 @@ func (c *Command) interceptFunc() InterceptFunc {
 		}
 		return fn
 	}
+}
+
+// SetUnstable denotes if the command as a beta feature. This will remove the command
+// from state help, disable the commmand for those who haven't opted in to beta features,
+// and add a warning banner for those who have.
+func (c *Command) SetUnstable(unstable bool) *Command {
+	c.unstable = unstable
+	if !c.cfg.GetBool(constants.UnstableConfig) {
+		c.cobra.Hidden = unstable
+	}
+	return c
 }
 
 // SetGroup sets the group this command belongs to. This defaults to empty, meaning the command is ungrouped.
@@ -499,7 +524,15 @@ func (c *Command) subCommandNames() []string {
 }
 
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
-	defer profile.Measure(fmt.Sprintf("captain:runner"), time.Now())
+	defer profile.Measure("captain:runner", time.Now())
+
+	if c.unstable {
+		if !c.cfg.GetBool(constants.UnstableConfig) {
+			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
+			return nil
+		}
+		c.out.Print(locale.T("unstable_feature_banner"))
+	}
 
 	subCommandString := c.UseFull()
 	logging.CurrentCmd = appEventPrefix + subCommandString
@@ -743,7 +776,11 @@ func childCommands(cmd *Command) string {
 			table.AddRow([]string{fmt.Sprintf("%s:", group)})
 		}
 		if !child.cobra.Hidden {
-			table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+			if child.unstable {
+				table.AddRow([]string{fmt.Sprintf("  %s (Unstable)", child.Name()), child.ShortDescription()})
+			} else {
+				table.AddRow([]string{fmt.Sprintf("  %s", child.Name()), child.ShortDescription()})
+			}
 		}
 	}
 

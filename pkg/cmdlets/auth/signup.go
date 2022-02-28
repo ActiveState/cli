@@ -34,13 +34,7 @@ type signupInput struct {
 }
 
 // Signup will prompt the user to create an account
-func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	input := &signupInput{}
-
-	if authentication.LegacyGet().Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", authentication.LegacyGet().WhoAmI())
-	}
-
+func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
@@ -49,16 +43,17 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 		return locale.NewInputError("tos_not_accepted", "")
 	}
 
+	input := &signupInput{}
 	err = promptForSignup(input, maxMatchTries, out, prompt)
 	if err != nil {
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	if err = doSignup(input, out); err != nil {
+	if err = doSignup(input, out, auth); err != nil {
 		return err
 	}
 
-	if authentication.LegacyGet().Authenticated() {
+	if auth.Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
 			return locale.WrapError(err, "keypair_err_save")
 		}
@@ -67,7 +62,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 	return nil
 }
 
-func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter) error {
+func signupFromLogin(username string, password string, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	input := &signupInput{}
 
 	input.Username = username
@@ -78,7 +73,7 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 		return locale.WrapError(err, "signup_failure")
 	}
 
-	return doSignup(input, out)
+	return doSignup(input, out, auth)
 }
 
 func downloadTOS(configPath string) (string, error) {
@@ -186,7 +181,7 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 	return nil
 }
 
-func doSignup(input *signupInput, out output.Outputer) error {
+func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth) error {
 	params := users.NewAddUserParams()
 	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
@@ -214,7 +209,7 @@ func doSignup(input *signupInput, out output.Outputer) error {
 	err = AuthenticateWithCredentials(&mono_models.Credentials{
 		Username: input.Username,
 		Password: input.Password,
-	})
+	}, auth)
 	if err != nil {
 		return err
 	}

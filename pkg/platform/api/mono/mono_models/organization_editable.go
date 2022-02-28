@@ -8,10 +8,8 @@ package mono_models
 import (
 	"context"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // OrganizationEditable organization editable
@@ -22,103 +20,17 @@ type OrganizationEditable struct {
 	// u r lname
 	URLname string `json:"URLname,omitempty"`
 
-	// add ons
-	AddOns map[string]AddOnEditable `json:"addOns,omitempty"`
-
-	// billing email
-	// Format: email
-	BillingEmail *strfmt.Email `json:"billingEmail,omitempty"`
-
 	// display name
 	DisplayName string `json:"displayName,omitempty"`
-
-	// stripe payment token
-	StripePaymentToken *string `json:"stripePaymentToken,omitempty"`
-
-	// tier name
-	Tier string `json:"tier,omitempty"`
-
-	// user allowance
-	UserAllowance int64 `json:"userAllowance,omitempty"`
 }
 
 // Validate validates this organization editable
 func (m *OrganizationEditable) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateAddOns(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateBillingEmail(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
 	return nil
 }
 
-func (m *OrganizationEditable) validateAddOns(formats strfmt.Registry) error {
-	if swag.IsZero(m.AddOns) { // not required
-		return nil
-	}
-
-	for k := range m.AddOns {
-
-		if err := validate.Required("addOns"+"."+k, "body", m.AddOns[k]); err != nil {
-			return err
-		}
-		if val, ok := m.AddOns[k]; ok {
-			if err := val.Validate(formats); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *OrganizationEditable) validateBillingEmail(formats strfmt.Registry) error {
-	if swag.IsZero(m.BillingEmail) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("billingEmail", "body", "email", m.BillingEmail.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// ContextValidate validate this organization editable based on the context it is used
+// ContextValidate validates this organization editable based on context it is used
 func (m *OrganizationEditable) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.contextValidateAddOns(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *OrganizationEditable) contextValidateAddOns(ctx context.Context, formats strfmt.Registry) error {
-
-	for k := range m.AddOns {
-
-		if val, ok := m.AddOns[k]; ok {
-			if err := val.ContextValidate(ctx, formats); err != nil {
-				return err
-			}
-		}
-
-	}
-
 	return nil
 }
 

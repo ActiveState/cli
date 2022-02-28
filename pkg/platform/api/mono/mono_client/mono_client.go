@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/github"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/invoices"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/limits"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/oauth"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/organizations"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
@@ -69,6 +70,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli.Github = github.New(transport, formats)
 	cli.Invoices = invoices.New(transport, formats)
 	cli.Limits = limits.New(transport, formats)
+	cli.Oauth = oauth.New(transport, formats)
 	cli.Organizations = organizations.New(transport, formats)
 	cli.Projects = projects.New(transport, formats)
 	cli.S3 = s3.New(transport, formats)
@@ -128,6 +130,8 @@ type Mono struct {
 
 	Limits limits.ClientService
 
+	Oauth oauth.ClientService
+
 	Organizations organizations.ClientService
 
 	Projects projects.ClientService
@@ -152,6 +156,7 @@ func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.Github.SetTransport(transport)
 	c.Invoices.SetTransport(transport)
 	c.Limits.SetTransport(transport)
+	c.Oauth.SetTransport(transport)
 	c.Organizations.SetTransport(transport)
 	c.Projects.SetTransport(transport)
 	c.S3.SetTransport(transport)

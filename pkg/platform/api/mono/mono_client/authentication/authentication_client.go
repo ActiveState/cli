@@ -48,6 +48,10 @@ type ClientService interface {
 
 	EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnableTOTPOK, error)
 
+	GithubAuthError(params *GithubAuthErrorParams, opts ...ClientOption) error
+
+	LinkGithubAccount(params *LinkGithubAccountParams, opts ...ClientOption) error
+
 	ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListTokensOK, error)
 
 	LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LoginAsOK, error)
@@ -59,6 +63,8 @@ type ClientService interface {
 	RequestReset(params *RequestResetParams, opts ...ClientOption) (*RequestResetOK, error)
 
 	ResetPassword(params *ResetPasswordParams, opts ...ClientOption) (*ResetPasswordOK, error)
+
+	SignupWithGithub(params *SignupWithGithubParams, opts ...ClientOption) error
 
 	UnlinkGithubAccount(params *UnlinkGithubAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlinkGithubAccountOK, error)
 
@@ -424,6 +430,68 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 }
 
 /*
+  GithubAuthError callbacks endpoint for handling errors that come from github
+*/
+func (a *Client) GithubAuthError(params *GithubAuthErrorParams, opts ...ClientOption) error {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGithubAuthErrorParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "githubAuthError",
+		Method:             "GET",
+		PathPattern:        "/oauth/github",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GithubAuthErrorReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	_, err := a.transport.Submit(op)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
+  LinkGithubAccount callbacks endpoint for linking an account to github
+*/
+func (a *Client) LinkGithubAccount(params *LinkGithubAccountParams, opts ...ClientOption) error {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewLinkGithubAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "linkGithubAccount",
+		Method:             "GET",
+		PathPattern:        "/oauth/github/link",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &LinkGithubAccountReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	_, err := a.transport.Submit(op)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
   ListTokens lists current user s API tokens
 
   List of all active API Tokens for current user
@@ -504,7 +572,7 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  LoginWithGithub callbacks endpoint for github auth
+  LoginWithGithub callbacks endpoint for logging in via github auth
 */
 func (a *Client) LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -514,7 +582,7 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOp
 	op := &runtime.ClientOperation{
 		ID:                 "loginWithGithub",
 		Method:             "GET",
-		PathPattern:        "/githubLogin",
+		PathPattern:        "/oauth/github/login",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},
@@ -656,6 +724,37 @@ func (a *Client) ResetPassword(params *ResetPasswordParams, opts ...ClientOption
 }
 
 /*
+  SignupWithGithub callbacks endpoint for signing up via github auth
+*/
+func (a *Client) SignupWithGithub(params *SignupWithGithubParams, opts ...ClientOption) error {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSignupWithGithubParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "signupWithGithub",
+		Method:             "GET",
+		PathPattern:        "/oauth/github/signup",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &SignupWithGithubReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	_, err := a.transport.Submit(op)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
   UnlinkGithubAccount callbacks endpoint for unlinking git hub accounts
 */
 func (a *Client) UnlinkGithubAccount(params *UnlinkGithubAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlinkGithubAccountOK, error) {
@@ -666,7 +765,7 @@ func (a *Client) UnlinkGithubAccount(params *UnlinkGithubAccountParams, authInfo
 	op := &runtime.ClientOperation{
 		ID:                 "unlinkGithubAccount",
 		Method:             "POST",
-		PathPattern:        "/unlink/github",
+		PathPattern:        "/oauth/github/unlink",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http", "https"},

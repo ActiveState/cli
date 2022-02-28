@@ -30,10 +30,15 @@ func NewAuth(prime primeable) *Auth {
 }
 
 type AuthParams struct {
-	Token    string
-	Username string
-	Password string
-	Totp     string
+	Token       string
+	Username    string
+	Password    string
+	Totp        string
+	Interactive bool
+}
+
+type SignupParams struct {
+	Interactive bool
 }
 
 // Run runs our command
@@ -61,7 +66,12 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Token == "" {
-		err := authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter)
+		var err error
+		if params.Interactive || params.Username != "" {
+			err = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+		} else {
+			err = authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
+		}
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth")
 		}

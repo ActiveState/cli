@@ -247,7 +247,7 @@ func (r *Push) Run(params PushParams) error {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt)
+		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt, r.auth)
 		if err != nil {
 			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
 		}

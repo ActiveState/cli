@@ -114,11 +114,15 @@ auth_description:
 flag_state_auth_token_description:
   other: "The API Token generated via the ActiveState Platform (http://docs.activestate.com/platform/state/ci.html#authenticate-without-prompts-or-passwords)"
 flag_state_auth_username_description:
-  other: The username to authenticate with, will be prompted for otherwise
+  other: The username to authenticate with
 flag_state_auth_password_description:
-  other: The password to authenticate with, will be prompted for otherwise
+  other: The password to authenticate with
 flag_state_auth_totp_description:
   other: The TOTP code generated via two-factor authentication
+flag_state_auth_interactive_description:
+  other: Sign in via your terminal, rather than your web browser.
+flag_state_auth_signup_interactive_description:
+  other: Sign up via your terminal, rather than your web browser.
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -766,7 +770,7 @@ installer_err_runtime_already_exists:
 installer_err_runtime_move_files_access_denied:
   other: |
     Unable to move runtime files.  Please ensure that you have write permissions for the directory '[NOTICE]{{.V0}}[/RESET]'
-    If you believe this is happening due to antivirus software please report your issue on our forums: 
+    If you believe this is happening due to antivirus software please report your issue on our forums:
     [ACTIONABLE]{{.V1}}[/RESET]
 installer_err_runtime_move_files_failed:
   other: Unable to move runtime files from '[NOTICE]{{.V0}}[/RESET]' to '[NOTICE]{{.V1}}[/RESET]'
@@ -856,7 +860,7 @@ warn_deprecation:
   other: |
     You are running a deprecated version of the State Tool. This version will stop working as of [NOTICE]{{.V0}}[/RESET].
 
-    Reason for deprecation: 
+    Reason for deprecation:
       [NOTICE]{{.V1}}[/RESET]
 
     Please update by running [ACTIONABLE]`state update`[/RESET].
@@ -864,7 +868,7 @@ err_deprecation:
   other: |
     You are running a version of the State Tool that is no longer supported! You will be encountering issues.
 
-    Reason for deprecation: 
+    Reason for deprecation:
       [NOTICE]{{.V1}}[/RESET]
 
     Please update by running [ACTIONABLE]`state update`[/RESET].
@@ -874,10 +878,12 @@ auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
   other: Would you like to login to an existing ActiveState Platform account, or create a new account?
+prompt_login_browser_action:
+  other: Login with my existing account using your browser
 prompt_login_action:
-  other: Login with my existing account
+  other: Login with my existing account by typing my username and password
 prompt_signup_action:
-  other: Signup for a new account
+  other: Signup for a new account by entering in a username and password
 prompt_signup_browser_action:
   other: Signup for a new account using the ActiveState Platform website
 prompt_login_after_browser_signup:
@@ -960,6 +966,26 @@ fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
   other: The provided token is empty
+err_auth_device:
+  other: Unable to communicate with the ActiveState Platform for login. Please contact support if this problem persists.
+err_auth_device_timeout:
+  other: Timed out waiting for authentication to complete.
+err_auth_device_noauth:
+  other: Authorization was not granted.
+auth_press_enter:
+  other: Have you completed authentication in your browser?
+auth_device_verify_security_code:
+  other: |
+    Awaiting authorization for this device with the following security code:
+
+        [ACTIONABLE]{{.V0}}[/RESET]
+
+    Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize".
+    After that, it may take a few seconds for the authorization process here to complete.
+auth_device_timeout:
+  other: Authorization timeout. Please try again.
+auth_device_success:
+  other: Successfully authorized this device
 err_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
@@ -1503,7 +1529,7 @@ ppm_print_area_redundant:
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
     You can simply start managing your packages, run [ACTIONABLE]`{{.V0}} --help`[/RESET] for more information.
 ppm_install_intent:
-  other: add new packages to your project 
+  other: add new packages to your project
 ppm_upgrade_intent:
   other: upgrade an existing package
 ppm_remove_intent:
@@ -1722,6 +1748,8 @@ auto_update_to_version:
   other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
 auto_update_relaunch:
   other: Update installed. Forwarding input to updated State Tool.
+auto_update_failed:
+  other: Could not update State Tool. If this issue persists please reinstall the State Tool.
 lock_update_legacy_version:
   other: See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.
 lock_version_mismatch:
@@ -1738,7 +1766,7 @@ err_learn_open:
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_directory_in_use:
-  other: | 
+  other: |
     Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
     To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
 err_jwt_not_authenticated:
@@ -1787,3 +1815,10 @@ progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
+unstable_feature_banner:
+  other: "[HEADING]█ Beta Feature: This feature is still in beta and may be unstable.[/RESET]"
+unstable_command_warning:
+  other: |
+    This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
+
+    [ACTIONABLE]state config set optin.unstable true[/RESET]

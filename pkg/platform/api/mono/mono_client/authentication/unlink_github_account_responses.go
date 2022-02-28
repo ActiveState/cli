@@ -50,7 +50,7 @@ type UnlinkGithubAccountOK struct {
 }
 
 func (o *UnlinkGithubAccountOK) Error() string {
-	return fmt.Sprintf("[POST /unlink/github][%d] unlinkGithubAccountOK ", 200)
+	return fmt.Sprintf("[POST /oauth/github/unlink][%d] unlinkGithubAccountOK ", 200)
 }
 
 func (o *UnlinkGithubAccountOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -71,7 +71,7 @@ type UnlinkGithubAccountForbidden struct {
 }
 
 func (o *UnlinkGithubAccountForbidden) Error() string {
-	return fmt.Sprintf("[POST /unlink/github][%d] unlinkGithubAccountForbidden ", 403)
+	return fmt.Sprintf("[POST /oauth/github/unlink][%d] unlinkGithubAccountForbidden ", 403)
 }
 
 func (o *UnlinkGithubAccountForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

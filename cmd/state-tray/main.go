@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -50,18 +49,34 @@ func main() {
 
 func onReady() {
 	var exitCode int
+
+	var cfg *config.Instance
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
-		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
-			logging.Warning("Failed to wait for rollbar to close")
+
+		if err := cfg.Close(); err != nil {
+			logging.Error("Failed to close config after exiting systray: %w", err)
+		}
+
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
+			logging.Warning("Failed to wait eventse")
 		}
 		os.Exit(exitCode)
 	}()
 
-	err := run()
+	cfg, err := config.New()
+	if err != nil {
+		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
+		exitCode = 1
+		return
+	}
+	logging.CurrentHandler().SetConfig(cfg)
+
+	err = run(cfg)
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logging.Critical("Systray encountered an error: %v", errMsg)
@@ -70,13 +85,7 @@ func onReady() {
 	}
 }
 
-func run() (rerr error) {
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not get new config instance")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
-
+func run(cfg *config.Instance) (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
