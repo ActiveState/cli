@@ -1748,6 +1748,8 @@ auto_update_to_version:
   other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
 auto_update_relaunch:
   other: Update installed. Forwarding input to updated State Tool.
+auto_update_failed:
+  other: Could not update State Tool. If this issue persists please reinstall the State Tool.
 lock_update_legacy_version:
   other: See [ACTIONABLE]{{.V0}}[/RESET] for more information on version locking and how to install a specific State Tool version.
 lock_version_mismatch:
