@@ -61,7 +61,7 @@ func onReady() {
 			logging.Error("Failed to close config after exiting systray: %w", err)
 		}
 
-		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, rollbar.Close, authentication.LegacyClose, logging.Close); err != nil {
+		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failed to wait eventse")
 		}
 		os.Exit(exitCode)
