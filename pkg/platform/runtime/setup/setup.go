@@ -151,19 +151,6 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
-	err := s.update()
-	if err != nil {
-		category := anaConsts.ActRuntimeFailure
-		if locale.IsInputError(err) {
-			category = anaConsts.ActRuntimeUserFailure
-		}
-		s.analytics.EventWithLabel(anaConsts.CatRuntime, category, anaConsts.LblRtFailUpdate)
-		return err
-	}
-	return nil
-}
-
-func (s *Setup) update() error {
 	// Request build
 	s.events.SolverStart()
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
