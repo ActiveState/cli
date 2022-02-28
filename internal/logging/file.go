@@ -19,6 +19,7 @@ var defaultMaxEntries = 1000
 type config interface {
 	GetBool(key string) bool
 	IsSet(key string) bool
+	Closed() bool
 }
 
 type entry struct {
@@ -119,7 +120,7 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 		isRollbarMsg := strings.HasPrefix(message, "Rollbar")
 
 		report := true
-		if l.cfg != nil && l.cfg.IsSet(constants.ReportErrorsConfig) {
+		if l.cfg != nil && !l.cfg.Closed() && l.cfg.IsSet(constants.ReportErrorsConfig) {
 			report = l.cfg.GetBool(constants.ReportErrorsConfig)
 		}
 
