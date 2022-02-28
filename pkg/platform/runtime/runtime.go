@@ -31,7 +31,6 @@ import (
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
-	envAccessed bool
 	analytics   analytics.Dispatcher
 	svcm        *model.SvcModel
 	completed   bool
@@ -130,10 +129,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
 	envDef, err := r.envDef()
-	if !r.envAccessed {
-		r.recordCompletion(err)
-		r.envAccessed = true
-	}
+	r.recordCompletion(err)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not grab environment definitions")
 	}
