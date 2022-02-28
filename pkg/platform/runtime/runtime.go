@@ -161,6 +161,7 @@ func (r *Runtime) recordCompletion(err error) {
 		logging.Debug("Not recording runtime completion as it was already recorded for this invocation")
 		return
 	}
+	r.completed = true
 	logging.Debug("Recording runtime completion: %v", err == nil)
 
 	var action string
