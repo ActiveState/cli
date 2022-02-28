@@ -58,8 +58,8 @@ func runAuth(params *auth.AuthParams, prompter prompt.Prompter, cfg keypairs.Con
 }
 
 func runSignup(prompter prompt.Prompter, cfg keypairs.Configurable) error {
-	signup := &auth.Signup{outputhelper.NewCatcher(), prompter, cfg}
-	return signup.Run()
+	signup := &auth.Signup{outputhelper.NewCatcher(), prompter, cfg, authentication.LegacyGet()}
+	return signup.Run(&auth.SignupParams{})
 }
 
 func runLogout(cfg keypairs.Configurable) error {
