@@ -71,7 +71,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 			logging.Debug("Update already in progress")
 			return false, nil
 		}
-		return false, errs.Wrap(err, "Failed to install update")
+		return false, locale.WrapError(err, "auto_update_failed")
 	}
 
 	out.Notice(locale.Tr("auto_update_relaunch"))

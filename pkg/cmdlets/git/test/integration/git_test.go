@@ -20,21 +20,18 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	gitlet "github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type GitTestSuite struct {
 	suite.Suite
-	authMock   *authMock.Mock
 	graphMock  *httpmock.HTTPMock
 	dir        string
 	anotherDir string
 }
 
 func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
-	suite.authMock = authMock.Init()
 	suite.graphMock = httpmock.Activate(api.GetServiceURL(api.ServiceGraphQL).String())
 
 	var err error
@@ -76,7 +73,6 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
-	suite.authMock.Close()
 	httpmock.DeActivate()
 
 	err := os.RemoveAll(suite.dir)
@@ -94,7 +90,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject() {
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
-func (suite *GitTestSuite) TestEnsureCorrectProject_Mistmatch() {
+func (suite *GitTestSuite) TestEnsureCorrectProject_Missmatch() {
 	owner := "not-owner"
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
