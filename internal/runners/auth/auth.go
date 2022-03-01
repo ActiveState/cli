@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -76,7 +77,9 @@ func (a *Auth) authenticate(params *AuthParams) error {
 			return locale.WrapError(err, "login_err_auth")
 		}
 	} else {
-		err := tokenAuth(params.Token)
+		err := a.Auth.AuthenticateWithModel(&mono_models.Credentials{
+			Token: params.Token,
+		})
 		if err != nil {
 			return locale.WrapError(err, "login_err_auth_token")
 		}
