@@ -187,8 +187,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		return errs.Wrap(err, "Storing JWT failed")
 	}
 
-	if credentials.Token == "" {
-		// If we didn't use an API token for authentication we'll want to create one now
+	if s.cfg.GetString(ApiTokenConfigKey) == "" {
 		if err := s.createToken(); err != nil {
 			return errs.Wrap(err, "CreateToken failed")
 		}
