@@ -51,7 +51,7 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 	cp.ExpectExitCode(0)
 
 	// still logged in?
-	c2 := ts.tagsuite.Auth)
+	c2 := ts.Spawn(tagsuite.Auth)
 	c2.Expect("You are logged in")
 	c2.ExpectExitCode(0)
 }
