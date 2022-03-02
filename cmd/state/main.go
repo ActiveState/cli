@@ -60,14 +60,12 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config after exiting systray: %w", err)
-		}
-
 		// ensure rollbar messages are called
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
+
+		events.Close("config", cfg.Close)
 
 		// exit with exitCode
 		os.Exit(exitCode)
@@ -188,7 +186,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		pjNamespace = pj.Namespace().String()
 	}
 
-	auth := authentication.LegacyGet()
+	auth := authentication.New(cfg)
+	defer events.Close("auth", auth.Close)
 
 	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
 	defer func() {

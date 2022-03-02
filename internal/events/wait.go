@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
@@ -16,6 +18,12 @@ func (et *EventsTimedOutError) Timeout() bool {
 
 func (et *EventsTimedOutError) Error() string {
 	return "timed out waiting for events"
+}
+
+func Close(name string, closer func() error) {
+	if err := closer(); err != nil {
+		logging.Warning("Failed to close %s, error: %v", name, errs.JoinMessage(err))
+	}
 }
 
 func WaitForEvents(t time.Duration, events ...func()) error {
