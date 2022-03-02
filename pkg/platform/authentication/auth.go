@@ -225,7 +225,7 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
 }
 
 func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
-	logging.Debug("AuthenticateWithDevicePolling")
+	logging.Debug("AuthenticateWithDevicePolling, polling: %v", interval.String())
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
 		err := s.AuthenticateWithDevice(deviceCode)
 		if err == nil {
