@@ -9,7 +9,6 @@ import (
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"
 	apiMock "github.com/ActiveState/cli/pkg/platform/api/mono/mock"
-	authMock "github.com/ActiveState/cli/pkg/platform/authentication/mock"
 )
 
 type Mock struct {
@@ -17,7 +16,6 @@ type Mock struct {
 	hcMock    *hcMock.Mock
 	invMock   *invMock.Mock
 	apiMock   *apiMock.Mock
-	authMock  *authMock.Mock
 	GraphMock *graphMock.Mock
 }
 
@@ -29,7 +27,6 @@ func Init() *Mock {
 		hcMock.Init(),
 		invMock.Init(),
 		apiMock.Init(),
-		authMock.Init(),
 		graphMock.Init(),
 	}
 }
@@ -39,12 +36,10 @@ func (m *Mock) Close() {
 	m.hcMock.Close()
 	m.invMock.Close()
 	m.apiMock.Close()
-	m.authMock.Close()
 	m.GraphMock.Close()
 }
 
 func (m *Mock) MockFullRuntime() {
-	m.authMock.MockLoggedin()
 	m.apiMock.MockSignS3URI()
 	m.invMock.MockOrderRecipes()
 	m.invMock.MockPlatforms()

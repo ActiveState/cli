@@ -44,7 +44,7 @@ type LoginWithGithubFound struct {
 }
 
 func (o *LoginWithGithubFound) Error() string {
-	return fmt.Sprintf("[GET /githubLogin][%d] loginWithGithubFound ", 302)
+	return fmt.Sprintf("[GET /oauth/github/login][%d] loginWithGithubFound ", 302)
 }
 
 func (o *LoginWithGithubFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

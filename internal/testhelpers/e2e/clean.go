@@ -25,7 +25,7 @@ func cleanUser(t *testing.T, username string) error {
 
 	err := auth.AuthenticateWithCredentials(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
-	})
+	}, authentication.LegacyGet())
 	if err != nil {
 		return err
 	}
@@ -79,4 +79,3 @@ func deleteUser(name string) error {
 
 	return nil
 }
-

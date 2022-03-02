@@ -120,6 +120,9 @@ const ForceUpdateEnvVarName = "ACTIVESTATE_FORCE_UPDATE"
 // ShimEnvVarName is used to instruct State Tool that it's being executed as part of a shim
 const ShimEnvVarName = "ACTIVESTATE_SHIM"
 
+// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
+const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -351,6 +354,9 @@ const SvcConfigPort = "svc-port"
 
 // SvcConfigPid is the config key used for storing the svc pid
 const SvcConfigPid = "svc-pid"
+
+// UnstableConfig is the config key used to determine if a command is unstable
+const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"

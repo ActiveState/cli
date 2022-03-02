@@ -2,26 +2,34 @@ package auth
 
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type Signup struct {
 	output.Outputer
 	prompt.Prompter
 	keypairs.Configurable
+	*authentication.Auth
 }
 
 func NewSignup(prime primeable) *Signup {
-	return &Signup{prime.Output(), prime.Prompt(), prime.Config()}
+	return &Signup{prime.Output(), prime.Prompt(), prime.Config(), prime.Auth()}
 }
 
-func (s *Signup) Run() error {
-	err := authlet.Signup(s.Configurable, s.Outputer, s.Prompter)
-	if err != nil {
-		return err
+func (s *Signup) Run(params *SignupParams) error {
+	logging.Debug("Running signup")
+
+	if s.Auth.Authenticated() {
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", s.Auth.WhoAmI())
 	}
 
-	return nil
+	if !params.Interactive {
+		return authlet.AuthenticateWithBrowser(s.Outputer, s.Auth, s.Prompter) // user can sign up from this page too
+	}
+	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter, s.Auth)
 }

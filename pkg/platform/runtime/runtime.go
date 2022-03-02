@@ -31,9 +31,9 @@ import (
 type Runtime struct {
 	target      setup.Targeter
 	store       *store.Store
-	envAccessed bool
 	analytics   analytics.Dispatcher
 	svcm        *model.SvcModel
+	completed   bool
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -95,7 +95,10 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error
 	go func() {
-		defer prod.Close()
+		defer func() {
+			r.recordCompletion(setupErr)
+			prod.Close()
+		}()
 
 		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
@@ -126,17 +129,7 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
 	envDef, err := r.envDef()
-	if !r.envAccessed {
-		if err != nil {
-			r.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActRuntimeFailure, anaConsts.LblRtFailEnv)
-		} else {
-			r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeSuccess)
-			if r.target.Trigger().IndicatesUsage() {
-				r.recordUsage()
-			}
-		}
-		r.envAccessed = true
-	}
+	r.recordCompletion(err)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not grab environment definitions")
 	}
@@ -159,7 +152,34 @@ func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error
 	return env, nil
 }
 
+func (r *Runtime) recordCompletion(err error) {
+	if r.completed {
+		logging.Debug("Not recording runtime completion as it was already recorded for this invocation")
+		return
+	}
+	r.completed = true
+	logging.Debug("Recording runtime completion: %v", err == nil)
+
+	var action string
+	if err != nil {
+		action = anaConsts.ActRuntimeFailure
+		if locale.IsInputError(err) {
+			action = anaConsts.ActRuntimeUserFailure
+		}
+	} else {
+		action = anaConsts.ActRuntimeSuccess
+		r.recordUsage()
+	}
+
+	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv)
+}
+
 func (r *Runtime) recordUsage() {
+	if !r.target.Trigger().IndicatesUsage() {
+		logging.Debug("Not recording usage as %s is not a usage trigger", r.target.Trigger().String())
+		return
+	}
+
 	dims := &dimensions.Values{
 		Trigger:          p.StrP(r.target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -34,6 +35,8 @@ type ErrUnauthorized struct{ *locale.LocalizedError }
 
 type ErrTokenRequired struct{ *locale.LocalizedError }
 
+var errNotYetGranted = locale.NewInputError("err_auth_device_noauth")
+
 // Auth is the base structure used to record the authenticated state
 type Auth struct {
 	client      *mono_client.Mono
@@ -49,8 +52,12 @@ type Configurable interface {
 	Close() error
 }
 
+const ApiTokenConfigKey = "apiToken"
+
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
+	logging.Debug("LegacyGet")
+
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
@@ -82,25 +89,24 @@ func ClientAuth() runtime.ClientAuthInfoWriter {
 
 // Reset clears the cache
 func Reset() {
+	logging.Debug("Resetting")
 	persist = nil
-}
-
-// Logout will remove the stored apiToken
-func Logout() {
-	LegacyGet().Logout()
-	Reset()
 }
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
+	logging.Debug("New Auth")
+
 	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
 	}
 
-	if availableAPIToken(cfg) != "" {
+	if auth.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
-		auth.Authenticate()
+		if err := auth.Authenticate(); err != nil {
+			logging.Error("Failed to authenticate: %v", errs.JoinMessage(err))
+		}
 	}
 
 	return auth
@@ -115,6 +121,7 @@ func (s *Auth) Close() error {
 
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
+	logging.Debug("Auth status: %v", s.clientAuth != nil)
 	return s.clientAuth != nil
 }
 
@@ -146,7 +153,7 @@ func (s *Auth) Authenticate() error {
 		return nil
 	}
 
-	apiToken := availableAPIToken(s.cfg)
+	apiToken := s.AvailableAPIToken()
 	if apiToken == "" {
 		return locale.NewInputError("err_no_credentials")
 	}
@@ -156,6 +163,8 @@ func (s *Auth) Authenticate() error {
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
 func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error {
+	logging.Debug("AuthenticateWithModel")
+
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
 
@@ -177,21 +186,13 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
-	defer s.updateRollbarPerson()
 
-	payload := loginOK.Payload
-	s.user = payload.User
-	s.bearerToken = payload.Token
-	clientAuth := httptransport.BearerToken(s.bearerToken)
-	s.clientAuth = &clientAuth
+	if err := s.updateSession(loginOK.Payload); err != nil {
+		return errs.Wrap(err, "Storing JWT failed")
+	}
 
-	if credentials.Token != "" {
-		setErr := s.cfg.Set("apiToken", credentials.Token)
-		if setErr != nil {
-			return errs.Wrap(err, "Could not set API token credentials in config")
-		}
-	} else {
-		if err := s.CreateToken(); err != nil {
+	if s.cfg.GetString(ApiTokenConfigKey) == "" {
+		if err := s.createToken(); err != nil {
 			return errs.Wrap(err, "CreateToken failed")
 		}
 	}
@@ -199,8 +200,56 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
+	logging.Debug("AuthenticateWithDevice")
+
+	token, err := model.CheckDeviceAuthorization(deviceCode)
+	if err != nil {
+		return errs.Wrap(err, "Authorization failed")
+	}
+
+	if token == nil {
+		return errNotYetGranted
+	}
+
+	if err := s.updateSession(token); err != nil {
+		return errs.Wrap(err, "Storing JWT failed")
+	}
+
+	if err := s.createToken(); err != nil {
+		return errs.Wrap(err, "CreateToken failed")
+	}
+
+	return nil
+
+}
+
+func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
+	logging.Debug("AuthenticateWithDevicePolling")
+	for start := time.Now(); time.Since(start) < 5*time.Minute; {
+		err := s.AuthenticateWithDevice(deviceCode)
+		if err == nil {
+			return nil
+		} else if !errors.Is(err, errNotYetGranted) {
+			return errs.Wrap(err, "Device authentication failed")
+		}
+		time.Sleep(interval) // then try again
+	}
+
+	return locale.NewInputError("err_auth_device_timeout")
+}
+
+// AuthenticateWithToken will try to authenticate using the given token
+func (s *Auth) AuthenticateWithToken(token string) error {
+	logging.Debug("AuthenticateWithToken")
+	return s.AuthenticateWithModel(&mono_models.Credentials{
+		Token: token,
+	})
+}
+
 // AuthenticateWithUser will try to authenticate using the given credentials
 func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
+	logging.Debug("AuthenticateWithUser")
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Username: username,
 		Password: password,
@@ -208,11 +257,17 @@ func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
 	})
 }
 
-// AuthenticateWithToken will try to authenticate using the given token
-func (s *Auth) AuthenticateWithToken(token string) error {
-	return s.AuthenticateWithModel(&mono_models.Credentials{
-		Token: token,
-	})
+// updateSession authenticates with the given access token obtained via a Platform
+// API request and response (e.g. username/password loging or device authentication).
+func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
+	defer s.updateRollbarPerson()
+
+	s.user = accessToken.User
+	s.bearerToken = accessToken.Token
+	clientAuth := httptransport.BearerToken(s.bearerToken)
+	s.clientAuth = &clientAuth
+
+	return nil
 }
 
 // WhoAmI returns the username of the currently authenticated user, or an empty string if not authenticated
@@ -253,15 +308,25 @@ func (s *Auth) UserID() *strfmt.UUID {
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance
-func (s *Auth) Logout() {
-	err := s.cfg.Set("apiToken", "")
+func (s *Auth) Logout() error {
+	logging.Debug("Logging out")
+
+	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
+		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
+
 	s.client = nil
 	s.clientAuth = nil
 	s.bearerToken = ""
 	s.user = nil
+
+	// This is a bit of a hack, but it's safe to assume that the global legacy use-case should be reset whenever we logout a specific instance
+	// Handling it any other way would be far too error-prone by comparison
+	Reset()
+
+	return nil
 }
 
 // Client will return an API client that has authentication set up
@@ -289,8 +354,8 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	return s.client, nil
 }
 
-// CreateToken will create an API token for the current authenticated user
-func (s *Auth) CreateToken() error {
+// createToken will create an API token for the current authenticated user
+func (s *Auth) createToken() error {
 	client, err := s.ClientSafe()
 	if err != nil {
 		return err
@@ -319,7 +384,7 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	err = s.cfg.Set("apiToken", token)
+	err = s.cfg.Set(ApiTokenConfigKey, token)
 	if err != nil {
 		return locale.WrapError(err, "err_set_token", "Could not set token in config")
 	}
@@ -345,7 +410,11 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	return tokenOK.Payload.Token, nil
 }
 
-func availableAPIToken(cfg Configurable) string {
+func (s *Auth) AvailableAPIToken() (v string) {
+	defer func() {
+		logging.Debug("Available API token: %v", v != "")
+	}()
+
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
@@ -359,5 +428,5 @@ func availableAPIToken(cfg Configurable) string {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}
-	return cfg.GetString("apiToken")
+	return s.cfg.GetString(ApiTokenConfigKey)
 }

@@ -36,6 +36,8 @@ type ClientService interface {
 
 	DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBranchOK, error)
 
+	EditTag(params *EditTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditTagOK, error)
+
 	GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBranchOK, error)
 
 	GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCheckpointOK, error)
@@ -55,6 +57,8 @@ type ClientService interface {
 	MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MergeBranchOK, error)
 
 	MergeCommits(params *MergeCommitsParams, opts ...ClientOption) (*MergeCommitsOK, *MergeCommitsNoContent, error)
+
+	RemoveTag(params *RemoveTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveTagOK, error)
 
 	UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBranchOK, error)
 
@@ -177,6 +181,47 @@ func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.Clien
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for deleteBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  EditTag edits tag
+
+  Edit a tag by org and project names, and tag label
+*/
+func (a *Client) EditTag(params *EditTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditTagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewEditTagParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "editTag",
+		Method:             "PUT",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/tags/{tagLabel}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &EditTagReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*EditTagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for editTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -568,6 +613,47 @@ func (a *Client) MergeCommits(params *MergeCommitsParams, opts ...ClientOption) 
 	}
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for version_control: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  RemoveTag removes tag
+
+  Remove a tag by org and project names, and tag label
+*/
+func (a *Client) RemoveTag(params *RemoveTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveTagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewRemoveTagParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "removeTag",
+		Method:             "DELETE",
+		PathPattern:        "/organizations/{organizationName}/projects/{projectName}/tags/{tagLabel}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &RemoveTagReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*RemoveTagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for removeTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

@@ -3,6 +3,7 @@ package target
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
@@ -35,14 +36,32 @@ const (
 )
 
 // usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
-var usageTriggers = []Trigger{TriggerActivate, TriggerScript, TriggerDeploy, TriggerExec}
-
-func (t Trigger) IndicatesUsage() bool {
-	return funk.Contains(usageTriggers, t)
+var usageTriggers = []Trigger{
+	TriggerActivate,
+	TriggerScript,
+	TriggerDeploy,
+	TriggerExec,
+	TriggerBranch,
+	TriggerImport,
+	TriggerPackage,
+	TriggerPull,
+	TriggerReset,
+	TriggerRevert,
 }
 
 func NewExecTrigger(cmd string) Trigger {
 	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
+}
+
+func (t Trigger) IndicatesUsage() bool {
+	if funk.Contains(usageTriggers, t) {
+		return true
+	}
+	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
+}
+
+func (t Trigger) IsExecTrigger() bool {
+	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
 }
 
 type ProjectTarget struct {
@@ -86,9 +105,9 @@ type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
-	dir      string
-	trigger  Trigger
-	headless bool
+	dir        string
+	trigger    Trigger
+	headless   bool
 }
 
 func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {

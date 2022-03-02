@@ -14,8 +14,8 @@ func TestTrigger_IndicatesUsage(t *testing.T) {
 			true,
 		},
 		{
-			"Import does not count as usage",
-			TriggerImport,
+			"Reset exec does not count as usage",
+			TriggerResetExec,
 			false,
 		},
 	}

@@ -97,6 +97,10 @@ func (i *Instance) Close() error {
 	return i.db.Close()
 }
 
+func (i *Instance) Closed() bool {
+	return i.closed
+}
+
 // GetThenSet updates a value at the given key. The valueF argument returns the
 // new value to set based on the previous one.  If the function returns with an error, the
 // update is cancelled.  The function ensures that no-other process or thread can modify
@@ -140,6 +144,8 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
+	logging.Debug("Setting config: %s", key)
+
 	return i.GetThenSet(key, func(_ interface{}) (interface{}, error) {
 		return value, nil
 	})
@@ -150,6 +156,8 @@ func (i *Instance) IsSet(key string) bool {
 }
 
 func (i *Instance) Get(key string) interface{} {
+	logging.Debug("Getting config: %s", key)
+
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		logging.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))

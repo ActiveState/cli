@@ -62,9 +62,6 @@ type LoginWithGithubParams struct {
 	// Code.
 	Code *string
 
-	// Error.
-	Error *string
-
 	// InviteCode.
 	InviteCode *string
 
@@ -138,17 +135,6 @@ func (o *LoginWithGithubParams) SetCode(code *string) {
 	o.Code = code
 }
 
-// WithError adds the error to the login with github params
-func (o *LoginWithGithubParams) WithError(error *string) *LoginWithGithubParams {
-	o.SetError(error)
-	return o
-}
-
-// SetError adds the error to the login with github params
-func (o *LoginWithGithubParams) SetError(error *string) {
-	o.Error = error
-}
-
 // WithInviteCode adds the inviteCode to the login with github params
 func (o *LoginWithGithubParams) WithInviteCode(inviteCode *string) *LoginWithGithubParams {
 	o.SetInviteCode(inviteCode)
@@ -202,23 +188,6 @@ func (o *LoginWithGithubParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		if qCode != "" {
 
 			if err := r.SetQueryParam("code", qCode); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.Error != nil {
-
-		// query param error
-		var qrError string
-
-		if o.Error != nil {
-			qrError = *o.Error
-		}
-		qError := qrError
-		if qError != "" {
-
-			if err := r.SetQueryParam("error", qError); err != nil {
 				return err
 			}
 		}

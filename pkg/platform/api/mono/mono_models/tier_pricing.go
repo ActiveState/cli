@@ -19,6 +19,9 @@ import (
 type TierPricing struct {
 	Tier
 
+	// price per runtime
+	PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+
 	// price per user
 	PricePerUser int64 `json:"pricePerUser,omitempty"`
 
@@ -37,6 +40,8 @@ func (m *TierPricing) UnmarshalJSON(raw []byte) error {
 
 	// AO1
 	var dataAO1 struct {
+		PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+
 		PricePerUser int64 `json:"pricePerUser,omitempty"`
 
 		TierPrice int64 `json:"tierPrice,omitempty"`
@@ -44,6 +49,8 @@ func (m *TierPricing) UnmarshalJSON(raw []byte) error {
 	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
 		return err
 	}
+
+	m.PricePerRuntime = dataAO1.PricePerRuntime
 
 	m.PricePerUser = dataAO1.PricePerUser
 
@@ -62,10 +69,14 @@ func (m TierPricing) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 	var dataAO1 struct {
+		PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+
 		PricePerUser int64 `json:"pricePerUser,omitempty"`
 
 		TierPrice int64 `json:"tierPrice,omitempty"`
 	}
+
+	dataAO1.PricePerRuntime = m.PricePerRuntime
 
 	dataAO1.PricePerUser = m.PricePerUser
 

@@ -71,8 +71,8 @@ func main() {
 			logging.Error("Failed to close config: %w", err)
 		}
 
-		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, rollbar.Close, an.Wait, logging.Close); err != nil {
-			logging.Error("state-installer failed to wait for events: %v", err)
+		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
+			logging.Warning("state-installer failed to wait for events: %v", err)
 		}
 		os.Exit(exitCode)
 	}()
