@@ -56,6 +56,8 @@ const ApiTokenConfigKey = "apiToken"
 
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
+	logging.Debug("LegacyGet")
+
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
@@ -87,17 +89,14 @@ func ClientAuth() runtime.ClientAuthInfoWriter {
 
 // Reset clears the cache
 func Reset() {
+	logging.Debug("Resetting")
 	persist = nil
-}
-
-// Logout will remove the stored apiToken
-func Logout() {
-	LegacyGet().Logout()
-	Reset()
 }
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
+	logging.Debug("New Auth")
+
 	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
@@ -105,7 +104,9 @@ func New(cfg Configurable) *Auth {
 
 	if auth.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
-		auth.Authenticate()
+		if err := auth.Authenticate(); err != nil {
+			logging.Error("Failed to authenticate: %v", errs.JoinMessage(err))
+		}
 	}
 
 	return auth
@@ -120,6 +121,7 @@ func (s *Auth) Close() error {
 
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
+	logging.Debug("Auth status: %v", s.clientAuth != nil)
 	return s.clientAuth != nil
 }
 
@@ -161,6 +163,8 @@ func (s *Auth) Authenticate() error {
 
 // AuthenticateWithModel will try to authenticate using the given swagger model
 func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error {
+	logging.Debug("AuthenticateWithModel")
+
 	params := authentication.NewPostLoginParams()
 	params.SetCredentials(credentials)
 
@@ -196,7 +200,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
-func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Duration) error {
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
+	logging.Debug("AuthenticateWithDevice")
+
 	token, err := model.CheckDeviceAuthorization(deviceCode)
 	if err != nil {
 		return errs.Wrap(err, "Authorization failed")
@@ -219,8 +225,9 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID, interval time.Dura
 }
 
 func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
+	logging.Debug("AuthenticateWithDevicePolling")
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
-		err := s.AuthenticateWithDevice(deviceCode, interval)
+		err := s.AuthenticateWithDevice(deviceCode)
 		if err == nil {
 			return nil
 		} else if !errors.Is(err, errNotYetGranted) {
@@ -234,6 +241,7 @@ func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval ti
 
 // AuthenticateWithToken will try to authenticate using the given token
 func (s *Auth) AuthenticateWithToken(token string) error {
+	logging.Debug("AuthenticateWithToken")
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Token: token,
 	})
@@ -241,6 +249,7 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 
 // AuthenticateWithUser will try to authenticate using the given credentials
 func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
+	logging.Debug("AuthenticateWithUser")
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Username: username,
 		Password: password,
@@ -299,15 +308,25 @@ func (s *Auth) UserID() *strfmt.UUID {
 }
 
 // Logout will destroy any session tokens and reset the current Auth instance
-func (s *Auth) Logout() {
+func (s *Auth) Logout() error {
+	logging.Debug("Logging out")
+
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
+		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
+
 	s.client = nil
 	s.clientAuth = nil
 	s.bearerToken = ""
 	s.user = nil
+
+	// This is a bit of a hack, but it's safe to assume that the global legacy use-case should be reset whenever we logout a specific instance
+	// Handling it any other way would be far too error-prone by comparison
+	Reset()
+
+	return nil
 }
 
 // Client will return an API client that has authentication set up
@@ -391,7 +410,11 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	return tokenOK.Payload.Token, nil
 }
 
-func (s *Auth) AvailableAPIToken() string {
+func (s *Auth) AvailableAPIToken() (v string) {
+	defer func() {
+		logging.Debug("Available API token: %v", v != "")
+	}()
+
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)

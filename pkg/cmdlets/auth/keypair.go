@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
@@ -22,7 +23,7 @@ func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.
 	}
 
 	if err != nil {
-		Logout(cfg)
+		authentication.New(cfg).Logout()
 		out.Error(locale.T("auth_unresolved_keypair_issue_message"))
 		return err
 	}

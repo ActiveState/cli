@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
@@ -21,6 +22,8 @@ func NewSignup(prime primeable) *Signup {
 }
 
 func (s *Signup) Run(params *SignupParams) error {
+	logging.Debug("Running signup")
+
 	if s.Auth.Authenticated() {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", s.Auth.WhoAmI())
 	}

@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
@@ -18,7 +20,12 @@ func NewLogout(prime primeable) *Logout {
 }
 
 func (l *Logout) Run() error {
-	l.Auth.Logout()
+	logging.Debug("Running logout")
+
+	if err := l.Auth.Logout(); err != nil {
+		return errs.Wrap(err, "Logout failed")
+	}
+
 	err := keypairs.DeleteWithDefaults(l.Cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_auth_logout", "Failed to delete authentication key")
