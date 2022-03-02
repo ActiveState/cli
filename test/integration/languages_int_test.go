@@ -50,7 +50,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	defer ts.Close()
 
 	username := ts.CreateNewUser()
-	cp := ts.Spawn("auth", "--username", username, "--password", username)
+	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", username)
 	cp.Expect("You are logged in")
 	cp.ExpectExitCode(0)
 	cp.MatchState().TermState.StringBeforeCursor()

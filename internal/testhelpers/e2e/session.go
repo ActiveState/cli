@@ -28,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -315,7 +316,7 @@ func (s *Session) PrepareFile(path, contents string) {
 }
 
 func (s *Session) LoginUser(userName string) {
-	p := s.Spawn("auth", "--username", userName, "--password", userName)
+	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
 
 	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
@@ -324,7 +325,7 @@ func (s *Session) LoginUser(userName string) {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
+		WithArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
 		HideCmdLine(),
 	)
@@ -334,7 +335,7 @@ func (s *Session) LoginAsPersistentUser() {
 }
 
 func (s *Session) LogoutUser() {
-	p := s.Spawn("auth", "logout")
+	p := s.Spawn(tagsuite.Auth, "logout")
 
 	p.Expect("logged out")
 	p.ExpectExitCode(0)
@@ -348,7 +349,7 @@ func (s *Session) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn("auth", "signup")
+	p := s.Spawn(tagsuite.Auth, "signup")
 
 	p.Expect("Terms of Service")
 	p.Send("y")
