@@ -144,6 +144,8 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
+	logging.Debug("Setting config: %s", key)
+
 	return i.GetThenSet(key, func(_ interface{}) (interface{}, error) {
 		return value, nil
 	})

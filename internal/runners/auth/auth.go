@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -44,6 +45,7 @@ type SignupParams struct {
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
+	logging.Debug("Running auth")
 	if !a.Authenticated() {
 		if err := a.authenticate(params); err != nil {
 			return locale.WrapError(err, "err_auth_authenticate", "Could not authenticate.")

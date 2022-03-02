@@ -26,7 +26,11 @@ import (
 )
 
 func setup(t *testing.T) {
-	authentication.Logout()
+	cfg, err := config.New()
+	assert.NoError(t, err)
+	auth := authentication.New(cfg)
+	assert.NoError(t, auth.Logout())
+
 	secretsapi_test.InitializeTestClient("bearer123")
 
 	root, err := environment.GetRootPath()

@@ -32,7 +32,8 @@ func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
 func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	logging.Debug("AuthenticateWithInput")
+	logging.Debug("Authenticating with input")
+
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
 	if err := promptForLogin(credentials, prompt); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
@@ -133,6 +134,8 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 
 // AuthenticateWithCredentials will attempt authenticate using the given credentials
 func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *authentication.Auth) error {
+	logging.Debug("Authenticating with credentials")
+
 	err := auth.AuthenticateWithModel(credentials)
 	if err != nil {
 		return err
@@ -188,6 +191,8 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 
 // AuthenticateWithBrowser attempts to authenticate this device with the Platform.
 func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
+	logging.Debug("Authenticating with browser")
+
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
@@ -225,7 +230,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 				return errs.Wrap(err, "Prompt failed")
 			}
 		}
-		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode)); err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
 	}
