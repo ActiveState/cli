@@ -25,6 +25,7 @@ import (
 type configGetter interface {
 	projectfile.ConfigGetter
 	ConfigPath() string
+	GetString(s string) string
 }
 
 type Push struct {

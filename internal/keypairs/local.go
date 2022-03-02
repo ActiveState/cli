@@ -17,6 +17,8 @@ import (
 type Configurable interface {
 	ConfigPath() string
 	Close() error
+	Set(s string, i interface{}) error
+	GetString(s string) string
 }
 
 // Load will attempt to load a Keypair using private and public-key files from
@@ -111,6 +113,7 @@ func loadAndParseKeypair(keyFilename string) (Keypair, error) {
 
 func hasKeyOverride() bool {
 	if os.Getenv(constants.PrivateKeyEnvVarName) != "" {
+		logging.Debug("Has key override from env")
 		return true
 	}
 
@@ -119,6 +122,7 @@ func hasKeyOverride() bool {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
+		logging.Debug("Has key override from gcloud")
 		return true
 	}
 
