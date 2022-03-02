@@ -42,7 +42,7 @@ func findExes(executable string, PATH string, exts []string, fileExists func(str
 	for _, p := range candidates {
 		for _, ext := range exts {
 			fp := filepath.Clean(filepath.Join(p, executable+ext))
-			if fileExists(fp) && (filter == nil || filter(fp)) {
+			if fileExists(fp) && !fileutils.IsDir(fp) && (filter == nil || filter(fp)) {
 				result = append(result, fp)
 			}
 		}
