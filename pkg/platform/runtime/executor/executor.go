@@ -170,6 +170,10 @@ func (f *Executor) createExecutor(exe string) error {
 }
 
 func IsExecutor(filePath string) (bool, error) {
+	if fileutils.IsDir(filePath) {
+		return false, nil
+	}
+	
 	b, err := fileutils.ReadFile(filePath)
 	if err != nil {
 		return false, locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", filePath)
