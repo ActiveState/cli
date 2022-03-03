@@ -1824,3 +1824,5 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+err_get_config:
+  other: "Could create new config instance"

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -31,9 +32,14 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
 
-	gql := graphql.New()
+	cfg, err := config.New()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_config")
+	}
+
+	gql := graphql.New(authentication.New(cfg))
 	response := model.Projects{}
-	err := gql.Run(request, &response)
+	err = gql.Run(request, &response)
 	if err != nil {
 		return nil, errs.Wrap(err, "GraphQL request failed")
 	}
