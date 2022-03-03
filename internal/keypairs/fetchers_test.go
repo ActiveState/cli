@@ -7,6 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -19,12 +20,16 @@ type KeypairFetcherTestSuite struct {
 	suite.Suite
 
 	secretsClient *secretsapi.Client
+	cfg           keypairs.Configurable
 }
 
 func (suite *KeypairFetcherTestSuite) BeforeTest(suiteName, testName string) {
 	secretsClient := secretsapi_test.NewDefaultTestClient("bearing123")
 	suite.Require().NotNil(secretsClient)
 	suite.secretsClient = secretsClient
+	var err error
+	suite.cfg, err = config.New()
+	suite.NoError(err)
 
 	httpmock.Activate(secretsClient.BaseURI)
 }
@@ -35,7 +40,7 @@ func (suite *KeypairFetcherTestSuite) AfterTest(suiteName, testName string) {
 
 func (suite *KeypairFetcherTestSuite) TestFetch_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
-	kp, err := keypairs.Fetch(suite.secretsClient, "")
+	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
 	suite.Nil(kp)
 	suite.Error(err)
 }
@@ -45,28 +50,28 @@ func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
 		return 200, "keypair-unparseable"
 	})
 
-	kp, err := keypairs.Fetch(suite.secretsClient, "")
+	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
 	suite.Nil(kp)
 	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetch_Success() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
-	kp, err := keypairs.Fetch(suite.secretsClient, "")
+	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
 	suite.Require().Nil(err)
 	suite.IsType(&keypairs.RSAKeypair{}, kp)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
-	kp, err := keypairs.FetchRaw(suite.secretsClient)
+	kp, err := keypairs.FetchRaw(suite.secretsClient, suite.cfg)
 	suite.Nil(kp)
 	suite.Error(err)
 }
 
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_Success() {
 	httpmock.RegisterWithCode("GET", "/keypair", 200)
-	kp, err := keypairs.FetchRaw(suite.secretsClient)
+	kp, err := keypairs.FetchRaw(suite.secretsClient, suite.cfg)
 	suite.Require().Nil(err)
 	suite.IsType(&secrets_models.Keypair{}, kp)
 }
