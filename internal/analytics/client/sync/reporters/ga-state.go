@@ -90,6 +90,6 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"16": p.PStr(d.Trigger),
 		"17": p.PStr(d.InstanceID),
 		"18": p.PStr(d.Headless),
-		//"19": p.PStr(d.CommitID), (deprecated)
+		"19": p.PStr(d.CommitID),
 	}
 }

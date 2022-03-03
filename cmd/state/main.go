@@ -181,15 +181,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 	}
 
-	pjNamespace := ""
-	if pj != nil {
-		pjNamespace = pj.Namespace().String()
-	}
-
 	auth := authentication.New(cfg)
 	defer events.Close("auth", auth.Close)
 
-	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
+	an := anAsync.New(svcm, cfg, auth, out, pj)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
