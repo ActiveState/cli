@@ -63,6 +63,7 @@ func NewRoundTripper() http.RoundTripper {
 	return NewRoundTripperWithTransport(http.DefaultTransport)
 }
 
+// NewRoundTripperWithTransport creates a new instance of RoundTripper with the specified transport.
 func NewRoundTripperWithTransport(transport http.RoundTripper) http.RoundTripper {
 	return &RoundTripper{transport}
 }
