@@ -65,7 +65,6 @@ func newError(message string, wrapTarget error) *WrapperError {
 // New creates a new error, similar to errors.New
 func New(message string, args ...interface{}) *WrapperError {
 	msg := fmt.Sprintf(message, args...)
-	logging.Debug("Created error: %v", msg)
 	return newError(msg, nil)
 }
 

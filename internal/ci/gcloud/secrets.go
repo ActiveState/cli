@@ -32,7 +32,6 @@ func GetSecret(name string) (tkn string, err error) {
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		// gcloud does not expose the error type for "no credentials", so we're going to assume any error is a not available error
-		logging.Debug("Gcloud Secretmanager failed to initialize (ignore if you're not trying to use gcloud): %v", err)
 		return "", fmt.Errorf("failed to create gcloud secretmanager client: %v %w", err, ErrNotAvailable{})
 	}
 
