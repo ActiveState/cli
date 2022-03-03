@@ -2,7 +2,9 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"log"
+	"net"
 	"net/http"
 	"reflect"
 
@@ -16,13 +18,15 @@ import (
 )
 
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information
-type RoundTripper struct{}
+type RoundTripper struct {
+	transport *http.Transport
+}
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", r.UserAgent())
 	req.Header.Set("X-Requestor", machineid.UniqID())
-	return http.DefaultTransport.RoundTrip(req)
+	return r.transport.RoundTrip(req)
 }
 
 // UserAgent returns the user agent used by the State Tool
@@ -58,7 +62,16 @@ func (r *RoundTripper) UserAgent() string {
 
 // NewRoundTripper creates a new instance of RoundTripper
 func NewRoundTripper() http.RoundTripper {
-	return &RoundTripper{}
+	// Force use of IPv4. This is needed particularly for device authorization, which compares the IP
+	// address of the State Tool request and the IP address of the web client request. If there's a
+	// mismatch, authorization fails. When this happens, it's often because the State Tool connects to
+	// the Platform via IPv6, but the browser does via IPv4 (browsers apparently prefer IPv4 for now).
+	var dialer net.Dialer
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return dialer.DialContext(ctx, "tcp4", addr)
+	}
+	return &RoundTripper{transport} // or http.DefaultTransport.(*http.Transport) for allowing IPv6
 }
 
 // ErrorCode tries to retrieve the code associated with an API error
