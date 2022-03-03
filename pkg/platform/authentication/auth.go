@@ -66,6 +66,9 @@ func LegacyGet() *Auth {
 			os.Exit(1)
 		}
 		persist = New(cfg)
+		if err := persist.Sync(); err != nil {
+			logging.Warning("Could not sync authenticated state: %s", err.Error())
+		}
 	}
 	return persist
 }
@@ -102,14 +105,17 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
-	if auth.AvailableAPIToken() != "" {
+	return auth
+}
+
+func (s *Auth) Sync() error {
+	if s.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
-		if err := auth.Authenticate(); err != nil {
-			logging.Error("Failed to authenticate: %v", errs.JoinMessage(err))
+		if err := s.Authenticate(); err != nil {
+			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
 	}
-
-	return auth
+	return nil
 }
 
 func (s *Auth) Close() error {

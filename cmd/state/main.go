@@ -189,6 +189,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	auth := authentication.New(cfg)
 	defer events.Close("auth", auth.Close)
 
+	if err := auth.Sync(); err != nil {
+		logging.Warning("Could not sync authenticated state: %s", err.Error())
+	}
+
 	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {

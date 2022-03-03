@@ -93,7 +93,8 @@ func run(cfg *config.Instance) (rerr error) {
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	an := anaSvc.New(cfg, authentication.LegacyGet())
+	auth := authentication.New(cfg)
+	an := anaSvc.New(cfg, auth)
 	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
@@ -149,6 +150,9 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
+				if err := auth.Sync(); err != nil {
+					logging.Warning("Could not sync authenticated state: %s", err.Error())
+				}
 				return runForeground(cfg, an)
 			},
 		),
