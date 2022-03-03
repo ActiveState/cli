@@ -29,7 +29,6 @@ func setup(t *testing.T) {
 	cfg, err := config.New()
 	assert.NoError(t, err)
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	assert.NoError(t, auth.Logout())
 
 	secretsapi_test.InitializeTestClient("bearer123")
@@ -91,7 +90,6 @@ func TestRequireAuthenticationLogin(t *testing.T) {
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 
 	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
@@ -118,7 +116,6 @@ func TestRequireAuthenticationLoginFail(t *testing.T) {
 	pmock.OnMethod("Input").Once().Return("Iammeanttoerr", nil)
 	pmock.OnMethod("InputSecret").Once().Return(user.Password, nil)
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 	err = authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
 
@@ -158,7 +155,6 @@ func TestRequireAuthenticationSignup(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
 
@@ -191,7 +187,6 @@ func TestRequireAuthenticationSignupBrowser(t *testing.T) {
 	defer func() { require.NoError(t, cfg.Close()) }()
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
 
@@ -225,7 +220,6 @@ func TestRequireAuthenticationSignupBrowserTimeout(t *testing.T) {
 	defer func() { require.NoError(t, cfg.Close()) }()
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_signup_browser_action"), nil)
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 	err = authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
 
@@ -260,7 +254,6 @@ func TestRequireAuthenticationLoginBrowser(t *testing.T) {
 	defer func() { require.NoError(t, cfg.Close()) }()
 	pmock.OnMethod("Select").Once().Return(locale.T("prompt_login_browser_action"), nil)
 	auth := authentication.New(cfg)
-	assert.NoError(t, auth.Sync())
 	defer auth.Close()
 	authlet.RequireAuthentication("", cfg, outputhelper.NewCatcher(), pmock, auth)
 
