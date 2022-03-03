@@ -6,9 +6,10 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func New(auth *authentication.Auth) *gqlclient.Client {
+func New() *gqlclient.Client {
 	url := api.GetServiceURL(api.ServiceGraphQL)
 	c := gqlclient.New(url.String(), 0)
-	c.SetTokenProvider(auth)
+	authentication.Reset()
+	c.SetTokenProvider(authentication.LegacyGet())
 	return c
 }

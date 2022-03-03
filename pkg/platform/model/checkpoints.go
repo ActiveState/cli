@@ -4,12 +4,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -77,14 +75,9 @@ func FetchCheckpointForCommit(commitID strfmt.UUID) ([]*gqlModel.Requirement, st
 
 	request := request.CheckpointByCommit(commitID)
 
-	cfg, err := config.New()
-	if err != nil {
-		return nil, strfmt.DateTime{}, locale.WrapError(err, "err_get_config")
-	}
-
-	gql := graphql.New(authentication.New(cfg))
+	gql := graphql.New()
 	response := gqlModel.Checkpoint{}
-	err = gql.Run(request, &response)
+	err := gql.Run(request, &response)
 	if err != nil {
 		return nil, strfmt.DateTime{}, errs.Wrap(err, "gql.Run failed")
 	}

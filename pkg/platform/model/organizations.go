@@ -6,7 +6,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -110,14 +109,9 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 	ids = funk.Uniq(ids).([]strfmt.UUID)
 	request := request.OrganizationsByIDs(ids)
 
-	cfg, err := config.New()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_get_config")
-	}
-
-	gql := graphql.New(authentication.New(cfg))
+	gql := graphql.New()
 	response := model.Organizations{}
-	err = gql.Run(request, &response)
+	err := gql.Run(request, &response)
 	if err != nil {
 		return nil, errs.Wrap(err, "gql.Run failed")
 	}
