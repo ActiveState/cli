@@ -351,7 +351,7 @@ func (s *Session) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn("auth", "signup")
+	p := s.Spawn("auth", "signup", "--interactive")
 
 	p.Expect("Terms of Service")
 	p.Send("y")
