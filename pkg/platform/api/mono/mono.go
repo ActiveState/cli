@@ -44,14 +44,8 @@ func Init(serviceURL *url.URL, auth *runtime.ClientAuthInfoWriter) *mono_client.
 	// the web client request. If there's a mismatch, authorization fails. When this happens, it's
 	// often because the State Tool connects to the Platform via IPv6, but the browser does via IPv4
 	// (browsers apparently prefer IPv4 for now).
-
-	httpTransport, ok := http.DefaultTransport.(*http.Transport)
-	if !ok {
-		return client // for some reason the assertion can fail...
-	}
-
 	ipv4PreferredTransportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
-	ipv4PreferredTransport := httpTransport.Clone()
+	ipv4PreferredTransport := http.DefaultTransport.(*http.Transport).Clone()
 	ipv4PreferredTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		dialer := &net.Dialer{}
 		if conn, err := dialer.DialContext(ctx, "tcp4", addr); conn != nil {
