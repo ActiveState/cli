@@ -55,7 +55,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 
 	if auth.Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
-			return locale.WrapError(err, "keypair_err_save")
+			return locale.WrapError(err, "keypair_err_generate")
 		}
 	}
 
@@ -212,6 +212,10 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 	}, auth)
 	if err != nil {
 		return err
+	}
+
+	if err := auth.CreateToken(); err != nil {
+		return locale.WrapError(err, "err_auth_token")
 	}
 
 	out.Notice(locale.T("signup_success", map[string]string{

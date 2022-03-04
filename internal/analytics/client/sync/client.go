@@ -134,8 +134,6 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 		return
 	}
 
-	logging.Debug("Reporting event to %d reporters: %s, %s, %s", len(a.reporters), category, action, label)
-
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {
 			logging.Debug(

@@ -109,6 +109,7 @@ scripts:
       set -e
       $constants.SET_ENV
       export GOOS=${1}
+      export GOARCH=amd64
       [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
       go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-svc
@@ -290,6 +291,39 @@ scripts:
       GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
       GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
       GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
+  -
+    name: update-workflow-assets
+    language: bash
+    description: Generates our github workflows
+    value: |
+      [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
+      
+      tmpDir=$(mktemp -d)
+      pushd $tmpDir
+      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
+      tar xzf state-darwin-amd64-${2}.tar.gz
+      cp -Rfv state-install/bin/state $project.path()/.github/deps/macOS/bin
+      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
+      popd
+      rm -Rf $tmpDir
+      
+      tmpDir=$(mktemp -d)
+      pushd $tmpDir
+      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
+      tar xzf state-linux-amd64-${2}.tar.gz
+      cp -Rfv state-install/bin/state $project.path()/.github/deps/Linux/bin
+      cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
+      popd
+      rm -Rf $tmpDir
+      
+      tmpDir=$(mktemp -d)
+      pushd $tmpDir
+      wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
+      unzip state-windows-amd64-${2}.zip
+      cp -Rfv state-install/bin/state.exe $project.path()/.github/deps/Windows/bin
+      cp -Rfv state-install/bin/state-svc.exe $project.path()/.github/deps/Windows/bin
+      popd
+      rm -Rf $tmpDir
   - name: test
     language: bash
     description: Runs unit tests (not integration tests)
