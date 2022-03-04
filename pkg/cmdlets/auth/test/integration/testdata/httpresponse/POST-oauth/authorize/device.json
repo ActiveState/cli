@@ -1,7 +1,0 @@
-{
-  "device_code": "aa8c280e-898f-4991-bdb1-3ee7754e7fd6",
-  "expires_in": "300",
-  "interval": 5,
-  "user_code": "4da1c38a-33f1-4358-90d4-8a431b599768",
-  "verification_uri_complete": "https://platform.activestate.com/authorize/device?user-code=4da1c38a-33f1-4358-90d4-8a431b599768"
-}
