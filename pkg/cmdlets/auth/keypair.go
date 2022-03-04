@@ -35,7 +35,7 @@ func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.
 func generateKeypairForUser(cfg keypairs.Configurable, passphrase string) error {
 	_, err := keypairs.GenerateAndSaveEncodedKeypair(cfg, secretsapi.Get(), passphrase, constants.DefaultRSABitLength)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not generate and save encoded keypair.")
 	}
 	return nil
 }

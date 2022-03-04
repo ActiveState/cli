@@ -1,6 +1,7 @@
 package keypairs
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -70,13 +71,13 @@ func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) 
 	} else {
 		encodedPrivateKey, err = keypair.EncryptAndEncodePrivateKey(passphrase)
 		if err != nil {
-			return nil, err
+			return nil, errs.Wrap(err, "Could not encrypt encoded private key")
 		}
 	}
 
 	encodedPublicKey, err := keypair.EncodePublicKey()
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not encode public key")
 	}
 
 	return &EncodedKeypair{
@@ -91,7 +92,7 @@ func EncodeKeypair(keypair Keypair, passphrase string) (*EncodedKeypair, error) 
 func GenerateEncodedKeypair(passphrase string, bits int) (*EncodedKeypair, error) {
 	keypair, err := GenerateRSA(bits)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not generate RSA")
 	}
 	return EncodeKeypair(keypair, passphrase)
 }
@@ -117,12 +118,13 @@ func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encK
 // otherwise a Failure is returned.
 func GenerateAndSaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, passphrase string, bits int) (*EncodedKeypair, error) {
 	encodedKeypair, err := GenerateEncodedKeypair(passphrase, bits)
-	if err == nil {
-		err = SaveEncodedKeypair(cfg, secretsClient, encodedKeypair)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not generate encoded keypair")
 	}
 
+	err = SaveEncodedKeypair(cfg, secretsClient, encodedKeypair)
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not save encoded keypair")
 	}
 	return encodedKeypair, nil
 }
