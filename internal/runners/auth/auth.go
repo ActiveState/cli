@@ -41,11 +41,15 @@ type AuthParams struct {
 
 func (p AuthParams) verify() error {
 	if p.Username != "" && p.Password == "" {
-		return locale.NewInputError("err_auth_invalid_username_flag", "[ACTIONABLE]--username[/RESET] flag requires [ACTIONABLE]--password[/RESET] flag")
+		return locale.NewInputError("err_auth_invalid_username_param", "[ACTIONABLE]--username[/RESET] flag requires [ACTIONABLE]--password[/RESET] flag")
 	}
 
 	if p.Username == "" && p.Password != "" {
 		return locale.NewInputError("err_auth_invalid_password_param", "[ACTIONABLLE]--password[/RESET] flag requires [ACTIONABLE]--username[/RESET] flag")
+	}
+
+	if p.Totp != "" && (p.Username == "" || p.Password == "") {
+		return locale.WrapInputError("err_auth_invalid_totp_param", "[ACTIONABLE]--totp[/RESET] flag requires both [ACTIONABLE]--username[/RESET] and [ACTIONABLE]--password[/RESET] flags", args ...string)
 	}
 
 	return nil
@@ -88,7 +92,7 @@ func (a *Auth) Run(params *AuthParams) error {
 }
 
 func (a *Auth) authenticate(params *AuthParams) error {
-	if params.Interactive || params.Username != "" || params.Totp != "" {
+	if params.Interactive || params.Username != "" {
 		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
