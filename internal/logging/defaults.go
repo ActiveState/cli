@@ -126,6 +126,5 @@ func init() {
 		}
 	}
 
-	Debug("\n------------------------\n")
 	Debug("Args: %v", os.Args)
 }

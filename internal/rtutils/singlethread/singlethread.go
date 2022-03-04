@@ -3,8 +3,6 @@ package singlethread
 import (
 	"fmt"
 	"sync"
-
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 type callback struct {
@@ -53,9 +51,6 @@ func (t *Thread) Run(funcToCall func() error) error {
 }
 
 func (t *Thread) Close() {
-	logging.Debug("Closing")
-	defer logging.Debug("Closed")
-
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 

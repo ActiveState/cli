@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/gofrs/flock"
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -97,12 +96,10 @@ func (l *fileHandler) SetConfig(cfg config) {
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	var a []interface{}
-	a = append(a, args)
 	e := entry{
 		ctx:     ctx,
 		message: message,
-		args:    a,
+		args:    args,
 	}
 	select {
 	case <-l.quit:
@@ -119,7 +116,6 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		return // disabled while I'm testing
 		isPublicChannel := (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch)
 
 		// All rollbar errors I observed are prefixed with "Rollbar"
@@ -206,25 +202,6 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 		}
 	}
 
-	l.writeCentral(message)
-}
-
-func (l *fileHandler) writeCentral(v string) {
-	logfile := FilePathFor("central.log")
-	v = fmt.Sprintf("(%s PID %d) %s\n", FileNamePrefix(), os.Getpid(), v)
-
-	lock := flock.New(logfile + ".lock")
-	if err := lock.Lock(); err != nil {
-		panic(fmt.Sprintf("Lock failed: %v", err))
-	}
-	defer lock.Unlock()
-
-	f, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModePerm)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer f.Close()
-	f.WriteString(v)
 }
 
 // Printf satifies a Logger interface allowing us to funnel our

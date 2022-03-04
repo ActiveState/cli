@@ -56,8 +56,6 @@ const ApiTokenConfigKey = "apiToken"
 
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
-	logging.Debug("LegacyGet")
-
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
@@ -92,14 +90,11 @@ func ClientAuth() runtime.ClientAuthInfoWriter {
 
 // Reset clears the cache
 func Reset() {
-	logging.Debug("Resetting")
 	persist = nil
 }
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
-	logging.Debug("New Auth")
-
 	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
@@ -127,7 +122,6 @@ func (s *Auth) Close() error {
 
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
-	logging.Debug("Auth status: %v", s.clientAuth != nil)
 	return s.clientAuth != nil
 }
 
@@ -315,8 +309,6 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() error {
-	logging.Debug("Logging out")
-
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
@@ -417,10 +409,6 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	defer func() {
-		logging.Debug("Available API token: %v", v != "")
-	}()
-
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)

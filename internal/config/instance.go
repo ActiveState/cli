@@ -83,9 +83,6 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 }
 
 func (i *Instance) Close() error {
-	logging.Debug("Closing")
-	defer logging.Debug("Closed")
-
 	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
