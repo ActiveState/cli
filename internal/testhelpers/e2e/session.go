@@ -99,25 +99,28 @@ func (s *Session) ExecutablePath() string {
 	return s.Exe
 }
 
-func (s *Session) copyExeToBinDir(executable string) string {
-	binExe := filepath.Join(s.Dirs.Bin, filepath.Base(executable))
-	if fileutils.TargetExists(binExe) {
-		return binExe
+func (s *Session) copyExeToDir(from, to string) string {
+	if fileutils.TargetExists(to) {
+		return to
 	}
 
-	err := fileutils.CopyFile(executable, binExe)
+	err := fileutils.CopyFile(from, to)
 	require.NoError(s.t, err)
 
 	// Ensure modTime is the same as source exe
-	stat, err := os.Stat(executable)
+	stat, err := os.Stat(from)
 	require.NoError(s.t, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(binExe, t, t))
+	require.NoError(s.t, os.Chtimes(to, t, t))
 
-	permissions, _ := permbits.Stat(binExe)
+	permissions, _ := permbits.Stat(to)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(binExe, permissions))
-	return binExe
+	require.NoError(s.t, permbits.Chmod(to, permissions))
+	return to
+}
+
+func (s *Session) copyExeToBinDir(executable string) string {
+	return s.copyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
 }
 
 // UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
@@ -136,7 +139,7 @@ func (s *Session) UseDistinctStateExes() {
 	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.copyExeToBinDir(s.InstallerExe)
+	s.InstallerExe = s.copyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
