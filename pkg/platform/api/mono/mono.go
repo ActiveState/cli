@@ -50,17 +50,17 @@ func Init(serviceURL *url.URL, auth *runtime.ClientAuthInfoWriter) *mono_client.
 		return client // for some reason the assertion can fail...
 	}
 
-	ipv4TransportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
-	var dialer net.Dialer
-	ipv4Transport := httpTransport.Clone()
-	ipv4Transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	ipv4PreferredTransportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
+	ipv4PreferredTransport := httpTransport.Clone()
+	ipv4PreferredTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		dialer := &net.Dialer{}
 		if conn, err := dialer.DialContext(ctx, "tcp4", addr); conn != nil {
 			return conn, err
 		}
-		return dialer.DialContext(ctx, "tcp", addr)
+		return dialer.DialContext(ctx, "tcp", addr) // fallback to default ipv6/ipv4 dialer
 	}
-	ipv4TransportRuntime.Transport = api.NewRoundTripperWithTransport(ipv4Transport)
-	client.Oauth.SetTransport(ipv4TransportRuntime)
+	ipv4PreferredTransportRuntime.Transport = api.NewRoundTripperWithTransport(ipv4PreferredTransport)
+	client.Oauth.SetTransport(ipv4PreferredTransportRuntime)
 
 	return client
 }
