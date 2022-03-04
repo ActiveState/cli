@@ -49,7 +49,7 @@ func (p AuthParams) verify() error {
 	}
 
 	if p.Totp != "" && (p.Username == "" || p.Password == "") {
-		return locale.WrapInputError("err_auth_invalid_totp_param", "[ACTIONABLE]--totp[/RESET] flag requires both [ACTIONABLE]--username[/RESET] and [ACTIONABLE]--password[/RESET] flags", args ...string)
+		return locale.NewInputError("err_auth_invalid_totp_param", "[ACTIONABLE]--totp[/RESET] flag requires both [ACTIONABLE]--username[/RESET] and [ACTIONABLE]--password[/RESET] flags")
 	}
 
 	return nil
