@@ -14,7 +14,7 @@ import (
 // ensureUserKeypair checks to see if the currently authenticated user has a Keypair. If not, one is generated
 // and saved.
 func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter) error {
-	keypairRes, err := keypairs.FetchRaw(secretsapi.Get())
+	keypairRes, err := keypairs.FetchRaw(secretsapi.Get(), cfg)
 	if err == nil {
 		err = processExistingKeypairForUser(keypairRes, passphrase, cfg, out, prompt)
 	} else if errs.Matches(err, &keypairs.ErrKeypairNotFound{}) {

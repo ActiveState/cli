@@ -18,8 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
-
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 )
 
 type configGetter interface {
@@ -248,11 +246,7 @@ func (r *Push) Run(params PushParams) error {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		err := authlet.RequireAuthentication(locale.Tl("auth_required_push", "You need to be authenticated to push a local project to the ActiveState Platform"), r.config, r.out, r.prompt, r.auth)
-		if err != nil {
-			return locale.WrapInputError(err, "err_push_auth", "Failed to authenticate")
-		}
-		r.out.Notice("") // Add line break to ensure output doesn't stick together
+		return locale.NewInputError("err_push_not_authenticated", "In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
 
 	// Check if as.yaml exists
