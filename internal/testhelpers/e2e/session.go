@@ -324,7 +324,7 @@ func (s *Session) LoginUser(userName string) {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs("auth", "--interactive", "--username", PersistentUsername, "--password", PersistentPassword),
+		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
 		HideCmdLine(),
 	)
