@@ -246,7 +246,7 @@ func (r *Push) Run(params PushParams) error {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		return locale.NewInputError("err_push_not_authenticated", "In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET] to authenticate.")
+		return locale.NewInputError("err_push_not_authenticated", "In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
 
 	// Check if as.yaml exists
