@@ -1,6 +1,9 @@
 package mono
 
 import (
+	"context"
+	"net"
+	"net/http"
 	"net/url"
 
 	"github.com/go-openapi/runtime"
@@ -34,7 +37,26 @@ func Init(serviceURL *url.URL, auth *runtime.ClientAuthInfoWriter) *mono_client.
 	if auth != nil {
 		transportRuntime.DefaultAuthentication = *auth
 	}
-	return mono_client.New(transportRuntime, strfmt.Default)
+	client := mono_client.New(transportRuntime, strfmt.Default)
+
+	// For the Oauth client, prefer use of IPv4. This is needed particularly for device
+	// authorization, which compares the IP address of the State Tool request and the IP address of
+	// the web client request. If there's a mismatch, authorization fails. When this happens, it's
+	// often because the State Tool connects to the Platform via IPv6, but the browser does via IPv4
+	// (browsers apparently prefer IPv4 for now).
+	ipv4PreferredTransportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
+	ipv4PreferredTransport := http.DefaultTransport.(*http.Transport).Clone()
+	ipv4PreferredTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		dialer := &net.Dialer{}
+		if conn, err := dialer.DialContext(ctx, "tcp4", addr); conn != nil {
+			return conn, err
+		}
+		return dialer.DialContext(ctx, "tcp", addr) // fallback to default ipv6/ipv4 dialer
+	}
+	ipv4PreferredTransportRuntime.Transport = api.NewRoundTripperWithTransport(ipv4PreferredTransport)
+	client.Oauth.SetTransport(ipv4PreferredTransportRuntime)
+
+	return client
 }
 
 // Get returns a cached version of the default api client
