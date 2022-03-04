@@ -109,7 +109,7 @@ func New(cfg Configurable) *Auth {
 		}
 	}
 
-	*persist = *auth
+	persist = auth
 
 	return auth
 }
