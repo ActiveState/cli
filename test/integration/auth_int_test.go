@@ -58,7 +58,6 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
 	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
-	cp.Expect("Authentication failed")
 	cp.ExpectLongString("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
 }

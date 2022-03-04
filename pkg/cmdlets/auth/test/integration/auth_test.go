@@ -50,21 +50,6 @@ func setupUser() *mono_models.UserEditable {
 	return testUser
 }
 
-func TestUsernameValidator(t *testing.T) {
-	httpmock.Activate(api.GetServiceURL(api.ServiceMono).String())
-	defer httpmock.DeActivate()
-
-	httpmock.Register("GET", "/users/uniqueUsername/test")
-
-	err := authlet.UsernameValidator("test")
-	assert.NoError(t, err, "Username is unique")
-
-	httpmock.RegisterWithCode("GET", "/users/uniqueUsername/test", 400)
-
-	err = authlet.UsernameValidator("test")
-	assert.Error(t, err, "Username is not unique")
-}
-
 func TestRequireAuthenticationLogin(t *testing.T) {
 	setup(t)
 	user := setupUser()
