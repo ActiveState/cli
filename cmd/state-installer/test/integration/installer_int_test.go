@@ -32,13 +32,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", filepath.Dir(ts.InstallerExe)),
+		e2e.WithArgs(target, "--source-path", ts.Dirs.Bin),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
-	cp.ExpectExitCode(0)
+	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)

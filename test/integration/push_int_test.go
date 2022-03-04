@@ -87,7 +87,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	}
 
 	// ensure that we are logged out
-	cp = ts.Spawn("auth", "logout")
+	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
@@ -231,7 +231,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// ensure that we are logged out
-	cp = ts.Spawn("auth", "logout")
+	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
 	// anonymous commit

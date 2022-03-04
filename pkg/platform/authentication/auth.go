@@ -100,6 +100,8 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
+	persist = auth
+
 	return auth
 }
 

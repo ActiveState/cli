@@ -666,6 +666,8 @@ keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
   other: Keypair could not be saved
+keypair_err_generate:
+  other: Keypair could not be generated
 keypair_err_publickey_not_found:
   other: "No public-key found for user [NOTICE]\"{{.V0}}\"[/RESET] ([NOTICE]\"{{.V1}}\"[/RESET])"
 keypair_err_passphrase_prompt:

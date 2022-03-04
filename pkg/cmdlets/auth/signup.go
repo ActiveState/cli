@@ -55,7 +55,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 
 	if auth.Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
-			return locale.WrapError(err, "keypair_err_save")
+			return locale.WrapError(err, "keypair_err_generate")
 		}
 	}
 

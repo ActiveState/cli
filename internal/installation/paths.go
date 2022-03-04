@@ -59,12 +59,7 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 		}
 	}
 
-	binDir := filepath.Join(installPath, BinDirName)
-	if fileutils.FileExists(binDir) {
-		return binDir, nil
-	}
-
-	return installPath, nil
+	return filepath.Join(installPath, BinDirName), nil
 }
 
 func InstalledOnPath(installPath string) (bool, string, error) {
