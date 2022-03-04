@@ -103,6 +103,8 @@ func New(cfg Configurable) *Auth {
 	return auth
 }
 
+// Sync will ensure that the authenticated state is in sync with what is in the config database.
+// This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
 func (s *Auth) Sync() error {
 	if s.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
@@ -191,12 +193,6 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		return errs.Wrap(err, "Storing JWT failed")
 	}
 
-	if s.cfg.GetString(ApiTokenConfigKey) == "" {
-		if err := s.createToken(); err != nil {
-			return errs.Wrap(err, "CreateToken failed")
-		}
-	}
-
 	return nil
 }
 
@@ -214,10 +210,6 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
 
 	if err := s.updateSession(token); err != nil {
 		return errs.Wrap(err, "Storing JWT failed")
-	}
-
-	if err := s.createToken(); err != nil {
-		return errs.Wrap(err, "CreateToken failed")
 	}
 
 	return nil
@@ -244,16 +236,6 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	logging.Debug("AuthenticateWithToken")
 	return s.AuthenticateWithModel(&mono_models.Credentials{
 		Token: token,
-	})
-}
-
-// AuthenticateWithUser will try to authenticate using the given credentials
-func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
-	logging.Debug("AuthenticateWithUser")
-	return s.AuthenticateWithModel(&mono_models.Credentials{
-		Username: username,
-		Password: password,
-		Totp:     totp,
 	})
 }
 
@@ -352,8 +334,8 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	return s.client, nil
 }
 
-// createToken will create an API token for the current authenticated user
-func (s *Auth) createToken() error {
+// CreateToken will create an API token for the current authenticated user
+func (s *Auth) CreateToken() error {
 	client, err := s.ClientSafe()
 	if err != nil {
 		return err

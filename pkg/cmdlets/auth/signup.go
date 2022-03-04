@@ -214,6 +214,10 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 		return err
 	}
 
+	if err := auth.CreateToken(); err != nil {
+		return locale.WrapError(err, "err_auth_token")
+	}
+
 	out.Notice(locale.T("signup_success", map[string]string{
 		"Email": addUserOK.Payload.User.Email,
 	}))

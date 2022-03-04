@@ -199,6 +199,8 @@ err_auth_username_check:
   other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
   other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
+err_auth_token:
+  other: "Failed to create authentication token, please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
 auth_err_password_prompt:
   other: The provided password is invalid
 confirm_password_account_creation:
