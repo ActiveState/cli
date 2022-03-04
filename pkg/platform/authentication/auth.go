@@ -109,6 +109,8 @@ func New(cfg Configurable) *Auth {
 		}
 	}
 
+	*persist = *auth
+
 	return auth
 }
 

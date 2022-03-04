@@ -3,7 +3,6 @@ package keypairs
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -105,7 +104,6 @@ func SaveEncodedKeypair(cfg Configurable, secretsClient *secretsapi.Client, encK
 	})
 
 	if _, err := secretsClient.Keys.SaveKeypair(params, authentication.LegacyGet().ClientAuth()); err != nil {
-		logging.Error("Saving keypair failed with error: %v", err)
 		return locale.WrapError(err, "keypair_err_save")
 	}
 
