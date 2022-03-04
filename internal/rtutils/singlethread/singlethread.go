@@ -44,7 +44,7 @@ func (t *Thread) Run(funcToCall func() error) error {
 	if t.closed {
 		return fmt.Errorf("thread is closed")
 	}
-	
+
 	callback := callback{funcToCall, make(chan (error))}
 	t.callback <- callback
 	return <-callback.funcResult

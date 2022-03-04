@@ -141,6 +141,10 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *aut
 		return err
 	}
 
+	if err := auth.CreateToken(); err != nil {
+		return locale.WrapError(err, "err_auth_token")
+	}
+
 	return nil
 }
 
@@ -233,6 +237,10 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode)); err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
+	}
+
+	if err := auth.CreateToken(); err != nil {
+		return locale.WrapError(err, "err_auth_token")
 	}
 
 	out.Notice(locale.T("auth_device_success"))

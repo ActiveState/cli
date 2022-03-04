@@ -472,7 +472,6 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		keyword := l(match[1])
 		if (keyword == l(sysinfo.Linux.String()) || keyword == l(sysinfo.Mac.String()) || keyword == l(sysinfo.Windows.String())) &&
 			keyword != l(sysinfo.OS().String()) {
-			logging.Debug("Not merging %s because we are on %s", file.Name(), sysinfo.OS().String())
 			continue
 		}
 
