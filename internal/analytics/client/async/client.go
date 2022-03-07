@@ -21,23 +21,22 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Client is the default analytics dispatcher, forwarding analytics events to the state-svc service
 type Client struct {
-	svcModel       *model.SvcModel
-	auth           *authentication.Auth
-	output         string
-	project        *project.Project
-	eventWaitGroup *sync.WaitGroup
-	sessionToken   string
-	updateTag      string
+	svcModel         *model.SvcModel
+	auth             *authentication.Auth
+	output           string
+	projectNameSpace string
+	eventWaitGroup   *sync.WaitGroup
+	sessionToken     string
+	updateTag        string
 }
 
 var _ analytics.Dispatcher = &Client{}
 
-func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, project *project.Project) *Client {
+func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 	}
@@ -47,7 +46,7 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 		o = string(out.Type())
 	}
 	a.output = o
-	a.project = project
+	a.projectNameSpace = projectNameSpace
 	a.auth = auth
 
 	if condition.InUnitTest() {
@@ -103,10 +102,9 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
-	dim := dimensions.NewDefaultDimensions(a.project.Namespace().String(), a.sessionToken, a.updateTag)
+	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
 	dim.OutputType = &a.output
 	dim.UserID = &userID
-	dim.CommitID = a.project.CommitID()
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()
