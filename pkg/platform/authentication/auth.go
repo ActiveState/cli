@@ -100,8 +100,6 @@ func New(cfg Configurable) *Auth {
 		cfg: cfg,
 	}
 
-	persist = auth
-
 	return auth
 }
 
@@ -250,6 +248,8 @@ func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
 	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
+
+	persist = s
 
 	return nil
 }
