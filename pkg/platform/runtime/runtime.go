@@ -29,11 +29,11 @@ import (
 )
 
 type Runtime struct {
-	target      setup.Targeter
-	store       *store.Store
-	analytics   analytics.Dispatcher
-	svcm        *model.SvcModel
-	completed   bool
+	target    setup.Targeter
+	store     *store.Store
+	analytics analytics.Dispatcher
+	svcm      *model.SvcModel
+	completed bool
 }
 
 // DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
@@ -81,7 +81,9 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache)
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+			CommitID: p.StrP(target.CommitUUID().String()),
+		})
 	}
 	return r, err
 }
@@ -171,7 +173,9 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv)
+	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
+		CommitID: p.StrP(r.target.CommitUUID().String()),
+	})
 }
 
 func (r *Runtime) recordUsage() {
