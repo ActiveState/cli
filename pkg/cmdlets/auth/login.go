@@ -3,9 +3,9 @@ package auth
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
-	"github.com/skratchdot/open-golang/open"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -21,9 +21,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model/auth"
 )
 
-// OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
+// OpenURI aliases to exeutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
-var OpenURI = open.Run
+var OpenURI = osutils.OpenURI
 
 // Authenticate will prompt the user for authentication
 func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
