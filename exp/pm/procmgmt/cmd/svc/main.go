@@ -29,6 +29,7 @@ func run() error {
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"
+		svcName = "svc"
 	)
 
 	flag.StringVar(&version, "v", version, "version id")
@@ -40,58 +41,70 @@ func run() error {
 		return err
 	}
 
+	n := &socket.Namespace{
+		RootDir:    rootDir,
+		AppName:    name,
+		AppVersion: version,
+		AppHash:    hash,
+	}
+	sock := socket.New(n, proccomm.HTTPAddrMHandler(addr))
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-
-	done := make(chan struct{})
-	errs := make(chan error)
+	defer close(sigs)
 
 	go func() {
-		defer close(done)
+		sig, ok := <-sigs
+		if !ok {
+			return
+		}
+		fmt.Printf("%s: handling signal: %s\n", svcName, sig)
 
-		select {
-		case sig := <-sigs:
-			fmt.Printf("handling signal: %s\n", sig)
-		case err = <-errs:
-			fmt.Fprintf(os.Stderr, "errored early: %s\n", err)
+		fmt.Printf("%s: closing socket\n", svcName)
+		if err := sock.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
 		}
 
-		fmt.Println("closing server")
+		fmt.Printf("%s: closing server\n", svcName)
 		if err := srv.Close(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
 		}
 	}()
 	time.Sleep(time.Millisecond)
 
 	var wg sync.WaitGroup
 
+	errs := make(chan error)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		n := &socket.Namespace{
-			RootDir:    rootDir,
-			AppName:    name,
-			AppVersion: version,
-			AppHash:    hash,
+		for err := range errs {
+			fmt.Fprintf(os.Stderr, "%s: errored early: %s\n", svcName, err)
 		}
-		sock := socket.New(n, proccomm.HTTPAddrMHandler(addr))
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer close(errs)
+		defer wg.Done()
+		defer fmt.Printf("%s: marking socket closed\n", svcName)
 
 		if err = sock.ListenAndServe(); err != nil {
-			select {
-			case errs <- err:
-			default:
-			}
+			errs <- err
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		defer fmt.Printf("%s: marking server closed\n", svcName)
 
 		srv.Wait() //nolint // add error handling
 	}()
 
+	fmt.Printf("%s: waiting\n", svcName)
 	wg.Wait()
+
 	return nil
 }

@@ -36,7 +36,7 @@ func New(n *Namespace, mhs ...MatchedHandler) *Socket {
 }
 
 func (s *Socket) ListenAndServe() error {
-	emsg := "listen: %w"
+	emsg := "socket: listen and serve: %w"
 	namespace := s.n.String()
 
 	l, err := net.Listen(network, namespace)
@@ -44,45 +44,30 @@ func (s *Socket) ListenAndServe() error {
 		return fmt.Errorf(emsg, err)
 	}
 	defer l.Close()
+	defer fmt.Println("closing listener")
 
-	if err = os.Chmod(namespace, 0700); err != nil {
+	if err := os.Chmod(namespace, 0700); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
 	conns := make(chan net.Conn)
-	for {
-		s.wg.Add(1)
-		go func() {
-			defer s.wg.Done()
 
-			conn, err := l.Accept()
-			if err != nil {
-				select {
-				case <-s.done:
-					return
-				default:
-					fmt.Println(fmt.Errorf(emsg, err)) // wire this for return
-					return
-				}
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		defer fmt.Println("marking pick up closed")
+
+		for {
+			if err := accept(s.done, conns, l); err != nil {
+				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // wire this for return
+				return
 			}
-			conns <- conn
-		}()
+		}
+	}()
 
-		select {
-		case <-s.done:
-			return errors.New("done signaled")
-		case conn := <-conns:
-			s.wg.Add(1)
-
-			go func() {
-				defer s.wg.Done()
-				defer conn.Close()
-
-				if err = reply(conn, s.mhs); err != nil {
-					fmt.Println(fmt.Errorf(emsg, err)) // wire this for return
-					return
-				}
-			}()
+	for {
+		if err := routeToHandler(s.done, s.wg, conns, s.mhs); err != nil {
+			return err
 		}
 	}
 }
@@ -93,7 +78,52 @@ func (s *Socket) Close() error {
 	return nil
 }
 
-func reply(conn net.Conn, mhs []MatchedHandler) error {
+func accept(done chan struct{}, conns chan net.Conn, l net.Listener) error {
+	emsg := "pick up connection: %w"
+
+	conn, err := l.Accept()
+	if err != nil {
+		select {
+		case <-done:
+			return fmt.Errorf(emsg, errors.New("done signaled"))
+		default:
+			return fmt.Errorf(emsg, err)
+		}
+	}
+
+	conns <- conn
+	return nil
+}
+
+func routeToHandler(done chan struct{}, wg *sync.WaitGroup, conns chan net.Conn, mhs []MatchedHandler) error {
+	emsg := "route connection: %w"
+
+	select {
+	case <-done:
+		return errors.New("done signaled")
+
+	case conn := <-conns:
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			defer fmt.Println("marking routing closed")
+			defer conn.Close()
+			defer fmt.Println("closing conn")
+
+			if err := handleMatching(conn, mhs); err != nil {
+				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // wire this for return
+				return
+			}
+		}()
+
+		return nil
+	}
+}
+
+func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
+	emsg := "handle matching query: %w"
+
 	buf := make([]byte, msgWidth)
 	n, _ := conn.Read(buf) //nolint // add error and timeout handling
 
@@ -108,7 +138,7 @@ func reply(conn net.Conn, mhs []MatchedHandler) error {
 	}
 
 	if _, err := conn.Write([]byte(output)); err != nil {
-		return err
+		return fmt.Errorf(emsg, err)
 	}
 
 	return nil

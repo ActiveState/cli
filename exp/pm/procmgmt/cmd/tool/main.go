@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	start := time.Now()
+
 	var (
 		rootDir = "/tmp/proccomm"
 		name    = "state"
@@ -22,6 +24,7 @@ func main() {
 
 	flag.StringVar(&version, "v", version, "version id")
 	flag.Parse()
+	fmt.Println("parsed flags", time.Since(start))
 
 	n := &socket.Namespace{
 		RootDir:    rootDir,
@@ -31,7 +34,9 @@ func main() {
 	}
 	sc := socket.NewClient(n)
 	pc := proccomm.NewClient(sc)
+	fmt.Println("setup proccomm client", time.Since(start))
 	addr, err := pc.GetHTTPAddr()
+	fmt.Println("got http addr", time.Since(start))
 
 	if err != nil {
 		args := []string{"-v", version}
@@ -57,5 +62,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	fmt.Println("got info via http", time.Since(start))
 	fmt.Print(info)
 }

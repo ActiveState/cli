@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 )
 
 type Serve struct {
@@ -50,7 +51,10 @@ func (s *Serve) Wait() error {
 }
 
 func (s *Serve) Close() error {
-	return s.h.Shutdown(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	return s.h.Shutdown(ctx)
 }
 
 var handleInfoPath = "/info"
