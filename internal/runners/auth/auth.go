@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -39,16 +38,39 @@ type AuthParams struct {
 	Interactive bool
 }
 
+func (p AuthParams) verify() error {
+	if p.Username != "" && p.Password == "" {
+		return locale.NewInputError("err_auth_invalid_username_param", "[ACTIONABLE]--username[/RESET] flag requires [ACTIONABLE]--password[/RESET] flag")
+	}
+
+	if p.Username == "" && p.Password != "" {
+		return locale.NewInputError("err_auth_invalid_password_param", "[ACTIONABLLE]--password[/RESET] flag requires [ACTIONABLE]--username[/RESET] flag")
+	}
+
+	if p.Totp != "" && (p.Username == "" || p.Password == "") {
+		return locale.NewInputError("err_auth_invalid_totp_param", "[ACTIONABLE]--totp[/RESET] flag requires both [ACTIONABLE]--username[/RESET] and [ACTIONABLE]--password[/RESET] flags")
+	}
+
+	return nil
+}
+
 type SignupParams struct {
 	Interactive bool
 }
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
-	logging.Debug("Running auth")
 	if !a.Authenticated() {
+		if err := params.verify(); err != nil {
+			return locale.WrapInputError(err, "err_auth_params", "Invalid authentication params")
+		}
+
 		if err := a.authenticate(params); err != nil {
 			return locale.WrapError(err, "err_auth_authenticate", "Could not authenticate.")
+		}
+
+		if err := a.verifyAuthentication(); err != nil {
+			return locale.WrapError(err, "err_auth_verify", "Could not verify authentication")
 		}
 	}
 
@@ -68,27 +90,24 @@ func (a *Auth) Run(params *AuthParams) error {
 }
 
 func (a *Auth) authenticate(params *AuthParams) error {
-	if params.Token == "" {
-		var err error
-		if params.Interactive || params.Username != "" {
-			err = authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
-		} else {
-			err = authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
-		}
-		if err != nil {
-			return locale.WrapError(err, "login_err_auth")
-		}
-	} else {
-		err := a.Auth.AuthenticateWithModel(&mono_models.Credentials{
+	if params.Interactive || params.Username != "" {
+		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+	}
+
+	if params.Token != "" {
+		return a.Auth.AuthenticateWithModel(&mono_models.Credentials{
 			Token: params.Token,
 		})
-		if err != nil {
-			return locale.WrapError(err, "login_err_auth_token")
-		}
 	}
+
+	return authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
+}
+
+func (a *Auth) verifyAuthentication() error {
 	if !a.Auth.Authenticated() {
 		return locale.NewInputError("login_err_auth")
 	}
+
 	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
 		"Name": a.Auth.WhoAmI(),

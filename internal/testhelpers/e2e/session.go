@@ -28,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
@@ -73,14 +74,14 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -98,25 +99,28 @@ func (s *Session) ExecutablePath() string {
 	return s.Exe
 }
 
-func (s *Session) copyExeToBinDir(executable string) string {
-	binExe := filepath.Join(s.Dirs.Bin, filepath.Base(executable))
-	if fileutils.TargetExists(binExe) {
-		return binExe
+func (s *Session) copyExeToDir(from, to string) string {
+	if fileutils.TargetExists(to) {
+		return to
 	}
 
-	err := fileutils.CopyFile(executable, binExe)
+	err := fileutils.CopyFile(from, to)
 	require.NoError(s.t, err)
 
 	// Ensure modTime is the same as source exe
-	stat, err := os.Stat(executable)
+	stat, err := os.Stat(from)
 	require.NoError(s.t, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(binExe, t, t))
+	require.NoError(s.t, os.Chtimes(to, t, t))
 
-	permissions, _ := permbits.Stat(binExe)
+	permissions, _ := permbits.Stat(to)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(binExe, permissions))
-	return binExe
+	require.NoError(s.t, permbits.Chmod(to, permissions))
+	return to
+}
+
+func (s *Session) copyExeToBinDir(executable string) string {
+	return s.copyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
 }
 
 // UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
@@ -135,7 +139,7 @@ func (s *Session) UseDistinctStateExes() {
 	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.copyExeToBinDir(s.InstallerExe)
+	s.InstallerExe = s.copyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
@@ -315,7 +319,7 @@ func (s *Session) PrepareFile(path, contents string) {
 }
 
 func (s *Session) LoginUser(userName string) {
-	p := s.Spawn("auth", "--username", userName, "--password", userName)
+	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
 
 	p.Expect("logged in", authnTimeout)
 	p.ExpectExitCode(0)
@@ -324,7 +328,7 @@ func (s *Session) LoginUser(userName string) {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs("auth", "--username", PersistentUsername, "--password", PersistentPassword),
+		WithArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
 		HideCmdLine(),
 	)
@@ -334,7 +338,7 @@ func (s *Session) LoginAsPersistentUser() {
 }
 
 func (s *Session) LogoutUser() {
-	p := s.Spawn("auth", "logout")
+	p := s.Spawn(tagsuite.Auth, "logout")
 
 	p.Expect("logged out")
 	p.ExpectExitCode(0)
@@ -348,7 +352,7 @@ func (s *Session) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn("auth", "signup")
+	p := s.Spawn(tagsuite.Auth, "signup", "--interactive")
 
 	p.Expect("Terms of Service")
 	p.Send("y")

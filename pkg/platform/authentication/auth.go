@@ -56,8 +56,6 @@ const ApiTokenConfigKey = "apiToken"
 
 // LegacyGet returns a cached version of Auth
 func LegacyGet() *Auth {
-	logging.Debug("LegacyGet")
-
 	if persist == nil {
 		cfg, err := config.New()
 		if err != nil {
@@ -66,6 +64,9 @@ func LegacyGet() *Auth {
 			os.Exit(1)
 		}
 		persist = New(cfg)
+		if err := persist.Sync(); err != nil {
+			logging.Warning("Could not sync authenticated state: %s", err.Error())
+		}
 	}
 	return persist
 }
@@ -89,27 +90,29 @@ func ClientAuth() runtime.ClientAuthInfoWriter {
 
 // Reset clears the cache
 func Reset() {
-	logging.Debug("Resetting")
 	persist = nil
 }
 
 // New creates a new version of Auth
 func New(cfg Configurable) *Auth {
-	logging.Debug("New Auth")
-
 	defer profile.Measure("auth:New", time.Now())
 	auth := &Auth{
 		cfg: cfg,
 	}
 
-	if auth.AvailableAPIToken() != "" {
+	return auth
+}
+
+// Sync will ensure that the authenticated state is in sync with what is in the config database.
+// This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
+func (s *Auth) Sync() error {
+	if s.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
-		if err := auth.Authenticate(); err != nil {
-			logging.Error("Failed to authenticate: %v", errs.JoinMessage(err))
+		if err := s.Authenticate(); err != nil {
+			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
 	}
-
-	return auth
+	return nil
 }
 
 func (s *Auth) Close() error {
@@ -121,7 +124,6 @@ func (s *Auth) Close() error {
 
 // Authenticated checks whether we are currently authenticated
 func (s *Auth) Authenticated() bool {
-	logging.Debug("Auth status: %v", s.clientAuth != nil)
 	return s.clientAuth != nil
 }
 
@@ -191,12 +193,6 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		return errs.Wrap(err, "Storing JWT failed")
 	}
 
-	if s.cfg.GetString(ApiTokenConfigKey) == "" {
-		if err := s.createToken(); err != nil {
-			return errs.Wrap(err, "CreateToken failed")
-		}
-	}
-
 	return nil
 }
 
@@ -214,10 +210,6 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
 
 	if err := s.updateSession(token); err != nil {
 		return errs.Wrap(err, "Storing JWT failed")
-	}
-
-	if err := s.createToken(); err != nil {
-		return errs.Wrap(err, "CreateToken failed")
 	}
 
 	return nil
@@ -247,16 +239,6 @@ func (s *Auth) AuthenticateWithToken(token string) error {
 	})
 }
 
-// AuthenticateWithUser will try to authenticate using the given credentials
-func (s *Auth) AuthenticateWithUser(username, password, totp string) error {
-	logging.Debug("AuthenticateWithUser")
-	return s.AuthenticateWithModel(&mono_models.Credentials{
-		Username: username,
-		Password: password,
-		Totp:     totp,
-	})
-}
-
 // updateSession authenticates with the given access token obtained via a Platform
 // API request and response (e.g. username/password loging or device authentication).
 func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
@@ -266,6 +248,8 @@ func (s *Auth) updateSession(accessToken *mono_models.JWT) error {
 	s.bearerToken = accessToken.Token
 	clientAuth := httptransport.BearerToken(s.bearerToken)
 	s.clientAuth = &clientAuth
+
+	persist = s
 
 	return nil
 }
@@ -309,8 +293,6 @@ func (s *Auth) UserID() *strfmt.UUID {
 
 // Logout will destroy any session tokens and reset the current Auth instance
 func (s *Auth) Logout() error {
-	logging.Debug("Logging out")
-
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
@@ -354,8 +336,8 @@ func (s *Auth) ClientSafe() (*mono_client.Mono, error) {
 	return s.client, nil
 }
 
-// createToken will create an API token for the current authenticated user
-func (s *Auth) createToken() error {
+// CreateToken will create an API token for the current authenticated user
+func (s *Auth) CreateToken() error {
 	client, err := s.ClientSafe()
 	if err != nil {
 		return err
@@ -411,10 +393,6 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	defer func() {
-		logging.Debug("Available API token: %v", v != "")
-	}()
-
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)

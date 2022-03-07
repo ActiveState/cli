@@ -114,6 +114,8 @@ func (i *Instance) GetThenSet(key string, valueF func(currentValue interface{}) 
 const CancelSet = "__CANCEL__"
 
 func (i *Instance) setWithCallback(key string, valueF func(currentValue interface{}) (interface{}, error)) (rerr error) {
+	logging.Debug("Setting config: %s", key)
+
 	defer func() {
 		if rerr != nil {
 			logging.Warning("setWithCallback error: %v", errs.JoinMessage(rerr))
@@ -151,8 +153,6 @@ func (i *Instance) setWithCallback(key string, valueF func(currentValue interfac
 
 // Set sets a value at the given key.
 func (i *Instance) Set(key string, value interface{}) error {
-	logging.Debug("Setting config: %s", key)
-
 	return i.GetThenSet(key, func(_ interface{}) (interface{}, error) {
 		return value, nil
 	})
@@ -163,8 +163,6 @@ func (i *Instance) IsSet(key string) bool {
 }
 
 func (i *Instance) Get(key string) interface{} {
-	logging.Debug("Getting config: %s", key)
-
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		logging.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))

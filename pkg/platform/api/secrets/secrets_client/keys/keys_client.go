@@ -6,9 +6,10 @@ package keys
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/go-openapi/runtime"
 
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 )
 
 // New creates a new keys API client.
@@ -111,7 +112,7 @@ func (a *Client) SaveKeypair(params *SaveKeypairParams, authInfo runtime.ClientA
 		Client:             params.HTTPClient,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errs.Wrap(err, "Could not save client-side encrypted keypair to platform.")
 	}
 	return result.(*SaveKeypairNoContent), nil
 

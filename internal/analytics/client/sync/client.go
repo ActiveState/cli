@@ -108,12 +108,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
 		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
-		gar, err := reporters.NewGaCLIReporter(deviceID)
-		if err != nil {
-			logging.Critical("Cannot initialize google analytics client: %s", errs.JoinMessage(err))
-		} else {
-			a.NewReporter(gar)
-		}
 		a.NewReporter(reporters.NewPixelReporter())
 	}
 
@@ -133,8 +127,6 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
 		return
 	}
-
-	logging.Debug("Reporting event to %d reporters: %s, %s, %s", len(a.reporters), category, action, label)
 
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {

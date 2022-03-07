@@ -16,7 +16,7 @@ type ForkIntegrationTestSuite struct {
 }
 
 func (suite *ForkIntegrationTestSuite) cleanup(ts *e2e.Session) {
-	cp := ts.Spawn("auth", "logout")
+	cp := ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 	ts.Close()
 }

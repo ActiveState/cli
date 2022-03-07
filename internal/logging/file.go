@@ -96,12 +96,10 @@ func (l *fileHandler) SetConfig(cfg config) {
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	var a []interface{}
-	a = append(a, args)
 	e := entry{
 		ctx:     ctx,
 		message: message,
-		args:    a,
+		args:    args,
 	}
 	select {
 	case <-l.quit:
@@ -203,6 +201,7 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 			printLogError(fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2), ctx, message, args...)
 		}
 	}
+
 }
 
 // Printf satifies a Logger interface allowing us to funnel our
