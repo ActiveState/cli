@@ -108,12 +108,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
 		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
-		gar, err := reporters.NewGaCLIReporter(deviceID)
-		if err != nil {
-			logging.Critical("Cannot initialize google analytics client: %s", errs.JoinMessage(err))
-		} else {
-			a.NewReporter(gar)
-		}
 		a.NewReporter(reporters.NewPixelReporter())
 	}
 
