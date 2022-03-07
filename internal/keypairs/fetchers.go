@@ -16,7 +16,7 @@ type ErrKeypairNotFound struct{ *locale.LocalizedError }
 
 // FetchRaw fetchs the current user keypair or returns a failure.
 func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable) (*secretModels.Keypair, error) {
-	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.New(cfg).ClientAuth())
+	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
