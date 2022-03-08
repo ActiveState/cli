@@ -35,15 +35,30 @@ func InstallPath() (string, error) {
 
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
-	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
-	if fileutils.TargetExists(stateInfo.Exec()) {
-		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
-			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
-		}
+	if !fileutils.TargetExists(stateInfo.Exec()) {
+		// TODO: is this a fallback?
 		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
 	}
 
+	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
+	if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
+		return filepath.Dir(filepath.Dir(filepath.Dir(stateInfo.Exec()))), nil // <return this>/<branch>/bin/state.exe
+	}
+
 	return DefaultInstallPath()
+}
+
+func BranchPathFromInstallPath(branch string) (string, error) {
+	installPath, err := InstallPath()
+	if err != nil {
+		return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BranchPath")
+	}
+
+	if branch == "" {
+		branch = constants.BranchName
+	}
+
+	return filepath.Join(installPath, branch), nil
 }
 
 func BinPath() (string, error) {
