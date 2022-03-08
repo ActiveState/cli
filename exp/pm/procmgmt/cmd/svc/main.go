@@ -88,7 +88,6 @@ func run() error {
 	go func() {
 		defer close(errs)
 		defer wg.Done()
-		defer fmt.Printf("%s: marking socket closed\n", svcName)
 
 		if err = sock.ListenAndServe(); err != nil {
 			errs <- err
@@ -98,7 +97,6 @@ func run() error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer fmt.Printf("%s: marking server closed\n", svcName)
 
 		srv.Wait() //nolint // add error handling
 	}()

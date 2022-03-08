@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"sync"
+
+	"github.com/ActiveState/cli/exp/pm/internal/pcerrors"
 )
 
 const (
@@ -44,7 +46,6 @@ func (s *Socket) ListenAndServe() error {
 		return fmt.Errorf(emsg, err)
 	}
 	defer l.Close()
-	defer fmt.Println("closing listener")
 
 	if err := os.Chmod(namespace, 0700); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -55,11 +56,12 @@ func (s *Socket) ListenAndServe() error {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		defer fmt.Println("marking pick up closed")
 
 		for {
 			if err := accept(s.done, conns, l); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // wire this for return
+				if derr := (pcerrors.DoneError)(nil); !errors.As(err, &derr) {
+					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
+				}
 				return
 			}
 		}
@@ -67,6 +69,9 @@ func (s *Socket) ListenAndServe() error {
 
 	for {
 		if err := routeToHandler(s.done, s.wg, conns, s.mhs); err != nil {
+			if derr := (pcerrors.DoneError)(nil); errors.As(err, &derr) {
+				return nil
+			}
 			return err
 		}
 	}
@@ -85,9 +90,9 @@ func accept(done chan struct{}, conns chan net.Conn, l net.Listener) error {
 	if err != nil {
 		select {
 		case <-done:
-			return fmt.Errorf(emsg, errors.New("done signaled"))
+			return fmt.Errorf(emsg, NewDoneError())
 		default:
-			return fmt.Errorf(emsg, err)
+			return fmt.Errorf(emsg, err) // TODO: should this halt the application?
 		}
 	}
 
@@ -100,19 +105,17 @@ func routeToHandler(done chan struct{}, wg *sync.WaitGroup, conns chan net.Conn,
 
 	select {
 	case <-done:
-		return errors.New("done signaled")
+		return fmt.Errorf(emsg, NewDoneError())
 
 	case conn := <-conns:
 		wg.Add(1)
 
 		go func() {
 			defer wg.Done()
-			defer fmt.Println("marking routing closed")
 			defer conn.Close()
-			defer fmt.Println("closing conn")
 
 			if err := handleMatching(conn, mhs); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // wire this for return
+				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
 				return
 			}
 		}()
@@ -125,7 +128,10 @@ func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
 	emsg := "handle matching query: %w"
 
 	buf := make([]byte, msgWidth)
-	n, _ := conn.Read(buf) //nolint // add error and timeout handling
+	n, err := conn.Read(buf)
+	if err != nil {
+		return fmt.Errorf(emsg, err)
+	}
 
 	input := string(buf[:n])
 	output := "not found"
