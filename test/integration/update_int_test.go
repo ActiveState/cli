@@ -31,10 +31,8 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
 var targetBranch = "beta"
-var testBranch = "test-channel"
-var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
-var oldReleaseUpdateVersion = "0.28.2-SHAbdac00e"
-var specificVersion = "0.29.0-SHA9f570a0"
+var oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+var specificVersion = "0.32.2-SHA3e1d435"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -169,13 +167,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
 			}
+			env := []string{fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)}
+			env = append(env, suite.env(false, false)...)
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(updateArgs...),
-				e2e.AppendEnv(suite.env(false, false)...),
+				e2e.AppendEnv(env...),
 			)
 			cp.Expect("Updating")
-			cp.Expect("Done")
-			cp.ExpectExitCode(0)
+			cp.ExpectExitCode(0, 1*time.Minute)
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
 
