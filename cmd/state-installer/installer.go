@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -134,14 +133,14 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	// If we are installing a different branch, update install path\
+	// If we are installing a different branch, update install path
 	// TODO: Remove logging messages
-	logging.Debug("Inital install path: %s", i.path)
-	logging.Debug("Current installer branch: %s", constants.BranchName)
-	if filepath.Base(i.path) != constants.BranchName {
-		i.path = filepath.Join(filepath.Dir(i.path), constants.BranchName)
-		logging.Debug("Updated install path: %s", i.path)
-	}
+	// logging.Debug("Inital install path: %s", i.path)
+	// logging.Debug("Current installer branch: %s", constants.BranchName)
+	// if filepath.Base(i.path) != constants.BranchName {
+	// 	i.path = filepath.Join(filepath.Dir(i.path), constants.BranchName)
+	// 	logging.Debug("Updated install path: %s", i.path)
+	// }
 
 	return nil
 }
