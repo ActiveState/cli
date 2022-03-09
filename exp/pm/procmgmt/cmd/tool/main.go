@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/proccomm"
-	"github.com/ActiveState/cli/exp/pm/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/socket"
+	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
 	"github.com/ActiveState/cli/internal/exeutils"
 )
 
