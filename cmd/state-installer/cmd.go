@@ -348,12 +348,13 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
 	logging.Debug("postInstallEvents binPath: %s", binPath)
-	logging.Debug("postInstallEvents isUpdate: %s", isUpdate)
+	logging.Debug("postInstallEvents isUpdate: %b", isUpdate)
 
 	// Execute requested command, these are mutually exclusive
 	switch {
 	// Execute provided --command
 	case params.command != "":
+		logging.Debug("postInstallEvents running command")
 		an.Event(AnalyticsFunnelCat, "forward-command")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
@@ -364,6 +365,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
+		logging.Debug("postInstallEvents activating")
 		an.Event(AnalyticsFunnelCat, "forward-activate")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
@@ -373,6 +375,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
+		logging.Debug("postInstallEvents default")
 		an.Event(AnalyticsFunnelCat, "forward-activate-default")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
@@ -393,6 +396,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	}
 
+	logging.Debug("postInstallEvents return nil")
 	return nil
 }
 
