@@ -44,7 +44,7 @@ func (p AuthParams) verify() error {
 	}
 
 	if p.Username == "" && p.Password != "" {
-		return locale.NewInputError("err_auth_invalid_password_param", "[ACTIONABLLE]--password[/RESET] flag requires [ACTIONABLE]--username[/RESET] flag")
+		return locale.NewInputError("err_auth_invalid_password_param", "[ACTIONABLE]--password[/RESET] flag requires [ACTIONABLE]--username[/RESET] flag")
 	}
 
 	if p.Totp != "" && (p.Username == "" || p.Password == "") {
