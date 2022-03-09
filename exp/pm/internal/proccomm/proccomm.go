@@ -1,6 +1,6 @@
 package proccomm
 
-import "github.com/ActiveState/cli/exp/pm/internal/socket"
+import "github.com/ActiveState/cli/exp/pm/internal/ipc"
 
 var (
 	KeyPing     = "ping"
@@ -8,16 +8,16 @@ var (
 )
 
 type Client struct {
-	s *socket.Client
+	s *ipc.Client
 }
 
-func NewClient(s *socket.Client) *Client {
+func NewClient(s *ipc.Client) *Client {
 	return &Client{
 		s: s,
 	}
 }
 
-func HTTPAddrMHandler(addr string) socket.MatchedHandler {
+func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
 	return func(input string) (string, bool) {
 		if input == KeyHTTPAddr {
 			return addr, true
@@ -31,7 +31,7 @@ func (c *Client) GetHTTPAddr() (string, error) {
 	return c.s.Get(KeyHTTPAddr)
 }
 
-func PingHandler() socket.MatchedHandler {
+func PingHandler() ipc.MatchedHandler {
 	return func(input string) (string, bool) {
 		if input == KeyPing {
 			return "pong", true

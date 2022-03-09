@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/exp/pm/internal/ipc"
 	"github.com/ActiveState/cli/exp/pm/internal/proccomm"
-	"github.com/ActiveState/cli/exp/pm/internal/socket"
 	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
 	"github.com/ActiveState/cli/internal/exeutils"
 )
@@ -26,14 +26,14 @@ func main() {
 	flag.Parse()
 	fmt.Println("parsed flags", time.Since(start))
 
-	n := &socket.Namespace{
+	n := &ipc.Namespace{
 		RootDir:    rootDir,
 		AppName:    name,
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	sc := socket.NewClient(n)
-	pc := proccomm.NewClient(sc)
+	ic := ipc.NewClient(n)
+	pc := proccomm.NewClient(ic)
 	fmt.Println("setup proccomm client", time.Since(start))
 	addr, err := pc.GetHTTPAddr()
 	fmt.Println("got http addr", time.Since(start))

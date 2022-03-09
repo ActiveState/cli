@@ -8,7 +8,7 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/ActiveState/cli/exp/pm/internal/socket/namespace"
+	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
 )
 
 var (

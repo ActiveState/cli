@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/exp/pm/internal/ipc"
 	"github.com/ActiveState/cli/exp/pm/internal/proccomm"
-	"github.com/ActiveState/cli/exp/pm/internal/socket"
 	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
 )
 
@@ -36,19 +36,19 @@ func run() error {
 	flag.StringVar(&version, "v", version, "version id")
 	flag.Parse()
 
-	srv := serve.New()
-	addr, err := srv.Run()
+	httpSrv := serve.New()
+	addr, err := httpSrv.Run()
 	if err != nil {
 		return err
 	}
 
-	n := &socket.Namespace{
+	n := &ipc.Namespace{
 		RootDir:    rootDir,
 		AppName:    name,
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	sock := socket.New(n, proccomm.HTTPAddrMHandler(addr))
+	ipcSrv := ipc.New(n, proccomm.HTTPAddrMHandler(addr))
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -61,13 +61,13 @@ func run() error {
 		}
 		fmt.Printf("%s: handling signal: %s\n", svcName, sig)
 
-		fmt.Printf("%s: closing socket\n", svcName)
-		if err := sock.Close(); err != nil {
+		fmt.Printf("%s: closing ipc\n", svcName)
+		if err := ipcSrv.Close(); err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
 		}
 
 		fmt.Printf("%s: closing server\n", svcName)
-		if err := srv.Close(); err != nil {
+		if err := httpSrv.Close(); err != nil {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
 		}
 	}()
@@ -81,8 +81,8 @@ func run() error {
 		defer wg.Done()
 
 		for err := range errs {
-			if errors.Is(err, socket.ErrInUse) {
-				srv.Close() // TODO: make this less gross
+			if errors.Is(err, ipc.ErrInUse) {
+				httpSrv.Close() // TODO: make this less gross
 			}
 			fmt.Fprintf(os.Stderr, "%s: errored early: %s\n", svcName, err)
 		}
@@ -93,7 +93,7 @@ func run() error {
 		defer close(errs)
 		defer wg.Done()
 
-		if err = sock.ListenAndServe(); err != nil {
+		if err = ipcSrv.ListenAndServe(); err != nil {
 			errs <- err
 		}
 	}()
@@ -102,7 +102,7 @@ func run() error {
 	go func() {
 		defer wg.Done()
 
-		srv.Wait() //nolint // add error handling
+		httpSrv.Wait() //nolint // add error handling
 	}()
 
 	fmt.Printf("%s: waiting\n", svcName)

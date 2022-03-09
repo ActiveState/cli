@@ -1,4 +1,4 @@
-package socket
+package ipc
 
 type DoneError struct {
 	doneMsg string

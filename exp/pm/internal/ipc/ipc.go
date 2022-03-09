@@ -1,4 +1,4 @@
-package socket
+package ipc
 
 import (
 	"errors"
@@ -8,9 +8,9 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
+	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
 	"github.com/ActiveState/cli/exp/pm/internal/pcerrors"
-	"github.com/ActiveState/cli/exp/pm/internal/socket/internal/flisten"
-	"github.com/ActiveState/cli/exp/pm/internal/socket/namespace"
 )
 
 const (
@@ -22,22 +22,22 @@ var (
 	network  = "unix"
 
 	ErrInUse       = flisten.ErrInUse
-	ErrConnRefused = errors.New("socket refused")
+	ErrConnRefused = errors.New("ipc connection refused")
 )
 
 type Namespace = namespace.Namespace
 
 type MatchedHandler func(input string) (resp string, isMatched bool)
 
-type Socket struct {
+type IPC struct {
 	n    *Namespace
 	mhs  []MatchedHandler
 	done chan struct{}
 	wg   *sync.WaitGroup
 }
 
-func New(n *Namespace, mhs ...MatchedHandler) *Socket {
-	return &Socket{
+func New(n *Namespace, mhs ...MatchedHandler) *IPC {
+	return &IPC{
 		n:    n,
 		mhs:  append(mhs, internalPingHandler()),
 		done: make(chan struct{}),
@@ -45,13 +45,13 @@ func New(n *Namespace, mhs ...MatchedHandler) *Socket {
 	}
 }
 
-func (s *Socket) ListenAndServe() error {
+func (c *IPC) ListenAndServe() error {
 	emsg := "socket: listen and serve: %w"
 
-	l, err := flisten.New(s.n, network)
+	l, err := flisten.New(c.n, network)
 	if err != nil {
 		if errors.Is(err, flisten.ErrInUse) {
-			_, pingErr := getPing(NewClient(s.n))
+			_, pingErr := getPing(NewClient(c.n))
 			if pingErr != nil {
 				if errors.Is(pingErr, syscall.ECONNREFUSED) {
 					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
@@ -68,12 +68,12 @@ func (s *Socket) ListenAndServe() error {
 
 	conns := make(chan net.Conn)
 
-	s.wg.Add(1)
+	c.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
+		defer c.wg.Done()
 
 		for {
-			if err := accept(s.done, conns, l); err != nil {
+			if err := accept(c.done, conns, l); err != nil {
 				if derr := (pcerrors.DoneError)(nil); !errors.As(err, &derr) {
 					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
 				}
@@ -83,7 +83,7 @@ func (s *Socket) ListenAndServe() error {
 	}()
 
 	for {
-		if err := routeToHandler(s.done, s.wg, conns, s.mhs); err != nil {
+		if err := routeToHandler(c.done, c.wg, conns, c.mhs); err != nil {
 			if derr := (pcerrors.DoneError)(nil); errors.As(err, &derr) {
 				return nil
 			}
@@ -92,9 +92,9 @@ func (s *Socket) ListenAndServe() error {
 	}
 }
 
-func (s *Socket) Close() error {
-	close(s.done)
-	s.wg.Wait()
+func (c *IPC) Close() error {
+	close(c.done)
+	c.wg.Wait()
 	return nil
 }
 
