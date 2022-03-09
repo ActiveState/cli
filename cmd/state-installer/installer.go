@@ -134,7 +134,8 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	// If we are installing a different branch, update install path
+	// If we are installing a different branch, update install path\
+	// TODO: Remove logging messages
 	logging.Debug("Inital install path: %s", i.path)
 	logging.Debug("Current installer branch: %s", constants.BranchName)
 	if filepath.Base(i.path) != constants.BranchName {

@@ -335,16 +335,20 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
+	logging.Debug("postInstallEvents params.path: %s", params.path)
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
+	logging.Debug("postInstallEvents installPath: %s", installPath)
 
 	stateExe := appinfo.StateApp(installPath).Exec()
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
+	logging.Debug("postInstallEvents binPath: %s", binPath)
+	logging.Debug("postInstallEvents isUpdate: %s", isUpdate)
 
 	// Execute requested command, these are mutually exclusive
 	switch {
@@ -377,8 +381,10 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	case !isUpdate:
+		logging.Debug("postInstallEvents starting subshell")
 		ss := subshell.New(cfg)
 		ss.SetEnv(envMap(binPath))
+		logging.Debug("postInstallEvents envMap: %s", envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
