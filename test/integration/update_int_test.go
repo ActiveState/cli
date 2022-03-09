@@ -174,6 +174,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				e2e.AppendEnv(suite.env(false, false)...),
 			)
 			cp.Expect("Updating")
+			cp.Expect("Done")
 			cp.ExpectExitCode(0)
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
