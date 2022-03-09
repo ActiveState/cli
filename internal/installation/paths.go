@@ -45,16 +45,17 @@ func InstallPath() (string, error) {
 }
 
 func BranchPathFromInstallPath(branch string) (string, error) {
-	installPath, err := InstallPath()
-	if err != nil {
-		return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BranchPath")
-	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
 		return path, nil
 	}
 
 	if branch == "" {
 		branch = constants.BranchName
+	}
+
+	installPath, err := InstallPath()
+	if err != nil {
+		return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BranchPath")
 	}
 
 	return filepath.Join(installPath, branch), nil

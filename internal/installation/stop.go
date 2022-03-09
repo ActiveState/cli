@@ -141,8 +141,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 func killProcess(proc *process.Process, name string) error {
 	children, err := proc.Children()
 	if err != nil {
-		logging.Error("Could not get child processes, err: %v", errs.JoinMessage(err))
-		// return errs.Wrap(err, "Could not get child processes")
+		return errs.Wrap(err, "Could not get child processes")
 	}
 
 	for _, c := range children {
