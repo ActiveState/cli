@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
-	"github.com/ActiveState/cli/exp/pm/internal/proccomm"
+	"github.com/ActiveState/cli/exp/pm/internal/pcomm"
 	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
 	"github.com/ActiveState/cli/internal/exeutils"
 )
@@ -16,7 +16,7 @@ func main() {
 	start := time.Now()
 
 	var (
-		rootDir = "/tmp/proccomm"
+		rootDir = "/tmp/pcomm"
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"
@@ -32,9 +32,9 @@ func main() {
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	ic := ipc.NewClient(n)
-	pc := proccomm.NewClient(ic)
-	fmt.Println("setup proccomm client", time.Since(start))
+	sc := ipc.NewClient(n)
+	pc := pcomm.NewClient(sc)
+	fmt.Println("setup pcomm client", time.Since(start))
 	addr, err := pc.GetHTTPAddr()
 	fmt.Println("got http addr", time.Since(start))
 

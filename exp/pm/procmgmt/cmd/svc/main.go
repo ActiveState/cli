@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
-	"github.com/ActiveState/cli/exp/pm/internal/proccomm"
+	"github.com/ActiveState/cli/exp/pm/internal/pcomm"
 	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
 )
 
@@ -26,7 +26,7 @@ func main() {
 
 func run() error {
 	var (
-		rootDir = "/tmp/proccomm"
+		rootDir = "/tmp/pcomm"
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"
@@ -48,7 +48,7 @@ func run() error {
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	ipcSrv := ipc.New(n, proccomm.HTTPAddrMHandler(addr))
+	ipcSrv := ipc.New(n, pcomm.HTTPAddrMHandler(addr))
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

@@ -1,4 +1,4 @@
-package proccomm
+package pcomm
 
 import "github.com/ActiveState/cli/exp/pm/internal/ipc"
 
