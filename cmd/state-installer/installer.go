@@ -32,7 +32,6 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	// TODO: Update path here?
 	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
 
 	return i, nil
@@ -132,15 +131,6 @@ func (i *Installer) sanitize() error {
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
-
-	// If we are installing a different branch, update install path
-	// TODO: Remove logging messages
-	// logging.Debug("Inital install path: %s", i.path)
-	// logging.Debug("Current installer branch: %s", constants.BranchName)
-	// if filepath.Base(i.path) != constants.BranchName {
-	// 	i.path = filepath.Join(filepath.Dir(i.path), constants.BranchName)
-	// 	logging.Debug("Updated install path: %s", i.path)
-	// }
 
 	return nil
 }

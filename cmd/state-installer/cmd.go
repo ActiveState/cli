@@ -243,6 +243,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
+	// If we are installing a different branch, update install path
 	var switchChannel bool
 	if filepath.Base(params.path) != constants.BranchName {
 		params.path = filepath.Join(filepath.Dir(params.path), constants.BranchName)
@@ -341,26 +342,21 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate, switchChannel bool) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
-	logging.Debug("postInstallEvents params.path: %s", params.path)
 	installPath, err := resolveInstallPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
-	logging.Debug("postInstallEvents installPath: %s", installPath)
 
 	stateExe := appinfo.StateApp(installPath).Exec()
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
-	logging.Debug("postInstallEvents binPath: %s", binPath)
-	logging.Debug("postInstallEvents isUpdate: %b", isUpdate)
 
 	// Execute requested command, these are mutually exclusive
 	switch {
 	// Execute provided --command
 	case params.command != "":
-		logging.Debug("postInstallEvents running command")
 		an.Event(AnalyticsFunnelCat, "forward-command")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
@@ -371,7 +367,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
-		logging.Debug("postInstallEvents activating")
 		an.Event(AnalyticsFunnelCat, "forward-activate")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
@@ -381,7 +376,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
-		logging.Debug("postInstallEvents default")
 		an.Event(AnalyticsFunnelCat, "forward-activate-default")
 
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
@@ -390,10 +384,8 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	case !isUpdate || switchChannel:
-		logging.Debug("postInstallEvents starting subshell")
 		ss := subshell.New(cfg)
 		ss.SetEnv(envMap(binPath))
-		logging.Debug("postInstallEvents envMap: %s", envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -402,7 +394,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	}
 
-	logging.Debug("postInstallEvents return nil")
 	return nil
 }
 
