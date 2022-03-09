@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -80,6 +81,9 @@ func run() error {
 		defer wg.Done()
 
 		for err := range errs {
+			if errors.Is(err, socket.ErrInUse) {
+				srv.Close() // TODO: make this less gross
+			}
 			fmt.Fprintf(os.Stderr, "%s: errored early: %s\n", svcName, err)
 		}
 	}()

@@ -3,6 +3,7 @@ package proccomm
 import "github.com/ActiveState/cli/exp/pm/internal/socket"
 
 var (
+	KeyPing     = "ping"
 	KeyHTTPAddr = "http-addr"
 )
 
@@ -17,15 +18,25 @@ func NewClient(s *socket.Client) *Client {
 }
 
 func HTTPAddrMHandler(addr string) socket.MatchedHandler {
-	return func(input string) (bool, string) {
+	return func(input string) (string, bool) {
 		if input == KeyHTTPAddr {
-			return true, addr
+			return addr, true
 		}
 
-		return false, ""
+		return "", false
 	}
 }
 
 func (c *Client) GetHTTPAddr() (string, error) {
 	return c.s.Get(KeyHTTPAddr)
+}
+
+func PingHandler() socket.MatchedHandler {
+	return func(input string) (string, bool) {
+		if input == KeyPing {
+			return "pong", true
+		}
+
+		return "", false
+	}
 }

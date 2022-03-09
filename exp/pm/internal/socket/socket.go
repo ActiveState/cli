@@ -6,8 +6,11 @@ import (
 	"net"
 	"os"
 	"sync"
+	"syscall"
 
 	"github.com/ActiveState/cli/exp/pm/internal/pcerrors"
+	"github.com/ActiveState/cli/exp/pm/internal/socket/internal/flisten"
+	"github.com/ActiveState/cli/exp/pm/internal/socket/namespace"
 )
 
 const (
@@ -17,9 +20,14 @@ const (
 var (
 	msgWidth = 64
 	network  = "unix"
+
+	ErrInUse       = flisten.ErrInUse
+	ErrConnRefused = errors.New("socket refused")
 )
 
-type MatchedHandler func(input string) (isMatched bool, resp string)
+type Namespace = namespace.Namespace
+
+type MatchedHandler func(input string) (resp string, isMatched bool)
 
 type Socket struct {
 	n    *Namespace
@@ -31,7 +39,7 @@ type Socket struct {
 func New(n *Namespace, mhs ...MatchedHandler) *Socket {
 	return &Socket{
 		n:    n,
-		mhs:  mhs,
+		mhs:  append(mhs, internalPingHandler()),
 		done: make(chan struct{}),
 		wg:   &sync.WaitGroup{},
 	}
@@ -39,17 +47,24 @@ func New(n *Namespace, mhs ...MatchedHandler) *Socket {
 
 func (s *Socket) ListenAndServe() error {
 	emsg := "socket: listen and serve: %w"
-	namespace := s.n.String()
 
-	l, err := net.Listen(network, namespace)
+	l, err := flisten.New(s.n, network)
 	if err != nil {
+		if errors.Is(err, flisten.ErrInUse) {
+			_, pingErr := getPing(NewClient(s.n))
+			if pingErr != nil {
+				if errors.Is(pingErr, syscall.ECONNREFUSED) {
+					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
+				}
+
+				return fmt.Errorf(emsg, pingErr) // advanced handling?
+			}
+			return ErrInUse // should die - check for in main specifically
+		}
+
 		return fmt.Errorf(emsg, err)
 	}
 	defer l.Close()
-
-	if err := os.Chmod(namespace, 0700); err != nil {
-		return fmt.Errorf(emsg, err)
-	}
 
 	conns := make(chan net.Conn)
 
@@ -137,7 +152,7 @@ func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
 	output := "not found"
 
 	for _, mh := range mhs {
-		if ok, resp := mh(input); ok {
+		if resp, ok := mh(input); ok {
 			output = resp
 			break
 		}

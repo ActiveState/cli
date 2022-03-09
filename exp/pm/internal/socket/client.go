@@ -10,13 +10,14 @@ type Client struct {
 }
 
 func NewClient(n *Namespace) *Client {
+	// TODO: move ping and error return here
 	return &Client{
 		n: n,
 	}
 }
 
 func (c *Client) Get(key string) (string, error) {
-	emsg := "check ok: %w"
+	emsg := "client: get: %w"
 
 	conn, err := net.Dial(network, c.n.String())
 	if err != nil {
