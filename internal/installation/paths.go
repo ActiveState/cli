@@ -36,7 +36,6 @@ func InstallPath() (string, error) {
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
 	if !fileutils.TargetExists(stateInfo.Exec()) {
-		// TODO: is this a fallback?
 		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
 	}
 
