@@ -61,10 +61,6 @@ type SignupParams struct {
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
-		if params.NonInteractive {
-			return locale.NewInputError("err_auth_loggedout", "You are logged out.")
-		}
-
 		if err := params.verify(); err != nil {
 			return locale.WrapInputError(err, "err_auth_params", "Invalid authentication params")
 		}
@@ -95,11 +91,15 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Prompt || params.Username != "" {
-		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
 	if params.Token != "" {
 		return authlet.AuthenticateWithToken(params.Token, a.Auth)
+	}
+
+	if params.NonInteractive {
+		return locale.NewInputError("err_auth_needinput")
 	}
 
 	return authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
