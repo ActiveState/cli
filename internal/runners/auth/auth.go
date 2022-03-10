@@ -34,7 +34,7 @@ type AuthParams struct {
 	Username       string
 	Password       string
 	Totp           string
-	Interactive    bool
+	Prompt         bool
 	NonInteractive bool
 }
 
@@ -55,7 +55,7 @@ func (p AuthParams) verify() error {
 }
 
 type SignupParams struct {
-	Interactive bool
+	Prompt bool
 }
 
 // Run runs our command
@@ -94,7 +94,7 @@ func (a *Auth) Run(params *AuthParams) error {
 }
 
 func (a *Auth) authenticate(params *AuthParams) error {
-	if params.Interactive || params.Username != "" {
+	if params.Prompt || params.Username != "" {
 		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 

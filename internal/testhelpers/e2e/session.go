@@ -361,7 +361,7 @@ func (s *Session) CreateNewUser() string {
 	password := username
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn(tagsuite.Auth, "signup", "--interactive")
+	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
 
 	p.Expect("Terms of Service")
 	p.Send("y")

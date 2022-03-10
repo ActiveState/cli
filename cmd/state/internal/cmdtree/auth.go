@@ -43,10 +43,10 @@ func newAuthCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 				Value:       &params.Totp,
 			},
 			{
-				Name:        "interactive",
+				Name:        "prompt",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_interactive_description"),
-				Value:       &params.Interactive,
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},
@@ -67,10 +67,10 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "interactive",
+				Name:        "prompt",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_signup_interactive_description"),
-				Value:       &params.Interactive,
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},

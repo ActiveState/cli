@@ -59,7 +59,7 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth, "--interactive")
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.Send(username)
 	cp.Expect("password:")
@@ -80,7 +80,7 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
-	cp := ts.Spawn(tagsuite.Auth, "--interactive")
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.SendCtrlC()
 }
