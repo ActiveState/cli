@@ -63,6 +63,7 @@ type Options struct {
 var (
 	PersistentUsername string
 	PersistentPassword string
+	PersistentToken    string
 
 	defaultTimeout = 40 * time.Second
 	authnTimeout   = 40 * time.Second
@@ -71,6 +72,7 @@ var (
 func init() {
 	PersistentUsername = os.Getenv("INTEGRATION_TEST_USERNAME")
 	PersistentPassword = os.Getenv("INTEGRATION_TEST_PASSWORD")
+	PersistentToken = os.Getenv("INTEGRATION_TEST_TOKEN")
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
@@ -87,9 +89,16 @@ func init() {
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
+	if PersistentToken == "" {
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
+		if err != nil {
+			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
+		}
+		PersistentToken = strings.TrimSpace(out)
+	}
 
-	if PersistentUsername == "" || PersistentPassword == "" {
-		fmt.Println("WARNING!!! Environment variables INTEGRATION_TEST_USERNAME and INTEGRATION_TEST_PASSWORD should be defined!")
+	if PersistentUsername == "" || PersistentPassword == "" || PersistentToken == "" {
+		fmt.Println("WARNING!!! Environment variables INTEGRATION_TEST_USERNAME, INTEGRATION_TEST_PASSWORD INTEGRATION_TEST_TOKEN and should be defined!")
 	}
 
 }

@@ -68,6 +68,23 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 	return nil
 }
 
+// AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
+func AuthenticateWithToken(token string, auth *authentication.Auth) error {
+	logging.Debug("Authenticating with token")
+
+	if err := auth.AuthenticateWithModel(&mono_models.Credentials{
+		Token: token,
+	}); err != nil {
+		return locale.WrapError(err, "err_auth_model", "Failed to authenticate.")
+	}
+
+	if err := auth.SaveToken(token); err != nil {
+		return locale.WrapError(err, "err_auth_token")
+	}
+
+	return nil
+}
+
 // RequireAuthentication will prompt the user for authentication if they are not already authenticated. If the authentication
 // is not successful it will return a failure
 func RequireAuthentication(message string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {

@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/auth"
 )
 
-func newAuthCommand(prime *primer.Values) *captain.Command {
+func newAuthCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	authRunner := auth.NewAuth(prime)
 
 	params := auth.AuthParams{}
@@ -51,6 +51,7 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return authRunner.Run(&params)
 		},
 	).SetGroup(PlatformGroup)
