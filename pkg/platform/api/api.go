@@ -16,15 +16,13 @@ import (
 )
 
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information
-type RoundTripper struct {
-	transport http.RoundTripper
-}
+type RoundTripper struct{}
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("User-Agent", r.UserAgent())
 	req.Header.Set("X-Requestor", machineid.UniqID())
-	return r.transport.RoundTrip(req)
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 // UserAgent returns the user agent used by the State Tool
@@ -60,12 +58,7 @@ func (r *RoundTripper) UserAgent() string {
 
 // NewRoundTripper creates a new instance of RoundTripper
 func NewRoundTripper() http.RoundTripper {
-	return NewRoundTripperWithTransport(http.DefaultTransport)
-}
-
-// NewRoundTripperWithTransport creates a new instance of RoundTripper with the specified transport.
-func NewRoundTripperWithTransport(transport http.RoundTripper) http.RoundTripper {
-	return &RoundTripper{transport}
+	return &RoundTripper{}
 }
 
 // ErrorCode tries to retrieve the code associated with an API error
