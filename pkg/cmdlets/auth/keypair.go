@@ -22,7 +22,7 @@ func ensureUserKeypair(passphrase string, cfg keypairs.Configurable, out output.
 	}
 
 	if err != nil {
-		return locale.WrapError(err, "err_ensure_keypair", "Could not find keypair. Please login with '[ACTIONABLE]state auth --interactive[/RESET]'.")
+		return locale.WrapError(err, "err_ensure_keypair", "Could not find keypair. Please login with '[ACTIONABLE]state auth --prompt[/RESET]'.")
 	}
 
 	return nil

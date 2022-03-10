@@ -41,8 +41,25 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.ensureLogout(ts)
 }
 
+func (suite *AuthIntegrationTestSuite) TestAuthToken() {
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken)
+	cp.Expect("logged in", 40*time.Second)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn(tagsuite.Auth, "--non-interactive")
+	cp.Expect("logged in", 40*time.Second)
+	cp.ExpectExitCode(0)
+
+	ts.LogoutUser()
+	suite.ensureLogout(ts)
+}
+
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth, "--interactive")
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.Send(username)
 	cp.Expect("password:")
@@ -63,7 +80,7 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
-	cp := ts.Spawn(tagsuite.Auth, "--interactive")
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.SendCtrlC()
 }
