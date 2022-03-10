@@ -3,6 +3,7 @@ package ipc
 import (
 	"fmt"
 	"net"
+	"time"
 )
 
 type Client struct {
@@ -36,4 +37,19 @@ func (c *Client) Get(key string) (string, error) {
 	msg := string(buf[:n])
 
 	return msg, nil
+}
+
+func (c *Client) Namespace() *Namespace {
+	return c.n
+}
+
+func (c *Client) Ping() (time.Duration, error) {
+	emsg := "client: ping: %w"
+
+	start := time.Now()
+	if _, err := getPing(c); err != nil {
+		return 0, fmt.Errorf(emsg, err)
+	}
+
+	return time.Since(start), nil
 }

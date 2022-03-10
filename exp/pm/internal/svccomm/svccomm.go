@@ -1,4 +1,4 @@
-package pcomm
+package svccomm
 
 import "github.com/ActiveState/cli/exp/pm/internal/ipc"
 

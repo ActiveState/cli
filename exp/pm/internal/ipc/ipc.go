@@ -8,9 +8,9 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ActiveState/cli/exp/pm/internal/errs"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
-	"github.com/ActiveState/cli/exp/pm/internal/pcerrors"
 )
 
 const (
@@ -51,9 +51,8 @@ func (c *IPC) ListenAndServe() error {
 	l, err := flisten.New(c.n, network)
 	if err != nil {
 		if errors.Is(err, flisten.ErrInUse) {
-			_, pingErr := getPing(NewClient(c.n))
-			if pingErr != nil {
-				if errors.Is(pingErr, syscall.ECONNREFUSED) {
+			if _, pingErr := NewClient(c.n).Ping(); pingErr != nil {
+				if errors.Is(pingErr, syscall.ECONNREFUSED) { // should handler per platform
 					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
 				}
 
@@ -74,7 +73,7 @@ func (c *IPC) ListenAndServe() error {
 
 		for {
 			if err := accept(c.done, conns, l); err != nil {
-				if derr := (pcerrors.DoneError)(nil); !errors.As(err, &derr) {
+				if derr := (errs.DoneError)(nil); !errors.As(err, &derr) {
 					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
 				}
 				return
@@ -84,7 +83,7 @@ func (c *IPC) ListenAndServe() error {
 
 	for {
 		if err := routeToHandler(c.done, c.wg, conns, c.mhs); err != nil {
-			if derr := (pcerrors.DoneError)(nil); errors.As(err, &derr) {
+			if derr := (errs.DoneError)(nil); errors.As(err, &derr) {
 				return nil
 			}
 			return err

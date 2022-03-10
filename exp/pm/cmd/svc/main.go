@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
-	"github.com/ActiveState/cli/exp/pm/internal/pcomm"
-	"github.com/ActiveState/cli/exp/pm/procmgmt/internal/serve"
+	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 
 func run() error {
 	var (
-		rootDir = "/tmp/pcomm"
+		rootDir = "/tmp/svccomm"
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"
@@ -48,7 +48,7 @@ func run() error {
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	ipcSrv := ipc.New(n, pcomm.HTTPAddrMHandler(addr))
+	ipcSrv := ipc.New(n, svccomm.HTTPAddrMHandler(addr))
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

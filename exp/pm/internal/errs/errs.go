@@ -1,4 +1,4 @@
-package pcerrors
+package errs
 
 type DoneError interface {
 	error
