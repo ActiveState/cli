@@ -46,7 +46,7 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken)
+	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
 	cp.Expect("logged in", 40*time.Second)
 	cp.ExpectExitCode(0)
 

@@ -880,6 +880,8 @@ err_deprecation:
     Please update by running [ACTIONABLE]`state update`[/RESET].
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
+err_auth_needinput:
+  other: You are logged out, in order to log in either run this command in interactive mode or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
 auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:

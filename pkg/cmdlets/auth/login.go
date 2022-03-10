@@ -27,15 +27,15 @@ var OpenURI = open.Run
 
 // Authenticate will prompt the user for authentication
 func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	return AuthenticateWithInput("", "", "", cfg, out, prompt, auth)
+	return AuthenticateWithInput("", "", "", false, cfg, out, prompt, auth)
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+func AuthenticateWithInput(username, password, totp string, nonInteractive bool, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
 	logging.Debug("Authenticating with input")
 
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
-	if err := promptForLogin(credentials, prompt); err != nil {
+	if err := ensureCredentials(credentials, prompt, nonInteractive); err != nil {
 		return locale.WrapInputError(err, "login_cancelled")
 	}
 
@@ -131,9 +131,12 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 	return nil
 }
 
-func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompter) error {
+func ensureCredentials(credentials *mono_models.Credentials, prompter prompt.Prompter, nonInteractive bool) error {
 	var err error
 	if credentials.Username == "" {
+		if nonInteractive {
+			return locale.NewInputError("err_auth_needinput")
+		}
 		credentials.Username, err = prompter.Input("", locale.T("username_prompt"), new(string), prompt.InputRequired)
 		if err != nil {
 			return errs.Wrap(err, "Input cancelled")
@@ -141,6 +144,9 @@ func promptForLogin(credentials *mono_models.Credentials, prompter prompt.Prompt
 	}
 
 	if credentials.Password == "" {
+		if nonInteractive {
+			return locale.NewInputError("err_auth_needinput")
+		}
 		credentials.Password, err = prompter.InputSecret("", locale.T("password_prompt"), prompt.InputRequired)
 		if err != nil {
 			return errs.Wrap(err, "Secret input cancelled")
