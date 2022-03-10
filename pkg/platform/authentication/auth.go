@@ -366,7 +366,17 @@ func (s *Auth) CreateToken() error {
 		return err
 	}
 
-	err = s.cfg.Set(ApiTokenConfigKey, token)
+	err = s.SaveToken(token)
+	if err != nil {
+		return errs.Wrap(err, "SaveToken failed")
+	}
+
+	return nil
+}
+
+// SaveToken will save an API token
+func (s *Auth) SaveToken(token string) error {
+	err := s.cfg.Set(ApiTokenConfigKey, token)
 	if err != nil {
 		return locale.WrapError(err, "err_set_token", "Could not set token in config")
 	}

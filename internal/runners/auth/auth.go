@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -31,11 +30,12 @@ func NewAuth(prime primeable) *Auth {
 }
 
 type AuthParams struct {
-	Token       string
-	Username    string
-	Password    string
-	Totp        string
-	Interactive bool
+	Token          string
+	Username       string
+	Password       string
+	Totp           string
+	Prompt         bool
+	NonInteractive bool
 }
 
 func (p AuthParams) verify() error {
@@ -55,12 +55,16 @@ func (p AuthParams) verify() error {
 }
 
 type SignupParams struct {
-	Interactive bool
+	Prompt bool
 }
 
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
+		if params.NonInteractive {
+			return locale.NewInputError("err_auth_loggedout", "You are logged out.")
+		}
+
 		if err := params.verify(); err != nil {
 			return locale.WrapInputError(err, "err_auth_params", "Invalid authentication params")
 		}
@@ -90,14 +94,12 @@ func (a *Auth) Run(params *AuthParams) error {
 }
 
 func (a *Auth) authenticate(params *AuthParams) error {
-	if params.Interactive || params.Username != "" {
+	if params.Prompt || params.Username != "" {
 		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
 	if params.Token != "" {
-		return a.Auth.AuthenticateWithModel(&mono_models.Credentials{
-			Token: params.Token,
-		})
+		return authlet.AuthenticateWithToken(params.Token, a.Auth)
 	}
 
 	return authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)

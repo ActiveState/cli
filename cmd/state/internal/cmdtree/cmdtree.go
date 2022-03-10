@@ -25,7 +25,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	globals := newGlobalOptions()
 
-	authCmd := newAuthCommand(prime)
+	authCmd := newAuthCommand(prime, globals)
 	authCmd.AddChildren(
 		newSignupCommand(prime),
 		newLogoutCommand(prime),
