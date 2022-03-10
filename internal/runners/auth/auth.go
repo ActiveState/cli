@@ -62,7 +62,7 @@ type SignupParams struct {
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
 		if params.NonInteractive {
-			return locale.NewInputError("err_auth_loggedout", "You are not logged out.")
+			return locale.NewInputError("err_auth_loggedout", "You are logged out.")
 		}
 
 		if err := params.verify(); err != nil {
