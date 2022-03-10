@@ -68,7 +68,7 @@ func AuthenticateWithInput(username, password, totp string, cfg keypairs.Configu
 	return nil
 }
 
-// AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
+// AuthenticateWithToken will try to authenticate with the provided token
 func AuthenticateWithToken(token string, auth *authentication.Auth) error {
 	logging.Debug("Authenticating with token")
 
