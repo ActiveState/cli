@@ -244,9 +244,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath(params.path)
+	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
+	}
+
+	var switchChannel bool
+	if filepath.Base(filepath.Dir(stateToolPath)) != constants.BranchName {
+		switchChannel = true
 	}
 
 	// Detect state tool alongside installer executable
@@ -281,7 +286,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
 			return err
 		}
-		return postInstallEvents(out, cfg, an, params, isUpdate)
+		return postInstallEvents(out, cfg, an, params, isUpdate, switchChannel)
 	}
 
 	// Check if state tool already installed
@@ -289,7 +294,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", stateToolPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, cfg, an, params, true)
+		return postInstallEvents(out, cfg, an, params, true, switchChannel)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -332,7 +337,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate, switchChannel bool) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
 	installPath, err := resolveInstallPath(params.path)
@@ -376,7 +381,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
-	case !isUpdate:
+	case !isUpdate || switchChannel:
 		ss := subshell.New(cfg)
 		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
