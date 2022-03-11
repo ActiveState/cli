@@ -89,6 +89,10 @@ func (u *Update) Run(params *Params) error {
 		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
+	if params.Channel != constants.BranchName {
+		u.out.Notice(locale.Tl("update_switch_channel", "Please start a new shell for the update to take effect."))
+	}
+
 	return nil
 }
 
