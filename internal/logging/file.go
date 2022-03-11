@@ -3,13 +3,10 @@ package logging
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 )
 
@@ -111,7 +108,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
 	filename := FilePath()
-	originalMessage := fmt.Sprintf(message, args...)
 
 	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose.value() {
