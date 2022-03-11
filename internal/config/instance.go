@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/spf13/cast"
 	"gopkg.in/yaml.v2"
@@ -76,6 +77,7 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 		if err := i.importLegacyConfig(); err != nil {
 			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
 			logging.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
+			rollbar.Error("Failed to import legacy config: %s", errs.JoinMessage(err))
 		}
 	}
 
@@ -166,6 +168,7 @@ func (i *Instance) Get(key string) interface{} {
 	row := i.db.QueryRow(`SELECT value FROM config WHERE key=?`, key)
 	if row.Err() != nil {
 		logging.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
+		rollbar.Error("config:get query failed: %s", errs.JoinMessage(row.Err()))
 		return nil
 	}
 
@@ -178,6 +181,7 @@ func (i *Instance) Get(key string) interface{} {
 	if err := yaml.Unmarshal([]byte(value), &result); err != nil {
 		if err2 := json.Unmarshal([]byte(value), &result); err2 != nil {
 			logging.Error("config:get unmarshal failed: %s (json err: %s)", errs.JoinMessage(err), errs.JoinMessage(err2))
+			rollbar.Error("config:get unmarshal failed: %s (json err: %s)", errs.JoinMessage(err), errs.JoinMessage(err2))
 			return nil
 		}
 	}
@@ -200,6 +204,7 @@ func (i *Instance) AllKeys() []string {
 	rows, err := i.db.Query(`SELECT key FROM config`)
 	if err != nil {
 		logging.Error("config:AllKeys query failed: %s", errs.JoinMessage(err))
+		rollbar.Error("config:AllKeys query failed: %s", errs.JoinMessage(err))
 		return nil
 	}
 	var keys []string

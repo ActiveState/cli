@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -124,6 +125,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
 		logging.Error("Could not detect OSVersion: %v", err)
+		rollbar.Error("Could not detect OSVersion: %v", err)
 	}
 	c.RegisterParam("OS", map[string]interface{}{
 		"Name":         sysinfo.OS().String(),
@@ -468,6 +470,7 @@ func FilterUnconstrained(conditional *Conditional, items []projectfile.Constrain
 
 	if conditional == nil {
 		logging.Error("FilterUnconstrained called with nil conditional")
+		rollbar.Error("FilterUnconstrained called with nil conditional")
 	}
 
 	for i, item := range items {

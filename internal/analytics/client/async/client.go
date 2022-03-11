@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -75,6 +76,7 @@ func (a *Client) EventWithLabel(category string, action string, label string, di
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
 		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+		rollbar.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 	}
 }
 
@@ -130,4 +132,5 @@ func handlePanics(err interface{}, stack []byte) {
 	}
 	logging.Error("Panic in client analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
+	rollbar.Error("Panic in client analytics: %v", err)
 }

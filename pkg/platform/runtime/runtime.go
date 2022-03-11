@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -118,6 +119,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	err := msgHandler.WaitForAllEvents(prod.Events())
 	if err != nil {
 		logging.Error("Error handling update events: %v", err)
+		rollbar.Error("Error handling update events: %v", err)
 	}
 
 	// when the msg handler returns, *r and setupErr are updated.
@@ -194,6 +196,7 @@ func (r *Runtime) recordUsage() {
 	dimsJson, err := dims.Marshal()
 	if err != nil {
 		logging.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
+		rollbar.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
 		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)

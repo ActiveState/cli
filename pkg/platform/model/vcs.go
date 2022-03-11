@@ -7,24 +7,24 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/machineid"
-	"github.com/ActiveState/cli/internal/singleton/uniqid"
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
-	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -115,6 +115,7 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
 	if err != nil {
 		logging.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
+		rollbar.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
 	}
 	return match
 }
@@ -392,6 +393,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
+		rollbar.Error("AddCommit Error: %s", err.Error())
 		return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 	return res.Payload, nil
@@ -581,6 +583,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		logging.Error("AddCommit Error: %s", err.Error())
+		rollbar.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 

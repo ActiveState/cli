@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -29,6 +30,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if we are running as administrator: %v", err)
+		rollbar.Error("Failed to determine if we are running as administrator: %v", err)
 	}
 	if isWindowsAdmin {
 		logging.Debug("Skip preparation step as it is not supported for Windows Administrators.")
@@ -53,7 +55,6 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 
 	return nil
 }
-
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
 func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, projectPath string) error {

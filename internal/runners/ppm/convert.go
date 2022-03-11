@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -157,6 +158,7 @@ func (cf *ConversionFlow) openInBrowser(what, url string) {
 	err := open.Run(url)
 	if err != nil {
 		logging.Error("Could not open %s in browser: %v", url, err)
+		rollbar.Error("Could not open %s in browser: %v", url, err)
 		cf.out.Error(locale.Tr("browser_fallback", what, url))
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 type Closer func()
@@ -19,6 +20,7 @@ func logInfo(msg string, args ...interface{}) {
 
 func logError(msg string, args ...interface{}) {
 	logging.Error("File-Event: "+msg, args...)
+	rollbar.Error("File-Event: "+msg, args...)
 }
 
 type Watcher struct {

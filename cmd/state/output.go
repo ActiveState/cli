@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/terminal"
 
 	survey "gopkg.in/AlecAivazis/survey.v1/core"
@@ -63,6 +64,7 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 			return initOutput(flags, string(output.PlainFormatName))
 		}
 		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, err.Error())
+		rollbar.Error("Could not create outputer, name: %s, error: %s", formatName, err.Error())
 		return nil, errs.Wrap(err, "output.New %s failed", formatName)
 	}
 	return out, nil

@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // FileTransform specifies a single transformation to be performed on files in artifacts post-installation
@@ -68,6 +69,7 @@ func (ft *FileTransform) relocateFile(fileBytes []byte, replacement string) ([]b
 	// replacement should be shorter than search string
 	if len(replacementBytes) > len(findBytes) {
 		logging.Errorf("Replacement text too long: %s, original text: %s", ft.Pattern, replacement)
+		rollbar.Error("Replacement text too long: %s, original text: %s", ft.Pattern, replacement)
 		return fileBytes, locale.NewError("file_transform_replacement_too_long", "Replacement text cannot be longer than search text in a binary file.")
 	}
 

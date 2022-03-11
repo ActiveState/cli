@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/wailsapp/wails"
@@ -45,6 +46,7 @@ func (b *Bindings) Warning() string {
 	v, err := json.Marshal(b.lockedProjects)
 	if err != nil {
 		logging.Error("Could not marshal lockedProject: %v", errs.Join(err, ": "))
+		rollbar.Error("Could not marshal lockedProject: %v", errs.Join(err, ": "))
 		return ""
 	}
 	return string(v)
@@ -64,6 +66,7 @@ func (b *Bindings) Install() error {
 	logging.Debug("Started installer: %d", proc.Pid)
 	if err != nil {
 		logging.Error("InstallDeferred failed: %v", errs.Join(err, ": "))
+		rollbar.Error("InstallDeferred failed: %v", errs.Join(err, ": "))
 		return formatError(err, "Installation failed")
 	}
 	return nil
@@ -92,6 +95,7 @@ func (b *Bindings) DebugMode() bool {
 func (b *Bindings) OpenURL(url string) {
 	if err := open.Run(url); err != nil {
 		logging.Error("Could not open URL: %s", errs.JoinMessage(err))
+		rollbar.Error("Could not open URL: %s", errs.JoinMessage(err))
 	}
 }
 

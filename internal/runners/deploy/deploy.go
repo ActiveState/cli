@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -82,6 +83,7 @@ func (d *Deploy) Run(params *Params) error {
 		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
 			logging.Error("Could not check for windows administrator privileges: %v", err)
+			rollbar.Error("Could not check for windows administrator privileges: %v", err)
 		}
 		if !isAdmin {
 			return locale.NewError("err_deploy_admin_privileges_required", "Administrator rights are required for this command to modify the system PATH.  If you want to deploy to the user environment, please adjust the command line flags.")

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -64,6 +65,7 @@ func (l *Lock) Run(params *LockParams) error {
 	// invalidate the installer version lock if `state update lock` is requested
 	if err := l.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
 		logging.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
+		rollbar.Error("Failed to invalidate installer version lock on `state update lock` invocation: %v", err)
 	}
 
 	defaultChannel, lockVersion := params.Channel.Name(), params.Channel.Version()

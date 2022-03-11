@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rollbar"
 
 	"github.com/posener/wstest"
 
@@ -69,6 +70,7 @@ func (s *WsMock) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			logging.Error("Reading Message failed: %v", err)
+			rollbar.Error("Reading Message failed: %v", err)
 			return
 		}
 

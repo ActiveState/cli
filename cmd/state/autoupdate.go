@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -38,6 +39,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	defer func() {
 		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
 			logging.Error("Failed to store last update check: %s", errs.JoinMessage(err))
+			rollbar.Error("Failed to store last update check: %s", errs.JoinMessage(err))
 		}
 	}()
 
@@ -151,6 +153,7 @@ func isFreshInstall() bool {
 	stat, err := os.Stat(exe)
 	if err != nil {
 		logging.Error("Could not stat file: %s, error: %v", exe)
+		rollbar.Error("Could not stat file: %s, error: %v", exe)
 		return true
 	}
 	diff := time.Now().Sub(stat.ModTime())

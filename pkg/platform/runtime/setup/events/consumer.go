@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -204,6 +205,7 @@ func stepTitle(step SetupStep) string {
 func (eh *RuntimeEventConsumer) ResolveArtifactName(id artifact.ArtifactID) string {
 	if eh.artifactNames == nil {
 		logging.Error("artifactNames resolver function has not been initialized")
+		rollbar.Error("artifactNames resolver function has not been initialized")
 		return ""
 	}
 	return eh.artifactNames(id)

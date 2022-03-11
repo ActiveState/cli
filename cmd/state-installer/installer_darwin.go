@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package main
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // installLauncher installs files in the /Application directory
@@ -19,6 +21,7 @@ func (i *Installer) installLauncher() error {
 	sourcePath := filepath.Join(i.sourcePath, "system")
 	if !fileutils.DirExists(sourcePath) {
 		logging.Error("Installation does not have a system path")
+		rollbar.Error("Installation does not have a system path")
 		return nil
 	}
 

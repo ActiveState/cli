@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -69,10 +70,8 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 	// gio is "Gnome input/output"
 	stdoutText, stderrText, err := exeutils.ExecSimple("gio", "set", path, "metadata::trusted", "true")
 	if err != nil {
-		logging.Errorf(
-			"Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)",
-			errs.JoinMessage(err), stdoutText, stderrText,
-		)
+		logging.Errorf("Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)", errs.JoinMessage(err), stdoutText, stderrText)
+		rollbar.Error("Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)", errs.JoinMessage(err), stdoutText, stderrText)
 	}
 
 	return path, nil

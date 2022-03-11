@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 )
 
@@ -36,6 +37,7 @@ func New(cfg *config.Instance, an *sync.Client) *Watcher {
 		err := json.Unmarshal([]byte(watchersJson), &watchers)
 		if err != nil {
 			logging.Error("Could not unmarshal watchersL %s", errs.JoinMessage(err))
+			rollbar.Error("Could not unmarshal watchersL %s", errs.JoinMessage(err))
 		} else {
 			w.watching = watchers
 		}
@@ -76,6 +78,7 @@ func (w *Watcher) check() {
 		running, err := e.IsRunning()
 		if err != nil {
 			logging.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
+			rollbar.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
 			// Don't return yet, the conditional below still needs to clear this entry
 		}
 		if !running {

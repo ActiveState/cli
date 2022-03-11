@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -47,6 +48,7 @@ func NewArtifactLogDownload(events chan<- SetupEventer) *ArtifactLogDownload {
 		case <-time.After(time.Second * 5):
 			// NOTE: If this message appears on rollbar, it means that we were unable to download and process all artifact downloads with a 5 seconds delay.  If that happens often enough, we might want to consider increasing the `maxConcurrency` value or ultimately this timeout.
 			logging.Error("Failed to process all artifact log downloads.")
+			rollbar.Error("Failed to process all artifact log downloads.")
 			cancel()
 			<-done
 		}
@@ -59,6 +61,7 @@ func (d *ArtifactLogDownload) RequestArtifactLog(artifactID artifact.ArtifactID,
 	d.wp.Submit(func() {
 		if err := d.downloadArtifactLog(d.ctx, artifactID, unsignedLogURI); err != nil {
 			logging.Error("Failed to add build log details to log file for %s: %v", artifactID, errs.JoinMessage(err))
+			rollbar.Error("Failed to add build log details to log file for %s: %v", artifactID, errs.JoinMessage(err))
 		}
 	})
 }

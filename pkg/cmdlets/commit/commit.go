@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -87,6 +88,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	dt, err := time.Parse(time.RFC3339, commit.AtTime.String())
 	if err != nil {
 		logging.Error("Could not parse commit time: %v", err)
+		rollbar.Error("Could not parse commit time: %v", err)
 	}
 	commitData.Date = dt.Format(time.RFC822)
 

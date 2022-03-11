@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -46,11 +47,13 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		rollbar.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
 	machineID := machineid.UniqID()
 	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
 		logging.Error("unknown machine id: %s", machineID)
+		rollbar.Error("unknown machine id: %s", machineID)
 	}
 	deviceID := uniqid.Text()
 
@@ -65,6 +68,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	osvInfo, err := sysinfo.OSVersion()
 	if err != nil {
 		logging.Errorf("Could not detect osVersion: %v", err)
+		rollbar.Error("Could not detect osVersion: %v", err)
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
@@ -97,6 +101,7 @@ func (m *Values) Merge(mergeWith ...*Values) {
 	for _, dim := range mergeWith {
 		if err := mergo.Merge(m, dim, mergo.WithOverride); err != nil {
 			logging.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
+			rollbar.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
 		}
 	}
 }

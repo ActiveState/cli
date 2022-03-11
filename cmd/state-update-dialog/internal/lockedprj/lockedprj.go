@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/version"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -26,6 +27,7 @@ func LockedProjectMapping(cfg projectfile.ConfigGetter) []LockedCheckout {
 			ver, err := version.ParseStateToolVersion(prj.Version())
 			if err != nil {
 				logging.Error("Failed to parse State Tool version %s: %v", prj.Version, err)
+				rollbar.Error("Failed to parse State Tool version %s: %v", prj.Version, err)
 			}
 			// We can ignore projects that are locked to a multi-file update version
 			if version.IsMultiFileUpdate(ver) {

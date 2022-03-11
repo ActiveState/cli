@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // CmdExitCode returns the exit code of a command in a platform agnostic way
@@ -19,6 +20,7 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 	defer func() {
 		if r := recover(); r != nil {
 			logging.Errorf("Could not get exit code, so returning 1 instead (this is non-fatal, but should be resolved), actual error: %v", r)
+			rollbar.Error("Could not get exit code, so returning 1 instead (this is non-fatal, but should be resolved), actual error: %v", r)
 			code = 128
 		}
 	}()
@@ -64,6 +66,7 @@ func BashifyPath(absolutePath string) (string, error) {
 		return winPath, nil
 	}
 	logging.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
+	rollbar.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
 
 	vol := filepath.VolumeName(absolutePath)
 	absolutePath = absolutePath[len(vol):]

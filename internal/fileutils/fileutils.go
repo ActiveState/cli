@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/gofrs/flock"
 )
 
@@ -106,6 +107,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
 		if replaceBytesLen > len(findBytes) {
 			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
+			rollbar.Error("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
@@ -487,6 +489,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				err = os.Remove(subToPath)
 				if err != nil {
 					logging.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
+					rollbar.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
 				}
 			}
 		}
@@ -756,6 +759,7 @@ func MoveAllFilesCrossDisk(src, dst string) error {
 	err := MoveAllFiles(src, dst)
 	if err != nil {
 		logging.Error("Move all files failed with error: %s. Falling back to copy files", err)
+		rollbar.Error("Move all files failed with error: %s. Falling back to copy files", err)
 	}
 
 	return copyFiles(src, dst, true)
@@ -798,6 +802,7 @@ func LogPath(path string) error {
 	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			logging.Error("Error walking filepath at: %s", path)
+			rollbar.Error("Error walking filepath at: %s", path)
 			return err
 		}
 

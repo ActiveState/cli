@@ -3,22 +3,22 @@ package auth
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/go-openapi/strfmt"
-	"github.com/skratchdot/open-golang/open"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	"github.com/go-openapi/strfmt"
+	"github.com/skratchdot/open-golang/open"
 )
 
 // OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
@@ -178,6 +178,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	if err != nil {
 		// This error is not useful to the user so we do not return it and log instead
 		logging.Error("Error when checking for unique username: %v", err)
+		rollbar.Error("Error when checking for unique username: %v", err)
 		return false
 	}
 

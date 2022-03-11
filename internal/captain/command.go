@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
 
@@ -159,6 +160,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		if err != nil {
 			// Cobra doesn't return this error for us, so we have to ensure it's logged
 			logging.Error("Error while running usage: %v", err)
+			rollbar.Error("Error while running usage: %v", err)
 		}
 		return err
 	})
@@ -535,7 +537,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	subCommandString := c.UseFull()
-	logging.CurrentCmd = appEventPrefix + subCommandString
+	rollbar.CurrentCmd = appEventPrefix + subCommandString
 
 	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {

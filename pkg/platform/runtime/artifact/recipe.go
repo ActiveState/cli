@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
@@ -74,6 +75,7 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 			aid, ok := iv2artMap[*dep.IngredientVersionID]
 			if !ok {
 				logging.Error("Could not map ingredient version id %s to artifact id", *dep.IngredientVersionID)
+				rollbar.Error("Could not map ingredient version id %s to artifact id", *dep.IngredientVersionID)
 			}
 			deps = append(deps, aid)
 		}

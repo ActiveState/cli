@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -25,6 +26,7 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 	}
 	if err := os.RemoveAll(s.store.InstallPath()); err != nil {
 		logging.Error("Error removing previous camel installation: %v", err)
+		rollbar.Error("Error removing previous camel installation: %v", err)
 	}
 	return nil
 }

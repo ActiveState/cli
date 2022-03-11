@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
@@ -51,11 +52,13 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		rollbar.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
 	machineID := machineid.UniqID()
 	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
 		logging.Error("unknown machine id: %s", machineID)
+		rollbar.Error("unknown machine id: %s", machineID)
 	}
 	deviceID := uniqid.Text()
 
@@ -64,6 +67,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	osvInfo, err := sysinfo.OSVersion()
 	if err != nil {
 		logging.Errorf("Could not detect osVersion: %v", err)
+		rollbar.Error("Could not detect osVersion: %v", err)
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
@@ -157,6 +161,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 			panic("Trying to send analytics without configuring the Analytics instance.")
 		}
 		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
+		rollbar.Critical("Trying to send analytics event without configuring the Analytics instance.")
 		return
 	}
 
@@ -168,6 +173,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 
 	if err := actualDims.PreProcess(); err != nil {
 		logging.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
+		rollbar.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
 	}
 
 	a.eventWaitGroup.Add(1)
@@ -185,4 +191,5 @@ func handlePanics(err interface{}, stack []byte) {
 	}
 	logging.Error("Panic in state-svc analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
+	rollbar.Error("Panic in state-svc analytics: %v", err)
 }

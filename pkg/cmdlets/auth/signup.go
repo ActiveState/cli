@@ -10,12 +10,12 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/api"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -199,9 +199,11 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
 			logging.Error("Encountered add user conflict: %v", err)
+			rollbar.Error("Encountered add user conflict: %v", err)
 			return locale.WrapInputError(err, "err_auth_signup_user_exists", "", api.ErrorMessageFromPayload(err))
 		default:
 			logging.Error("Encountered unknown error adding user: %v", err)
+			rollbar.Error("Encountered unknown error adding user: %v", err)
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", api.ErrorMessageFromPayload(err))
 		}
 	}

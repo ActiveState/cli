@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
 
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -66,6 +67,7 @@ func (s *serviceManager) Start(args ...string) error {
 			err := rtutils.Timeout(func() error { return proc.Signal(os.Kill) }, time.Second)
 			if err != nil {
 				logging.Errorf("Could not cleanup process: %v", err)
+				rollbar.Error("Could not cleanup process: %v", err)
 				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 			}
 		}
@@ -144,6 +146,7 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 		exe, err := p.Exe()
 		if err != nil {
 			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+			rollbar.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
 		} else if !strings.HasPrefix(strings.ToLower(filepath.Base(exe)), constants.ServiceCommandName) {
 			return nil, nil
 		}

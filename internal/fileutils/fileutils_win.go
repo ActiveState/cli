@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
 )
@@ -46,6 +47,7 @@ func IsWritable(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
 		logging.Error("Could not stat path: %s, got error: %v", path, err)
+		rollbar.Error("Could not stat path: %s, got error: %v", path, err)
 		return false
 	}
 
@@ -58,11 +60,13 @@ func IsWritable(path string) bool {
 	contents, err := assets.ReadFileBytes(filename)
 	if err != nil {
 		logging.Error("Could not read asset: %s", filename)
+		rollbar.Error("Could not read asset: %s", filename)
 		return false
 	}
 	scriptFile, err := WriteTempFile("", filename, contents, 0700)
 	if err != nil {
 		logging.Error("Could not create temporary powershell file: %v", err)
+		rollbar.Error("Could not create temporary powershell file: %v", err)
 		return false
 	}
 
@@ -111,6 +115,7 @@ func ResolveUniquePath(path string) (string, error) {
 		// => just log the error (unless err due to file not existing) and resume with resolved path
 		if !errors.Is(err, os.ErrNotExist) && !errs.Matches(err, os.ErrNotExist) {
 			logging.Error("could not resolve long version of %s: %v", evalPath, err)
+			rollbar.Error("could not resolve long version of %s: %v", evalPath, err)
 		}
 		return filepath.Clean(evalPath), nil
 	}

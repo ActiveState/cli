@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 type ErrorTips interface {
@@ -103,6 +104,7 @@ func unwrapError(err error) (int, error) {
 	// Log error if this isn't a user input error
 	if !locale.IsInputError(err) {
 		logging.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		rollbar.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
@@ -116,11 +118,13 @@ func unwrapError(err error) (int, error) {
 		reportMsg := llerr.ReportMessage()
 		if reportMsg != "" {
 			logging.Error(reportMsg)
+			rollbar.Error(reportMsg)
 		}
 	}
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		logging.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
+		rollbar.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
 		if !condition.BuiltViaCI() {

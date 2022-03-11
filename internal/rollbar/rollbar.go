@@ -2,17 +2,26 @@ package rollbar
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
 	"github.com/rollbar/rollbar-go"
 )
+
+// CurrentCmd holds the value of the current command being invoked
+// it's a quick hack to allow us to log the command to rollbar without risking exposing sensitive info
+var CurrentCmd string
 
 func SetupRollbar(token string) {
 	defer handlePanics(recover())
@@ -67,11 +76,61 @@ func UpdateRollbarPerson(userID, username, email string) {
 // Wait is a wrapper around rollbar.Wait().
 func Wait() { rollbar.Wait() }
 
+func logToRollbar(critical bool, message string, args ...interface{}) {
+	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
+	isPublicChannel := (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch)
+	if !isPublicChannel || !condition.BuiltViaCI() {
+		return
+	}
+
+	data := map[string]interface{}{}
+	logDatab, err := ioutil.ReadFile(logging.FilePath())
+	if err != nil {
+		data["log_file_read_error"] = err.Error()
+	} else {
+		logData := string(logDatab)
+		if len(logData) > 5000 {
+			logData = "<truncated>\n" + logData[len(logData)-5000:]
+		}
+		data["log_file_data"] = logData
+	}
+
+	exec := CurrentCmd
+	if exec == "" {
+		exec = strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
+	}
+	flags := []string{}
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "-") {
+			idx := strings.Index(arg, "=")
+			if idx != -1 {
+				arg = arg[0:idx]
+			}
+			flags = append(flags, arg)
+		}
+	}
+
+	rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, fmt.Sprintf(message, args...))
+	if len(rollbarMsg) > 1000 {
+		rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
+	}
+
+	if critical {
+		rollbar.Critical(fmt.Errorf(rollbarMsg), data)
+	} else {
+		rollbar.Error(fmt.Errorf(rollbarMsg), data)
+	}
+}
+
 // Critical is a wrapper around rollbar.Critical().
-func Critical(interfaces ...interface{}) { rollbar.Critical(interfaces...) }
+func Critical(message string, args ...interface{}) {
+	logToRollbar(true, message, args...)
+}
 
 // Error is a wrapper around rollbar.Error().
-func Error(interfaces ...interface{}) { rollbar.Error(interfaces...) }
+func Error(message string, args ...interface{}) {
+	logToRollbar(false, message, args...)
+}
 
 func handlePanics(err interface{}) {
 	if err == nil {

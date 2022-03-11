@@ -59,6 +59,7 @@ func onReady() {
 
 		if err := cfg.Close(); err != nil {
 			logging.Error("Failed to close config after exiting systray: %w", err)
+			rollbar.Error("Failed to close config after exiting systray: %w", err)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -70,6 +71,7 @@ func onReady() {
 	cfg, err := config.New()
 	if err != nil {
 		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		rollbar.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
@@ -80,6 +82,7 @@ func onReady() {
 	if err != nil {
 		errMsg := errs.Join(err, ": ").Error()
 		logging.Critical("Systray encountered an error: %v", errMsg)
+		rollbar.Critical("Systray encountered an error: %v", errMsg)
 		fmt.Fprintln(os.Stderr, errMsg)
 		exitCode = 1
 	}
@@ -172,6 +175,7 @@ func run(cfg *config.Instance) (rerr error) {
 	localProjects, err := model.LocalProjects(context.Background())
 	if err != nil {
 		logging.Error("Could not get local projects listing: %v", err)
+		rollbar.Error("Could not get local projects listing: %v", err)
 	}
 	localProjectsUpdater.Update(localProjects)
 
@@ -186,36 +190,42 @@ func run(cfg *config.Instance) (rerr error) {
 			err = open.TerminalAndWait(appinfo.StateApp().Exec() + " --version")
 			if err != nil {
 				logging.Error("Could not open command prompt: %v", err)
+				rollbar.Error("Could not open command prompt: %v", err)
 			}
 		case <-mDoc.ClickedCh:
 			logging.Debug("Documentation event")
 			err = open.Browser(constants.TrayDocumentationURL)
 			if err != nil {
 				logging.Error("Could not open documentation url: %v", err)
+				rollbar.Error("Could not open documentation url: %v", err)
 			}
 		case <-mLearn.ClickedCh:
 			logging.Debug("Learn event")
 			err = open.Browser(constants.ActiveStateBlogURL)
 			if err != nil {
 				logging.Error("Could not open blog url: %v", err)
+				rollbar.Error("Could not open blog url: %v", err)
 			}
 		case <-mSupport.ClickedCh:
 			logging.Debug("Support event")
 			err = open.Browser(constants.ActiveStateSupportURL)
 			if err != nil {
 				logging.Error("Could not open support url: %v", err)
+				rollbar.Error("Could not open support url: %v", err)
 			}
 		case <-mDashboard.ClickedCh:
 			logging.Debug("Account event")
 			err = open.Browser(constants.ActiveStateDashboardURL)
 			if err != nil {
 				logging.Error("Could not open account url: %v", err)
+				rollbar.Error("Could not open account url: %v", err)
 			}
 		case <-mReload.ClickedCh:
 			logging.Debug("Projects event")
 			localProjects, err = model.LocalProjects(context.Background())
 			if err != nil {
 				logging.Error("Could not get local projects listing: %v", err)
+				rollbar.Error("Could not get local projects listing: %v", err)
 			}
 			localProjectsUpdater.Update(localProjects)
 		case <-mAutoStart.ClickedCh:
@@ -224,6 +234,7 @@ func run(cfg *config.Instance) (rerr error) {
 			enabled, err := as.IsEnabled()
 			if err != nil {
 				logging.Error("Could not check if autostart is enabled: %v", err)
+				rollbar.Error("Could not check if autostart is enabled: %v", err)
 			}
 			if enabled {
 				logging.Debug("Disable")
@@ -240,6 +251,7 @@ func run(cfg *config.Instance) (rerr error) {
 			}
 			if err != nil {
 				logging.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
+				rollbar.Error("Could not toggle autostart tray: %v", errs.Join(err, ": "))
 			}
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
@@ -259,11 +271,13 @@ func onExit() {
 	cfg, err := config.New()
 	if err != nil {
 		logging.Error("Could not get configuration object on Systray exit")
+		rollbar.Error("Could not get configuration object on Systray exit")
 		return
 	}
 	defer func() {
 		if err := cfg.Close(); err != nil {
 			logging.Error("Failed to close config after exiting systray: %w", err)
+			rollbar.Error("Failed to close config after exiting systray: %w", err)
 		}
 	}()
 	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
@@ -275,6 +289,7 @@ func onExit() {
 	})
 	if err != nil {
 		logging.Error("Failed to unset Systray PID in configuration file: %w", err)
+		rollbar.Error("Failed to unset Systray PID in configuration file: %w", err)
 	}
 }
 

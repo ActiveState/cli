@@ -62,6 +62,7 @@ func LegacyGet() *Auth {
 		if err != nil {
 			// TODO: We need to get rid of this Get() function altogether...
 			logging.Error("Could not get configuration required by auth: %v", err)
+			rollbar.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
 		persist = New(cfg)
@@ -186,6 +187,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			return errs.AddTips(&ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}, tips...)
 		default:
 			logging.Error("Authentication API returned %v", err)
+			rollbar.Error("Authentication API returned %v", err)
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
@@ -297,6 +299,7 @@ func (s *Auth) Logout() error {
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
 		logging.Error("Could not clear apiToken in config")
+		rollbar.Error("Could not clear apiToken in config")
 		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
 
@@ -317,6 +320,7 @@ func (s *Auth) Client() *mono_client.Mono {
 	client, err := s.ClientSafe()
 	if err != nil {
 		logging.Error("Trying to get the Client while not authenticated")
+		rollbar.Error("Trying to get the Client while not authenticated")
 		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
 		exit(1)
 	}
@@ -407,6 +411,7 @@ func (s *Auth) AvailableAPIToken() (v string) {
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
 		logging.Error("Could not retrieve gcloud secret: %v", err)
+		rollbar.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
 		logging.Debug("Using api token sourced from gcloud")

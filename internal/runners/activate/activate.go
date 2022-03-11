@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
@@ -333,11 +334,13 @@ func warningForAdministrator(out output.Outputer) {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		logging.Error("Failed to determine if run as administrator.")
+		rollbar.Error("Failed to determine if run as administrator.")
 	}
 	if isAdmin {
 		u, err := user.Current()
 		if err != nil {
 			logging.Error("Failed to determine current user.")
+			rollbar.Error("Failed to determine current user.")
 			return
 		}
 		out.Notice(locale.Tl(

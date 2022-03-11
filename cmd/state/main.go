@@ -11,23 +11,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"golang.org/x/crypto/ssh/terminal"
-
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/internal/config" // MUST be first!
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -36,11 +29,17 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcmanager"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type ConfigurableAnalytics interface {
@@ -74,6 +73,7 @@ func main() {
 	cfg, err := config.New()
 	if err != nil {
 		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		rollbar.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
@@ -85,6 +85,7 @@ func main() {
 	out, err := initOutput(outFlags, "")
 	if err != nil {
 		logging.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
+		rollbar.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
@@ -157,6 +158,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
 		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+		rollbar.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}
 
 	svcmodel := model.NewSvcModel(cfg, svcm)
@@ -229,6 +231,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
 			logging.Error("Could not check for deprecation: %s", err.Error())
+			rollbar.Error("Could not check for deprecation: %s", err.Error())
 		}
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)

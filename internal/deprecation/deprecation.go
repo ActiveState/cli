@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 const (
@@ -127,6 +128,7 @@ func (checker *Checker) shouldFetch() bool {
 	err := checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
 	if err != nil {
 		logging.Error("Could not set deprecation fetch time in config, error: %v", err)
+		rollbar.Error("Could not set deprecation fetch time in config, error: %v", err)
 	}
 	return true
 

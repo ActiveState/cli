@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // Supported languages
@@ -51,10 +52,12 @@ func init() {
 				setErr := cfg.Set("Locale", locale)
 				if setErr != nil {
 					logging.Error("Could not set locale entry in config, error: %v", setErr)
+					rollbar.Error("Could not set locale entry in config, error: %v", setErr)
 				}
 			}
 		} else {
 			logging.Error("Could not load  config to check locale, error: %v", err)
+			rollbar.Error("Could not load  config to check locale, error: %v", err)
 			locale = "en-US"
 		}
 	}
@@ -76,6 +79,7 @@ func init() {
 
 	if err := Set(locale); err != nil {
 		logging.Error("Could not set locale: %v", err)
+		rollbar.Error("Could not set locale: %v", err)
 	}
 }
 
@@ -155,6 +159,7 @@ func Tl(translationID, locale string, values ...string) string {
 		tmpl, err := template.New("locale error").Parse(translation)
 		if err != nil {
 			logging.Error("Invalid translation template: %w", err)
+			rollbar.Error("Invalid translation template: %w", err)
 			return translation
 		}
 
@@ -163,6 +168,7 @@ func Tl(translationID, locale string, values ...string) string {
 		err = tmpl.Execute(&out, input)
 		if err != nil {
 			logging.Error("Could not execute translation template: %w", err)
+			rollbar.Error("Could not execute translation template: %w", err)
 			return translation
 		}
 		translation = out.String()
