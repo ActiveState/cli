@@ -29,6 +29,9 @@ func InstallPath() (string, error) {
 	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
 		return filepath.Dir(os.Args[0]), nil
 	}
+	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
+		return path, nil
+	}
 
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
@@ -42,23 +45,6 @@ func InstallPath() (string, error) {
 	}
 
 	return DefaultInstallPath()
-}
-
-func BranchPathFromInstallPath(branch string) (string, error) {
-	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
-		return path, nil
-	}
-
-	if branch == "" {
-		branch = constants.BranchName
-	}
-
-	installPath, err := InstallPath()
-	if err != nil {
-		return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BranchPath")
-	}
-
-	return filepath.Join(installPath, branch), nil
 }
 
 func BinPath() (string, error) {

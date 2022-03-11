@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -82,13 +81,6 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		return "", nil, errs.Wrap(err, "Downloaded update does not have installer")
-	}
-
-	if installTargetPath == "" {
-		installTargetPath, err = installation.BranchPathFromInstallPath(u.Channel)
-		if err != nil {
-			return "", nil, errs.Wrap(err, "Could not detect install path")
-		}
 	}
 
 	args = append(args, "--source-path", sourcePath)
