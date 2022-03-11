@@ -157,6 +157,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			// TODO: Update targetBranch and specificVersion after a v0.34.0 release
+			suite.T().Skip("Skipping these tests for now as the update changes need to be available in an older version of the state tool.")
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
