@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // CfgInstallPath is the configuration key for the path where the State Tool is installed
@@ -36,12 +35,13 @@ func InstallPath() (string, error) {
 
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
-	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
-	if fileutils.TargetExists(stateInfo.Exec()) {
-		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
-			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
-		}
+	if !fileutils.TargetExists(stateInfo.Exec()) {
 		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
+	}
+
+	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
+	if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
+		return filepath.Dir(filepath.Dir(filepath.Dir(stateInfo.Exec()))), nil // <return this>/<branch>/bin/state.exe
 	}
 
 	return DefaultInstallPath()
@@ -63,15 +63,13 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	return filepath.Join(installPath, BinDirName), nil
 }
 
-func InstalledOnPath() (bool, string, error) {
-	entries := strings.Split(os.Getenv("PATH"), string(os.PathListSeparator))
-	for _, entry := range entries {
-		potentialPath := filepath.Join(entry, constants.CommandName, osutils.ExeExt)
-		if fileutils.TargetExists(potentialPath) {
-			return true, potentialPath, nil
-		}
+func InstalledOnPath(installPath string) (bool, string, error) {
+	binPath, err := BinPathFromInstallPath(installPath)
+	if err != nil {
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
 	}
-	return false, "", nil
+	path := appinfo.StateApp(binPath).Exec()
+	return fileutils.TargetExists(path), path, nil
 }
 
 func LauncherInstallPath() (string, error) {
