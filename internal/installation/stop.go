@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"errors"
 	"runtime"
 	"strings"
 	"syscall"
@@ -140,9 +141,8 @@ func stopSvcProcess(proc *process.Process, name string) error {
 
 func killProcess(proc *process.Process, name string) error {
 	children, err := proc.Children()
-	if err != nil {
-		logging.Error("Could not get child processes, err: %v", err)
-		// return errs.Wrap(err, "Could not get child processes")
+	if err != nil && !errors.Is(err, process.ErrorNoChildren) {
+		return errs.Wrap(err, "Could not get child processes")
 	}
 
 	for _, c := range children {
