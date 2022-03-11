@@ -90,7 +90,7 @@ func (u *Update) Run(params *Params) error {
 	}
 
 	if params.Channel != constants.BranchName {
-		u.out.Notice(locale.Tl("update_switch_channel", "Please start a new shell for the update to take effect."))
+		u.out.Notice(locale.Tl("update_switch_channel", "[NOTICE]Please start a new shell for the update to take effect.[/RESET]"))
 	}
 
 	return nil
