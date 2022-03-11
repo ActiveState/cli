@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/rollbar/rollbar-go"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 var defaultMaxEntries = 1000

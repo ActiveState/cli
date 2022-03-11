@@ -30,7 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/rollbar/rollbar-go"
+	"github.com/ActiveState/internal/rollbar"
 )
 
 const AnalyticsCat = "installer"
@@ -80,7 +80,7 @@ func main() {
 	// Set up verbose logging
 	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "")
 	// Set up rollbar reporting
-	logging.SetupRollbar(constants.StateInstallerRollbarToken)
+	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
 
 	// Set up configuration handler
 	cfg, err := config.New()

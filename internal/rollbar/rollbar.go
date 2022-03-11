@@ -1,6 +1,8 @@
-package logging
+package rollbar
 
 import (
+	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -60,4 +62,20 @@ func UpdateRollbarPerson(userID, username, email string) {
 	custom["MachineID"] = machineid.UniqID()
 
 	rollbar.SetCustom(custom)
+}
+
+// Wait is a wrapper around rollbar.Wait().
+func Wait() { rollbar.Wait() }
+
+// Critical is a wrapper around rollbar.Critical().
+func Critical(interfaces ...interface{}) { rollbar.Critical(interfaces...) }
+
+// Error is a wrapper around rollbar.Error().
+func Error(interfaces ...interface{}) { rollbar.Error(interfaces...) }
+
+func handlePanics(err interface{}) {
+	if err == nil {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "Failed to log error. Please report this on the forums if it keeps happening. Error: %v\n", err)
 }

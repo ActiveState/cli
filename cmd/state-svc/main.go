@@ -22,10 +22,10 @@ import (
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/rollbar/rollbar-go"
 )
 
 const (
@@ -62,7 +62,7 @@ func main() {
 		return
 	}
 	logging.CurrentHandler().SetConfig(cfg)
-	logging.SetupRollbar(constants.StateServiceRollbarToken)
+	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

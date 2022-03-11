@@ -13,10 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 		return
 	}
 	logging.CurrentHandler().SetConfig(cfg)
-	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
+	rollbar.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

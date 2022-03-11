@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -145,7 +146,7 @@ func (s *Auth) updateRollbarPerson() {
 	if uid == nil {
 		return
 	}
-	logging.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
+	rollbar.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
 }
 
 // Authenticate will try to authenticate using stored credentials

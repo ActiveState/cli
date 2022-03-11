@@ -22,12 +22,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/rollbar/rollbar-go"
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/cast"
 )
@@ -42,7 +42,7 @@ func main() {
 	verbose := os.Getenv("VERBOSE") != ""
 
 	logging.CurrentHandler().SetVerbose(verbose)
-	logging.SetupRollbar(constants.StateTrayRollbarToken)
+	rollbar.SetupRollbar(constants.StateTrayRollbarToken)
 
 	systray.Run(onReady, onExit)
 }

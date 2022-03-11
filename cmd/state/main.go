@@ -14,11 +14,11 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/rollbar/rollbar-go"
 	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
@@ -51,7 +51,7 @@ type ConfigurableAnalytics interface {
 func main() {
 	var exitCode int
 	// Set up logging
-	logging.SetupRollbar(constants.StateToolRollbarToken)
+	rollbar.SetupRollbar(constants.StateToolRollbarToken)
 
 	var cfg *config.Instance
 	defer func() {
