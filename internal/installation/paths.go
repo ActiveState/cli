@@ -37,7 +37,7 @@ func InstallPath() (string, error) {
 	stateInfo := appinfo.StateApp()
 	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
 	if fileutils.TargetExists(stateInfo.Exec()) {
-		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
+		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && (activeStateOwnedPath || stateInfo.LegacyExec() != "") {
 			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
 		}
 		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
