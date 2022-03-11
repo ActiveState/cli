@@ -35,13 +35,12 @@ func InstallPath() (string, error) {
 
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
-	if !fileutils.TargetExists(stateInfo.Exec()) {
-		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
-	}
-
 	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
-	if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
-		return filepath.Dir(filepath.Dir(filepath.Dir(stateInfo.Exec()))), nil // <return this>/<branch>/bin/state.exe
+	if fileutils.TargetExists(stateInfo.Exec()) {
+		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
+			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
+		}
+		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
 	}
 
 	return DefaultInstallPath()
