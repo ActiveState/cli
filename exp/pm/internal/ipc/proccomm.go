@@ -1,6 +1,7 @@
 package ipc
 
 import (
+	"context"
 	"errors"
 )
 
@@ -19,8 +20,8 @@ func internalPingHandler() MatchedHandler {
 	}
 }
 
-func getPing(c *Client) (string, error) {
-	s, err := c.Get(keyPing)
+func getPing(ctx context.Context, c *Client) (string, error) {
+	s, err := c.Get(ctx, keyPing)
 	if err != nil {
 		return s, err
 	}

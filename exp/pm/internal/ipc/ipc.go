@@ -1,12 +1,14 @@
 package ipc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"os"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/errs"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
@@ -23,6 +25,7 @@ var (
 
 	ErrInUse       = flisten.ErrInUse
 	ErrConnRefused = errors.New("ipc connection refused")
+	ErrServerDown  = errors.New("ipc server down")
 )
 
 type Namespace = namespace.Namespace
@@ -51,7 +54,10 @@ func (c *IPC) ListenAndServe() error {
 	l, err := flisten.New(c.n, network)
 	if err != nil {
 		if errors.Is(err, flisten.ErrInUse) {
-			if _, pingErr := NewClient(c.n).Ping(); pingErr != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+			defer cancel()
+
+			if _, pingErr := NewClient(c.n).Ping(ctx); pingErr != nil {
 				if errors.Is(pingErr, syscall.ECONNREFUSED) { // should handler per platform
 					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
 				}

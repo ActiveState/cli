@@ -1,6 +1,10 @@
 package svccomm
 
-import "github.com/ActiveState/cli/exp/pm/internal/ipc"
+import (
+	"context"
+
+	"github.com/ActiveState/cli/exp/pm/internal/ipc"
+)
 
 var (
 	KeyPing     = "ping"
@@ -27,8 +31,8 @@ func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
 	}
 }
 
-func (c *Client) GetHTTPAddr() (string, error) {
-	return c.s.Get(KeyHTTPAddr)
+func (c *Client) GetHTTPAddr(ctx context.Context) (string, error) {
+	return c.s.Get(ctx, KeyHTTPAddr)
 }
 
 func PingHandler() ipc.MatchedHandler {

@@ -1,13 +1,17 @@
 package ipc
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
+	"syscall"
 	"time"
 )
 
 type Client struct {
 	n *Namespace
+	d net.Dialer
 }
 
 func NewClient(n *Namespace) *Client {
@@ -17,11 +21,14 @@ func NewClient(n *Namespace) *Client {
 	}
 }
 
-func (c *Client) Get(key string) (string, error) {
+func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	emsg := "client: get: %w"
 
-	conn, err := net.Dial(network, c.n.String())
+	conn, err := c.d.DialContext(ctx, network, c.n.String())
 	if err != nil {
+		if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ENOENT) { // should handler per platform
+			return "", fmt.Errorf(emsg, ErrServerDown)
+		}
 		return "", fmt.Errorf(emsg, err)
 	}
 	defer conn.Close()
@@ -43,11 +50,11 @@ func (c *Client) Namespace() *Namespace {
 	return c.n
 }
 
-func (c *Client) Ping() (time.Duration, error) {
+func (c *Client) Ping(ctx context.Context) (time.Duration, error) {
+	start := time.Now()
 	emsg := "client: ping: %w"
 
-	start := time.Now()
-	if _, err := getPing(c); err != nil {
+	if _, err := getPing(ctx, c); err != nil {
 		return 0, fmt.Errorf(emsg, err)
 	}
 
