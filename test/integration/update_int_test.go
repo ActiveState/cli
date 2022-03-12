@@ -31,10 +31,8 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
 var targetBranch = "beta"
-var testBranch = "test-channel"
-var oldUpdateVersion = "beta@0.28.1-SHA8592c6a"
-var oldReleaseUpdateVersion = "0.28.2-SHAbdac00e"
-var specificVersion = "0.29.0-SHA9f570a0"
+var oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+var specificVersion = "0.32.2-SHA3e1d435"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -159,6 +157,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 
 	for _, tt := range tests {
 		suite.Run(tt.Name, func() {
+			// TODO: Update targetBranch and specificVersion after a v0.34.0 release
+			suite.T().Skip("Skipping these tests for now as the update changes need to be available in an older version of the state tool.")
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
@@ -169,12 +169,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
 			}
+			env := []string{fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)}
+			env = append(env, suite.env(false, false)...)
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(updateArgs...),
-				e2e.AppendEnv(suite.env(false, false)...),
+				e2e.AppendEnv(env...),
 			)
 			cp.Expect("Updating")
-			cp.ExpectExitCode(0)
+			cp.ExpectExitCode(0, 1*time.Minute)
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
 
@@ -251,7 +253,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
-	cp.Expect("Update installed")
+	cp.Expect("Done")
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
