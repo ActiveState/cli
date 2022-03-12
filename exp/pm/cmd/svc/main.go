@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -9,7 +8,6 @@ import (
 	"path"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
@@ -74,19 +72,16 @@ func run() error {
 			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
 		}
 	}()
-	time.Sleep(time.Millisecond)
 
 	var wg sync.WaitGroup
-
 	errs := make(chan error)
+
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
 		for err := range errs {
-			if errors.Is(err, ipc.ErrInUse) {
-				httpSrv.Close() // TODO: make this less gross
-			}
+			httpSrv.Close()
 			fmt.Fprintf(os.Stderr, "%s: errored early: %s\n", svcName, err)
 		}
 	}()
@@ -106,7 +101,9 @@ func run() error {
 	go func() {
 		defer wg.Done()
 
-		httpSrv.Wait() //nolint // add error handling
+		if err = httpSrv.Wait(); err != nil {
+			errs <- err
+		}
 	}()
 
 	fmt.Printf("%s: waiting\n", svcName)

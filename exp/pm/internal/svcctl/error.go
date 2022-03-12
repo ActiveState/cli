@@ -12,7 +12,8 @@ var (
 )
 
 func asNotUp(err error) error {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, ipc.ErrServerDown) {
+	var sderr *ipc.ServerDownError // TODO: simplify this if possible
+	if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &sderr) {
 		return errNotUp
 	}
 	return err

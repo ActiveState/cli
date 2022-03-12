@@ -6,13 +6,8 @@ import (
 	"net"
 	"os"
 	"path"
-	"syscall"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
-)
-
-var (
-	ErrInUse = errors.New("flisten in use")
 )
 
 type FListen struct {
@@ -21,7 +16,7 @@ type FListen struct {
 }
 
 func New(n *namespace.Namespace, network string) (*FListen, error) {
-	emsg := "flisten: construct: %w"
+	emsg := "construct flisten: %w"
 
 	namespace := n.String()
 
@@ -57,9 +52,18 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 	return &f, nil
 }
 
-func asInUse(err error) error {
-	if errors.Is(err, syscall.EADDRINUSE) {
-		return ErrInUse
+func NewWithCleanup(n *namespace.Namespace, network string) (*FListen, error) {
+	emsg := "cleanup for construction: %w"
+
+	namespace := n.String()
+	if err := os.Remove(namespace); err != nil {
+		return nil, fmt.Errorf(emsg, err)
 	}
-	return err
+
+	return New(n, network)
 }
+
+/*func (l *FListen) Accept() (net.Conn, error) {
+	conn, err := l.Listener.Accept()
+	return conn, asFileNotExist(asConnRefused(err))
+}*/

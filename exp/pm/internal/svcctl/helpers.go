@@ -20,7 +20,8 @@ func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
 
 	addr, err = commClient.GetHTTPAddr(ctx)
 	if err != nil {
-		if !errors.Is(err, ipc.ErrServerDown) {
+		var sderr *ipc.ServerDownError
+		if !errors.As(err, &sderr) {
 			return "", fmt.Errorf(emsg, err)
 		}
 

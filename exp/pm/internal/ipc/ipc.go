@@ -7,7 +7,6 @@ import (
 	"net"
 	"os"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
@@ -22,10 +21,6 @@ const (
 var (
 	msgWidth = 64
 	network  = "unix"
-
-	ErrInUse       = flisten.ErrInUse
-	ErrConnRefused = errors.New("ipc connection refused")
-	ErrServerDown  = errors.New("ipc server down")
 )
 
 type Namespace = namespace.Namespace
@@ -49,25 +44,30 @@ func New(n *Namespace, mhs ...MatchedHandler) *IPC {
 }
 
 func (ipc *IPC) ListenAndServe() error {
-	emsg := "socket: listen and serve: %w"
+	emsg := "listen and serve: %w"
 
 	listener, err := flisten.New(ipc.n, network)
 	if err != nil {
-		if errors.Is(err, flisten.ErrInUse) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-			defer cancel()
-
-			if _, pingErr := NewClient(ipc.n).Ping(ctx); pingErr != nil {
-				if errors.Is(pingErr, syscall.ECONNREFUSED) { // should handler per platform
-					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
-				}
-
-				return fmt.Errorf(emsg, pingErr) // advanced handling?
-			}
-			return ErrInUse // should die - check for in main specifically
+		if !errors.Is(err, flisten.ErrInUse) {
+			return fmt.Errorf(emsg, err)
 		}
 
-		return fmt.Errorf(emsg, err)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+
+		_, pingErr := NewClient(ipc.n).Ping(ctx)
+		if pingErr == nil {
+			return ErrInUse
+		}
+
+		if !errors.Is(pingErr, flisten.ErrConnRefused) {
+			return fmt.Errorf(emsg, pingErr) // advanced handling?
+		}
+
+		listener, err = flisten.NewWithCleanup(ipc.n, network)
+		if err != nil {
+			return fmt.Errorf(emsg, err)
+		}
 	}
 	defer listener.Close()
 

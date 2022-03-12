@@ -3,13 +3,14 @@ package ipc
 import (
 	"context"
 	"fmt"
-	"net"
 	"time"
+
+	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
 )
 
 type Client struct {
 	namespace *Namespace
-	dialer    net.Dialer
+	dialer    flisten.Dialer
 }
 
 func NewClient(n *Namespace) *Client {
@@ -19,7 +20,7 @@ func NewClient(n *Namespace) *Client {
 }
 
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
-	emsg := "client: get: %w"
+	emsg := "get: %w"
 
 	conn, err := c.dialer.DialContext(ctx, network, c.namespace.String())
 	if err != nil {
@@ -50,7 +51,7 @@ func (c *Client) Namespace() *Namespace {
 
 func (c *Client) Ping(ctx context.Context) (time.Duration, error) {
 	start := time.Now()
-	emsg := "client: ping: %w"
+	emsg := "ping: %w"
 
 	if _, err := getPing(ctx, c); err != nil {
 		return 0, fmt.Errorf(emsg, err)
