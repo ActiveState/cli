@@ -10,7 +10,7 @@ var (
 	valPong = "internal---pong"
 )
 
-func internalPingHandler() MatchedHandler {
+func pingHandler() MatchedHandler {
 	return func(input string) (string, bool) {
 		if input == keyPing {
 			return valPong, true
@@ -27,7 +27,8 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 	}
 
 	if s != valPong {
-		return s, errors.New("WAT") // typed error?
+		// this should not ever be seen by users
+		return s, errors.New("ipc.IPC should be constructed with a ping handler")
 	}
 
 	return s, nil

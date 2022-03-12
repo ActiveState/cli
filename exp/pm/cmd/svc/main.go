@@ -48,7 +48,10 @@ func run() error {
 		AppVersion: version,
 		AppHash:    hash,
 	}
-	ipcSrv := ipc.New(n, svccomm.HTTPAddrMHandler(addr))
+	mhs := []ipc.MatchedHandler{
+		svccomm.HTTPAddrMHandler(addr),
+	}
+	ipcSrv := ipc.New(n, mhs...)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -93,6 +96,7 @@ func run() error {
 		defer close(errs)
 		defer wg.Done()
 
+		// TODO: work out the best order of closing/cleanup
 		if err = ipcSrv.ListenAndServe(); err != nil {
 			errs <- err
 		}

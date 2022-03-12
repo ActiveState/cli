@@ -1,4 +1,4 @@
-package errs
+package ipcerrs
 
 type DoneError interface {
 	error

@@ -2,33 +2,28 @@ package ipc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
-	"syscall"
 	"time"
 )
 
 type Client struct {
-	n *Namespace
-	d net.Dialer
+	namespace *Namespace
+	dialer    net.Dialer
 }
 
 func NewClient(n *Namespace) *Client {
-	// TODO: move ping and error return here
 	return &Client{
-		n: n,
+		namespace: n,
 	}
 }
 
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	emsg := "client: get: %w"
 
-	conn, err := c.d.DialContext(ctx, network, c.n.String())
+	conn, err := c.dialer.DialContext(ctx, network, c.namespace.String())
 	if err != nil {
-		if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ENOENT) { // should handler per platform
-			return "", fmt.Errorf(emsg, ErrServerDown)
-		}
+		err = asServerDown(err)
 		return "", fmt.Errorf(emsg, err)
 	}
 	defer conn.Close()
@@ -39,7 +34,10 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	}
 
 	buf := make([]byte, msgWidth)
-	n, _ := conn.Read(buf) //nolint // add error and timeout handling
+	n, err := conn.Read(buf)
+	if err != nil {
+		return "", fmt.Errorf(emsg, err)
+	}
 
 	msg := string(buf[:n])
 
@@ -47,7 +45,7 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 }
 
 func (c *Client) Namespace() *Namespace {
-	return c.n
+	return c.namespace
 }
 
 func (c *Client) Ping(ctx context.Context) (time.Duration, error) {

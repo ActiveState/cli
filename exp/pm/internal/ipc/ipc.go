@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/exp/pm/internal/errs"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
+	"github.com/ActiveState/cli/exp/pm/internal/ipcerrs"
 )
 
 const (
@@ -42,22 +42,22 @@ type IPC struct {
 func New(n *Namespace, mhs ...MatchedHandler) *IPC {
 	return &IPC{
 		n:    n,
-		mhs:  append(mhs, internalPingHandler()),
+		mhs:  append(mhs, pingHandler()),
 		done: make(chan struct{}),
 		wg:   &sync.WaitGroup{},
 	}
 }
 
-func (c *IPC) ListenAndServe() error {
+func (ipc *IPC) ListenAndServe() error {
 	emsg := "socket: listen and serve: %w"
 
-	l, err := flisten.New(c.n, network)
+	listener, err := flisten.New(ipc.n, network)
 	if err != nil {
 		if errors.Is(err, flisten.ErrInUse) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 			defer cancel()
 
-			if _, pingErr := NewClient(c.n).Ping(ctx); pingErr != nil {
+			if _, pingErr := NewClient(ipc.n).Ping(ctx); pingErr != nil {
 				if errors.Is(pingErr, syscall.ECONNREFUSED) { // should handler per platform
 					return fmt.Errorf(emsg, ErrConnRefused) // should take down sock file and retry
 				}
@@ -69,17 +69,17 @@ func (c *IPC) ListenAndServe() error {
 
 		return fmt.Errorf(emsg, err)
 	}
-	defer l.Close()
+	defer listener.Close()
 
 	conns := make(chan net.Conn)
 
-	c.wg.Add(1)
+	ipc.wg.Add(1)
 	go func() {
-		defer c.wg.Done()
+		defer ipc.wg.Done()
 
 		for {
-			if err := accept(c.done, conns, l); err != nil {
-				if derr := (errs.DoneError)(nil); !errors.As(err, &derr) {
+			if err := accept(ipc.done, conns, listener); err != nil {
+				if derr := (ipcerrs.DoneError)(nil); !errors.As(err, &derr) {
 					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
 				}
 				return
@@ -88,8 +88,8 @@ func (c *IPC) ListenAndServe() error {
 	}()
 
 	for {
-		if err := routeToHandler(c.done, c.wg, conns, c.mhs); err != nil {
-			if derr := (errs.DoneError)(nil); errors.As(err, &derr) {
+		if err := routeToHandler(ipc.done, ipc.wg, conns, ipc.mhs); err != nil {
+			if derr := (ipcerrs.DoneError)(nil); errors.As(err, &derr) {
 				return nil
 			}
 			return err
@@ -97,9 +97,9 @@ func (c *IPC) ListenAndServe() error {
 	}
 }
 
-func (c *IPC) Close() error {
-	close(c.done)
-	c.wg.Wait()
+func (ipc *IPC) Close() error {
+	close(ipc.done)
+	ipc.wg.Wait()
 	return nil
 }
 

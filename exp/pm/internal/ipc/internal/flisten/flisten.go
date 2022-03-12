@@ -40,10 +40,7 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 
 	l, err := net.Listen(network, namespace)
 	if err != nil {
-		if errors.Is(err, syscall.EADDRINUSE) {
-			return nil, fmt.Errorf(emsg, ErrInUse)
-		}
-
+		err = asInUse(err)
 		return nil, fmt.Errorf(emsg, err)
 	}
 
@@ -58,4 +55,11 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 	}
 
 	return &f, nil
+}
+
+func asInUse(err error) error {
+	if errors.Is(err, syscall.EADDRINUSE) {
+		return ErrInUse
+	}
+	return err
 }
