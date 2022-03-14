@@ -42,7 +42,7 @@ func execDir(baseDir ...string) (resultPath string) {
 		multilog.Error("Could not determine executable directory: %v", err)
 		path, err = filepath.Abs(os.Args[0])
 		if err != nil {
-			multilog.Error("Could not get absolute directory of os.Args[0]", err)
+			multilog.Error("Could not get absolute directory of os.Args[0]: %v", err)
 		}
 	}
 

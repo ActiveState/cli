@@ -173,7 +173,7 @@ func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurabl
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
-			multilog.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
+			multilog.Error("Could not get pointer for secret name and/or scope, definition ID: %s", def.DefID)
 			continue
 		}
 

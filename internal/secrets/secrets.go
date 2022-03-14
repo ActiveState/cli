@@ -73,7 +73,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 
 			ciphertext, err := pubKey.EncryptAndEncode([]byte(secretValue))
 			if err != nil {
-				multilog.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
+				multilog.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username, err.Error())
 				// this is a local issue with the user's keys, so we try and move on
 				continue
 			}
