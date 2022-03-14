@@ -162,7 +162,7 @@ func Tl(translationID, locale string, values ...string) string {
 		var out bytes.Buffer
 		err = tmpl.Execute(&out, input)
 		if err != nil {
-			multilog.Error("Could not execute translation template: %w", err)
+			multilog.Error("Could not execute translation template: %v", err)
 			return translation
 		}
 		translation = out.String()
