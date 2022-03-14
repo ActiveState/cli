@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/p"
@@ -18,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/strfmt"
-	"github.com/skratchdot/open-golang/open"
 )
 
 // OpenURI aliases to exeutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be

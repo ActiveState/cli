@@ -3,7 +3,6 @@ package lockedprj
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/version"
 	"github.com/ActiveState/cli/pkg/projectfile"
