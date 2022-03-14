@@ -21,9 +21,9 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
-// OpenURI aliases to open.Run which opens the given URI in your browser. This is being exposed so that it can be
+// OpenURI aliases to exeutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
-var OpenURI = open.Run
+var OpenURI = osutils.OpenURI
 
 // Authenticate will prompt the user for authentication
 func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
