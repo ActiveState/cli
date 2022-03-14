@@ -154,7 +154,7 @@ func Tl(translationID, locale string, values ...string) string {
 		// prepare template
 		tmpl, err := template.New("locale error").Parse(translation)
 		if err != nil {
-			multilog.Error("Invalid translation template: %w", err)
+			multilog.Error("Invalid translation template: %v", err)
 			return translation
 		}
 

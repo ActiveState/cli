@@ -25,7 +25,7 @@ func LockedProjectMapping(cfg projectfile.ConfigGetter) []LockedCheckout {
 			}
 			ver, err := version.ParseStateToolVersion(prj.Version())
 			if err != nil {
-				multilog.Error("Failed to parse State Tool version %s: %v", prj.Version, err)
+				multilog.Error("Failed to parse State Tool version %s: %v", prj.Version(), err)
 			}
 			// We can ignore projects that are locked to a multi-file update version
 			if version.IsMultiFileUpdate(ver) {
