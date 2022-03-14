@@ -30,7 +30,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %w", err)
+			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {

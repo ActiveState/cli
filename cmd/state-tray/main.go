@@ -59,7 +59,7 @@ func onReady() {
 		logging.Debug("onReady is done with exit code %d", exitCode)
 
 		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %w", err)
+			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -264,7 +264,7 @@ func onExit() {
 	}
 	defer func() {
 		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %w", err)
+			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 	}()
 	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
@@ -275,7 +275,7 @@ func onExit() {
 		return "", nil
 	})
 	if err != nil {
-		multilog.Error("Failed to unset Systray PID in configuration file: %w", err)
+		multilog.Error("Failed to unset Systray PID in configuration file: %v", err)
 	}
 }
 
