@@ -7,8 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
 )
@@ -24,8 +23,7 @@ func SignS3URL(u *url.URL) (*url.URL, error) {
 
 	ur, err := url.Parse(res.Payload.URI.String())
 	if err != nil {
-		logging.Error("API responded with an invalid url: %s, error: %v", res.Payload.URI.String(), err)
-		rollbar.Error("API responded with an invalid url: %s, error: %v", res.Payload.URI.String(), err)
+		multilog.Error("API responded with an invalid url: %s, error: %v", res.Payload.URI.String(), err)
 		return ur, locale.NewError("InvalidURL")
 	}
 

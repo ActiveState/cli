@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/svc"
@@ -66,8 +67,7 @@ func (s *serviceManager) Start(args ...string) error {
 		if proc != nil {
 			err := rtutils.Timeout(func() error { return proc.Signal(os.Kill) }, time.Second)
 			if err != nil {
-				logging.Errorf("Could not cleanup process: %v", err)
-				rollbar.Error("Could not cleanup process: %v", err)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not cleanup process: %v", err)
 				fmt.Printf("Failed to cleanup serviceManager after lock failed, please manually kill the following pid: %d\n", proc.Pid)
 			}
 		}
@@ -145,8 +145,7 @@ func (s *serviceManager) CheckPid(pid int) (*int, error) {
 	if runtime.GOOS == "windows" {
 		exe, err := p.Exe()
 		if err != nil {
-			logging.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
-			rollbar.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
+			multilog.Error("Could not detect executable for pid, error: %s", errs.JoinMessage(err))
 		} else if !strings.HasPrefix(strings.ToLower(filepath.Base(exe)), constants.ServiceCommandName) {
 			return nil, nil
 		}

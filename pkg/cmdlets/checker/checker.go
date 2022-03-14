@@ -12,9 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -70,8 +70,7 @@ func RunUpdateNotifier(svcManager *svcmanager.Manager, cfg *config.Instance, out
 			logging.Debug("CheckUpdate timed out")
 			return
 		}
-		logging.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
-		rollbar.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
+		multilog.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
 	if up == nil {

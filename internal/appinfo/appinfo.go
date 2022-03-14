@@ -9,9 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 type AppInfo struct {
@@ -40,19 +39,16 @@ func execDir(baseDir ...string) (resultPath string) {
 	}
 	path, err := os.Executable()
 	if err != nil {
-		logging.Error("Could not determine executable directory: %v", err)
-		rollbar.Error("Could not determine executable directory: %v", err)
+		multilog.Error("Could not determine executable directory: %v", err)
 		path, err = filepath.Abs(os.Args[0])
 		if err != nil {
-			logging.Error("Could not get absolute directory of os.Args[0]", err)
-			rollbar.Error("Could not get absolute directory of os.Args[0]", err)
+			multilog.Error("Could not get absolute directory of os.Args[0]", err)
 		}
 	}
 
 	pathEvaled, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		logging.Error("Could not eval symlinks: %v", err)
-		rollbar.Error("Could not eval symlinks: %v", err)
+		multilog.Error("Could not eval symlinks: %v", err)
 	} else {
 		path = pathEvaled
 	}

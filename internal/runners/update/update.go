@@ -8,10 +8,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
@@ -78,8 +78,7 @@ func (u *Update) Run(params *Params) error {
 
 	// invalidate the installer version lock if `state update` is requested
 	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
-		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
-		rollbar.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
+		multilog.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
 	return nil

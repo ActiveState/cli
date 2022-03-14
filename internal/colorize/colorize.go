@@ -7,10 +7,9 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output/colorstyle"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 var colorRx *regexp.Regexp
@@ -107,8 +106,7 @@ func ColorizedOrStrip(value string, stripColors bool) string {
 	var out bytes.Buffer
 	_, err := Colorize(value, &out, stripColors)
 	if err != nil {
-		logging.Error("Could not colorize: %s", err.Error())
-		rollbar.Error("Could not colorize: %s", err.Error())
+		multilog.Error("Could not colorize: %s", err.Error())
 		return StripColorCodes(value)
 	}
 	return out.String()

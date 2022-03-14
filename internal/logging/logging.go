@@ -272,30 +272,19 @@ func Warning(msg string, args ...interface{}) {
 	}
 }
 
-// Same as Warning() but return a formatted error object, regardless of logging level
-func Warningf(msg string, args ...interface{}) error {
-	err := fmt.Errorf(msg, args...)
-	if level&WARN != 0 {
-		writeMessage("WARNING", err.Error())
-	}
-
-	return err
-}
-
 // Output ERROR level messages
+// This should be used sparingly, as multilog.Error() is preferred.
 func Error(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
 		writeMessage("ERROR", msg+"\n\nStacktrace: "+stacktrace.Get().String()+"\n", args...)
 	}
 }
 
-// Same as Error() but also returns a new formatted error object with the message regardless of logging level
-func Errorf(msg string, args ...interface{}) error {
-	err := fmt.Errorf(msg, args...)
+// Same as Error() but without a stacktrace.
+func ErrorNoStacktrace(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
-		writeMessage("ERROR", err.Error())
+		writeMessage("ERROR", msg, args...)
 	}
-	return err
 }
 
 // Output NOTICE level messages
@@ -306,6 +295,7 @@ func Notice(msg string, args ...interface{}) {
 }
 
 // Output a CRITICAL level message while showing a stack trace
+// This should be called sparingly, as multilog.Critical() is preferred.
 func Critical(msg string, args ...interface{}) {
 	if level&CRITICAL != 0 {
 		writeMessage("CRITICAL", msg, args...)
@@ -313,22 +303,10 @@ func Critical(msg string, args ...interface{}) {
 	}
 }
 
-// Same as critical but also returns an error object with the message regardless of logging level
-func Criticalf(msg string, args ...interface{}) error {
-
-	err := fmt.Errorf(msg, args...)
-	if level&CRITICAL != 0 {
-		writeMessage("CRITICAL", err.Error())
-		log.Println(string(debug.Stack()))
-	}
-	return err
-}
-
 // Raise a PANIC while writing the stack trace to the log
 func Panic(msg string, args ...interface{}) {
 	log.Println(string(debug.Stack()))
 	log.Panicf(msg, args...)
-
 }
 
 func Close() {

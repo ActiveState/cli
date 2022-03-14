@@ -7,8 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -33,8 +32,7 @@ func (as *ArtifactSetup) EnvDef(tmpDir string) (*envdef.EnvironmentDefinition, e
 
 	// Remove the runtime.json file because we don't want it in the installdir
 	if err := os.Remove(path); err != nil {
-		logging.Error("Could not remove environment definition file: %s", path)
-		rollbar.Error("Could not remove environment definition file: %s", path)
+		multilog.Error("Could not remove environment definition file: %s", path)
 	}
 
 	return e, nil

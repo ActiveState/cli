@@ -10,16 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/hashicorp/go-version"
-
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/hashicorp/go-version"
 )
 
 const (
@@ -127,8 +126,7 @@ func (checker *Checker) shouldFetch() bool {
 
 	err := checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
 	if err != nil {
-		logging.Error("Could not set deprecation fetch time in config, error: %v", err)
-		rollbar.Error("Could not set deprecation fetch time in config, error: %v", err)
+		multilog.Error("Could not set deprecation fetch time in config, error: %v", err)
 	}
 	return true
 

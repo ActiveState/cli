@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsapiClient "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/secrets"
@@ -39,8 +39,7 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 	_, err = secretsClient.Secrets.Secrets.SaveAllUserSecrets(params, authentication.LegacyGet().ClientAuth())
 	if err != nil {
-		logging.Error("error saving user secret: %v", err)
-		rollbar.Error("error saving user secret: %v", err)
+		multilog.Error("error saving user secret: %v", err)
 		return locale.WrapError(err, "secrets_err_save", "", err.Error())
 	}
 
@@ -74,8 +73,7 @@ func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organi
 
 			ciphertext, err := pubKey.EncryptAndEncode([]byte(secretValue))
 			if err != nil {
-				logging.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
-				rollbar.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
+				multilog.Error("Encryptying secret `%s` for user `%s`: %s", secretName, member.User.Username)
 				// this is a local issue with the user's keys, so we try and move on
 				continue
 			}

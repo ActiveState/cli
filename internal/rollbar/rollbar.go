@@ -122,12 +122,12 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	}
 }
 
-// Critical is a wrapper around rollbar.Critical().
+// Critical logs a critical error to rollbar.
 func Critical(message string, args ...interface{}) {
 	logToRollbar(true, message, args...)
 }
 
-// Error is a wrapper around rollbar.Error().
+// Error logs an error to rollbar.
 func Error(message string, args ...interface{}) {
 	logToRollbar(false, message, args...)
 }

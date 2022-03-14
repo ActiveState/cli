@@ -7,9 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
@@ -173,8 +173,7 @@ func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurabl
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
-			logging.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
-			rollbar.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
+			multilog.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
 			continue
 		}
 

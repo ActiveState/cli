@@ -17,9 +17,9 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rollbar"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -564,8 +564,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 		if errors.Is(err, ErrSecretNotFound) {
 			return nil, nil
 		}
-		logging.Error("Could not expand secret %s, error: %v", s.Name(), err)
-		rollbar.Error("Could not expand secret %s, error: %v", s.Name(), err)
+		multilog.Error("Could not expand secret %s, error: %v", s.Name(), err)
 		return nil, errs.Wrap(err, "secret for %s expansion failed", s.secret.Name)
 	}
 	return &value, nil

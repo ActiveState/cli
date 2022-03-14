@@ -2,6 +2,7 @@ package promptable
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 )
 
@@ -48,8 +49,7 @@ func SetPrompted(cfg Configurer, key OnceKey) bool {
 
 	logging.Debug("%s: setting asked", key)
 	if err := cfg.Set(string(key), true); err != nil {
-		logging.Errorf("Failed to set %q: %v", key, err)
-		rollbar.Error("Failed to set %q: %v", key, err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to set %q: %v", key, err)
 	}
 	return true
 }

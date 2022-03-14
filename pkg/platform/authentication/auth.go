@@ -6,12 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
-	"github.com/go-openapi/runtime"
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/config"
@@ -20,12 +14,18 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/go-openapi/strfmt"
 )
 
 var exit = os.Exit
@@ -61,8 +61,7 @@ func LegacyGet() *Auth {
 		cfg, err := config.New()
 		if err != nil {
 			// TODO: We need to get rid of this Get() function altogether...
-			logging.Error("Could not get configuration required by auth: %v", err)
-			rollbar.Error("Could not get configuration required by auth: %v", err)
+			multilog.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
 		persist = New(cfg)
@@ -186,8 +185,7 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		case *apiAuth.PostLoginRetryWith:
 			return errs.AddTips(&ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}, tips...)
 		default:
-			logging.Error("Authentication API returned %v", err)
-			rollbar.Error("Authentication API returned %v", err)
+			multilog.Error("Authentication API returned %v", err)
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
@@ -298,8 +296,7 @@ func (s *Auth) UserID() *strfmt.UUID {
 func (s *Auth) Logout() error {
 	err := s.cfg.Set(ApiTokenConfigKey, "")
 	if err != nil {
-		logging.Error("Could not clear apiToken in config")
-		rollbar.Error("Could not clear apiToken in config")
+		multilog.Error("Could not clear apiToken in config")
 		return locale.WrapError(err, "err_logout_cfg", "Could not update config, if this persists please try running '[ACTIONABLE]state clean config[/RESET]'.")
 	}
 
@@ -319,8 +316,7 @@ func (s *Auth) Logout() error {
 func (s *Auth) Client() *mono_client.Mono {
 	client, err := s.ClientSafe()
 	if err != nil {
-		logging.Error("Trying to get the Client while not authenticated")
-		rollbar.Error("Trying to get the Client while not authenticated")
+		multilog.Error("Trying to get the Client while not authenticated")
 		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
 		exit(1)
 	}
@@ -410,8 +406,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 func (s *Auth) AvailableAPIToken() (v string) {
 	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
-		logging.Error("Could not retrieve gcloud secret: %v", err)
-		rollbar.Error("Could not retrieve gcloud secret: %v", err)
+		multilog.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
 		logging.Debug("Using api token sourced from gcloud")

@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 func InstallSystemFiles(_, _, _ string) error {
@@ -48,8 +48,7 @@ func (i *Installer) PrepareBinTargets(useBinDir bool) error {
 				logging.Debug("Deleting old file: %s", file.Name())
 				oldFile := filepath.Join(targetBinPath, file.Name())
 				if err := os.Remove(oldFile); err != nil {
-					logging.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
-					rollbar.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
+					multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
 				}
 				continue
 			}

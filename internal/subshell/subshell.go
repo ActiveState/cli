@@ -13,9 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -150,8 +150,7 @@ func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
 		// We save and use the detected shell to our config so that we can use it when running code through
 		// a non-interactive shell
 		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
-			logging.Error("Could not save shell binary: %v", errs.Join(err, ": "))
-			rollbar.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+			multilog.Error("Could not save shell binary: %v", errs.Join(err, ": "))
 		}
 	}()
 

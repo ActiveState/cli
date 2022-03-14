@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -82,8 +82,7 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 
 	contents, err := fileutils.ReadFile(marker)
 	if err != nil {
-		logging.Error("Could not read marker file %s: %v", marker, err)
-		rollbar.Error("Could not read marker file %s: %v", marker, err)
+		multilog.Error("Could not read marker file %s: %v", marker, err)
 	}
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) < 1 {

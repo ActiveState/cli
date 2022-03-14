@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -114,8 +114,7 @@ type CustomTarget struct {
 func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
-		logging.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
-		rollbar.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
+		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
@@ -156,8 +155,7 @@ func (c *CustomTarget) Headless() bool {
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {
 	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
 	if err != nil {
-		logging.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
-		rollbar.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
 		resolvedDir = projectDir
 	}
 	logging.Debug("In newStore: resolved project dir is: %s", resolvedDir)

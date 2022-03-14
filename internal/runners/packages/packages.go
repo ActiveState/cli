@@ -15,9 +15,9 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -73,8 +73,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		defer func() {
 			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
 				if err := os.Remove(pj.Source().Path()); err != nil {
-					logging.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
-					rollbar.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
+					multilog.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
 				}
 			}
 		}()
@@ -122,8 +121,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		if len(packages) == 0 {
 			suggestions, err := getSuggestions(ns, packageName)
 			if err != nil {
-				logging.Error("Failed to retrieve suggestions: %v", err)
-				rollbar.Error("Failed to retrieve suggestions: %v", err)
+				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
 			if len(suggestions) == 0 {
 				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", packageName)

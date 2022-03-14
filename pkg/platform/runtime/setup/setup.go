@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
@@ -229,8 +230,7 @@ func (s *Setup) Update() error {
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
-		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
-		rollbar.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
+		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
 		if err != nil {
 			return locale.WrapError(err, "Failed to clean installation path")
@@ -273,8 +273,7 @@ func (s *Setup) Update() error {
 	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	err = os.RemoveAll(tempDir)
 	if err != nil {
-		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
-		rollbar.Error("Failed to remove temporary installation directory %s: %v", tempDir, err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {

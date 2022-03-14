@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/retryhttp"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -114,8 +114,7 @@ func (t TrackingType) String() string {
 func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 	match, err := regexp.Match(string(namespace), []byte(query))
 	if err != nil {
-		logging.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
-		rollbar.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
+		multilog.Error("Could not match regex for %v, query: %s, error: %v", namespace, query, err)
 	}
 	return match
 }
@@ -392,8 +391,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		logging.Error("AddCommit Error: %s", err.Error())
-		rollbar.Error("AddCommit Error: %s", err.Error())
+		multilog.Error("AddCommit Error: %s", err.Error())
 		return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 	return res.Payload, nil
@@ -582,8 +580,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		logging.Error("AddCommit Error: %s", err.Error())
-		rollbar.Error("AddCommit Error: %s", err.Error())
+		multilog.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 

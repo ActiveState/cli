@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // JSON is our JSON outputer, there's not much going on here, just forwards it to the JSON marshaller and provides
@@ -42,8 +42,7 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 		var err error
 		b, err = json.Marshal(value)
 		if err != nil {
-			logging.Error("Could not marshal value, error: %v", err)
-			rollbar.Error("Could not marshal value, error: %v", err)
+			multilog.Error("Could not marshal value, error: %v", err)
 			f.Error(locale.T("err_could_not_marshal_print"))
 			return
 		}
@@ -72,8 +71,7 @@ func (f *JSON) Error(value interface{}) {
 		var err error
 		b, err = json.Marshal(errStruct)
 		if err != nil {
-			logging.Error("Could not marshal value, error: %v", err)
-			rollbar.Error("Could not marshal value, error: %v", err)
+			multilog.Error("Could not marshal value, error: %v", err)
 			b = []byte(locale.T("err_could_not_marshal_print"))
 		}
 		b = []byte(colorize.StripColorCodes(string(b)))
@@ -91,7 +89,7 @@ func (f *JSON) Error(value interface{}) {
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to
 // reliably combine this data into the eventual output
 func (f *JSON) Notice(value interface{}) {
-	logging.Warningf("JSON outputer truncated the following notice: %v", value)
+	logging.Warning("JSON outputer truncated the following notice: %v", value)
 }
 
 // Config returns the Config struct for the active instance

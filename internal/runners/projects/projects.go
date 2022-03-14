@@ -5,10 +5,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -89,8 +88,7 @@ func (r *Projects) Run(params *Params) error {
 	for namespace, checkouts := range localProjects {
 		ns, err := project.ParseNamespace(namespace)
 		if err != nil {
-			logging.Error("Invalid project namespace stored to config mapping: %s", namespace)
-			rollbar.Error("Invalid project namespace stored to config mapping: %s", namespace)
+			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
 

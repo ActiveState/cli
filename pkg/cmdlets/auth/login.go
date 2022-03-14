@@ -7,9 +7,9 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -177,8 +177,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	_, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil {
 		// This error is not useful to the user so we do not return it and log instead
-		logging.Error("Error when checking for unique username: %v", err)
-		rollbar.Error("Error when checking for unique username: %v", err)
+		multilog.Error("Error when checking for unique username: %v", err)
 		return false
 	}
 

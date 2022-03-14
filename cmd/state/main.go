@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
@@ -72,8 +73,7 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		rollbar.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
@@ -84,8 +84,7 @@ func main() {
 	outFlags := parseOutputFlags(os.Args)
 	out, err := initOutput(outFlags, "")
 	if err != nil {
-		logging.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
-		rollbar.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
+		multilog.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
@@ -157,8 +156,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	svcm := svcmanager.New(cfg)
 	if err := svcm.Start(); err != nil {
-		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
-		rollbar.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+		multilog.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}
 
 	svcmodel := model.NewSvcModel(cfg, svcm)
@@ -230,8 +228,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		// Check for deprecation
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
-			logging.Error("Could not check for deprecation: %s", err.Error())
-			rollbar.Error("Could not check for deprecation: %s", err.Error())
+			multilog.Error("Could not check for deprecation: %s", err.Error())
 		}
 		if deprecated != nil {
 			date := deprecated.Date.Format(constants.DateFormatUser)

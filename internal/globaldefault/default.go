@@ -6,8 +6,8 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -29,8 +29,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 
 	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		logging.Error("Failed to determine if we are running as administrator: %v", err)
-		rollbar.Error("Failed to determine if we are running as administrator: %v", err)
+		multilog.Error("Failed to determine if we are running as administrator: %v", err)
 	}
 	if isWindowsAdmin {
 		logging.Debug("Skip preparation step as it is not supported for Windows Administrators.")

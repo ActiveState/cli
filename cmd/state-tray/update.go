@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
@@ -36,8 +37,7 @@ func superviseUpdate(mdl *model.SvcModel, notice *updateNotice) func() {
 func needsUpdate(mdl *model.SvcModel) bool {
 	availableUpdate, err := mdl.CheckUpdate(context.Background())
 	if err != nil {
-		logging.Errorf("Cannot determine the latest state version: %s", errs.Join(err, ","))
-		rollbar.Error("Cannot determine the latest state version: %s", errs.Join(err, ","))
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Cannot determine the latest state version: %s", errs.Join(err, ","))
 		return false
 	}
 

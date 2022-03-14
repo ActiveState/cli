@@ -29,8 +29,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config after exiting systray: %w", err)
-			rollbar.Error("Failed to close config after exiting systray: %w", err)
+			multilog.Error("Failed to close config after exiting systray: %w", err)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -41,8 +40,7 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
-		rollbar.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
@@ -57,9 +55,7 @@ func main() {
 	err = run(cfg)
 	if err != nil {
 		exitCode = 1
-		errmsg := "Update Dialog Failure: " + errs.Join(err, ": ").Error()
-		logging.Critical(errmsg)
-		rollbar.Critical(errmsg)
+		multilog.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
 		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
 		return
 	}

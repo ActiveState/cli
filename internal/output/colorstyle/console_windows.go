@@ -12,6 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 )
 
@@ -86,8 +87,7 @@ func (st *Styler) SetStyle(s Style, bright bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			if os.Getenv("CI") == "" {
-				logging.Errorf("colorstyle.SetStyle failed with: %v", r)
-				rollbar.Error("colorstyle.SetStyle failed with: %v", r)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("colorstyle.SetStyle failed with: %v", r)
 			}
 		}
 	}()

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 )
 
@@ -22,8 +23,7 @@ func TerminalAndWait(command string) error {
 func Terminal(command string) error {
 	shell, err := preferredShell()
 	if err != nil {
-		logging.Errorf("Preferred shell failure (falling back to bash): %v", err)
-		rollbar.Error("Preferred shell failure (falling back to bash): %v", err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Preferred shell failure (falling back to bash): %v", err)
 		shell = "bash"
 	}
 

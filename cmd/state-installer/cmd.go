@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -68,8 +69,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config: %w", err)
-			rollbar.Error("Failed to close config: %w", err)
+			multilog.Error("Failed to close config: %w", err)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
@@ -86,9 +86,7 @@ func main() {
 	// Set up configuration handler
 	cfg, err := config.New()
 	if err != nil {
-		errmsg := "Could not set up configuration handler: " + errs.JoinMessage(err)
-		logging.Error(errmsg)
-		rollbar.Error(errmsg)
+		multilog.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 	}
@@ -107,9 +105,7 @@ func main() {
 		Interactive: false,
 	})
 	if err != nil {
-		errmsg := "Could not set up output handler: " + errs.JoinMessage(err)
-		logging.Error(errmsg)
-		rollbar.Error(errmsg)
+		multilog.Error("Could not set up output handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 		return
@@ -217,14 +213,10 @@ func main() {
 	if err != nil {
 		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
-			errmsg := "Installer input error: " + errs.JoinMessage(err)
-			logging.Error(errmsg)
-			rollbar.Error(errmsg)
+			multilog.Error("Installer input error: " + errs.JoinMessage(err))
 		} else {
 			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
-			errmsg := "Installer error: " + errs.JoinMessage(err)
-			logging.Critical(errmsg)
-			rollbar.Critical(errmsg)
+			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
 		exitCode = errs.UnwrapExitCode(err)
@@ -466,13 +458,11 @@ func storeInstallSource(installSource string) {
 
 	appData, err := storage.AppDataPath()
 	if err != nil {
-		logging.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
-		rollbar.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
+		multilog.Error("Could not store install source due to AppDataPath error: %s", errs.JoinMessage(err))
 		return
 	}
 	if err := fileutils.WriteFile(filepath.Join(appData, constants.InstallSourceFile), []byte(installSource)); err != nil {
-		logging.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
-		rollbar.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
+		multilog.Error("Could not store install source due to WriteFile error: %s", errs.JoinMessage(err))
 	}
 }
 

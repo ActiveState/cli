@@ -15,9 +15,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -75,8 +75,7 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
-		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
-		rollbar.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 	}
 }
 
@@ -130,7 +129,6 @@ func handlePanics(err interface{}, stack []byte) {
 	if err == nil {
 		return
 	}
-	logging.Error("Panic in client analytics: %v", err)
+	multilog.Error("Panic in client analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
-	rollbar.Error("Panic in client analytics: %v", err)
 }
