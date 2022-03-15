@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -26,6 +27,9 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.Expect("Switched to Python3")
 
 	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
+	if runtime.GOOS == "windows" {
+		pythonExe = pythonExe + ".bat"
+	}
 	cp = ts.SpawnCmdWithOpts(
 		pythonExe,
 		e2e.WithArgs("--version"),
