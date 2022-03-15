@@ -218,6 +218,23 @@ func writeMessage(level string, msg string, args ...interface{}) {
 	writeMessageDepth(4, level, msg, args...)
 }
 
+// Tail provides access to the last TailSize bytes written by this logger.
+var Tail io.Reader
+
+// TailSize specifies the number of logged bytes to keep for use with Tail.
+const TailSize = 5000
+
+var tailLogger *log.Logger
+
+func writeToLogTail(ctx *MessageContext, msg string, args ...interface{}) {
+	if tailLogger == nil {
+		logTailBuffer := newRingBuffer(TailSize)
+		tailLogger = log.New(logTailBuffer, "", log.LstdFlags)
+		Tail = logTailBuffer
+	}
+	tailLogger.Println(DefaultFormatter.Format(ctx, msg, args...))
+}
+
 func writeMessageDepth(depth int, level string, msg string, args ...interface{}) {
 	ctx := getContext(level, depth)
 
@@ -236,9 +253,9 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
 		printLogError(err, ctx, msg, args...)
-
 	}
 
+	writeToLogTail(ctx, msg, args...)
 }
 
 func printLogError(err error, ctx *MessageContext, msg string, args ...interface{}) {

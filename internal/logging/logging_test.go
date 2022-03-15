@@ -3,14 +3,12 @@
 package logging
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"testing"
 )
-
-var _ = regexp.Compile
 
 type Test1Handler struct {
 	formatter Formatter
@@ -209,4 +207,33 @@ func Test_Formatting(t *testing.T) {
 		t.Fatal(s)
 	}
 
+}
+
+func TestLogTail(t *testing.T) {
+	handler := &TestHandler{
+		make([][]interface{}, 0),
+		DefaultFormatter,
+		t,
+	}
+	SetHandler(handler)
+
+	SetLevel(ALL)
+	Info("Foo Bar %d", 1)
+	Warning("Bar Baz %d", 2)
+
+	p := make([]byte, 5000)
+	read, _ := Tail.Read(p)
+	fmt.Println(string(p[:read]))
+	if !bytes.Contains(p, []byte("[INFO ")) {
+		t.Fatal("Tail does not contain '[INFO '")
+	}
+	if !bytes.Contains(p, []byte("] Foo Bar 1")) {
+		t.Fatal("Tail does not contain '] Foo Bar 1'")
+	}
+	if !bytes.Contains(p, []byte("[WARNING ")) {
+		t.Fatal("Tail does not contain '[WARNING '")
+	}
+	if !bytes.Contains(p, []byte("] Bar Baz 2")) {
+		t.Fatal("Tail does not contain '] Bar Baz 2'")
+	}
 }
