@@ -5,6 +5,10 @@ import (
 	"path/filepath"
 )
 
+var (
+	namespaceExtension = "sock"
+)
+
 type Namespace struct {
 	RootDir    string
 	AppName    string
