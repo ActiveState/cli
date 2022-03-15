@@ -8,18 +8,19 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"gopkg.in/src-d/go-git.v4"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 // Repository is the interface used to represent a version control system repository
@@ -93,7 +94,7 @@ func plainClone(path string, isBare bool, o *git.CloneOptions) (r *git.Repositor
 				derr = fmt.Errorf("git.PlainClone recover type: %T, %v", r, r)
 			}
 			// removal tracked: https://www.pivotaltracker.com/story/show/179187192
-			logging.Errorf("plain clone panic: %v", derr)
+			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("plain clone panic: %v", derr)
 		}
 	}()
 

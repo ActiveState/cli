@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -81,7 +82,7 @@ func (d *Deploy) Run(params *Params) error {
 	if RequiresAdministratorRights(d.step, params.UserScope) {
 		isAdmin, err := osutils.IsAdmin()
 		if err != nil {
-			logging.Error("Could not check for windows administrator privileges: %v", err)
+			multilog.Error("Could not check for windows administrator privileges: %v", err)
 		}
 		if !isAdmin {
 			return locale.NewError("err_deploy_admin_privileges_required", "Administrator rights are required for this command to modify the system PATH.  If you want to deploy to the user environment, please adjust the command line flags.")

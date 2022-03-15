@@ -25,10 +25,6 @@ var datadir string
 
 var timestamp int64
 
-// CurrentCmd holds the value of the current command being invoked
-// it's a quick hack to allow us to log the command to rollbar without risking exposing sensitive info
-var CurrentCmd string
-
 const FileNameSuffix = ".log"
 
 // Logger describes a logging function, like Debug, Error, Warning, etc.

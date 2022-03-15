@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -107,7 +108,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 }
 
 func (r *Prepare) reportError(message string, err error) {
-	logging.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
+	multilog.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
 }

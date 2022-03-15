@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -86,7 +87,7 @@ func (u *Update) Run(params *Params) error {
 
 	// invalidate the installer version lock if `state update` is requested
 	if err := u.cfg.Set(updater.CfgKeyInstallVersion, ""); err != nil {
-		logging.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
+		multilog.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
 	if params.Channel != constants.BranchName {

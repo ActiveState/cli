@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type UserNetworkError struct {
@@ -90,7 +91,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 	// of user facing network issues. Theoretically this could cause some false positives, but at the time of writing I could not find any instances on rollbar
 	// where `wsarecv:` was being reported as anything other than a network issue caused by the user or their network
 	if err != nil && strings.Contains(err.Error(), "wsarecv:") {
-		logging.Error("Non-Critical User Network Issue, please vet for false-positive: %v", err) // Logging so we can vet for false positives
+		multilog.Error("Non-Critical User Network Issue, please vet for false-positive: %v", err) // Logging so we can vet for false positives
 		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_wsarecv", "Request failed due to user network error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 

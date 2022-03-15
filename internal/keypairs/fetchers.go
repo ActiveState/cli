@@ -3,7 +3,7 @@ package keypairs
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -21,7 +21,7 @@ func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable)
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
 		}
-		logging.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
+		multilog.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
 		return nil, errs.Wrap(err, "GetKeypair failed")
 	}
 

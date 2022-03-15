@@ -8,7 +8,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/terminal"
 
 	survey "gopkg.in/AlecAivazis/survey.v1/core"
@@ -39,7 +41,7 @@ func parseOutputFlags(args []string) outputFlags {
 	parser := flags.NewParser(&flagSet, flags.IgnoreUnknown)
 	_, err := parser.ParseArgs(args)
 	if err != nil {
-		logging.Warningf("Could not parse output flag: %s", err.Error())
+		logging.Warning("Could not parse output flag: %s", err.Error())
 	}
 
 	return flagSet
@@ -59,10 +61,10 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 	if err != nil {
 		if errors.Is(err, output.ErrNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
-			logging.Warningf("Output format not recognized: %s, defaulting to plain output instead", formatName)
+			logging.Warning("Output format not recognized: %s, defaulting to plain output instead", formatName)
 			return initOutput(flags, string(output.PlainFormatName))
 		}
-		logging.Errorf("Could not create outputer, name: %s, error: %s", formatName, err.Error())
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not create outputer, name: %s, error: %s", formatName, err.Error())
 		return nil, errs.Wrap(err, "output.New %s failed", formatName)
 	}
 	return out, nil

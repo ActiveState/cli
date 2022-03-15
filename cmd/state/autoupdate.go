@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/updater"
 )
@@ -37,7 +38,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	profile.Measure("autoUpdate", time.Now())
 	defer func() {
 		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
-			logging.Error("Failed to store last update check: %s", errs.JoinMessage(err))
+			multilog.Error("Failed to store last update check: %s", errs.JoinMessage(err))
 		}
 	}()
 
@@ -150,7 +151,7 @@ func isFreshInstall() bool {
 	exe := osutils.Executable()
 	stat, err := os.Stat(exe)
 	if err != nil {
-		logging.Error("Could not stat file: %s, error: %v", exe)
+		multilog.Error("Could not stat file: %s, error: %v", exe, err)
 		return true
 	}
 	diff := time.Now().Sub(stat.ModTime())

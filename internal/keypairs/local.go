@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Configurable interface {
@@ -119,7 +120,7 @@ func hasKeyOverride() bool {
 
 	tkn, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
-		logging.Error("Could not retrieve gcloud secret: %v", err)
+		multilog.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
 		logging.Debug("Has key override from gcloud")

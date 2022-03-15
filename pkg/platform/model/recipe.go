@@ -11,19 +11,18 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/pkg/sysinfo"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/go-openapi/strfmt"
 )
 
 type SolverError struct {
@@ -127,7 +126,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		}
 
 		serr := resolveSolverError(err)
-		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
 		return "", serr
 	}
 
@@ -180,7 +179,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 		orderBody, _ := json.Marshal(params.Order)
 		serr := resolveSolverError(err)
-		logging.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
 		return nil, serr
 	}
 

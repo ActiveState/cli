@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/wailsapp/wails"
 	"github.com/yuin/goldmark"
@@ -65,13 +65,13 @@ func (a *App) Start() error {
 		url := fmt.Sprintf("https://raw.githubusercontent.com/ActiveState/cli/%s/changelog.md", bindings.update.Channel)
 		changelog, _, err := httpreq.New().Get(url)
 		if err != nil {
-			logging.Error(fmt.Sprintf("Could not retrieve changelog: %v", errs.Join(err, ": ")))
+			multilog.Error(fmt.Sprintf("Could not retrieve changelog: %v", errs.Join(err, ": ")))
 			return
 		}
 
 		var buf bytes.Buffer
 		if err := goldmark.Convert(changelog, &buf); err != nil {
-			logging.Error(fmt.Sprintf("Could not convert changelog to html: %v", errs.Join(err, ": ")))
+			multilog.Error(fmt.Sprintf("Could not convert changelog to html: %v", errs.Join(err, ": ")))
 			return
 		}
 

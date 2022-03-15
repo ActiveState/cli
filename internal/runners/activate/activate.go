@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -332,12 +333,12 @@ func warningForAdministrator(out output.Outputer) {
 
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		logging.Error("Failed to determine if run as administrator.")
+		multilog.Error("Failed to determine if run as administrator.")
 	}
 	if isAdmin {
 		u, err := user.Current()
 		if err != nil {
-			logging.Error("Failed to determine current user.")
+			multilog.Error("Failed to determine current user.")
 			return
 		}
 		out.Notice(locale.Tl(

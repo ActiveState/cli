@@ -13,7 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
@@ -88,7 +90,7 @@ func (f *Plain) Config() *Config {
 func (f *Plain) write(writer io.Writer, value interface{}) {
 	v, err := sprint(value)
 	if err != nil {
-		logging.Errorf("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not sprint value: %v, error: %v, stack: %s", value, err, stacktrace.Get().String())
 		f.writeNow(f.cfg.ErrWriter, fmt.Sprintf("[ERROR]%s[/RESET]", locale.Tr("err_sprint", err.Error())))
 		return
 	}
@@ -99,7 +101,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 func (f *Plain) writeNow(writer io.Writer, value string) {
 	_, err := colorize.Colorize(wordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
-		logging.Errorf("Writing colored output failed: %v", err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Writing colored output failed: %v", err)
 	}
 }
 
@@ -370,7 +372,7 @@ func shiftColsVal(opts []string) int {
 		if len(numChar) < len(opt) { // prefix exists and was trimmed
 			n, err := strconv.Atoi(numChar)
 			if err != nil {
-				logging.Errorf("Cannot get shiftCols value: %v", err)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Cannot get shiftCols value: %v", err)
 				break
 			}
 
@@ -384,7 +386,7 @@ func shiftColsVal(opts []string) int {
 func columns(offset int, value string) []string {
 	if offset < 0 {
 		offset = 0
-		logging.Errorf("Negative shiftCols values are not handled; Using zero offset")
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Negative shiftCols values are not handled; Using zero offset")
 	}
 	cols := make([]string, offset+1)
 	cols[offset] = value

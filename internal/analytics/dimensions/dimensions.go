@@ -11,7 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -45,12 +47,12 @@ type Values struct {
 func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
-		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
 	machineID := machineid.UniqID()
 	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		logging.Error("unknown machine id: %s", machineID)
+		multilog.Error("unknown machine id: %s", machineID)
 	}
 	deviceID := uniqid.Text()
 
@@ -64,7 +66,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	osVersion := "unknown"
 	osvInfo, err := sysinfo.OSVersion()
 	if err != nil {
-		logging.Errorf("Could not detect osVersion: %v", err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not detect osVersion: %v", err)
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
@@ -96,7 +98,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 func (m *Values) Merge(mergeWith ...*Values) {
 	for _, dim := range mergeWith {
 		if err := mergo.Merge(m, dim, mergo.WithOverride); err != nil {
-			logging.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
+			multilog.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
 		}
 	}
 }

@@ -14,17 +14,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/google/uuid"
-	"github.com/imdario/mergo"
-	"github.com/spf13/cast"
-	"gopkg.in/yaml.v2"
-
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -34,9 +23,20 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/imdario/mergo"
+	"github.com/spf13/cast"
+	"github.com/thoas/go-funk"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -345,7 +345,7 @@ func (e Event) ID() string {
 	if e.id == "" {
 		id, err := uuid.NewUUID()
 		if err != nil {
-			logging.Error("UUID generation failed, defaulting to serialization")
+			multilog.Error("UUID generation failed, defaulting to serialization")
 			e.id = hash.ShortHash(e.Name, e.Value, strings.Join(e.Scope, ""))
 		} else {
 			e.id = id.String()
@@ -833,7 +833,7 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 func Get() *Project {
 	project, err := GetSafe()
 	if err != nil {
-		logging.Error("projectfile.Get() failed with: %s", err.Error())
+		multilog.Error("projectfile.Get() failed with: %s", err.Error())
 		fmt.Fprint(os.Stderr, locale.T("err_project_file_unavailable"))
 		os.Exit(1)
 	}
@@ -1155,7 +1155,7 @@ func Reset() {
 // Only one project can persist at a time.
 func (p *Project) Persist() {
 	if p.Project == "" {
-		logging.Error("projectfile.Persist() failed because no project is defined")
+		multilog.Error("projectfile.Persist() failed because no project is defined")
 		fmt.Fprint(os.Stderr, locale.T("err_invalid_project"))
 		os.Exit(1)
 	}
@@ -1194,7 +1194,7 @@ func GetProjectFileMapping(config ConfigGetter) map[string][]*Project {
 		for _, path := range paths {
 			prj, err := FromExactPath(path)
 			if err != nil {
-				logging.Error("Could not read project file at %s: %v", path, err)
+				multilog.Error("Could not read project file at %s: %v", path, err)
 				continue
 			}
 			pFiles = append(pFiles, prj)
@@ -1233,7 +1233,7 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
 			if err != nil && v != nil { // don't report if error due to nil input
-				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
 			}
 
 			keys := funk.FilterString(cfg.AllKeys(), func(v string) bool {
@@ -1252,11 +1252,11 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 		},
 	)
 	if err != nil {
-		logging.Error("Could not update project mapping in config, error: %v", err)
+		multilog.Error("Could not update project mapping in config, error: %v", err)
 	}
 	for _, unset := range unsets {
 		if err := cfg.Set(unset, nil); err != nil {
-			logging.Error("Could not clear config entry for key %s, error: %v", unset, err)
+			multilog.Error("Could not clear config entry for key %s, error: %v", unset, err)
 		}
 	}
 
@@ -1285,12 +1285,12 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
 			if err != nil && v != nil { // don't report if error due to nil input
-				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
 			}
 
 			projectPath, err = fileutils.ResolveUniquePath(projectPath)
 			if err != nil {
-				logging.Errorf("Could not resolve uniqe project path, %v", err)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not resolve uniqe project path, %v", err)
 				projectPath = filepath.Clean(projectPath)
 			}
 
@@ -1298,7 +1298,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 				for i, path := range paths {
 					path, err = fileutils.ResolveUniquePath(path)
 					if err != nil {
-						logging.Errorf("Could not resolve unique path, :%v", err)
+						multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not resolve unique path, :%v", err)
 						path = filepath.Clean(path)
 					}
 
@@ -1327,7 +1327,7 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 		},
 	)
 	if err != nil {
-		logging.Error("Could not set project mapping in config, error: %v", err)
+		multilog.Error("Could not set project mapping in config, error: %v", err)
 	}
 }
 
@@ -1339,7 +1339,7 @@ func CleanProjectMapping(cfg ConfigGetter) {
 		func(v interface{}) (interface{}, error) {
 			projects, err := cast.ToStringMapStringSliceE(v)
 			if err != nil && v != nil { // don't report if error due to nil input
-				logging.Errorf("Projects data in config is abnormal (type: %T)", v)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Projects data in config is abnormal (type: %T)", v)
 			}
 
 			seen := make(map[string]struct{})

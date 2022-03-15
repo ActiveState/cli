@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -69,7 +69,7 @@ func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, st
 
 			deleteOk, err := dirCanBeDeleted(dir, alreadyInstalled)
 			if err != nil {
-				logging.Error("Could not determine if directory %s could be deleted: %v", dir, err)
+				multilog.Error("Could not determine if directory %s could be deleted: %v", dir, err)
 				continue
 			}
 			if !deleteOk {

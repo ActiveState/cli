@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/getlantern/systray"
 )
@@ -93,7 +93,7 @@ func (i *localProjectsMenuItem) eventLoop() {
 				}
 				err = open.TerminalAndWait(cmd)
 				if err != nil {
-					logging.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
+					multilog.Error("Could not open local projects prompt for project %s, got error: %v", i.namespace, err)
 				}
 			}
 		case <-i.close:
