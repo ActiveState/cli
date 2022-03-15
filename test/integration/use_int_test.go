@@ -25,7 +25,6 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.Expect("Switched to Python3")
 
 	cp.SendLine("hash -r")
-	cp.WaitForInput()
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.6.6")
