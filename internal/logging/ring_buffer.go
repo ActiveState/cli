@@ -26,7 +26,7 @@ func (b *ringBuffer) Read(p []byte) (int, error) {
 		copy(p, b.buffer[b.end-len(p):b.end]) // fill p with trailing buffer
 		return len(p), nil
 	case b.size <= len(p): // entire buffer fits in p (wrapped)
-		copy(p, b.buffer[b.end:])        // fill p with beginning of buffer
+		copy(p, b.buffer[b.end:])        // fill p with buffer prior to wrap
 		copy(p[b.size-b.end:], b.buffer) // finish filling with wrapped remainder
 		return b.size, nil
 	default: // b.size > len(p): // entire buffer does not fit in p (wrapped)

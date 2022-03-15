@@ -2,7 +2,6 @@ package rollbar
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -85,7 +84,7 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 
 	data := map[string]interface{}{}
 	logDataBytes := make([]byte, logging.TailSize)
-	bytesRead, err = logging.Tail.Read(logDataBytes)
+	bytesRead, err := logging.Tail.Read(logDataBytes)
 	if err != nil {
 		data["log_file_read_error"] = err.Error() // should never happen
 	} else {

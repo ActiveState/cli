@@ -221,7 +221,7 @@ func TestLogTail(t *testing.T) {
 	Info("Foo Bar %d", 1)
 	Warning("Bar Baz %d", 2)
 
-	p := make([]byte, 5000)
+	p := make([]byte, TailSize)
 	read, _ := Tail.Read(p)
 	fmt.Println(string(p[:read]))
 	if !bytes.Contains(p, []byte("[INFO ")) {
