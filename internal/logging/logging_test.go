@@ -3,10 +3,10 @@
 package logging
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -221,19 +221,18 @@ func TestLogTail(t *testing.T) {
 	Info("Foo Bar %d", 1)
 	Warning("Bar Baz %d", 2)
 
-	p := make([]byte, TailSize)
-	read, _ := Tail.Read(p)
-	fmt.Println(string(p[:read]))
-	if !bytes.Contains(p, []byte("[INFO ")) {
+	contents := ReadTail()
+	fmt.Println(contents)
+	if !strings.Contains(contents, "[INFO ") {
 		t.Fatal("Tail does not contain '[INFO '")
 	}
-	if !bytes.Contains(p, []byte("] Foo Bar 1")) {
+	if !strings.Contains(contents, "] Foo Bar 1") {
 		t.Fatal("Tail does not contain '] Foo Bar 1'")
 	}
-	if !bytes.Contains(p, []byte("[WARNING ")) {
+	if !strings.Contains(contents, "[WARNING ") {
 		t.Fatal("Tail does not contain '[WARNING '")
 	}
-	if !bytes.Contains(p, []byte("] Bar Baz 2")) {
+	if !strings.Contains(contents, "] Bar Baz 2") {
 		t.Fatal("Tail does not contain '] Bar Baz 2'")
 	}
 }

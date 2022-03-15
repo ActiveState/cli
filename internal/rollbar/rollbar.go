@@ -83,17 +83,11 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	}
 
 	data := map[string]interface{}{}
-	logDataBytes := make([]byte, logging.TailSize)
-	bytesRead, err := logging.Tail.Read(logDataBytes)
-	if err != nil {
-		data["log_file_read_error"] = err.Error() // should never happen
-	} else {
-		logData := string(logDataBytes[:bytesRead])
-		if bytesRead == logging.TailSize {
-			logData = "<truncated>\n" + logData
-		}
-		data["log_file_data"] = logData
+	logData := logging.ReadTail()
+	if len(logData) == logging.TailSize {
+		logData = "<truncated>\n" + logData
 	}
+	data["log_file_data"] = logData
 
 	exec := CurrentCmd
 	if exec == "" {
