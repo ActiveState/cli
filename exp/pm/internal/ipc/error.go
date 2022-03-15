@@ -9,8 +9,8 @@ import (
 
 var (
 	ErrInUse        = flisten.ErrInUse
-	ErrConnRefused  = flisten.ErrConnRefused
-	ErrFileNotExist = flisten.ErrFileNotExist
+	errConnRefused  = flisten.ErrConnRefused
+	errFileNotExist = flisten.ErrFileNotExist
 )
 
 type DoneError struct {
@@ -50,7 +50,7 @@ func (e *ServerDownError) Unwrap() error {
 }
 
 func asServerDown(err error) error {
-	if errors.Is(err, ErrFileNotExist) || errors.Is(err, ErrConnRefused) {
+	if errors.Is(err, errFileNotExist) || errors.Is(err, errConnRefused) {
 		return NewServerDownError(err)
 	}
 	return err
