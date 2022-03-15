@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"unicode"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -128,18 +127,6 @@ func CachePath() string {
 	}
 
 	return cachePath
-}
-
-func caseInsensitiveGlob(path string) string {
-	var result string
-	for _, r := range path {
-		if unicode.IsLetter(r) {
-			result += fmt.Sprintf("[%c%c]", unicode.ToUpper(r), unicode.ToLower(r))
-		} else {
-			result += string(r)
-		}
-	}
-	return result
 }
 
 func GlobalBinDir() string {
