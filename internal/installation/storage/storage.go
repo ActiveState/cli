@@ -112,14 +112,14 @@ func CachePath() string {
 	}
 
 	configRoot := filepath.Dir(cachePath)
-	matches, err := filepath.Glob(filepath.Join(configRoot, caseInsensitiveGlob(constants.InternalConfigNamespace)))
-	if err != nil {
-		// log error?
-		fmt.Println(err)
-	}
-
-	if len(matches) > 0 {
-		cachePath = matches[0]
+	entries, err := os.ReadDir(configRoot)
+	if err == nil {
+		for _, e := range entries {
+			if strings.EqualFold(e.Name(), constants.InternalConfigNamespace) {
+				cachePath = filepath.Join(configRoot, e.Name())
+				break
+			}
+		}
 	}
 
 	if runtime.GOOS == "windows" {
