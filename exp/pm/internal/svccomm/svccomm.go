@@ -7,7 +7,6 @@ import (
 )
 
 var (
-	KeyPing     = "ping"
 	KeyHTTPAddr = "http-addr"
 )
 
@@ -33,14 +32,4 @@ func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
 
 func (c *Client) GetHTTPAddr(ctx context.Context) (string, error) {
 	return c.s.Get(ctx, KeyHTTPAddr)
-}
-
-func PingHandler() ipc.MatchedHandler {
-	return func(input string) (string, bool) {
-		if input == KeyPing {
-			return "pong", true
-		}
-
-		return "", false
-	}
 }
