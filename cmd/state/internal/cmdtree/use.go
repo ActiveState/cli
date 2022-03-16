@@ -18,7 +18,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"use",
 		"",
-		"Switch to using the given project",
+		"Use the given project runtime as the default for your system",
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{

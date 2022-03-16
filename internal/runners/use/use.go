@@ -30,7 +30,6 @@ import (
 )
 
 type Params struct {
-	// TODO: Make owner optional?
 	Namespace *project.Namespaced
 }
 
