@@ -70,7 +70,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, defaultProjectDir); err != nil {
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the default executors.")
 	}
 

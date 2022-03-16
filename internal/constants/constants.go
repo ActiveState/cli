@@ -364,6 +364,9 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
 
+// ActiveProjectConfig is the config key used to denote the currently active project
+const ActiveProjectConfig = "projects.active"
+
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"
 

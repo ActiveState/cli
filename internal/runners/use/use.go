@@ -99,7 +99,7 @@ func (u *Use) Run(params *Params) error {
 		}
 	}
 
-	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, filepath.Dir(proj.Source().Path())); err != nil {
+	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
@@ -109,10 +109,6 @@ func (u *Use) Run(params *Params) error {
 		u.out.Notice(locale.Tl("use_reset_notice_windows", "Note you may need to start a new command prompt to fully update your environment."))
 	} else {
 		u.out.Notice(locale.Tl("use_reset_notice", "Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment."))
-	}
-
-	if err := u.config.Set("projects.active", proj.Namespace().String()); err != nil {
-		return err
 	}
 
 	return nil
