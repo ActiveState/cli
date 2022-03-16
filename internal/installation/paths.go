@@ -46,10 +46,6 @@ func InstallPath() (string, error) {
 	return DefaultInstallPath()
 }
 
-func BinPath() (string, error) {
-	return BinPathFromInstallPath("")
-}
-
 func BinPathFromInstallPath(installPath string) (string, error) {
 	if installPath == "" {
 		var err error

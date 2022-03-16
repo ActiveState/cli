@@ -79,11 +79,11 @@ func TrayApp(baseDir ...string) *AppInfo {
 }
 
 func StateApp(baseDir ...string) *AppInfo {
-	return newAppInfo(constants.StateAppName, "state", baseDir...)
+	return newAppInfo(constants.StateAppName, constants.StateCmd, baseDir...)
 }
 
 func SvcApp(baseDir ...string) *AppInfo {
-	return newAppInfo(constants.SvcAppName, "state-svc", baseDir...)
+	return newAppInfo(constants.SvcAppName, constants.StateSvcCmd, baseDir...)
 }
 
 func UpdateDialogApp(baseDir ...string) *AppInfo {
@@ -91,7 +91,7 @@ func UpdateDialogApp(baseDir ...string) *AppInfo {
 }
 
 func InstallerApp(baseDir ...string) *AppInfo {
-	return newAppInfo(constants.StateInstallerCmd, "state-installer", baseDir...)
+	return newAppInfo(constants.StateInstallerCmd, constants.StateInstallerCmd, baseDir...)
 }
 
 func (a *AppInfo) Name() string {

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -131,6 +132,20 @@ func (i *Installer) sanitize() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	// Ensure that the target path is usable
+	if fileutils.TargetExists(i.path) {
+		isEmpty, err := fileutils.IsEmptyDir(i.path)
+		if err != nil {
+			return errs.Wrap(err, "Could not check if install dir is empty")
+		}
+
+		if !isEmpty {
+			if err := detectCorruptedInstallDir(i.path); err != nil {
+				return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
+			}
+		}
 	}
 
 	return nil
