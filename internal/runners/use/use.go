@@ -7,9 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
+	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
+	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -46,6 +46,7 @@ type primeable interface {
 type Use struct {
 	auth      *authentication.Auth
 	out       output.Outputer
+	checkout  *checkout.Checkout
 	svcMgr    *svcmanager.Manager
 	svcModel  *model.SvcModel
 	config    *config.Instance
@@ -57,6 +58,7 @@ func NewUse(prime primeable) *Use {
 	return &Use{
 		prime.Auth(),
 		prime.Output(),
+		checkout.New(git.NewRepo(), prime),
 		prime.SvcManager(),
 		prime.SvcModel(),
 		prime.Config(),
@@ -70,14 +72,19 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcMgr, u.config, u.out)
 
-	path, err := u.getProjectPath(params.Namespace)
+	projectPath, err := checkout.EnsureProjectPath(u.config, params.Namespace, "")
 	if err != nil {
-		return locale.WrapError(err, "err_use_get_project_path", "Could not get path for project")
+		return locale.WrapError(err, "err_use_select_namespace", "Could not")
 	}
 
-	proj, err := initProject(params.Namespace, path)
+	err = u.checkout.Run(params.Namespace, "", projectPath)
 	if err != nil {
-		return locale.WrapError(err, "err_use_init_project", "Could not initialize project")
+		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
+	}
+
+	proj, err := project.FromPath(projectPath)
+	if err != nil {
+		return locale.WrapError(err, "err_activate_projectfrompath")
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
@@ -126,40 +133,4 @@ func (u *Use) getProjectPath(namespace *project.Namespaced) (string, error) {
 	}
 
 	return filepath.Join(dir, namespace.Project), nil
-}
-
-func initProject(ns *project.Namespaced, dir string) (*project.Project, error) {
-	if fileutils.TargetExists(filepath.Join(dir, constants.ConfigFileName)) {
-		return project.FromPath(dir)
-	}
-
-	pj, err := model.FetchProjectByName(ns.Owner, ns.Project)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_fetch_project", ns.String())
-	}
-
-	branch, err := model.DefaultBranchForProject(pj)
-	if err != nil {
-		return nil, locale.NewInputError("err_no_default_branch")
-	}
-	branchName := branch.Label
-
-	commitID := ns.CommitID
-	if commitID == nil && branch.CommitID == nil {
-		return nil, locale.NewError("err_use_commit_id", "Could not determine commit ID")
-	}
-	commitID = branch.CommitID
-
-	pf, err := projectfile.Create(&projectfile.CreateParams{
-		Owner:      ns.Owner,
-		Project:    ns.Project,
-		CommitID:   commitID,
-		BranchName: branchName,
-		Directory:  dir,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return project.New(pf, nil)
 }

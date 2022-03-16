@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
+	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -37,8 +38,7 @@ import (
 )
 
 type Activate struct {
-	namespaceSelect  *NamespaceSelect
-	activateCheckout *Checkout
+	activateCheckout *checkout.Checkout
 	auth             *authentication.Auth
 	out              output.Outputer
 	svcMgr           *svcmanager.Manager
@@ -72,8 +72,7 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config()),
-		NewCheckout(git.NewRepo(), prime),
+		checkout.New(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
 		prime.SvcManager(),
@@ -163,12 +162,12 @@ func (r *Activate) run(params *ActivateParams) error {
 
 		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
 		if err != nil {
-			return err
+			return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
 		}
 
 		proj, err = project.FromPath(pathToUse)
 		if err != nil {
-			return locale.WrapError(err, "err_activate_projectfrompath", "Something went wrong while creating project files.")
+			return locale.WrapError(err, "err_project_frompath")
 		}
 	}
 
@@ -304,7 +303,7 @@ func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string
 	switch {
 	case namespace != nil && namespace.String() != "":
 		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return r.namespaceSelect.Run(namespace, preferredPath)
+		return checkout.EnsureProjectPath(r.config, namespace, preferredPath)
 	case preferredPath != "":
 		// Use the user provided path
 		return preferredPath, nil

@@ -1834,3 +1834,7 @@ arg_state_use_namespace:
   other: ORG/PROJECT
 arg_state_use_namespace_description:
   other: The namespace of the project that you wish to use
+err_checkout_project:
+  other: Could not checkout project {{.V0}}
+err_project_frompath:
+  other: Could not create project files
