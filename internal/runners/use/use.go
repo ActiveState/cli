@@ -2,7 +2,6 @@ package use
 
 import (
 	"fmt"
-	"path/filepath"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -12,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -26,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -119,18 +116,4 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	return nil
-}
-
-func (u *Use) getProjectPath(namespace *project.Namespaced) (string, error) {
-	potentialPaths := projectfile.GetProjectPaths(u.config, namespace.String())
-	if len(potentialPaths) > 0 {
-		return potentialPaths[0], nil
-	}
-
-	dir, err := osutils.Getwd()
-	if err != nil {
-		return "", locale.WrapError(err, "err_use_get_wd", "Could not get current working directory")
-	}
-
-	return filepath.Join(dir, namespace.Project), nil
 }
