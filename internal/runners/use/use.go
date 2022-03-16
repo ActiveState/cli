@@ -69,12 +69,7 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcMgr, u.config, u.out)
 
-	projectPath, err := checkout.EnsureProjectPath(u.config, params.Namespace, "")
-	if err != nil {
-		return locale.WrapError(err, "err_use_select_namespace", "Could not")
-	}
-
-	err = u.checkout.Run(params.Namespace, "", projectPath)
+	projectPath, err := u.checkout.Run(params.Namespace, "")
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
 	}

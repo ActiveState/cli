@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -15,24 +16,24 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-func EnsureProjectPath(cfg *config.Instance, namespace *project.Namespaced, preferredPath string) (string, error) {
+func ensureProjectPath(cfg *config.Instance, namespace *project.Namespaced, preferredPath string) (string, error) {
 	targetPath := preferredPath
 	if targetPath == "" {
 		var err error
 		targetPath, err = getProjectPath(cfg, namespace)
 		if err != nil {
-			return "", err
+			return "", errs.Wrap(err, "Could not get project path")
 		}
 	}
 
 	err := fileutils.MkdirUnlessExists(targetPath)
 	if err != nil {
-		return "", err
+		return "", errs.Wrap(err, "Could not make directory at: %s", targetPath)
 	}
 
 	// Validate that target path doesn't contain a config for a different namespace
 	if err := validatePath(namespace.Project, targetPath); err != nil {
-		return "", err
+		return "", errs.Wrap(err, "Could not validate target path: %s", targetPath)
 	}
 
 	return targetPath, nil
@@ -69,7 +70,7 @@ func validatePath(name string, path string) error {
 
 	pj, err := project.Parse(configFile)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_parse_project", "", configFile)
 	}
 
 	if !pj.IsHeadless() && pj.Name() != name {
@@ -82,7 +83,7 @@ func validatePath(name string, path string) error {
 func getSafeWorkDir() (string, error) {
 	dir, err := osutils.Getwd()
 	if err != nil {
-		return "", err
+		return "", errs.Wrap(err, "Could not get working directory")
 	}
 
 	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
@@ -91,7 +92,7 @@ func getSafeWorkDir() (string, error) {
 
 	dir, err = os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", errs.Wrap(err, "Could not get home directory")
 	}
 
 	return dir, nil

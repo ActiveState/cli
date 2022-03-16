@@ -97,7 +97,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
+	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -152,22 +152,6 @@ func (r *Activate) run(params *ActivateParams) error {
 				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
 				params.Branch, proj.BranchName(),
 			)
-		}
-	}
-
-	if proj == nil {
-		if params.Namespace == nil || !params.Namespace.IsValid() {
-			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
-		}
-
-		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
-		if err != nil {
-			return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
-		}
-
-		proj, err = project.FromPath(pathToUse)
-		if err != nil {
-			return locale.WrapError(err, "err_project_frompath")
 		}
 	}
 
@@ -297,21 +281,6 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	}
 
 	return nil
-}
-
-func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
-	switch {
-	case namespace != nil && namespace.String() != "":
-		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return checkout.EnsureProjectPath(r.config, namespace, preferredPath)
-	case preferredPath != "":
-		// Use the user provided path
-		return preferredPath, nil
-	default:
-		// Get path from working directory
-		targetPath, err := projectfile.GetProjectFilePath()
-		return filepath.Dir(targetPath), err
-	}
 }
 
 func (r *Activate) pathToProject(path string) (*project.Project, error) {

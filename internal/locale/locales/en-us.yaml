@@ -1838,3 +1838,9 @@ err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
+err_language_by_commit:
+  other: Could not get language from commit ID {{.V0}}
+err_make_language:
+  other: Could not create language from commit ID
+err_parse_project:
+  other: Could not parse project file at {{.V0}}
