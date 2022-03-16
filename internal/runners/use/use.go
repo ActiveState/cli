@@ -108,7 +108,7 @@ func (u *Use) Run(params *Params) error {
 	if rt.GOOS == "windows" {
 		u.out.Print(locale.Tl("use_reset_notice_windows", "Note you may need to start a new command prompt to fully update your environment."))
 	} else {
-		u.out.Print(locale.Tl("use_reset_notice", "Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to reset your environment."))
+		u.out.Print(locale.Tl("use_reset_notice", "Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment."))
 	}
 
 	if err := u.config.Set("projects.active", proj.Namespace().String()); err != nil {
