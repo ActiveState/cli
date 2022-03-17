@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 )
@@ -110,15 +112,9 @@ func CachePath() string {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 	}
 
-	configRoot := filepath.Dir(cachePath)
-	entries, err := os.ReadDir(configRoot)
+	caseSensitiveCachePath, err := caseSensitivePath(cachePath)
 	if err == nil {
-		for _, e := range entries {
-			if strings.EqualFold(e.Name(), constants.InternalConfigNamespace) {
-				cachePath = filepath.Join(configRoot, e.Name())
-				break
-			}
-		}
+		cachePath = caseSensitiveCachePath
 	}
 
 	if runtime.GOOS == "windows" {
@@ -127,6 +123,31 @@ func CachePath() string {
 	}
 
 	return cachePath
+}
+
+func caseSensitivePath(path string) (string, error) {
+	matches, err := filepath.Glob(caseSensitiveGlob(path))
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to search for matching paths")
+	}
+
+	if len(matches) == 0 {
+		return "", errs.New("No matches")
+	}
+
+	return matches[0], nil
+}
+
+func caseSensitiveGlob(path string) string {
+	var result string
+	for _, r := range path {
+		if unicode.IsLetter(r) {
+			result += fmt.Sprintf("[%c%c]", unicode.ToUpper(r), unicode.ToLower(r))
+		} else {
+			result += string(r)
+		}
+	}
+	return result
 }
 
 func GlobalBinDir() string {
