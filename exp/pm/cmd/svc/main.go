@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"sync"
 	"syscall"
 
@@ -24,7 +25,7 @@ func main() {
 
 func run() error {
 	var (
-		rootDir = "/tmp/svccomm"
+		rootDir = filepath.Join(os.TempDir(), "svccomm")
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
 )
@@ -20,7 +20,7 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 
 	namespace := n.String()
 
-	namespaceDir := path.Dir(namespace)
+	namespaceDir := filepath.Dir(namespace)
 
 	_, err := os.Stat(namespaceDir)
 	if err != nil {
@@ -62,8 +62,3 @@ func NewWithCleanup(n *namespace.Namespace, network string) (*FListen, error) {
 
 	return New(n, network)
 }
-
-/*func (l *FListen) Accept() (net.Conn, error) {
-	conn, err := l.Listener.Accept()
-	return conn, asFileNotExist(asConnRefused(err))
-}*/

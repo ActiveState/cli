@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
@@ -29,7 +30,7 @@ func (m *SvcCtl) Start(ctx context.Context) error {
 	emsg := "start svc: %w"
 	defer profile.Measure("svcmanager:Start", time.Now())
 
-	svcExec := "../svc/build/svc" /*appinfo.SvcApp().Exec()*/
+	svcExec := filepath.Clean("../svc/build/svc" + fileExt) /*appinfo.SvcApp().Exec()*/
 	if err := start(m.c.Namespace().AppVersion, svcExec); err != nil {
 		return fmt.Errorf(emsg, err)
 	}

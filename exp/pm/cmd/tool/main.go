@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	var (
-		rootDir = "/tmp/svccomm"
+		rootDir = filepath.Join(os.TempDir(), "svccomm")
 		name    = "state"
 		version = "default"
 		hash    = "DEADBEEF"
