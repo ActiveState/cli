@@ -38,8 +38,8 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 	)
 
 	ccmd.SetGroup(PlatformGroup)
-
 	ccmd.SetAliases("variables", "vars")
+	ccmd.SetUnstable(true)
 
 	return ccmd
 }

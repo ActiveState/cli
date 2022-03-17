@@ -26,6 +26,7 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 
 	cmd.SetGroup(PlatformGroup)
 	cmd.SetAliases("orgs")
+	cmd.SetUnstable(true)
 
 	return cmd
 }

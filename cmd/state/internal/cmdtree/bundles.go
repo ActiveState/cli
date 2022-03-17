@@ -13,7 +13,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 
 	params := packages.ListRunParams{}
 
-	cmd := captain.NewCommand(
+	return captain.NewCommand(
 		"bundles",
 		locale.Tl("bundles_title", "Listing Bundles"),
 		locale.Tl("bundles_cmd_description", "Manage bundles used in your project"),
@@ -39,11 +39,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespaceBundle)
 		},
-	)
-
-	cmd.SetGroup(PackagesGroup)
-
-	return cmd
+	).SetGroup(PackagesGroup).SetUnstable(true)
 }
 
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
