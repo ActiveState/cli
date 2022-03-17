@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -112,10 +111,7 @@ func CachePath() string {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 	}
 
-	caseSensitiveCachePath, err := caseSensitivePath(cachePath)
-	if err == nil {
-		cachePath = caseSensitiveCachePath
-	}
+	cachePath = caseSensitiveCachePath(filepath.Dir(cachePath), constants.InternalConfigNamespace)
 
 	if runtime.GOOS == "windows" {
 		// Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
@@ -125,17 +121,16 @@ func CachePath() string {
 	return cachePath
 }
 
-func caseSensitivePath(path string) (string, error) {
-	matches, err := filepath.Glob(caseSensitiveGlob(path))
-	if err != nil {
-		return "", fmt.Errorf("Failed to serach for matching paths, error: %w", err)
+func caseSensitiveCachePath(base, path string) string {
+	entries, err := os.ReadDir(base)
+	if err == nil {
+		for _, e := range entries {
+			if strings.EqualFold(e.Name(), path) {
+				return filepath.Join(base, e.Name())
+			}
+		}
 	}
-
-	if len(matches) == 0 {
-		return "", errors.New("No matches")
-	}
-
-	return matches[0], nil
+	return ""
 }
 
 func caseSensitiveGlob(path string) string {
