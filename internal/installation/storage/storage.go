@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 )
@@ -128,11 +128,11 @@ func CachePath() string {
 func caseSensitivePath(path string) (string, error) {
 	matches, err := filepath.Glob(caseSensitiveGlob(path))
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to search for matching paths")
+		return "", fmt.Errorf("Failed to serach for matching paths, error: %w", err)
 	}
 
 	if len(matches) == 0 {
-		return "", errs.New("No matches")
+		return "", errors.New("No matches")
 	}
 
 	return matches[0], nil
