@@ -130,7 +130,7 @@ func caseSensitiveCachePath(base, path string) string {
 			}
 		}
 	}
-	return ""
+	return filepath.Join(base, path)
 }
 
 func caseSensitiveGlob(path string) string {
