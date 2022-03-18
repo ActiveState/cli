@@ -344,7 +344,7 @@ const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
-const GlobalDefaultPrefname = "default_project_path"
+const GlobalDefaultPrefname = "projects.active.path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
@@ -363,9 +363,6 @@ const ReportErrorsConfig = "report.errors"
 
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
-
-// ActiveProjectConfig is the config key used to denote the currently active project
-const ActiveProjectConfig = "projects.active"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"

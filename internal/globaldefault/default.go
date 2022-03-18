@@ -79,9 +79,5 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
 	}
 
-	if err := cfg.Set(constants.ActiveProjectConfig, proj.Namespace().String()); err != nil {
-		return err
-	}
-
 	return nil
 }
