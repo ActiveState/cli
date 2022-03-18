@@ -44,3 +44,20 @@ func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
 
 	return addr, nil
 }
+
+func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
+	ipcClient := ipc.NewClient(n)
+	emsg := "locate http: %w"
+	commClient := svccomm.NewClient(ipcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	defer cancel()
+
+	addr, err = commClient.GetHTTPAddr(ctx)
+	fmt.Println(addr)
+	if err != nil {
+		return "", fmt.Errorf(emsg, err)
+	}
+
+	return addr, nil
+}

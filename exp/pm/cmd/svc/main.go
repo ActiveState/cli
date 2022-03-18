@@ -1,25 +1,40 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
 	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
+	"github.com/ActiveState/cli/exp/pm/internal/svcctl"
 )
+
+type namedClose struct {
+	name string
+	io.Closer
+}
 
 func main() {
 	if err := run(); err != nil {
 		cmd := path.Base(os.Args[0])
 		fmt.Fprintf(os.Stderr, "%s: %s\n", cmd, err)
-		os.Exit(1)
+
+		exitCode := 1
+		if errors.Is(err, ipc.ErrInUse) {
+			exitCode = 7
+		}
+		os.Exit(exitCode)
 	}
 }
 
@@ -31,6 +46,8 @@ func run() error {
 		hash    = "DEADBEEF"
 		svcName = "svc"
 	)
+
+	defer fmt.Printf("%s: goodbye\n", svcName)
 
 	flag.StringVar(&version, "v", version, "version id")
 	flag.Parse()
@@ -52,63 +69,108 @@ func run() error {
 	}
 	ipcSrv := ipc.New(n, mhs...)
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	defer close(sigs)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	go func() {
-		sig, ok := <-sigs
-		if !ok {
-			return
-		}
-		fmt.Printf("%s: handling signal: %s\n", svcName, sig)
-
-		fmt.Printf("%s: closing ipc\n", svcName)
-		if err := ipcSrv.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
-		}
-
-		fmt.Printf("%s: closing server\n", svcName)
-		if err := httpSrv.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
-		}
-	}()
-
-	var wg sync.WaitGroup
 	errs := make(chan error)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	callOnSysSigs(ctx, svcName, cancel)
+	callWhenNotVerified(ctx, errs, svcName, addr, n, cancel)
+	shutDownOnDone(
+		ctx,
+		svcName,
+		namedClose{"ipc", ipcSrv},
+		namedClose{"http", httpSrv},
+	)
 
-		for err := range errs {
-			httpSrv.Close()
-			fmt.Fprintf(os.Stderr, "%s: errored early: %s\n", svcName, err)
-		}
-	}()
-
-	wg.Add(1)
 	go func() {
 		defer close(errs)
-		defer wg.Done()
 
-		// TODO: work out the best order of closing/cleanup
-		if err = ipcSrv.ListenAndServe(); err != nil {
-			errs <- err
-		}
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			if err = ipcSrv.ListenAndServe(); err != nil {
+				errs <- err
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			if err = httpSrv.Wait(); err != nil {
+				errs <- err
+			}
+		}()
+
+		fmt.Printf("%s: waiting\n", svcName)
+		wg.Wait()
 	}()
 
-	wg.Add(1)
+	var reportErr error
+	for err := range errs {
+		if reportErr == nil {
+			cancel()
+			reportErr = err
+		}
+
+		fmt.Fprintf(os.Stderr, "%s (outputing all): %s\n", svcName, err)
+	}
+
+	return reportErr
+}
+
+func shutDownOnDone(ctx context.Context, svcName string, ncs ...namedClose) {
 	go func() {
-		defer wg.Done()
+		<-ctx.Done()
 
-		if err = httpSrv.Wait(); err != nil {
-			errs <- err
+		for _, nc := range ncs {
+			fmt.Printf("%s: closing %s\n", svcName, nc.name)
+			if err := nc.Close(); err != nil {
+				fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
+			}
 		}
 	}()
+}
 
-	fmt.Printf("%s: waiting\n", svcName)
-	wg.Wait()
+func callOnSysSigs(ctx context.Context, svcName string, fn func()) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	return nil
+	go func() {
+		defer close(sigs)
+
+		select {
+		case <-ctx.Done():
+			return
+		case sig, ok := <-sigs:
+			if !ok {
+				return
+			}
+
+			fmt.Printf("%s: handling signal: %s\n", svcName, sig)
+			fn()
+		}
+	}()
+}
+
+func callWhenNotVerified(ctx context.Context, errs chan error, svcName, addr string, n *ipc.Namespace, fn func()) {
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second * 3):
+			checkedAddr, err := svcctl.LocateHTTP(n)
+			if err == nil && checkedAddr != addr {
+				err = fmt.Errorf("checked addr %q does not match current %q", checkedAddr, addr)
+			}
+			if err != nil {
+				errs <- err
+				fn()
+			}
+		}
+	}()
 }
