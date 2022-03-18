@@ -54,7 +54,8 @@ func TestRelocateFile(t *testing.T) {
 }
 
 func TestApplyConstTransforms(t *testing.T) {
-	cs := NewConstants(`C:\an\installdir`)
+	cs, err := NewConstants(`C:\an\installdir`)
+	assert.NoError(t, err)
 
 	cases := []struct {
 		Name          string

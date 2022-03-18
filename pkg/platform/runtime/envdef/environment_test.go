@@ -186,7 +186,8 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 	tmpDir, err = fileutils.GetLongPathName(tmpDir)
 	require.NoError(suite.T(), err)
 
-	constants := envdef.NewConstants(tmpDir)
+	constants, err := envdef.NewConstants(tmpDir)
+	require.NoError(suite.T(), err)
 	// expand variables
 	ed1.ExpandVariables(constants)
 
