@@ -8,12 +8,17 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
+
+// AuthorDeleted is the placeholder username to use if an author has since been deleted from an
+// organization and their username can no longer be obtained.
+const AuthorDeleted = "<deleted>"
 
 type commitData struct {
 	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
@@ -73,7 +78,8 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	if commit.Author != nil && orgs != nil {
 		username, err = usernameForID(*commit.Author, orgs)
 		if err != nil {
-			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
+			logging.Debug("Could not determine username for commit author '%s'. Using placeholder value '%s'.", *commit.Author, AuthorDeleted)
+			username = AuthorDeleted
 		}
 	}
 
