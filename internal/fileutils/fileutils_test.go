@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/environment"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -577,4 +576,23 @@ func TestResolveUniquePath(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.Equal(tt, nonExistent, res)
 	})
+}
+
+func TestCaseSensitivePath(t *testing.T) {
+	testCaseSensitivePath(t, "lowercase", "LOWERCASE")
+	testCaseSensitivePath(t, "UPPERCASE", "uppercase")
+	testCaseSensitivePath(t, "MiXeDcAsE", "mixedCase")
+}
+
+func testCaseSensitivePath(t *testing.T, dirName, variant string) {
+	dir, err := ioutil.TempDir("", dirName)
+	assert.NoError(t, err)
+
+	searchPath := strings.Replace(dir, dirName, variant, -1)
+	found, err := CaseSensitivePath(searchPath)
+	assert.NoError(t, err)
+
+	if found != dir {
+		t.Fatalf("Found should match dir \nwant: %s \ngot: %s", dir, found)
+	}
 }

@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -1016,4 +1017,38 @@ func ModTime(path string) (time.Time, error) {
 		return time.Now(), errs.Wrap(err, "Could not stat file %s", path)
 	}
 	return stat.ModTime(), nil
+}
+
+func CaseSensitivePath(path string) (string, error) {
+	var searchPath string
+	if runtime.GOOS != "windows" {
+		searchPath = caseSensitiveSearchPath(path)
+	} else {
+		volume := filepath.VolumeName(path)
+		remainder := strings.TrimLeft(path, volume)
+		searchPath = filepath.Join(volume, caseSensitiveSearchPath(remainder))
+	}
+
+	matches, err := filepath.Glob(searchPath)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to search for path")
+	}
+
+	if len(matches) == 0 {
+		return "", errs.New("Could not find path: %s", path)
+	}
+
+	return matches[0], nil
+}
+
+func caseSensitiveSearchPath(path string) string {
+	var result string
+	for _, r := range path {
+		if unicode.IsLetter(r) {
+			result += fmt.Sprintf("[%c%c]", unicode.ToUpper(r), unicode.ToLower(r))
+		} else {
+			result += string(r)
+		}
+	}
+	return result
 }
