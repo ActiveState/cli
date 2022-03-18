@@ -1021,9 +1021,14 @@ func ModTime(path string) (time.Time, error) {
 
 func CaseSensitivePath(path string) (string, error) {
 	var searchPath string
+	var err error
 	if runtime.GOOS != "windows" {
 		searchPath = caseSensitiveSearchPath(path)
 	} else {
+		path, err = GetLongPathName(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not evaluate long pathname")
+		}
 		volume := filepath.VolumeName(path)
 		remainder := strings.TrimLeft(path, volume)
 		searchPath = filepath.Join(volume, caseSensitiveSearchPath(remainder))
