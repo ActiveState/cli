@@ -78,7 +78,8 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 	ed, err := envdef.NewEnvironmentDefinition(edFile)
 	suite.Require().NoError(err, "failed to create environment definition file")
 
-	constants := envdef.NewConstants(installDir)
+	constants, err := envdef.NewConstants(installDir)
+	suite.Require().NoError(err, "failed to get new constants")
 	ed = ed.ExpandVariables(constants)
 	env := ed.GetEnv(true)
 

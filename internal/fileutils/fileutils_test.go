@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/ActiveState/cli/internal/environment"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -577,4 +576,53 @@ func TestResolveUniquePath(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.Equal(tt, nonExistent, res)
 	})
+}
+
+func TestCaseSensitivePath(t *testing.T) {
+	tests := []struct {
+		dirName string
+		variant string
+	}{
+		{
+			"lowercase",
+			"LOWERCASE",
+		},
+		{
+			"UPPERCASE",
+			"uppercase",
+		},
+		{
+			"MiXeDcAse",
+			"mixedCase",
+		},
+		{
+			"{other~symbols!}",
+			"{OTHER~symbols!}",
+		},
+		{
+			"spéçïàl",
+			"spÉÇÏÀl",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.dirName, func(t *testing.T) {
+			testCaseSensitivePath(t, tt.dirName, tt.variant)
+		})
+	}
+}
+
+func testCaseSensitivePath(t *testing.T, dirName, variant string) {
+	dir, err := ioutil.TempDir("", dirName)
+	assert.NoError(t, err)
+
+	dir, err = GetLongPathName(dir)
+	assert.NoError(t, err)
+
+	searchPath := strings.Replace(dir, dirName, variant, -1)
+	found, err := CaseSensitivePath(searchPath)
+	assert.NoError(t, err)
+
+	if found != dir {
+		t.Fatalf("Found should match dir \nwant: %s \ngot: %s", dir, found)
+	}
 }
