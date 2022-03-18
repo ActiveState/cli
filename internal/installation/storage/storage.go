@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"unicode"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -109,40 +108,13 @@ func CachePath() string {
 		cachePath = path
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
-	}
-
-	cachePath = caseSensitiveCachePath(filepath.Dir(cachePath), constants.InternalConfigNamespace)
-
-	if runtime.GOOS == "windows" {
-		// Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
-		cachePath = filepath.Join(cachePath, "cache")
+		if runtime.GOOS == "windows" {
+			// Explicitly append "cache" dir as the cachedir on Windows is the same as the local appdata dir (conflicts with config)
+			cachePath = filepath.Join(cachePath, "cache")
+		}
 	}
 
 	return cachePath
-}
-
-func caseSensitiveCachePath(base, path string) string {
-	entries, err := os.ReadDir(base)
-	if err == nil {
-		for _, e := range entries {
-			if strings.EqualFold(e.Name(), path) {
-				return filepath.Join(base, e.Name())
-			}
-		}
-	}
-	return filepath.Join(base, path)
-}
-
-func caseSensitiveGlob(path string) string {
-	var result string
-	for _, r := range path {
-		if unicode.IsLetter(r) {
-			result += fmt.Sprintf("[%c%c]", unicode.ToUpper(r), unicode.ToLower(r))
-		} else {
-			result += string(r)
-		}
-	}
-	return result
 }
 
 func GlobalBinDir() string {
