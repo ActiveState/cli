@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,6 +58,9 @@ func TestRelocateFile(t *testing.T) {
 
 func TestApplyConstTransforms(t *testing.T) {
 	dir, err := ioutil.TempDir("", "installdir")
+	assert.NoError(t, err)
+
+	dir, err = fileutils.GetLongPathName(dir)
 	assert.NoError(t, err)
 
 	cs, err := NewConstants(dir)
