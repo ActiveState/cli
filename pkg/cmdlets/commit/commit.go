@@ -16,10 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-// AuthorDeleted is the placeholder username to use if an author has since been deleted from an
-// organization and their username can no longer be obtained.
-const AuthorDeleted = "<deleted>"
-
 type commitData struct {
 	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
 	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
@@ -78,8 +74,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	if commit.Author != nil && orgs != nil {
 		username, err = usernameForID(*commit.Author, orgs)
 		if err != nil {
-			logging.Debug("Could not determine username for commit author '%s'. Using placeholder value '%s'.", *commit.Author, AuthorDeleted)
-			username = AuthorDeleted
+			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
 		}
 	}
 
@@ -173,5 +168,7 @@ func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) (string, error) {
 		}
 	}
 
-	return "", locale.NewError("err_user_not_found", id.String())
+	placeholder := locale.Tl("deleted_username", "<deleted>")
+	logging.Debug("Could not determine username for commit author '%s'. Using placeholder value '%s'.", id, placeholder)
+	return placeholder, nil
 }
