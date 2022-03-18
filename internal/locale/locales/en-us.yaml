@@ -851,7 +851,7 @@ err_activate_namespace:
 err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
-  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]ORGANISATION_NAME/PROJECT_NAME[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
+  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]ORGANIZATION_NAME/PROJECT_NAME[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
