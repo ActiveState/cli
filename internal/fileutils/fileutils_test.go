@@ -578,10 +578,37 @@ func TestResolveUniquePath(t *testing.T) {
 	})
 }
 
-func TestCaseSensitivePath(t *testing.T) {
-	testCaseSensitivePath(t, "lowercase", "LOWERCASE")
-	testCaseSensitivePath(t, "UPPERCASE", "uppercase")
-	testCaseSensitivePath(t, "MiXeDcAsE", "mixedCase")
+func TestCaseSensitivePath2(t *testing.T) {
+	tests := []struct {
+		dirName string
+		variant string
+	}{
+		{
+			"lowercase",
+			"LOWERCASE",
+		},
+		{
+			"UPPERCASE",
+			"uppercase",
+		},
+		{
+			"MiXeDcAse",
+			"mixedCase",
+		},
+		{
+			"{other~symbols!}",
+			"{OTHER~symbols!}",
+		},
+		{
+			"spéçïàl",
+			"spÉÇÏÀl",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.dirName, func(t *testing.T) {
+			testCaseSensitivePath(t, tt.dirName, tt.variant)
+		})
+	}
 }
 
 func testCaseSensitivePath(t *testing.T, dirName, variant string) {
