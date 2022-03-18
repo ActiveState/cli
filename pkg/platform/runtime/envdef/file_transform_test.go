@@ -2,8 +2,11 @@ package envdef
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +57,15 @@ func TestRelocateFile(t *testing.T) {
 }
 
 func TestApplyConstTransforms(t *testing.T) {
-	cs := NewConstants(`C:\an\installdir`)
+	dir, err := ioutil.TempDir("", "installdir")
+	assert.NoError(t, err)
+
+	dir, err = fileutils.GetLongPathName(dir)
+	assert.NoError(t, err)
+
+	cs, err := NewConstants(dir)
+	assert.NoError(t, err)
+	assert.NoError(t, err)
 
 	cases := []struct {
 		Name          string
@@ -66,10 +77,10 @@ func TestApplyConstTransforms(t *testing.T) {
 			"double-slashes", `[{"pattern":
 			   "\\",
 			"with": "\\\\", "in": ["INSTALLDIR"]}]`,
-			false, `C:\\an\\installdir`,
+			false, strings.Replace(dir, `\`, `\\`, -1),
 		},
 		{
-			"unchanged", `[]`, false, "C:\\an\\installdir",
+			"unchanged", `[]`, false, dir,
 		},
 		{
 			"invalid-constant", `[{"pattern": "\\", "with": "\\\\", "in": ["INVALID"]}]`,
