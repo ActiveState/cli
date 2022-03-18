@@ -1,9 +1,10 @@
 package svctool
 
 import (
-	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
@@ -12,60 +13,68 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	count := 128
+	simultaneous := 4
+	iterations := 32
+	pause := time.Millisecond * 200
 
-	start := make(chan struct{})
 	errs := make(chan error)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*300)
 	defer cancel()
 
 	go func() { // load up command instances
 		defer close(errs)
 
 		wg := &sync.WaitGroup{}
-		wg.Add(count)
+		var count int
 
-		for i := 0; i < count; i++ {
-			c := exec.CommandContext(ctx, filepath.Clean("../../cmd/svc/build/svc"))
-			buf := &bytes.Buffer{}
-			c.Stdout = buf
+		for iter := 0; iter < iterations; iter++ {
+			start := make(chan struct{})
+			wg.Add(simultaneous)
+			for i := 0; i < simultaneous; i++ {
+				count++
+				fmt.Println("count", count)
+				c := exec.CommandContext(ctx, filepath.Clean("../../cmd/svc/build/svc"))
+				c.Stdout = os.Stdout
 
-			go func(buf *bytes.Buffer, cmd *exec.Cmd) {
-				defer wg.Done()
-				defer func() {
-					//fmt.Println(buf.String())
-				}()
+				go func(cmd *exec.Cmd) {
+					defer wg.Done()
 
-				select { // wait for common start time with fallback timeout
-				case <-start:
-				case <-time.After(time.Millisecond * 3):
-					t.Error("cmd start is not aligned")
-				}
+					select { // wait for common start time with fallback timeout
+					case <-start:
+					case <-time.After(time.Millisecond * 3):
+						t.Error("cmd start is not aligned")
+					}
 
-				if err := cmd.Start(); err != nil {
-					errs <- err
-				}
+					fmt.Println("STARTING")
+					if err := cmd.Start(); err != nil {
+						fmt.Println("start error:", err)
+						errs <- err
+					}
 
-				if err := cmd.Wait(); err != nil {
-					errs <- err
-				}
-			}(buf, c)
+					if err := cmd.Wait(); err != nil {
+						fmt.Println("wait error:", err)
+						errs <- err
+					}
+				}(c)
+			}
+
+			close(start) // trip command instances executions
+			time.Sleep(pause)
 		}
 		wg.Wait()
 	}()
 
-	close(start) // trip command instances executions
-
 	var saved error
 	var got int
-	want := count - 1
+	want := (simultaneous * iterations) - 1
 
 	for err := range errs {
 		var eerr *exec.ExitError
 		if errors.As(err, &eerr) && eerr.ExitCode() < 0 { // ctx cancelled (ignore killed)
 			continue
 		}
+
 		if saved == nil && err != nil { // save first non-nil error for example output
 			saved = err
 		}
