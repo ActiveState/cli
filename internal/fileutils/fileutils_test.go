@@ -578,7 +578,7 @@ func TestResolveUniquePath(t *testing.T) {
 	})
 }
 
-func TestCaseSensitivePath2(t *testing.T) {
+func TestCaseSensitivePath(t *testing.T) {
 	tests := []struct {
 		dirName string
 		variant string
@@ -613,6 +613,9 @@ func TestCaseSensitivePath2(t *testing.T) {
 
 func testCaseSensitivePath(t *testing.T, dirName, variant string) {
 	dir, err := ioutil.TempDir("", dirName)
+	assert.NoError(t, err)
+
+	dir, err = GetLongPathName(dir)
 	assert.NoError(t, err)
 
 	searchPath := strings.Replace(dir, dirName, variant, -1)
