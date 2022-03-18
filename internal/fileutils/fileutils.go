@@ -1023,11 +1023,11 @@ func CaseSensitivePath(path string) (string, error) {
 	var searchPath string
 	var err error
 	if runtime.GOOS != "windows" {
-		searchPath = caseSensitiveSearchPath(path)
+		searchPath = globPath(path)
 	} else {
 		volume := filepath.VolumeName(path)
 		remainder := strings.TrimLeft(path, volume)
-		searchPath = filepath.Join(volume, caseSensitiveSearchPath(remainder))
+		searchPath = filepath.Join(volume, globPath(remainder))
 	}
 
 	matches, err := filepath.Glob(searchPath)
@@ -1042,7 +1042,7 @@ func CaseSensitivePath(path string) (string, error) {
 	return matches[0], nil
 }
 
-func caseSensitiveSearchPath(path string) string {
+func globPath(path string) string {
 	var result string
 	for _, r := range path {
 		if unicode.IsLetter(r) {
