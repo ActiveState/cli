@@ -1022,6 +1022,7 @@ func ModTime(path string) (time.Time, error) {
 }
 
 func CaseSensitivePath(path string) (string, error) {
+	// On Windows Glob may not work with the short path (ie., DOS 8.3 notation)
 	path, err := GetLongPathName(path)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to get long path name")

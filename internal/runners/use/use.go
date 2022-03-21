@@ -94,7 +94,6 @@ func (u *Use) Run(params *Params) error {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}
-			fmt.Println("Full err:", errs.JoinMessage(err))
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
