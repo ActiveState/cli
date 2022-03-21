@@ -183,7 +183,11 @@ func (suite *EnvironmentTestSuite) TestFindBinPathFor() {
 		}`), &ed1)
 	require.NoError(suite.T(), err, "un-marshaling test json blob")
 
-	constants := envdef.NewConstants(tmpDir)
+	tmpDir, err = fileutils.GetLongPathName(tmpDir)
+	require.NoError(suite.T(), err)
+
+	constants, err := envdef.NewConstants(tmpDir)
+	require.NoError(suite.T(), err)
 	// expand variables
 	ed1.ExpandVariables(constants)
 
