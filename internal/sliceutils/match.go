@@ -8,6 +8,8 @@ import (
 	"reflect"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // isEmpty gets whether the specified object is considered empty or not.
@@ -64,7 +66,7 @@ func ObjectsAreEqual(expected, actual interface{}) bool {
 func ElementsMatchImplicit(listA, listB interface{}) bool {
 	match, err := ElementsMatch(listA, listB)
 	if err != nil {
-		logging.Errorf("Could not check if two elements match: %v", err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not check if two elements match: %v", err)
 		return false
 	}
 	return match

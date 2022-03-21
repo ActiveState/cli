@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 var projectFieldRE = regexp.MustCompile(`(?m:^project:["' ]*(https?:\/\/.*?)["' ]*$)`)
@@ -58,7 +58,7 @@ func (p *projectField) SetCommit(commitID string, headless bool) {
 
 func (p *projectField) SetBranch(branch string) {
 	if p.isHeadless() {
-		logging.Error("Ignoring SetBranch when project is headless")
+		multilog.Error("Ignoring SetBranch when project is headless")
 		return
 	}
 	p.setQuery("branch", branch)

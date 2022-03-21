@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/process"
 )
@@ -33,7 +34,7 @@ func StopRunning(installPath string) (rerr error) {
 
 	err = stopSvc(installPath)
 	if err != nil {
-		logging.Critical("Could not stop running service, error: %v", err)
+		multilog.Critical("Could not stop running service, error: %v", err)
 		return locale.NewError("err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
@@ -75,7 +76,7 @@ func stopSvc(installPath string) error {
 	for _, p := range procs {
 		n, err := p.Name()
 		if err != nil {
-			logging.Error("Could not get process name: %v", err)
+			multilog.Error("Could not get process name: %v", err)
 			continue
 		}
 
@@ -86,12 +87,12 @@ func stopSvc(installPath string) error {
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
-				logging.Error("Could not get executable path for state-svc process, error: %v", err)
+				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
 
 			if !strings.Contains(strings.ToLower(exe), "activestate") {
-				logging.Error("Found state-svc process in unexpected directory: %s", exe)
+				multilog.Error("Found state-svc process in unexpected directory: %s", exe)
 				continue
 			}
 
@@ -120,7 +121,7 @@ func stopSvcProcess(proc *process.Process, name string) error {
 	select {
 	case err := <-signalErrs:
 		if err != nil {
-			logging.Error("Could not send SIGTERM to %s  process, error: %v", name, err)
+			multilog.Error("Could not send SIGTERM to %s  process, error: %v", name, err)
 			return killProcess(proc, name)
 		}
 

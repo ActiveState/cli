@@ -24,6 +24,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(PlatformGroup)
 	cmd.SetAliases("cve")
+	cmd.SetUnstable(true)
 	return cmd
 }
 

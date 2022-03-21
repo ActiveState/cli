@@ -12,7 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/lockfile"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 type Configurable interface {
@@ -39,7 +41,7 @@ func ActivationPID(cfg Configurable) int32 {
 		pproc, err := process.NewProcess(ppid)
 		if err != nil {
 			if err != process.ErrorProcessNotRunning {
-				logging.Errorf(procInfoErrMsgFmt, err)
+				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)(procInfoErrMsgFmt, err)
 			}
 			return -1
 		}
@@ -47,7 +49,7 @@ func ActivationPID(cfg Configurable) int32 {
 		pid = ppid
 		ppid, err = pproc.Ppid()
 		if err != nil {
-			logging.Errorf(procInfoErrMsgFmt, err)
+			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)(procInfoErrMsgFmt, err)
 			return -1
 		}
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
@@ -63,7 +63,7 @@ type createKeyFunc = func(path string) (osutils.RegistryKey, bool, error)
 func setStateProtocol() error {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		logging.Error("Could not check for windows administrator privileges: %v", err)
+		multilog.Error("Could not check for windows administrator privileges: %v", err)
 	}
 
 	createFunc := osutils.CreateCurrentUserKey
@@ -118,7 +118,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 
 	as, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
-		logging.Error("Failed to determine autostart path for removal: %v", err)
+		multilog.Error("Failed to determine autostart path for removal: %v", err)
 	} else if as != "" {
 		files = append(files, as)
 	}

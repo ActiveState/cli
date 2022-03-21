@@ -17,19 +17,18 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/sighandler"
 	"github.com/ActiveState/cli/internal/table"
-
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -158,7 +157,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		err := cmd.Usage()
 		if err != nil {
 			// Cobra doesn't return this error for us, so we have to ensure it's logged
-			logging.Error("Error while running usage: %v", err)
+			multilog.Error("Error while running usage: %v", err)
 		}
 		return err
 	})
@@ -535,7 +534,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	subCommandString := c.UseFull()
-	logging.CurrentCmd = appEventPrefix + subCommandString
+	rollbar.CurrentCmd = appEventPrefix + subCommandString
 
 	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {

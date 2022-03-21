@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Closer func()
@@ -18,7 +19,7 @@ func logInfo(msg string, args ...interface{}) {
 }
 
 func logError(msg string, args ...interface{}) {
-	logging.Error("File-Event: "+msg, args...)
+	multilog.Error("File-Event: "+msg, args...)
 }
 
 type Watcher struct {

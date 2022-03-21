@@ -19,7 +19,9 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -228,7 +230,7 @@ func (s *Setup) Update() error {
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
-		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
+		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
 		if err != nil {
 			return locale.WrapError(err, "Failed to clean installation path")
@@ -271,7 +273,7 @@ func (s *Setup) Update() error {
 	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	err = os.RemoveAll(tempDir)
 	if err != nil {
-		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
@@ -452,7 +454,11 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	cnst := envdef.NewConstants(s.store.InstallPath())
+	cnst, err := envdef.NewConstants(s.store.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Could not get new environment constants")
+	}
+
 	envDef = envDef.ExpandVariables(cnst)
 	err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
 	if err != nil {

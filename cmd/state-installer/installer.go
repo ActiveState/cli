@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -55,7 +56,7 @@ func (i *Installer) Install() (rerr error) {
 	// Stop any running processes that might interfere
 	trayRunning, err := installation.IsTrayAppRunning(i.cfg)
 	if err != nil {
-		logging.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
+		multilog.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
 	}
 	if err := installation.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
@@ -99,13 +100,13 @@ func (i *Installer) Install() (rerr error) {
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), "_prepare"); err != nil {
-		logging.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
+		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
 		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(binDir).Exec(), []string{}); err != nil {
-			logging.Error("Could not start state-tray: %s", errs.JoinMessage(err))
+			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}
 
