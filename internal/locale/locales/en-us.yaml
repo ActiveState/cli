@@ -1830,3 +1830,17 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+arg_state_use_namespace:
+  other: ORG/PROJECT
+arg_state_use_namespace_description:
+  other: The namespace of the project that you wish to use
+err_checkout_project:
+  other: Could not checkout project {{.V0}}
+err_project_frompath:
+  other: Could not create project files
+err_language_by_commit:
+  other: Could not get language from commit ID {{.V0}}
+err_make_language:
+  other: Could not create language from commit ID
+err_parse_project:
+  other: Could not parse project file at {{.V0}}
