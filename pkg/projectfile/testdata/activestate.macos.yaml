@@ -1,0 +1,6 @@
+environments: dev
+constants:
+  - name: macOS
+    value: true
+  - name: DEBUG
+    value: false

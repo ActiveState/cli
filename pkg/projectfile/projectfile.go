@@ -479,8 +479,48 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice); err != nil {
+		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice, mergo.WithOverride); err != nil {
 			return nil, errs.Wrap(err, "Could not merge %s into your activestate.yaml", file.Name())
+		}
+
+		// Now reverse all arrays such that any members that were redefined show up first. (The array
+		// will still have two copies.)
+		if list := project.Platforms; len(secondaryProject.Platforms) > 0 {
+			for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+		if list := project.Languages; len(secondaryProject.Languages) > 0 {
+			for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+		if list := project.Constants; len(secondaryProject.Constants) > 0 {
+			for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+		if secondaryProject.Secrets != nil {
+			if list := project.Secrets.User; len(secondaryProject.Secrets.User) > 0 {
+				for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+					list[i], list[j] = list[j], list[i]
+				}
+			}
+			if list := project.Secrets.Project; len(secondaryProject.Secrets.Project) > 0 {
+				for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+					list[i], list[j] = list[j], list[i]
+				}
+			}
+		}
+		if list := project.Events; len(secondaryProject.Events) > 0 {
+			for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+				list[i], list[j] = list[j], list[i]
+			}
+		}
+		if list := project.Jobs; len(secondaryProject.Jobs) > 0 {
+			for i, j := 0, len(list)-1; i < j; i, j = i+1, j-1 {
+				list[i], list[j] = list[j], list[i]
+			}
 		}
 	}
 
