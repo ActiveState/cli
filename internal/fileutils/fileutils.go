@@ -1022,8 +1022,12 @@ func ModTime(path string) (time.Time, error) {
 }
 
 func CaseSensitivePath(path string) (string, error) {
+	path, err := GetLongPathName(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to get long path name")
+	}
+
 	var searchPath string
-	var err error
 	if runtime.GOOS != "windows" {
 		searchPath = globPath(path)
 	} else {
