@@ -17,7 +17,7 @@ func TestYamlMerge(t *testing.T) {
 	project, err := Parse(filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml"))
 	assert.NoError(t, err, "Should not throw an error")
 
-	assert.Equal(t, "dev,qa,prod", project.Environment) // should not be overridden by macOS's environment
+	assert.Equal(t, "dev,qa,prod", project.Environments) // should not be overridden by macOS's environment
 
 	assert.True(t, len(project.Constants) > 2) // should not be overridden by macOS's constants
 	for _, constant := range project.Constants {
