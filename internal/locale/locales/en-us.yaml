@@ -30,7 +30,7 @@ flag_state_verbose_description:
 flag_state_monochrome_output_description:
   other: Force monochrome text output
 flag_state_output_description:
-  other: "Set the output method, possible values: plain, json, editor"
+  other: "Set the output method, possible values: plain, simple, json, editor"
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
