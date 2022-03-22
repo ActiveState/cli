@@ -1436,11 +1436,11 @@ deploy_cmd_description:
 deploy_install_cmd_description:
   other: Only install the runtime environment files, but do not configure it in any way (effectively caches the runtime environment)
 deploy_configure_cmd_description:
-  other: Configure the runtime environment for your current shell (must have run install first or this will err)
+  other: Configure the runtime environment for your current shell (must have run install first or this will error)
 deploy_symlink_cmd_description:
-  other: Symlink the executables to your PATH and to the target directory (must have run install first or this will err)
+  other: Symlink the executables to your PATH and to the target directory (must have run install first or this will error)
 deploy_report_cmd_description:
-  other: Reports information about the deployed runtime environment, useful for further manual setup (must have run install first or this will err)
+  other: Reports information about the deployed runtime environment, useful for further manual setup (must have run install first or this will error)
 field_binarydirectories:
   other: Binary Directories
 field_environment:
