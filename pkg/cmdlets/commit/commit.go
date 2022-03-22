@@ -72,10 +72,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 	var username string
 	var err error
 	if commit.Author != nil && orgs != nil {
-		username, err = usernameForID(*commit.Author, orgs)
-		if err != nil {
-			return commitData{}, locale.WrapError(err, "err_commit_print_username", "Could not determine username for commit author")
-		}
+		username = usernameForID(*commit.Author, orgs)
 	}
 
 	commitData := commitData{
@@ -158,17 +155,17 @@ func formatConstraints(constraints []*mono_models.Constraint) string {
 	return strings.Join(result, ",")
 }
 
-func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) (string, error) {
+func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) string {
 	for _, org := range orgs {
 		if org.ID == id {
 			if org.DisplayName != "" {
-				return org.DisplayName, nil
+				return org.DisplayName
 			}
-			return org.URLName, nil
+			return org.URLName
 		}
 	}
 
 	placeholder := locale.Tl("deleted_username", "<deleted>")
 	logging.Debug("Could not determine username for commit author '%s'. Using placeholder value '%s'.", id, placeholder)
-	return placeholder, nil
+	return placeholder
 }
