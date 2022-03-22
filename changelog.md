@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.33.0
+
+### Added
+
+* Authentication now uses your browser for a more secure and transparent
+  authentication process.
+  * The old behavior is still available as well, and use-cases where you provide
+    the api key or credentials in the command are unaffected.
+* Added a new `state config` command, which can be used to change behavior of
+  the State Tool itself.
+  * Currently can be used to disable analytics and error reporting, eg.
+  ```bash
+  state config set report.analytics false # Turns off analytics
+  state config set report.errors false # Turns off error reporting
+  ```
+
+### Fixed
+
+* Fixed issue where temporary files were not cleaned up in a timely manner.
+* Fixed issue where the `state-svc` process would not be shut down correctly.
+* Fixed issue where `state clean uninstall` would say it succeeded but the State
+  Tool would still be installed.
+
+### Changed
+
+* Several performance enhancements have been made affecting all parts of the
+  State Tool.
+* Activating an already activated project won't error out anymore.
+* The local project is no longer affected if `state install` fails.
+
+### Removed
+
+* The `-c` flag has been removed from `state activate` as this is now handled
+  by `state exec`.
+
 ## 0.32.2
 
 ### Fixed

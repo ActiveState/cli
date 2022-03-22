@@ -1685,7 +1685,7 @@ artifact_progress_step_unpack:
 artifact_progress_step_install:
   other: Installing
 artifact_setup_failed:
-  other: Failed to install artifact {{.V0}} ({{.V1}})
+  other: "Failed to install artifact {{.V0}} ({{.V1}}). Error received: {{.V2}}."
 err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:

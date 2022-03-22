@@ -326,7 +326,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 		if err := s.setupArtifact(buildResult.BuildEngine, a.ArtifactID, a.UnsignedURI); err != nil {
 			if err != nil {
 				name := setup.ResolveArtifactName(a.ArtifactID)
-				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
+				errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String(), errs.JoinMessage(err))
 			}
 		}
 	}
