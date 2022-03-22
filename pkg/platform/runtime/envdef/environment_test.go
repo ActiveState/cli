@@ -237,6 +237,14 @@ func TestFilterPATH(t *testing.T) {
 			},
 			"/path//to/key1" + s + "/path/to//key3",
 		},
+		{
+			"Does not filter any paths",
+			args{
+				map[string]string{"PATH": "/path/to/key1"},
+				[]string{"/path/to/key2", "/path/to/key3"},
+			},
+			"/path/to/key1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
