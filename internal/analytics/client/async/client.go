@@ -33,6 +33,7 @@ type Client struct {
 	eventWaitGroup   *sync.WaitGroup
 	sessionToken     string
 	updateTag        string
+	closed           bool
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -91,6 +92,10 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
+	if a.closed {
+		return nil
+	}
+
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
@@ -131,4 +136,9 @@ func handlePanics(err interface{}, stack []byte) {
 	}
 	multilog.Error("Panic in client analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
+}
+
+func (a *Client) Close() {
+	a.Wait()
+	a.closed = true
 }
