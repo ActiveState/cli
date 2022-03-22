@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
@@ -42,4 +43,7 @@ func main() {
 	}
 
 	fmt.Print(data)
+
+	time.Sleep(time.Second)
+	fmt.Println(svcctl.StopServer(n))
 }

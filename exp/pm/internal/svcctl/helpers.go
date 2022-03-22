@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
 )
 
+// TODO: relocate? maybe move into structured type field within svcctl type
+
 func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
 	ipcClient := ipc.NewClient(n)
 	emsg := "ensure svc and locate http: %w"
@@ -60,4 +62,18 @@ func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
 	}
 
 	return addr, nil
+}
+
+func StopServer(n *ipc.Namespace) (err error) {
+	ipcClient := ipc.NewClient(n)
+	emsg := "locate http: %w"
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	defer cancel()
+
+	svcCtl := New(ipcClient)
+	if err := svcCtl.Stop(ctx); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+	return nil
 }

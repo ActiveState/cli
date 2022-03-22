@@ -35,12 +35,18 @@ type IPC struct {
 }
 
 func New(n *Namespace, mhs ...MatchedHandler) *IPC {
-	return &IPC{
+	ipc := IPC{
 		n:    n,
-		mhs:  append(mhs, pingHandler()),
+		mhs:  make([]MatchedHandler, 0, len(mhs)+2),
 		done: make(chan struct{}),
 		wg:   &sync.WaitGroup{},
 	}
+
+	ipc.mhs = append(ipc.mhs, pingHandler())
+	ipc.mhs = append(ipc.mhs, mhs...)
+	ipc.mhs = append(ipc.mhs, stopHandler(&ipc))
+
+	return &ipc
 }
 
 func (ipc *IPC) ListenAndServe() error {
@@ -55,7 +61,7 @@ func (ipc *IPC) ListenAndServe() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		_, pingErr := NewClient(ipc.n).Ping(ctx)
+		_, pingErr := NewClient(ipc.n).InternalPing(ctx)
 		if pingErr == nil {
 			return ErrInUse
 		}
@@ -98,9 +104,14 @@ func (ipc *IPC) ListenAndServe() error {
 }
 
 func (ipc *IPC) Close() error {
-	close(ipc.done)
-	ipc.wg.Wait()
-	return nil
+	select {
+	case <-ipc.done:
+		return nil
+	default:
+		close(ipc.done)
+		ipc.wg.Wait()
+		return nil
+	}
 }
 
 func accept(done chan struct{}, conns chan net.Conn, l net.Listener) error {
