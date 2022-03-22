@@ -92,20 +92,6 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+out.String()))
 }
 
-func WriteRcData(data string, path string, identification RcIdentification) error {
-	if err := fileutils.Touch(path); err != nil {
-		return err
-	}
-
-	if err := CleanRcFile(path, identification); err != nil {
-		return err
-	}
-
-	data = identification.Start + fileutils.LineEnd + data + fileutils.LineEnd + identification.Stop
-	logging.Debug("Writing to %s:\n%s", path, data)
-	return fileutils.AppendToFile(path, []byte(fileutils.LineEnd+data))
-}
-
 // RemoveLegacyInstallPath removes the PATH modification statement added to the shell-rc file by the legacy install script
 func RemoveLegacyInstallPath(path string) error {
 	if err := fileutils.Touch(path); err != nil {
