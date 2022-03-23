@@ -71,7 +71,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errs.Wrap(err, "Could not check if current user is an administrator")
 	}
 	if installedAsAdmin && !isAdmin {
-		return locale.NewInputError("err_uninstall_privlege_mismatch", "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator.")
+		return locale.NewInputError("err_uninstall_privlege_mismatch")
 	}
 
 	if err := stopServices(u.cfg, u.out, params.Force); err != nil {
