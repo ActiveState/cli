@@ -66,7 +66,7 @@ func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
 
 func StopServer(n *ipc.Namespace) (err error) {
 	ipcClient := ipc.NewClient(n)
-	emsg := "locate http: %w"
+	emsg := "stop server: %w"
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
 	defer cancel()
