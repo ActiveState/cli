@@ -91,6 +91,7 @@ func run() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer cancel()
 
 			if err = ipcSrv.ListenAndServe(); err != nil {
 				errs <- err

@@ -11,11 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
-	"github.com/ActiveState/cli/exp/pm/internal/ipcerrs"
-)
-
-const (
-	MsgSep = ":"
 )
 
 var (
@@ -28,18 +23,22 @@ type Namespace = namespace.Namespace
 type MatchedHandler func(input string) (resp string, isMatched bool)
 
 type IPC struct {
-	n    *Namespace
-	mhs  []MatchedHandler
-	done chan struct{}
-	wg   *sync.WaitGroup
+	n      *Namespace
+	mhs    []MatchedHandler
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     *sync.WaitGroup
 }
 
 func New(n *Namespace, mhs ...MatchedHandler) *IPC {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	ipc := IPC{
-		n:    n,
-		mhs:  make([]MatchedHandler, 0, len(mhs)+2),
-		done: make(chan struct{}),
-		wg:   &sync.WaitGroup{},
+		n:      n,
+		mhs:    make([]MatchedHandler, 0, len(mhs)+2),
+		ctx:    ctx,
+		cancel: cancel,
+		wg:     &sync.WaitGroup{},
 	}
 
 	ipc.mhs = append(ipc.mhs, pingHandler())
@@ -52,13 +51,13 @@ func New(n *Namespace, mhs ...MatchedHandler) *IPC {
 func (ipc *IPC) ListenAndServe() error {
 	emsg := "listen and serve: %w"
 
-	listener, err := flisten.New(ipc.n, network)
+	listener, err := flisten.New(ipc.ctx, ipc.n, network)
 	if err != nil {
 		if !errors.Is(err, flisten.ErrInUse) {
 			return fmt.Errorf(emsg, err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		ctx, cancel := context.WithTimeout(ipc.ctx, time.Second*3)
 		defer cancel()
 
 		_, pingErr := NewClient(ipc.n).PingServer(ctx)
@@ -67,10 +66,10 @@ func (ipc *IPC) ListenAndServe() error {
 		}
 
 		if !errors.Is(pingErr, flisten.ErrConnRefused) {
-			return fmt.Errorf(emsg, pingErr) // advanced handling?
+			return fmt.Errorf(emsg, pingErr) // TODO: advanced handling?
 		}
 
-		listener, err = flisten.NewWithCleanup(ipc.n, network)
+		listener, err = flisten.NewWithCleanup(ctx, ipc.n, network)
 		if err != nil {
 			return fmt.Errorf(emsg, err)
 		}
@@ -84,8 +83,8 @@ func (ipc *IPC) ListenAndServe() error {
 		defer ipc.wg.Done()
 
 		for {
-			if err := accept(ipc.done, conns, listener); err != nil {
-				if derr := (ipcerrs.DoneError)(nil); !errors.As(err, &derr) {
+			if err := accept(ipc.ctx, conns, listener); err != nil {
+				if !errors.Is(err, context.Canceled) {
 					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
 				}
 				return
@@ -94,8 +93,8 @@ func (ipc *IPC) ListenAndServe() error {
 	}()
 
 	for {
-		if err := routeToHandler(ipc.done, ipc.wg, conns, ipc.mhs); err != nil {
-			if derr := (ipcerrs.DoneError)(nil); errors.As(err, &derr) {
+		if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.mhs); err != nil {
+			if errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err
@@ -105,23 +104,22 @@ func (ipc *IPC) ListenAndServe() error {
 
 func (ipc *IPC) Close() error {
 	select {
-	case <-ipc.done:
-		return nil
+	case <-ipc.ctx.Done():
 	default:
-		close(ipc.done)
+		ipc.cancel()
 		ipc.wg.Wait()
-		return nil
 	}
+	return nil
 }
 
-func accept(done chan struct{}, conns chan net.Conn, l net.Listener) error {
+func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
 	emsg := "pick up connection: %w"
 
 	conn, err := l.Accept()
 	if err != nil {
 		select {
-		case <-done:
-			return fmt.Errorf(emsg, NewDoneError())
+		case <-ctx.Done():
+			return ctx.Err()
 		default:
 			return fmt.Errorf(emsg, err) // TODO: should this halt the application?
 		}
@@ -131,12 +129,12 @@ func accept(done chan struct{}, conns chan net.Conn, l net.Listener) error {
 	return nil
 }
 
-func routeToHandler(done chan struct{}, wg *sync.WaitGroup, conns chan net.Conn, mhs []MatchedHandler) error {
+func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, mhs []MatchedHandler) error {
 	emsg := "route connection: %w"
 
 	select {
-	case <-done:
-		return fmt.Errorf(emsg, NewDoneError())
+	case <-ctx.Done():
+		return ctx.Err()
 
 	case conn := <-conns:
 		wg.Add(1)

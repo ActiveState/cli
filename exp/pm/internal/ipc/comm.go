@@ -30,7 +30,7 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 	}
 
 	if s != valPong {
-		// this should not ever be seen by users
+		// this should never be seen by users
 		return s, errors.New("ipc.IPC should be constructed with a ping handler")
 	}
 
@@ -40,9 +40,9 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 func stopHandler(c io.Closer) MatchedHandler {
 	return func(input string) (string, bool) {
 		if input == keyStop {
-			// TODO: errors should be returned as structured text
-			// for the client.Get method to unmarshal and return.
-			c.Close()
+			defer func() {
+				go c.Close()
+			}()
 			return valStop, true
 		}
 
@@ -56,9 +56,9 @@ func getStop(ctx context.Context, c *Client) (string, error) {
 		return s, err
 	}
 
-	if s != valPong {
-		// this should not ever be seen by users
-		return s, errors.New("ipc.IPC should be constructed with a ping handler")
+	if s != valStop {
+		// this should never be seen by users
+		return s, errors.New("ipc.IPC should be constructed with a stop handler")
 	}
 
 	return s, nil

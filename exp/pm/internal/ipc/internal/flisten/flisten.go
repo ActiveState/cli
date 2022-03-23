@@ -1,6 +1,7 @@
 package flisten
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -15,7 +16,7 @@ type FListen struct {
 	net.Listener
 }
 
-func New(n *namespace.Namespace, network string) (*FListen, error) {
+func New(ctx context.Context, n *namespace.Namespace, network string) (*FListen, error) {
 	emsg := "construct flisten: %w"
 
 	namespace := n.String()
@@ -33,7 +34,7 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 		}
 	}
 
-	l, err := net.Listen(network, namespace)
+	l, err := (&net.ListenConfig{}).Listen(ctx, network, namespace)
 	if err != nil {
 		err = asInUse(err)
 		return nil, fmt.Errorf(emsg, err)
@@ -52,7 +53,7 @@ func New(n *namespace.Namespace, network string) (*FListen, error) {
 	return &f, nil
 }
 
-func NewWithCleanup(n *namespace.Namespace, network string) (*FListen, error) {
+func NewWithCleanup(ctx context.Context, n *namespace.Namespace, network string) (*FListen, error) {
 	emsg := "cleanup for construction: %w"
 
 	namespace := n.String()
@@ -60,5 +61,5 @@ func NewWithCleanup(n *namespace.Namespace, network string) (*FListen, error) {
 		return nil, fmt.Errorf(emsg, err)
 	}
 
-	return New(n, network)
+	return New(ctx, n, network)
 }
