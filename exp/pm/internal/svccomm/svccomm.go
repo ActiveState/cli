@@ -1,3 +1,4 @@
+// Package svccomm contains common IPC handlers and requesters.
 package svccomm
 
 import (

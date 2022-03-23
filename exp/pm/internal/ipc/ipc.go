@@ -61,7 +61,7 @@ func (ipc *IPC) ListenAndServe() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		_, pingErr := NewClient(ipc.n).InternalPing(ctx)
+		_, pingErr := NewClient(ipc.n).PingServer(ctx)
 		if pingErr == nil {
 			return ErrInUse
 		}

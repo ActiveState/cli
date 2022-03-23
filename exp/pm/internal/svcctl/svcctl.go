@@ -80,7 +80,7 @@ func ping(c *ipc.Client, d time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), d)
 	defer cancel()
 
-	_, err := c.InternalPing(ctx)
+	_, err := c.PingServer(ctx)
 	if err != nil {
 		return asNotUp(err)
 	}
@@ -89,5 +89,5 @@ func ping(c *ipc.Client, d time.Duration) error {
 
 func (m *SvcCtl) Stop(ctx context.Context) error {
 	// TODO: handle errors - timeout, can't reach, etc.
-	return m.c.InternalStop(ctx)
+	return m.c.StopServer(ctx)
 }

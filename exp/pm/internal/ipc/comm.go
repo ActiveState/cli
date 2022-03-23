@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 )
 
@@ -41,8 +40,8 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 func stopHandler(c io.Closer) MatchedHandler {
 	return func(input string) (string, bool) {
 		if input == keyStop {
-			// TODO: handle closing correctly
-			fmt.Println("server close called")
+			// TODO: errors should be returned as structured text
+			// for the client.Get method to unmarshal and return.
 			c.Close()
 			return valStop, true
 		}

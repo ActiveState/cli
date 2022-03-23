@@ -49,7 +49,7 @@ func (c *Client) Namespace() *Namespace {
 	return c.namespace
 }
 
-func (c *Client) InternalPing(ctx context.Context) (time.Duration, error) {
+func (c *Client) PingServer(ctx context.Context) (time.Duration, error) {
 	start := time.Now()
 	emsg := "ping: %w"
 
@@ -60,7 +60,7 @@ func (c *Client) InternalPing(ctx context.Context) (time.Duration, error) {
 	return time.Since(start), nil
 }
 
-func (c *Client) InternalStop(ctx context.Context) error {
+func (c *Client) StopServer(ctx context.Context) error {
 	emsg := "stop: %w"
 
 	if _, err := getStop(ctx, c); err != nil {
