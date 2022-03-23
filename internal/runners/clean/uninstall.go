@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
@@ -64,11 +65,20 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		}
 	}
 
+	installedAsAdmin := u.cfg.GetBool(constants.InstalledAdminConfig)
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if current user is an administrator")
+	}
+	if installedAsAdmin && !isAdmin {
+		return locale.NewInputError("err_uninstall_privlege_mismatch", "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator.")
+	}
+
 	if err := stopServices(u.cfg, u.out, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
-	err := u.runUninstall()
+	err = u.runUninstall()
 	if err != nil {
 		return errs.Wrap(err, "Could not complete uninstallation")
 	}

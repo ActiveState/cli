@@ -364,6 +364,9 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalayticsConfig = "report.analytics"
 
+// InstalledAdminConfig is the config key use to determine if the State Tool was installed as administrator
+const InstalledAdminConfig = "installed.admin"
+
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"
 

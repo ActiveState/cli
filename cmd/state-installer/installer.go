@@ -97,6 +97,11 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
+	err = i.cfg.Set(constants.InstalledAdminConfig, isAdmin)
+	if err != nil {
+		return errs.Wrap(err, "Failed to set current privilege level in config")
+	}
+
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), "_prepare"); err != nil {
