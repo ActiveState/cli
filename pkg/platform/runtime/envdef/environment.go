@@ -370,6 +370,7 @@ func FilterPATH(env map[string]string, excludes ...string) {
 	for _, p := range paths {
 		pc := filepath.Clean(p)
 		includePath := true
+
 		for _, exclude := range excludes {
 			if pc == filepath.Clean(exclude) {
 				includePath = false
