@@ -369,14 +369,14 @@ func FilterPATH(env map[string]string, excludes ...string) {
 	paths := strings.Split(PATH, string(os.PathListSeparator))
 	for _, p := range paths {
 		pc := filepath.Clean(p)
-		include_path := true
+		includePath := true
 		for _, exclude := range excludes {
 			if pc == filepath.Clean(exclude) {
-				include_path = false
+				includePath = false
 				break
 			}
 		}
-		if include_path {
+		if includePath {
 			newPaths = append(newPaths, p)
 		}
 	}
