@@ -94,7 +94,7 @@ func removeInstall(logFile, configPath, transitionalStateTool string) error {
 		return aggErr
 	}
 
-	paths := []string{appinfo.StateApp().Exec(), configPath}
+	paths := []string{filepath.Dir(appinfo.StateApp().Exec()), configPath}
 	// If the transitional state tool path is known, we remove it.  This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)
