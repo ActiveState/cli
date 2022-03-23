@@ -406,3 +406,6 @@ const PpmShim = "ppm"
 
 // PipShim is the name of the pip shim
 const PipShim = "pip"
+
+// AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
+const AutoUpdateConfigKey = "autoupdate"
