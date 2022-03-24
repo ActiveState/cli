@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -132,9 +133,14 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
 	}
 
-	err = os.RemoveAll(installPath)
-	if err != nil {
-		aggErr = errs.Wrap(aggErr, "Could not remove install path")
+	empty, err := fileutils.IsEmptyDir(installPath)
+	if err == nil && empty {
+		removeErr := os.RemoveAll(installPath)
+		if err != nil {
+			aggErr = errs.Wrap(removeErr, "Could not remove install path")
+		}
+	} else {
+		aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
 	}
 
 	return aggErr
