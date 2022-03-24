@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/ActiveState/cli/exp/pm/internal/ipc"
+	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,43 +18,98 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 )
 
-type SvcCtl struct {
-	c *ipc.Client
+var (
+	svcExec = func() string {
+		var fileExt string
+		if runtime.GOOS == "windows" {
+			fileExt = ".exe"
+		}
+		return filepath.Clean("../svc/build/svc" + fileExt) /*appinfo.SvcApp().Exec()*/
+	}()
+)
+
+func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
+	ipcClient := ipc.NewClient(n)
+	emsg := "ensure svc and locate http: %w"
+	commClient := svccomm.NewClient(ipcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	defer cancel()
+
+	addr, err = commClient.GetHTTPAddr(ctx)
+	if err != nil {
+		var sderr *ipc.ServerDownError
+		if !errors.As(err, &sderr) {
+			return "", fmt.Errorf(emsg, err)
+		}
+
+		fmt.Println("starting service")
+		ctx1, cancel1 := context.WithTimeout(context.Background(), time.Millisecond*2)
+		defer cancel1()
+
+		if err := start(ctx1, ipcClient, svcExec); err != nil {
+			return "", fmt.Errorf(emsg, err)
+		}
+
+		ctx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond*2)
+		defer cancel2()
+		addr, err = commClient.GetHTTPAddr(ctx2)
+		if err != nil {
+			return "", fmt.Errorf(emsg, err)
+		}
+	}
+
+	return addr, nil
 }
 
-func New(c *ipc.Client) *SvcCtl {
-	return &SvcCtl{
-		c: c,
+func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
+	ipcClient := ipc.NewClient(n)
+	emsg := "locate http: %w"
+	commClient := svccomm.NewClient(ipcClient)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	defer cancel()
+
+	addr, err = commClient.GetHTTPAddr(ctx)
+	fmt.Println(addr)
+	if err != nil {
+		return "", fmt.Errorf(emsg, err)
 	}
+
+	return addr, nil
 }
 
-func (m *SvcCtl) Start(ctx context.Context) error {
-	emsg := "start svc: %w"
-	defer profile.Measure("svcmanager:Start", time.Now())
+func StopServer(n *ipc.Namespace) (err error) {
+	ipcClient := ipc.NewClient(n)
+	emsg := "stop server: %w"
 
-	svcExec := filepath.Clean("../svc/build/svc" + fileExt) /*appinfo.SvcApp().Exec()*/
-	if err := start(m.c.Namespace().AppVersion, svcExec); err != nil {
-		return fmt.Errorf(emsg, err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	defer cancel()
 
-	logging.Debug("Waiting for state-svc")
-	if err := wait(m.c); err != nil {
+	if err := stop(ctx, ipcClient); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 	return nil
 }
 
-func start(version, exec string) error {
+func start(ctx context.Context, c *ipc.Client, exec string) error {
+	emsg := "start svc: %w"
+	defer profile.Measure("svcmanager:Start", time.Now())
+
 	if !fileutils.FileExists(exec) {
 		return errs.New("file %q not found", exec)
 	}
 
-	args := []string{"-v", version, "start"}
+	args := []string{"-v", c.Namespace().AppVersion, "start"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return errs.Wrap(err, "execute and forget %q", exec)
 	}
 
+	logging.Debug("Waiting for state-svc")
+	if err := wait(c); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
 	return nil
 }
 
@@ -87,7 +144,7 @@ func ping(c *ipc.Client, d time.Duration) error {
 	return nil
 }
 
-func (m *SvcCtl) Stop(ctx context.Context) error {
+func stop(ctx context.Context, c *ipc.Client) error {
 	// TODO: handle errors - timeout, can't reach, etc.
-	return m.c.StopServer(ctx)
+	return c.StopServer(ctx)
 }

@@ -12,7 +12,7 @@ var (
 )
 
 func asNotUp(err error) error {
-	var sderr *ipc.ServerDownError // TODO: simplify this if possible
+	var sderr *ipc.ServerDownError // TODO: simplify this if possible - is it even needed?
 	if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &sderr) {
 		return errNotUp
 	}
