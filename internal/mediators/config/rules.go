@@ -26,12 +26,14 @@ type Rules map[string]Rule
 
 var rules = make(Rules)
 
-func GetRule(key string) Rule {
+// GetRule returns the rule for the given key, or the default rule if none exists.
+// Also returns whether or not a rule was found.
+func GetRule(key string) (Rule, bool) {
 	rule, ok := rules[key]
 	if !ok {
-		return defaultRule
+		return defaultRule, false
 	}
-	return rule
+	return rule, true
 }
 
 func NewRule(key string, t Type, get Event, set Event) {

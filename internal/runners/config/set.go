@@ -5,10 +5,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/spf13/cast"
-
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
 type Set struct {
@@ -28,7 +27,10 @@ func NewSet(prime primeable) *Set {
 func (s *Set) Run(params SetParams) error {
 	// Cast to rule type if applicable
 	var value interface{}
-	rule := configMediator.GetRule(params.Key.String())
+	rule, found := configMediator.GetRule(params.Key.String())
+	if !found {
+		return locale.NewInputError("unknown_config_key", "Unknown config key: {{.V0}}", params.Key.String())
+	}
 	switch rule.Type {
 	case configMediator.Bool:
 		value = cast.ToBool(params.Value)
@@ -45,7 +47,7 @@ func (s *Set) Run(params SetParams) error {
 
 	err = s.cfg.Set(params.Key.String(), value)
 	if err != nil {
-		return locale.WrapError(err, "err_cofing_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
+		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
 	}
 
 	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
