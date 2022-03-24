@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
@@ -19,6 +20,8 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
@@ -128,4 +131,45 @@ func removePaths(logFile string, paths ...string) error {
 	}
 
 	return nil
+}
+
+func checkAdmin() error {
+	doAdminCheck := true
+	installedAsAdmin, err := getAdminInstall()
+	if err != nil {
+		doAdminCheck = false
+		multilog.Error("Could not check if initial installation was run as admin, error: %v", err)
+	}
+
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		doAdminCheck = false
+		multilog.Error("Could not check if current user is an administrator, error: %v", err)
+	}
+
+	if doAdminCheck && installedAsAdmin && !isAdmin {
+		return locale.NewInputError("err_uninstall_privlege_mismatch")
+	}
+
+	return nil
+}
+
+func getAdminInstall() (bool, error) {
+	key, err := osutils.OpenUserKey(installation.InstallRegistryKeyPath())
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get key value")
+	}
+	defer key.Close()
+
+	v, _, err := key.GetStringValue(installation.AdminInstallRegistry)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get string value")
+	}
+
+	installedAsAdmin, err := strconv.ParseBool(v)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not parse bool from string value: %s", v)
+	}
+
+	return installedAsAdmin, nil
 }

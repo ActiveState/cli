@@ -139,3 +139,11 @@ func removeInstall(cfg configurable) error {
 
 	return aggErr
 }
+
+func checkAdmin() error {
+	return nil
+}
+
+func getAdminInstall() (bool, error) {
+	return false, nil
+}

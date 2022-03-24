@@ -2,18 +2,14 @@ package clean
 
 import (
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
@@ -68,21 +64,9 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		}
 	}
 
-	doAdminCheck := true
-	installedAsAdmin, err := getAdminInstall()
+	err := checkAdmin()
 	if err != nil {
-		doAdminCheck = false
-		multilog.Error("Could not check if initial installation was run as admin, error: %v", err)
-	}
-
-	isAdmin, err := osutils.IsAdmin()
-	if err != nil {
-		doAdminCheck = false
-		multilog.Error("Could not check if current user is an administrator, error: %v", err)
-	}
-
-	if doAdminCheck && installedAsAdmin && !isAdmin {
-		return locale.NewInputError("err_uninstall_privlege_mismatch")
+		return errs.Wrap(err, "Administration check failed")
 	}
 
 	if err := stopServices(u.cfg, u.out, params.Force); err != nil {
@@ -96,24 +80,4 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	events.WaitForEvents(5*time.Second, u.an.Close, logging.Close)
 
 	return nil
-}
-
-func getAdminInstall() (bool, error) {
-	key, err := osutils.OpenUserKey(installation.InstallRegistryKeyPath())
-	if err != nil {
-		return false, errs.Wrap(err, "Could not get key value")
-	}
-	defer key.Close()
-
-	v, _, err := key.GetStringValue(installation.AdminInstallRegistry)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not get string value")
-	}
-
-	installedAsAdmin, err := strconv.ParseBool(v)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not parse bool from string value: %s", v)
-	}
-
-	return installedAsAdmin, nil
 }
