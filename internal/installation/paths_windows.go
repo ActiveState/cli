@@ -13,3 +13,7 @@ func defaultSystemInstallPath() (string, error) {
 	// There is no system install path for Windows
 	return "", nil
 }
+
+func InstallRegistryKeyPath() string {
+	return `SOFTWARE\ActiveState\install`
+}

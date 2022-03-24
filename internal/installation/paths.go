@@ -20,6 +20,9 @@ const CfgTransitionalStateToolPath = "transitional_installation_path"
 
 const BinDirName = "bin"
 
+// AdminInstallRegistry is the registry key name used to determine if the State Tool was installed as administrator
+const AdminInstallRegistry = "Installed As Admin"
+
 func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }

@@ -54,7 +54,7 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 		return locale.WrapError(err, "err_windows_registry")
 	}
 
-	// Special handling if they key is PATH
+	// Special handling if the key is PATH
 	if keyName == "PATH" {
 		updatedPath := cleanPath(v, oldValue)
 		return key.SetStringValue(keyName, updatedPath)

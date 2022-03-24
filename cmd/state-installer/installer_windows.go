@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 func InstallSystemFiles(_, _, _ string) error {
@@ -80,6 +84,26 @@ func (i *Installer) PrepareBinTargets(useBinDir bool) error {
 				os.Remove(renamedFile)
 			}
 		}
+	}
+
+	return nil
+}
+
+func SaveInstallationContext(isAdmin bool) error {
+	user, err := user.Current()
+	if err != nil {
+		return errs.Wrap(err, "Could not get current user")
+	}
+
+	key, _, err := osutils.CreateUserKey(fmt.Sprintf(`%s\%s`, user.Uid, installation.InstallRegistryKeyPath()))
+	if err != nil {
+		return errs.Wrap(err, "Could not create registry key")
+	}
+	defer key.Close()
+
+	err = key.SetStringValue(installation.AdminInstallRegistry, strconv.FormatBool(isAdmin))
+	if err != nil {
+		return errs.Wrap(err, "Could not set registry key value")
 	}
 
 	return nil
