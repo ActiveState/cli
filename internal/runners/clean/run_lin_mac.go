@@ -5,6 +5,7 @@ package clean
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -33,6 +34,7 @@ func (u *Uninstall) runUninstall() error {
 	}
 
 	err = removeInstall(u.cfg)
+	fmt.Println("Remove err:", errs.JoinMessage(err))
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -133,14 +135,16 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
 	}
 
-	empty, err := fileutils.IsEmptyDir(installPath)
-	if err == nil && empty {
-		removeErr := os.RemoveAll(installPath)
-		if err != nil {
-			aggErr = errs.Wrap(removeErr, "Could not remove install path")
+	if fileutils.DirExists(installPath) {
+		empty, err := fileutils.IsEmptyDir(installPath)
+		if err == nil && empty {
+			removeErr := os.RemoveAll(installPath)
+			if err != nil {
+				aggErr = errs.Wrap(removeErr, "Could not remove install path")
+			}
+		} else {
+			aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
 		}
-	} else {
-		aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
 	}
 
 	return aggErr
