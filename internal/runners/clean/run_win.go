@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -135,20 +134,17 @@ func removePaths(logFile string, paths ...string) error {
 // verifyInstallation ensures that the context of the initial State Tool
 // installation will allow us to properly remove the State Tool
 func verifyInstallation() error {
-	doAdminCheck := true
 	installationContext, err := installation.GetContext()
 	if err != nil {
-		doAdminCheck = false
-		multilog.Error("Could not check if initial installation was run as admin, error: %v", err)
+		return errs.Wrap(err, "Could not check if initial installation was run as admin")
 	}
 
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		doAdminCheck = false
-		multilog.Error("Could not check if current user is an administrator, error: %v", err)
+		return errs.Wrap(err, "Could not check if current user is an administrator")
 	}
 
-	if doAdminCheck && installationContext.InstalledAsAdmin && !isAdmin {
+	if installationContext.InstalledAsAdmin && !isAdmin {
 		return locale.NewInputError("err_uninstall_privlege_mismatch")
 	}
 
