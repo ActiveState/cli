@@ -5,7 +5,6 @@ package clean
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
