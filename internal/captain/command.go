@@ -33,6 +33,7 @@ import (
 
 func init() {
 	configMediator.NewRule(constants.UnstableConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.NewRule(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
 // appEventPrefix is used for all executables except for the State Tool itself.
