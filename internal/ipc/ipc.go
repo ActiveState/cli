@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
-	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
+	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
+	"github.com/ActiveState/cli/internal/ipc/namespace"
 )
 
 var (

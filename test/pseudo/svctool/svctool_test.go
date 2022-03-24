@@ -7,15 +7,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
 )
 
 func TestServer(t *testing.T) {
-	simultaneous := 4
-	iterations := 32
-	pause := time.Millisecond * 200
+	simultaneous := 2
+	iterations := 128
+	pause := time.Millisecond * 10
 
 	errs := make(chan error)
 
@@ -34,7 +35,11 @@ func TestServer(t *testing.T) {
 			for i := 0; i < simultaneous; i++ {
 				count++
 				fmt.Println("count", count)
-				c := exec.CommandContext(ctx, filepath.Clean("../../cmd/svc/build/svc"))
+				var ext string
+				if runtime.GOOS == "windows" {
+					ext = ".exe"
+				}
+				c := exec.CommandContext(ctx, filepath.Clean("../cmd/svc/build/svc"+ext))
 				c.Stdout = os.Stdout
 
 				go func(cmd *exec.Cmd) {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/exp/pm/internal/ipc/namespace"
+	"github.com/ActiveState/cli/internal/ipc/namespace"
 )
 
 type FListen struct {

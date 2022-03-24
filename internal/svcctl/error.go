@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ActiveState/cli/exp/pm/internal/ipc"
+	"github.com/ActiveState/cli/internal/ipc"
 )
 
 var (

@@ -14,10 +14,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/exp/pm/cmd/internal/serve"
-	"github.com/ActiveState/cli/exp/pm/internal/ipc"
-	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
-	"github.com/ActiveState/cli/exp/pm/internal/svcctl"
+	"github.com/ActiveState/cli/internal/ipc"
+	"github.com/ActiveState/cli/internal/svccomm"
+	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/test/pseudo/cmd/internal/serve"
 )
 
 type namedClose struct {

@@ -8,14 +8,14 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ActiveState/cli/exp/pm/internal/ipc"
-	"github.com/ActiveState/cli/exp/pm/internal/svccomm"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/svccomm"
 )
 
 var (

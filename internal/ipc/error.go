@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ActiveState/cli/exp/pm/internal/ipc/internal/flisten"
+	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 )
 
 var (
