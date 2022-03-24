@@ -25,4 +25,5 @@ func TestSetUnknownKey(t *testing.T) {
 	configMediator.NewRule("unknown", configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 	err = set.Run(params)
 	assert.NoError(t, err)
+	assert.Equal(t, true, cfg.Get("unknown"))
 }
