@@ -93,6 +93,7 @@ func (a *Client) Wait() {
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
 	if a.closed {
+		logging.Debug("Client is closed, not sending event")
 		return nil
 	}
 
