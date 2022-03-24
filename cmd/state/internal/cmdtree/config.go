@@ -51,7 +51,7 @@ func newConfigSetCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"set",
 		locale.Tl("config_set_title", "Set config value"),
-		"",
+		locale.Tl("config_set_description", "Set config values using the terminal"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
