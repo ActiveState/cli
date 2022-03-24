@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -70,7 +71,7 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 func cleanPath(keyValue, oldEntry string) string {
 	var newValue []string
 	for _, entry := range strings.Split(keyValue, string(os.PathListSeparator)) {
-		if entry == oldEntry {
+		if filepath.Clean(entry) == filepath.Clean(oldEntry) {
 			continue
 		}
 		newValue = append(newValue, entry)
