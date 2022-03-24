@@ -24,7 +24,3 @@ func defaultSystemInstallPath() (string, error) {
 
 	return filepath.Join(home, "Applications"), nil
 }
-
-func InstallRegistryKeyPath() string {
-	return ""
-}

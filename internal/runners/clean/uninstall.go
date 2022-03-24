@@ -64,9 +64,9 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		}
 	}
 
-	err := checkAdmin()
+	err := verifyInstallation()
 	if err != nil {
-		return errs.Wrap(err, "Administration check failed")
+		return errs.Wrap(err, "Could not verify installation")
 	}
 
 	if err := stopServices(u.cfg, u.out, params.Force); err != nil {

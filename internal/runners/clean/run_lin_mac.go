@@ -34,7 +34,6 @@ func (u *Uninstall) runUninstall() error {
 	}
 
 	err = removeInstall(u.cfg)
-	fmt.Println("Remove err:", errs.JoinMessage(err))
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -150,10 +149,6 @@ func removeInstall(cfg configurable) error {
 	return aggErr
 }
 
-func checkAdmin() error {
+func verifyInstallation() error {
 	return nil
-}
-
-func getAdminInstall() (bool, error) {
-	return false, nil
 }

@@ -11,7 +11,3 @@ func (i *Installer) installLauncher() error {
 func (i *Installer) PrepareBinTargets(useBinDir bool) error {
 	return nil
 }
-
-func SaveInstallationContext(isAdmin bool) error {
-	return nil
-}

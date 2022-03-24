@@ -97,7 +97,8 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
-	err = SaveInstallationContext(isAdmin)
+	ic := installation.NewContext(isAdmin)
+	err = ic.Save()
 	if err != nil {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}

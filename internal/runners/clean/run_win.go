@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
@@ -133,9 +132,11 @@ func removePaths(logFile string, paths ...string) error {
 	return nil
 }
 
-func checkAdmin() error {
+// verifyInstallation ensures that the context of the initial State Tool
+// installation will allow us to properly remove the State Tool
+func verifyInstallation() error {
 	doAdminCheck := true
-	installedAsAdmin, err := getAdminInstall()
+	installationContext, err := installation.GetContext()
 	if err != nil {
 		doAdminCheck = false
 		multilog.Error("Could not check if initial installation was run as admin, error: %v", err)
@@ -147,29 +148,9 @@ func checkAdmin() error {
 		multilog.Error("Could not check if current user is an administrator, error: %v", err)
 	}
 
-	if doAdminCheck && installedAsAdmin && !isAdmin {
+	if doAdminCheck && installationContext.InstalledAsAdmin && !isAdmin {
 		return locale.NewInputError("err_uninstall_privlege_mismatch")
 	}
 
 	return nil
-}
-
-func getAdminInstall() (bool, error) {
-	key, err := osutils.OpenUserKey(installation.InstallRegistryKeyPath())
-	if err != nil {
-		return false, errs.Wrap(err, "Could not get key value")
-	}
-	defer key.Close()
-
-	v, _, err := key.GetStringValue(installation.AdminInstallRegistry)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not get string value")
-	}
-
-	installedAsAdmin, err := strconv.ParseBool(v)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not parse bool from string value: %s", v)
-	}
-
-	return installedAsAdmin, nil
 }
