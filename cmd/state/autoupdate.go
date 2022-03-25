@@ -35,7 +35,7 @@ func (fe *forwardExitError) IsSilent() bool { return true }
 func (fe *forwardExitError) ExitCode() int  { return fe.code }
 
 func init() {
-	configMediator.NewRule(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {

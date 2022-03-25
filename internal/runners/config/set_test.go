@@ -24,7 +24,7 @@ func TestSetUnknownKey(t *testing.T) {
 	assert.False(t, cfg.IsSet("unknown"))
 
 	// Register config key to be known. Now setting it should not error.
-	configMediator.NewRule("unknown", configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption("unknown", configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 	err = set.Run(params)
 	assert.NoError(t, err)
 	assert.True(t, cfg.IsSet("unknown"))

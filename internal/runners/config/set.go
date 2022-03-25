@@ -25,13 +25,13 @@ func NewSet(prime primeable) *Set {
 }
 
 func (s *Set) Run(params SetParams) error {
-	// Cast to rule type if applicable
+	// Cast to option type if applicable
 	var value interface{}
-	rule := configMediator.GetRule(params.Key.String())
-	if !configMediator.KnownRule(rule) {
+	option := configMediator.GetOption(params.Key.String())
+	if !configMediator.KnownOption(option) {
 		return locale.NewInputError("unknown_config_key", "Unknown config key: {{.V0}}", params.Key.String())
 	}
-	switch rule.Type {
+	switch option.Type {
 	case configMediator.Bool:
 		value = cast.ToBool(params.Value)
 	case configMediator.Int:
@@ -40,7 +40,7 @@ func (s *Set) Run(params SetParams) error {
 		value = params.Value
 	}
 
-	value, err := rule.SetEvent(value)
+	value, err := option.SetEvent(value)
 	if err != nil {
 		return locale.WrapError(err, "err_config_set_event", "Could not store config value, if this continues to happen please contact support.")
 	}
