@@ -1,6 +1,6 @@
 package installation
 
-func (c *Context) Save() error {
+func SaveContext(context *Context) error {
 	return nil
 }
 

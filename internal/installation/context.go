@@ -8,10 +8,6 @@ type Context struct {
 	InstalledAsAdmin bool
 }
 
-func NewContext(isAdmin bool) *Context {
-	return &Context{isAdmin}
-}
-
 func GetContext() (*Context, error) {
 	installedAsAdmin, err := getAdminInstallInformation()
 	if err != nil {

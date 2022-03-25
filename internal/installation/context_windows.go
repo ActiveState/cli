@@ -16,7 +16,7 @@ const (
 	installRegistryKeyPath = `SOFTWARE\ActiveState\install`
 )
 
-func (c *Context) Save() error {
+func SaveContext(context *Context) error {
 	user, err := user.Current()
 	if err != nil {
 		return errs.Wrap(err, "Could not get current user")
@@ -28,7 +28,7 @@ func (c *Context) Save() error {
 	}
 	defer key.Close()
 
-	err = key.SetStringValue(adminInstallRegistry, strconv.FormatBool(c.InstalledAsAdmin))
+	err = key.SetStringValue(adminInstallRegistry, strconv.FormatBool(context.InstalledAsAdmin))
 	if err != nil {
 		return errs.Wrap(err, "Could not set registry key value")
 	}

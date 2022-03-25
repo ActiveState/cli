@@ -27,8 +27,7 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	isAdmin, err := osutils.IsAdmin()
 	suite.NoError(err)
 
-	ic := installation.NewContext(isAdmin)
-	err = ic.Save()
+	err = installation.SaveContext(&installation.Context{InstalledAsAdmin: isAdmin})
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
