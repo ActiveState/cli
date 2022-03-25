@@ -21,13 +21,13 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        "force",
 				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_force_description", "Force pulling specified project even if it is unrelated to checked out one"),
+				Description: locale.Tl("flag_state_pull_force_description", "Force pulling the specified project even if it is unrelated to the checked out one"),
 				Value:       &params.Force,
 			},
 			{
 				Name:        "set-project",
 				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_set_project_description", "project even if it is unrelated to checked out one"),
+				Description: locale.Tl("flag_state_pull_set_project_description", "Pull from the specified project instead of the checked out one"),
 				Value:       &params.SetProject,
 			},
 		},
