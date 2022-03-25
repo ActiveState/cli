@@ -27,8 +27,8 @@ func NewSet(prime primeable) *Set {
 func (s *Set) Run(params SetParams) error {
 	// Cast to rule type if applicable
 	var value interface{}
-	rule, found := configMediator.GetRule(params.Key.String())
-	if !found {
+	rule := configMediator.GetRule(params.Key.String())
+	if !configMediator.KnownRule(rule) {
 		return locale.NewInputError("unknown_config_key", "Unknown config key: {{.V0}}", params.Key.String())
 	}
 	switch rule.Type {

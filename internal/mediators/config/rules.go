@@ -18,28 +18,31 @@ type Rule struct {
 	Type     Type
 	GetEvent Event
 	SetEvent Event
+	isKnown  bool
 }
 
-var defaultRule = Rule{String, EmptyEvent, EmptyEvent}
+var defaultRule = Rule{String, EmptyEvent, EmptyEvent, false}
 
 type Rules map[string]Rule
 
 var rules = make(Rules)
 
-// GetRule returns the rule for the given key, or the default rule if none exists.
-// Also returns whether or not a rule was found.
-func GetRule(key string) (Rule, bool) {
+func GetRule(key string) Rule {
 	rule, ok := rules[key]
 	if !ok {
-		return defaultRule, false
+		return defaultRule
 	}
-	return rule, true
+	return rule
 }
 
 func NewRule(key string, t Type, get Event, set Event) {
-	rules[key] = Rule{t, get, set}
+	rules[key] = Rule{t, get, set, true}
 }
 
 func SetRule(key string, rule Rule) {
 	rules[key] = rule
+}
+
+func KnownRule(rule Rule) bool {
+	return rule.isKnown
 }

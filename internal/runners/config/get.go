@@ -27,8 +27,7 @@ func (g *Get) Run(params GetParams) error {
 		return locale.NewInputError("err_config_not_found", "No config value for key: {{.V0}}", params.Key.String())
 	}
 
-	rule, _ := configMediator.GetRule(params.Key.String())
-	value, err := rule.GetEvent(value)
+	value, err := configMediator.GetRule(params.Key.String()).GetEvent(value)
 	if err != nil {
 		return locale.WrapError(err, "err_config_get_event", "Could not retrieve config value, if this continues to happen please contact support.")
 	}
