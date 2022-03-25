@@ -131,8 +131,8 @@ func removePaths(logFile string, paths ...string) error {
 	return nil
 }
 
-// verifyInstallation ensures that the context of the initial State Tool
-// installation will allow us to properly remove the State Tool
+// verifyInstallation ensures that the State Tool was installed in a way
+// that will allow us to properly uninstall
 func verifyInstallation() error {
 	installationContext, err := installation.GetContext()
 	if err != nil {
