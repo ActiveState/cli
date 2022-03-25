@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -24,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/rollbar/rollbar-go"
 )
@@ -119,7 +121,7 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart(cfg)
+				return runStart()
 			},
 		),
 		captain.NewCommand(
@@ -129,17 +131,17 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStop")
-				return runStop(cfg)
+				return runStop()
 			},
 		),
 		captain.NewCommand(
 			cmdStatus,
-			"Starting the ActiveState Service",
+			"Checking the ActiveState Service",
 			"Display the Status of the ActiveState Service",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStatus")
-				return runStatus(cfg)
+				return runStatus()
 			},
 		),
 		captain.NewCommand(
@@ -199,10 +201,11 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	return err
 }
 
-func runStart(cfg *config.Instance) error {
-	s := NewServiceManager(cfg)
-	if err := s.Start(os.Args[0], cmdForeground); err != nil {
-		if errors.Is(err, ErrSvcAlreadyRunning) {
+func runStart() error {
+	ns := svcctl.NewIPCNamespaceFromGlobals()
+	ipcClient := ipc.NewClient(ns)
+	if _, err := svcctl.EnsureAndLocateHTTP(ipcClient); err != nil {
+		if errors.Is(err, ipc.ErrInUse) {
 			fmt.Println("A State Service instance is already running in the background.")
 			return nil
 		}
@@ -212,33 +215,27 @@ func runStart(cfg *config.Instance) error {
 	return nil
 }
 
-func runStop(cfg *config.Instance) error {
-	s := NewServiceManager(cfg)
-	if err := s.Stop(); err != nil {
+func runStop() error {
+	ns := svcctl.NewIPCNamespaceFromGlobals()
+	ipcClient := ipc.NewClient(ns)
+	if err := svcctl.StopServer(ipcClient); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
 	}
-
 	return nil
 }
 
-func runStatus(cfg *config.Instance) error {
-	pid, err := NewServiceManager(cfg).CheckPid(cfg.GetInt(constants.SvcConfigPid))
-	if err != nil {
-		return errs.Wrap(err, "Could not obtain pid")
-	}
-
-	if pid == nil {
-		fmt.Println("Service is not running")
-		return nil
-	}
-
+func runStatus() error {
+	ns := svcctl.NewIPCNamespaceFromGlobals()
+	ipcClient := ipc.NewClient(ns)
 	// Don't run in background if we're already running
-	port := cfg.GetInt(constants.SvcConfigPort)
+	port, err := svcctl.LocateHTTP(ipcClient)
+	if err != nil {
+		return errs.Wrap(err, "Service cannot be reached")
+	}
 
-	fmt.Printf("Pid: %d\n", *pid)
-	fmt.Printf("Port: %d\n", port)
-	fmt.Printf("Dashboard: http://127.0.0.1:%d\n", port)
-	fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
+	fmt.Printf("Port: %s\n", port)
+	fmt.Printf("Dashboard: http://127.0.0.1%s\n", port)
+	//fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
 }

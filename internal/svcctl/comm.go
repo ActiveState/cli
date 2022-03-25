@@ -1,5 +1,5 @@
 // Package svccomm contains common IPC handlers and requesters.
-package svccomm
+package svcctl
 
 import (
 	"context"
@@ -11,13 +11,17 @@ var (
 	KeyHTTPAddr = "http-addr"
 )
 
-type Client struct {
-	s *ipc.Client
+type Getter interface {
+	Get(ctx context.Context, key string) (value string, err error)
 }
 
-func NewClient(s *ipc.Client) *Client {
-	return &Client{
-		s: s,
+type Comm struct {
+	g Getter
+}
+
+func NewComm(g Getter) *Comm {
+	return &Comm{
+		g: g,
 	}
 }
 
@@ -31,6 +35,6 @@ func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
 	}
 }
 
-func (c *Client) GetHTTPAddr(ctx context.Context) (string, error) {
-	return c.s.Get(ctx, KeyHTTPAddr)
+func (c *Comm) GetHTTPAddr(ctx context.Context) (string, error) {
+	return c.g.Get(ctx, KeyHTTPAddr)
 }

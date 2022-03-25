@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -15,28 +16,32 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/svccomm"
 )
 
-var (
-	svcExec = func() string {
-		var fileExt string
-		if runtime.GOOS == "windows" {
-			fileExt = ".exe"
-		}
-		return filepath.Clean("../svc/build/svc" + fileExt) /*appinfo.SvcApp().Exec()*/
-	}()
-)
+type IPCommunicator interface {
+	Getter
+	Namespace() *ipc.Namespace
+	PingServer(context.Context) (time.Duration, error)
+	StopServer(context.Context) error
+}
 
-func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
-	ipcClient := ipc.NewClient(n)
+func NewIPCNamespaceFromGlobals() *ipc.Namespace {
+	return &ipc.Namespace{
+		RootDir:    filepath.Join(os.TempDir(), "svccomm"),
+		AppName:    "state",
+		AppVersion: "default",
+		AppHash:    "DEADBEEF",
+	}
+}
+
+func EnsureAndLocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	emsg := "ensure svc and locate http: %w"
-	commClient := svccomm.NewClient(ipcClient)
+	comm := NewComm(ipComm)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
 	defer cancel()
 
-	addr, err = commClient.GetHTTPAddr(ctx)
+	addr, err = comm.GetHTTPAddr(ctx)
 	if err != nil {
 		var sderr *ipc.ServerDownError
 		if !errors.As(err, &sderr) {
@@ -47,13 +52,14 @@ func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
 		ctx1, cancel1 := context.WithTimeout(context.Background(), time.Millisecond*2)
 		defer cancel1()
 
-		if err := start(ctx1, ipcClient, svcExec); err != nil {
+		fmt.Println(appinfo.SvcApp().Exec())
+		if err := start(ctx1, ipComm, appinfo.SvcApp().Exec()); err != nil {
 			return "", fmt.Errorf(emsg, err)
 		}
 
 		ctx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond*2)
 		defer cancel2()
-		addr, err = commClient.GetHTTPAddr(ctx2)
+		addr, err = comm.GetHTTPAddr(ctx2)
 		if err != nil {
 			return "", fmt.Errorf(emsg, err)
 		}
@@ -62,16 +68,14 @@ func EnsureAndLocateHTTP(n *ipc.Namespace) (addr string, err error) {
 	return addr, nil
 }
 
-func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
-	ipcClient := ipc.NewClient(n)
+func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	emsg := "locate http: %w"
-	commClient := svccomm.NewClient(ipcClient)
+	comm := NewComm(ipComm)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
 	defer cancel()
 
-	addr, err = commClient.GetHTTPAddr(ctx)
-	fmt.Println(addr)
+	addr, err = comm.GetHTTPAddr(ctx)
 	if err != nil {
 		return "", fmt.Errorf(emsg, err)
 	}
@@ -79,20 +83,19 @@ func LocateHTTP(n *ipc.Namespace) (addr string, err error) {
 	return addr, nil
 }
 
-func StopServer(n *ipc.Namespace) (err error) {
-	ipcClient := ipc.NewClient(n)
+func StopServer(ipComm IPCommunicator) (err error) {
 	emsg := "stop server: %w"
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
 	defer cancel()
 
-	if err := stop(ctx, ipcClient); err != nil {
+	if err := stop(ctx, ipComm); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 	return nil
 }
 
-func start(ctx context.Context, c *ipc.Client, exec string) error {
+func start(ctx context.Context, c IPCommunicator, exec string) error {
 	emsg := "start svc: %w"
 	defer profile.Measure("svcmanager:Start", time.Now())
 
@@ -113,7 +116,7 @@ func start(ctx context.Context, c *ipc.Client, exec string) error {
 	return nil
 }
 
-func wait(c *ipc.Client) error {
+func wait(c IPCommunicator) error {
 	for try := 1; try <= 16; try++ {
 		start := time.Now()
 		d := time.Millisecond * time.Duration(try*try)
@@ -133,8 +136,8 @@ func wait(c *ipc.Client) error {
 	return locale.NewError("err_svcmanager_wait")
 }
 
-func ping(c *ipc.Client, d time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), d)
+func ping(c IPCommunicator, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	_, err := c.PingServer(ctx)
@@ -144,7 +147,7 @@ func ping(c *ipc.Client, d time.Duration) error {
 	return nil
 }
 
-func stop(ctx context.Context, c *ipc.Client) error {
+func stop(ctx context.Context, c IPCommunicator) error {
 	// TODO: handle errors - timeout, can't reach, etc.
 	return c.StopServer(ctx)
 }

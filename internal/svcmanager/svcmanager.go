@@ -102,7 +102,7 @@ func (m *Manager) Ready() (bool, error) {
 }
 
 func (m *Manager) ping(ctx context.Context) error {
-	client, err := svc.New(m.cfg)
+	client, err := svc.New(":port")
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize non-retrying svc client")
 	}

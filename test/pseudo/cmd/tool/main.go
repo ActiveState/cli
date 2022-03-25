@@ -1,10 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/ActiveState/cli/internal/ipc"
@@ -13,23 +11,10 @@ import (
 )
 
 func main() {
-	var (
-		rootDir = filepath.Join(os.TempDir(), "svccomm")
-		name    = "state"
-		version = "default"
-		hash    = "DEADBEEF"
-	)
+	ns := svcctl.NewIPCNamespaceFromGlobals()
+	ipcClient := ipc.NewClient(ns)
 
-	flag.StringVar(&version, "v", version, "version id")
-	flag.Parse()
-
-	n := &ipc.Namespace{
-		RootDir:    rootDir,
-		AppName:    name,
-		AppVersion: version,
-		AppHash:    hash,
-	}
-	addr, err := svcctl.EnsureAndLocateHTTP(n)
+	addr, err := svcctl.EnsureAndLocateHTTP(ipcClient)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -45,5 +30,5 @@ func main() {
 	fmt.Print(data)
 
 	time.Sleep(time.Second)
-	fmt.Println(svcctl.StopServer(n))
+	fmt.Println(svcctl.StopServer(ipcClient))
 }

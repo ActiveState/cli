@@ -2,43 +2,32 @@ package model
 
 import (
 	"context"
+	"net/http"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/svcmanager"
-	"github.com/ActiveState/cli/pkg/platform/api/svc"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
+	"github.com/machinebox/graphql"
 )
 
 type SvcModel struct {
-	svcm   *svcmanager.Manager
-	cfg    *config.Instance
-	client *svc.Client
+	client *gqlclient.Client
 }
 
 // NewSvcModel returns a model for all client connections to a State Svc.  This function returns an error if the State service is not yet ready to communicate.
-func NewSvcModel(cfg *config.Instance, svcm *svcmanager.Manager) *SvcModel {
-	return &SvcModel{cfg: cfg, svcm: svcm}
+func NewSvcModel(port string) *SvcModel {
+	localURL := "http://127.0.0.1" + port + "/query"
+
+	return &SvcModel{
+		client: gqlclient.NewWithOpts(localURL, 0, graphql.WithHTTPClient(&http.Client{})),
+	}
 }
 
 func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
 	defer profile.Measure("SvcModel:request", time.Now())
-	if m.client == nil {
-		if err := m.svcm.WaitWithContext(ctx); err != nil {
-			return errs.Wrap(err, "Failed to wait for svc connection to be ready")
-		}
-
-		client, err := svc.New(m.cfg)
-		if err != nil {
-			return errs.Wrap(err, "Could not initialize svc client")
-		}
-		m.client = client
-	}
-
 	return m.client.RunWithContext(ctx, request, resp)
 }
 

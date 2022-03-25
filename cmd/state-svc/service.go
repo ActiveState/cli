@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
-	"os"
+	"strconv"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/spf13/cast"
+	"github.com/ActiveState/cli/internal/svcctl"
 )
 
 type service struct {
@@ -20,6 +21,7 @@ type service struct {
 	an       *anaSvc.Client
 	shutdown context.CancelFunc
 	server   *server.Server
+	ipcSrv   *ipc.IPC
 }
 
 func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
@@ -35,17 +37,29 @@ func (s *service) Start() error {
 		return errs.Wrap(err, "Could not create server")
 	}
 
-	if err := s.cfg.Set(constants.SvcConfigPort, s.server.Port()); err != nil {
-		return errs.Wrap(err, "Could not save config")
-	}
-
 	logging.Debug("Server starting on port: %d", s.server.Port())
 
-	if err := s.server.Start(); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			return nil
+	go func() {
+		if err := s.server.Start(); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				logging.Errorf("%s", errs.Wrap(err, "Failed to start server"))
+			}
 		}
+	}()
+
+	ns := svcctl.NewIPCNamespaceFromGlobals()
+	mhs := []ipc.MatchedHandler{
+		svcctl.HTTPAddrMHandler(".:" + strconv.Itoa(s.server.Port())),
+	}
+	s.ipcSrv = ipc.New(ns, mhs...)
+	err = s.ipcSrv.ListenAndServe()
+	if err != nil {
 		return errs.Wrap(err, "Failed to start server")
+	}
+
+	fmt.Println("shutting down http server")
+	if err := s.server.Shutdown(); err != nil {
+		return errs.Wrap(err, "Failed to stop server")
 	}
 
 	return nil
@@ -56,20 +70,8 @@ func (s *service) Stop() error {
 		return errs.New("Can't stop service as it was never started")
 	}
 
-	if err := s.server.Shutdown(); err != nil {
-		return errs.Wrap(err, "Failed to stop server")
-	}
-
-	err := s.cfg.GetThenSet(constants.SvcConfigPid, func(currentValue interface{}) (interface{}, error) {
-		setPid := cast.ToInt(currentValue)
-		if setPid != os.Getpid() {
-			logging.Warning("PID in configuration file does not match PID of server shutting down")
-			return config.CancelSet, nil
-		}
-		return "", nil
-	})
-	if err != nil {
-		logging.Warning("Could not unset State Service PID in configuration file")
+	if err := s.ipcSrv.Close(); err != nil {
+		return errs.Wrap(err, "Failed to stop ipc server")
 	}
 
 	return nil

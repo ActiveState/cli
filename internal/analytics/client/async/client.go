@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -36,7 +35,7 @@ type Client struct {
 
 var _ analytics.Dispatcher = &Client{}
 
-func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
+func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 	}
@@ -53,7 +52,7 @@ func New(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.
 		return a
 	}
 
-	a.svcModel = model.NewSvcModel(cfg, svcMgr)
+	a.svcModel = svcModel
 
 	a.sessionToken = cfg.GetString(ac.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
