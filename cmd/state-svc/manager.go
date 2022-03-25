@@ -31,8 +31,8 @@ import (
 var ErrSvcAlreadyRunning error = errs.New("Service is already running")
 
 func init() {
-	configMediator.NewRule(constants.SvcConfigPid, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
-	configMediator.NewRule(constants.SvcConfigPort, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SvcConfigPid, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.RegisterOption(constants.SvcConfigPort, configMediator.Int, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
 type serviceManager struct {

@@ -17,7 +17,7 @@ func TestKey_Set(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"emtpy",
+			"empty",
 			Key(""),
 			args{""},
 			true,

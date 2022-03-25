@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -32,6 +33,10 @@ func (fe *forwardExitError) Error() string  { return "forwardExitError" }
 func (fe *forwardExitError) Unwrap() error  { return nil }
 func (fe *forwardExitError) IsSilent() bool { return true }
 func (fe *forwardExitError) ExitCode() int  { return fe.code }
+
+func init() {
+	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
