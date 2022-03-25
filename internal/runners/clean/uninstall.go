@@ -1,7 +1,6 @@
 package clean
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -67,7 +66,6 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 
 	err := verifyInstallation()
 	if err != nil {
-		fmt.Println("err:", errs.JoinMessage(err))
 		return errs.Wrap(err, "Could not verify installation")
 	}
 
