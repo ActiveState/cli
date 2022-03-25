@@ -188,3 +188,7 @@ func handlePanics(err interface{}, stack []byte) {
 	multilog.Error("Panic in state-svc analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
 }
+
+func (a *Client) Close() {
+	a.sendReports = false
+}

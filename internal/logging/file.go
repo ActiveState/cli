@@ -34,6 +34,7 @@ type fileHandler struct {
 	queue     chan entry
 	quit      chan struct{}
 	report    bool
+	closed    bool
 }
 
 func newFileHandler() *fileHandler {
@@ -47,6 +48,7 @@ func newFileHandler() *fileHandler {
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 		true,
+		false,
 	}
 	handler.wg.Add(1)
 	go func() {
@@ -163,6 +165,11 @@ func (l *fileHandler) reopenLogfile() error {
 }
 
 func (l *fileHandler) Close() {
+	if l.closed {
+		return
+	}
+
 	close(l.quit)
 	l.wg.Wait()
+	l.closed = true
 }

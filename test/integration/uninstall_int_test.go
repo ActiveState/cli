@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -21,6 +23,12 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	defer ts.Close()
 
 	ts.UseDistinctStateExes()
+
+	isAdmin, err := osutils.IsAdmin()
+	suite.NoError(err)
+
+	err = installation.SaveContext(&installation.Context{InstalledAsAdmin: isAdmin})
+	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.ExpectExitCode(0)

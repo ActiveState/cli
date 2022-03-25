@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
@@ -94,7 +95,7 @@ func removeInstall(logFile, configPath, transitionalStateTool string) error {
 		return aggErr
 	}
 
-	paths := []string{appinfo.StateApp().Exec(), configPath}
+	paths := []string{filepath.Dir(appinfo.StateApp().Exec()), configPath}
 	// If the transitional state tool path is known, we remove it.  This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)
@@ -125,6 +126,26 @@ func removePaths(logFile string, paths ...string) error {
 	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
+	}
+
+	return nil
+}
+
+// verifyInstallation ensures that the State Tool was installed in a way
+// that will allow us to properly uninstall
+func verifyInstallation() error {
+	installationContext, err := installation.GetContext()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if initial installation was run as admin")
+	}
+
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if current user is an administrator")
+	}
+
+	if installationContext.InstalledAsAdmin && !isAdmin {
+		return locale.NewInputError("err_uninstall_privlege_mismatch")
 	}
 
 	return nil
