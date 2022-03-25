@@ -17,10 +17,6 @@ const (
 	installRegistryKeyPath = `SOFTWARE\ActiveState\install`
 )
 
-type Context struct {
-	InstalledAsAdmin bool
-}
-
 func GetContext() (*Context, error) {
 	key, err := osutils.OpenUserKey(installRegistryKeyPath)
 	if osutils.IsNotExistError(err) {

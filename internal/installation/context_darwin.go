@@ -1,7 +1,5 @@
 package installation
 
-type Context struct{}
-
 func GetContext() (*Context, error) {
 	return nil, nil
 }
