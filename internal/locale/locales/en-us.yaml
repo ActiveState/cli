@@ -1339,11 +1339,11 @@ arg_state_clean_cache_project_description:
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
-  other: Cannot uninstall the State Tool while in an activated state. Please deactivate and try again.
+  other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_clean_cache_activated:
-  other: Cannot remove the cache directory while in an activated state. Please deactivate and try again.
+  other: Cannot remove the cache directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_clean_config_activated:
-  other: Cannot remove the config directory while in an activated state. Please deactivate and try again.
+  other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
@@ -1403,6 +1403,8 @@ err_project_env_file_not_exist:
     Expected the following file to exist: [NOTICE]{{.V0}}[/RESET]
 
     Either replace the missing file or deactivate your activated state as it will continue to malfunction without this file.
+
+    Your activated state can be deactivated by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET].
 err_invalid_step:
   other: "Invalid step specified: [NOTICE]{{.V0}}[/RESET]. Step must be one of: [ACTIONABLE]{{.V1}}[/RESET]."
 arg_state_deploy_namespace:
