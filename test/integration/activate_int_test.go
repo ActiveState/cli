@@ -364,6 +364,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
 	cp.ExpectExitCode(0)
 }
 
+//
+
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 	suite.OnlyRunForTags(tagsuite.Activate)
 	ts := e2e.New(suite.T(), false)
