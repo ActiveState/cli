@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -46,6 +45,7 @@ func (s *service) Start() error {
 			}
 		}
 	}()
+	defer s.shutdown()
 
 	ns := svcctl.NewIPCNamespaceFromGlobals()
 	mhs := []ipc.MatchedHandler{
@@ -57,17 +57,16 @@ func (s *service) Start() error {
 		return errs.Wrap(err, "Failed to start server")
 	}
 
-	fmt.Println("shutting down http server")
-	if err := s.server.Shutdown(); err != nil {
-		return errs.Wrap(err, "Failed to stop server")
-	}
-
 	return nil
 }
 
 func (s *service) Stop() error {
 	if s.server == nil {
 		return errs.New("Can't stop service as it was never started")
+	}
+
+	if err := s.server.Shutdown(); err != nil {
+		return errs.Wrap(err, "Failed to stop server")
 	}
 
 	if err := s.ipcSrv.Close(); err != nil {

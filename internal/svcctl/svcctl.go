@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -25,12 +27,12 @@ type IPCommunicator interface {
 	StopServer(context.Context) error
 }
 
-func NewIPCNamespaceFromGlobals() *ipc.Namespace {
+func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
+	defer fmt.Println(example)
 	return &ipc.Namespace{
 		RootDir:    filepath.Join(os.TempDir(), "svccomm"),
-		AppName:    "state",
-		AppVersion: "default",
-		AppHash:    "DEADBEEF",
+		AppName:    constants.CommandName,
+		AppChannel: strings.ReplaceAll(constants.BranchName, "/", "--"),
 	}
 }
 
@@ -103,7 +105,7 @@ func start(ctx context.Context, c IPCommunicator, exec string) error {
 		return errs.New("file %q not found", exec)
 	}
 
-	args := []string{"-v", c.Namespace().AppVersion, "start"}
+	args := []string{"start"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return errs.Wrap(err, "execute and forget %q", exec)

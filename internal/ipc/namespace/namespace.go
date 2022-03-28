@@ -12,16 +12,14 @@ var (
 type Namespace struct {
 	RootDir    string
 	AppName    string
-	AppVersion string
-	AppHash    string
+	AppChannel string
 }
 
 func (n *Namespace) String() string {
 	filename := fmt.Sprintf(
-		"%s-%s-%s.%s",
+		"%s-%s.%s",
 		n.AppName,
-		n.AppVersion,
-		n.AppHash,
+		n.AppChannel,
 		namespaceExtension,
 	)
 
