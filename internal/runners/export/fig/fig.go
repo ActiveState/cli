@@ -103,15 +103,3 @@ func exportCmd(cmd *captain.Command) ExportCmd {
 
 	return export
 }
-
-func grabChildren(cmd *captain.Command) []*captain.Command {
-	children := []*captain.Command{}
-	for _, child := range cmd.Children() {
-		if child.Hidden() {
-			continue
-		}
-		children = append(children, child)
-		children = append(children, grabChildren(child)...)
-	}
-	return children
-}
