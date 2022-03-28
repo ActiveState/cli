@@ -7,4 +7,5 @@ type Dispatcher interface {
 	Event(category string, action string, dim ...*dimensions.Values)
 	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
 	Wait()
+	Close()
 }

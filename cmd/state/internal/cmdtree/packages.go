@@ -161,7 +161,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetUnstable(true)
 }
 
 func newInfoCommand(prime *primer.Values) *captain.Command {
@@ -192,5 +192,5 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetUnstable(true)
 }

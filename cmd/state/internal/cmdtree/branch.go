@@ -19,7 +19,7 @@ func newBranchCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
-		}).SetGroup(PlatformGroup)
+		}).SetGroup(PlatformGroup).SetUnstable(true)
 }
 
 func newBranchAddCommand(prime *primer.Values) *captain.Command {

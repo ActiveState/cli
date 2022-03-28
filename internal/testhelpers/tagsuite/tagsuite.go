@@ -59,6 +59,7 @@ const (
 	Show           = "show"
 	Uninstall      = "uninstall"
 	Update         = "update"
+	Use            = "use"
 	VSCode         = "vscode"
 	Performance    = "performance"
 )

@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -53,7 +54,7 @@ func (suite *CleanTestSuite) SetupTest() {
 }
 
 func (suite *CleanTestSuite) TestUninstall_PromptNo() {
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath))
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath), blackhole.New())
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().NoError(err)
@@ -69,7 +70,7 @@ func (suite *CleanTestSuite) TestUninstall_Activated() {
 		os.Unsetenv(constants.ActivatedStateEnvVarName)
 	}()
 
-	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, &configMock{suite.T(), suite.cachePath, suite.configPath})
+	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, &configMock{suite.T(), suite.cachePath, suite.configPath}, blackhole.New())
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
 	suite.Require().Error(err)

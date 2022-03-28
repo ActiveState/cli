@@ -176,6 +176,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		branchCmd,
 		newLearnCommand(prime),
 		configCmd,
+		newUseCommand(prime),
 	)
 
 	return &CmdTree{

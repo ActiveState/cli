@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 )
 
-type Client struct {}
+type Client struct{}
 
 var _ analytics.Dispatcher = &Client{}
 
@@ -22,3 +22,5 @@ func (c Client) EventWithLabel(category string, action string, label string, dim
 func (c Client) Wait() {
 }
 
+func (c Client) Close() {
+}

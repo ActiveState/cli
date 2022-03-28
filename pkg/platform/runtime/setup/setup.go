@@ -454,7 +454,11 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	cnst := envdef.NewConstants(s.store.InstallPath())
+	cnst, err := envdef.NewConstants(s.store.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Could not get new environment constants")
+	}
+
 	envDef = envDef.ExpandVariables(cnst)
 	err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -117,7 +118,7 @@ func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
 	}
 
 	if len(response.Organizations) != len(ids) {
-		return nil, locale.NewError("err_orgs_length")
+		logging.Debug("Organization membership mismatch: %d members returned for %d members requested. Caller must account for this.", len(response.Organizations), len(ids))
 	}
 
 	return response.Organizations, nil

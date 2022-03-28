@@ -57,8 +57,8 @@ func sanitize(params *RunParams) error {
 
 	params.language = language.Supported{language.MakeByName(langParts[0])}
 	if !params.language.Recognized() {
-		return language.NewUnrecognizedLanguageError(
-			params.language.String(),
+		return language.UnrecognizedLanguageError(
+			params.Language,
 			language.RecognizedSupportedsNames(),
 		)
 	}

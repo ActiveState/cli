@@ -479,9 +479,11 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := mergo.Merge(project, *secondaryProject, mergo.WithAppendSlice); err != nil {
+		if err := mergo.Merge(secondaryProject, *project, mergo.WithAppendSlice); err != nil {
 			return nil, errs.Wrap(err, "Could not merge %s into your activestate.yaml", file.Name())
 		}
+		secondaryProject.path = project.path // keep original project path, not secondary path
+		project = secondaryProject
 	}
 
 	if err = project.Init(); err != nil {

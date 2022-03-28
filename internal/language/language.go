@@ -26,28 +26,13 @@ const (
 	Ruby
 )
 
-// UnrecognizedLanguageError contains info related to the usage of an
-// unrecognized language and the available valid options.
-type UnrecognizedLanguageError struct {
-	Name    string
-	Options []string
-}
-
-// NewUnrecognizedLanguageError simplifies construction.
-func NewUnrecognizedLanguageError(name string, options []string) *UnrecognizedLanguageError {
-	return &UnrecognizedLanguageError{
-		Name:    name,
-		Options: options,
-	}
-}
-
-// Error implements the error interface.
-func (e *UnrecognizedLanguageError) Error() string {
+// UnrecognizedLanguageError simplifies construction of LocalizedError for an unrecognized language.
+func UnrecognizedLanguageError(name string, options []string) *locale.LocalizedError {
 	opts := locale.T("language_unknown_options")
-	if len(e.Options) > 0 {
-		opts = strings.Join(e.Options, ", ")
+	if len(options) > 0 {
+		opts = strings.Join(options, ", ")
 	}
-	return locale.Tr("err_invalid_language", e.Name, opts)
+	return locale.NewError("err_invalid_language", "", name, opts)
 }
 
 const (
@@ -186,7 +171,7 @@ func (l *Language) Recognized() bool {
 // Validate ensures that the current language is recognized
 func (l *Language) Validate() error {
 	if !l.Recognized() {
-		return NewUnrecognizedLanguageError(l.String(), RecognizedNames())
+		return UnrecognizedLanguageError(l.String(), RecognizedNames())
 	}
 	return nil
 }
@@ -246,7 +231,7 @@ func (l Language) MarshalYAML() (interface{}, error) {
 func (l *Language) Set(v string) error {
 	lang := MakeByName(v)
 	if !lang.Recognized() {
-		return NewUnrecognizedLanguageError(v, RecognizedNames())
+		return UnrecognizedLanguageError(v, RecognizedNames())
 	}
 
 	*l = lang
@@ -335,7 +320,7 @@ func (l *Supported) UnmarshalYAML(applyPayload func(interface{}) error) error {
 func (l *Supported) Set(v string) error {
 	supported := Supported{MakeByName(v)}
 	if !supported.Recognized() {
-		return NewUnrecognizedLanguageError(v, RecognizedSupportedsNames())
+		return UnrecognizedLanguageError(v, RecognizedSupportedsNames())
 	}
 
 	*l = supported

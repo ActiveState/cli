@@ -344,7 +344,7 @@ const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 
 // GlobalDefaultPrefname is the pref that holds the path to the globally defaulted project
-const GlobalDefaultPrefname = "default_project_path"
+const GlobalDefaultPrefname = "projects.active.path"
 
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
@@ -412,3 +412,6 @@ const PpmShim = "ppm"
 
 // PipShim is the name of the pip shim
 const PipShim = "pip"
+
+// AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
+const AutoUpdateConfigKey = "autoupdate"

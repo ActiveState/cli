@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -96,7 +97,12 @@ func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcId
 	// Clean up old entries
 	oldEnv := cfg.GetStringMap(envType.Key)
 	for k, v := range oldEnv {
-		if err := cmdEnv.unset(k, v.(string)); err != nil {
+		val, ok := v.(string)
+		if !ok {
+			logging.Debug("Invalid non-string value in environment mapping")
+			continue
+		}
+		if err := cmdEnv.unset(k, val); err != nil {
 			return err
 		}
 	}
