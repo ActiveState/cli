@@ -28,7 +28,6 @@ type IPCommunicator interface {
 }
 
 func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
-	defer fmt.Println(example)
 	return &ipc.Namespace{
 		RootDir:    filepath.Join(os.TempDir(), "svccomm"),
 		AppName:    constants.CommandName,
@@ -50,11 +49,9 @@ func EnsureAndLocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 			return "", fmt.Errorf(emsg, err)
 		}
 
-		fmt.Println("starting service")
 		ctx1, cancel1 := context.WithTimeout(context.Background(), time.Millisecond*2)
 		defer cancel1()
 
-		fmt.Println(appinfo.SvcApp().Exec())
 		if err := start(ctx1, ipComm, appinfo.SvcApp().Exec()); err != nil {
 			return "", fmt.Errorf(emsg, err)
 		}
@@ -105,7 +102,7 @@ func start(ctx context.Context, c IPCommunicator, exec string) error {
 		return errs.New("file %q not found", exec)
 	}
 
-	args := []string{"start"}
+	args := []string{"foreground"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return errs.Wrap(err, "execute and forget %q", exec)

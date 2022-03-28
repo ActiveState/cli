@@ -108,7 +108,7 @@ func run(cfg *config.Instance) (rerr error) {
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]), "", "", p, nil, nil,
 		func(ccmd *captain.Command, args []string) error {
-			fmt.Println("top level")
+			out.Print(ccmd.UsageText())
 			return nil
 		},
 	)
@@ -121,7 +121,7 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart()
+				return runStart(out)
 			},
 		),
 		captain.NewCommand(
@@ -141,7 +141,7 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStatus")
-				return runStatus()
+				return runStatus(out)
 			},
 		),
 		captain.NewCommand(
@@ -201,12 +201,12 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	return err
 }
 
-func runStart() error {
+func runStart(out output.Outputer) error {
 	ns := svcctl.NewIPCNamespaceFromGlobals()
 	ipcClient := ipc.NewClient(ns)
 	if _, err := svcctl.EnsureAndLocateHTTP(ipcClient); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
-			fmt.Println("A State Service instance is already running in the background.")
+			out.Print("A State Service instance is already running in the background.")
 			return nil
 		}
 		return errs.Wrap(err, "Could not start serviceManager")
@@ -224,7 +224,7 @@ func runStop() error {
 	return nil
 }
 
-func runStatus() error {
+func runStatus(out output.Outputer) error {
 	ns := svcctl.NewIPCNamespaceFromGlobals()
 	ipcClient := ipc.NewClient(ns)
 	// Don't run in background if we're already running
@@ -233,8 +233,8 @@ func runStatus() error {
 		return errs.Wrap(err, "Service cannot be reached")
 	}
 
-	fmt.Printf("Port: %s\n", port)
-	fmt.Printf("Dashboard: http://127.0.0.1%s\n", port)
+	out.Print(fmt.Sprintf("Port: %s", port))
+	out.Print(fmt.Sprintf("Dashboard: http://127.0.0.1%s", port))
 	//fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
 
 	return nil
