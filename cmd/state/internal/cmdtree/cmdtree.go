@@ -46,6 +46,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
+		newExportFigCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
