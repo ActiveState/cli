@@ -91,7 +91,7 @@ func (f *Fork) run(params *Params) error {
 
 	_, err := model.CreateCopy(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private)
 	if err != nil {
-		return locale.WrapError(err, "err_fork_project", "Could not successfully create fork")
+		return locale.WrapError(err, "err_fork_project", "Could not create fork")
 	}
 
 	f.out.Print(&outputFormat{
