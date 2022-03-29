@@ -11,7 +11,6 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 	runner := pull.New(prime)
 
 	params := &pull.PullParams{}
-	params.Force = globals.NonInteractive
 
 	return captain.NewCommand(
 		"pull",
@@ -28,6 +27,7 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
+			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		}).SetGroup(VCSGroup)
 }
