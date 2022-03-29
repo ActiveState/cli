@@ -382,6 +382,9 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// StateTrayCmd is the name of the state tray binary
+const StateTrayCmd = "state-tray"
+
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime/debug"
@@ -482,64 +481,4 @@ func resolveInstallPath(path string) (string, error) {
 	} else {
 		return installation.InstallPath()
 	}
-}
-
-var errCorruptedInstall = errs.New("Corrupted install")
-
-// detectCorruptedInstallDir will return an error if it detects that the given install path is not a proper
-// State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
-// Tool or cases where the uninstall was not completed properly.
-func detectCorruptedInstallDir(path string) error {
-	if !fileutils.TargetExists(path) {
-		return nil
-	}
-
-	isEmpty, err := fileutils.IsEmptyDir(path)
-	if err != nil {
-		return errs.Wrap(err, "Could not check if install dir is empty")
-	}
-	if isEmpty {
-		return nil
-	}
-
-	// Detect if the install dir has non state tool files in it
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		return errs.Wrap(err, "Could not read directory: %s", path)
-	}
-
-	for _, file := range files {
-		if !file.IsDir() && !strings.HasPrefix(file.Name(), "state") {
-			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
-		}
-	}
-
-	// Detect if bin dir exists
-	binPath, err := installation.BinPathFromInstallPath(path)
-	if err != nil {
-		return errs.Wrap(err, "Could not detect bin path")
-	}
-	if !fileutils.DirExists(binPath) {
-		return errs.Wrap(errCorruptedInstall, "Bin path does not exist: %s", binPath)
-	}
-
-	// Ensure that bin dir has at least the state and state-svc executables
-	files, err = ioutil.ReadDir(binPath)
-	if err != nil {
-		return errs.Wrap(err, "Could not read bin directory: %s", path)
-	}
-
-	var found int
-	for _, file := range files {
-		fname := strings.ToLower(file.Name())
-		if fname == constants.StateCmd+exeutils.Extension || fname == constants.StateSvcCmd+exeutils.Extension {
-			found++
-		}
-	}
-
-	if found != 2 {
-		return errs.Wrap(errCorruptedInstall, "Bin path did not contain state tool executables.")
-	}
-
-	return nil
 }

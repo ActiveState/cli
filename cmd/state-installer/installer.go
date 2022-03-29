@@ -2,7 +2,10 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -70,6 +73,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
+	// TODO: Change this to always use bin dir
 	if err := i.PrepareBinTargets(true); err != nil {
 		return errs.Wrap(err, "Could not prepare for installation")
 	}
@@ -82,6 +86,11 @@ func (i *Installer) Install() (rerr error) {
 	// Install Launcher
 	if err := i.installLauncher(); err != nil {
 		return errs.Wrap(err, "Installation of system files failed.")
+	}
+
+	err = fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker))
+	if err != nil {
+		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
 	// Set up the environment
@@ -140,17 +149,41 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	err = detectCorruptedInstallDir(i.path)
-	if errors.Is(err, errCorruptedInstall) {
-
+	err = installation.DetectCorruptedInstallDir(i.path)
+	if errors.Is(err, installation.ErrCorruptedInstall) {
+		err = i.repairInstallPath()
+		if err != nil {
+			return errs.Wrap(err, "Could not repair corrupted installation path")
+		}
 	} else if err != nil {
 		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
 	}
-	// TODO: If there are any state executables in the corrupted install path we need to remove them?
 
 	return nil
 }
 
 func (i *Installer) repairInstallPath() error {
+	files, err := ioutil.ReadDir(i.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not installation directory: %s", i.path)
+	}
 
+	for _, file := range files {
+		fname := strings.ToLower(file.Name())
+		if isStateExecutable(strings.ToLower(file.Name())) {
+			err = os.Remove(filepath.Join(i.path, fname))
+			if err != nil {
+				return errs.Wrap(err, "Could not remove")
+			}
+		}
+	}
+
+	return nil
+}
+
+func isStateExecutable(name string) bool {
+	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension || name == constants.StateTrayCmd+exeutils.Extension {
+		return true
+	}
+	return false
 }
