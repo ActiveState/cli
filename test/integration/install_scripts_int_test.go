@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -129,12 +128,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
-
+	argsPlain = append(argsPlain, "-b", constants.BranchName)
 	argsWithActive := append(argsPlain, "-f")
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS != "windows" {
@@ -150,46 +150,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	}
 	cp.ExpectLongString("Installation path must bbe an empty directory")
 	cp.ExpectExitCode(1)
-}
-
-func (suite *InstallScriptsIntegrationTestSuite) TestInstall_Repair() {
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	script := scriptPath(suite.T(), ts.Dirs.Work)
-	installDir := filepath.Join(ts.Dirs.Work, "install")
-	argsPlain := []string{script, "-t", installDir}
-
-	ts.CopyExeToDir(ts.Exe, installDir)
-	ts.CopyExeToDir(ts.SvcExe, installDir)
-	ts.CopyExeToDir(ts.TrayExe, installDir)
-
-	binDir := filepath.Join(installDir, "bin")
-	err := fileutils.Mkdir(binDir)
-	suite.NoError(err)
-
-	ts.CopyExeToDir(ts.Exe, binDir)
-	ts.CopyExeToDir(ts.SvcExe, binDir)
-	ts.CopyExeToDir(ts.TrayExe, binDir)
-
-	argsWithActive := append(argsPlain, "-f")
-	var cp *termtest.ConsoleProcess
-	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts(
-			"bash", e2e.WithArgs(argsWithActive...),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
-	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
-			e2e.AppendEnv("SHELL="),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
-	}
-	expectStateToolInstallation(cp)
-
-	suite.NoFileExists(filepath.Join(installDir, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
-	suite.NoFileExists(filepath.Join(installDir, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
-	suite.NoFileExists(filepath.Join(installDir, constants.StateTrayCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 }
 
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -141,6 +142,40 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
+}
+
+func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
+	suite.OnlyRunForTags(tagsuite.Update)
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.UseDistinctStateExes()
+
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
+	subBinDir := filepath.Join(ts.Dirs.Bin, "subBin")
+	ts.CopyExeToDir(ts.Exe, subBinDir)
+	ts.CopyExeToDir(ts.SvcExe, subBinDir)
+	ts.CopyExeToDir(ts.TrayExe, subBinDir)
+
+	stateExe := appinfo.StateApp(subBinDir)
+
+	spawnOpts := []e2e.SpawnOptions{
+		e2e.WithArgs("update"),
+		e2e.AppendEnv(suite.env(false, true)...),
+	}
+
+	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect("Installing Update")
+	cp.ExpectExitCode(0)
+
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateTrayCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
+
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
