@@ -23,7 +23,7 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("arg_state_push_namespace", "owner/name"),
+				Name:        locale.Tl("arg_state_push_namespace", "org/project"),
 				Description: locale.Tl("arg_state_push_namespace_description", "The project to push to (uses project under current dir otherwise)."),
 				Value:       params.Namespace,
 				Required:    false,

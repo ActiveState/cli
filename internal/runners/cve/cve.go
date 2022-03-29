@@ -103,7 +103,7 @@ func (od *outputDataPrinter) printFooter() {
 	od.output.Print("")
 	od.output.Print([]string{
 		locale.Tl("cve_hint_report", "To view a detailed report for this runtime, run [ACTIONABLE]state security report[/RESET]"),
-		locale.Tl("cve_hint_specific_report", "For a specific runtime, run [ACTIONABLE]state security report [Organization/Project][/RESET]"),
+		locale.Tl("cve_hint_specific_report", "For a specific runtime, run [ACTIONABLE]state security report <org/project>[/RESET]"),
 	})
 }
 

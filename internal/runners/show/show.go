@@ -144,7 +144,7 @@ func (s *Show) Run(params Params) error {
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
-			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument, must be of the form <Owner>/<Project>")
+			return locale.WrapError(err, "err_show_parse_namespace", "Invalid remote argument, must be of the form <org/project>")
 		}
 
 		owner = namespaced.Owner
