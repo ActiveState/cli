@@ -161,7 +161,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		deployCmd,
 		scriptsCmd,
 		eventsCmd,
-		newPullCommand(prime),
+		newPullCommand(prime, globals),
 		updateCmd,
 		newForkCommand(prime),
 		newPpmCommand(prime),

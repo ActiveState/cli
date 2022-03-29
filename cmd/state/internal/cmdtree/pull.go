@@ -7,10 +7,11 @@ import (
 	"github.com/ActiveState/cli/internal/runners/pull"
 )
 
-func newPullCommand(prime *primer.Values) *captain.Command {
+func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := pull.New(prime)
 
 	params := &pull.PullParams{}
+	params.Force = globals.NonInteractive
 
 	return captain.NewCommand(
 		"pull",
@@ -18,12 +19,6 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("pull_description", "Pull in the latest version of your project from the ActiveState Platform"),
 		prime,
 		[]*captain.Flag{
-			{
-				Name:        "force",
-				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_force_description", "Force pulling the specified project even if it is unrelated to the checked out one"),
-				Value:       &params.Force,
-			},
 			{
 				Name:        "set-project",
 				Shorthand:   "",
