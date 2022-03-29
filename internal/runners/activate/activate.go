@@ -54,7 +54,6 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
-	ReplaceWith   *project.Namespaced
 	Default       bool
 	Branch        string
 }
@@ -159,12 +158,6 @@ func (r *Activate) run(params *ActivateParams) error {
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
-	// on --replace, replace namespace and commit id in as.yaml
-	if params.ReplaceWith.IsValid() {
-		if err := updateProjectFile(proj, params.ReplaceWith, params.Branch); err != nil {
-			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
-		}
-	}
 	proj.Source().Persist()
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
