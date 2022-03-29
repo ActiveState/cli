@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -71,7 +72,10 @@ func InstalledOnPath(installPath string) (bool, string, error) {
 	if err != nil {
 		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
 	}
+	fmt.Println("Bin path:", binPath)
 	path := appinfo.StateApp(binPath).Exec()
+	fmt.Println("Exec path:", path)
+	fmt.Println("Exists:", fileutils.TargetExists(path))
 	return fileutils.TargetExists(path), path, nil
 }
 
