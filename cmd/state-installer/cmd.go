@@ -243,6 +243,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
+	} else {
+		empty, err := fileutils.IsEmptyDir(params.path)
+		if err != nil {
+			return errs.Wrap(err, "Could not check if install path is empty")
+		}
+		if !empty {
+			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+		}
 	}
 
 	// Detect installed state tool
@@ -468,6 +476,7 @@ func storeInstallSource(installSource string) {
 }
 
 func resolveInstallPath(path string) (string, error) {
+	// TODO: What do we want to do with a path passed in here? What if it is ~/bin?
 	if path != "" {
 		return filepath.Abs(path)
 	} else {
@@ -475,10 +484,23 @@ func resolveInstallPath(path string) (string, error) {
 	}
 }
 
+var errCorruptedInstall = errs.New("Corrupted install")
+
 // detectCorruptedInstallDir will return an error if it detects that the given install path is not a proper
-// state tool installation path. This mainly covers cases where we are working off of a legacy install of the State
+// State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
 // Tool or cases where the uninstall was not completed properly.
 func detectCorruptedInstallDir(path string) error {
+	if !fileutils.TargetExists(path) {
+		return nil
+	}
+
+	isEmpty, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not check if install dir is empty")
+	}
+	if isEmpty {
+		return nil
+	}
 
 	// Detect if the install dir has non state tool files in it
 	files, err := ioutil.ReadDir(path)
@@ -488,7 +510,7 @@ func detectCorruptedInstallDir(path string) error {
 
 	for _, file := range files {
 		if !file.IsDir() && !strings.HasPrefix(file.Name(), "state") {
-			return errs.New("Install directory should only contain dirs: %s", path)
+			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
 		}
 	}
 
@@ -498,7 +520,7 @@ func detectCorruptedInstallDir(path string) error {
 		return errs.Wrap(err, "Could not detect bin path")
 	}
 	if !fileutils.DirExists(binPath) {
-		return errs.New("Bin path does not exist: %s", binPath)
+		return errs.Wrap(errCorruptedInstall, "Bin path does not exist: %s", binPath)
 	}
 
 	// Ensure that bin dir has at least the state and state-svc executables
@@ -506,6 +528,7 @@ func detectCorruptedInstallDir(path string) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not read bin directory: %s", path)
 	}
+
 	var found int
 	for _, file := range files {
 		fname := strings.ToLower(file.Name())
@@ -515,7 +538,7 @@ func detectCorruptedInstallDir(path string) error {
 	}
 
 	if found != 2 {
-		return errs.New("Bin path did not contain state tool executables.")
+		return errs.Wrap(errCorruptedInstall, "Bin path did not contain state tool executables.")
 	}
 
 	return nil
