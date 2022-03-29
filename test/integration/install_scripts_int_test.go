@@ -49,7 +49,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
-			argsPlain := []string{script, "-t", ts.Dirs.Work}
+			installDir := filepath.Join(ts.Dirs.Work, "install")
+			argsPlain := []string{script, "-t", installDir}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -101,10 +102,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			state := appinfo.StateApp(ts.Dirs.Work)
+			state := appinfo.StateApp(installDir)
 			suite.FileExists(state.Exec())
 
-			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
+			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
