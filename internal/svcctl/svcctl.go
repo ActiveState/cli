@@ -1,3 +1,5 @@
+// Package svcctl provides functions that make use of an IPC device, as well as
+// common IPC handlers and requesters.
 package svcctl
 
 import (
@@ -6,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -20,6 +21,10 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 )
 
+var (
+	commonTimeout = time.Millisecond * 10
+)
+
 type IPCommunicator interface {
 	Getter
 	Namespace() *ipc.Namespace
@@ -28,37 +33,33 @@ type IPCommunicator interface {
 }
 
 func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
+	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
+
 	return &ipc.Namespace{
-		RootDir:    filepath.Join(os.TempDir(), "svccomm"),
+		RootDir:    filepath.Join(os.TempDir(), subdir),
 		AppName:    constants.CommandName,
-		AppChannel: strings.ReplaceAll(constants.BranchName, "/", "--"),
+		AppChannel: constants.BranchName,
 	}
 }
 
 func EnsureAndLocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	emsg := "ensure svc and locate http: %w"
-	comm := NewComm(ipComm)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
-	defer cancel()
-
-	addr, err = comm.GetHTTPAddr(ctx)
+	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		var sderr *ipc.ServerDownError
 		if !errors.As(err, &sderr) {
 			return "", fmt.Errorf(emsg, err)
 		}
 
-		ctx1, cancel1 := context.WithTimeout(context.Background(), time.Millisecond*2)
-		defer cancel1()
+		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
+		defer cancel()
 
-		if err := start(ctx1, ipComm, appinfo.SvcApp().Exec()); err != nil {
+		if err := start(ctx, ipComm, appinfo.SvcApp().Exec()); err != nil {
 			return "", fmt.Errorf(emsg, err)
 		}
 
-		ctx2, cancel2 := context.WithTimeout(context.Background(), time.Millisecond*2)
-		defer cancel2()
-		addr, err = comm.GetHTTPAddr(ctx2)
+		addr, err = LocateHTTP(ipComm)
 		if err != nil {
 			return "", fmt.Errorf(emsg, err)
 		}
@@ -71,7 +72,7 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	emsg := "locate http: %w"
 	comm := NewComm(ipComm)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
 	addr, err = comm.GetHTTPAddr(ctx)
@@ -85,7 +86,7 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 func StopServer(ipComm IPCommunicator) (err error) {
 	emsg := "stop server: %w"
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*2)
+	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
 	if err := stop(ctx, ipComm); err != nil {
@@ -118,13 +119,13 @@ func start(ctx context.Context, c IPCommunicator, exec string) error {
 func wait(c IPCommunicator) error {
 	for try := 1; try <= 16; try++ {
 		start := time.Now()
-		d := time.Millisecond * time.Duration(try*try)
+		timeout := time.Millisecond * time.Duration(try*try)
 
-		logging.Debug("Attempt %d at %v", try, d)
-		if err := ping(c, d); err != nil {
+		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
+		if err := ping(c, timeout); err != nil {
 			if errors.Is(err, errNotUp) {
 				elapsed := time.Since(start)
-				time.Sleep(d - elapsed)
+				time.Sleep(timeout - elapsed)
 				continue
 			}
 			return err

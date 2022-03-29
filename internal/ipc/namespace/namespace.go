@@ -3,6 +3,7 @@ package namespace
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -19,7 +20,7 @@ func (n *Namespace) String() string {
 	filename := fmt.Sprintf(
 		"%s-%s.%s",
 		n.AppName,
-		n.AppChannel,
+		strings.ReplaceAll(n.AppChannel, "/", "--"),
 		namespaceExtension,
 	)
 

@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	keyPing = "internal---ping"
-	valPong = "internal---pong"
-	keyStop = "internal---stop"
-	valStop = "internal---okok"
+	keyPing = "|||ping"
+	valPong = "|||pong"
+	keyStop = "|||stop"
+	valStop = "|||okok"
 )
 
 func pingHandler() MatchedHandler {
@@ -24,17 +24,17 @@ func pingHandler() MatchedHandler {
 }
 
 func getPing(ctx context.Context, c *Client) (string, error) {
-	s, err := c.Get(ctx, keyPing)
+	val, err := c.Get(ctx, keyPing)
 	if err != nil {
-		return s, err
+		return val, err
 	}
 
-	if s != valPong {
+	if val != valPong {
 		// this should never be seen by users
-		return s, errors.New("ipc.IPC should be constructed with a ping handler")
+		return val, errors.New("ipc.IPC should be constructed with a ping handler")
 	}
 
-	return s, nil
+	return val, nil
 }
 
 func stopHandler(c io.Closer) MatchedHandler {
@@ -51,15 +51,15 @@ func stopHandler(c io.Closer) MatchedHandler {
 }
 
 func getStop(ctx context.Context, c *Client) (string, error) {
-	s, err := c.Get(ctx, keyStop)
+	val, err := c.Get(ctx, keyStop)
 	if err != nil {
-		return s, err
+		return val, err
 	}
 
-	if s != valStop {
+	if val != valStop {
 		// this should never be seen by users
-		return s, errors.New("ipc.IPC should be constructed with a stop handler")
+		return val, errors.New("ipc.IPC should be constructed with a stop handler")
 	}
 
-	return s, nil
+	return val, nil
 }

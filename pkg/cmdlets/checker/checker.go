@@ -57,7 +57,7 @@ func CommitsBehind(p *project.Project) (int, error) {
 
 func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 	defer profile.Measure("RunUpdateNotifier", time.Now())
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*500) // TODO: source from some other global ;)
+	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 	defer cancel()
 	up, err := svc.CheckUpdate(ctx)
 	if err != nil {
