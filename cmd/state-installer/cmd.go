@@ -243,12 +243,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
 	} else {
-		empty, err := fileutils.IsEmptyDir(params.path)
-		if err != nil {
-			return errs.Wrap(err, "Could not check if install path is empty")
-		}
-		if !empty {
-			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+		if fileutils.DirExists(params.path) {
+			empty, err := fileutils.IsEmptyDir(params.path)
+			if err != nil {
+				return errs.Wrap(err, "Could not check if install path is empty")
+			}
+			if !empty {
+				return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+			}
 		}
 	}
 
