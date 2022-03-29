@@ -43,6 +43,12 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 
 	// update to related project
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
+	cp.ExpectLongString("you may lose changes to your project")
+	cp.SendLine("n")
+	cp.Expect("Pull aborted by user")
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/small-python-fork")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 }
@@ -60,9 +66,9 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
 
-	cp = ts.Spawn("pull", "--force", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
+	cp.Expect("could not detect common parent")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {

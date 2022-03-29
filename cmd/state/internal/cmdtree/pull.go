@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/pull"
 )
 
-func newPullCommand(prime *primer.Values) *captain.Command {
+func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := pull.New(prime)
 
 	params := &pull.PullParams{}
@@ -19,20 +19,15 @@ func newPullCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "force",
-				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_force_description", "Force pulling specified project even if it is unrelated to checked out one"),
-				Value:       &params.Force,
-			},
-			{
 				Name:        "set-project",
 				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_set_project_description", "project even if it is unrelated to checked out one"),
+				Description: locale.Tl("flag_state_pull_set_project_description", "Pull from the specified project instead of the checked out one"),
 				Value:       &params.SetProject,
 			},
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
+			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		}).SetGroup(VCSGroup)
 }
