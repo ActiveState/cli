@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -139,19 +140,17 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	// Ensure that the target path is usable
-	if fileutils.TargetExists(i.path) {
-		isEmpty, err := fileutils.IsEmptyDir(i.path)
-		if err != nil {
-			return errs.Wrap(err, "Could not check if install dir is empty")
-		}
+	err = detectCorruptedInstallDir(i.path)
+	if errors.Is(err, errCorruptedInstall) {
 
-		if !isEmpty {
-			if err := detectCorruptedInstallDir(i.path); err != nil {
-				return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
-			}
-		}
+	} else if err != nil {
+		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
 	}
+	// TODO: If there are any state executables in the corrupted install path we need to remove them?
 
 	return nil
+}
+
+func (i *Installer) repairInstallPath() error {
+
 }
