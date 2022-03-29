@@ -242,23 +242,22 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
-	} else {
-		if fileutils.DirExists(params.path) {
-			empty, err := fileutils.IsEmptyDir(params.path)
-			if err != nil {
-				return errs.Wrap(err, "Could not check if install path is empty")
-			}
-			if !empty {
-				return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
-			}
-		}
 	}
 
 	// Detect installed state tool
 	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath(params.path)
-	fmt.Println("state tool installed:", stateToolInstalled)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
+	}
+
+	if !stateToolInstalled && fileutils.DirExists(params.path) {
+		empty, err := fileutils.IsEmptyDir(params.path)
+		if err != nil {
+			return errs.Wrap(err, "Could not check if install path is empty")
+		}
+		if !empty {
+			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+		}
 	}
 
 	// Detect state tool alongside installer executable
