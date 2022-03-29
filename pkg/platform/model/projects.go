@@ -193,10 +193,17 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
 	if makePrivate {
 		if err := MakeProjectPrivate(targetOwner, targetName); err != nil {
-			return nil, locale.WrapError(
-				err, "err_fork_private",
-				"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}}/{{.V2}} to manually update your privacy settings.",
-				constants.PlatformURL, targetOwner, targetName)
+			logging.Debug("Cannot make forked project private; deleting public fork.")
+			deleteParams := projects.NewDeleteProjectParams()
+			deleteParams.SetOrganizationName(targetOwner)
+			deleteParams.SetProjectName(targetName)
+			if _, err := authentication.Client().Projects.DeleteProject(deleteParams, authentication.ClientAuth()); err != nil {
+				return nil, locale.WrapError(
+					err, "err_fork_private_but_project_created",
+					"Your project was created but could not be made private, please head over to https://{{.V0}}/{{.V1}}/{{.V2}} to manually update your privacy settings.",
+					constants.PlatformURL, targetOwner, targetName)
+			}
+			return nil, locale.WrapError(err, "err_fork_private", "Your fork could not be made private.")
 		}
 	}
 
