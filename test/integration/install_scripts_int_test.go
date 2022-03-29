@@ -148,7 +148,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	}
-	cp.ExpectLongString("Installation path must bbe an empty directory")
+	cp.ExpectLongString("Installation path must be an empty directory")
 	cp.ExpectExitCode(1)
 }
 
