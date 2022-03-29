@@ -106,7 +106,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.FileExists(state.Exec())
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
-			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
+			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that we don't try to install it again
@@ -172,13 +172,13 @@ func listFilesOnly(dir string) []string {
 	return funk.Map(files, filepath.Base).([]string)
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, expectedVersion, expectedBranch string) {
+func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedBranch string) {
 	type versionData struct {
 		Version string `json:"version"`
 		Branch  string `json:"branch"`
 	}
 
-	state := appinfo.StateApp(ts.Dirs.Work)
+	state := appinfo.StateApp(installDir)
 	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
