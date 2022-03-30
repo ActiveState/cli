@@ -173,7 +173,7 @@ func (i *Installer) repairInstallPath() error {
 
 	for _, file := range files {
 		fname := strings.ToLower(file.Name())
-		fmt.Println("Checking executable")
+		fmt.Println("Checking executable:", fname)
 		if isStateExecutable(strings.ToLower(file.Name())) {
 			fmt.Println("Removing executable")
 			err = os.Remove(filepath.Join(i.path, fname))

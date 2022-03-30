@@ -160,14 +160,17 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(subBinDir, filepath.Base(ts.SvcExe)))
 	ts.CopyExeToDir(ts.TrayExe, filepath.Join(subBinDir, filepath.Base(ts.TrayExe)))
 
-	stateExe := appinfo.StateApp(ts.Dirs.Bin)
+	fmt.Println("Bin dir:", ts.Dirs.Bin)
+	// stateExe := appinfo.StateApp(ts.Dirs.Bin)
+	stateExePath := filepath.Join(ts.Dirs.Bin, filepath.Base(ts.Exe))
 
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("update"),
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 
-	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	fmt.Println("state exe:", stateExePath)
+	cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update", time.Minute)
 	cp.ExpectExitCode(0)
