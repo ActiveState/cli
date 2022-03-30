@@ -2,9 +2,9 @@ package ipc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 )
 
@@ -20,24 +20,23 @@ func NewClient(n *Namespace) *Client {
 }
 
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
-	emsg := "get: %w"
-
-	conn, err := c.dialer.DialContext(ctx, network, c.namespace.String())
+	ns := c.namespace.String()
+	conn, err := c.dialer.DialContext(ctx, network, ns)
 	if err != nil {
 		err = asServerDown(err)
-		return "", fmt.Errorf(emsg, err)
+		return "", errs.Wrap(err, "Cannot connect to ipc via %q", ns)
 	}
 	defer conn.Close()
 
 	_, err = conn.Write([]byte(key))
 	if err != nil {
-		return "", fmt.Errorf(emsg, err)
+		return "", errs.Wrap(err, "Failed to write to connection")
 	}
 
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return "", fmt.Errorf(emsg, err)
+		return "", errs.Wrap(err, "Failed to read from connection")
 	}
 
 	msg := string(buf[:n])
@@ -51,20 +50,17 @@ func (c *Client) Namespace() *Namespace {
 
 func (c *Client) PingServer(ctx context.Context) (time.Duration, error) {
 	start := time.Now()
-	emsg := "ping: %w"
 
 	if _, err := getPing(ctx, c); err != nil {
-		return 0, fmt.Errorf(emsg, err)
+		return 0, errs.Wrap(err, "Failed to complete ping request")
 	}
 
 	return time.Since(start), nil
 }
 
 func (c *Client) StopServer(ctx context.Context) error {
-	emsg := "stop: %w"
-
 	if _, err := getStop(ctx, c); err != nil {
-		return fmt.Errorf(emsg, err)
+		return errs.Wrap(err, "Failed to complete stop request")
 	}
 
 	return nil

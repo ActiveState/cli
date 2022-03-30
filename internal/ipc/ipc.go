@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/internal/ipc/namespace"
 )
@@ -49,12 +50,10 @@ func New(n *Namespace, mhs ...MatchedHandler) *IPC {
 }
 
 func (ipc *IPC) ListenAndServe() error {
-	emsg := "listen and serve: %w"
-
 	listener, err := flisten.New(ipc.ctx, ipc.n, network)
 	if err != nil {
 		if !errors.Is(err, flisten.ErrInUse) {
-			return fmt.Errorf(emsg, err)
+			return errs.Wrap(err, "Cannot construct file listener")
 		}
 
 		ctx, cancel := context.WithTimeout(ipc.ctx, time.Second*3)
@@ -66,12 +65,12 @@ func (ipc *IPC) ListenAndServe() error {
 		}
 
 		if !errors.Is(pingErr, flisten.ErrConnRefused) {
-			return fmt.Errorf(emsg, pingErr) // TODO: advanced handling?
+			return errs.Wrap(err, "Cannot connect to existing socket file")
 		}
 
 		listener, err = flisten.NewWithCleanup(ctx, ipc.n, network)
 		if err != nil {
-			return fmt.Errorf(emsg, err)
+			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
 	defer listener.Close()
@@ -85,7 +84,7 @@ func (ipc *IPC) ListenAndServe() error {
 		for {
 			if err := accept(ipc.ctx, conns, listener); err != nil {
 				if !errors.Is(err, context.Canceled) {
-					fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
+					fmt.Fprintln(os.Stderr, fmt.Errorf("listen and server: %w", err)) // TODO: something more useful, log properly, at least
 				}
 				return
 			}
@@ -97,7 +96,7 @@ func (ipc *IPC) ListenAndServe() error {
 			if errors.Is(err, context.Canceled) {
 				return nil
 			}
-			return err
+			return errs.Wrap(err, "Critical failure handling ipc connections")
 		}
 	}
 }
@@ -113,15 +112,13 @@ func (ipc *IPC) Close() error {
 }
 
 func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
-	emsg := "pick up connection: %w"
-
 	conn, err := l.Accept()
 	if err != nil {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			return fmt.Errorf(emsg, err) // TODO: should this halt the application?
+			return errs.Wrap(err, "Critical error accepting connections") // TODO: should this halt the application?
 		}
 	}
 
@@ -130,8 +127,6 @@ func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
 }
 
 func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, mhs []MatchedHandler) error {
-	emsg := "route connection: %w"
-
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -144,7 +139,7 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 			defer conn.Close()
 
 			if err := handleMatching(conn, mhs); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Errorf(emsg, err)) // TODO: maybe do something more useful
+				fmt.Fprintln(os.Stderr, fmt.Errorf("routing connections: %w", err)) // TODO: maybe do something more useful / log properly
 				return
 			}
 		}()
@@ -154,12 +149,10 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 }
 
 func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
-	emsg := "handle matching query: %w"
-
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return fmt.Errorf(emsg, err)
+		return errs.Wrap(err, "Failed to read from connection")
 	}
 
 	input := string(buf[:n])
@@ -173,7 +166,7 @@ func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
 	}
 
 	if _, err := conn.Write([]byte(output)); err != nil {
-		return fmt.Errorf(emsg, err)
+		return errs.Wrap(err, "Failed to write to connection")
 	}
 
 	return nil
