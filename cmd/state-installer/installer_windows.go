@@ -84,3 +84,25 @@ func (i *Installer) PrepareBinTargets(useBinDir bool) error {
 
 	return nil
 }
+
+func (i *Installer) cleanInstallPath() error {
+	files, err := ioutil.ReadDir(i.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not installation directory: %s", i.path)
+	}
+
+	for _, file := range files {
+		fname := strings.ToLower(file.Name())
+		targetFile := filepath.Join(i.path, file.Name())
+		if isStateExecutable(fname) {
+			renamedFile := filepath.Join(i.path, fmt.Sprintf("%s-%d.old", fname, time.Now().Unix()))
+			if err := os.Rename(targetFile, renamedFile); err != nil {
+				return errs.Wrap(err, "Could not rename corrupted executable: %s to %s", targetFile, renamedFile)
+			}
+			// This will likely fail but we try anyways
+			os.Remove(renamedFile)
+		}
+	}
+
+	return nil
+}

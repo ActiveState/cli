@@ -2,11 +2,8 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -73,7 +70,6 @@ func (i *Installer) Install() (rerr error) {
 	if errors.Is(err, installation.ErrCorruptedInstall) {
 		err = i.cleanInstallPath()
 		if err != nil {
-			fmt.Println("clean err:", errs.JoinMessage(err))
 			return errs.Wrap(err, "Could not repair corrupted installation path")
 		}
 	} else if err != nil {
@@ -159,25 +155,6 @@ func (i *Installer) sanitizeInput() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
-	}
-
-	return nil
-}
-
-func (i *Installer) cleanInstallPath() error {
-	files, err := ioutil.ReadDir(i.path)
-	if err != nil {
-		return errs.Wrap(err, "Could not installation directory: %s", i.path)
-	}
-
-	for _, file := range files {
-		fname := strings.ToLower(file.Name())
-		if isStateExecutable(strings.ToLower(file.Name())) {
-			err = os.Remove(filepath.Join(i.path, fname))
-			if err != nil {
-				return errs.Wrap(err, "Could not remove")
-			}
-		}
 	}
 
 	return nil
