@@ -156,9 +156,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	defer cfg.Close()
 
 	subBinDir := filepath.Join(ts.Dirs.Bin, "subBin")
-	ts.CopyExeToDir(ts.Exe, subBinDir)
-	ts.CopyExeToDir(ts.SvcExe, subBinDir)
-	ts.CopyExeToDir(ts.TrayExe, subBinDir)
+	ts.CopyExeToDir(ts.Exe, filepath.Join(subBinDir, filepath.Base(ts.Exe)))
+	ts.CopyExeToDir(ts.SvcExe, filepath.Join(subBinDir, filepath.Base(ts.SvcExe)))
+	ts.CopyExeToDir(ts.TrayExe, filepath.Join(subBinDir, filepath.Base(ts.TrayExe)))
 
 	stateExe := appinfo.StateApp(subBinDir)
 
