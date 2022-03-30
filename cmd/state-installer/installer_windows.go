@@ -24,35 +24,20 @@ func (i *Installer) installLauncher() error {
 
 // PrepareBinTargets will move aside any targets in the bin dir that we would otherwise overwrite.
 // This guards us from file in use errors as well as false positives by security software
-func (i *Installer) PrepareBinTargets(useBinDir bool) error {
+func (i *Installer) PrepareBinTargets() error {
 	sourceBinPath := filepath.Join(i.sourcePath, "bin")
-	targetBinPath := i.path
+	targetBinPath := filepath.Join(i.path, "bin")
 
-	if useBinDir {
-		targetBinPath = filepath.Join(targetBinPath, "bin")
+	// Clean up exectuables from potentially corrupted installed
+	err := removeOldExecutables(i.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not remove executables at: %s", i.path)
 	}
 
-	// Clean up executables from previous install
-	if fileutils.DirExists(targetBinPath) {
-		files, err := ioutil.ReadDir(targetBinPath)
-		if err != nil {
-			return errs.Wrap(err, "Could not read target dir")
-		}
-
-		for _, file := range files {
-			if file.IsDir() {
-				continue
-			}
-
-			if strings.HasSuffix(file.Name(), ".old") {
-				logging.Debug("Deleting old file: %s", file.Name())
-				oldFile := filepath.Join(targetBinPath, file.Name())
-				if err := os.Remove(oldFile); err != nil {
-					multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
-				}
-				continue
-			}
-		}
+	// Clean up exectuables from old install
+	err = removeOldExecutables(targetBinPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not remove executables at: %s", i.path)
 	}
 
 	// Move aside conflicting executables in target
@@ -101,6 +86,32 @@ func (i *Installer) cleanInstallPath() error {
 			}
 			// This will likely fail but we try anyways
 			os.Remove(renamedFile)
+		}
+	}
+
+	return nil
+}
+
+func removeOldExecutables(dir string) error {
+	if fileutils.TargetExists(dir) {
+		files, err := ioutil.ReadDir(dir)
+		if err != nil {
+			return errs.Wrap(err, "Could not read installer dir")
+		}
+
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+
+			if strings.HasSuffix(file.Name(), ".old") {
+				logging.Debug("Deleting old file: %s", file.Name())
+				oldFile := filepath.Join(dir, file.Name())
+				if err := os.Remove(oldFile); err != nil {
+					multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
+				}
+				continue
+			}
 		}
 	}
 
