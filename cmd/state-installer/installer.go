@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -150,6 +151,7 @@ func (i *Installer) sanitize() error {
 	}
 
 	err = installation.DetectCorruptedInstallDir(i.path)
+	fmt.Println("Corrupted install err:", err)
 	if errors.Is(err, installation.ErrCorruptedInstall) {
 		err = i.repairInstallPath()
 		if err != nil {
@@ -163,6 +165,7 @@ func (i *Installer) sanitize() error {
 }
 
 func (i *Installer) repairInstallPath() error {
+	fmt.Println("Reparing install path")
 	files, err := ioutil.ReadDir(i.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not installation directory: %s", i.path)
@@ -170,7 +173,9 @@ func (i *Installer) repairInstallPath() error {
 
 	for _, file := range files {
 		fname := strings.ToLower(file.Name())
+		fmt.Println("Checking executable")
 		if isStateExecutable(strings.ToLower(file.Name())) {
+			fmt.Println("Removing executable")
 			err = os.Remove(filepath.Join(i.path, fname))
 			if err != nil {
 				return errs.Wrap(err, "Could not remove")

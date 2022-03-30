@@ -437,10 +437,6 @@ func IsEmptyDir(path string) (bool, error) {
 		return false, errs.Wrap(err, "dir.Readdir %s failed", path)
 	}
 
-	fmt.Println("Found files:", len(files))
-	for _, f := range files {
-		fmt.Println("found file:", f.Name())
-	}
 	return (len(files) == 0), nil
 }
 

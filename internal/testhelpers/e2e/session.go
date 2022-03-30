@@ -109,7 +109,6 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
-	fmt.Printf("Copying from %s to %s\n", from, to)
 	if fileutils.TargetExists(to) {
 		return to
 	}
