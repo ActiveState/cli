@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -72,6 +73,7 @@ func (i *Installer) Install() (rerr error) {
 	if errors.Is(err, installation.ErrCorruptedInstall) {
 		err = i.cleanInstallPath()
 		if err != nil {
+			fmt.Println("clean err:", errs.JoinMessage(err))
 			return errs.Wrap(err, "Could not repair corrupted installation path")
 		}
 	} else if err != nil {
