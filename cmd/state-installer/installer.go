@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -35,11 +34,10 @@ type Installer struct {
 
 func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
 	i := &Installer{cfg: cfg, out: out, Params: params}
-	if err := i.sanitize(); err != nil {
+	if err := i.sanitizeInput(); err != nil {
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	fmt.Printf("Instantiated installer with source dir: %s, target dir: %s\n", i.sourcePath, i.path)
 	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
 
 	return i, nil
@@ -67,6 +65,17 @@ func (i *Installer) Install() (rerr error) {
 	}
 	if err := installation.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
+	}
+
+	// Detect if existing installation needs to be cleaned
+	err = installation.DetectCorruptedInstallDir(i.path)
+	if errors.Is(err, installation.ErrCorruptedInstall) {
+		err = i.cleanInstallPath()
+		if err != nil {
+			return errs.Wrap(err, "Could not repair corrupted installation path")
+		}
+	} else if err != nil {
+		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
 	}
 
 	// Create target dir
@@ -136,8 +145,8 @@ func (i *Installer) InstallPath() string {
 	return i.path
 }
 
-// sanitize cleans up the input and inserts fallback values
-func (i *Installer) sanitize() error {
+// sanitizeInput cleans up the input and inserts fallback values
+func (i *Installer) sanitizeInput() error {
 	if sessionToken, ok := os.LookupEnv(constants.SessionTokenEnvVarName); ok {
 		i.sessionToken = sessionToken
 	}
@@ -150,20 +159,10 @@ func (i *Installer) sanitize() error {
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	err = installation.DetectCorruptedInstallDir(i.path)
-	if errors.Is(err, installation.ErrCorruptedInstall) {
-		err = i.repairInstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Could not repair corrupted installation path")
-		}
-	} else if err != nil {
-		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
-	}
-
 	return nil
 }
 
-func (i *Installer) repairInstallPath() error {
+func (i *Installer) cleanInstallPath() error {
 	files, err := ioutil.ReadDir(i.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not installation directory: %s", i.path)

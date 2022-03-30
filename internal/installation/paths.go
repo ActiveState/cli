@@ -1,7 +1,6 @@
 package installation
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -98,9 +97,7 @@ func IsInstallRoot(dir string) bool {
 // State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
 // Tool or cases where the uninstall was not completed properly.
 func DetectCorruptedInstallDir(path string) error {
-	fmt.Println("Checking path:", path)
 	if !fileutils.TargetExists(path) {
-		fmt.Println("Path does not exist")
 		return nil
 	}
 
@@ -109,7 +106,6 @@ func DetectCorruptedInstallDir(path string) error {
 		return errs.Wrap(err, "Could not check if install dir is empty")
 	}
 	if isEmpty {
-		fmt.Println("Path is empty")
 		return nil
 	}
 
