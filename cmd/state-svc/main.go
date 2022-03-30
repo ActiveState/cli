@@ -12,6 +12,7 @@ import (
 	"time"
 
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -202,9 +203,10 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 }
 
 func runStart(out output.Outputer) error {
+	exec := appinfo.SvcApp().Exec()
 	ns := svcctl.NewIPCNamespaceFromGlobals()
 	ipcClient := ipc.NewClient(ns)
-	if _, err := svcctl.EnsureAndLocateHTTP(ipcClient); err != nil {
+	if _, err := svcctl.EnsureAndLocateHTTP(ipcClient, exec); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil

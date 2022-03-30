@@ -9,15 +9,14 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/ipc"
-	"github.com/ActiveState/cli/internal/svccomm"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/test/pseudo/cmd/internal/serve"
+	intsvcctl "github.com/ActiveState/cli/test/pseudo/cmd/internal/svcctl"
 )
 
 type namedClose struct {
@@ -40,16 +39,13 @@ func main() {
 
 func run() error {
 	var (
-		rootDir = filepath.Join(os.TempDir(), "svccomm")
-		name    = "state"
-		version = "default"
-		hash    = "DEADBEEF"
+		channel = "default"
 		svcName = "svc"
 	)
 
 	defer fmt.Printf("%s: goodbye\n", svcName)
 
-	flag.StringVar(&version, "v", version, "version id")
+	flag.StringVar(&channel, "c", channel, "channel name")
 	flag.Parse()
 
 	httpSrv := serve.New()
@@ -58,16 +54,13 @@ func run() error {
 		return err
 	}
 
-	n := &ipc.Namespace{
-		RootDir:    rootDir,
-		AppName:    name,
-		AppVersion: version,
-		AppHash:    hash,
-	}
+	ns := intsvcctl.NewIPCNamespace()
+	ns.AppChannel = channel
 	mhs := []ipc.MatchedHandler{
-		svccomm.HTTPAddrMHandler(addr),
+		svcctl.HTTPAddrMHandler(addr),
 	}
-	ipcSrv := ipc.New(n, mhs...)
+	ipcSrv := ipc.New(ns, mhs...)
+	ipcClient := ipc.NewClient(ns)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -75,7 +68,7 @@ func run() error {
 	errs := make(chan error)
 
 	callOnSysSigs(ctx, svcName, cancel)
-	callWhenNotVerified(ctx, errs, svcName, addr, n, cancel)
+	callWhenNotVerified(ctx, errs, svcName, addr, ipcClient, cancel)
 	shutDownOnDone(
 		ctx,
 		svcName,
@@ -158,13 +151,13 @@ func callOnSysSigs(ctx context.Context, svcName string, fn func()) {
 	}()
 }
 
-func callWhenNotVerified(ctx context.Context, errs chan error, svcName, addr string, n *ipc.Namespace, fn func()) {
+func callWhenNotVerified(ctx context.Context, errs chan error, svcName, addr string, ipComm svcctl.IPCommunicator, fn func()) {
 	go func() {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(time.Second * 3):
-			checkedAddr, err := svcctl.LocateHTTP(n)
+			checkedAddr, err := svcctl.LocateHTTP(ipComm)
 			if err == nil && checkedAddr != addr {
 				err = fmt.Errorf("checked addr %q does not match current %q", checkedAddr, addr)
 			}

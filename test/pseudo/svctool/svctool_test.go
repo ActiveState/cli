@@ -3,8 +3,6 @@ package svctool
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -13,9 +11,19 @@ import (
 	"time"
 )
 
+//go:generate go build -o ../cmd/svc/build/svc ../cmd/svc
+//go:generate go build -o ../cmd/svc/build/tool ../cmd/tool
+
+type logFunc func(...interface{})
+
+func (l logFunc) Write(p []byte) (int, error) {
+	l(string(p))
+	return len(p), nil
+}
+
 func TestServer(t *testing.T) {
 	simultaneous := 2
-	iterations := 128
+	iterations := 512
 	pause := time.Millisecond * 10
 
 	errs := make(chan error)
@@ -34,13 +42,13 @@ func TestServer(t *testing.T) {
 			wg.Add(simultaneous)
 			for i := 0; i < simultaneous; i++ {
 				count++
-				fmt.Println("count", count)
+				t.Log("count", count)
 				var ext string
 				if runtime.GOOS == "windows" {
 					ext = ".exe"
 				}
 				c := exec.CommandContext(ctx, filepath.Clean("../cmd/svc/build/svc"+ext))
-				c.Stdout = os.Stdout
+				c.Stdout = logFunc(t.Log)
 
 				go func(cmd *exec.Cmd) {
 					defer wg.Done()
@@ -51,14 +59,14 @@ func TestServer(t *testing.T) {
 						t.Error("cmd start is not aligned")
 					}
 
-					fmt.Println("STARTING")
+					t.Log("STARTING")
 					if err := cmd.Start(); err != nil {
-						fmt.Println("start error:", err)
+						t.Log("start error:", err)
 						errs <- err
 					}
 
 					if err := cmd.Wait(); err != nil {
-						fmt.Println("wait error:", err)
+						t.Log("wait error:", err)
 						errs <- err
 					}
 				}(c)

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/runbits/panics"
@@ -151,9 +152,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
+	exec := appinfo.SvcApp().Exec()
 	ns := svcctl.NewIPCNamespaceFromGlobals()
 	ipcClient := ipc.NewClient(ns)
-	svcPort, err := svcctl.EnsureAndLocateHTTP(ipcClient)
+	svcPort, err := svcctl.EnsureAndLocateHTTP(ipcClient, exec)
 	if err != nil {
 		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}

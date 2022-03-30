@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -42,26 +41,23 @@ func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
 	}
 }
 
-func EnsureAndLocateHTTP(ipComm IPCommunicator) (addr string, err error) {
-	emsg := "ensure svc and locate http: %w"
-
+func EnsureAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
-		var sderr *ipc.ServerDownError
-		if !errors.As(err, &sderr) {
-			return "", fmt.Errorf(emsg, err)
+		if !errs.Matches(err, &ipc.ServerDownError{}) {
+			return "", errs.Wrap(err, "Cannot locate HTTP port of ipc server")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
-		if err := start(ctx, ipComm, appinfo.SvcApp().Exec()); err != nil {
-			return "", fmt.Errorf(emsg, err)
+		if err := start(ctx, ipComm, exec); err != nil {
+			return "", errs.Wrap(err, "Cannot start ipc server at %q", exec)
 		}
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", fmt.Errorf(emsg, err)
+			return "", errs.Wrap(err, "Cannot locate HTTP port of ipc server after start succeeded")
 		}
 	}
 
@@ -69,7 +65,6 @@ func EnsureAndLocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
-	emsg := "locate http: %w"
 	comm := NewComm(ipComm)
 
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
@@ -77,41 +72,40 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 
 	addr, err = comm.GetHTTPAddr(ctx)
 	if err != nil {
-		return "", fmt.Errorf(emsg, err)
+		return "", errs.Wrap(err, "HTTP address request failed")
 	}
 
 	return addr, nil
 }
 
 func StopServer(ipComm IPCommunicator) (err error) {
-	emsg := "stop server: %w"
-
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
-	if err := stop(ctx, ipComm); err != nil {
-		return fmt.Errorf(emsg, err)
+	if err := ipComm.StopServer(ctx); err != nil {
+		// TODO: handle errors - timeout, can't reach, etc.
+		return errs.Wrap(err, "IPC stop server request failed")
 	}
+
 	return nil
 }
 
 func start(ctx context.Context, c IPCommunicator, exec string) error {
-	emsg := "start svc: %w"
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return errs.New("file %q not found", exec)
+		return errs.New("File %q not found", exec)
 	}
 
 	args := []string{"foreground"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
-		return errs.Wrap(err, "execute and forget %q", exec)
+		return errs.Wrap(err, "Execute and forget %q", exec)
 	}
 
 	logging.Debug("Waiting for state-svc")
 	if err := wait(c); err != nil {
-		return fmt.Errorf(emsg, err)
+		return errs.Wrap(err, "Wait failed")
 	}
 	return nil
 }
@@ -123,12 +117,12 @@ func wait(c IPCommunicator) error {
 
 		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
 		if err := ping(c, timeout); err != nil {
-			if errors.Is(err, errNotUp) {
-				elapsed := time.Since(start)
-				time.Sleep(timeout - elapsed)
-				continue
+			if !errors.Is(err, errNotUp) {
+				return errs.Wrap(err, "Ping failed")
 			}
-			return err
+			elapsed := time.Since(start)
+			time.Sleep(timeout - elapsed)
+			continue
 		}
 		return nil
 	}
@@ -145,9 +139,4 @@ func ping(c IPCommunicator, timeout time.Duration) error {
 		return asNotUp(err)
 	}
 	return nil
-}
-
-func stop(ctx context.Context, c IPCommunicator) error {
-	// TODO: handle errors - timeout, can't reach, etc.
-	return c.StopServer(ctx)
 }

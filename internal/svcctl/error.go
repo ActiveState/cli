@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
 )
 
@@ -12,8 +13,8 @@ var (
 )
 
 func asNotUp(err error) error {
-	var sderr *ipc.ServerDownError // TODO: simplify this if possible - is it even needed?
-	if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &sderr) {
+	// TODO: simplify this if possible - is it even needed?
+	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
 		return errNotUp
 	}
 	return err
