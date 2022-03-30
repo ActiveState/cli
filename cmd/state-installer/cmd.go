@@ -236,6 +236,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		targetBranch = constants.BranchName
 	}
 
+	fmt.Println("Path param:", params.path)
 	if params.path == "" {
 		var err error
 		params.path, err = installation.InstallPathForBranch(targetBranch)
