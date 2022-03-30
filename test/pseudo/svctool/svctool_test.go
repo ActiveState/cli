@@ -21,7 +21,7 @@ func (l logFunc) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func TestServer(t *testing.T) {
+func TestService(t *testing.T) {
 	simultaneous := 2
 	iterations := 512
 	pause := time.Millisecond * 10
