@@ -20,14 +20,6 @@ type AppInfo struct {
 }
 
 func execDir(baseDir ...string) (resultPath string) {
-	defer func() {
-		// Account for legacy use-case that wasn't using the correct bin dir
-		binDir := filepath.Join(resultPath, "bin")
-		if fileutils.DirExists(binDir) {
-			resultPath = binDir
-		}
-	}()
-
 	if len(baseDir) > 0 {
 		return baseDir[0]
 	}

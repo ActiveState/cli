@@ -160,8 +160,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(subBinDir, filepath.Base(ts.SvcExe)))
 	ts.CopyExeToDir(ts.TrayExe, filepath.Join(subBinDir, filepath.Base(ts.TrayExe)))
 
-	fmt.Println("Bin dir:", ts.Dirs.Bin)
-	// stateExe := appinfo.StateApp(ts.Dirs.Bin)
 	stateExePath := filepath.Join(ts.Dirs.Bin, filepath.Base(ts.Exe))
 
 	spawnOpts := []e2e.SpawnOptions{
@@ -169,12 +167,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 
-	fmt.Println("state exe:", stateExePath)
 	cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update", time.Minute)
 	cp.ExpectExitCode(0)
-	fmt.Println(cp.Snapshot())
 
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
