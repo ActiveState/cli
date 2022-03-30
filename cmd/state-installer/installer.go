@@ -75,7 +75,6 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
-	// TODO: Change this to always use bin dir
 	if err := i.PrepareBinTargets(true); err != nil {
 		return errs.Wrap(err, "Could not prepare for installation")
 	}

@@ -477,7 +477,6 @@ func storeInstallSource(installSource string) {
 }
 
 func resolveInstallPath(path string) (string, error) {
-	// TODO: What do we want to do with a path passed in here? What if it is ~/bin?
 	if path != "" {
 		return filepath.Abs(path)
 	} else {
