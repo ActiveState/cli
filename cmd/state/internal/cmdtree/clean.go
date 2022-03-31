@@ -49,7 +49,7 @@ func newCleanUninstallCommand(prime *primer.Values) *captain.Command {
 	)
 }
 
-func newCleanCacheCommand(prime *primer.Values) *captain.Command {
+func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := clean.NewCache(prime)
 	params := clean.CacheParams{}
 	return captain.NewCommand(
@@ -57,14 +57,7 @@ func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("clean_cache_title", "Cleaning Cached Runtimes"),
 		locale.T("cache_description"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "force",
-				Shorthand:   "f",
-				Description: locale.T("flag_state_clean_cache_force_description"),
-				Value:       &params.Force,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
 				Name:        "project",
@@ -74,6 +67,7 @@ func newCleanCacheCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
+			params.Force = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)
