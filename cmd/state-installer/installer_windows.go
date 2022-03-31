@@ -12,6 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 func InstallSystemFiles(_, _, _ string) error {
@@ -89,6 +92,20 @@ func (i *Installer) cleanInstallPath() error {
 				os.Remove(renamedFile)
 			}
 		}
+	}
+
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+
+	// Since we are repairing a corrupted install we need to also remove the old
+	// PATH entry. The new PATH entry will be added later in the install/update process.
+	// This is only an issue on Windows as on other platforms we can simply rewrite
+	// the PATH entry.
+	s := subshell.New(i.cfg)
+	if err := s.CleanUserEnv(i.cfg, sscommon.InstallID, !isAdmin); err != nil {
+		return errs.Wrap(err, "Failed to State Tool installation PATH")
 	}
 
 	return nil
