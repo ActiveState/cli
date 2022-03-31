@@ -515,6 +515,10 @@ err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: [NOTICE]{{.V0}}[/RESET]"
 err_already_active:
   other: "You cannot activate a new state when you are already in an activated state."
+err_conflicting_branch_while_checkedout:
+  other: |
+    Cannot activate branch [NOTICE]{{.V0}}[/RESET]. Branch [NOTICE]{{.V1}}[/RESET] is already checked out.
+    Please use [ACTIONABLE]state branch switch <name>[/RESET] followed by [ACTIONABLE]state activate[/RESET] instead.
 run_listing_scripts:
   other: "Available Scripts: "
 

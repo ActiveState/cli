@@ -147,12 +147,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		if params.Branch != proj.BranchName() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_checkedout",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]. Branch [NOTICE]{{.V1}}[/RESET] is already checked out.\n"+
-					"Please use [ACTIONABLE]state branch switch <name>[/RESET] followed by [ACTIONABLE]state activate[/RESET] instead.",
-				params.Branch, proj.BranchName(),
-			)
+			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 		}
 	}
 
