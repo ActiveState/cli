@@ -29,7 +29,6 @@ func (i *Installer) cleanInstallPath() error {
 				}
 			}
 		}
-
-		return nil
 	}
+	return nil
 }
