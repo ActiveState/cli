@@ -50,7 +50,6 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 		}
 
 		if err := svcctl.StopServer(ipComm); err != nil {
-			// TODO: add StopServerWithWait to svcctl
 			if !ignoreErrors {
 				return errs.AddTips(
 					locale.WrapError(err, "clean_stop_svc_failure_wait", "Cleanup interrupted, because a running {{.V0}} process failed to stop due to a timeout.", svcInfo.Name()),
