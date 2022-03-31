@@ -66,7 +66,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
 		newCleanUninstallCommand(prime),
-		newCleanCacheCommand(prime),
+		newCleanCacheCommand(prime, globals),
 		newCleanConfigCommand(prime),
 	)
 
