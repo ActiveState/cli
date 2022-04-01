@@ -23,7 +23,7 @@ const (
 
 	BinDirName = "bin"
 
-	InstallDirMarker = ".install_root"
+	InstallDirMarker = ".state_install_root"
 )
 
 var ErrCorruptedInstall = errs.New("Corrupted install")
