@@ -7,8 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 )
 
-func NewIPCNamespace() *ipc.Namespace {
-	return &ipc.Namespace{
+func NewIPCSockPath() *ipc.SockPath {
+	return &ipc.SockPath{
 		RootDir:    filepath.Join(os.TempDir(), "state-test-ipc"),
 		AppName:    "state",
 		AppChannel: "default",

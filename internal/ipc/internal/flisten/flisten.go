@@ -8,53 +8,53 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/ipc/namespace"
+	"github.com/ActiveState/cli/internal/ipc/sockpath"
 )
 
 type FListen struct {
-	n *namespace.Namespace
+	spath *sockpath.SockPath
 	net.Listener
 }
 
-func New(ctx context.Context, n *namespace.Namespace, network string) (*FListen, error) {
-	namespace := n.String()
-	namespaceDir := filepath.Dir(namespace)
+func New(ctx context.Context, spath *sockpath.SockPath, network string) (*FListen, error) {
+	sockpath := spath.String()
+	sockpathDir := filepath.Dir(sockpath)
 
-	_, err := os.Stat(namespaceDir)
+	_, err := os.Stat(sockpathDir)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return nil, errs.Wrap(err, "Cannot verify ipc dir %q", namespaceDir)
+			return nil, errs.Wrap(err, "Cannot verify ipc dir %q", sockpathDir)
 		}
 
-		if err = os.MkdirAll(namespaceDir, 0755); err != nil {
-			return nil, errs.Wrap(err, "Cannot make ipc dir %q", namespaceDir)
+		if err = os.MkdirAll(sockpathDir, 0755); err != nil {
+			return nil, errs.Wrap(err, "Cannot make ipc dir %q", sockpathDir)
 		}
 	}
 
-	l, err := (&net.ListenConfig{}).Listen(ctx, network, namespace)
+	l, err := (&net.ListenConfig{}).Listen(ctx, network, sockpath)
 	if err != nil {
 		err = asInUse(err)
-		return nil, errs.Wrap(err, "Cannot get listener for %q", namespace)
+		return nil, errs.Wrap(err, "Cannot get listener for %q", sockpath)
 	}
 
 	f := FListen{
-		n:        n,
+		spath:    spath,
 		Listener: l,
 	}
 
-	if err := os.Chmod(namespace, 0700); err != nil {
+	if err := os.Chmod(sockpath, 0700); err != nil {
 		_ = f.Close()
-		return nil, errs.Wrap(err, "Cannot set file mode for %q", namespace)
+		return nil, errs.Wrap(err, "Cannot set file mode for %q", sockpath)
 	}
 
 	return &f, nil
 }
 
-func NewWithCleanup(ctx context.Context, n *namespace.Namespace, network string) (*FListen, error) {
-	namespace := n.String()
-	if err := os.Remove(namespace); err != nil {
-		return nil, errs.Wrap(err, "Cannot remove file %q", namespace)
+func NewWithCleanup(ctx context.Context, spath *sockpath.SockPath, network string) (*FListen, error) {
+	sockpath := spath.String()
+	if err := os.Remove(sockpath); err != nil {
+		return nil, errs.Wrap(err, "Cannot remove file %q", sockpath)
 	}
 
-	return New(ctx, n, network)
+	return New(ctx, spath, network)
 }

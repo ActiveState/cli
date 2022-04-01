@@ -27,15 +27,15 @@ var (
 
 type IPCommunicator interface {
 	Requester
-	Namespace() *ipc.Namespace
+	SockPath() *ipc.SockPath
 	PingServer(context.Context) (time.Duration, error)
 	StopServer(context.Context) error
 }
 
-func NewIPCNamespaceFromGlobals() *ipc.Namespace {
+func NewIPCSockPathFromGlobals() *ipc.SockPath {
 	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
 
-	return &ipc.Namespace{
+	return &ipc.SockPath{
 		RootDir:    filepath.Join(os.TempDir(), subdir),
 		AppName:    constants.CommandName,
 		AppChannel: constants.BranchName,
@@ -43,7 +43,7 @@ func NewIPCNamespaceFromGlobals() *ipc.Namespace {
 }
 
 func NewDefaultIPCClient() *ipc.Client {
-	return ipc.NewClient(NewIPCNamespaceFromGlobals())
+	return ipc.NewClient(NewIPCSockPathFromGlobals())
 }
 
 func EnsureStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {

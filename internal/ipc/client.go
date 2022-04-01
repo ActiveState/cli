@@ -9,22 +9,22 @@ import (
 )
 
 type Client struct {
-	namespace *Namespace
-	dialer    flisten.Dialer
+	sockpath *SockPath
+	dialer   flisten.Dialer
 }
 
-func NewClient(n *Namespace) *Client {
+func NewClient(n *SockPath) *Client {
 	return &Client{
-		namespace: n,
+		sockpath: n,
 	}
 }
 
 func (c *Client) Request(ctx context.Context, key string) (string, error) {
-	ns := c.namespace.String()
-	conn, err := c.dialer.DialContext(ctx, network, ns)
+	spath := c.sockpath.String()
+	conn, err := c.dialer.DialContext(ctx, network, spath)
 	if err != nil {
 		err = asServerDownError(err)
-		return "", errs.Wrap(err, "Cannot connect to ipc via %q", ns)
+		return "", errs.Wrap(err, "Cannot connect to ipc via %q", spath)
 	}
 	defer conn.Close()
 
@@ -44,8 +44,8 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	return msg, nil
 }
 
-func (c *Client) Namespace() *Namespace {
-	return c.namespace
+func (c *Client) SockPath() *SockPath {
+	return c.sockpath
 }
 
 func (c *Client) PingServer(ctx context.Context) (time.Duration, error) {

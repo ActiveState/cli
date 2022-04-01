@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
-	"github.com/ActiveState/cli/internal/ipc/namespace"
+	"github.com/ActiveState/cli/internal/ipc/sockpath"
 )
 
 var (
@@ -19,23 +19,23 @@ var (
 	network  = "unix"
 )
 
-type Namespace = namespace.Namespace
+type SockPath = sockpath.SockPath
 
 type MatchedHandler func(input string) (resp string, isMatched bool)
 
 type IPC struct {
-	n      *Namespace
+	spath  *SockPath
 	mhs    []MatchedHandler
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     *sync.WaitGroup
 }
 
-func New(n *Namespace, mhs ...MatchedHandler) *IPC {
+func New(spath *SockPath, mhs ...MatchedHandler) *IPC {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	ipc := IPC{
-		n:      n,
+		spath:  spath,
 		mhs:    make([]MatchedHandler, 0, len(mhs)+2),
 		ctx:    ctx,
 		cancel: cancel,
@@ -50,7 +50,7 @@ func New(n *Namespace, mhs ...MatchedHandler) *IPC {
 }
 
 func (ipc *IPC) ListenAndServe() error {
-	listener, err := flisten.New(ipc.ctx, ipc.n, network)
+	listener, err := flisten.New(ipc.ctx, ipc.spath, network)
 	if err != nil {
 		if !errors.Is(err, flisten.ErrInUse) {
 			return errs.Wrap(err, "Cannot construct file listener")
@@ -59,7 +59,7 @@ func (ipc *IPC) ListenAndServe() error {
 		ctx, cancel := context.WithTimeout(ipc.ctx, time.Second*3)
 		defer cancel()
 
-		_, pingErr := NewClient(ipc.n).PingServer(ctx)
+		_, pingErr := NewClient(ipc.spath).PingServer(ctx)
 		if pingErr == nil {
 			return ErrInUse
 		}
@@ -68,7 +68,7 @@ func (ipc *IPC) ListenAndServe() error {
 			return errs.Wrap(err, "Cannot connect to existing socket file")
 		}
 
-		listener, err = flisten.NewWithCleanup(ctx, ipc.n, network)
+		listener, err = flisten.NewWithCleanup(ctx, ipc.spath, network)
 		if err != nil {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}

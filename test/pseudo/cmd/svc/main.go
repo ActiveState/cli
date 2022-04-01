@@ -54,13 +54,13 @@ func run() error {
 		return err
 	}
 
-	ns := intsvcctl.NewIPCNamespace()
-	ns.AppChannel = channel
+	spath := intsvcctl.NewIPCSockPath()
+	spath.AppChannel = channel
 	mhs := []ipc.MatchedHandler{
 		svcctl.HTTPAddrMHandler(addr),
 	}
-	ipcSrv := ipc.New(ns, mhs...)
-	ipcClient := ipc.NewClient(ns)
+	ipcSrv := ipc.New(spath, mhs...)
+	ipcClient := ipc.NewClient(spath)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

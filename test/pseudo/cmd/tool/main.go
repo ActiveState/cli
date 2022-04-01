@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-	ns := intsvcctl.NewIPCNamespace()
-	ipcClient := ipc.NewClient(ns)
+	spath := intsvcctl.NewIPCSockPath()
+	ipcClient := ipc.NewClient(spath)
 
 	addr, err := svcctl.EnsureStartedAndLocateHTTP(ipcClient, "../svc/build/svc")
 	if err != nil {

@@ -47,11 +47,11 @@ func (s *service) Start() error {
 	}()
 	defer s.shutdown()
 
-	ns := svcctl.NewIPCNamespaceFromGlobals()
+	spath := svcctl.NewIPCSockPathFromGlobals()
 	mhs := []ipc.MatchedHandler{
 		svcctl.HTTPAddrMHandler(".:" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.New(ns, mhs...)
+	s.ipcSrv = ipc.New(spath, mhs...)
 	err = s.ipcSrv.ListenAndServe()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")

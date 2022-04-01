@@ -1,4 +1,4 @@
-package namespace
+package sockpath
 
 import (
 	"fmt"
@@ -7,21 +7,21 @@ import (
 )
 
 var (
-	namespaceExtension = "sock"
+	sockpathExtension = "sock"
 )
 
-type Namespace struct {
+type SockPath struct {
 	RootDir    string
 	AppName    string
 	AppChannel string
 }
 
-func (n *Namespace) String() string {
+func (n *SockPath) String() string {
 	filename := fmt.Sprintf(
 		"%s-%s.%s",
 		n.AppName,
 		strings.ReplaceAll(n.AppChannel, "/", "--"),
-		namespaceExtension,
+		sockpathExtension,
 	)
 
 	return filepath.Join(n.RootDir, filename)
