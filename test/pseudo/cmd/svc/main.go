@@ -56,10 +56,10 @@ func run() error {
 
 	spath := intsvcctl.NewIPCSockPath()
 	spath.AppChannel = channel
-	mhs := []ipc.MatchedHandler{
-		svcctl.HTTPAddrMHandler(addr),
+	reqHandlers := []ipc.RequestHandler{
+		svcctl.HTTPAddrHandler(addr),
 	}
-	ipcSrv := ipc.New(spath, mhs...)
+	ipcSrv := ipc.New(spath, reqHandlers...)
 	ipcClient := ipc.NewClient(spath)
 
 	ctx, cancel := context.WithCancel(context.Background())

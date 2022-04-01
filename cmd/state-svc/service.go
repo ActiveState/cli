@@ -48,10 +48,10 @@ func (s *service) Start() error {
 	defer s.shutdown()
 
 	spath := svcctl.NewIPCSockPathFromGlobals()
-	mhs := []ipc.MatchedHandler{
-		svcctl.HTTPAddrMHandler(".:" + strconv.Itoa(s.server.Port())),
+	reqHandlers := []ipc.RequestHandler{
+		svcctl.HTTPAddrHandler(".:" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.New(spath, mhs...)
+	s.ipcSrv = ipc.New(spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")

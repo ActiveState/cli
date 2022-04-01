@@ -13,7 +13,7 @@ var (
 	valStop = "|||okok"
 )
 
-func pingHandler() MatchedHandler {
+func pingHandler() RequestHandler {
 	return func(input string) (string, bool) {
 		if input == keyPing {
 			return valPong, true
@@ -37,7 +37,7 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 	return val, nil
 }
 
-func stopHandler(c io.Closer) MatchedHandler {
+func stopHandler(c io.Closer) RequestHandler {
 	return func(input string) (string, bool) {
 		if input == keyStop {
 			defer func() {

@@ -21,30 +21,30 @@ var (
 
 type SockPath = sockpath.SockPath
 
-type MatchedHandler func(input string) (resp string, isMatched bool)
+type RequestHandler func(input string) (resp string, isMatched bool)
 
 type IPC struct {
-	spath  *SockPath
-	mhs    []MatchedHandler
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     *sync.WaitGroup
+	spath       *SockPath
+	reqHandlers []RequestHandler
+	ctx         context.Context
+	cancel      context.CancelFunc
+	wg          *sync.WaitGroup
 }
 
-func New(spath *SockPath, mhs ...MatchedHandler) *IPC {
+func New(spath *SockPath, reqHandlers ...RequestHandler) *IPC {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	ipc := IPC{
-		spath:  spath,
-		mhs:    make([]MatchedHandler, 0, len(mhs)+2),
-		ctx:    ctx,
-		cancel: cancel,
-		wg:     &sync.WaitGroup{},
+		spath:       spath,
+		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
+		ctx:         ctx,
+		cancel:      cancel,
+		wg:          &sync.WaitGroup{},
 	}
 
-	ipc.mhs = append(ipc.mhs, pingHandler())
-	ipc.mhs = append(ipc.mhs, mhs...)
-	ipc.mhs = append(ipc.mhs, stopHandler(&ipc))
+	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
+	ipc.reqHandlers = append(ipc.reqHandlers, reqHandlers...)
+	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(&ipc))
 
 	return &ipc
 }
@@ -96,7 +96,7 @@ func (ipc *IPC) Start() error {
 	}()
 
 	for {
-		if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.mhs); err != nil {
+		if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
 			if errors.Is(err, context.Canceled) {
 				return nil
 			}
@@ -130,7 +130,7 @@ func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
 	return nil
 }
 
-func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, mhs []MatchedHandler) error {
+func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []RequestHandler) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -142,7 +142,7 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 			defer wg.Done()
 			defer conn.Close()
 
-			if err := handleMatching(conn, mhs); err != nil {
+			if err := handleMatching(conn, reqHandlers); err != nil {
 				fmt.Fprintln(os.Stderr, fmt.Errorf("routing connections: %w", err)) // TODO: maybe do something more useful / log properly
 				return
 			}
@@ -152,7 +152,7 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 	}
 }
 
-func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
+func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -162,8 +162,8 @@ func handleMatching(conn net.Conn, mhs []MatchedHandler) error {
 	input := string(buf[:n])
 	output := "not found"
 
-	for _, mh := range mhs {
-		if resp, ok := mh(input); ok {
+	for _, reqHandler := range reqHandlers {
+		if resp, ok := reqHandler(input); ok {
 			output = resp
 			break
 		}

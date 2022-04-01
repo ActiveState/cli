@@ -24,7 +24,7 @@ func NewComm(req Requester) *Comm {
 	}
 }
 
-func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
+func HTTPAddrHandler(addr string) ipc.RequestHandler {
 	return func(input string) (string, bool) {
 		if input == KeyHTTPAddr {
 			return addr, true
