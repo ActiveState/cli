@@ -379,7 +379,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
-		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -393,12 +392,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 
 func envSlice(binPath string) []string {
 	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
-}
-
-func envMap(binPath string) map[string]string {
-	return map[string]string{
-		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
-	}
 }
 
 // installFromRemoteSource is invoked when we run the installer without providing the associated source files
