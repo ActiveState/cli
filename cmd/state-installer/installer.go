@@ -68,7 +68,7 @@ func (i *Installer) Install() (rerr error) {
 	// Detect if existing installation needs to be cleaned
 	err = installation.DetectCorruptedInstallDir(i.path)
 	if errors.Is(err, installation.ErrCorruptedInstall) {
-		err = i.cleanInstallPath()
+		err = i.sanitizeInstallPath()
 		if err != nil {
 			return errs.Wrap(err, "Could not repair corrupted installation path")
 		}

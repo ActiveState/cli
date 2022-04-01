@@ -73,7 +73,7 @@ func (i *Installer) PrepareBinTargets() error {
 	return nil
 }
 
-func (i *Installer) cleanInstallPath() error {
+func (i *Installer) sanitizeInstallPath() error {
 	if !fileutils.DirExists(i.path) {
 		return nil
 	}

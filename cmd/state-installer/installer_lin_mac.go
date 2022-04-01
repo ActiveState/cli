@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-func (i *Installer) cleanInstallPath() error {
+func (i *Installer) sanitizeInstallPath() error {
 	if !fileutils.DirExists(i.path) {
 		return nil
 	}
