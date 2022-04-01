@@ -1,6 +1,7 @@
 package update
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -77,12 +78,14 @@ func (u *Update) Run(params *Params) error {
 		}
 	}
 
+	fmt.Println("Installing to install path:", installPath)
 	err = up.InstallBlocking(installPath)
 	if err != nil {
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
 			return locale.WrapInputError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
 		}
+		fmt.Println("Install err:", errs.JoinMessage(err))
 		return locale.WrapError(err, "err_update_generic", "Update could not be installed.")
 	}
 
