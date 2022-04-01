@@ -74,23 +74,25 @@ func (i *Installer) PrepareBinTargets() error {
 }
 
 func (i *Installer) cleanInstallPath() error {
-	if fileutils.DirExists(i.path) {
-		files, err := ioutil.ReadDir(i.path)
-		if err != nil {
-			return errs.Wrap(err, "Could not installation directory: %s", i.path)
-		}
+	if !fileutils.DirExists(i.path) {
+		return nil
+	}
 
-		for _, file := range files {
-			fname := strings.ToLower(file.Name())
-			targetFile := filepath.Join(i.path, file.Name())
-			if isStateExecutable(fname) {
-				renamedFile := filepath.Join(i.path, fmt.Sprintf("%s-%d.old", fname, time.Now().Unix()))
-				if err := os.Rename(targetFile, renamedFile); err != nil {
-					return errs.Wrap(err, "Could not rename corrupted executable: %s to %s", targetFile, renamedFile)
-				}
-				// This will likely fail but we try anyways
-				os.Remove(renamedFile)
+	files, err := ioutil.ReadDir(i.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not installation directory: %s", i.path)
+	}
+
+	for _, file := range files {
+		fname := strings.ToLower(file.Name())
+		targetFile := filepath.Join(i.path, file.Name())
+		if isStateExecutable(fname) {
+			renamedFile := filepath.Join(i.path, fmt.Sprintf("%s-%d.old", fname, time.Now().Unix()))
+			if err := os.Rename(targetFile, renamedFile); err != nil {
+				return errs.Wrap(err, "Could not rename corrupted executable: %s to %s", targetFile, renamedFile)
 			}
+			// This will likely fail but we try anyways
+			os.Remove(renamedFile)
 		}
 	}
 
@@ -112,24 +114,25 @@ func (i *Installer) cleanInstallPath() error {
 }
 
 func removeOldExecutables(dir string) error {
-	if fileutils.TargetExists(dir) {
-		files, err := ioutil.ReadDir(dir)
-		if err != nil {
-			return errs.Wrap(err, "Could not read installer dir")
+	if !fileutils.TargetExists(dir) {
+		return nil
+	}
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return errs.Wrap(err, "Could not read installer dir")
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
 		}
 
-		for _, file := range files {
-			if file.IsDir() {
-				continue
-			}
-
-			if strings.HasSuffix(file.Name(), ".old") {
-				logging.Debug("Deleting old file: %s", file.Name())
-				oldFile := filepath.Join(dir, file.Name())
-				if err := os.Remove(oldFile); err != nil {
-					multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
-				}
-				continue
+		if strings.HasSuffix(file.Name(), ".old") {
+			logging.Debug("Deleting old file: %s", file.Name())
+			oldFile := filepath.Join(dir, file.Name())
+			if err := os.Remove(oldFile); err != nil {
+				multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
 			}
 		}
 	}
