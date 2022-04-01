@@ -26,7 +26,7 @@ var (
 )
 
 type IPCommunicator interface {
-	Getter
+	Requester
 	Namespace() *ipc.Namespace
 	PingServer(context.Context) (time.Duration, error)
 	StopServer(context.Context) error

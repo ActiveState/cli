@@ -10,17 +10,17 @@ var (
 	KeyHTTPAddr = "http-addr"
 )
 
-type Getter interface {
-	Get(ctx context.Context, key string) (value string, err error)
+type Requester interface {
+	Request(ctx context.Context, key string) (value string, err error)
 }
 
 type Comm struct {
-	g Getter
+	req Requester
 }
 
-func NewComm(g Getter) *Comm {
+func NewComm(req Requester) *Comm {
 	return &Comm{
-		g: g,
+		req: req,
 	}
 }
 
@@ -35,5 +35,5 @@ func HTTPAddrMHandler(addr string) ipc.MatchedHandler {
 }
 
 func (c *Comm) GetHTTPAddr(ctx context.Context) (string, error) {
-	return c.g.Get(ctx, KeyHTTPAddr)
+	return c.req.Request(ctx, KeyHTTPAddr)
 }

@@ -24,7 +24,7 @@ func pingHandler() MatchedHandler {
 }
 
 func getPing(ctx context.Context, c *Client) (string, error) {
-	val, err := c.Get(ctx, keyPing)
+	val, err := c.Request(ctx, keyPing)
 	if err != nil {
 		return val, err
 	}
@@ -51,7 +51,7 @@ func stopHandler(c io.Closer) MatchedHandler {
 }
 
 func getStop(ctx context.Context, c *Client) (string, error) {
-	val, err := c.Get(ctx, keyStop)
+	val, err := c.Request(ctx, keyStop)
 	if err != nil {
 		return val, err
 	}

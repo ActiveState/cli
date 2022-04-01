@@ -19,7 +19,7 @@ func NewClient(n *Namespace) *Client {
 	}
 }
 
-func (c *Client) Get(ctx context.Context, key string) (string, error) {
+func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	ns := c.namespace.String()
 	conn, err := c.dialer.DialContext(ctx, network, ns)
 	if err != nil {
