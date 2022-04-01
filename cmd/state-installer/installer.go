@@ -196,7 +196,7 @@ func detectCorruptedInstallDir(path string) error {
 	}
 
 	for _, file := range files {
-		if !file.IsDir() || strings.ToLower(file.Name()) != installation.InstallDirMarker {
+		if isStateExecutable(strings.ToLower(file.Name())) {
 			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
 		}
 	}
