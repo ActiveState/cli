@@ -10,9 +10,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -94,9 +94,9 @@ func (i *Installer) cleanInstallPath() error {
 		}
 	}
 
-	isAdmin, err := osutils.IsAdmin()
+	installContext, err := installation.GetContext()
 	if err != nil {
-		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+		return errs.Wrap(err, "Could not get initial installation context")
 	}
 
 	// Since we are repairing a corrupted install we need to also remove the old
@@ -104,7 +104,7 @@ func (i *Installer) cleanInstallPath() error {
 	// This is only an issue on Windows as on other platforms we can simply rewrite
 	// the PATH entry.
 	s := subshell.New(i.cfg)
-	if err := s.CleanUserEnv(i.cfg, sscommon.InstallID, !isAdmin); err != nil {
+	if err := s.CleanUserEnv(i.cfg, sscommon.InstallID, !installContext.InstalledAsAdmin); err != nil {
 		return errs.Wrap(err, "Failed to State Tool installation PATH")
 	}
 

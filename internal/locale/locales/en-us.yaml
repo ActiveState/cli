@@ -1858,3 +1858,5 @@ err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
+err_update_privilege_mismatch:
+  other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
