@@ -15,7 +15,7 @@ func main() {
 	ns := intsvcctl.NewIPCNamespace()
 	ipcClient := ipc.NewClient(ns)
 
-	addr, err := svcctl.EnsureAndLocateHTTP(ipcClient, "../svc/build/svc")
+	addr, err := svcctl.EnsureStartedAndLocateHTTP(ipcClient, "../svc/build/svc")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ensure and locate: %v\n", errs.JoinMessage(err))
 		os.Exit(1)

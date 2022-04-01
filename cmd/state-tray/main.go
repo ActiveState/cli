@@ -105,10 +105,7 @@ func run(cfg *config.Instance) (rerr error) {
 
 	systray.SetIcon(iconFile)
 
-	exec := appinfo.SvcApp().Exec()
-	ns := svcctl.NewIPCNamespaceFromGlobals()
-	ipcClient := ipc.NewClient(ns)
-	port, err := svcctl.EnsureAndLocateHTTP(ipcClient, exec)
+	port, err := svcctl.DefaultEnsureStartedAndLocateHTTP()
 	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}

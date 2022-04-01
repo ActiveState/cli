@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -31,7 +32,7 @@ type IPCommunicator interface {
 	StopServer(context.Context) error
 }
 
-func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
+func NewIPCNamespaceFromGlobals() *ipc.Namespace {
 	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
 
 	return &ipc.Namespace{
@@ -41,7 +42,11 @@ func NewIPCNamespaceFromGlobals() (example *ipc.Namespace) {
 	}
 }
 
-func EnsureAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
+func NewDefaultIPCClient() *ipc.Client {
+	return ipc.NewClient(NewIPCNamespaceFromGlobals())
+}
+
+func EnsureStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
@@ -62,6 +67,10 @@ func EnsureAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err e
 	}
 
 	return addr, nil
+}
+
+func DefaultEnsureStartedAndLocateHTTP() (addr string, err error) {
+	return EnsureStartedAndLocateHTTP(NewDefaultIPCClient(), appinfo.SvcApp().Exec())
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {

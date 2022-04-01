@@ -12,7 +12,6 @@ import (
 	"time"
 
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -203,10 +202,7 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 }
 
 func runStart(out output.Outputer) error {
-	exec := appinfo.SvcApp().Exec()
-	ns := svcctl.NewIPCNamespaceFromGlobals()
-	ipcClient := ipc.NewClient(ns)
-	if _, err := svcctl.EnsureAndLocateHTTP(ipcClient, exec); err != nil {
+	if _, err := svcctl.DefaultEnsureStartedAndLocateHTTP(); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil
@@ -218,8 +214,7 @@ func runStart(out output.Outputer) error {
 }
 
 func runStop() error {
-	ns := svcctl.NewIPCNamespaceFromGlobals()
-	ipcClient := ipc.NewClient(ns)
+	ipcClient := svcctl.NewDefaultIPCClient()
 	if err := svcctl.StopServer(ipcClient); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
 	}
@@ -227,8 +222,7 @@ func runStop() error {
 }
 
 func runStatus(out output.Outputer) error {
-	ns := svcctl.NewIPCNamespaceFromGlobals()
-	ipcClient := ipc.NewClient(ns)
+	ipcClient := svcctl.NewDefaultIPCClient()
 	// Don't run in background if we're already running
 	port, err := svcctl.LocateHTTP(ipcClient)
 	if err != nil {
