@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,12 +40,16 @@ func InstallPath() (string, error) {
 
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
+	fmt.Println("State exec info:", stateInfo.Exec())
 	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
 	installRootFile := filepath.Join(filepath.Dir(stateInfo.Exec()), InstallDirMarker)
+	fmt.Println("Install root file:", installRootFile)
 	if fileutils.TargetExists(stateInfo.Exec()) && fileutils.FileExists(installRootFile) && activeStateOwnedPath {
+		fmt.Println("returning path:", filepath.Dir(filepath.Dir(stateInfo.Exec())))
 		return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
 	}
 
+	fmt.Println("Returning default path")
 	return DefaultInstallPath()
 }
 
