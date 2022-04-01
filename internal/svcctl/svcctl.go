@@ -112,14 +112,14 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 	}
 
 	logging.Debug("Waiting for state-svc")
-	if err := waitup(ctx, ipComm); err != nil {
+	if err := waitUp(ctx, ipComm); err != nil {
 		return errs.Wrap(err, "Wait failed")
 	}
 
 	return nil
 }
 
-func waitup(ctx context.Context, c IPCommunicator) error {
+func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= 24; try++ {
 		select {
 		case <-ctx.Done():
@@ -131,7 +131,7 @@ func waitup(ctx context.Context, c IPCommunicator) error {
 		timeout := time.Millisecond * time.Duration(try*try)
 
 		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
-		if err := ping(ctx, c, timeout); err != nil {
+		if err := ping(ctx, ipComm, timeout); err != nil {
 			if !errors.Is(err, errNotUp) {
 				return errs.Wrap(err, "Ping failed")
 			}
@@ -151,14 +151,14 @@ func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 	}
 
 	logging.Debug("Waiting for state-svc to die")
-	if err := waitdn(ctx, ipComm); err != nil {
+	if err := waitDown(ctx, ipComm); err != nil {
 		return errs.Wrap(err, "Wait failed")
 	}
 
 	return nil
 }
 
-func waitdn(ctx context.Context, c IPCommunicator) error {
+func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= 32; try++ {
 		select {
 		case <-ctx.Done():
@@ -170,7 +170,7 @@ func waitdn(ctx context.Context, c IPCommunicator) error {
 		timeout := time.Millisecond * time.Duration(try*try)
 
 		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
-		if err := ping(ctx, c, timeout); err != nil {
+		if err := ping(ctx, ipComm, timeout); err != nil {
 			if errors.Is(err, errNotUp) {
 				return nil
 			}
@@ -183,8 +183,8 @@ func waitdn(ctx context.Context, c IPCommunicator) error {
 	return locale.NewError("err_svcmanager_wait")
 }
 
-func ping(ctx context.Context, c IPCommunicator, timeout time.Duration) error {
-	_, err := c.PingServer(ctx)
+func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
+	_, err := ipComm.PingServer(ctx)
 	if err != nil {
 		return asNotUpError(err)
 	}
