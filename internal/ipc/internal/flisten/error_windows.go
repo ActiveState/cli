@@ -6,7 +6,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func asInUse(err error) error {
+func asInUseError(err error) error {
 	if errors.Is(err, windows.WSAEADDRINUSE) {
 		return ErrInUse
 	}
@@ -14,7 +14,7 @@ func asInUse(err error) error {
 	return err
 }
 
-func asConnRefused(err error) error {
+func asConnRefusedError(err error) error {
 	if errors.Is(err, windows.WSAECONNREFUSED) {
 		return ErrConnRefused
 	}

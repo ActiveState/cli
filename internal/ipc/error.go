@@ -8,9 +8,10 @@ import (
 )
 
 var (
+	// expose internal errors for outside inspection
 	ErrInUse        = flisten.ErrInUse
-	errConnRefused  = flisten.ErrConnRefused
-	errFileNotExist = flisten.ErrFileNotExist
+	ErrConnRefused  = flisten.ErrConnRefused
+	ErrFileNotExist = flisten.ErrFileNotExist
 )
 
 type ServerDownError struct {
@@ -32,7 +33,7 @@ func (e *ServerDownError) Unwrap() error {
 }
 
 func asServerDownError(err error) error {
-	if errors.Is(err, errFileNotExist) || errors.Is(err, errConnRefused) {
+	if errors.Is(err, ErrFileNotExist) || errors.Is(err, ErrConnRefused) {
 		return NewServerDownError(err)
 	}
 	return err

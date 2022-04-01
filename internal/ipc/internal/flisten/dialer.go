@@ -11,5 +11,5 @@ type Dialer struct {
 
 func (d *Dialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	conn, err := d.Dialer.DialContext(ctx, network, addr)
-	return conn, asConnRefused(asFileNotExist(err))
+	return conn, asConnRefusedError(asFileNotExistError(err))
 }

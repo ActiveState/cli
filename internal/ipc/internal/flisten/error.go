@@ -11,7 +11,7 @@ var (
 	ErrFileNotExist = errors.New("flisten file does not exist")
 )
 
-func asFileNotExist(err error) error {
+func asFileNotExistError(err error) error {
 	if errors.Is(err, syscall.ENOENT) {
 		return ErrFileNotExist
 	}

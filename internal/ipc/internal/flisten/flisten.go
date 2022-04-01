@@ -33,7 +33,7 @@ func New(ctx context.Context, spath *sockpath.SockPath, network string) (*FListe
 
 	l, err := (&net.ListenConfig{}).Listen(ctx, network, sockpath)
 	if err != nil {
-		err = asInUse(err)
+		err = asInUseError(err)
 		return nil, errs.Wrap(err, "Cannot get listener for %q", sockpath)
 	}
 

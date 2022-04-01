@@ -8,14 +8,14 @@ import (
 	"syscall"
 )
 
-func asInUse(err error) error {
+func asInUseError(err error) error {
 	if errors.Is(err, syscall.EADDRINUSE) {
 		return ErrInUse
 	}
 	return err
 }
 
-func asConnRefused(err error) error {
+func asConnRefusedError(err error) error {
 	if errors.Is(err, syscall.ECONNREFUSED) {
 		return ErrConnRefused
 	}

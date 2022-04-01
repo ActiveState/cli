@@ -52,6 +52,8 @@ func New(spath *SockPath, mhs ...MatchedHandler) *IPC {
 func (ipc *IPC) Start() error {
 	listener, err := flisten.New(ipc.ctx, ipc.spath, network)
 	if err != nil {
+		// if sock listener construction error is "in use", ensure
+		// current owner can be contacted
 		if !errors.Is(err, flisten.ErrInUse) {
 			return errs.Wrap(err, "Cannot construct file listener")
 		}
@@ -64,6 +66,8 @@ func (ipc *IPC) Start() error {
 			return ErrInUse
 		}
 
+		// if client comm error is "refused", we can reasonably clobber
+		// existing sock file
 		if !errors.Is(pingErr, flisten.ErrConnRefused) {
 			return errs.Wrap(err, "Cannot connect to existing socket file")
 		}
