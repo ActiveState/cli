@@ -250,6 +250,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
 
+	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) {
 		empty, err := fileutils.IsEmptyDir(params.path)
 		if err != nil {
