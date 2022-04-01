@@ -85,7 +85,6 @@ func (u *Update) Run(params *Params) error {
 		if os.IsPermission(innerErr) {
 			return locale.WrapInputError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
 		}
-		fmt.Println("Install err:", errs.JoinMessage(err))
 		return locale.WrapError(err, "err_update_generic", "Update could not be installed.")
 	}
 

@@ -253,13 +253,25 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) {
 		fmt.Println("Checking dir:", params.path)
-		empty, err := fileutils.IsEmptyDir(params.path)
+		// empty, err := fileutils.IsEmptyDir(params.path)
+		// if err != nil {
+		// 	return errs.Wrap(err, "Could not check if install path is empty")
+		// }
+		files, err := os.ReadDir(params.path)
 		if err != nil {
-			return errs.Wrap(err, "Could not check if install path is empty")
+			return errs.Wrap(err, "Could not read install path")
 		}
-		if !empty {
-			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+
+		for _, file := range files {
+			if isStateExecutable(strings.ToLower(file.Name())) || strings.ToLower(file.Name()) == installation.InstallDirMarker {
+				continue
+			} else {
+				return errs.Wrap(err, "Installation directory contains unknown file")
+			}
 		}
+		// if !empty {
+		// 	return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+		// }
 	}
 
 	// Detect state tool alongside installer executable

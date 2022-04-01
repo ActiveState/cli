@@ -258,6 +258,7 @@ func lockedProjectURL() string {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
+	// suite.T().Skip("Test will not work until v0.34.0")
 	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
