@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -66,9 +68,9 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err = installation.DetectCorruptedInstallDir(i.path)
-	if errors.Is(err, installation.ErrCorruptedInstall) {
-		err = i.cleanInstallPath()
+	err = detectCorruptedInstallDir(i.path)
+	if errors.Is(err, errCorruptedInstall) {
+		err = i.sanitizeInstallPath()
 		if err != nil {
 			return errs.Wrap(err, "Could not repair corrupted installation path")
 		}
@@ -155,6 +157,66 @@ func (i *Installer) sanitizeInput() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	return nil
+}
+
+var errCorruptedInstall = errs.New("Corrupted install")
+
+// detectCorruptedInstallDir will return an error if it detects that the given install path is not a proper
+// State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
+// Tool or cases where the uninstall was not completed properly.
+func detectCorruptedInstallDir(path string) error {
+	if !fileutils.TargetExists(path) {
+		return nil
+	}
+
+	isEmpty, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not check if install dir is empty")
+	}
+	if isEmpty {
+		return nil
+	}
+
+	// Detect if bin dir exists
+	binPath, err := installation.BinPathFromInstallPath(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not detect bin path")
+	}
+	if !fileutils.DirExists(binPath) {
+		return errs.Wrap(errCorruptedInstall, "Bin path does not exist: %s", binPath)
+	}
+
+	// Detect if the install dir has files in it
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not read directory: %s", path)
+	}
+
+	for _, file := range files {
+		if isStateExecutable(strings.ToLower(file.Name())) {
+			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
+		}
+	}
+
+	// Ensure that bin dir has at least the state and state-svc executables
+	files, err = ioutil.ReadDir(binPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not read bin directory: %s", path)
+	}
+
+	var found int
+	for _, file := range files {
+		fname := strings.ToLower(file.Name())
+		if fname == constants.StateCmd+exeutils.Extension || fname == constants.StateSvcCmd+exeutils.Extension {
+			found++
+		}
+	}
+
+	if found != 2 {
+		return errs.Wrap(errCorruptedInstall, "Bin path did not contain state tool executables.")
 	}
 
 	return nil
