@@ -72,7 +72,7 @@ func InstalledOnPath(installRoot string) (bool, string, error) {
 	}
 
 	path := appinfo.StateApp(binPath).Exec()
-	return fileutils.TargetExists(path), path, nil
+	return fileutils.TargetExists(path), filepath.Dir(path), nil
 }
 
 func LauncherInstallPath() (string, error) {
