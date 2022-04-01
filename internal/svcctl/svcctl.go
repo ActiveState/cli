@@ -186,7 +186,7 @@ func waitdn(ctx context.Context, c IPCommunicator) error {
 func ping(ctx context.Context, c IPCommunicator, timeout time.Duration) error {
 	_, err := c.PingServer(ctx)
 	if err != nil {
-		return asNotUp(err)
+		return asNotUpError(err)
 	}
 	return nil
 }

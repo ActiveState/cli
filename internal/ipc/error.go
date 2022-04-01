@@ -31,7 +31,7 @@ func (e *ServerDownError) Unwrap() error {
 	return e.err
 }
 
-func asServerDown(err error) error {
+func asServerDownError(err error) error {
 	if errors.Is(err, errFileNotExist) || errors.Is(err, errConnRefused) {
 		return NewServerDownError(err)
 	}

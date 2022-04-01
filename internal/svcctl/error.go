@@ -12,7 +12,7 @@ var (
 	errNotUp = errors.New("server not up")
 )
 
-func asNotUp(err error) error {
+func asNotUpError(err error) error {
 	// TODO: simplify this if possible - is it even needed?
 	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
 		return errNotUp

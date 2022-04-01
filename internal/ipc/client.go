@@ -23,7 +23,7 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	ns := c.namespace.String()
 	conn, err := c.dialer.DialContext(ctx, network, ns)
 	if err != nil {
-		err = asServerDown(err)
+		err = asServerDownError(err)
 		return "", errs.Wrap(err, "Cannot connect to ipc via %q", ns)
 	}
 	defer conn.Close()
