@@ -49,7 +49,7 @@ func New(spath *SockPath, mhs ...MatchedHandler) *IPC {
 	return &ipc
 }
 
-func (ipc *IPC) ListenAndServe() error {
+func (ipc *IPC) Start() error {
 	listener, err := flisten.New(ipc.ctx, ipc.spath, network)
 	if err != nil {
 		if !errors.Is(err, flisten.ErrInUse) {

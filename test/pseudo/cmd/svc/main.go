@@ -86,7 +86,7 @@ func run() error {
 			defer wg.Done()
 			defer cancel()
 
-			if err = ipcSrv.ListenAndServe(); err != nil {
+			if err = ipcSrv.Start(); err != nil {
 				errs <- err
 			}
 		}()
