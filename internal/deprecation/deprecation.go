@@ -134,6 +134,7 @@ func (checker *Checker) shouldFetch() bool {
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	client := http.Client{
+		// TODO: Remove this timeout when this code lives in the service
 		Timeout: time.Duration(checker.timeout),
 	}
 

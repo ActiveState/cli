@@ -36,6 +36,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
+	__Directive() __DirectiveResolver
 }
 
 type DirectiveRoot struct {
@@ -54,17 +55,25 @@ type ComplexityRoot struct {
 		Version  func(childComplexity int) int
 	}
 
+	DeprecationInfo struct {
+		Date        func(childComplexity int) int
+		DateReached func(childComplexity int) int
+		Reason      func(childComplexity int) int
+		Version     func(childComplexity int) int
+	}
+
 	Project struct {
 		Locations func(childComplexity int) int
 		Namespace func(childComplexity int) int
 	}
 
 	Query struct {
-		AnalyticsEvent  func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
-		AvailableUpdate func(childComplexity int) int
-		Projects        func(childComplexity int) int
-		RuntimeUsage    func(childComplexity int, pid int, exec string, dimensionsJSON string) int
-		Version         func(childComplexity int) int
+		AnalyticsEvent   func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
+		AvailableUpdate  func(childComplexity int) int
+		CheckDeprecation func(childComplexity int) int
+		Projects         func(childComplexity int) int
+		RuntimeUsage     func(childComplexity int, pid int, exec string, dimensionsJSON string) int
+		Version          func(childComplexity int) int
 	}
 
 	RuntimeUsageResponse struct {
@@ -90,6 +99,10 @@ type QueryResolver interface {
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
+	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
+}
+type __DirectiveResolver interface {
+	IsRepeatable(ctx context.Context, obj *introspection.Directive) (bool, error)
 }
 
 type executableSchema struct {
@@ -149,6 +162,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AvailableUpdate.Version(childComplexity), true
 
+	case "DeprecationInfo.date":
+		if e.complexity.DeprecationInfo.Date == nil {
+			break
+		}
+
+		return e.complexity.DeprecationInfo.Date(childComplexity), true
+
+	case "DeprecationInfo.dateReached":
+		if e.complexity.DeprecationInfo.DateReached == nil {
+			break
+		}
+
+		return e.complexity.DeprecationInfo.DateReached(childComplexity), true
+
+	case "DeprecationInfo.reason":
+		if e.complexity.DeprecationInfo.Reason == nil {
+			break
+		}
+
+		return e.complexity.DeprecationInfo.Reason(childComplexity), true
+
+	case "DeprecationInfo.version":
+		if e.complexity.DeprecationInfo.Version == nil {
+			break
+		}
+
+		return e.complexity.DeprecationInfo.Version(childComplexity), true
+
 	case "Project.locations":
 		if e.complexity.Project.Locations == nil {
 			break
@@ -181,6 +222,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.AvailableUpdate(childComplexity), true
+
+	case "Query.checkDeprecation":
+		if e.complexity.Query.CheckDeprecation == nil {
+			break
+		}
+
+		return e.complexity.Query.CheckDeprecation(childComplexity), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -340,12 +388,20 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
+type DeprecationInfo {
+  version: String!
+  date: String!
+  dateReached: Boolean!
+  reason: String!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  checkDeprecation: DeprecationInfo
 }
 
 `, BuiltIn: false},
@@ -694,6 +750,146 @@ func (ec *executionContext) _AvailableUpdate_sha256(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _DeprecationInfo_version(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeprecationInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DeprecationInfo_date(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeprecationInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Date, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DeprecationInfo_dateReached(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeprecationInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DateReached, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DeprecationInfo_reason(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "DeprecationInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Project_namespace(ctx context.Context, field graphql.CollectedField, obj *graph.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -939,6 +1135,38 @@ func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graph
 	res := resTmp.(*graph.RuntimeUsageResponse)
 	fc.Result = res
 	return ec.marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CheckDeprecation(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.DeprecationInfo)
+	fc.Result = res
+	return ec.marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1392,6 +1620,41 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	res := resTmp.([]introspection.InputValue)
 	fc.Result = res
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.__Directive().IsRepeatable(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql.CollectedField, obj *introspection.EnumValue) (ret graphql.Marshaler) {
@@ -2426,6 +2689,48 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 	return out
 }
 
+var deprecationInfoImplementors = []string{"DeprecationInfo"}
+
+func (ec *executionContext) _DeprecationInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.DeprecationInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deprecationInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeprecationInfo")
+		case "version":
+			out.Values[i] = ec._DeprecationInfo_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "date":
+			out.Values[i] = ec._DeprecationInfo_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dateReached":
+			out.Values[i] = ec._DeprecationInfo_dateReached(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._DeprecationInfo_reason(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var projectImplementors = []string{"Project"}
 
 func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *graph.Project) graphql.Marshaler {
@@ -2529,6 +2834,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_runtimeUsage(ctx, field)
+				return res
+			})
+		case "checkDeprecation":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_checkDeprecation(ctx, field)
 				return res
 			})
 		case "__type":
@@ -2661,20 +2977,34 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 		case "name":
 			out.Values[i] = ec.___Directive_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec.___Directive_description(ctx, field, obj)
 		case "locations":
 			out.Values[i] = ec.___Directive_locations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "args":
 			out.Values[i] = ec.___Directive_args(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "isRepeatable":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec.___Directive_isRepeatable(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2956,6 +3286,7 @@ func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋc
 
 	}
 	wg.Wait()
+
 	return ret
 }
 
@@ -3011,6 +3342,12 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
 	}
 
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3052,6 +3389,13 @@ func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgq
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3125,6 +3469,13 @@ func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3174,6 +3525,13 @@ func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3215,6 +3573,13 @@ func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3279,6 +3644,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx context.Context, sel ast.SelectionSet, v *graph.DeprecationInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeprecationInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v *graph.Project) graphql.Marshaler {
@@ -3363,6 +3735,13 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3403,6 +3782,13 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3443,6 +3829,13 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 
@@ -3490,6 +3883,13 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 
 	}
 	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
 }
 

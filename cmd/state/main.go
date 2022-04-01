@@ -226,6 +226,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 
 		// Check for deprecation
+		// TODO: This becomes a check done via the service
 		deprecated, err := deprecation.Check(cfg)
 		if err != nil {
 			multilog.Error("Could not check for deprecation: %s", err.Error())
