@@ -245,7 +245,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, stateToolPath, err := installation.InstalledOnPath(params.path)
+	stateToolInstalled, installPath, err := installation.InstalledOnPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -300,7 +300,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// Check if state tool already installed
 	if !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
-		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", stateToolPath))
+		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
 		return postInstallEvents(out, cfg, an, params, true)
 	}
