@@ -170,7 +170,9 @@ var errCorruptedInstall = errs.New("Corrupted install")
 // State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
 // Tool or cases where the uninstall was not completed properly.
 func detectCorruptedInstallDir(path string) error {
+	fmt.Println("Checking path:", path)
 	if !fileutils.TargetExists(path) {
+		fmt.Println("Does not exist")
 		return nil
 	}
 
@@ -179,6 +181,7 @@ func detectCorruptedInstallDir(path string) error {
 		return errs.Wrap(err, "Could not check if install dir is empty")
 	}
 	if isEmpty {
+		fmt.Println("Is empty")
 		return nil
 	}
 
@@ -221,6 +224,7 @@ func detectCorruptedInstallDir(path string) error {
 		return errs.Wrap(errCorruptedInstall, "Bin path did not contain state tool executables.")
 	}
 
+	fmt.Println("No issues")
 	return nil
 }
 
