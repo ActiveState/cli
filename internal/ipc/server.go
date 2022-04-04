@@ -20,7 +20,12 @@ var (
 
 type SockPath = sockpath.SockPath
 
-type RequestHandler func(input string) (resp string, isMatched bool)
+// RequestHandler describes a function that receives a key which is used to
+// verify if the handler is useful for a given request. If it is useful, the
+// remainder of the function is used for some special behavior (usually, to
+// simply return some value). This enables dynamic construction of IPC Server
+// handlers/endpoints.
+type RequestHandler func(key string) (resp string, isMatched bool)
 
 type Server struct {
 	spath       *SockPath
@@ -30,6 +35,9 @@ type Server struct {
 	wg          *sync.WaitGroup
 }
 
+// NewServer constructs a reference to a Server instance which can be populated
+// with called-defined handlers, and is preconfigured with ping and stop
+// handlers as a low-level flexibility.
 func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -166,11 +174,11 @@ func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 		return errs.Wrap(err, "Failed to read from connection")
 	}
 
-	input := string(buf[:n])
+	key := string(buf[:n])
 	output := "not found"
 
 	for _, reqHandler := range reqHandlers {
-		if resp, ok := reqHandler(input); ok {
+		if resp, ok := reqHandler(key); ok {
 			output = resp
 			break
 		}

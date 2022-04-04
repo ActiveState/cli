@@ -17,8 +17,8 @@ var (
 )
 
 func pingHandler() RequestHandler {
-	return func(input string) (string, bool) {
-		if input == keyPing {
+	return func(key string) (string, bool) {
+		if key == keyPing {
 			return valPong, true
 		}
 
@@ -41,8 +41,8 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 }
 
 func stopHandler(c io.Closer) RequestHandler {
-	return func(input string) (string, bool) {
-		if input == keyStop {
+	return func(key string) (string, bool) {
+		if key == keyStop {
 			defer func() {
 				go c.Close()
 			}()

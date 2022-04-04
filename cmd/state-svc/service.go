@@ -48,7 +48,7 @@ func (s *service) Start() error {
 	defer s.shutdown()
 
 	spath := svcctl.NewIPCSockPathFromGlobals()
-	reqHandlers := []ipc.RequestHandler{
+	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(".:" + strconv.Itoa(s.server.Port())),
 	}
 	s.ipcSrv = ipc.NewServer(spath, reqHandlers...)
