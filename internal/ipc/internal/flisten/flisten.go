@@ -1,3 +1,6 @@
+// Package flisten provides a type that manages a file-based unix domain socket.
+// The construction funcs enable flexible usage, so abstraction of this type
+// will likely require some redesign of how it is interacted with.
 package flisten
 
 import (
