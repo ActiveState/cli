@@ -149,9 +149,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 		)
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
-	if runtime.GOOS != "windows" {
-		cp.ExpectExitCode(1)
-	}
+	// if runtime.GOOS != "windows" {
+	cp.ExpectExitCode(1)
+	// }
 }
 
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
