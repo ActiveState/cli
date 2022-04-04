@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,7 +38,6 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	fmt.Printf("Instantiated installer with source dir: %s, target dir: %s\n", i.sourcePath, i.path)
 	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
 
 	return i, nil
