@@ -61,15 +61,9 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 }
 
 func InstalledOnPath(installRoot string) (bool, string, error) {
-	var binPath string
-	var err error
-	if filepath.Base(installRoot) == "bin" {
-		binPath = installRoot
-	} else {
-		binPath, err = BinPathFromInstallPath(installRoot)
-		if err != nil {
-			return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
-		}
+	binPath, err := fileutils.FindFileInPath(installRoot, InstallDirMarker)
+	if err != nil {
+		return false, "", errs.Wrap(err, "Could not find install directory marker file")
 	}
 
 	path := appinfo.StateApp(binPath).Exec()
