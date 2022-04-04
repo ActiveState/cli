@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -156,9 +157,12 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	defer cfg.Close()
 
 	subBinDir := filepath.Join(ts.Dirs.Bin, "bin")
-	ts.CopyExeToDir(ts.Exe, filepath.Join(subBinDir, filepath.Base(ts.Exe)))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(subBinDir, filepath.Base(ts.SvcExe)))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(subBinDir, filepath.Base(ts.TrayExe)))
+	files, err := os.ReadDir(ts.Dirs.Bin)
+	suite.NoError(err)
+	for _, f := range files {
+		err = fileutils.CopyFile(filepath.Join(ts.Dirs.Bin, f.Name()), filepath.Join(subBinDir, f.Name()))
+		suite.NoError(err)
+	}
 
 	stateExePath := filepath.Join(ts.Dirs.Bin, filepath.Base(ts.Exe))
 
