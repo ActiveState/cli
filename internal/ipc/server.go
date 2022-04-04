@@ -3,9 +3,7 @@ package ipc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 
@@ -88,21 +86,21 @@ func (ipc *Server) Start() error {
 		defer close(conns)
 
 		for {
-			if err := accept(ipc.ctx, conns, listener); err != nil {
-				if !errors.Is(err, context.Canceled) {
-					logging.Errorf("unexpected accept error: %v", err)
+			if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
+				if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
+					return
 				}
-				return
+				logging.Errorf("unexpected routeToHandler error: %v", err)
 			}
 		}
 	}()
 
 	for {
-		if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
-			if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
+		if err := accept(ipc.ctx, conns, listener); err != nil {
+			if errors.Is(err, context.Canceled) {
 				return nil
 			}
-			logging.Errorf("unexpected routeToHandler error: %v", err)
+			return errs.Wrap(err, "Unexpected accept error")
 		}
 	}
 }
@@ -149,7 +147,7 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 			defer conn.Close()
 
 			if err := handleMatching(conn, reqHandlers); err != nil {
-				fmt.Fprintln(os.Stderr, fmt.Errorf("routing connections: %w", err)) // TODO: maybe do something more useful / log properly
+				logging.Errorf("unexpected ipc request handling error: %v", err)
 				return
 			}
 		}()
