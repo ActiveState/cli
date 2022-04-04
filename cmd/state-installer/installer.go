@@ -185,9 +185,6 @@ func detectCorruptedInstallDir(path string) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not detect bin path")
 	}
-	if !fileutils.DirExists(binPath) {
-		return errs.Wrap(errCorruptedInstall, "Bin path does not exist: %s", binPath)
-	}
 
 	// Detect if the install dir has files in it
 	files, err := ioutil.ReadDir(path)
