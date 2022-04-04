@@ -6,11 +6,14 @@ import (
 	"io"
 )
 
+// Key/Value associations. Keys start with rare characters to try to ensure
+// that they do not match higher-level keys in a quick manner. The response
+// values are of little interest.
 var (
-	keyPing = "|||ping"
-	valPong = "|||pong"
-	keyStop = "|||stop"
-	valStop = "|||okok"
+	keyPing = "|ping"
+	valPong = "|pong"
+	keyStop = "%stop"
+	valStop = "%okok"
 )
 
 func pingHandler() RequestHandler {
