@@ -12,6 +12,8 @@ var (
 	ErrInUse        = flisten.ErrInUse
 	ErrConnRefused  = flisten.ErrConnRefused
 	ErrFileNotExist = flisten.ErrFileNotExist
+
+	ErrConnsClosed = errors.New("Connections channel closed")
 )
 
 type ServerDownError struct {

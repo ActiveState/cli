@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/internal/ipc/sockpath"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
@@ -23,7 +24,7 @@ type SockPath = sockpath.SockPath
 
 type RequestHandler func(input string) (resp string, isMatched bool)
 
-type IPC struct {
+type Server struct {
 	spath       *SockPath
 	reqHandlers []RequestHandler
 	ctx         context.Context
@@ -31,10 +32,10 @@ type IPC struct {
 	wg          *sync.WaitGroup
 }
 
-func New(spath *SockPath, reqHandlers ...RequestHandler) *IPC {
+func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	ipc := IPC{
+	ipc := Server{
 		spath:       spath,
 		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
 		ctx:         ctx,
@@ -49,7 +50,7 @@ func New(spath *SockPath, reqHandlers ...RequestHandler) *IPC {
 	return &ipc
 }
 
-func (ipc *IPC) Start() error {
+func (ipc *Server) Start() error {
 	listener, err := flisten.New(ipc.ctx, ipc.spath, network)
 	if err != nil {
 		// if sock listener construction error is "in use", ensure
@@ -84,11 +85,12 @@ func (ipc *IPC) Start() error {
 	ipc.wg.Add(1)
 	go func() {
 		defer ipc.wg.Done()
+		defer close(conns)
 
 		for {
 			if err := accept(ipc.ctx, conns, listener); err != nil {
 				if !errors.Is(err, context.Canceled) {
-					fmt.Fprintln(os.Stderr, fmt.Errorf("listen and server: %w", err)) // TODO: something more useful, log properly, at least
+					logging.Errorf("unexpected accept error: %v", err)
 				}
 				return
 			}
@@ -97,15 +99,15 @@ func (ipc *IPC) Start() error {
 
 	for {
 		if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
-			if errors.Is(err, context.Canceled) {
+			if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
 				return nil
 			}
-			return errs.Wrap(err, "Critical failure handling ipc connections")
+			logging.Errorf("unexpected routeToHandler error: %v", err)
 		}
 	}
 }
 
-func (ipc *IPC) Close() error {
+func (ipc *Server) Close() error {
 	select {
 	case <-ipc.ctx.Done():
 	default:
@@ -122,7 +124,7 @@ func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			return errs.Wrap(err, "Critical error accepting connections") // TODO: should this halt the application?
+			return errs.Wrap(err, "Critical error accepting connections")
 		}
 	}
 
@@ -135,7 +137,11 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 	case <-ctx.Done():
 		return ctx.Err()
 
-	case conn := <-conns:
+	case conn, ok := <-conns:
+		if !ok {
+			return ErrConnsClosed
+		}
+
 		wg.Add(1)
 
 		go func() {

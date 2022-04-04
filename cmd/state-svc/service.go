@@ -20,7 +20,7 @@ type service struct {
 	an       *anaSvc.Client
 	shutdown context.CancelFunc
 	server   *server.Server
-	ipcSrv   *ipc.IPC
+	ipcSrv   *ipc.Server
 }
 
 func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
@@ -51,7 +51,7 @@ func (s *service) Start() error {
 	reqHandlers := []ipc.RequestHandler{
 		svcctl.HTTPAddrHandler(".:" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.New(spath, reqHandlers...)
+	s.ipcSrv = ipc.NewServer(spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")

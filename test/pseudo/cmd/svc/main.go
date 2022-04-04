@@ -59,7 +59,7 @@ func run() error {
 	reqHandlers := []ipc.RequestHandler{
 		svcctl.HTTPAddrHandler(addr),
 	}
-	ipcSrv := ipc.New(spath, reqHandlers...)
+	ipcSrv := ipc.NewServer(spath, reqHandlers...)
 	ipcClient := ipc.NewClient(spath)
 
 	ctx, cancel := context.WithCancel(context.Background())
