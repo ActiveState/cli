@@ -172,6 +172,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	cp.Expect("Installing Update", time.Minute)
 	cp.ExpectExitCode(0)
 
+	fmt.Println(cp.Snapshot())
+
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateTrayCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
