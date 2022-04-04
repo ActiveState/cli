@@ -164,6 +164,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("update"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)),
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 

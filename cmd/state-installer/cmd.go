@@ -236,7 +236,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		targetBranch = constants.BranchName
 	}
 
-	fmt.Println("Initial path:", params.path)
 	if params.path == "" {
 		var err error
 		params.path, err = installation.InstallPathForBranch(targetBranch)
@@ -289,7 +288,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	an.Event(AnalyticsFunnelCat, route)
 
-	fmt.Printf("Parmas: %+v\n", *params)
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {

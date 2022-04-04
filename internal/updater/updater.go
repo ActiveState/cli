@@ -136,6 +136,8 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
+
+	logging.Debug("Executing: %s %s env: %s\n", installerPath, args, envs)
 	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
