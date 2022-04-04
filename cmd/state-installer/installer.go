@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -69,6 +70,7 @@ func (i *Installer) Install() (rerr error) {
 
 	// Detect if existing installation needs to be cleaned
 	err = detectCorruptedInstallDir(i.path)
+	fmt.Println("Corrupted install:", err)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {

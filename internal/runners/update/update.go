@@ -1,7 +1,6 @@
 package update
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -78,7 +77,6 @@ func (u *Update) Run(params *Params) error {
 		}
 	}
 
-	fmt.Println("Installing to install path:", installPath)
 	err = up.InstallBlocking(installPath)
 	if err != nil {
 		innerErr := errs.InnerError(err)

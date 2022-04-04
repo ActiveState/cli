@@ -236,7 +236,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		targetBranch = constants.BranchName
 	}
 
-	fmt.Println("path param:", params.path)
 	if params.path == "" {
 		var err error
 		params.path, err = installation.InstallPathForBranch(targetBranch)
@@ -257,18 +256,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err != nil {
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
-		// files, err := os.ReadDir(params.path)
-		// if err != nil {
-		// 	return errs.Wrap(err, "Could not read install path")
-		// }
-
-		// for _, file := range files {
-		// 	if isStateExecutable(strings.ToLower(file.Name())) || strings.ToLower(file.Name()) == installation.InstallDirMarker {
-		// 		continue
-		// 	} else {
-		// 		return errs.Wrap(err, "Installation path must be an empty directory")
-		// 	}
-		// }
 		if !empty {
 			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
 		}

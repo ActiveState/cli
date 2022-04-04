@@ -93,7 +93,6 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 			return "", nil, errs.Wrap(err, "Could not detect install path")
 		}
 	}
-	fmt.Println("Install target path:", installTargetPath)
 
 	args = append(args, "--source-path", sourcePath)
 	args = append([]string{installTargetPath}, args...)
