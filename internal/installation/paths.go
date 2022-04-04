@@ -66,10 +66,17 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 }
 
 func InstalledOnPath(installRoot string) (bool, string, error) {
-	binPath, err := BinPathFromInstallPath(installRoot)
-	if err != nil {
-		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+	var binPath string
+	var err error
+	if filepath.Base(installRoot) == "bin" {
+		binPath = installRoot
+	} else {
+		binPath, err = BinPathFromInstallPath(installRoot)
+		if err != nil {
+			return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+		}
 	}
+	fmt.Println("Bin path:", binPath)
 
 	path := appinfo.StateApp(binPath).Exec()
 	return fileutils.TargetExists(path), filepath.Dir(path), nil
