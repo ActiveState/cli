@@ -192,6 +192,7 @@ func detectCorruptedInstallDir(path string) error {
 		return errs.Wrap(err, "Could not read directory: %s", path)
 	}
 
+	// Executable files should be in bin dir, not root dir
 	for _, file := range files {
 		if isStateExecutable(strings.ToLower(file.Name())) {
 			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
