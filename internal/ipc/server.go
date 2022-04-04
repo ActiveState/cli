@@ -78,6 +78,7 @@ func (ipc *Server) Start() error {
 	}
 	defer listener.Close()
 
+	// Produce (accept) and consume (route to handler) connections.
 	conns := make(chan net.Conn)
 
 	ipc.wg.Add(1)
@@ -85,6 +86,7 @@ func (ipc *Server) Start() error {
 		defer ipc.wg.Done()
 		defer close(conns)
 
+		// Continually route incomming connections to the appropriate handler.
 		for {
 			if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
 				if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
@@ -95,6 +97,7 @@ func (ipc *Server) Start() error {
 		}
 	}()
 
+	// Continually accept connections and feed them into the relevant channel.
 	for {
 		if err := accept(ipc.ctx, conns, listener); err != nil {
 			if errors.Is(err, context.Canceled) {
