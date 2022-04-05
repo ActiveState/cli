@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -158,4 +159,21 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	// TODO: This should always just return what's in the file on disk
+	// When the service starts we should do the initial deprecation check
+	// We should also do a deprecation check after this request
+	deprecated, err := deprecation.Check(r.cfg)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check for deprecation")
+	}
+
+	return &graph.DeprecationInfo{
+		Version:     deprecated.Version,
+		Date:        deprecated.Date.Format(constants.DateFormatUser),
+		DateReached: deprecated.DateReached,
+		Reason:      deprecated.Reason,
+	}, nil
 }

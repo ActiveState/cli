@@ -103,3 +103,15 @@ func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string,
 
 	return nil
 }
+
+func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	defer profile.Measure("svc:CheckDeprecation", time.Now())
+
+	r := request.NewDeprecationRequest()
+	u := graph.DeprecationInfo{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error sending deprecation request")
+	}
+
+	return &u, nil
+}
