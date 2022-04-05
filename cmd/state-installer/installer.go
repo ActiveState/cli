@@ -202,6 +202,9 @@ func detectCorruptedInstallDir(path string) error {
 	// Ensure that bin dir has at least the state and state-svc executables
 	files, err = ioutil.ReadDir(binPath)
 	if err != nil {
+		if !fileutils.DirExists(binPath) {
+			return errs.Wrap(errCorruptedInstall, "Bin path does not exist")
+		}
 		return errs.Wrap(err, "Could not read bin directory: %s", path)
 	}
 
