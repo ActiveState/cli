@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -18,6 +19,7 @@ type Cache struct {
 	config  configurable
 	confirm confirmAble
 	path    string
+	ipComm  svcctl.IPCommunicator
 }
 
 type CacheParams struct {
@@ -26,15 +28,16 @@ type CacheParams struct {
 }
 
 func NewCache(prime primeable) *Cache {
-	return newCache(prime.Output(), prime.Config(), prime.Prompt())
+	return newCache(prime.Output(), prime.Config(), prime.Prompt(), prime.IPComm())
 }
 
-func newCache(output output.Outputer, cfg configurable, confirm confirmAble) *Cache {
+func newCache(output output.Outputer, cfg configurable, confirm confirmAble, ipComm svcctl.IPCommunicator) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
 		confirm: confirm,
 		path:    storage.CachePath(),
+		ipComm:  ipComm,
 	}
 }
 
@@ -43,7 +46,7 @@ func (c *Cache) Run(params *CacheParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
-	if err := stopServices(c.config, c.output, params.Force); err != nil {
+	if err := stopServices(c.config, c.output, c.ipComm, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
