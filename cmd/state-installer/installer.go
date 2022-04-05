@@ -180,12 +180,6 @@ func detectCorruptedInstallDir(path string) error {
 		return nil
 	}
 
-	// Detect if bin dir exists
-	binPath, err := installation.BinPathFromInstallPath(path)
-	if err != nil {
-		return errs.Wrap(err, "Could not detect bin path")
-	}
-
 	// Detect if the install dir has files in it
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -197,27 +191,6 @@ func detectCorruptedInstallDir(path string) error {
 		if isStateExecutable(strings.ToLower(file.Name())) {
 			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
 		}
-	}
-
-	// Ensure that bin dir has at least the state and state-svc executables
-	files, err = ioutil.ReadDir(binPath)
-	if err != nil {
-		if !fileutils.DirExists(binPath) {
-			return errs.Wrap(errCorruptedInstall, "Bin path does not exist")
-		}
-		return errs.Wrap(err, "Could not read bin directory: %s", path)
-	}
-
-	var found int
-	for _, file := range files {
-		fname := strings.ToLower(file.Name())
-		if fname == constants.StateCmd+exeutils.Extension || fname == constants.StateSvcCmd+exeutils.Extension {
-			found++
-		}
-	}
-
-	if found != 2 {
-		return errs.Wrap(errCorruptedInstall, "Bin path did not contain state tool executables.")
 	}
 
 	return nil
