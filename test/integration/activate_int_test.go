@@ -172,8 +172,8 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine(pythonExe + " -c \"import pytest; print(pytest.__doc__)\"")
 	cp.Expect("unit and functional testing")
 
-	cp.SendLine("state activate --default something/else")
-	cp.ExpectLongString("Cannot set something/else as the global default project while in an activated state")
+	cp.SendLine("state activate --default ActiveState-CLI/cli")
+	cp.ExpectLongString("Cannot set ActiveState-CLI/cli as the global default project while in an activated state")
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
@@ -296,70 +296,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 		cp.Expect("Shimming command")
 	}
 
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivate_Replace() {
-	suite.OnlyRunForTags(tagsuite.Activate)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated")
-
-	cp.WaitForInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
-		e2e.WithWorkDirectory(ts.Dirs.Bin),
-	)
-	cp.ExpectLongString("No activestate.yaml file exists in the current working directory or its parent directories.")
-	cp.ExpectExitCode(1)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated")
-
-	cp.WaitForInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivate_Headless_Replace() {
-	suite.OnlyRunForTags(tagsuite.Activate)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated")
-
-	cp.WaitForInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("install", "dateparser@0.7.2")
-	cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
-	cp.Wait()
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "--replace", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-
-	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

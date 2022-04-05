@@ -16,6 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
@@ -35,6 +37,7 @@ type Client struct {
 	customDimensions *dimensions.Values
 	cfg              *config.Instance
 	eventWaitGroup   *sync.WaitGroup
+	sendReports      bool
 	reporters        []Reporter
 }
 
@@ -44,16 +47,17 @@ var _ analytics.Dispatcher = &Client{}
 func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
+		sendReports:    true,
 	}
 
 	installSource, err := storage.InstallSource()
 	if err != nil {
-		logging.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
 	machineID := machineid.UniqID()
 	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		logging.Error("unknown machine id: %s", machineID)
+		multilog.Error("unknown machine id: %s", machineID)
 	}
 	deviceID := uniqid.Text()
 
@@ -61,7 +65,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	osVersion := "unknown"
 	osvInfo, err := sysinfo.OSVersion()
 	if err != nil {
-		logging.Errorf("Could not detect osVersion: %v", err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not detect osVersion: %v", err)
 	}
 	if osvInfo != nil {
 		osVersion = osvInfo.Version
@@ -77,6 +81,10 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 			tag = cfg.GetString(updater.CfgUpdateTag)
 		}
 		a.cfg = cfg
+	}
+
+	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
+		a.sendReports = false
 	}
 
 	userID := ""
@@ -108,12 +116,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
 		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
-		gar, err := reporters.NewGaCLIReporter(deviceID)
-		if err != nil {
-			logging.Critical("Cannot initialize google analytics client: %s", errs.JoinMessage(err))
-		} else {
-			a.NewReporter(gar)
-		}
 		a.NewReporter(reporters.NewPixelReporter())
 	}
 
@@ -130,11 +132,9 @@ func (a *Client) Wait() {
 
 // Events returns a channel to feed eventData directly to the report loop
 func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
-	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
+	if !a.sendReports {
 		return
 	}
-
-	logging.Debug("Reporting event to %d reporters: %s, %s, %s", len(a.reporters), category, action, label)
 
 	for _, reporter := range a.reporters {
 		if err := reporter.Event(category, action, label, dimensions); err != nil {
@@ -158,7 +158,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 		if !condition.BuiltViaCI() {
 			panic("Trying to send analytics without configuring the Analytics instance.")
 		}
-		logging.Critical("Trying to send analytics event without configuring the Analytics instance.")
+		multilog.Critical("Trying to send analytics event without configuring the Analytics instance.")
 		return
 	}
 
@@ -169,7 +169,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	}
 
 	if err := actualDims.PreProcess(); err != nil {
-		logging.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
+		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
 	}
 
 	a.eventWaitGroup.Add(1)
@@ -185,6 +185,10 @@ func handlePanics(err interface{}, stack []byte) {
 	if err == nil {
 		return
 	}
-	logging.Error("Panic in state-svc analytics: %v", err)
+	multilog.Error("Panic in state-svc analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
+}
+
+func (a *Client) Close() {
+	a.sendReports = false
 }

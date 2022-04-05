@@ -12,11 +12,14 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Configurable interface {
 	ConfigPath() string
 	Close() error
+	Set(s string, i interface{}) error
+	GetString(s string) string
 }
 
 // Load will attempt to load a Keypair using private and public-key files from
@@ -111,14 +114,16 @@ func loadAndParseKeypair(keyFilename string) (Keypair, error) {
 
 func hasKeyOverride() bool {
 	if os.Getenv(constants.PrivateKeyEnvVarName) != "" {
+		logging.Debug("Has key override from env")
 		return true
 	}
 
 	tkn, err := gcloud.GetSecret(constants.PrivateKeyEnvVarName)
 	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
-		logging.Error("Could not retrieve gcloud secret: %v", err)
+		multilog.Error("Could not retrieve gcloud secret: %v", err)
 	}
 	if err == nil && tkn != "" {
+		logging.Debug("Has key override from gcloud")
 		return true
 	}
 

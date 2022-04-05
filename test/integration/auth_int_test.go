@@ -41,8 +41,25 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.ensureLogout(ts)
 }
 
+func (suite *AuthIntegrationTestSuite) TestAuthToken() {
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
+	cp.Expect("logged in", 40*time.Second)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn(tagsuite.Auth, "--non-interactive")
+	cp.Expect("logged in", 40*time.Second)
+	cp.ExpectExitCode(0)
+
+	ts.LogoutUser()
+	suite.ensureLogout(ts)
+}
+
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth)
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.Send(username)
 	cp.Expect("password:")
@@ -51,20 +68,19 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 	cp.ExpectExitCode(0)
 
 	// still logged in?
-	c2 := ts.Spawn("auth")
+	c2 := ts.Spawn(tagsuite.Auth)
 	c2.Expect("You are logged in")
 	c2.ExpectExitCode(0)
 }
 
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
-	cp := ts.Spawn("auth", "--username", username, "--password", "bad-password")
-	cp.Expect("Authentication failed")
+	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
 	cp.ExpectLongString("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
-	cp := ts.Spawn("auth")
+	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.SendCtrlC()
 }
@@ -91,7 +107,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 
 	expected := string(data)
 	ts.LoginAsPersistentUser()
-	cp := ts.Spawn("auth", "--output", method)
+	cp := ts.Spawn(tagsuite.Auth, "--output", method)
 	cp.Expect("false}")
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())

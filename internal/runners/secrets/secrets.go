@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/secrets"
@@ -172,7 +173,7 @@ func defsToData(defs []*secretsModels.SecretDefinition, cfg keypairs.Configurabl
 
 	for i, def := range defs {
 		if def.Name == nil || def.Scope == nil {
-			logging.Error("Could not get pointer for secret name and/or scope, definition ID: %d", def.DefID)
+			multilog.Error("Could not get pointer for secret name and/or scope, definition ID: %s", def.DefID)
 			continue
 		}
 

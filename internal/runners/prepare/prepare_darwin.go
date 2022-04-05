@@ -2,7 +2,7 @@ package prepare
 
 import (
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
@@ -17,7 +17,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 
 	sc, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
-		logging.Error("Failed to determine shortcut path for removal: %v", err)
+		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if sc != "" {
 		files = append(files, sc)
 	}

@@ -16,10 +16,13 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/gofrs/flock"
 )
 
@@ -105,7 +108,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 		// Replacement regex for binary files must account for null characters
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s([^\x00]*)`, quoteEscapeFind))
 		if replaceBytesLen > len(findBytes) {
-			logging.Errorf("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
+			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Replacement text too long: %s, original text: %s", string(replaceBytes), string(findBytes))
 			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
@@ -486,7 +489,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 				// On Windows, the following renaming step can otherwise fail if subToPath is read-only (file removal is allowed)
 				err = os.Remove(subToPath)
 				if err != nil {
-					logging.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
+					multilog.Error("Failed to remove file scheduled to be overwritten: %s (file mode: %#o): %v", subToPath, toInfo.Mode(), err)
 				}
 			}
 		}
@@ -755,7 +758,7 @@ func TempDirUnsafe() string {
 func MoveAllFilesCrossDisk(src, dst string) error {
 	err := MoveAllFiles(src, dst)
 	if err != nil {
-		logging.Error("Move all files failed with error: %s. Falling back to copy files", err)
+		multilog.Error("Move all files failed with error: %s. Falling back to copy files", err)
 	}
 
 	return copyFiles(src, dst, true)
@@ -797,7 +800,7 @@ func PrepareDir(path string) (string, error) {
 func LogPath(path string) error {
 	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			logging.Error("Error walking filepath at: %s", path)
+			multilog.Error("Error walking filepath at: %s", path)
 			return err
 		}
 
@@ -1016,4 +1019,44 @@ func ModTime(path string) (time.Time, error) {
 		return time.Now(), errs.Wrap(err, "Could not stat file %s", path)
 	}
 	return stat.ModTime(), nil
+}
+
+func CaseSensitivePath(path string) (string, error) {
+	// On Windows Glob may not work with the short path (ie., DOS 8.3 notation)
+	path, err := GetLongPathName(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to get long path name")
+	}
+
+	var searchPath string
+	if runtime.GOOS != "windows" {
+		searchPath = globPath(path)
+	} else {
+		volume := filepath.VolumeName(path)
+		remainder := strings.TrimLeft(path, volume)
+		searchPath = filepath.Join(volume, globPath(remainder))
+	}
+
+	matches, err := filepath.Glob(searchPath)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to search for path")
+	}
+
+	if len(matches) == 0 {
+		return "", errs.New("Could not find path: %s", path)
+	}
+
+	return matches[0], nil
+}
+
+func globPath(path string) string {
+	var result string
+	for _, r := range path {
+		if unicode.IsLetter(r) {
+			result += fmt.Sprintf("[%c%c]", unicode.ToUpper(r), unicode.ToLower(r))
+		} else {
+			result += string(r)
+		}
+	}
+	return result
 }

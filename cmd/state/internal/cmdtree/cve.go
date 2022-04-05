@@ -24,6 +24,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(PlatformGroup)
 	cmd.SetAliases("cve")
+	cmd.SetUnstable(true)
 	return cmd
 }
 
@@ -41,7 +42,7 @@ func newReportCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("cve_report_namespace_arg", "Organization/Project"),
+				Name:        locale.Tl("cve_report_namespace_arg", "org/project"),
 				Description: locale.Tl("cve_report_namespace_arg_description", "The project for which the report is created"),
 				Value:       params.Namespace,
 			},

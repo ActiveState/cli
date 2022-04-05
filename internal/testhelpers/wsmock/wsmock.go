@@ -8,12 +8,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-
-	"github.com/posener/wstest"
-
 	"github.com/ActiveState/cli/internal/logging"
-
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/gorilla/websocket"
+	"github.com/posener/wstest"
 )
 
 type WsMock struct {
@@ -68,7 +66,7 @@ func (s *WsMock) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.Close()
 				return
 			}
-			logging.Error("Reading Message failed: %v", err)
+			multilog.Error("Reading Message failed: %v", err)
 			return
 		}
 

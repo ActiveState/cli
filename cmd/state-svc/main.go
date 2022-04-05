@@ -21,13 +21,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/rollbar/rollbar-go"
 )
 
 const (
@@ -47,7 +48,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config: %w", err)
+			multilog.Error("Failed to close config: %v", err)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -58,13 +59,13 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
 	}
 	logging.CurrentHandler().SetConfig(cfg)
-	logging.SetupRollbar(constants.StateServiceRollbarToken)
+	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -76,7 +77,7 @@ func main() {
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {
-			logging.Critical("state-svc errored out: %s", errMsg)
+			multilog.Critical("state-svc errored out: %s", errMsg)
 		}
 
 		fmt.Fprintln(os.Stderr, errMsg)
@@ -95,7 +96,8 @@ func run(cfg *config.Instance) (rerr error) {
 
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
-	an := anaSvc.New(cfg, authentication.LegacyGet())
+	auth := authentication.New(cfg)
+	an := anaSvc.New(cfg, auth)
 	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
@@ -151,6 +153,9 @@ func run(cfg *config.Instance) (rerr error) {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
+				if err := auth.Sync(); err != nil {
+					logging.Warning("Could not sync authenticated state: %s", err.Error())
+				}
 				return runForeground(cfg, an)
 			},
 		),

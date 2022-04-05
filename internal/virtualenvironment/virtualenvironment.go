@@ -46,9 +46,10 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 		envMap[constants.ActivatedStateIDEnvVarName] = v.activationID
 
 		// Get project from explicitly defined configuration file
-		pj, err := project.Parse(filepath.Join(projectDir, constants.ConfigFileName))
+		configFile := filepath.Join(projectDir, constants.ConfigFileName)
+		pj, err := project.Parse(configFile)
 		if err != nil {
-			return envMap, err
+			return envMap, locale.WrapError(err, "err_parse_project", "", configFile)
 		}
 		for _, constant := range pj.Constants() {
 			v, err := constant.Value()

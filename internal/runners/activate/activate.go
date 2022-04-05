@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -26,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
+	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -36,8 +38,7 @@ import (
 )
 
 type Activate struct {
-	namespaceSelect  *NamespaceSelect
-	activateCheckout *Checkout
+	activateCheckout *checkout.Checkout
 	auth             *authentication.Auth
 	out              output.Outputer
 	svcModel         *model.SvcModel
@@ -51,7 +52,6 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
-	ReplaceWith   *project.Namespaced
 	Default       bool
 	Branch        string
 }
@@ -69,8 +69,7 @@ type primeable interface {
 
 func NewActivate(prime primeable) *Activate {
 	return &Activate{
-		NewNamespaceSelect(prime.Config()),
-		NewCheckout(git.NewRepo(), prime),
+		checkout.New(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
 		prime.SvcModel(),
@@ -94,7 +93,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	// Detect target path
-	pathToUse, err := r.pathToUse(params.Namespace, params.PreferredPath)
+	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}
@@ -144,39 +143,13 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		if params.Branch != proj.BranchName() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_checkedout",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
-				params.Branch, proj.BranchName(),
-			)
-		}
-	}
-
-	if proj == nil {
-		if params.Namespace == nil || !params.Namespace.IsValid() {
-			return locale.NewInputError("err_activate_nonamespace", "Please provide a namespace (see `state activate --help` for more info).")
-		}
-
-		err = r.activateCheckout.Run(params.Namespace, params.Branch, pathToUse)
-		if err != nil {
-			return err
-		}
-
-		proj, err = project.FromPath(pathToUse)
-		if err != nil {
-			return locale.WrapError(err, "err_activate_projectfrompath", "Something went wrong while creating project files.")
+			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 		}
 	}
 
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
-	// on --replace, replace namespace and commit id in as.yaml
-	if params.ReplaceWith.IsValid() {
-		if err := updateProjectFile(proj, params.ReplaceWith, params.Branch); err != nil {
-			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
-		}
-	}
 	proj.Source().Persist()
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
@@ -236,7 +209,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(rt)
 
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, filepath.Dir(proj.Source().Path()))
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}
@@ -296,21 +269,6 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
-	switch {
-	case namespace != nil && namespace.String() != "":
-		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return r.namespaceSelect.Run(namespace, preferredPath)
-	case preferredPath != "":
-		// Use the user provided path
-		return preferredPath, nil
-	default:
-		// Get path from working directory
-		targetPath, err := projectfile.GetProjectFilePath()
-		return filepath.Dir(targetPath), err
-	}
-}
-
 func (r *Activate) pathToProject(path string) (*project.Project, error) {
 	projectToUse, err := project.FromExactPath(path)
 	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
@@ -328,12 +286,12 @@ func warningForAdministrator(out output.Outputer) {
 
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		logging.Error("Failed to determine if run as administrator.")
+		multilog.Error("Failed to determine if run as administrator.")
 	}
 	if isAdmin {
 		u, err := user.Current()
 		if err != nil {
-			logging.Error("Failed to determine current user.")
+			multilog.Error("Failed to determine current user.")
 			return
 		}
 		out.Notice(locale.Tl(

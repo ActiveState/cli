@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/mitchellh/go-homedir"
@@ -77,21 +77,21 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 
 	shortcut, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
-		logging.Error("Failed to determine shortcut path for removal: %v", err)
+		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if shortcut != "" {
 		files = append(files, shortcut)
 	}
 
 	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
-		logging.Error("Failed to set application dir: %v", err)
+		multilog.Error("Failed to set application dir: %v", err)
 	} else {
 		files = append(files, filepath.Join(dir, constants.TrayLaunchFileName))
 	}
 
 	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
-		logging.Error("Could not find icons directory: %v", err)
+		multilog.Error("Could not find icons directory: %v", err)
 	} else {
 		files = append(files, filepath.Join(iconsDir, constants.TrayIconFileName))
 	}

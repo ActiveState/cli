@@ -117,7 +117,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
-		Tier:     "Community Tier (Free)",
+		Tier:     "free_legacy", // was "Community Tier (Free)"
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)

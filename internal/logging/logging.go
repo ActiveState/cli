@@ -218,6 +218,28 @@ func writeMessage(level string, msg string, args ...interface{}) {
 	writeMessageDepth(4, level, msg, args...)
 }
 
+// TailSize specifies the number of logged bytes to keep for use with Tail.
+const TailSize = 5000
+
+var logTail *ringBuffer
+var tailLogger *log.Logger
+
+func writeToLogTail(ctx *MessageContext, msg string, args ...interface{}) {
+	if tailLogger == nil {
+		logTail = newRingBuffer(TailSize)
+		tailLogger = log.New(logTail, "", log.LstdFlags)
+	}
+	tailLogger.Println(DefaultFormatter.Format(ctx, msg, args...))
+}
+
+// ReadTail returns as a string the last TailSize bytes written by this logger.
+func ReadTail() string {
+	if logTail == nil {
+		return ""
+	}
+	return logTail.Read()
+}
+
 func writeMessageDepth(depth int, level string, msg string, args ...interface{}) {
 	ctx := getContext(level, depth)
 
@@ -236,9 +258,9 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 	err := currentHandler.Emit(ctx, msg, args...)
 	if err != nil {
 		printLogError(err, ctx, msg, args...)
-
 	}
 
+	writeToLogTail(ctx, msg, args...)
 }
 
 func printLogError(err error, ctx *MessageContext, msg string, args ...interface{}) {
@@ -272,30 +294,19 @@ func Warning(msg string, args ...interface{}) {
 	}
 }
 
-// Same as Warning() but return a formatted error object, regardless of logging level
-func Warningf(msg string, args ...interface{}) error {
-	err := fmt.Errorf(msg, args...)
-	if level&WARN != 0 {
-		writeMessage("WARNING", err.Error())
-	}
-
-	return err
-}
-
 // Output ERROR level messages
+// This should be used sparingly, as multilog.Error() is preferred.
 func Error(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
 		writeMessage("ERROR", msg+"\n\nStacktrace: "+stacktrace.Get().String()+"\n", args...)
 	}
 }
 
-// Same as Error() but also returns a new formatted error object with the message regardless of logging level
-func Errorf(msg string, args ...interface{}) error {
-	err := fmt.Errorf(msg, args...)
+// Same as Error() but without a stacktrace.
+func ErrorNoStacktrace(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
-		writeMessage("ERROR", err.Error())
+		writeMessage("ERROR", msg, args...)
 	}
-	return err
 }
 
 // Output NOTICE level messages
@@ -306,6 +317,7 @@ func Notice(msg string, args ...interface{}) {
 }
 
 // Output a CRITICAL level message while showing a stack trace
+// This should be called sparingly, as multilog.Critical() is preferred.
 func Critical(msg string, args ...interface{}) {
 	if level&CRITICAL != 0 {
 		writeMessage("CRITICAL", msg, args...)
@@ -313,22 +325,10 @@ func Critical(msg string, args ...interface{}) {
 	}
 }
 
-// Same as critical but also returns an error object with the message regardless of logging level
-func Criticalf(msg string, args ...interface{}) error {
-
-	err := fmt.Errorf(msg, args...)
-	if level&CRITICAL != 0 {
-		writeMessage("CRITICAL", err.Error())
-		log.Println(string(debug.Stack()))
-	}
-	return err
-}
-
 // Raise a PANIC while writing the stack trace to the log
 func Panic(msg string, args ...interface{}) {
 	log.Println(string(debug.Stack()))
 	log.Panicf(msg, args...)
-
 }
 
 func Close() {

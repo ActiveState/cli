@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/thoas/go-funk"
@@ -49,7 +49,7 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactRecipeMap, req
 	for i, dep := range addedDependencies {
 		depMapping, ok := artifacts[dep]
 		if !ok {
-			logging.Error("Could not find dependency %s in artifactsMap", dep)
+			multilog.Error("Could not find dependency %s in artifactsMap", dep)
 			continue
 		}
 		var depCount string

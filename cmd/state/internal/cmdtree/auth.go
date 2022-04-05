@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/auth"
 )
 
-func newAuthCommand(prime *primer.Values) *captain.Command {
+func newAuthCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	authRunner := auth.NewAuth(prime)
 
 	params := auth.AuthParams{}
@@ -43,14 +43,15 @@ func newAuthCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.Totp,
 			},
 			{
-				Name:        "interactive",
+				Name:        "prompt",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_interactive_description"),
-				Value:       &params.Interactive,
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return authRunner.Run(&params)
 		},
 	).SetGroup(PlatformGroup)
@@ -66,10 +67,10 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "interactive",
+				Name:        "prompt",
 				Shorthand:   "",
 				Description: locale.T("flag_state_auth_signup_interactive_description"),
-				Value:       &params.Interactive,
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},

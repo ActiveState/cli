@@ -35,7 +35,7 @@ func newForkCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("fork_arg_namespace", "ORG/PROJECT"),
+				Name:        locale.Tl("fork_arg_namespace", "org/project"),
 				Description: locale.Tl("fork_arg_namespace_desc", "The namespace of the project to be forked"),
 				Required:    true,
 				Value:       &params.Namespace,

@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
+	"strings"
 	"testing"
 )
-
-var _ = regexp.Compile
 
 type Test1Handler struct {
 	formatter Formatter
@@ -209,4 +207,32 @@ func Test_Formatting(t *testing.T) {
 		t.Fatal(s)
 	}
 
+}
+
+func TestLogTail(t *testing.T) {
+	handler := &TestHandler{
+		make([][]interface{}, 0),
+		DefaultFormatter,
+		t,
+	}
+	SetHandler(handler)
+
+	SetLevel(ALL)
+	Info("Foo Bar %d", 1)
+	Warning("Bar Baz %d", 2)
+
+	contents := ReadTail()
+	fmt.Println(contents)
+	if !strings.Contains(contents, "[INFO ") {
+		t.Fatal("Tail does not contain '[INFO '")
+	}
+	if !strings.Contains(contents, "] Foo Bar 1") {
+		t.Fatal("Tail does not contain '] Foo Bar 1'")
+	}
+	if !strings.Contains(contents, "[WARNING ") {
+		t.Fatal("Tail does not contain '[WARNING '")
+	}
+	if !strings.Contains(contents, "] Bar Baz 2") {
+		t.Fatal("Tail does not contain '] Bar Baz 2'")
+	}
 }

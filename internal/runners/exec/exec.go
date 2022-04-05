@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -151,7 +152,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
 			v, err := executor.IsExecutor(exe)
 			if err != nil {
-				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 				return true // This usually means there's a permission issue, which means we likely don't own it
 			}
 			return !v
@@ -168,7 +169,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if exe != exeTarget { // Found the exe name on our PATH
 			isExec, err := executor.IsExecutor(exe)
 			if err != nil {
-				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 			} else if isExec {
 				// If the exe we resolve to is an executor then we have ourselves a recursive loop
 				return locale.NewError("err_exec_recursion", "", constants.ForumsURL, constants.ExecRecursionAllowEnvVarName)
@@ -227,7 +228,7 @@ func handleRecursion(env map[string]string, args []string) error {
 		maxLevel = 10
 	}
 	if recursionLvl == 2 || recursionLvl == 10 || recursionLvl == 50 {
-		logging.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
+		multilog.Error("executor recursion detected: parent %s (%d): %s (lvl=%d)", getParentProcessArgs(), os.Getppid(), strings.Join(args, " "), recursionLvl)
 	}
 	if recursionLvl >= maxLevel {
 		return locale.NewError("err_recursion_limit", "", strings.Join(recursionReadable, "\n"), constants.ExecRecursionMaxLevelEnvVarName)

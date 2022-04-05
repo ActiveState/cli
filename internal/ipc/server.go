@@ -100,7 +100,7 @@ func (ipc *Server) Start() error {
 				if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
 					return
 				}
-				logging.Errorf("unexpected routeToHandler error: %v", err)
+				logging.Error("unexpected routeToHandler error: %v", err)
 			}
 		}
 	}()
@@ -158,7 +158,7 @@ func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn
 			defer conn.Close()
 
 			if err := handleMatching(conn, reqHandlers); err != nil {
-				logging.Errorf("unexpected ipc request handling error: %v", err)
+				logging.Error("unexpected ipc request handling error: %v", err)
 				return
 			}
 		}()

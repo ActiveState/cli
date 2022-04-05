@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -56,8 +57,8 @@ func sanitize(params *RunParams) error {
 
 	params.language = language.Supported{language.MakeByName(langParts[0])}
 	if !params.language.Recognized() {
-		return language.NewUnrecognizedLanguageError(
-			params.language.String(),
+		return language.UnrecognizedLanguageError(
+			params.Language,
 			language.RecognizedSupportedsNames(),
 		)
 	}
@@ -191,7 +192,7 @@ func deriveVersion(lang language.Language, version string) string {
 
 	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
 	if err != nil {
-		logging.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+		multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
 		return lang.RecommendedVersion()
 	}
 
@@ -201,6 +202,6 @@ func deriveVersion(lang language.Language, version string) string {
 		}
 	}
 
-	logging.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+	multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
 	return lang.RecommendedVersion()
 }

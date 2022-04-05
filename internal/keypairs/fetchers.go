@@ -3,7 +3,7 @@ package keypairs
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -15,13 +15,13 @@ import (
 type ErrKeypairNotFound struct{ *locale.LocalizedError }
 
 // FetchRaw fetchs the current user keypair or returns a failure.
-func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
+func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable) (*secretModels.Keypair, error) {
 	kpOk, err := secretsClient.Keys.GetKeypair(nil, authentication.LegacyGet().ClientAuth())
 	if err != nil {
 		if api.ErrorCode(err) == 404 {
 			return nil, &ErrKeypairNotFound{locale.WrapInputError(err, "keypair_err_not_found")}
 		}
-		logging.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
+		multilog.Error("Error when fetching keypair: %v", api.ErrorMessageFromPayload(err))
 		return nil, errs.Wrap(err, "GetKeypair failed")
 	}
 
@@ -29,8 +29,8 @@ func FetchRaw(secretsClient *secretsapi.Client) (*secretModels.Keypair, error) {
 }
 
 // Fetch fetchs and parses the current user's keypair using the provided passphrase or returns a failure.
-func Fetch(secretsClient *secretsapi.Client, passphrase string) (Keypair, error) {
-	rawKP, err := FetchRaw(secretsClient)
+func Fetch(secretsClient *secretsapi.Client, cfg authentication.Configurable, passphrase string) (Keypair, error) {
+	rawKP, err := FetchRaw(secretsClient, cfg)
 	if err != nil {
 		return nil, err
 	}

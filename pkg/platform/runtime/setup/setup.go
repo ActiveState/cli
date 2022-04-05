@@ -11,35 +11,38 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/gammazero/workerpool"
-	"github.com/go-openapi/strfmt"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
+	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
+	"github.com/gammazero/workerpool"
+	"github.com/go-openapi/strfmt"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -190,14 +193,19 @@ func (s *Setup) Update() error {
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
+	// Analytics data to send.
+	dimensions := &dimensions.Values{
+		CommitID: p.StrP(s.target.CommitUUID().String()),
+	}
+
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
 		ns := project.Namespaced{
 			Owner:   s.target.Owner(),
 			Project: s.target.Name(),
 		}
-		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String())
+		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String(), dimensions)
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
@@ -222,7 +230,7 @@ func (s *Setup) Update() error {
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
-		logging.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
+		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
 		if err != nil {
 			return locale.WrapError(err, "Failed to clean installation path")
@@ -232,7 +240,7 @@ func (s *Setup) Update() error {
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifacts) != len(alreadyInstalled) {
 		// if we get here, we dowload artifacts
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
@@ -265,7 +273,7 @@ func (s *Setup) Update() error {
 	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	err = os.RemoveAll(tempDir)
 	if err != nil {
-		logging.Errorf("Failed to remove temporary installation directory %s: %v", tempDir, err)
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
@@ -446,7 +454,11 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 		return errs.Wrap(err, "Could not collect env info for artifact")
 	}
 
-	cnst := envdef.NewConstants(s.store.InstallPath())
+	cnst, err := envdef.NewConstants(s.store.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Could not get new environment constants")
+	}
+
 	envDef = envDef.ExpandVariables(cnst)
 	err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
 	if err != nil {

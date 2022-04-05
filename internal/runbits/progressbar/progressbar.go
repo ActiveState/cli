@@ -111,7 +111,8 @@ func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ strin
 		return nil
 	}
 	if rp.buildBar == nil {
-		return errs.New("Build bar has not been initialized yet.")
+		logging.Debug("BuildArtifactCompleted: Build bar has not been initialized yet. This can happen if the build artifact was already known to be failing.")
+		return nil
 	}
 
 	rp.buildBar.Increment()

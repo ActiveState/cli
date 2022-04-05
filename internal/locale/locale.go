@@ -15,15 +15,15 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/nicksnyder/go-i18n/i18n"
+	"github.com/thoas/go-funk"
 )
 
 // Supported languages
@@ -50,11 +50,11 @@ func init() {
 				locale = "en-US"
 				setErr := cfg.Set("Locale", locale)
 				if setErr != nil {
-					logging.Error("Could not set locale entry in config, error: %v", setErr)
+					multilog.Error("Could not set locale entry in config, error: %v", setErr)
 				}
 			}
 		} else {
-			logging.Error("Could not load  config to check locale, error: %v", err)
+			multilog.Error("Could not load  config to check locale, error: %v", err)
 			locale = "en-US"
 		}
 	}
@@ -75,7 +75,7 @@ func init() {
 	})
 
 	if err := Set(locale); err != nil {
-		logging.Error("Could not set locale: %v", err)
+		multilog.Error("Could not set locale: %v", err)
 	}
 }
 
@@ -154,7 +154,7 @@ func Tl(translationID, locale string, values ...string) string {
 		// prepare template
 		tmpl, err := template.New("locale error").Parse(translation)
 		if err != nil {
-			logging.Error("Invalid translation template: %w", err)
+			multilog.Error("Invalid translation template: %v", err)
 			return translation
 		}
 
@@ -162,7 +162,7 @@ func Tl(translationID, locale string, values ...string) string {
 		var out bytes.Buffer
 		err = tmpl.Execute(&out, input)
 		if err != nil {
-			logging.Error("Could not execute translation template: %w", err)
+			multilog.Error("Could not execute translation template: %v", err)
 			return translation
 		}
 		translation = out.String()

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -20,7 +21,10 @@ import (
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/thoas/go-funk"
 )
+
+const oldGlobalDefaultPrefname = "default_project_path"
 
 type primeable interface {
 	primer.Outputer
@@ -70,7 +74,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, defaultProjectDir); err != nil {
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the default executors.")
 	}
 
@@ -103,11 +107,38 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	// OS specific preparations
 	r.prepareOS()
 
+	if err := updateConfigKey(r.cfg, oldGlobalDefaultPrefname, constants.GlobalDefaultPrefname); err != nil {
+		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys, error recieved: {{.V0}}", errs.JoinMessage(err)), err)
+	}
+
 	return nil
 }
 
 func (r *Prepare) reportError(message string, err error) {
-	logging.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
+	multilog.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
 	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
+}
+
+func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
+	if !funk.Contains(cfg.AllKeys(), oldKey) {
+		return nil
+	}
+
+	value := cfg.Get(oldKey)
+	err := cfg.Set(oldKey, "")
+	if err != nil {
+		return errs.Wrap(err, "Could not clear old global default prefname")
+	}
+
+	if cfg.Get(newKey) != nil {
+		return nil
+	}
+
+	err = cfg.Set(newKey, value)
+	if err != nil {
+		return errs.Wrap(err, "Could not set new config key")
+	}
+
+	return nil
 }

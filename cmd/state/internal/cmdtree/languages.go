@@ -20,7 +20,7 @@ func newLanguagesCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	).SetGroup(PlatformGroup)
+	).SetGroup(PlatformGroup).SetUnstable(true)
 }
 
 func newLanguageInstallCommand(prime *primer.Values) *captain.Command {

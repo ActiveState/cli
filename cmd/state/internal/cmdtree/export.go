@@ -59,7 +59,7 @@ func newRecipeCommand(prime *primer.Values) *captain.Command {
 		},
 		func(_ *captain.Command, _ []string) error {
 			return recipe.Run(&params)
-		})
+		}).SetUnstable(true)
 }
 
 func newJWTCommand(prime *primer.Values) *captain.Command {
@@ -142,7 +142,7 @@ func newExportConfigCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(ccmd, &params)
-		})
+		}).SetUnstable(true)
 }
 
 func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
@@ -158,7 +158,7 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
-		})
+		}).SetUnstable(true)
 }
 
 func newExportDocsCommand(prime *primer.Values) *captain.Command {

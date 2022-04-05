@@ -10,12 +10,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/api"
-
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -55,7 +54,7 @@ func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompt
 
 	if auth.Authenticated() {
 		if err := generateKeypairForUser(cfg, input.Password); err != nil {
-			return locale.WrapError(err, "keypair_err_save")
+			return locale.WrapError(err, "keypair_err_generate")
 		}
 	}
 
@@ -198,10 +197,10 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 		switch err.(type) {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
-			logging.Error("Encountered add user conflict: %v", err)
+			multilog.Error("Encountered add user conflict: %v", err)
 			return locale.WrapInputError(err, "err_auth_signup_user_exists", "", api.ErrorMessageFromPayload(err))
 		default:
-			logging.Error("Encountered unknown error adding user: %v", err)
+			multilog.Error("Encountered unknown error adding user: %v", err)
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", api.ErrorMessageFromPayload(err))
 		}
 	}
@@ -212,6 +211,10 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 	}, auth)
 	if err != nil {
 		return err
+	}
+
+	if err := auth.CreateToken(); err != nil {
+		return locale.WrapError(err, "err_auth_token")
 	}
 
 	out.Notice(locale.T("signup_success", map[string]string{

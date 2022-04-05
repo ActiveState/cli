@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer
@@ -61,7 +63,7 @@ func extractPythonRelocationPrefix(installDir string, python string) (string, er
 	logging.Debug("OUTPUT: %s", string(prefixBytes))
 	if err != nil {
 		if _, isExitError := err.(*exec.ExitError); isExitError {
-			logging.Errorf("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
+			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("obtaining relocation prefixes: %v : %s", err, string(prefixBytes))
 			return "", &ErrNoPrefixes{locale.NewError("installer_err_fail_obtain_prefixes", "", installDir)}
 		}
 		return "", errs.Wrap(err, "python import prefixes failed")

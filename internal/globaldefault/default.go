@@ -1,16 +1,20 @@
 package globaldefault
 
 import (
+	"path/filepath"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 type DefaultConfigurer interface {
@@ -28,7 +32,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 
 	isWindowsAdmin, err := osutils.IsAdmin()
 	if err != nil {
-		logging.Error("Failed to determine if we are running as administrator: %v", err)
+		multilog.Error("Failed to determine if we are running as administrator: %v", err)
 	}
 	if isWindowsAdmin {
 		logging.Debug("Skip preparation step as it is not supported for Windows Administrators.")
@@ -54,9 +58,8 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	return nil
 }
 
-
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, projectPath string) error {
+func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
 	logging.Debug("Setting up globaldefault")
 	if err := Prepare(cfg, subshell); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
@@ -67,12 +70,13 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	fw := executor.NewWithBinPath(projectPath, BinDir())
+	projectDir := filepath.Dir(proj.Source().Path())
+	fw := executor.NewWithBinPath(projectDir, BinDir())
 	if err := fw.Update(exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
-	if err := cfg.Set(constants.GlobalDefaultPrefname, projectPath); err != nil {
+	if err := cfg.Set(constants.GlobalDefaultPrefname, projectDir); err != nil {
 		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
 	}
 

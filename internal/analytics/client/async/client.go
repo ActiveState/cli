@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/updater"
@@ -31,6 +32,7 @@ type Client struct {
 	eventWaitGroup   *sync.WaitGroup
 	sessionToken     string
 	updateTag        string
+	closed           bool
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -73,7 +75,7 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
-		logging.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
 	}
 }
 
@@ -89,6 +91,11 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
+	if a.closed {
+		logging.Debug("Client is closed, not sending event")
+		return nil
+	}
+
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
@@ -127,6 +134,11 @@ func handlePanics(err interface{}, stack []byte) {
 	if err == nil {
 		return
 	}
-	logging.Error("Panic in client analytics: %v", err)
+	multilog.Error("Panic in client analytics: %v", err)
 	logging.Debug("Stack: %s", string(stack))
+}
+
+func (a *Client) Close() {
+	a.Wait()
+	a.closed = true
 }

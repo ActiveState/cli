@@ -13,10 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/rollbar/rollbar-go"
 )
 
 func main() {
@@ -29,7 +30,7 @@ func main() {
 		}
 
 		if err := cfg.Close(); err != nil {
-			logging.Error("Failed to close config after exiting systray: %w", err)
+			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -40,13 +41,13 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		logging.Critical("Could not initialize config: %v", errs.JoinMessage(err))
+		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
 	}
 	logging.CurrentHandler().SetConfig(cfg)
-	logging.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
+	rollbar.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -55,7 +56,7 @@ func main() {
 	err = run(cfg)
 	if err != nil {
 		exitCode = 1
-		logging.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
+		multilog.Critical("Update Dialog Failure: " + errs.Join(err, ": ").Error())
 		fmt.Fprintln(os.Stderr, errs.Join(err, ": ").Error())
 		return
 	}

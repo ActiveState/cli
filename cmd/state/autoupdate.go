@@ -6,10 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/profile"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -18,8 +14,13 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/thoas/go-funk"
 )
 
 const CfgKeyLastCheck = "auto_update_lastcheck"
@@ -33,11 +34,15 @@ func (fe *forwardExitError) Unwrap() error  { return nil }
 func (fe *forwardExitError) IsSilent() bool { return true }
 func (fe *forwardExitError) ExitCode() int  { return fe.code }
 
+func init() {
+	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
+
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
 	defer func() {
 		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
-			logging.Error("Failed to store last update check: %s", errs.JoinMessage(err))
+			multilog.Error("Failed to store last update check: %s", errs.JoinMessage(err))
 		}
 	}()
 
@@ -53,6 +58,13 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	}
 	if up == nil {
 		logging.Debug("No update found")
+		return false, nil
+	}
+
+	if cfg.IsSet(constants.AutoUpdateConfigKey) && !cfg.GetBool(constants.AutoUpdateConfigKey) {
+		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
+		out.Notice(output.Heading(locale.Tl("update_available_header", "Auto Update")))
+		out.Notice(locale.Tr("update_available", constants.VersionNumber, up.Version))
 		return false, nil
 	}
 
@@ -150,7 +162,7 @@ func isFreshInstall() bool {
 	exe := osutils.Executable()
 	stat, err := os.Stat(exe)
 	if err != nil {
-		logging.Error("Could not stat file: %s, error: %v", exe)
+		multilog.Error("Could not stat file: %s, error: %v", exe, err)
 		return true
 	}
 	diff := time.Now().Sub(stat.ModTime())

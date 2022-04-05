@@ -97,14 +97,14 @@ func releaseNotes(p languagePreset, c *config) (string, error) {
 		majorMinor := strings.Join(vParts[0:2], ".")
 		return fmt.Sprintf("http://docs.activestate.com/activeperl/%s/get/relnotes/", majorMinor), nil
 	}
-		return fmt.Sprintf("http://platform.activestate.com/%s", c.ProjectOwnerAndName), nil
+	return fmt.Sprintf("http://platform.activestate.com/%s", c.ProjectOwnerAndName), nil
 }
 
 // normalizes and validates the configuration
 func normalize(preset languagePreset, c *config) (*config, error) {
 	parts := strings.SplitN(c.ProjectOwnerAndName, "/", 2)
 	if len(parts) != 2 {
-		return c, fmt.Errorf("Second argument must be of type owner/project")
+		return c, fmt.Errorf("Second argument must be of type org/project")
 	}
 
 	if c.Visibility != "Public" && c.Visibility != "Private" {
@@ -184,7 +184,7 @@ func parseArgs(args []string) (*config, error) {
 		return baseConfig(), nil
 	}
 
-	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <owner/name> <version> [<commitID>] | \"base\"")
+	return nil, fmt.Errorf("invalid arguments: Expected <preset> <visibility> <org/project> <version> [<commitID>] | \"base\"")
 }
 
 func run(args []string) error {

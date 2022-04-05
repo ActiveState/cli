@@ -41,7 +41,7 @@ func (s *service) Start() error {
 	go func() {
 		if err := s.server.Start(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				logging.Errorf("%s", errs.Wrap(err, "Failed to start server"))
+				logging.Error("%s", errs.Wrap(err, "Failed to start server"))
 			}
 		}
 	}()

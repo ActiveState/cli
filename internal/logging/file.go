@@ -3,15 +3,11 @@ package logging
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/rollbar/rollbar-go"
 )
 
 var defaultMaxEntries = 1000
@@ -38,6 +34,7 @@ type fileHandler struct {
 	queue     chan entry
 	quit      chan struct{}
 	report    bool
+	closed    bool
 }
 
 func newFileHandler() *fileHandler {
@@ -51,6 +48,7 @@ func newFileHandler() *fileHandler {
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
 		true,
+		false,
 	}
 	handler.wg.Add(1)
 	go func() {
@@ -96,12 +94,10 @@ func (l *fileHandler) SetConfig(cfg config) {
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
-	var a []interface{}
-	a = append(a, args)
 	e := entry{
 		ctx:     ctx,
 		message: message,
-		args:    a,
+		args:    args,
 	}
 	select {
 	case <-l.quit:
@@ -114,64 +110,6 @@ func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interfac
 
 func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interface{}) {
 	filename := FilePath()
-	originalMessage := fmt.Sprintf(message, args...)
-
-	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	defer func() { // defer so that we can ensure errors are logged to the logfile even if rollbar panics (which HAS happened!)
-		isPublicChannel := (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch)
-
-		// All rollbar errors I observed are prefixed with "Rollbar"
-		// This is meant to help guard against recursion issues
-		isRollbarMsg := strings.HasPrefix(message, "Rollbar")
-
-		if (ctx.Level == "ERROR" || ctx.Level == "CRITICAL") && l.report && isPublicChannel && !isRollbarMsg && condition.BuiltViaCI() {
-			data := map[string]interface{}{}
-
-			if l.file != nil {
-				if err := l.file.Close(); err != nil {
-					data["log_file_close_error"] = err.Error()
-				} else {
-					logDatab, err := ioutil.ReadFile(filename)
-					if err != nil {
-						data["log_file_read_error"] = err.Error()
-					} else {
-						logData := string(logDatab)
-						if len(logData) > 5000 {
-							logData = "<truncated>\n" + logData[len(logData)-5000:]
-						}
-						data["log_file_data"] = logData
-					}
-				}
-				l.file = nil // unset so that it is reset later in this func
-			}
-
-			exec := CurrentCmd
-			if exec == "" {
-				exec = strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
-			}
-			flags := []string{}
-			for _, arg := range os.Args[1:] {
-				if strings.HasPrefix(arg, "-") {
-					idx := strings.Index(arg, "=")
-					if idx != -1 {
-						arg = arg[0:idx]
-					}
-					flags = append(flags, arg)
-				}
-			}
-
-			rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, originalMessage)
-			if len(rollbarMsg) > 1000 {
-				rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
-			}
-
-			if ctx.Level == "CRITICAL" {
-				rollbar.Critical(fmt.Errorf(rollbarMsg), data)
-			} else {
-				rollbar.Error(fmt.Errorf(rollbarMsg), data)
-			}
-		}
-	}()
 
 	message = l.formatter.Format(ctx, message, args...)
 	if l.verbose.value() {
@@ -203,6 +141,7 @@ func (l *fileHandler) emit(ctx *MessageContext, message string, args ...interfac
 			printLogError(fmt.Errorf("Failed to write log line twice. First error was: %v: %w", err, err2), ctx, message, args...)
 		}
 	}
+
 }
 
 // Printf satifies a Logger interface allowing us to funnel our
@@ -226,6 +165,11 @@ func (l *fileHandler) reopenLogfile() error {
 }
 
 func (l *fileHandler) Close() {
+	if l.closed {
+		return
+	}
+
 	close(l.quit)
 	l.wg.Wait()
+	l.closed = true
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -26,14 +27,23 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
 	}
 
+	err = undoPrepare(u.cfg)
+	if err != nil {
+		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+	}
+
 	err = removeInstall(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
-	err = undoPrepare(u.cfg)
+	err = removeEnvPaths(u.cfg)
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
+	}
+
+	if aggErr != nil {
+		return aggErr
 	}
 
 	path := u.cfg.ConfigPath()
@@ -45,15 +55,6 @@ func (u *Uninstall) runUninstall() error {
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
 
-	}
-
-	err = removeEnvPaths(u.cfg)
-	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
-	}
-
-	if aggErr != nil {
-		return aggErr
 	}
 
 	u.out.Print(locale.T("clean_success_message"))
@@ -127,5 +128,26 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
 	}
 
+	installPath, err := installation.InstallPath()
+	if err != nil {
+		aggErr = errs.Wrap(aggErr, "Could not get installation path")
+	}
+
+	if fileutils.DirExists(installPath) {
+		empty, err := fileutils.IsEmptyDir(installPath)
+		if err == nil && empty {
+			removeErr := os.RemoveAll(installPath)
+			if err != nil {
+				aggErr = errs.Wrap(removeErr, "Could not remove install path")
+			}
+		} else if err != nil {
+			aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
+		}
+	}
+
 	return aggErr
+}
+
+func verifyInstallation() error {
+	return nil
 }

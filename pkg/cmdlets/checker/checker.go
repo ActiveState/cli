@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -66,7 +67,7 @@ func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 			logging.Debug("CheckUpdate timed out")
 			return
 		}
-		logging.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
+		multilog.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
 	if up == nil {
