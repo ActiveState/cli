@@ -140,7 +140,7 @@ func removeInstall(cfg configurable) error {
 			if err != nil {
 				aggErr = errs.Wrap(removeErr, "Could not remove install path")
 			}
-		} else {
+		} else if err != nil {
 			aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
 		}
 	}

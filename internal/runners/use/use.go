@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
@@ -35,7 +34,6 @@ type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
-	primer.Svcer
 	primer.SvcModeler
 	primer.Analyticer
 }
@@ -44,7 +42,6 @@ type Use struct {
 	auth      *authentication.Auth
 	out       output.Outputer
 	checkout  *checkout.Checkout
-	svcMgr    *svcmanager.Manager
 	svcModel  *model.SvcModel
 	config    *config.Instance
 	subshell  subshell.SubShell
@@ -56,7 +53,6 @@ func NewUse(prime primeable) *Use {
 		prime.Auth(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
-		prime.SvcManager(),
 		prime.SvcModel(),
 		prime.Config(),
 		prime.Subshell(),
@@ -67,7 +63,7 @@ func NewUse(prime primeable) *Use {
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.svcMgr, u.config, u.out)
+	checker.RunUpdateNotifier(u.svcModel, u.out)
 
 	projectPath, err := u.checkout.Run(params.Namespace, "")
 	if err != nil {

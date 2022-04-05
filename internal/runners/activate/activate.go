@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/svcmanager"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
@@ -42,7 +41,6 @@ type Activate struct {
 	activateCheckout *checkout.Checkout
 	auth             *authentication.Auth
 	out              output.Outputer
-	svcMgr           *svcmanager.Manager
 	svcModel         *model.SvcModel
 	config           *config.Instance
 	proj             *project.Project
@@ -54,7 +52,6 @@ type Activate struct {
 type ActivateParams struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
-	ReplaceWith   *project.Namespaced
 	Default       bool
 	Branch        string
 }
@@ -66,7 +63,6 @@ type primeable interface {
 	primer.Subsheller
 	primer.Prompter
 	primer.Configurer
-	primer.Svcer
 	primer.SvcModeler
 	primer.Analyticer
 }
@@ -76,7 +72,6 @@ func NewActivate(prime primeable) *Activate {
 		checkout.New(git.NewRepo(), prime),
 		prime.Auth(),
 		prime.Output(),
-		prime.SvcManager(),
 		prime.SvcModel(),
 		prime.Config(),
 		prime.Project(),
@@ -93,7 +88,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.svcMgr, r.config, r.out)
+	checker.RunUpdateNotifier(r.svcModel, r.out)
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
@@ -148,23 +143,13 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		if params.Branch != proj.BranchName() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_checkedout",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET]; Branch [NOTICE]{{.V1}}[/RESET] is already checked out.",
-				params.Branch, proj.BranchName(),
-			)
+			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 		}
 	}
 
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
-	// on --replace, replace namespace and commit id in as.yaml
-	if params.ReplaceWith.IsValid() {
-		if err := updateProjectFile(proj, params.ReplaceWith, params.Branch); err != nil {
-			return locale.WrapError(err, "err_activate_replace_write", "Could not update the project file with a new namespace.")
-		}
-	}
 	proj.Source().Persist()
 
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373

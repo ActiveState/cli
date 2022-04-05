@@ -2,6 +2,7 @@ package updater
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,6 +25,8 @@ import (
 type ErrorInProgress struct{ *locale.LocalizedError }
 
 const CfgKeyInstallVersion = "state_tool_installer_version"
+
+var errPrivilegeMistmatch = errs.New("Privilege mismatch")
 
 type AvailableUpdate struct {
 	Version  string  `json:"version"`
@@ -99,6 +102,13 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
 
+	err := checkAdmin()
+	if errors.Is(err, errPrivilegeMistmatch) {
+		return locale.NewInputError("err_update_privilege_mismatch")
+	} else if err != nil {
+		return errs.Wrap(err, "Could not check if State Tool was installed as admin")
+	}
+
 	appdata, err := storage.AppDataPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not detect appdata path")
@@ -126,6 +136,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
+
 	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")

@@ -11,10 +11,10 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-// NamespaceRegex matches the org and project name in a namespace, eg. ORG/PROJECT
+// NamespaceRegex matches the org and project name in a namespace, eg. org/project
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
 
-// Namespaced represents a project namespace of the form <OWNER>/<PROJECT>
+// Namespaced represents a project namespace of the form <org/project>
 type Namespaced struct {
 	Owner    string
 	Project  string

@@ -18,7 +18,7 @@ events_header_event:
 events_header_value:
   other: Value
 arg_state_activate_namespace:
-  other: ORG/PROJECT
+  other: org/project
 arg_state_activate_namespace_description:
   other: The namespace of the project that you wish to activate
 flag_state_init_private_flag_description:
@@ -515,6 +515,10 @@ err_cannot_obtain_dist:
   other: "Could not obtain distribution for language: [NOTICE]{{.V0}}[/RESET]"
 err_already_active:
   other: "You cannot activate a new state when you are already in an activated state."
+err_conflicting_branch_while_checkedout:
+  other: |
+    Cannot activate branch [NOTICE]{{.V0}}[/RESET]. Branch [NOTICE]{{.V1}}[/RESET] is already checked out.
+    Please use [ACTIONABLE]state branch switch <name>[/RESET] followed by [ACTIONABLE]state activate[/RESET] instead.
 run_listing_scripts:
   other: "Available Scripts: "
 
@@ -851,7 +855,7 @@ err_activate_namespace:
 err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
-  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]ORGANIZATION_NAME/PROJECT_NAME[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
+  other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
@@ -1005,15 +1009,15 @@ variable_deprecation_warning:
 err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
-  other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/Owner/ProjectName'."
+  other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
 err_deprection_404:
   other: Could not check for deprecation as the service returned a 404 not found
 err_deprection_code:
   other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
-  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/Owner/ProjectName`[/RESET]"
+  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_set_project:
-  other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/Owner/ProjectName`[/RESET]"
+  other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
@@ -1214,7 +1218,7 @@ init_success:
 flag_state_init_skeleton_description:
   other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
 arg_state_init_namespace:
-  other: ORG/PROJECT
+  other: org/project
 arg_state_init_namespace_description:
   other: The namespace for the project that you wish to initialize
 arg_state_init_language:
@@ -1317,7 +1321,7 @@ print_commit_description:
 history_cmd_description:
   other: View history of the active or given project
 arg_state_history_namespace_description:
-  other: "The namespace to view the history for (owner/name)"
+  other: "The namespace to view the history for in the format of <org/project>"
 err_history_namespace:
   other: "Please provide a namespace or run [ACTIONABLE]`state history`[/RESET] in a project directory"
 clean_description:
@@ -1335,7 +1339,7 @@ flag_state_clean_ignore_errors_description:
 flag_state_clean_cache_force_description:
   other: Run clean cache operation without prompts
 arg_state_clean_cache_project_description:
-  other: The project to be removed from the local cache. Must be in the format of <Owner>/<ProjectName>
+  other: The project to be removed from the local cache. Must be in the format of <org/project>
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts
 err_uninstall_activated:
@@ -1408,7 +1412,7 @@ err_project_env_file_not_exist:
 err_invalid_step:
   other: "Invalid step specified: [NOTICE]{{.V0}}[/RESET]. Step must be one of: [ACTIONABLE]{{.V1}}[/RESET]."
 arg_state_deploy_namespace:
-  other: ORG/PROJECT
+  other: org/project
 arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
 err_deploy_no_commits:
@@ -1835,8 +1839,15 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+err_update_corrupt_install:
+  other: |
+    Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
+    uninstalling it and then running the installation process again.
+    
+    Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
+    Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
-  other: ORG/PROJECT
+  other: org/project
 arg_state_use_namespace_description:
   other: The namespace of the project that you wish to use
 err_checkout_project:
@@ -1851,3 +1862,5 @@ err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
+err_update_privilege_mismatch:
+  other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."

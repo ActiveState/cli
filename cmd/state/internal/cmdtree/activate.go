@@ -20,8 +20,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 	runner := activate.NewActivate(prime)
 
 	params := activate.ActivateParams{
-		Namespace:   &project.Namespaced{},
-		ReplaceWith: &project.Namespaced{},
+		Namespace: &project.Namespaced{},
 	}
 
 	cmd := captain.NewCommand(
@@ -35,11 +34,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				Shorthand:   "",
 				Description: locale.T("flag_state_activate_path_description"),
 				Value:       &params.PreferredPath,
-			},
-			{
-				Name:        "replace",
-				Description: locale.Tl("flag_state_activate_replace_description", "Replace project url for this project."),
-				Value:       params.ReplaceWith,
 			},
 			{
 				Name:        "default",
@@ -60,22 +54,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			if params.ReplaceWith.IsValid() {
-				if params.PreferredPath != "" {
-					return locale.NewInputError(
-						"activate_flag_replace_and_path_incompatible",
-						"The flags --path and --replace are mutually exclusive.",
-					)
-				}
-
-				if params.Namespace.IsValid() {
-					return locale.NewInputError(
-						"activate_flag_replace_and_namespace_incompatible",
-						"The flag --replace cannot be used when a project namespace is specified.",
-					)
-				}
-			}
-
 			as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 			sighandler.Push(as)
 			defer sighandler.Pop()

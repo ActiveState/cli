@@ -12,13 +12,17 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
-// CfgInstallPath is the configuration key for the path where the State Tool is installed
-const CfgInstallPath = "installation_path"
+const (
+	// CfgInstallPath is the configuration key for the path where the State Tool is installed
+	CfgInstallPath = "installation_path"
 
-// CfgTransitionalStateToolPath is the configuration key for the path where a transitional State Tool might still be stored
-const CfgTransitionalStateToolPath = "transitional_installation_path"
+	// CfgTransitionalStateToolPath is the configuration key for the path where a transitional State Tool might still be stored
+	CfgTransitionalStateToolPath = "transitional_installation_path"
 
-const BinDirName = "bin"
+	BinDirName = "bin"
+
+	InstallDirMarker = ".state_install_root"
+)
 
 func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
@@ -36,18 +40,12 @@ func InstallPath() (string, error) {
 	// If State Tool is already exists then we should detect the install path from there
 	stateInfo := appinfo.StateApp()
 	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
-	if fileutils.TargetExists(stateInfo.Exec()) {
-		if filepath.Base(filepath.Dir(stateInfo.Exec())) == BinDirName && activeStateOwnedPath {
-			return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
-		}
-		return filepath.Dir(stateInfo.Exec()), nil // <return this>/state.exe
+	installRootFile := filepath.Join(filepath.Dir(stateInfo.Exec()), InstallDirMarker)
+	if fileutils.TargetExists(stateInfo.Exec()) && fileutils.FileExists(installRootFile) && activeStateOwnedPath {
+		return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
 	}
 
 	return DefaultInstallPath()
-}
-
-func BinPath() (string, error) {
-	return BinPathFromInstallPath("")
 }
 
 func BinPathFromInstallPath(installPath string) (string, error) {
@@ -62,18 +60,13 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	return filepath.Join(installPath, BinDirName), nil
 }
 
-func InstalledOnPath(installPath string) (bool, string, error) {
-	binPath, err := BinPathFromInstallPath(installPath)
-	if err != nil {
-		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
-	}
-	path := appinfo.StateApp(binPath).Exec()
-	return fileutils.TargetExists(path), path, nil
-}
-
 func LauncherInstallPath() (string, error) {
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultSystemPathEnvVarName); ok {
 		return path, nil
 	}
 	return defaultSystemInstallPath()
+}
+
+func IsInstallRoot(dir string) bool {
+	return fileutils.FileExists(filepath.Join(dir, InstallDirMarker))
 }
