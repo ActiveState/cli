@@ -49,7 +49,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			defer ts.Close()
 
 			script := scriptPath(suite.T(), ts.Dirs.Work)
-			argsPlain := []string{script, "-t", ts.Dirs.Work}
+			installDir := filepath.Join(ts.Dirs.Work, "install")
+			argsPlain := []string{script, "-t", installDir}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -101,11 +102,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			state := appinfo.StateApp(ts.Dirs.Work)
+			state := appinfo.StateApp(installDir)
 			suite.FileExists(state.Exec())
 
-			suite.assertBinDirContents(filepath.Join(ts.Dirs.Work, "bin"))
-			suite.assertCorrectVersion(ts, tt.Version, tt.Channel)
+			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
+			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that we don't try to install it again
@@ -123,6 +124,33 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			cp.Expect("already installed")
 			cp.ExpectExitCode(0)
 		})
+	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), ts.Dirs.Work)
+	argsPlain := []string{script, "-t", ts.Dirs.Work}
+	argsPlain = append(argsPlain, "-b", constants.BranchName)
+	argsWithActive := append(argsPlain, "-f")
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs(argsWithActive...),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
+			e2e.AppendEnv("SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	}
+	cp.ExpectLongString("Installation path must be an empty directory")
+	if runtime.GOOS != "windows" {
+		cp.ExpectExitCode(1)
 	}
 }
 
@@ -171,13 +199,13 @@ func listFilesOnly(dir string) []string {
 	return funk.Map(files, filepath.Base).([]string)
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, expectedVersion, expectedBranch string) {
+func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedBranch string) {
 	type versionData struct {
 		Version string `json:"version"`
 		Branch  string `json:"branch"`
 	}
 
-	state := appinfo.StateApp(ts.Dirs.Work)
+	state := appinfo.StateApp(installDir)
 	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}

@@ -145,7 +145,7 @@ func verifyInstallation() error {
 	}
 
 	if installationContext.InstalledAsAdmin && !isAdmin {
-		return locale.NewInputError("err_uninstall_privlege_mismatch")
+		return locale.NewInputError("err_uninstall_privilege_mismatch")
 	}
 
 	return nil

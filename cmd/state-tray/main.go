@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -25,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
@@ -104,12 +106,12 @@ func run(cfg *config.Instance) (rerr error) {
 
 	systray.SetIcon(iconFile)
 
-	svcm := svcmanager.New(cfg)
-	if err := svcm.Start(); err != nil {
+	port, err := svcctl.EnsureStartedAndLocateHTTP()
+	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model := model.NewSvcModel(cfg, svcm)
+	model := model.NewSvcModel(port)
 
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 

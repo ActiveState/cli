@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/internal/analytics"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -33,20 +33,16 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/internal/svcctl"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+
 	"golang.org/x/crypto/ssh/terminal"
 )
-
-type ConfigurableAnalytics interface {
-	analytics.Dispatcher
-	Configure(svcMgr *svcmanager.Manager, cfg *config.Instance, auth *authentication.Auth, out output.Outputer, projectNameSpace string) error
-}
 
 func main() {
 	var exitCode int
@@ -154,12 +150,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 
-	svcm := svcmanager.New(cfg)
-	if err := svcm.Start(); err != nil {
-		multilog.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
+	ipcClient := svcctl.NewDefaultIPCClient()
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
+	if err != nil {
+		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}
 
-	svcmodel := model.NewSvcModel(cfg, svcm)
+	svcmodel := model.NewSvcModel(svcPort)
 
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
@@ -193,7 +190,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Warning("Could not sync authenticated state: %s", err.Error())
 	}
 
-	an := anAsync.New(svcm, cfg, auth, out, pjNamespace)
+	an := anAsync.New(svcmodel, cfg, auth, out, pjNamespace)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
@@ -212,7 +209,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, svcm, svcmodel, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {
