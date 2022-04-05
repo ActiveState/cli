@@ -226,3 +226,30 @@ func isStateExecutable(name string) bool {
 	}
 	return false
 }
+
+func installedOnPath(installRoot string) (bool, string, error) {
+	if !fileutils.DirExists(installRoot) {
+		return false, "", nil
+	}
+
+	path := appinfo.StateApp(installRoot).Exec()
+	if fileutils.TargetExists(path) {
+		return true, filepath.Dir(path), nil
+	}
+
+	found, err := fileutils.FindFileInPath(installRoot, installation.InstallDirMarker)
+	if err != nil {
+		if errors.Is(err, fileutils.ErrorFileNotFound) {
+			return false, "", nil
+		}
+		return false, "", errs.Wrap(err, "Could not find install directory marker file")
+	}
+
+	binPath, err := installation.BinPathFromInstallPath(filepath.Dir(found))
+	if err != nil {
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+	}
+
+	path = appinfo.StateApp(binPath).Exec()
+	return fileutils.TargetExists(path), filepath.Dir(path), nil
+}
