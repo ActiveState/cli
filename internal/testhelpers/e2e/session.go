@@ -108,7 +108,7 @@ func (s *Session) ExecutablePath() string {
 	return s.Exe
 }
 
-func (s *Session) copyExeToDir(from, to string) string {
+func (s *Session) CopyExeToDir(from, to string) string {
 	if fileutils.TargetExists(to) {
 		return to
 	}
@@ -129,7 +129,7 @@ func (s *Session) copyExeToDir(from, to string) string {
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
-	return s.copyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
+	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
 }
 
 // UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
@@ -148,7 +148,7 @@ func (s *Session) UseDistinctStateExes() {
 	s.Exe = s.copyExeToBinDir(s.Exe)
 	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
 	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.copyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
+	s.InstallerExe = s.CopyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test

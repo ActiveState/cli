@@ -1839,6 +1839,13 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+err_update_corrupt_install:
+  other: |
+    Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
+    uninstalling it and then running the installation process again.
+    
+    Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
+    Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
@@ -1855,3 +1862,5 @@ err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
+err_update_privilege_mismatch:
+  other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."

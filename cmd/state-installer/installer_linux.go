@@ -8,6 +8,6 @@ func (i *Installer) installLauncher() error {
 	return nil
 }
 
-func (i *Installer) PrepareBinTargets(useBinDir bool) error {
+func (i *Installer) PrepareBinTargets() error {
 	return nil
 }

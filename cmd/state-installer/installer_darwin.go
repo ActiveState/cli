@@ -69,6 +69,6 @@ func createNewSymlink(target, filename string) error {
 	return nil
 }
 
-func (i *Installer) PrepareBinTargets(useBinDir bool) error {
+func (i *Installer) PrepareBinTargets() error {
 	return nil
 }
