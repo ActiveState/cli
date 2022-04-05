@@ -1,8 +1,6 @@
 package installation
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -63,7 +61,6 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 }
 
 func InstalledOnPath(installRoot string) (bool, string, error) {
-	fmt.Println("Checking install root:", installRoot)
 	if !fileutils.DirExists(installRoot) {
 		return false, "", nil
 	}
@@ -73,18 +70,14 @@ func InstalledOnPath(installRoot string) (bool, string, error) {
 		return true, filepath.Dir(path), nil
 	}
 
-	binPath, err := BinPathFromInstallPath(installRoot)
+	found, err := fileutils.FindFileInPath(installRoot, InstallDirMarker)
 	if err != nil {
-		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+		return false, "", errs.Wrap(err, "Could not find install directory marker file")
 	}
 
-	found, err := fileutils.FindFileInPath(binPath, InstallDirMarker)
+	binPath, err := BinPathFromInstallPath(filepath.Dir(found))
 	if err != nil {
-		if errors.Is(err, fileutils.ErrorFileNotFound) {
-			binPath = filepath.Dir(found)
-		} else {
-			return false, "", errs.Wrap(err, "Could not find install directory marker file")
-		}
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
 	}
 
 	path = appinfo.StateApp(binPath).Exec()
