@@ -22,6 +22,8 @@ func (l logFunc) Write(p []byte) (int, error) {
 }
 
 func TestService(t *testing.T) {
+	t.SkipNow() // https://activestatef.atlassian.net/browse/DX-828
+
 	simultaneous := 2
 	iterations := 512
 	pause := time.Millisecond * 10
