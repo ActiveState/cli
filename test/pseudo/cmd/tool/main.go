@@ -15,7 +15,7 @@ func main() {
 	spath := intsvcctl.NewIPCSockPath()
 	ipcClient := ipc.NewClient(spath)
 
-	addr, err := svcctl.EnsureStartedAndLocateHTTP(ipcClient, "../svc/build/svc")
+	addr, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, "../svc/build/svc")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ensure and locate: %v\n", errs.JoinMessage(err))
 		os.Exit(1)

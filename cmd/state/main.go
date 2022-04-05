@@ -151,7 +151,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	machineid.SetErrorLogger(logging.Error)
 
 	ipcClient := svcctl.NewDefaultIPCClient()
-	svcPort, err := svcctl.EnsureStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
 	if err != nil {
 		logging.Error("Failed to start state-svc at state tool invocation, error: %s", errs.JoinMessage(err))
 	}

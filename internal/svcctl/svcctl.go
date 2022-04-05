@@ -46,7 +46,7 @@ func NewDefaultIPCClient() *ipc.Client {
 	return ipc.NewClient(NewIPCSockPathFromGlobals())
 }
 
-func EnsureStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
+func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
@@ -69,8 +69,8 @@ func EnsureStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string
 	return addr, nil
 }
 
-func DefaultEnsureStartedAndLocateHTTP() (addr string, err error) {
-	return EnsureStartedAndLocateHTTP(NewDefaultIPCClient(), appinfo.SvcApp().Exec())
+func EnsureStartedAndLocateHTTP() (addr string, err error) {
+	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), appinfo.SvcApp().Exec())
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {

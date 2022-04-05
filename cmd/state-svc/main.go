@@ -207,7 +207,7 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 }
 
 func runStart(out output.Outputer) error {
-	if _, err := svcctl.DefaultEnsureStartedAndLocateHTTP(); err != nil {
+	if _, err := svcctl.EnsureStartedAndLocateHTTP(); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil

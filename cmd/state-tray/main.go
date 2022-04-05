@@ -106,7 +106,7 @@ func run(cfg *config.Instance) (rerr error) {
 
 	systray.SetIcon(iconFile)
 
-	port, err := svcctl.DefaultEnsureStartedAndLocateHTTP()
+	port, err := svcctl.EnsureStartedAndLocateHTTP()
 	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}
