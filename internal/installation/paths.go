@@ -2,6 +2,7 @@ package installation
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,8 +63,14 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 }
 
 func InstalledOnPath(installRoot string) (bool, string, error) {
+	fmt.Println("Checking install root:", installRoot)
 	if !fileutils.DirExists(installRoot) {
 		return false, "", nil
+	}
+
+	path := appinfo.StateApp(installRoot).Exec()
+	if fileutils.TargetExists(path) {
+		return true, filepath.Dir(path), nil
 	}
 
 	binPath, err := BinPathFromInstallPath(installRoot)
@@ -80,7 +87,7 @@ func InstalledOnPath(installRoot string) (bool, string, error) {
 		}
 	}
 
-	path := appinfo.StateApp(binPath).Exec()
+	path = appinfo.StateApp(binPath).Exec()
 	return fileutils.TargetExists(path), filepath.Dir(path), nil
 }
 
