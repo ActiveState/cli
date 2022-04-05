@@ -1,7 +1,11 @@
 package main
 
 import (
+	"errors"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/appinfo"
@@ -11,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -29,7 +34,7 @@ type Installer struct {
 
 func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
 	i := &Installer{cfg: cfg, out: out, Params: params}
-	if err := i.sanitize(); err != nil {
+	if err := i.sanitizeInput(); err != nil {
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
@@ -62,13 +67,24 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
+	// Detect if existing installation needs to be cleaned
+	err = detectCorruptedInstallDir(i.path)
+	if errors.Is(err, errCorruptedInstall) {
+		err = i.sanitizeInstallPath()
+		if err != nil {
+			return locale.WrapError(err, "err_update_corrupt_install")
+		}
+	} else if err != nil {
+		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
+	}
+
 	// Create target dir
 	if err := fileutils.MkdirUnlessExists(i.path); err != nil {
 		return errs.Wrap(err, "Could not create target directory: %s", i.path)
 	}
 
 	// Prepare bin targets is an OS specific method that will ensure we don't run into conflicts while installing
-	if err := i.PrepareBinTargets(true); err != nil {
+	if err := i.PrepareBinTargets(); err != nil {
 		return errs.Wrap(err, "Could not prepare for installation")
 	}
 
@@ -80,6 +96,11 @@ func (i *Installer) Install() (rerr error) {
 	// Install Launcher
 	if err := i.installLauncher(); err != nil {
 		return errs.Wrap(err, "Installation of system files failed.")
+	}
+
+	err = fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker))
+	if err != nil {
+		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
 	// Set up the environment
@@ -124,8 +145,8 @@ func (i *Installer) InstallPath() string {
 	return i.path
 }
 
-// sanitize cleans up the input and inserts fallback values
-func (i *Installer) sanitize() error {
+// sanitizeInput cleans up the input and inserts fallback values
+func (i *Installer) sanitizeInput() error {
 	if sessionToken, ok := os.LookupEnv(constants.SessionTokenEnvVarName); ok {
 		i.sessionToken = sessionToken
 	}
@@ -139,4 +160,64 @@ func (i *Installer) sanitize() error {
 	}
 
 	return nil
+}
+
+var errCorruptedInstall = errs.New("Corrupted install")
+
+// detectCorruptedInstallDir will return an error if it detects that the given install path is not a proper
+// State Tool installation path. This mainly covers cases where we are working off of a legacy install of the State
+// Tool or cases where the uninstall was not completed properly.
+func detectCorruptedInstallDir(path string) error {
+	if !fileutils.TargetExists(path) {
+		return nil
+	}
+
+	isEmpty, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not check if install dir is empty")
+	}
+	if isEmpty {
+		return nil
+	}
+
+	// Detect if the install dir has files in it
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not read directory: %s", path)
+	}
+
+	// Executable files should be in bin dir, not root dir
+	for _, file := range files {
+		if isStateExecutable(strings.ToLower(file.Name())) {
+			return errs.Wrap(errCorruptedInstall, "Install directory should only contain dirs: %s", path)
+		}
+	}
+
+	return nil
+}
+
+func isStateExecutable(name string) bool {
+	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension || name == constants.StateTrayCmd+exeutils.Extension {
+		return true
+	}
+	return false
+}
+
+func installedOnPath(installRoot string) (bool, string, error) {
+	if !fileutils.DirExists(installRoot) {
+		return false, "", nil
+	}
+
+	path := appinfo.StateApp(installRoot).Exec()
+	if fileutils.TargetExists(path) {
+		return true, filepath.Dir(path), nil
+	}
+
+	binPath, err := installation.BinPathFromInstallPath(installRoot)
+	if err != nil {
+		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+	}
+
+	path = appinfo.StateApp(binPath).Exec()
+	return fileutils.TargetExists(path), filepath.Dir(path), nil
 }
