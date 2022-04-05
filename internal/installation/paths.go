@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,6 +73,9 @@ func InstalledOnPath(installRoot string) (bool, string, error) {
 
 	found, err := fileutils.FindFileInPath(installRoot, InstallDirMarker)
 	if err != nil {
+		if errors.Is(err, fileutils.ErrorFileNotFound) {
+			return false, "", nil
+		}
 		return false, "", errs.Wrap(err, "Could not find install directory marker file")
 	}
 
