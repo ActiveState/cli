@@ -57,8 +57,8 @@ type Configurable interface {
 	Close() error
 }
 
-// NewChecker returns a new instance of the Checker struct
-func NewChecker(timeout time.Duration, configuration Configurable) *Checker {
+// newChecker returns a new instance of the Checker struct
+func newChecker(timeout time.Duration, configuration Configurable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
@@ -69,12 +69,12 @@ func NewChecker(timeout time.Duration, configuration Configurable) *Checker {
 // Check will run a Checker.Check with defaults
 func Check(cfg Configurable) (*Info, error) {
 	defer profile.Measure("deprecation:Check", time.Now())
-	return CheckVersionNumber(cfg, constants.VersionNumber)
+	return checkVersionNumber(cfg, constants.VersionNumber)
 }
 
-// CheckVersionNumber will run a Checker.Check with defaults
-func CheckVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
-	checker := NewChecker(DefaultTimeout, cfg)
+// checkVersionNumber will run a Checker.Check with defaults
+func checkVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
+	checker := newChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
 
@@ -94,17 +94,18 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 		return nil, errs.Wrap(err, "Invalid version number: %s", versionNumber)
 	}
 
-	var infos []Info
 	if checker.shouldFetch() {
-		infos, err = checker.fetchDeprecationInfo()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		infos, err = checker.cachedDeprecationInfo()
-		if err != nil {
-			return nil, errs.Wrap(err, "cachedDeprecationInfo failed")
-		}
+		go func() {
+			err := checker.refreshDeprecationInfo()
+			if err != nil {
+				multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
+			}
+		}()
+	}
+
+	infos, err := checker.cachedDeprecationInfo()
+	if err != nil {
+		return nil, errs.Wrap(err, "cachedDeprecationInfo failed")
 	}
 
 	for _, info := range infos {
@@ -155,37 +156,37 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	return resp.StatusCode, body, nil
 }
 
-func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
-	logging.Debug("Fetching deprecation information from S3")
+func (checker *Checker) refreshDeprecationInfo() error {
+	logging.Debug("Refreshing deprecation information from S3")
 
 	code, body, err := checker.fetchDeprecationInfoBody()
 	if err != nil {
 		if errs.Matches(err, &ErrTimeout{}) {
 			logging.Debug("Timed out while fetching deprecation info: %v", err)
-			return nil, nil
+			return nil
 		}
-		return nil, err
+		return err
 	}
 
 	// Handle non-200 response gracefully
 	if code != 200 {
 		if code == 404 || code == 403 { // On S3 a 403 means a 404, at least for our use-case
-			return nil, locale.NewError("err_deprection_404")
+			return locale.NewError("err_deprection_404")
 		}
-		return nil, locale.NewError("err_deprection_code", "", strconv.Itoa(code))
+		return locale.NewError("err_deprection_code", "", strconv.Itoa(code))
 	}
 
 	infos, err := initializeInfo(body)
 	if err != nil {
-		return nil, errs.Wrap(err, "initializeInfo failed")
+		return errs.Wrap(err, "initializeInfo failed")
 	}
 
 	err = checker.saveDeprecationInfo(infos)
 	if err != nil {
-		return nil, errs.Wrap(err, "saveDeprecatinInfo failed")
+		return errs.Wrap(err, "saveDeprecatinInfo failed")
 	}
 
-	return infos, nil
+	return nil
 }
 
 func (checker *Checker) saveDeprecationInfo(info []Info) error {

@@ -100,7 +100,6 @@ func run(cfg *config.Instance) (rerr error) {
 	defer an.Wait()
 
 	// Refresh deprecation file
-	// TODO: This should be a forced refresh of the deprecation file
 	_, err = deprecation.Check(cfg)
 	if err != nil {
 		multilog.Error("Could not check for deprecation: %s", err.Error())

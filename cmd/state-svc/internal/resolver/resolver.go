@@ -162,18 +162,20 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
-	// TODO: This should always just return what's in the file on disk
-	// When the service starts we should do the initial deprecation check
-	// We should also do a deprecation check after this request
 	deprecated, err := deprecation.Check(r.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not check for deprecation")
 	}
+	if deprecated == nil || deprecated.Date.IsZero() {
+		return &graph.DeprecationInfo{DateReached: false}, nil
+	}
 
 	return &graph.DeprecationInfo{
+		Deprecated:  true,
 		Version:     deprecated.Version,
 		Date:        deprecated.Date.Format(constants.DateFormatUser),
 		DateReached: deprecated.DateReached,
 		Reason:      deprecated.Reason,
 	}, nil
+
 }
