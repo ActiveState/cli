@@ -230,7 +230,11 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 
 func checkInstallationPath(installPath string) (bool, string) {
 	// We expect the executablePath to be: ../<branchName>/bin/state
-	// So we return the directory above 'bin'
+	// So we return the directory above 'bin' if it exists
 	executablePath := appinfo.StateApp(installPath).Exec()
-	return fileutils.TargetExists(executablePath), filepath.Dir(filepath.Dir(installPath))
+	installDir := filepath.Dir(executablePath)
+	if filepath.Base(filepath.Dir(installPath)) == installation.BinDirName {
+		return fileutils.TargetExists(executablePath), filepath.Dir(installDir)
+	}
+	return fileutils.TargetExists(executablePath), installDir
 }
