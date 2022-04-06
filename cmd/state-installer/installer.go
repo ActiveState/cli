@@ -45,6 +45,10 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 }
 
 func (i *Installer) Install() (rerr error) {
+	if err := fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker)); err != nil {
+		return errs.Wrap(err, "Could not place install dir marker")
+	}
+
 	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
 		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
@@ -97,11 +101,6 @@ func (i *Installer) Install() (rerr error) {
 	// Install Launcher
 	if err := i.installLauncher(); err != nil {
 		return errs.Wrap(err, "Installation of system files failed.")
-	}
-
-	err = fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker))
-	if err != nil {
-		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
 	// Set up the environment
