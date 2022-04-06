@@ -87,11 +87,12 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	return addr, nil
 }
 
-func StopServer(ipComm IPCommunicator) (err error) {
+func StopServer(ipComm IPCommunicator) error {
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
-	if err := stopAndWait(ctx, ipComm); err != nil {
+	err := stopAndWait(ctx, ipComm)
+	if err != nil && !errors.Is(err, ipc.ErrFileNotExist) && !errors.Is(err, ipc.ErrConnRefused) {
 		return errs.Wrap(err, "Cannot stop ipc server")
 	}
 
