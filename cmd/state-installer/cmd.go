@@ -251,7 +251,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	if installPath != params.path {
 		logging.Debug("Setting path to: %s", installPath)
-		params.path = filepath.Dir(installPath)
+		params.path = installPath
 	}
 
 	// If this is a fresh installation we ensure that the target directory is empty
