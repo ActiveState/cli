@@ -245,7 +245,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, targetBranch)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}

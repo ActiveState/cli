@@ -203,7 +203,7 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot string) (bool, string, error) {
+func installedOnPath(installRoot, branch string) (bool, string, error) {
 	if !fileutils.DirExists(installRoot) {
 		return false, "", nil
 	}
@@ -219,5 +219,11 @@ func installedOnPath(installRoot string) (bool, string, error) {
 	}
 
 	path = appinfo.StateApp(binPath).Exec()
+	if fileutils.TargetExists(path) {
+		return true, filepath.Dir(path), nil
+	}
+
+	// Fallback for installRoot that does not include branch name
+	path = appinfo.StateApp(filepath.Join(installRoot, branch)).Exec()
 	return fileutils.TargetExists(path), filepath.Dir(path), nil
 }
