@@ -250,6 +250,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
 	if installPath != params.path {
+		logging.Debug("Setting path to: %s", installPath)
 		params.path = installPath
 	}
 
