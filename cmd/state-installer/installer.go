@@ -206,22 +206,15 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	// Handle beta version that was sending the installRoot without the braanch
-	branchVariant := filepath.Join(installRoot, branch)
-	if fileutils.DirExists(branchVariant) {
-		installRoot = branchVariant
-	}
-
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
 	stateCmd := constants.StateCmd + exeutils.Extension
-	binRoot, err := installation.BinPathFromInstallPath(installRoot)
-	if err != nil {
-		return false, "", errs.Wrap(err, "Could not get bin install path")
-	}
 
-	// Check for state.exe in root and bin dir
+	// Check for state.exe in branch, root and bin dir
+	// This is to handle older state tool versions that gave incompatible input paths
 	candidates := []string{
-		filepath.Join(binRoot, stateCmd),
+		filepath.Join(installRoot, branch, installation.BinDirName, stateCmd),
+		filepath.Join(installRoot, branch, stateCmd),
+		filepath.Join(installRoot, installation.BinDirName, stateCmd),
 		filepath.Join(installRoot, stateCmd),
 	}
 	for _, candidate := range candidates {
