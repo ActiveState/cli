@@ -2,6 +2,7 @@ package ipc
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -59,7 +60,8 @@ func (c *Client) PingServer(ctx context.Context) (time.Duration, error) {
 }
 
 func (c *Client) StopServer(ctx context.Context) error {
-	if _, err := getStop(ctx, c); err != nil {
+	_, err := getStop(ctx, c)
+	if err != nil && !errors.Is(err, ErrFileNotExist) && !errors.Is(err, ErrConnRefused) {
 		return errs.Wrap(err, "Failed to complete stop request")
 	}
 
