@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	commonTimeout = time.Millisecond * 100
+	commonTimeout = time.Millisecond * 750
 )
 
 type IPCommunicator interface {
