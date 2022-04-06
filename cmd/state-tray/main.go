@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -100,7 +100,7 @@ func run(cfg *config.Instance) (rerr error) {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
-	if err := cfg.Set(installation.ConfigKeyTrayPid, os.Getpid()); err != nil {
+	if err := cfg.Set(installmgr.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
@@ -269,7 +269,7 @@ func onExit() {
 			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 	}()
-	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
+	err = cfg.GetThenSet(installmgr.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
 		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
@@ -294,7 +294,7 @@ func execute(exec string, args []string) error {
 }
 
 func isTrayRunning(cfg *config.Instance) (bool, error) {
-	pid := cfg.GetInt(installation.ConfigKeyTrayPid)
+	pid := cfg.GetInt(installmgr.ConfigKeyTrayPid)
 	if pid <= 0 {
 		return false, nil
 	}

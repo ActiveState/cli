@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -59,11 +60,11 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Stop any running processes that might interfere
-	trayRunning, err := installation.IsTrayAppRunning(i.cfg)
+	trayRunning, err := installmgr.IsTrayAppRunning(i.cfg)
 	if err != nil {
 		multilog.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
 	}
-	if err := installation.StopRunning(i.path); err != nil {
+	if err := installmgr.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
@@ -104,10 +105,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Set up the environment
-	binDir, err := installation.BinPathFromInstallPath(i.path)
-	if err != nil {
-		return errs.Wrap(err, "Could not detect installation bin path")
-	}
+	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
@@ -208,33 +206,29 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	installed, installPath := checkInstallationPath(installRoot)
-	if installed {
-		return installed, installPath, nil
+	// Handle beta version that was sending the installRoot without the braanch
+	branchVariant := filepath.Join(installRoot, branch)
+	if fileutils.DirExists(branchVariant) {
+		installRoot = branchVariant
 	}
 
-	binPath, err := installation.BinPathFromInstallPath(installRoot)
+	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
+	stateCmd := constants.StateCmd + exeutils.Extension
+	binRoot, err := installation.BinPathFromInstallPath(installRoot)
 	if err != nil {
-		return installed, installPath, errs.Wrap(err, "Could not detect binPath from installRoot: %s", installRoot)
+		return false, "", errs.Wrap(err, "Could not get bin install path")
 	}
 
-	installed, installPath = checkInstallationPath(binPath)
-	if installed {
-		return installed, installPath, nil
+	// Check for state.exe in root and bin dir
+	candidates := []string{
+		filepath.Join(binRoot, stateCmd),
+		filepath.Join(installRoot, stateCmd),
+	}
+	for _, candidate := range candidates {
+		if fileutils.TargetExists(candidate) {
+			return true, installRoot, nil
+		}
 	}
 
-	// Fallback for installRoot that does not include branch name
-	installed, installPath = checkInstallationPath(filepath.Join(installRoot, branch))
-	return installed, installPath, nil
-}
-
-func checkInstallationPath(installPath string) (bool, string) {
-	// We expect the executablePath to be: ../<branchName>/bin/state
-	// So we return the directory above 'bin' if it exists
-	executablePath := appinfo.StateApp(installPath).Exec()
-	installDir := filepath.Dir(executablePath)
-	if filepath.Base(installDir) == installation.BinDirName {
-		return fileutils.TargetExists(executablePath), filepath.Dir(installDir)
-	}
-	return fileutils.TargetExists(executablePath), installDir
+	return false, installRoot, nil
 }

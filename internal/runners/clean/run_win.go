@@ -76,12 +76,6 @@ func removeInstall(logFile, configPath, transitionalStateTool string) error {
 	trayInfo := appinfo.TrayApp()
 	var aggErr error
 	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
-		if err := os.Remove(info.LegacyExec()); err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				aggErr = errs.Wrap(aggErr, "Could not remove (legacy) %s: %v", info.LegacyExec(), err)
-			}
-		}
-
 		err := os.Remove(info.Exec())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
