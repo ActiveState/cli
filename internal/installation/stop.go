@@ -149,7 +149,7 @@ func killProcess(proc *process.Process, name string) error {
 			}
 		}
 	} else {
-		logging.Error("Could not get child process: %w", err)
+		logging.Error("Could not get child process: %v", err)
 	}
 
 	err = proc.Kill()
