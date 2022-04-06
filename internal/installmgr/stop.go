@@ -57,10 +57,10 @@ func stopSvc(installPath string) error {
 	if fileutils.FileExists(svcInfo.Exec()) {
 		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
 		if err != nil {
-			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
-		}
-		if exitCode != 0 {
-			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+			// We don't return these errors because we want to fall back on killing the process
+			multilog.Error("Stopping %s returned error: %s", svcInfo.Name(), errs.JoinMessage(err))
+		} else if exitCode != 0 {
+			multilog.Error("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
 		}
 	}
 
