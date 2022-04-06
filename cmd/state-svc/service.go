@@ -75,3 +75,7 @@ func (s *service) Stop() error {
 
 	return nil
 }
+
+func (s *service) Wait() {
+	_ = s.ipcSrv.Wait()
+}

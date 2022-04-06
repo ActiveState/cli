@@ -88,32 +88,58 @@ func (ipc *Server) Start() error {
 
 	// Produce (accept) and consume (route to handler) connections.
 	conns := make(chan net.Conn)
+	errsc := make(chan error)
 
-	ipc.wg.Add(1)
 	go func() {
-		defer ipc.wg.Done()
-		defer close(conns)
+		var wg sync.WaitGroup
+		defer close(errsc)
 
-		// Continually route incomming connections to the appropriate handler.
-		for {
-			if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
-				if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer close(conns)
+
+			// Continually accept connections and feed them into the relevant channel.
+			for {
+				select {
+				case <-ipc.ctx.Done():
 					return
+				default:
+					if err := accept(conns, listener); err != nil {
+						if !errors.Is(err, context.Canceled) {
+							errsc <- errs.Wrap(err, "Unexpected accept error")
+						}
+						return
+					}
 				}
-				logging.Error("unexpected routeToHandler error: %v", err)
 			}
-		}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// Continually route incomming connections to the appropriate handler.
+			for {
+				if err := routeToHandler(ipc.wg, conns, ipc.reqHandlers); err != nil {
+					if !errors.Is(err, CtlErrConnsClosed) {
+						logging.Error("unexpected routeToHandler error: %v", err)
+					}
+					break
+				}
+			}
+		}()
+
+		wg.Wait()
 	}()
 
-	// Continually accept connections and feed them into the relevant channel.
-	for {
-		if err := accept(ipc.ctx, conns, listener); err != nil {
-			if errors.Is(err, context.Canceled) {
-				return nil
-			}
-			return errs.Wrap(err, "Unexpected accept error")
+	var retErr error
+	for err := range errsc {
+		if err != nil && retErr == nil {
+			retErr = err
 		}
 	}
+	return retErr
 }
 
 func (ipc *Server) Close() error {
@@ -121,38 +147,34 @@ func (ipc *Server) Close() error {
 	case <-ipc.ctx.Done():
 	default:
 		ipc.cancel()
-		ipc.wg.Wait()
 	}
 	return nil
 }
 
-func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
+func (ipc *Server) Wait() error {
+	ipc.wg.Wait()
+	return nil
+}
+
+func accept(conns chan net.Conn, l net.Listener) error {
 	conn, err := l.Accept()
 	if err != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			return errs.Wrap(err, "Critical error accepting connections")
-		}
+		return err
 	}
 
 	conns <- conn
+
 	return nil
 }
 
-func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []RequestHandler) error {
+func routeToHandler(wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []RequestHandler) error {
 	select {
-	case <-ctx.Done():
-		return ctx.Err()
-
 	case conn, ok := <-conns:
 		if !ok {
-			return ErrConnsClosed
+			return CtlErrConnsClosed
 		}
 
 		wg.Add(1)
-
 		go func() {
 			defer wg.Done()
 			defer conn.Close()
