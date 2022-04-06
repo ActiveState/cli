@@ -186,3 +186,33 @@ func newDeployReportCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		})
 }
+
+func newDeployUninstallCommand(prime *primer.Values) *captain.Command {
+	runner := deploy.NewDeploy(deploy.UnsetStep, prime)
+
+	params := &deploy.Params{Uninstall: true}
+
+	return captain.NewCommand(
+		"uninstall",
+		locale.Tl("deploy_uninstall_title", "Uninstall Deployed Runtime"),
+		locale.Tl("deploy_uninstall_cmd_description", "Removes a runtime that had previously been deployed"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Description: locale.Tl("flag_state_deploy_uninstall_path_description", "The path of the deployed runtime to uninstall if not the current directory"),
+				Value:       &params.Path,
+			},
+		},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("arg_state_deploy_namespace"),
+				Description: locale.Tl("arg_state_deploy_uninstall_namespace_description", "The namespace of the deployed project that you wish to uninstall"),
+				Value:       &params.Namespace,
+				Required:    true,
+			},
+		},
+		func(cmd *captain.Command, args []string) error {
+			return runner.Run(params)
+		})
+}

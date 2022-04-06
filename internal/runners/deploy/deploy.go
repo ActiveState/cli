@@ -37,6 +37,7 @@ type Params struct {
 	Path      string
 	Force     bool
 	UserScope bool
+	Uninstall bool
 }
 
 // RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
@@ -96,6 +97,30 @@ func (d *Deploy) Run(params *Params) error {
 
 	// Headless argument is simply false here as you cannot deploy a headless project
 	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
+
+	if params.Uninstall {
+		path := rtTarget.Dir()
+		logging.Debug("Attempting to uninstall deployment at %s", path)
+		if _, err := runtime.New(rtTarget, d.analytics, d.svcModel); err != nil {
+			return errs.AddTips(
+				locale.NewError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
+				locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
+		}
+
+		err := os.RemoveAll(path)
+		if err != nil {
+			return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at {{.V0}}", path)
+		}
+
+		err = d.subshell.CleanUserEnv(d.cfg, sscommon.DeployID, params.UserScope)
+		if err != nil {
+			return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
+		}
+
+		d.output.Notice(locale.T("deploy_uninstall_success"))
+
+		return nil
+	}
 
 	logging.Debug("runSteps: %s", d.step.String())
 
