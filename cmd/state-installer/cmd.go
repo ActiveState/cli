@@ -267,7 +267,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// Detect state tool alongside installer executable
 	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := appinfo.StateApp(installerPath).Exec()
+	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 
 	// Detect whether this is a fresh install or an update
 	isUpdate := false
