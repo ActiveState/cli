@@ -203,21 +203,38 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot string) (bool, string, error) {
+func installedOnPath(installRoot, branch string) (bool, string, error) {
 	if !fileutils.DirExists(installRoot) {
 		return false, "", nil
 	}
 
-	path := appinfo.StateApp(installRoot).Exec()
-	if fileutils.TargetExists(path) {
-		return true, filepath.Dir(path), nil
+	installed, installPath := checkInstallationPath(installRoot)
+	if installed {
+		return installed, installPath, nil
 	}
 
 	binPath, err := installation.BinPathFromInstallPath(installRoot)
 	if err != nil {
-		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
+		return installed, installPath, errs.Wrap(err, "Could not detect binPath from installRoot: %s", installRoot)
 	}
 
-	path = appinfo.StateApp(binPath).Exec()
-	return fileutils.TargetExists(path), filepath.Dir(path), nil
+	installed, installPath = checkInstallationPath(binPath)
+	if installed {
+		return installed, installPath, nil
+	}
+
+	// Fallback for installRoot that does not include branch name
+	installed, installPath = checkInstallationPath(filepath.Join(installRoot, branch))
+	return installed, installPath, nil
+}
+
+func checkInstallationPath(installPath string) (bool, string) {
+	// We expect the executablePath to be: ../<branchName>/bin/state
+	// So we return the directory above 'bin' if it exists
+	executablePath := appinfo.StateApp(installPath).Exec()
+	installDir := filepath.Dir(executablePath)
+	if filepath.Base(installDir) == installation.BinDirName {
+		return fileutils.TargetExists(executablePath), filepath.Dir(installDir)
+	}
+	return fileutils.TargetExists(executablePath), installDir
 }
