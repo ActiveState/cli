@@ -233,7 +233,7 @@ func checkInstallationPath(installPath string) (bool, string) {
 	// So we return the directory above 'bin' if it exists
 	executablePath := appinfo.StateApp(installPath).Exec()
 	installDir := filepath.Dir(executablePath)
-	if filepath.Base(filepath.Dir(installPath)) == installation.BinDirName {
+	if filepath.Base(installDir) == installation.BinDirName {
 		return fileutils.TargetExists(executablePath), filepath.Dir(installDir)
 	}
 	return fileutils.TargetExists(executablePath), installDir
