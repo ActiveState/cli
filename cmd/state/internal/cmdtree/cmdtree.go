@@ -76,6 +76,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newDeployConfigureCommand(prime),
 		newDeploySymlinkCommand(prime),
 		newDeployReportCommand(prime),
+		newDeployUninstallCommand(prime),
 	)
 
 	tutorialCmd := newTutorialCommand(prime)

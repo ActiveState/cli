@@ -45,7 +45,7 @@ func removeEnvPaths(cfg configurable) error {
 	// remove shell file additions
 	s := subshell.New(cfg)
 	if err := s.CleanUserEnv(cfg, sscommon.InstallID, !isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to State Tool installation PATH")
+		return errs.Wrap(err, "Failed to remove State Tool installation PATH")
 	}
 	// Default projects will stop working, so we return them from the PATH as well
 	if err := s.CleanUserEnv(cfg, sscommon.DefaultID, !isAdmin); err != nil {

@@ -1467,6 +1467,10 @@ flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
 flag_state_deploy_user_path_description:
   other: "Updates the user PATH instead of the system PATH"
+deploy_uninstall_success:
+  other: |
+    Successfully removed deployment.
+    [ACTIONABLE]Please restart your terminal or start a new terminal session in order to clear any residual Runtime Environment variables and settings.[/RESET]
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.
@@ -1843,7 +1847,7 @@ err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
     uninstalling it and then running the installation process again.
-    
+
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
