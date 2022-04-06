@@ -26,16 +26,12 @@ func DefaultInstallPath() (string, error) {
 }
 
 func InstallRoot(path string) (string, error) {
-	currentPath := path
-	for filepath.Dir(currentPath) != currentPath {
-		candidate := filepath.Join(currentPath, InstallDirMarker)
-		if fileutils.TargetExists(candidate) {
-			return filepath.Dir(candidate), nil
-		}
-		currentPath = filepath.Dir(currentPath)
+	installFile, err := fileutils.FindFileInPath(path, InstallDirMarker)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not find install marker file in path")
 	}
 
-	return "", errs.New("Could not find an installation dir marker under %s", path)
+	return filepath.Dir(installFile), nil
 }
 
 func InstallPathFromArg0() (string, error) {
