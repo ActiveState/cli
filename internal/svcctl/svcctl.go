@@ -92,7 +92,7 @@ func StopServer(ipComm IPCommunicator) error {
 	defer cancel()
 
 	err := stopAndWait(ctx, ipComm)
-	if err != nil && !errors.Is(err, ipc.ErrFileNotExist) && !errors.Is(err, ipc.ErrConnRefused) {
+	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
 		return errs.Wrap(err, "Cannot stop ipc server")
 	}
 

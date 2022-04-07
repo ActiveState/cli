@@ -122,7 +122,7 @@ func (ipc *Server) Start() error {
 			// Continually route incomming connections to the appropriate handler.
 			for {
 				if err := routeToHandler(ipc.wg, conns, ipc.reqHandlers); err != nil {
-					if !errors.Is(err, CtlErrConnsClosed) {
+					if !errors.Is(err, ctlErrConnsClosed) {
 						logging.Error("unexpected routeToHandler error: %v", err)
 					}
 					break
@@ -171,7 +171,7 @@ func routeToHandler(wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []Reque
 	select {
 	case conn, ok := <-conns:
 		if !ok {
-			return CtlErrConnsClosed
+			return ctlErrConnsClosed
 		}
 
 		wg.Add(1)
