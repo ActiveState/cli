@@ -121,22 +121,26 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 }
 
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
-	for try := 1; try <= 24; try++ {
+	start := time.Now()
+	for try := 1; try <= 32; try++ {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 
-		start := time.Now()
+		tryStart := time.Now()
 		timeout := time.Millisecond * time.Duration(try*try)
 
-		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
+		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
 		if err := ping(ctx, ipComm, timeout); err != nil {
-			if !errors.Is(err, errNotUp) {
+			if errors.Is(err, ctlErrNotSureIfUp) {
+				continue
+			}
+			if !errors.Is(err, ctlErrNotUp) {
 				return errs.Wrap(err, "Ping failed")
 			}
-			elapsed := time.Since(start)
+			elapsed := time.Since(tryStart)
 			time.Sleep(timeout - elapsed)
 			continue
 		}
@@ -160,6 +164,7 @@ func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 }
 
 func waitDown(ctx context.Context, ipComm IPCommunicator) error {
+	start := time.Now()
 	for try := 1; try <= 32; try++ {
 		select {
 		case <-ctx.Done():
@@ -167,17 +172,20 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 		default:
 		}
 
-		start := time.Now()
+		tryStart := time.Now()
 		timeout := time.Millisecond * time.Duration(try*try)
 
-		logging.Debug("Attempt: %d, timeout: %v", try, timeout)
+		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
 		if err := ping(ctx, ipComm, timeout); err != nil {
-			if errors.Is(err, errNotUp) {
+			if errors.Is(err, ctlErrNotSureIfUp) {
+				continue
+			}
+			if errors.Is(err, ctlErrNotUp) {
 				return nil
 			}
 			return errs.Wrap(err, "Ping failed")
 		}
-		elapsed := time.Since(start)
+		elapsed := time.Since(tryStart)
 		time.Sleep(timeout - elapsed)
 	}
 
@@ -185,9 +193,13 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
 	_, err := ipComm.PingServer(ctx)
 	if err != nil {
-		return asNotUpError(err)
+		return asNotSureIfUpErr(asNotUpError(err))
 	}
+
 	return nil
 }
