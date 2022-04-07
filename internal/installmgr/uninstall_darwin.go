@@ -1,6 +1,7 @@
+//go:build darwin
 // +build darwin
 
-package installation
+package installmgr
 
 import (
 	"os"
