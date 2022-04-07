@@ -202,6 +202,8 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 		return errs.Wrap(err, "Failed to stop service")
 	}
 
+	p.Wait()
+
 	err := <-serverErr
 	return err
 }

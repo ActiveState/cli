@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	commonTimeout = time.Millisecond * 100
+	commonTimeout = time.Millisecond * 750
 )
 
 type IPCommunicator interface {
@@ -87,11 +87,12 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	return addr, nil
 }
 
-func StopServer(ipComm IPCommunicator) (err error) {
+func StopServer(ipComm IPCommunicator) error {
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
 
-	if err := stopAndWait(ctx, ipComm); err != nil {
+	err := stopAndWait(ctx, ipComm)
+	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
 		return errs.Wrap(err, "Cannot stop ipc server")
 	}
 
