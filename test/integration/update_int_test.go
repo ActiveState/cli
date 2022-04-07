@@ -54,8 +54,6 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) [
 		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
 	}
 
-	env = append(env, "VERBOSE=true")
-
 	if forceUpdate {
 		env = append(env, "ACTIVESTATE_FORCE_UPDATE=true")
 	}
