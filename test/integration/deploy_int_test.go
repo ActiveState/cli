@@ -117,9 +117,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.Expect("a tar-like program written in perl")
 
 	cp.SendLine("ppm --version")
-	cp.Expect("The Perl Package Manager (PPM) is no longer supported.")
-	cp.SendLine(errorLevel)
-	cp.Expect("0")
+	cp.Expect("not found")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
