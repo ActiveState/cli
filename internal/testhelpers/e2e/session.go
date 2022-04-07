@@ -115,7 +115,7 @@ func (s *Session) CopyExeToDir(from, to string) string {
 	}
 
 	err := fileutils.CopyFile(from, to)
-	require.NoError(s.t, err)
+	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(from)
@@ -131,25 +131,6 @@ func (s *Session) CopyExeToDir(from, to string) string {
 
 func (s *Session) copyExeToBinDir(executable string) string {
 	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
-}
-
-// UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
-func (s *Session) UseDistinctStateExesLegacy() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	if fileutils.FileExists(s.SvcExe) {
-		s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	}
-	if fileutils.FileExists(s.TrayExe) {
-		s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	}
-}
-
-// UniqueExe ensures the executable is unique to this instance
-func (s *Session) UseDistinctStateExes() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.CopyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
