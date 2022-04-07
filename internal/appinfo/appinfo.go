@@ -3,12 +3,12 @@ package appinfo
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -16,24 +16,16 @@ import (
 type AppInfo struct {
 	name       string
 	executable string
-	legacyExec string
 }
 
 func execDir(baseDir ...string) (resultPath string) {
-	defer func() {
-		// Account for legacy use-case that wasn't using the correct bin dir
-		if filepath.Base(resultPath) == "bin" {
-			return
-		}
-
-		binDir := filepath.Join(resultPath, "bin")
-		if fileutils.DirExists(binDir) {
-			resultPath = binDir
-		}
-	}()
-
 	if len(baseDir) > 0 {
-		return baseDir[0]
+		path, err := installation.BinPathFromInstallPath(baseDir[0])
+		if err != nil {
+			multilog.Error("Could not collect bin path from install path: %s, error: %s", baseDir[0], errs.JoinMessage(err))
+			return baseDir[0]
+		}
+		return path
 	}
 
 	if condition.InUnitTest() {
@@ -63,18 +55,9 @@ func execDir(baseDir ...string) (resultPath string) {
 func newAppInfo(name, executableBase string, baseDir ...string) *AppInfo {
 	dir := execDir(baseDir...)
 
-	var legacyExec string
-	if strings.HasSuffix(dir, "bin") {
-		possibleLegacyExec := filepath.Join(filepath.Dir(dir), executableBase+osutils.ExeExt)
-		if fileutils.FileExists(possibleLegacyExec) {
-			legacyExec = possibleLegacyExec
-		}
-	}
-
 	return &AppInfo{
 		name,
 		filepath.Join(dir, executableBase+osutils.ExeExt),
-		legacyExec,
 	}
 }
 
@@ -106,6 +89,3 @@ func (a *AppInfo) Exec() string {
 	return a.executable
 }
 
-func (a *AppInfo) LegacyExec() string {
-	return a.legacyExec
-}

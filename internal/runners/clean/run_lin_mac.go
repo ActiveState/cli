@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -91,19 +92,13 @@ func removeInstall(cfg configurable) error {
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
-	if err := installation.StopTrayApp(cfg); err != nil {
+	if err := installmgr.StopTrayApp(cfg); err != nil {
 		return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
 	}
 
 	var aggErr error
 
 	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
-		if err := os.Remove(info.LegacyExec()); err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				aggErr = errs.Wrap(aggErr, "Could not remove (legacy) %s: %v", info.LegacyExec(), err)
-			}
-		}
-
 		err := os.Remove(info.Exec())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
@@ -124,11 +119,11 @@ func removeInstall(cfg configurable) error {
 		return errs.Wrap(aggErr, "Could not determine OS specific launcher install path")
 	}
 
-	if err := installation.RemoveSystemFiles(appPath); err != nil {
+	if err := installmgr.RemoveSystemFiles(appPath); err != nil {
 		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
 	}
 
-	installPath, err := installation.InstallPath()
+	installPath, err := installation.InstallPathFromExecPath()
 	if err != nil {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
 	}
