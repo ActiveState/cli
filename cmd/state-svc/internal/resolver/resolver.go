@@ -151,6 +151,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 }
 
 func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+	logging.Debug("Runtime usage resolver")
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
@@ -162,12 +163,13 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	logging.Debug("Check deprecation resolver")
 	deprecated, err := deprecation.Check(r.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not check for deprecation")
 	}
-	if deprecated == nil || deprecated.Date.IsZero() {
-		return &graph.DeprecationInfo{DateReached: false}, nil
+	if deprecated == nil {
+		return &graph.DeprecationInfo{Deprecated: false}, nil
 	}
 
 	return &graph.DeprecationInfo{
