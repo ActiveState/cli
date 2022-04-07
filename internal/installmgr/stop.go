@@ -1,7 +1,6 @@
-package installation
+package installmgr
 
 import (
-	"errors"
 	"runtime"
 	"strings"
 	"syscall"
@@ -34,8 +33,8 @@ func StopRunning(installPath string) (rerr error) {
 
 	err = stopSvc(installPath)
 	if err != nil {
-		multilog.Critical("Could not stop running service, error: %v", err)
-		return locale.NewError("err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
+		multilog.Critical("Could not stop running service, error: %v", errs.JoinMessage(err))
+		return locale.WrapError(err, "err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
 	return nil
@@ -58,10 +57,10 @@ func stopSvc(installPath string) error {
 	if fileutils.FileExists(svcInfo.Exec()) {
 		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
 		if err != nil {
-			return errs.Wrap(err, "Stopping %s returned error", svcInfo.Name())
-		}
-		if exitCode != 0 {
-			return errs.New("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+			// We don't return these errors because we want to fall back on killing the process
+			multilog.Error("Stopping %s returned error: %s", svcInfo.Name(), errs.JoinMessage(err))
+		} else if exitCode != 0 {
+			multilog.Error("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
 		}
 	}
 
@@ -142,15 +141,15 @@ func stopSvcProcess(proc *process.Process, name string) error {
 
 func killProcess(proc *process.Process, name string) error {
 	children, err := proc.Children()
-	if err != nil && !errors.Is(err, process.ErrorNoChildren) {
-		return errs.Wrap(err, "Could not get child processes")
-	}
-
-	for _, c := range children {
-		err = c.Kill()
-		if err != nil {
-			return errs.Wrap(err, "Could not kill child process of %s", name)
+	if err == nil {
+		for _, c := range children {
+			err = c.Kill()
+			if err != nil {
+				return errs.Wrap(err, "Could not kill child process of %s", name)
+			}
 		}
+	} else {
+		logging.Error("Could not get child process: %v", err)
 	}
 
 	err = proc.Kill()
