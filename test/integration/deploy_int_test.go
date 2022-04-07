@@ -446,6 +446,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 	cp.Expect("Uninstall Deployed Runtime")
 	cp.Expect("Successful")
 	cp.ExpectExitCode(0)
+	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.Work, "target")), "Deploy dir was not deleted")
 
 	// Trying to uninstall again should fail
 	cp = ts.SpawnWithOpts(
@@ -467,7 +468,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 	)
 	cp.Expect("no deployed runtime")
 	cp.ExpectExitCode(1)
-	suite.True(fileutils.IsDir(filepath.Join(ts.Dirs.Work)), "Work dir still exists")
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir still exists")
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {
