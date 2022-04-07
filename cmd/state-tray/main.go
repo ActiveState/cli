@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -17,7 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
+	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
@@ -25,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
@@ -98,18 +100,18 @@ func run(cfg *config.Instance) (rerr error) {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
-	if err := cfg.Set(installation.ConfigKeyTrayPid, os.Getpid()); err != nil {
+	if err := cfg.Set(installmgr.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
 	systray.SetIcon(iconFile)
 
-	svcm := svcmanager.New(cfg)
-	if err := svcm.Start(); err != nil {
+	port, err := svcctl.EnsureStartedAndLocateHTTP()
+	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}
 
-	model := model.NewSvcModel(cfg, svcm)
+	model := model.NewSvcModel(port)
 
 	systray.SetTooltip(locale.Tl("tray_tooltip", constants.TrayAppName))
 
@@ -267,7 +269,7 @@ func onExit() {
 			multilog.Error("Failed to close config after exiting systray: %v", err)
 		}
 	}()
-	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
+	err = cfg.GetThenSet(installmgr.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
 		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
@@ -292,7 +294,7 @@ func execute(exec string, args []string) error {
 }
 
 func isTrayRunning(cfg *config.Instance) (bool, error) {
-	pid := cfg.GetInt(installation.ConfigKeyTrayPid)
+	pid := cfg.GetInt(installmgr.ConfigKeyTrayPid)
 	if pid <= 0 {
 		return false, nil
 	}

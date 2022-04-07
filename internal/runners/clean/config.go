@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -26,6 +27,7 @@ type Config struct {
 	output  output.Outputer
 	confirm confirmAble
 	cfg     configurable
+	ipComm  svcctl.IPCommunicator
 }
 
 type ConfigParams struct {
@@ -33,14 +35,15 @@ type ConfigParams struct {
 }
 
 func NewConfig(prime primeable) *Config {
-	return newConfig(prime.Output(), prime.Prompt(), prime.Config())
+	return newConfig(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm())
 }
 
-func newConfig(out output.Outputer, confirm confirmAble, cfg configurable) *Config {
+func newConfig(out output.Outputer, confirm confirmAble, cfg configurable, ipComm svcctl.IPCommunicator) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirm,
 		cfg:     cfg,
+		ipComm:  ipComm,
 	}
 }
 
@@ -59,7 +62,7 @@ func (c *Config) Run(params *ConfigParams) error {
 		}
 	}
 
-	if err := stopServices(c.cfg, c.output, params.Force); err != nil {
+	if err := stopServices(c.cfg, c.output, c.ipComm, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 

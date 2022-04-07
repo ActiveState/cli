@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/svcmanager"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,7 +23,7 @@ type Values struct {
 	subshell    subshell.SubShell
 	conditional *constraints.Conditional
 	config      *config.Instance
-	svcMgr      *svcmanager.Manager
+	ipComm      svcctl.IPCommunicator
 	svcModel    *model.SvcModel
 	analytics   analytics.Dispatcher
 }
@@ -31,7 +31,7 @@ type Values struct {
 func New(
 	project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter,
 	subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance,
-	svcMgr *svcmanager.Manager, svcModel *model.SvcModel, an analytics.Dispatcher) *Values {
+	ipComm svcctl.IPCommunicator, svcModel *model.SvcModel, an analytics.Dispatcher) *Values {
 
 	v := &Values{
 		output:      output,
@@ -40,7 +40,7 @@ func New(
 		subshell:    subshell,
 		conditional: conditional,
 		config:      config,
-		svcMgr:      svcMgr,
+		ipComm:      ipComm,
 		svcModel:    svcModel,
 		analytics:   an,
 	}
@@ -75,8 +75,8 @@ type Configurer interface {
 	Config() *config.Instance
 }
 
-type Svcer interface {
-	SvcManager() *svcmanager.Manager
+type IPCommunicator interface {
+	IPComm() svcctl.IPCommunicator
 }
 
 type SvcModeler interface {
@@ -119,8 +119,8 @@ func (v *Values) Subshell() subshell.SubShell {
 	return v.subshell
 }
 
-func (v *Values) SvcManager() *svcmanager.Manager {
-	return v.svcMgr
+func (v *Values) IPComm() svcctl.IPCommunicator {
+	return v.ipComm
 }
 
 func (v *Values) SvcModel() *model.SvcModel {

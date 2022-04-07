@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/svcctl"
 )
 
 type confirmAble interface {
@@ -22,6 +23,7 @@ type Uninstall struct {
 	out     output.Outputer
 	confirm confirmAble
 	cfg     configurable
+	ipComm  svcctl.IPCommunicator
 	an      analytics.Dispatcher
 }
 
@@ -33,18 +35,20 @@ type primeable interface {
 	primer.Outputer
 	primer.Prompter
 	primer.Configurer
+	primer.IPCommunicator
 	primer.Analyticer
 }
 
 func NewUninstall(prime primeable) (*Uninstall, error) {
-	return newUninstall(prime.Output(), prime.Prompt(), prime.Config(), prime.Analytics())
+	return newUninstall(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm(), prime.Analytics())
 }
 
-func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable, an analytics.Dispatcher) (*Uninstall, error) {
+func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable, ipComm svcctl.IPCommunicator, an analytics.Dispatcher) (*Uninstall, error) {
 	return &Uninstall{
 		out:     out,
 		confirm: confirm,
 		cfg:     cfg,
+		ipComm:  ipComm,
 		an:      an,
 	}, nil
 }
@@ -69,7 +73,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errs.Wrap(err, "Could not verify installation")
 	}
 
-	if err := stopServices(u.cfg, u.out, params.Force); err != nil {
+	if err := stopServices(u.cfg, u.out, u.ipComm, params.Force); err != nil {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
