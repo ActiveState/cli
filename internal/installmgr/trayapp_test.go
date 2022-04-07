@@ -1,4 +1,4 @@
-package installation
+package installmgr
 
 import (
 	"testing"

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
@@ -27,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -114,7 +115,7 @@ func (s *Session) CopyExeToDir(from, to string) string {
 	}
 
 	err := fileutils.CopyFile(from, to)
-	require.NoError(s.t, err)
+	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(from)
@@ -130,25 +131,6 @@ func (s *Session) CopyExeToDir(from, to string) string {
 
 func (s *Session) copyExeToBinDir(executable string) string {
 	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
-}
-
-// UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
-func (s *Session) UseDistinctStateExesLegacy() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	if fileutils.FileExists(s.SvcExe) {
-		s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	}
-	if fileutils.FileExists(s.TrayExe) {
-		s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	}
-}
-
-// UniqueExe ensures the executable is unique to this instance
-func (s *Session) UseDistinctStateExes() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.CopyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
@@ -206,9 +188,20 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	// add session environment variables
 	env = append(env, extraEnv...)
-	exe, svcExe, trayExe, installExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe, InstallerExe: installExe}
+	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+
+	// Mock installation directory
+	exe, svcExe, trayExe, installExe := executablePaths(t)
+	session.Exe = session.copyExeToBinDir(exe)
+	session.SvcExe = session.copyExeToBinDir(svcExe)
+	session.TrayExe = session.copyExeToBinDir(trayExe)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.base)
+
+	err = fileutils.Touch(filepath.Join(dirs.base, installation.InstallDirMarker))
+	require.NoError(session.t, err)
+
+	return session
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -405,7 +398,7 @@ func (s *Session) Close() error {
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-	err = installation.StopTrayApp(cfg)
+	err = installmgr.StopTrayApp(cfg)
 	require.NoError(s.t, err, "Could not stop tray app")
 
 	if !s.retainDirs {

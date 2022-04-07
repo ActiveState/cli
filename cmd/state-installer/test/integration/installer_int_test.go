@@ -26,7 +26,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.UseDistinctStateExes()
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
 	// Run installer with source-path flag (ie. install from this local path)
