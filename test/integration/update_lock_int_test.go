@@ -26,9 +26,6 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 	suite.Require().NoError(err)
 	defer cfg.Close()
 
-	// Ensure we always use a unique exe for updates
-	ts.UseDistinctStateExes()
-
 	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 	pjfile.Save(cfg)
 
@@ -87,9 +84,6 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 			suite.Require().NoError(err)
 			defer cfg.Close()
 
-			// Ensure we always use a unique exe for updates
-			ts.UseDistinctStateExes()
-
 			yamlPath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 			pjfile.SetPath(yamlPath)
 			pjfile.Save(cfg)
@@ -144,9 +138,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 			suite.Require().NoError(err)
 			defer cfg.Close()
-
-			// Ensure we always use a unique exe for updates
-			ts.UseDistinctStateExes()
 
 			pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
 			pjfile.Save(cfg)

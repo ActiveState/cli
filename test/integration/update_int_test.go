@@ -101,9 +101,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// use unique exe
-	ts.UseDistinctStateExes()
-
 	// Technically state tool automatically starts the state-svc, but the update notification only happens if the svc
 	// happens to already be running and fails silently if not, so in this case we want to ensure the svc is running
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
@@ -119,8 +116,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
-
-	ts.UseDistinctStateExes()
 
 	suite.testUpdate(ts, ts.Dirs.Bin)
 }
@@ -149,8 +144,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	suite.OnlyRunForTags(tagsuite.Update)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
-
-	ts.UseDistinctStateExes()
 
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
@@ -201,9 +194,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			// Ensure we always use a unique exe for updates
-			ts.UseDistinctStateExes()
-
 			updateArgs := []string{"update", "--set-channel", tt.Channel}
 			if tt.Version != "" {
 				updateArgs = append(updateArgs, "--set-version", tt.Version)
@@ -244,10 +234,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 		suite.Run(tt.name, func() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
-			// use unique exe
-			ts.UseDistinctStateExes()
-
-			// ..
 		})
 	}
 }
@@ -268,8 +254,6 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
-
-	ts.UseDistinctStateExes()
 
 	suite.testAutoUpdate(ts, ts.Dirs.Bin)
 }
