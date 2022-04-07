@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -206,9 +207,20 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	// add session environment variables
 	env = append(env, extraEnv...)
-	exe, svcExe, trayExe, installExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe, InstallerExe: installExe}
+	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+
+	// Mock installation directory
+	exe, svcExe, trayExe, installExe := executablePaths(t)
+	session.Exe = session.copyExeToBinDir(exe)
+	session.SvcExe = session.copyExeToBinDir(svcExe)
+	session.TrayExe = session.copyExeToBinDir(trayExe)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.base)
+
+	err = fileutils.Touch(filepath.Join(dirs.base, installation.InstallDirMarker))
+	require.NoError(session.t, err)
+
+	return session
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
