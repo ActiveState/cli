@@ -57,6 +57,19 @@ type Configurable interface {
 	Close() error
 }
 
+// Check will run a Checker.Check with defaults
+func Check(cfg Configurable) (*Info, error) {
+	defer profile.Measure("deprecation:Check", time.Now())
+	return checkVersionNumber(cfg, constants.VersionNumber)
+}
+
+// RefreshDeprecationInfo will fetch the deprecation info and refresh the local deprecation file
+func RefreshDeprecationInfo(cfg Configurable) error {
+	defer profile.Measure("deprecation:Refresh", time.Now())
+	checker := newChecker(DefaultTimeout, cfg)
+	return checker.refreshDeprecationInfo()
+}
+
 // newChecker returns a new instance of the Checker struct
 func newChecker(timeout time.Duration, configuration Configurable) *Checker {
 	return &Checker{
@@ -66,24 +79,14 @@ func newChecker(timeout time.Duration, configuration Configurable) *Checker {
 	}
 }
 
-// Check will run a Checker.Check with defaults
-func Check(cfg Configurable) (*Info, error) {
-	defer profile.Measure("deprecation:Check", time.Now())
-	return checkVersionNumber(cfg, constants.VersionNumber)
-}
-
 // checkVersionNumber will run a Checker.Check with defaults
 func checkVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
 	checker := newChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
 
-// Check will check if the current version of the tool is deprecated and returns deprecation info if it is.
+// check will check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
-func (checker *Checker) Check() (*Info, error) {
-	return checker.check(constants.VersionNumber)
-}
-
 func (checker *Checker) check(versionNumber string) (*Info, error) {
 	if !constvers.NumberIsProduction(versionNumber) {
 		return nil, nil
@@ -92,15 +95,6 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 	versionInfo, err := version.NewVersion(versionNumber)
 	if err != nil {
 		return nil, errs.Wrap(err, "Invalid version number: %s", versionNumber)
-	}
-
-	if checker.shouldFetch() {
-		go func() {
-			err := checker.refreshDeprecationInfo()
-			if err != nil {
-				multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
-			}
-		}()
 	}
 
 	infos, err := checker.cachedDeprecationInfo()
@@ -112,6 +106,15 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
 			return &info, nil
 		}
+	}
+
+	if checker.shouldFetch() {
+		go func() {
+			err := checker.refreshDeprecationInfo()
+			if err != nil {
+				multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
+			}
+		}()
 	}
 
 	return nil, nil

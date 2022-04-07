@@ -99,8 +99,7 @@ func run(cfg *config.Instance) (rerr error) {
 	an := anaSvc.New(cfg, auth)
 	defer an.Wait()
 
-	// Refresh deprecation file
-	_, err = deprecation.Check(cfg)
+	err = deprecation.RefreshDeprecationInfo(cfg)
 	if err != nil {
 		multilog.Error("Could not check for deprecation: %s", err.Error())
 	}
