@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/gofrs/flock"
 )
@@ -394,7 +393,6 @@ func FindFileInPath(dir, filename string) (string, error) {
 	} else if filepath := walkPathAndFindFile(absDir, filename); filepath != "" {
 		return filepath, nil
 	}
-	fmt.Println(stacktrace.Get().String())
 	return "", locale.WrapError(ErrorFileNotFound, "err_file_not_found_in_path", "", filename, absDir)
 }
 
