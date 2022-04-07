@@ -32,6 +32,7 @@ type RuntimeUsageResponse {
 }
 
 type DeprecationInfo {
+  deprecated: Boolean!
   version: String!
   date: String!
   dateReached: Boolean!
