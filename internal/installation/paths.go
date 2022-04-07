@@ -34,16 +34,21 @@ func InstallRoot(path string) (string, error) {
 	return filepath.Dir(installFile), nil
 }
 
-func InstallPathFromArg0() (string, error) {
+func InstallPathFromExecPath() (string, error) {
+	exePath := os.Args[0]
+	if exe, err := os.Executable(); err == nil {
+		exePath = exe
+	}
+
 	// Facilitate use-case of running executables from the build dir while developing
-	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
-		return filepath.Dir(os.Args[0]), nil
+	if !condition.BuiltViaCI() && strings.Contains(exePath, "/build/") {
+		return filepath.Dir(exePath), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
 		return path, nil
 	}
 
-	return InstallPathFromReference(filepath.Dir(os.Args[0]))
+	return InstallPathFromReference(filepath.Dir(exePath))
 }
 
 func InstallPathFromReference(dir string) (string, error) {

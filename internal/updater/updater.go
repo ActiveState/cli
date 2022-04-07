@@ -88,7 +88,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	}
 
 	if installTargetPath == "" {
-		installTargetPath, err = installation.InstallPathFromArg0()
+		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			return "", nil, errs.Wrap(err, "Could not detect install path")
 		}

@@ -123,7 +123,7 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
 	}
 
-	installPath, err := installation.InstallPathFromArg0()
+	installPath, err := installation.InstallPathFromExecPath()
 	if err != nil {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
 	}
