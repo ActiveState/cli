@@ -22,8 +22,6 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	ts.UseDistinctStateExes()
-
 	isAdmin, err := osutils.IsAdmin()
 	suite.NoError(err)
 
