@@ -249,6 +249,10 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
+	if stateToolInstalled && installPath != params.path {
+		logging.Debug("Setting path to: %s", installPath)
+		params.path = installPath
+	}
 
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) {
@@ -263,7 +267,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// Detect state tool alongside installer executable
 	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := appinfo.StateApp(installerPath).Exec()
+	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 
 	// Detect whether this is a fresh install or an update
 	isUpdate := false
@@ -481,6 +485,6 @@ func resolveInstallPath(path string) (string, error) {
 	if path != "" {
 		return filepath.Abs(path)
 	} else {
-		return installation.InstallPath()
+		return installation.DefaultInstallPath()
 	}
 }

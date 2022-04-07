@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -20,7 +20,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
-	if err := installation.StopTrayApp(cfg); err != nil {
+	if err := installmgr.StopTrayApp(cfg); err != nil {
 		if !ignoreErrors {
 			return errs.AddTips(
 				locale.WrapError(err, "clean_stop_tray_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", trayInfo.Name()),

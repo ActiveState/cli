@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -44,6 +45,10 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*I
 }
 
 func (i *Installer) Install() (rerr error) {
+	if err := fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker)); err != nil {
+		return errs.Wrap(err, "Could not place install dir marker")
+	}
+
 	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
 		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
@@ -59,11 +64,11 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Stop any running processes that might interfere
-	trayRunning, err := installation.IsTrayAppRunning(i.cfg)
+	trayRunning, err := installmgr.IsTrayAppRunning(i.cfg)
 	if err != nil {
 		multilog.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
 	}
-	if err := installation.StopRunning(i.path); err != nil {
+	if err := installmgr.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
@@ -98,16 +103,8 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Installation of system files failed.")
 	}
 
-	err = fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker))
-	if err != nil {
-		return errs.Wrap(err, "Could not place install dir marker")
-	}
-
 	// Set up the environment
-	binDir, err := installation.BinPathFromInstallPath(i.path)
-	if err != nil {
-		return errs.Wrap(err, "Could not detect installation bin path")
-	}
+	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
@@ -208,22 +205,22 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 		return false, "", nil
 	}
 
-	path := appinfo.StateApp(installRoot).Exec()
-	if fileutils.TargetExists(path) {
-		return true, filepath.Dir(path), nil
+	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
+	stateCmd := constants.StateCmd + exeutils.Extension
+
+	// Check for state.exe in branch, root and bin dir
+	// This is to handle older state tool versions that gave incompatible input paths
+	candidates := []string{
+		filepath.Join(installRoot, branch, installation.BinDirName, stateCmd),
+		filepath.Join(installRoot, branch, stateCmd),
+		filepath.Join(installRoot, installation.BinDirName, stateCmd),
+		filepath.Join(installRoot, stateCmd),
+	}
+	for _, candidate := range candidates {
+		if fileutils.TargetExists(candidate) {
+			return true, installRoot, nil
+		}
 	}
 
-	binPath, err := installation.BinPathFromInstallPath(installRoot)
-	if err != nil {
-		return false, "", errs.Wrap(err, "Could not detect binPath from BinPathFromInstallPath")
-	}
-
-	path = appinfo.StateApp(binPath).Exec()
-	if fileutils.TargetExists(path) {
-		return true, filepath.Dir(path), nil
-	}
-
-	// Fallback for installRoot that does not include branch name
-	path = appinfo.StateApp(filepath.Join(installRoot, branch)).Exec()
-	return fileutils.TargetExists(path), filepath.Dir(path), nil
+	return false, installRoot, nil
 }
