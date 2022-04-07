@@ -125,7 +125,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.Expect("a tar-like program written in perl")
 
 	cp.SendLine("ppm --version")
-	cp.Expect("not found")
+	if runtime.GOOS != "windows" {
+		cp.Expect("not found")
+	} else {
+		cp.Expect("Can't locate")
+	}
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
