@@ -135,6 +135,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// The current error (e.g. timeout) does not reveal enough info, try again.
+			// We don't need to sleep for this type of error because by definition this is a timeout, and time has already elapsed.
 			if errors.Is(err, ctlErrNotSureIfUp) {
 				continue
 			}
@@ -179,6 +180,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// The current error (e.g. timeout) does not reveal enough info, try again.
+			// We don't need to sleep for this type of error because by definition this is a timeout, and time has already elapsed.
 			if errors.Is(err, ctlErrNotSureIfUp) {
 				continue
 			}
