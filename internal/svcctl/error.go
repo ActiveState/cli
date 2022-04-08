@@ -17,7 +17,7 @@ var (
 
 func asNotSureIfUpErr(err error) error {
 	opErr := &net.OpError{}
-	if errors.Is(err, os.ErrDeadlineExceeded) || errors.As(err, &opErr) && opErr.Timeout() {
+	if errors.Is(err, os.ErrDeadlineExceeded) || (errors.As(err, &opErr) && opErr.Timeout()) {
 		return ctlErrNotSureIfUp
 	}
 	return err
