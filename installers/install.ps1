@@ -148,7 +148,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
 & $exePath $args --source-installer="install.ps1"
 if ( !$? ) {
-  return 1
+  exit 1
 }
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
 {
