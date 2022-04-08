@@ -261,17 +261,17 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+const StateToolRollbarToken = "73cd77e321db4e929ca7c24b2e72a172"
 
 // StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
-const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+const StateTrayRollbarToken = "84e7a358f8bd4bf99382a208459544bb"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+const StateServiceRollbarToken = "110c508fb11547f5b3379167ae35a1f0"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "276678f6090d4f17a4b2d4d35be00ca9"
+const StateInstallerRollbarToken = "11b13f236eb04703b199a48bb6227e66"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
