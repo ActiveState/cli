@@ -272,6 +272,10 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// Detect whether this is a fresh install or an update
 	isUpdate := false
 	switch {
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+		params.sourcePath = installerPath
+		break
 	case params.force:
 		logging.Debug("Not using update flow as --force was passed")
 		break // When ran with `--force` we always use the install UX
@@ -292,20 +296,20 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	an.Event(AnalyticsFunnelCat, route)
 
+	// Check if state tool already installed
+	if !isUpdate && !params.force && stateToolInstalled {
+		logging.Debug("Cancelling out because State Tool is already installed")
+		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
+		an.Event(AnalyticsFunnelCat, "already-installed")
+		return postInstallEvents(out, cfg, an, params, true)
+	}
+
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
 			return err
 		}
 		return postInstallEvents(out, cfg, an, params, isUpdate)
-	}
-
-	// Check if state tool already installed
-	if !params.force && stateToolInstalled {
-		logging.Debug("Cancelling out because State Tool is already installed")
-		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
-		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, cfg, an, params, true)
 	}
 
 	// If no sourcePath was provided then we still need to download the source files, and defer the actual
@@ -317,6 +321,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
+	if !isUpdate {
+    // install.sh or install.ps1 downloaded this installer and is running it.
+		out.Print(output.Title("Installing State Tool Package Manager"))
+		out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
+			`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
+			`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` + "\n" +
+			`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
+	}
 
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
