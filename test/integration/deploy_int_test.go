@@ -132,7 +132,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	}
 
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 }
 
 func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
