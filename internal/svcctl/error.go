@@ -11,14 +11,14 @@ import (
 )
 
 var (
-	ctlErrNotUp       = errors.New("server not up")
-	ctlErrNotSureIfUp = errors.New("server may or may not be up")
+	ctlErrNotUp          = errors.New("server not up")
+	ctlErrRequestTimeout = errors.New("request timeout")
 )
 
-func asNotSureIfUpErr(err error) error {
+func asRequestTimeoutErr(err error) error {
 	opErr := &net.OpError{}
 	if errors.Is(err, os.ErrDeadlineExceeded) || (errors.As(err, &opErr) && opErr.Timeout()) {
-		return ctlErrNotSureIfUp
+		return ctlErrRequestTimeout
 	}
 	return err
 }
