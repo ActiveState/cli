@@ -37,7 +37,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Assert output
 	cp.Expect("Installing Update")
 	cp.Expect("Done")
-	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
