@@ -35,7 +35,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
-	cp.Expect("Installing Update")
+	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
