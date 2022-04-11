@@ -110,6 +110,7 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
+	to = filepath.Join(to, filepath.Base(from))
 	if fileutils.TargetExists(to) {
 		return to
 	}
@@ -130,7 +131,7 @@ func (s *Session) CopyExeToDir(from, to string) string {
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
-	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
+	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
