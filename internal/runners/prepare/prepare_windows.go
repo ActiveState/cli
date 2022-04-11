@@ -35,7 +35,7 @@ func (r *Prepare) prepareStartShortcut() error {
 	}
 
 	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec(), "")
 	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "Could not create shortcut")
@@ -50,7 +50,7 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapError(err, "err_preparestart_icon", "Could not set icon for shortcut file")
 	}
 
-	sc = shortcut.New(shortcutDir, "Uninstall State Tool", filepath.Join(os.Getenv("windir"), "system32", "cmd.exe")+" /C \"state clean uninstall\"")
+	sc = shortcut.New(shortcutDir, "Uninstall State Tool", filepath.Join(os.Getenv("windir"), "system32", "cmd.exe"), "/C \"state clean uninstall\"")
 	err = sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_prepare_shortcut", "Could not create shortcut")
@@ -129,7 +129,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 		files = append(files, as)
 	}
 	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec(), "")
 	files = append(files, filepath.Dir(sc.Path()))
 
 	return files

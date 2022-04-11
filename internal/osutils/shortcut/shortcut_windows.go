@@ -17,12 +17,13 @@ type Shortcut struct {
 	dir      string
 	name     string
 	target   string
+	args     string
 	dispatch *ole.IDispatch
 }
 
-func New(dir, name, target string) *Shortcut {
+func New(dir, name, target, args string) *Shortcut {
 	return &Shortcut{
-		dir, name, target, nil,
+		dir, name, target, args, nil,
 	}
 }
 
@@ -51,18 +52,29 @@ func (s *Shortcut) Enable() error {
 
 	s.dispatch = cs.ToIDispatch()
 
-	if err := s.setTarget(s.target); err != nil {
+	err = s.setTarget(s.target, s.args)
+	if err != nil {
 		return errs.Wrap(err, "Could not set Shortcut target")
+	}
+	err = s.setArguments(s.args)
+	if err != nil {
+		return errs.Wrap(err, "Could not set Shortcut arguments")
 	}
 
 	return nil
 }
 
-func (s *Shortcut) setTarget(target string) error {
+func (s *Shortcut) setTarget(target, args string) error {
 	logging.Debug("Setting TargetPath: %s", target)
 	_, err := oleutil.PutProperty(s.dispatch, "TargetPath", target)
 	if err != nil {
 		return errs.Wrap(err, "Could not set Shortcut target")
+	}
+
+	logging.Debug("Setting Arguments: %s", args)
+	_, err := oleutil.PutProperty(s.dispatch, "Arguments", args)
+	if err != nil {
+		return errs.Wrap(err, "Could not set Shortcut arguments")
 	}
 
 	_, err = oleutil.CallMethod(s.dispatch, "Save")
