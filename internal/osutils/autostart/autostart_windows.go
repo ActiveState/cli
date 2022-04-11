@@ -23,7 +23,7 @@ func (a *App) enable() error {
 	}
 
 	name := formattedName(a.Name)
-	s := shortcut.New(startupPath, name, a.Exec)
+	s := shortcut.New(startupPath, name, a.Exec, "")
 	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
