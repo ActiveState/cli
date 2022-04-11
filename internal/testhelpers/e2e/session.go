@@ -197,9 +197,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	session.InstallerExe = session.CopyExeToDir(installExe, dirs.base)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
 
-	err = fileutils.Touch(filepath.Join(dirs.base, installation.InstallDirMarker))
+	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
 
 	return session

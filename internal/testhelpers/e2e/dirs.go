@@ -8,7 +8,7 @@ import (
 
 // Dirs represents directories that are temporarily created for this end-to-end testing session
 type Dirs struct {
-	base string
+	Base string
 	// Config is where configuration files are stored
 	Config string
 	// Cache is the directory where cached files including downloaded artifacts are stored
@@ -48,7 +48,7 @@ func NewDirs(base string) (*Dirs, error) {
 	}
 
 	dirs := Dirs{
-		base:         base,
+		Base:         base,
 		Config:       config,
 		Cache:        cache,
 		Bin:          bin,
