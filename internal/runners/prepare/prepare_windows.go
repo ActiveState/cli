@@ -50,6 +50,12 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapError(err, "err_preparestart_icon", "Could not set icon for shortcut file")
 	}
 
+	sc = shortcut.New(shortcutDir, "Uninstall State Tool", filepath.Join(os.Getenv("windir"), "system32", "cmd.exe")+" /C \"state clean uninstall\"")
+	err = sc.Enable()
+	if err != nil {
+		return locale.WrapError(err, "err_prepare_shortcut", "Could not create shortcut")
+	}
+
 	return nil
 }
 
