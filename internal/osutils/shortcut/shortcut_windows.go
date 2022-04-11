@@ -56,10 +56,6 @@ func (s *Shortcut) Enable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not set Shortcut target")
 	}
-	err = s.setArguments(s.args)
-	if err != nil {
-		return errs.Wrap(err, "Could not set Shortcut arguments")
-	}
 
 	return nil
 }
