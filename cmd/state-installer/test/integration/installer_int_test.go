@@ -31,7 +31,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.Bin, "--from-deferred"),
+		e2e.WithArgs(target, "--source-path", ts.Dirs.Bin),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
