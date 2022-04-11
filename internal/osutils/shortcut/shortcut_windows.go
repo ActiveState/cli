@@ -72,7 +72,7 @@ func (s *Shortcut) setTarget(target, args string) error {
 	}
 
 	logging.Debug("Setting Arguments: %s", args)
-	_, err := oleutil.PutProperty(s.dispatch, "Arguments", args)
+	_, err = oleutil.PutProperty(s.dispatch, "Arguments", args)
 	if err != nil {
 		return errs.Wrap(err, "Could not set Shortcut arguments")
 	}
