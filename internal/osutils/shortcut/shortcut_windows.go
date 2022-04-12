@@ -21,7 +21,7 @@ type Shortcut struct {
 	dispatch *ole.IDispatch
 }
 
-func New(dir, name, target, args ...string) *Shortcut {
+func New(dir, name, target string, args ...string) *Shortcut {
 	return &Shortcut{
 		dir, name, target, strings.Join(args, " "), nil,
 	}
