@@ -38,7 +38,7 @@ func (r *Prepare) prepareStartShortcut() error {
 	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
 	err := sc.Enable()
 	if err != nil {
-		return locale.WrapError(err, "err_preparestart_shortcut", sc.Path())
+		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
 
 	icon, err := assets.ReadFileBytes("icon.ico")
@@ -47,17 +47,13 @@ func (r *Prepare) prepareStartShortcut() error {
 	}
 	err = sc.SetIconBlob(icon)
 	if err != nil {
-		return locale.WrapError(err, "err_preparestart_icon", sc.Path())
+		return locale.WrapError(err, "err_preparestart_icon", "", sc.Path())
 	}
 
 	sc = shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall\"")
 	err = sc.Enable()
 	if err != nil {
-		return locale.WrapError(err, "err_preparestart_shortcut", sc.Path())
-	}
-	err = sc.SetIconBlob(icon)
-	if err != nil {
-		return locale.WrapError(err, "err_preparestart_icon", sc.Path())
+		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
 
 	return nil
