@@ -1652,6 +1652,10 @@ err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
   other: Could not add state protocol
+err_preparestart_shortcut:
+  other: Could not create shortcut for {{.V0}}
+err_preparestart_icon:
+  other: Could not set icon for shortcut file {{.V0}}
 confirm:
   other: Please Confirm
 err_no_project:
@@ -1843,7 +1847,7 @@ err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
     uninstalling it and then running the installation process again.
-    
+
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
