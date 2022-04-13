@@ -227,7 +227,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if err != nil {
 			multilog.Error("Could not check for deprecation: %s", err.Error())
 		}
-		if deprecationInfo.Deprecated {
+		if deprecationInfo != nil {
 			if !deprecationInfo.DateReached {
 				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
 				out.Notice(locale.Tr("warn_deprecation", deprecationInfo.Date, deprecationInfo.Reason))
