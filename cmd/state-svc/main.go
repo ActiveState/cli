@@ -180,13 +180,17 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	sig := make(chan os.Signal, 1)
 	go func() {
 		defer close(sig)
-		oscall, ok := <-sig
-		if !ok {
-			return
+
+		select {
+		case oscall, ok := <-sig:
+			if !ok {
+				return
+			}
+			logging.Debug("system call:%+v", oscall)
+			// issue a service shutdown on interrupt
+			cancel()
+		case <-ctx.Done():
 		}
-		logging.Debug("system call:%+v", oscall)
-		// issue a service shutdown on interrupt
-		cancel()
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
