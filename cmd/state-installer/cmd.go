@@ -296,14 +296,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 	an.Event(AnalyticsFunnelCat, route)
 
-	// Check if state tool already installed
-	if !isUpdate && !params.force && stateToolInstalled {
-		logging.Debug("Cancelling out because State Tool is already installed")
-		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
-		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, cfg, an, params, true)
-	}
-
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {

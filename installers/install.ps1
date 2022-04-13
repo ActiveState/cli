@@ -137,7 +137,8 @@ catch [System.Exception]
 
 # Verify checksum.
 $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-  if ($hash -ne $checksum){
+if ($hash -ne $checksum)
+{
     Write-Warning "SHA256 sum did not match:"
     Write-Warning "Expected: $checksum"
     Write-Warning "Received: $hash"
