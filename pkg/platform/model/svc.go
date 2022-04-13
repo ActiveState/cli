@@ -105,6 +105,9 @@ func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 	if err := m.request(ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error sending deprecation request")
 	}
+	if u.Date == "" {
+		return nil, nil
+	}
 
 	return &u, nil
 }

@@ -13,10 +13,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/hashicorp/go-version"
 )
@@ -58,16 +57,9 @@ type Configurable interface {
 }
 
 // Check will run a Checker.Check with defaults
-func Check(cfg Configurable) (*Info, error) {
+func Check(cfg Configurable) (*graph.DeprecationInfo, error) {
 	defer profile.Measure("deprecation:Check", time.Now())
 	return checkVersionNumber(cfg, constants.VersionNumber)
-}
-
-// RefreshDeprecationInfo will fetch the deprecation info and refresh the local deprecation file
-func RefreshDeprecationInfo(cfg Configurable) error {
-	defer profile.Measure("deprecation:Refresh", time.Now())
-	checker := newChecker(DefaultTimeout, cfg)
-	return checker.refreshDeprecationInfo()
 }
 
 // newChecker returns a new instance of the Checker struct
@@ -80,14 +72,14 @@ func newChecker(timeout time.Duration, configuration Configurable) *Checker {
 }
 
 // checkVersionNumber will run a Checker.Check with defaults
-func checkVersionNumber(cfg Configurable, versionNumber string) (*Info, error) {
+func checkVersionNumber(cfg Configurable, versionNumber string) (*graph.DeprecationInfo, error) {
 	checker := newChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
 
 // check will check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
-func (checker *Checker) check(versionNumber string) (*Info, error) {
+func (checker *Checker) check(versionNumber string) (*graph.DeprecationInfo, error) {
 	if !constvers.NumberIsProduction(versionNumber) {
 		return nil, nil
 	}
@@ -97,43 +89,46 @@ func (checker *Checker) check(versionNumber string) (*Info, error) {
 		return nil, errs.Wrap(err, "Invalid version number: %s", versionNumber)
 	}
 
-	infos, err := checker.cachedDeprecationInfo()
+	infos, err := checker.fetchDeprecationInfo()
 	if err != nil {
-		return nil, errs.Wrap(err, "cachedDeprecationInfo failed")
+		return nil, errs.Wrap(err, "Could not fetch deprectation info")
 	}
 
 	for _, info := range infos {
 		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
-			return &info, nil
+			return &graph.DeprecationInfo{
+				Version:     info.Version,
+				Date:        info.Date.Format(constants.DateFormatUser),
+				DateReached: info.DateReached,
+				Reason:      info.Reason,
+			}, nil
 		}
-	}
-
-	if checker.shouldFetch() {
-		go func() {
-			err := checker.refreshDeprecationInfo()
-			if err != nil {
-				multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
-			}
-		}()
 	}
 
 	return nil, nil
 }
 
-func (checker *Checker) shouldFetch() bool {
-	if fileutils.FileExists(checker.deprecationFile) {
-		lastFetch := checker.config.GetTime(fetchKey)
-		if !lastFetch.IsZero() && time.Now().Before(lastFetch) {
-			return false
-		}
-	}
+func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
+	logging.Debug("Fetching deprecation info from S3")
 
-	err := checker.config.Set(fetchKey, time.Now().Add(15*time.Minute))
+	code, body, err := checker.fetchDeprecationInfoBody()
 	if err != nil {
-		multilog.Error("Could not set deprecation fetch time in config, error: %v", err)
+		if errs.Matches(err, &ErrTimeout{}) {
+			logging.Debug("Timed out while fetching deprecation info: %v", err)
+			return nil, nil
+		}
+		return nil, err
 	}
-	return true
 
+	// Handle non-200 response gracefully
+	if code != 200 {
+		if code == 404 || code == 403 { // On S3 a 403 means a 404, at least for our use-case
+			return nil, locale.NewError("err_deprection_404")
+		}
+		return nil, locale.NewError("err_deprection_code", "", strconv.Itoa(code))
+	}
+
+	return initializeInfo(body)
 }
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
@@ -157,63 +152,6 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	}
 
 	return resp.StatusCode, body, nil
-}
-
-func (checker *Checker) refreshDeprecationInfo() error {
-	logging.Debug("Refreshing deprecation information from S3")
-
-	code, body, err := checker.fetchDeprecationInfoBody()
-	if err != nil {
-		if errs.Matches(err, &ErrTimeout{}) {
-			logging.Debug("Timed out while fetching deprecation info: %v", err)
-			return nil
-		}
-		return err
-	}
-
-	// Handle non-200 response gracefully
-	if code != 200 {
-		if code == 404 || code == 403 { // On S3 a 403 means a 404, at least for our use-case
-			return locale.NewError("err_deprection_404")
-		}
-		return locale.NewError("err_deprection_code", "", strconv.Itoa(code))
-	}
-
-	infos, err := initializeInfo(body)
-	if err != nil {
-		return errs.Wrap(err, "initializeInfo failed")
-	}
-
-	err = checker.saveDeprecationInfo(infos)
-	if err != nil {
-		return errs.Wrap(err, "saveDeprecatinInfo failed")
-	}
-
-	return nil
-}
-
-func (checker *Checker) saveDeprecationInfo(info []Info) error {
-	data, err := json.MarshalIndent(info, "", " ")
-	if err != nil {
-		return locale.WrapError(err, "err_save_deprection", "Could not save deprication information")
-	}
-
-	return ioutil.WriteFile(checker.deprecationFile, data, 0644)
-}
-
-func (checker *Checker) cachedDeprecationInfo() ([]Info, error) {
-	logging.Debug("Using cached deprecation information")
-	data, err := ioutil.ReadFile(checker.deprecationFile)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_read_deprection", "Could not read cached deprecation information")
-	}
-
-	info, err := initializeInfo(data)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_init_deprecation_info", "Could not initialize deprecation information")
-	}
-
-	return info, nil
 }
 
 func initializeInfo(data []byte) ([]Info, error) {

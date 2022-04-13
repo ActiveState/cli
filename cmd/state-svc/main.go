@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -100,11 +99,6 @@ func run(cfg *config.Instance) (rerr error) {
 	auth := authentication.New(cfg)
 	an := anaSvc.New(cfg, auth)
 	defer an.Wait()
-
-	err = deprecation.RefreshDeprecationInfo(cfg)
-	if err != nil {
-		multilog.Error("Could not check for deprecation: %s", err.Error())
-	}
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
