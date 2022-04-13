@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,17 +22,14 @@ import (
 const (
 	// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
 	DefaultTimeout = time.Second
-
-	// fetchKey is the config key used to determine if a deprecation check should occur
-	fetchKey = "deprecation_fetch_time"
 )
 
 type ErrTimeout struct {
 	error
 }
 
-// Info details deprecation information for a given version
-type Info struct {
+// info details deprecation information for a given version
+type info struct {
 	Version     string `json:"version"`
 	versionInfo *version.Version
 	Date        time.Time `json:"date"`
@@ -43,13 +39,12 @@ type Info struct {
 
 // Checker is the struct that we use to do checks with
 type Checker struct {
-	timeout         time.Duration
-	config          Configurable
-	deprecationFile string
+	timeout time.Duration
+	config  configurable
 }
 
-// Configurable defines the configuration function used by the functions in this package
-type Configurable interface {
+// configurable defines the configuration function used by the functions in this package
+type configurable interface {
 	ConfigPath() string
 	GetTime(key string) time.Time
 	Set(key string, value interface{}) error
@@ -57,22 +52,21 @@ type Configurable interface {
 }
 
 // Check will run a Checker.Check with defaults
-func Check(cfg Configurable) (*graph.DeprecationInfo, error) {
+func Check(cfg configurable) (*graph.DeprecationInfo, error) {
 	defer profile.Measure("deprecation:Check", time.Now())
 	return checkVersionNumber(cfg, constants.VersionNumber)
 }
 
 // newChecker returns a new instance of the Checker struct
-func newChecker(timeout time.Duration, configuration Configurable) *Checker {
+func newChecker(timeout time.Duration, configuration configurable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
-		filepath.Join(configuration.ConfigPath(), "deprecation.json"),
 	}
 }
 
 // checkVersionNumber will run a Checker.Check with defaults
-func checkVersionNumber(cfg Configurable, versionNumber string) (*graph.DeprecationInfo, error) {
+func checkVersionNumber(cfg configurable, versionNumber string) (*graph.DeprecationInfo, error) {
 	checker := newChecker(DefaultTimeout, cfg)
 	return checker.check(versionNumber)
 }
@@ -108,8 +102,8 @@ func (checker *Checker) check(versionNumber string) (*graph.DeprecationInfo, err
 	return nil, nil
 }
 
-func (checker *Checker) fetchDeprecationInfo() ([]Info, error) {
-	logging.Debug("Fetching deprecation info from S3")
+func (checker *Checker) fetchDeprecationInfo() ([]info, error) {
+	logging.Debug("Fetching deprecation information from S3")
 
 	code, body, err := checker.fetchDeprecationInfoBody()
 	if err != nil {
@@ -154,8 +148,8 @@ func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
 	return resp.StatusCode, body, nil
 }
 
-func initializeInfo(data []byte) ([]Info, error) {
-	var info []Info
+func initializeInfo(data []byte) ([]info, error) {
+	var info []info
 	err := json.Unmarshal(data, &info)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_unmarshal_deprecation", "Could not unmarshall deprecation information")
