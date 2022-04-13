@@ -275,7 +275,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	case params.force:
 		logging.Debug("Not using update flow as --force was passed")
 		break // When ran with `--force` we always use the install UX
-	case !params.fromDeferred && fileutils.FileExists(packagedStateExe):
+	case params.sourcePath == "" && !params.fromDeferred && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
