@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
-	"github.com/ActiveState/cli/internal/multilog"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -26,12 +25,12 @@ import (
 )
 
 type Resolver struct {
-	cfg              *config.Instance
-	updateCache      *cache.Cache
-	deprecationCache *cache.Cache
-	projectIDCache   *projectcache.ID
-	an               *sync.Client
-	rtwatch          *rtwatcher.Watcher
+	cfg            *config.Instance
+	cache          *cache.Cache
+	deprecation    *deprecation.Checker
+	projectIDCache *projectcache.ID
+	an             *sync.Client
+	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
@@ -40,7 +39,7 @@ func New(cfg *config.Instance, an *sync.Client) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
-		cache.New(cache.NoExpiration, cache.NoExpiration),
+		deprecation.NewChecker(deprecation.DefaultTimeout, cfg),
 		projectcache.NewID(),
 		an,
 		rtwatcher.New(cfg, an),
@@ -75,13 +74,13 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	defer logging.Debug("AvailableUpdate done")
 
 	const cacheKey = "AvailableUpdate"
-	if up, exists := r.updateCache.Get(cacheKey); exists {
+	if up, exists := r.cache.Get(cacheKey); exists {
 		logging.Debug("Using cache")
 		return up.(*graph.AvailableUpdate), nil
 	}
 
 	var availableUpdate *graph.AvailableUpdate
-	defer func() { r.updateCache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
+	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
 
 	update, err := updater.NewDefaultChecker(r.cfg).Check()
 	if err != nil {
@@ -167,21 +166,10 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
 	logging.Debug("Check deprecation resolver")
 
-	const cacheKey = "Deprecated"
-	if deprecated, exists := r.updateCache.Get(cacheKey); exists {
-		logging.Debug("Using cache")
-		return deprecated.(*graph.DeprecationInfo), nil
+	deprecated, err := r.deprecation.Check()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not fetch deprecation information")
 	}
 
-	go func() {
-		deprecated, err := deprecation.Check(r.cfg)
-		if err != nil {
-			multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
-		}
-		if deprecated != nil {
-			r.updateCache.Set(cacheKey, deprecated, cache.NoExpiration)
-		}
-	}()
-
-	return nil, nil
+	return deprecated, nil
 }

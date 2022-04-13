@@ -15,13 +15,16 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/hashicorp/go-version"
+	"github.com/patrickmn/go-cache"
 )
 
 const (
 	// DefaultTimeout defines how long we should wait for a response from constants.DeprecationInfoURL
 	DefaultTimeout = time.Second
+
+	cacheKey = "info"
 )
 
 type ErrTimeout struct {
@@ -41,6 +44,7 @@ type info struct {
 type Checker struct {
 	timeout time.Duration
 	config  configurable
+	cache   *cache.Cache
 }
 
 // configurable defines the configuration function used by the functions in this package
@@ -51,41 +55,42 @@ type configurable interface {
 	Close() error
 }
 
-// Check will run a Checker.Check with defaults
-func Check(cfg configurable) (*graph.DeprecationInfo, error) {
-	defer profile.Measure("deprecation:Check", time.Now())
-	return checkVersionNumber(cfg, constants.VersionNumber)
-}
-
-// newChecker returns a new instance of the Checker struct
-func newChecker(timeout time.Duration, configuration configurable) *Checker {
+// NewChecker returns a new instance of the Checker struct
+func NewChecker(timeout time.Duration, configuration configurable) *Checker {
 	return &Checker{
 		timeout,
 		configuration,
+		cache.New(15*time.Minute, 5*time.Minute),
 	}
 }
 
-// checkVersionNumber will run a Checker.Check with defaults
-func checkVersionNumber(cfg configurable, versionNumber string) (*graph.DeprecationInfo, error) {
-	checker := newChecker(DefaultTimeout, cfg)
-	return checker.check(versionNumber)
-}
-
-// check will check if the current version of the tool is deprecated and returns deprecation info if it is.
-// This uses a fairly short timeout to check against our deprecation url, so this should not be considered conclusive.
-func (checker *Checker) check(versionNumber string) (*graph.DeprecationInfo, error) {
-	if !constvers.NumberIsProduction(versionNumber) {
+// Check will Check if the current version of the tool is deprecated and returns deprecation info if it is.
+// This uses a fairly short timeout to Check against our deprecation url, so this should not be considered conclusive.
+func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
+	if !constvers.NumberIsProduction(constants.Version) {
 		return nil, nil
 	}
 
-	versionInfo, err := version.NewVersion(versionNumber)
+	versionInfo, err := version.NewVersion(constants.Version)
 	if err != nil {
-		return nil, errs.Wrap(err, "Invalid version number: %s", versionNumber)
+		return nil, errs.Wrap(err, "Invalid version number: %s", constants.Version)
 	}
 
-	infos, err := checker.fetchDeprecationInfo()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch deprectation info")
+	data, exists := checker.cache.Get(cacheKey)
+	if !exists {
+		go func() {
+			err := checker.updateDeprecationInfo()
+			if err != nil {
+				multilog.Critical("Could not update deprecation information %s", errs.JoinMessage(err))
+			}
+		}()
+
+		return nil, nil
+	}
+
+	infos, ok := data.([]info)
+	if !ok {
+		return nil, errs.New("Unexpected cache entry for deprecation info")
 	}
 
 	for _, info := range infos {
@@ -100,6 +105,17 @@ func (checker *Checker) check(versionNumber string) (*graph.DeprecationInfo, err
 	}
 
 	return nil, nil
+}
+
+func (checker *Checker) updateDeprecationInfo() error {
+	deprecated, err := checker.fetchDeprecationInfo()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch deprecation information")
+	}
+	if deprecated != nil {
+		checker.cache.Set(cacheKey, deprecated, cache.DefaultExpiration)
+	}
+	return nil
 }
 
 func (checker *Checker) fetchDeprecationInfo() ([]info, error) {
