@@ -32,15 +32,16 @@ type primeable interface {
 type Checkout struct {
 	repo git.Repository
 	output.Outputer
-	config    *config.Instance
-	analytics analytics.Dispatcher
+	config     *config.Instance
+	analytics  analytics.Dispatcher
+	branchName string
 }
 
 func New(repo git.Repository, prime primeable) *Checkout {
-	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics()}
+	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), ""}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, targetPath string) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
@@ -57,11 +58,13 @@ func (r *Checkout) Run(ns *project.Namespaced, targetPath string) (string, error
 		return "", locale.WrapError(err, "err_fetch_project", "", ns.String())
 	}
 
-	branch, err := model.DefaultBranchForProject(pj)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not grab branch for project")
+	if branchName == "" {
+		branch, err := model.DefaultBranchForProject(pj)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not grab branch for project")
+		}
+		branchName = branch.Label
 	}
-	branchName := branch.Label
 
 	commitID := ns.CommitID
 	if commitID == nil {
