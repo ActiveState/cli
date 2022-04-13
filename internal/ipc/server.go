@@ -32,7 +32,6 @@ type Server struct {
 	reqHandlers []RequestHandler
 	ctx         context.Context
 	cancel      context.CancelFunc
-	wg          *sync.WaitGroup
 	flistener   *flisten.FListen
 	errsc       chan error
 }
@@ -48,7 +47,6 @@ func NewServer(topCtx context.Context, topCancel context.CancelFunc, spath *Sock
 		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
 		ctx:         ctx,
 		cancel:      cancel,
-		wg:          &sync.WaitGroup{},
 		errsc:       make(chan error),
 	}
 
@@ -118,7 +116,7 @@ func (ipc *Server) Start() error {
 
 			// Continually route incomming connections to the appropriate handler.
 			for {
-				if err := routeToHandler(ipc.wg, conns, ipc.reqHandlers); err != nil {
+				if err := routeToHandler(&wg, conns, ipc.reqHandlers); err != nil {
 					if !errors.Is(err, ctlErrConnsClosed) {
 						logging.Error("unexpected routeToHandler error: %v", err)
 					}
