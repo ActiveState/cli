@@ -167,9 +167,14 @@ func run(cfg *config.Instance) (rerr error) {
 func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	logging.Debug("Running in Foreground")
 
-	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
-	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, an, shutdown)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	p := NewService(ctx, cancel, cfg, an)
+
+	if err := p.Start(); err != nil {
+		return errs.Wrap(err, "Could not start service")
+	}
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
@@ -181,31 +186,17 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 		}
 		logging.Debug("system call:%+v", oscall)
 		// issue a service shutdown on interrupt
-		shutdown()
+		cancel()
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
-	serverErr := make(chan error)
-	go func() {
-		err := p.Start()
-		if err != nil {
-			err = errs.Wrap(err, "Could not start service")
-		}
-
-		serverErr <- err
-	}()
-
-	// cancellation of context issues server shutdown
 	<-ctx.Done()
 	if err := p.Stop(); err != nil {
-		return errs.Wrap(err, "Failed to stop service")
+		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
 
-	p.Wait()
-
-	err := <-serverErr
-	return err
+	return nil
 }
 
 func runStart(out output.Outputer) error {

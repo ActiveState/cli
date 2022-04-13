@@ -23,7 +23,6 @@ import (
 )
 
 type Server struct {
-	shutdown    context.CancelFunc
 	resolver    *resolver.Resolver
 	graphServer *handler.Server
 	listener    net.Listener
@@ -32,13 +31,13 @@ type Server struct {
 	analytics   *sync.Client
 }
 
-func New(cfg *config.Instance, an *sync.Client, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *sync.Client) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg, an), analytics: an}
+	s := &Server{resolver: resolver.New(cfg, an), analytics: an}
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener

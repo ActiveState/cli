@@ -17,9 +17,4 @@ func (s *Server) setupRouting() {
 		playground.Handler("GraphQL", "/query").ServeHTTP(c.Response(), c.Request())
 		return nil
 	})
-
-	s.httpServer.GET(QuitRoute, func(c echo.Context) error {
-		s.shutdown()
-		return nil
-	})
 }

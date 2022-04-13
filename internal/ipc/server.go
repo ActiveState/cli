@@ -33,13 +33,15 @@ type Server struct {
 	ctx         context.Context
 	cancel      context.CancelFunc
 	wg          *sync.WaitGroup
+	flistener   *flisten.FListen
+	errsc       chan error
 }
 
 // NewServer constructs a reference to a Server instance which can be populated
 // with called-defined handlers, and is preconfigured with ping and stop
 // handlers as a low-level flexibility.
-func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
-	ctx, cancel := context.WithCancel(context.Background())
+func NewServer(topCtx context.Context, topCancel context.CancelFunc, spath *SockPath, reqHandlers ...RequestHandler) *Server {
+	ctx, cancel := context.WithCancel(topCtx)
 
 	ipc := Server{
 		spath:       spath,
@@ -47,11 +49,12 @@ func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
 		ctx:         ctx,
 		cancel:      cancel,
 		wg:          &sync.WaitGroup{},
+		errsc:       make(chan error),
 	}
 
 	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
 	ipc.reqHandlers = append(ipc.reqHandlers, reqHandlers...)
-	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(&ipc))
+	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(topCancel))
 
 	return &ipc
 }
@@ -84,15 +87,14 @@ func (ipc *Server) Start() error {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
-	defer listener.Close()
+	ipc.flistener = listener
 
 	// Produce (accept) and consume (route to handler) connections.
 	conns := make(chan net.Conn)
-	errsc := make(chan error)
 
 	go func() {
 		var wg sync.WaitGroup
-		defer close(errsc)
+		defer close(ipc.errsc)
 
 		wg.Add(1)
 		go func() {
@@ -101,16 +103,11 @@ func (ipc *Server) Start() error {
 
 			// Continually accept connections and feed them into the relevant channel.
 			for {
-				select {
-				case <-ipc.ctx.Done():
-					return
-				default:
-					if err := accept(conns, listener); err != nil {
-						if !errors.Is(err, context.Canceled) {
-							errsc <- errs.Wrap(err, "Unexpected accept error")
-						}
-						return
+				if err := accept(conns, listener); err != nil {
+					if !errors.Is(err, context.Canceled) {
+						ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
 					}
+					return
 				}
 			}
 		}()
@@ -133,27 +130,26 @@ func (ipc *Server) Start() error {
 		wg.Wait()
 	}()
 
+	return nil
+}
+
+func (ipc *Server) Shutdown() error {
+	select {
+	case <-ipc.ctx.Done():
+		return nil
+	default:
+		ipc.cancel()
+	}
+
+	defer ipc.flistener.Close()
+
 	var retErr error
-	for err := range errsc {
+	for err := range ipc.errsc {
 		if err != nil && retErr == nil {
 			retErr = err
 		}
 	}
 	return retErr
-}
-
-func (ipc *Server) Close() error {
-	select {
-	case <-ipc.ctx.Done():
-	default:
-		ipc.cancel()
-	}
-	return nil
-}
-
-func (ipc *Server) Wait() error {
-	ipc.wg.Wait()
-	return nil
 }
 
 func accept(conns chan net.Conn, l net.Listener) error {

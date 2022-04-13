@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-	"io"
 )
 
 // Key/Value associations. Keys start with rare characters to try to ensure
@@ -40,11 +39,11 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 	return val, nil
 }
 
-func stopHandler(c io.Closer) RequestHandler {
+func stopHandler(cancel context.CancelFunc) RequestHandler {
 	return func(key string) (string, bool) {
 		if key == keyStop {
 			defer func() {
-				go c.Close()
+				go cancel()
 			}()
 			return valStop, true
 		}

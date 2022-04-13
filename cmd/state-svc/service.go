@@ -16,22 +16,23 @@ import (
 )
 
 type service struct {
-	cfg      *config.Instance
-	an       *anaSvc.Client
-	shutdown context.CancelFunc
-	server   *server.Server
-	ipcSrv   *ipc.Server
+	ctx    context.Context
+	cancel context.CancelFunc
+	cfg    *config.Instance
+	an     *anaSvc.Client
+	server *server.Server
+	ipcSrv *ipc.Server
 }
 
-func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
-	return &service{cfg: cfg, an: an, shutdown: shutdown}
+func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Instance, an *anaSvc.Client) *service {
+	return &service{ctx: ctx, cancel: cancel, cfg: cfg, an: an}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg, s.an, s.shutdown)
+	s.server, err = server.New(s.cfg, s.an)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -45,13 +46,12 @@ func (s *service) Start() error {
 			}
 		}
 	}()
-	defer s.shutdown()
 
 	spath := svcctl.NewIPCSockPathFromGlobals()
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.NewServer(spath, reqHandlers...)
+	s.ipcSrv = ipc.NewServer(s.ctx, s.cancel, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")
@@ -69,13 +69,9 @@ func (s *service) Stop() error {
 		return errs.Wrap(err, "Failed to stop server")
 	}
 
-	if err := s.ipcSrv.Close(); err != nil {
+	if err := s.ipcSrv.Shutdown(); err != nil {
 		return errs.Wrap(err, "Failed to stop ipc server")
 	}
 
 	return nil
-}
-
-func (s *service) Wait() {
-	_ = s.ipcSrv.Wait()
 }
