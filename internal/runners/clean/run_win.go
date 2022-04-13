@@ -122,7 +122,7 @@ func removePaths(logFile string, cfg configurable, paths ...string) error {
 
 	shell := subshell.DetectShellBinary(cfg)
 	if filepath.Base(shell) != "cmd.exe" {
-		return errs.New("Could not detect cmd.exe")
+		return locale.NewError("err_uninstall_shell_windows")
 	}
 
 	_, err = exeutils.ExecuteAndForget(shell, args)

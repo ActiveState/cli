@@ -1868,3 +1868,5 @@ err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
 err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
+err_uninstall_shell_windows:
+  other: "Could not detect cmd.exe on system. cmd.exe is required to run uninstall. Please ensure it is on your PATH"
