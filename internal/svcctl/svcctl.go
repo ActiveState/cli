@@ -27,7 +27,6 @@ var (
 
 type IPCommunicator interface {
 	Requester
-	SockPath() *ipc.SockPath
 	PingServer(context.Context) (time.Duration, error)
 	StopServer(context.Context) error
 }

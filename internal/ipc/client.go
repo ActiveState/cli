@@ -44,10 +44,6 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	return msg, nil
 }
 
-func (c *Client) SockPath() *SockPath {
-	return c.sockpath
-}
-
 func (c *Client) PingServer(ctx context.Context) (time.Duration, error) {
 	start := time.Now()
 
