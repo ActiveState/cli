@@ -40,7 +40,7 @@ func New(cfg *config.Instance, an *sync.Client) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
-		cache.New(15*time.Minute, -1),
+		cache.New(cache.NoExpiration, cache.NoExpiration),
 		projectcache.NewID(),
 		an,
 		rtwatcher.New(cfg, an),
@@ -179,7 +179,7 @@ func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 			multilog.Critical("Could not fetch deprecation information: %s", errs.JoinMessage(err))
 		}
 		if deprecated != nil {
-			r.updateCache.Set(cacheKey, deprecated, -1)
+			r.updateCache.Set(cacheKey, deprecated, cache.NoExpiration)
 		}
 	}()
 
