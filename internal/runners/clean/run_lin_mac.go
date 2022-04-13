@@ -52,7 +52,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
 	}
 
-	err = removeConfig(path, u.out)
+	err = removeConfig(path, u.cfg, u.out)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
 
@@ -62,7 +62,7 @@ func (u *Uninstall) runUninstall() error {
 	return nil
 }
 
-func removeConfig(configPath string, out output.Outputer) error {
+func removeConfig(configPath string, cfg configurable, out output.Outputer) error {
 	file, err := os.Open(logging.FilePath())
 	if err != nil {
 		return locale.WrapError(err, "err_clean_open_log", "Could not open logging file at: {{.V0}}", logging.FilePath())

@@ -62,14 +62,14 @@ func (u *Uninstall) runUninstall() error {
 	return nil
 }
 
-func removeConfig(configPath string, out output.Outputer) error {
+func removeConfig(configPath string, cfg configurable, out output.Outputer) error {
 	logFile, err := ioutil.TempFile("", "state-clean-config")
 	if err != nil {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
 	out.Print(locale.Tr("clean_config_message_windows", logFile.Name()))
-	return removePaths(logFile.Name(), configPath)
+	return removePaths(logFile.Name(), cfg, configPath)
 }
 
 func removeInstall(logFile string, cfg configurable) error {
@@ -120,7 +120,12 @@ func removePaths(logFile string, cfg configurable, paths ...string) error {
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	_, err = exeutils.ExecuteAndForget(subshell.DetectShellBinary(cfg), args)
+	shell := subshell.DetectShellBinary(cfg)
+	if filepath.Base(shell) != "cmd.exe" {
+		return errs.New("Could not detect cmd.exe")
+	}
+
+	_, err = exeutils.ExecuteAndForget(shell, args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}

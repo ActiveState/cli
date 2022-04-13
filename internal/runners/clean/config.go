@@ -70,5 +70,5 @@ func (c *Config) Run(params *ConfigParams) error {
 	c.cfg.Close()
 
 	logging.Debug("Removing config directory: %s", dir)
-	return removeConfig(dir, c.output)
+	return removeConfig(dir, c.cfg, c.output)
 }
