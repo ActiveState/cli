@@ -108,21 +108,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
-
-			// Verify that we don't try to install it again
-			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.WithArgs(argsPlain...),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-				)
-			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...),
-					e2e.AppendEnv("SHELL="),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-				)
-			}
-			cp.Expect("already installed")
-			cp.ExpectExitCode(0)
 		})
 	}
 }
