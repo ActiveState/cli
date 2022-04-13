@@ -38,7 +38,6 @@ const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	fromDeferred    bool
 	sourcePath      string
 	sourceInstaller string
 	path            string
@@ -183,11 +182,6 @@ func main() {
 				Value:  &params.sourcePath,
 			},
 			{
-				Name:   "from-deferred",
-				Hidden: true, // This is set when deferring installs to another installer, to avoid redundant UI
-				Value:  &params.fromDeferred,
-			},
-			{
 				Name:      "path",
 				Shorthand: "t",
 				Hidden:    true, // Since we already expose the path as an argument, let's not confuse the user
@@ -279,7 +273,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	case params.force:
 		logging.Debug("Not using update flow as --force was passed")
 		break // When ran with `--force` we always use the install UX
-	case params.sourcePath == "" && !params.fromDeferred && fileutils.FileExists(packagedStateExe):
+	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
@@ -312,9 +306,9 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params, isUpdate)
 	}
 
-	// If no sourcePath was provided then we still need to download the source files, and defer the actual
-	// installation to the installer contained within the source file
-	return installFromRemoteSource(out, cfg, an, args, params)
+	storeInstallSource(params.sourceInstaller)
+
+	return locale.NewError("err_install_source_path_not_provided", "sourcePath was not provided by install.sh or install.ps1")
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
@@ -322,7 +316,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
 	if !isUpdate {
-    // install.sh or install.ps1 downloaded this installer and is running it.
+		// install.sh or install.ps1 downloaded this installer and is running it.
 		out.Print(output.Title("Installing State Tool Package Manager"))
 		out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
 			`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
@@ -419,54 +413,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 
 func envSlice(binPath string) []string {
 	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
-}
-
-// installFromRemoteSource is invoked when we run the installer without providing the associated source files
-// Effectively this will download and unpack the target version and then run the installer packaged for that version
-// To view the source of the target version you can extract the relevant commit ID from the version of the target version
-// This is the default behavior when doing a clean install
-func installFromRemoteSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
-	an.Event(AnalyticsFunnelCat, "remote-source")
-
-	out.Print(output.Title("Installing State Tool Package Manager"))
-	out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
-		`ActiveState collects usage statistics and diagnostic data about failures. ` + "\n" +
-		`By using the State Tool Package Manager you agree to the terms of ActiveState’s Privacy Policy, ` + "\n" +
-		`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
-
-	args = append(args, "--from-deferred")
-
-	storeInstallSource(params.sourceInstaller)
-
-	// Fetch payload
-	checker := updater.NewDefaultChecker(cfg)
-	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	checker.VerifyVersion = false
-	update, err := checker.CheckFor(params.branch, params.version)
-	if err != nil {
-		return errs.Wrap(err, "Could not retrieve install package information")
-	}
-	if update == nil {
-		return errs.New("No update information could be found.")
-	}
-
-	version := update.Version
-	if params.branch != "" {
-		version = fmt.Sprintf("%s (%s)", version, params.branch)
-	}
-
-	an.Event(AnalyticsFunnelCat, "download")
-	out.Fprint(os.Stdout, fmt.Sprintf("• Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
-	if _, err := update.DownloadAndUnpack(); err != nil {
-		out.Print("[ERROR]x Failed[/RESET]")
-		return errs.Wrap(err, "Could not download and unpack")
-	}
-	out.Print("[SUCCESS]✔ Done[/RESET]")
-
-	cfg.Set(updater.CfgKeyInstallVersion, params.version)
-
-	an.Event(AnalyticsFunnelCat, "install-async")
-	return update.InstallBlocking(params.path, args...)
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir
