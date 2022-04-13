@@ -9,7 +9,6 @@ func NewDeprecationRequest() *DeprecationRequest {
 func (d *DeprecationRequest) Query() string {
 	return `query {
 		checkDeprecation {
-			deprecated
 			version
 			date
 			dateReached
