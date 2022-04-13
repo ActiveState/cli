@@ -15,7 +15,6 @@ type AvailableUpdate struct {
 }
 
 type DeprecationInfo struct {
-	Deprecated  bool   `json:"deprecated"`
 	Version     string `json:"version"`
 	Date        string `json:"date"`
 	DateReached bool   `json:"dateReached"`
