@@ -30,13 +30,13 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 
 	_, err = conn.Write([]byte(key))
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to write to connection")
+		return "", errs.Wrap(err, "Failed to write to server connection")
 	}
 
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to read from connection")
+		return "", errs.Wrap(err, "Failed to read from server connection")
 	}
 
 	msg := string(buf[:n])
