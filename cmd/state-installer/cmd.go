@@ -302,12 +302,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
 			return err
 		}
+		storeInstallSource(params.sourceInstaller)
 		return postInstallEvents(out, cfg, an, params, isUpdate)
 	}
 
-	storeInstallSource(params.sourceInstaller)
-
-	return locale.NewError("err_install_source_path_not_provided", "sourcePath was not provided by install.sh or install.ps1")
+	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
