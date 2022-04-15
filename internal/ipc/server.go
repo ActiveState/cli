@@ -35,6 +35,7 @@ type Server struct {
 	flistener   *flisten.FListen
 	errsc       chan error
 	donec       chan struct{}
+	handlerWG   *sync.WaitGroup
 }
 
 // NewServer constructs a reference to a Server instance which can be populated
@@ -50,6 +51,7 @@ func NewServer(topCtx context.Context, topCancel context.CancelFunc, spath *Sock
 		cancel:      cancel,
 		errsc:       make(chan error),
 		donec:       make(chan struct{}),
+		handlerWG:   &sync.WaitGroup{},
 	}
 
 	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
@@ -100,10 +102,18 @@ func (ipc *Server) Start() error {
 		go func() {
 			defer wg.Done()
 			defer close(conns)
+			defer ipc.handlerWG.Wait()
+			defer ipc.flistener.Close()
 
 			// Continually accept connections and feed them into the relevant channel.
 			for {
-				if err := accept(&wg, conns, listener); err != nil {
+				select {
+				case <-ipc.donec:
+					return
+				default:
+				}
+
+				if err := accept(ipc.handlerWG, conns, listener); err != nil {
 					if !errors.Is(err, context.Canceled) {
 						ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
 					}
@@ -118,7 +128,7 @@ func (ipc *Server) Start() error {
 
 			// Continually route incomming connections to the appropriate handler.
 			for {
-				if err := routeToHandler(&wg, conns, ipc.reqHandlers); err != nil {
+				if err := routeToHandler(ipc.handlerWG, conns, ipc.reqHandlers); err != nil {
 					if !errors.Is(err, ctlErrConnsClosed) {
 						logging.Error("Unexpected routeToHandler error: %v", err)
 					}
@@ -141,11 +151,9 @@ func (ipc *Server) Shutdown() error {
 		close(ipc.donec)
 		ipc.cancel()
 
-		listenerCloseErr := ipc.flistener.Close()
-
 		var retErr error
 		for err := range ipc.errsc {
-			if err != nil && errors.Is(err, listenerCloseErr) && retErr == nil {
+			if err != nil && retErr == nil {
 				retErr = err
 			}
 		}
