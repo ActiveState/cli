@@ -1,16 +1,19 @@
 #!/usr/bin/env sh
 # Copyright 2022 ActiveState Software Inc. All rights reserved.
 
+# URL to fetch update infos from.
+BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info"
 # URL to fetch installer archive from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
-# Name of the installer executable and archive.
-INSTALLERNAME="state-installer"
+# Path to the installer executable in the archive.
+INSTALLERNAME="state-install/state-installer"
 # Channel the installer will target
 CHANNEL='release'
 # the download exetension
 DOWNLOADEXT=".tar.gz"
 # the installer extension
 BINARYEXT=""
+SHA256SUM="sha256sum"
 
 SESSION_TOKEN_VERIFY="{TOKEN""}"
 SESSION_TOKEN="{TOKEN}"
@@ -68,6 +71,7 @@ Linux)
   ;;
 Darwin)
   OS="darwin"
+  SHA256SUM="shasum -a 256"
   ;;
 MINGW*|MSYS*)
   OS="windows"
@@ -95,15 +99,40 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-progress "Preparing Installer for State Tool Package Manager"
-STATEURL="$BASE_FILE_URL/$CHANNEL/$OS-amd64/$INSTALLERNAME$DOWNLOADEXT"
-ARCHIVE="$INSTALLERNAME$DOWNLOADEXT"
+# Determine the latest version to fetch.
+STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+$FETCH $TMPDIR/info.json $STATEURL || exit 1
+
+# Parse info.
+VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
+if [ -z "$VERSION" ]; then
+  error "Unable to retrieve the latest version number"
+  exit 1
+fi
+SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
+rm $TMPDIR/info.json
+
+# Fetch the latest version.
+progress "Preparing Installer for State Tool Package Manager version $VERSION"
+STATEURL="$BASE_FILE_URL/$RELURL"
+ARCHIVE="$OS-amd64$DOWNLOADEXT"
 if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
   progress_fail
   error "Could not fetch the State Tool installer at $STATEURL. Please try again."
   exit 1
 fi
 
+# Verify checksum.
+if [ "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
+  error "SHA256 sum did not match:"
+  error "Expected: $SUM"
+  error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
+  error "Aborting installation."
+  exit 1
+fi
+
+# Extract it.
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
@@ -115,4 +144,5 @@ chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
 progress_done
 echo ""
 
+# Run the installer.
 ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
