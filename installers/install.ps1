@@ -6,12 +6,14 @@ install.ps1 -b branchToInstall
 
 Set-StrictMode -Off
 
+# URL to fetch update infos from.
+$script:BASEINFOURL = "https://platform.activestate.com/sv/state-update/api/v1/info"
 # URL to fetch installer archive from
 $script:BASEFILEURL = "https://state-tool.s3.amazonaws.com/update/state"
 # The name of the remove archive to download
 $script:ARCHIVENAME = "state-installer.zip"
 # Name of the installer executable to ultimately use
-$script:INSTALLERNAME = "state-installer.exe"
+$script:INSTALLERNAME = "state-install\\state-installer.exe"
 # Channel the installer will target
 $script:CHANNEL = "release"
 
@@ -108,9 +110,16 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-progress "Preparing Installer for State Tool Package Manager"
+# Determine the latest version to fetch and parse info.
+$jsonURL="$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
+$infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+$version = $infoJson.Version
+$checksum = $infoJson.Sha256
+$relUrl = $infoJson.Path
 
-$zipURL = "$script:BASEFILEURL/$script:CHANNEL/windows-amd64/$script:ARCHIVENAME"
+# Fetch the latest version.
+progress "Preparing Installer for State Tool Package Manager version $version"
+$zipURL = "$script:BASEFILEURL/$relUrl"
 $tmpParentPath = tempDir
 $zipPath = Join-Path $tmpParentPath $script:ARCHIVENAME
 $exePath = Join-Path $tmpParentPath $script:INSTALLERNAME
@@ -126,6 +135,18 @@ catch [System.Exception]
     return 1
 }
 
+# Verify checksum.
+$hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
+if ($hash -ne $checksum)
+{
+    Write-Warning "SHA256 sum did not match:"
+    Write-Warning "Expected: $checksum"
+    Write-Warning "Received: $hash"
+    Write-Warning "Aborting installation"
+    return 1
+}
+
+# Extract it.
 try
 {
     Expand-Archive -ErrorAction Stop -LiteralPath $zipPath -DestinationPath $tmpParentPath
@@ -145,9 +166,14 @@ $PSDefaultParameterValues['*:Encoding'] = 'utf8'
 [System.Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# Run the installer.
 $env:ACTIVESTATE_SESSION_TOKEN = $script:SESSION_TOKEN_VALUE
 & $exePath $args --source-installer="install.ps1"
+$success = $?
 if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
 {
     Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
+}
+if ( !$success ) {
+  exit 1
 }
