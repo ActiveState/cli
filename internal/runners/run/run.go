@@ -54,18 +54,11 @@ func New(prime primeable) *Run {
 
 // Run runs the Run run runner.
 func (r *Run) Run(name string, args []string) error {
-	return run(r.auth, r.out, r.analytics, r.subshell, r.proj, r.svcModel, r.cfg, name, args)
-}
-
-func run(
-	auth *authentication.Auth, out output.Outputer, analytics analytics.Dispatcher, subs subshell.SubShell,
-	proj *project.Project, svcModel *model.SvcModel, cfg *config.Instance,
-	name string, args []string) error {
 	logging.Debug("Execute")
 
-	checker.RunUpdateNotifier(svcModel, out)
+	checker.RunUpdateNotifier(r.svcModel, r.out)
 
-	if proj == nil {
+	if r.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
@@ -73,18 +66,18 @@ func run(
 		return locale.NewError("error_state_run_undefined_name")
 	}
 
-	out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
+	r.out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.LegacyGet().Authenticated() {
-		checker.RunCommitsBehindNotifier(proj, out)
+		checker.RunCommitsBehindNotifier(r.proj, r.out)
 	}
 
-	script := proj.ScriptByName(name)
+	script := r.proj.ScriptByName(name)
 	if script == nil {
-		return locale.NewInputError("error_state_run_unknown_name", "Script does not exist: {{.V0}}", name)
+		return locale.NewInputError("error_state_run_unknown_name", "", name)
 	}
 
-	scriptrunner := scriptrun.New(auth, out, subs, proj, cfg, analytics, svcModel)
+	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
@@ -92,13 +85,13 @@ func run(
 	}
 
 	if len(script.Languages()) == 0 {
-		out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
-		out.Notice(locale.Tl(
+		r.out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
+		r.out.Notice(locale.Tl(
 			"run_warn_deprecated_script_without_language",
 			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
 			strings.Join(language.RecognizedNames(), ", ")))
 	}
 
-	out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
+	r.out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
 	return scriptrunner.Run(script, args)
 }

@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -71,7 +70,6 @@ func New(message string, args ...interface{}) *WrapperError {
 // Wrap creates a new error that wraps the given error
 func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	msg := fmt.Sprintf(message, args...)
-	logging.Debug("Wrapped error: %v -- with: %v", wrapTarget, msg)
 	return newError(msg, wrapTarget)
 }
 

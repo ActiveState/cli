@@ -65,7 +65,7 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectPath, err := u.checkout.Run(params.Namespace, "")
+	projectPath, err := u.checkout.Run(params.Namespace, "", "")
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
 	}
