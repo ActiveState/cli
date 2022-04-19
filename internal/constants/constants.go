@@ -124,7 +124,7 @@ const ShimEnvVarName = "ACTIVESTATE_SHIM"
 const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
-const DisableAnalyticsEnvVarName = "ACTIVESTATE_DISABLE_ANALYTICS"
+const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
