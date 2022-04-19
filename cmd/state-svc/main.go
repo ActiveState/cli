@@ -170,7 +170,7 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	p := NewService(ctx, cancel, cfg, an)
+	p := NewService(ctx, cfg, an)
 
 	if err := p.Start(); err != nil {
 		return errs.Wrap(err, "Could not start service")
@@ -189,14 +189,16 @@ func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
 			logging.Debug("system call:%+v", oscall)
 			// issue a service shutdown on interrupt
 			cancel()
+			if err := p.Stop(); err != nil {
+				logging.Debug("Service stop failed: %v", err)
+			}
 		case <-ctx.Done():
 		}
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
-	<-ctx.Done()
-	if err := p.Stop(); err != nil {
+	if err := p.Wait(); err != nil {
 		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
 

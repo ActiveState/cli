@@ -32,7 +32,6 @@ type Server struct {
 	reqHandlers []RequestHandler
 	ctx         context.Context
 	cancel      context.CancelFunc
-	flistener   *flisten.FListen
 	errsc       chan error
 	donec       chan struct{}
 }
@@ -40,7 +39,7 @@ type Server struct {
 // NewServer constructs a reference to a Server instance which can be populated
 // with called-defined handlers, and is preconfigured with ping and stop
 // handlers as a low-level flexibility.
-func NewServer(topCtx context.Context, topCancel context.CancelFunc, spath *SockPath, reqHandlers ...RequestHandler) *Server {
+func NewServer(topCtx context.Context, spath *SockPath, reqHandlers ...RequestHandler) *Server {
 	ctx, cancel := context.WithCancel(topCtx)
 
 	ipc := Server{
@@ -54,7 +53,7 @@ func NewServer(topCtx context.Context, topCancel context.CancelFunc, spath *Sock
 
 	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
 	ipc.reqHandlers = append(ipc.reqHandlers, reqHandlers...)
-	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(topCancel))
+	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(ipc.Shutdown))
 
 	return &ipc
 }
@@ -87,7 +86,6 @@ func (ipc *Server) Start() error {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
-	ipc.flistener = listener
 
 	// Produce (accept) and consume (route to handler) connections.
 	conns := make(chan net.Conn)
@@ -99,24 +97,30 @@ func (ipc *Server) Start() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+
+			<-ipc.donec
+			listener.Close()
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			defer close(conns)
-			defer ipc.flistener.Close()
 
 			// Continually accept connections and feed them into the relevant channel.
 			for {
+				// At this time, the context.Context that is
+				// passed into the flisten construction func
+				// does not halt the listener. Close() must be
+				// called to halt and "doneness" managed.
+				err := accept(&wg, conns, listener)
 				select {
 				case <-ipc.donec:
 					return
 				default:
 				}
-				// At this time, the context.Context that is
-				// passed into the flisten construction func
-				// does not halt the listener. Close() must be
-				// called to halt and "doneness" managed.
-				if err := accept(&wg, conns, listener); err != nil {
-					if !errors.Is(err, context.Canceled) {
-						ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
-					}
+				if err != nil {
+					ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
 					return
 				}
 			}
@@ -150,15 +154,18 @@ func (ipc *Server) Shutdown() error {
 	default:
 		close(ipc.donec)
 		ipc.cancel()
-
-		var retErr error
-		for err := range ipc.errsc {
-			if err != nil && retErr == nil {
-				retErr = err
-			}
-		}
-		return retErr
+		return nil
 	}
+}
+
+func (ipc *Server) Wait() error {
+	var retErr error
+	for err := range ipc.errsc {
+		if err != nil && retErr == nil {
+			retErr = err
+		}
+	}
+	return retErr
 }
 
 func accept(wg *sync.WaitGroup, conns chan net.Conn, l net.Listener) error {

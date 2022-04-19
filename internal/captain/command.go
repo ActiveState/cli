@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"text/template"
 	"time"
 	"unicode"
@@ -583,7 +582,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	execute := intercept(c.execute)
 
 	// initialize signal handler for analytics events
-	as := sighandler.NewAwaitingSigHandler(os.Interrupt, syscall.SIGTERM)
+	as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 	sighandler.Push(as)
 	defer sighandler.Pop()
 

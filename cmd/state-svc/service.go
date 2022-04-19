@@ -17,15 +17,14 @@ import (
 
 type service struct {
 	ctx    context.Context
-	cancel context.CancelFunc
 	cfg    *config.Instance
 	an     *anaSvc.Client
 	server *server.Server
 	ipcSrv *ipc.Server
 }
 
-func NewService(ctx context.Context, cancel context.CancelFunc, cfg *config.Instance, an *anaSvc.Client) *service {
-	return &service{ctx: ctx, cancel: cancel, cfg: cfg, an: an}
+func NewService(ctx context.Context, cfg *config.Instance, an *anaSvc.Client) *service {
+	return &service{ctx: ctx, cfg: cfg, an: an}
 }
 
 func (s *service) Start() error {
@@ -51,7 +50,7 @@ func (s *service) Start() error {
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.NewServer(s.ctx, s.cancel, spath, reqHandlers...)
+	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")
@@ -73,5 +72,12 @@ func (s *service) Stop() error {
 		return errs.Wrap(err, "Failed to stop ipc server")
 	}
 
+	return nil
+}
+
+func (s *service) Wait() error {
+	if err := s.ipcSrv.Wait(); err != nil {
+		return errs.Wrap(err, "IPC server operating failure")
+	}
 	return nil
 }
