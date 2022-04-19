@@ -768,7 +768,7 @@ func childCommands(cmd *Command) string {
 	var group string
 	table := table.New([]string{"", ""})
 	table.HideHeaders = true
-	for _, child := range cmd.Children() {
+	for _, child := range cmd.AvailableChildren() {
 		if group != child.Group().String() && child.Group().String() != "" {
 			group = child.Group().String()
 			table.AddRow([]string{""})
