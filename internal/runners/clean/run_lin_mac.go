@@ -107,6 +107,7 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
 	}
 
+	// We only want to remove the bin directory under the branch path
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		aggErr = errs.Wrap(aggErr, "Could not get bin path from install path")
