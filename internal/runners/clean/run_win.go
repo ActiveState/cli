@@ -120,12 +120,7 @@ func removePaths(logFile string, cfg configurable, paths ...string) error {
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	shell := subshell.DetectShellBinary(cfg)
-	if filepath.Base(shell) != "cmd.exe" {
-		return locale.NewError("err_uninstall_shell_windows")
-	}
-
-	_, err = exeutils.ExecuteAndForget(shell, args)
+	_, err = exeutils.ExecuteAndForget(subshell.DetectShellBinary(cfg), args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
