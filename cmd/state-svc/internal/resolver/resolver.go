@@ -35,11 +35,11 @@ type Resolver struct {
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client) *Resolver {
+func New(cfg *config.Instance, an *sync.Client, checker *deprecation.Checker) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
-		deprecation.NewChecker(deprecation.DefaultTimeout, cfg),
+		checker,
 		projectcache.NewID(),
 		an,
 		rtwatcher.New(cfg, an),

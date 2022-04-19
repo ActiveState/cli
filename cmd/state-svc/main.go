@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -100,6 +101,13 @@ func run(cfg *config.Instance) (rerr error) {
 	an := anaSvc.New(cfg, auth)
 	defer an.Wait()
 
+	checker := deprecation.NewChecker(cfg)
+	err = checker.Refresh()
+	if err != nil {
+		return errs.Wrap(err, "Could not refresh deprecation info")
+	}
+	defer checker.Close()
+
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
@@ -159,7 +167,7 @@ func run(cfg *config.Instance) (rerr error) {
 				if err := auth.Sync(); err != nil {
 					logging.Warning("Could not sync authenticated state: %s", err.Error())
 				}
-				return runForeground(cfg, an)
+				return runForeground(cfg, an, checker)
 			},
 		),
 	)
@@ -167,12 +175,12 @@ func run(cfg *config.Instance) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
+func runForeground(cfg *config.Instance, an *anaSvc.Client, deprecation *deprecation.Checker) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
 	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, an, shutdown)
+	p := NewService(cfg, an, deprecation, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
