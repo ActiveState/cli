@@ -23,16 +23,21 @@ type namedClose struct {
 	io.Closer
 }
 
-type shutdowner interface {
+type gracefulShutdowner interface {
 	Shutdown() error
+	Wait() error
 }
 
-type shutdownerWrap struct {
-	shutdowner
+type gracefulShutdownerWrap struct {
+	gracefulShutdowner
 }
 
-func (s shutdownerWrap) Close() error {
-	return s.shutdowner.Shutdown()
+func (s gracefulShutdownerWrap) Close() error {
+	if err := s.gracefulShutdowner.Shutdown(); err != nil {
+		return err
+	}
+
+	return s.gracefulShutdowner.Wait()
 }
 
 func main() {
@@ -72,7 +77,7 @@ func run() (int, error) {
 	reqHandlers := []ipc.RequestHandler{
 		svcctl.HTTPAddrHandler(addr),
 	}
-	ipcSrv := ipc.NewServer(ctx, cancel, spath, reqHandlers...)
+	ipcSrv := ipc.NewServer(ctx, spath, reqHandlers...)
 	ipcClient := ipc.NewClient(spath)
 	if err := ipcSrv.Start(); err != nil {
 		return 2, err
@@ -86,8 +91,8 @@ func run() (int, error) {
 	return closeOnCancel(
 		ctx,
 		svcName,
-		namedClose{"ipc", shutdownerWrap{ipcSrv}},
 		namedClose{"http", httpSrv},
+		namedClose{"ipc", gracefulShutdownerWrap{ipcSrv}},
 	)
 }
 
