@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
@@ -91,8 +92,12 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
-	if a.closed {
+	switch {
+	case a.closed:
 		logging.Debug("Client is closed, not sending event")
+		return nil
+	case strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true":
+		logging.Debug("Analytics are disabled; not sending event")
 		return nil
 	}
 
