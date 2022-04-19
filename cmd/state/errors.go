@@ -101,13 +101,6 @@ func unwrapError(err error) (int, error) {
 		return code, nil
 	}
 
-	// Log error if this isn't a user input error
-	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-	} else {
-		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-	}
-
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
 	if errors.As(err, &llerr) {
 		key, base := llerr.Localization()
