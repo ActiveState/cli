@@ -5,7 +5,6 @@ package clean
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -36,7 +35,6 @@ func (u *Uninstall) runUninstall() error {
 
 	err = removeInstall(u.cfg)
 	if err != nil {
-		fmt.Println("Err:", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
