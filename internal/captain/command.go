@@ -525,7 +525,7 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
-	if c.unstable {
+	if c.unstable && c.out.Type() != output.EditorV0FormatName {
 		if !c.cfg.GetBool(constants.UnstableConfig) {
 			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
