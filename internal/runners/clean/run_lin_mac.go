@@ -5,6 +5,7 @@ package clean
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -35,6 +36,7 @@ func (u *Uninstall) runUninstall() error {
 
 	err = removeInstall(u.cfg)
 	if err != nil {
+		fmt.Println("Err:", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
@@ -98,6 +100,18 @@ func removeInstall(cfg configurable) error {
 
 	var aggErr error
 
+	// Get the install path before we remove the actual executable
+	// to avoid any errors from this function
+	installPath, err := installation.InstallPathFromExecPath()
+	if err != nil {
+		aggErr = errs.Wrap(aggErr, "Could not get installation path")
+	}
+
+	binPath, err := installation.BinPathFromInstallPath(installPath)
+	if err != nil {
+		aggErr = errs.Wrap(aggErr, "Could not get bin path from install path")
+	}
+
 	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
 		err := os.Remove(info.Exec())
 		if err != nil {
@@ -123,15 +137,11 @@ func removeInstall(cfg configurable) error {
 		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
 	}
 
-	installPath, err := installation.InstallPathFromExecPath()
-	if err != nil {
-		aggErr = errs.Wrap(aggErr, "Could not get installation path")
-	}
-
-	if fileutils.DirExists(installPath) {
-		empty, err := fileutils.IsEmptyDir(installPath)
+	// Remove the installation directory after all of the executables have been removed
+	if fileutils.DirExists(binPath) {
+		empty, err := fileutils.IsEmptyDir(binPath)
 		if err == nil && empty {
-			removeErr := os.RemoveAll(installPath)
+			removeErr := os.RemoveAll(binPath)
 			if err != nil {
 				aggErr = errs.Wrap(removeErr, "Could not remove install path")
 			}
