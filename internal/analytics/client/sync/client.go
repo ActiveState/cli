@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -104,6 +105,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
 		Flags:         p.StrP(dimensions.CalculateFlags()),
+		InstanceID:    p.StrP(instanceid.ID()),
 	}
 
 	a.customDimensions = customDimensions
