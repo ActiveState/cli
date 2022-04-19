@@ -112,7 +112,10 @@ func (ipc *Server) Start() error {
 					return
 				default:
 				}
-
+				// At this time, the context.Context that is
+				// passed into the flisten construction func
+				// does not halt the listener. Close() must be
+				// called to halt and "doneness" managed.
 				if err := accept(ipc.handlerWG, conns, listener); err != nil {
 					if !errors.Is(err, context.Canceled) {
 						ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
