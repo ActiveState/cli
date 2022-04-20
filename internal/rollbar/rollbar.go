@@ -13,10 +13,21 @@ import (
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
 	"github.com/rollbar/rollbar-go"
 )
+
+type config interface {
+	GetBool(key string) bool
+	IsSet(key string) bool
+	Closed() bool
+}
+
+func init() {
+	configMediator.RegisterOption(constants.ReportErrorsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 // CurrentCmd holds the value of the current command being invoked
 // it's a quick hack to allow us to log the command to rollbar without risking exposing sensitive info
@@ -57,6 +68,12 @@ func SetupRollbar(token string) {
 	})
 }
 
+var currentCfg config
+
+func SetConfig(cfg config) {
+	currentCfg = config
+}
+
 func UpdateRollbarPerson(userID, username, email string) {
 	defer handlePanics(recover())
 	rollbar.SetPerson(uniqid.Text(), username, email)
@@ -77,8 +94,9 @@ func Wait() { rollbar.Wait() }
 
 func logToRollbar(critical bool, message string, args ...interface{}) {
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	isPublicChannel := (constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch)
-	if !isPublicChannel || !condition.BuiltViaCI() {
+	isPublicChannel := constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch
+	reportingDisabled := currentCfg != nil && !currentCfg.Closed() && currentCfg.IsSet(constants.ReportErrorsConfig) && !currentCfg.GetBool(constants.ReportErrorsConfig)
+	if !isPublicChannel || !condition.BuiltViaCI() || !reportingDisabled {
 		return
 	}
 

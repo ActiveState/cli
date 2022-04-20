@@ -46,8 +46,8 @@ func main() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
 	rollbar.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
+	rollbar.SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
