@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
-var asFiles = []string{installation.InstallDirMarker, constants.StateInstallerCmd + exeutils.Extension, filepath.Join("system", constants.MacOSApplicationName)}
+var asFiles = []string{installation.InstallDirMarker, constants.StateInstallerCmd + exeutils.Extension, filepath.Join("system", constants.MacOSApplicationName), "system"}
 
 func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)

@@ -140,7 +140,7 @@ func removeInstall(cfg configurable) error {
 
 	// Remove the installation directory after all of the executables have been removed
 	if fileutils.DirExists(binPath) {
-		if err := removeIfEmpty(binPath); err != nil {
+		if err := removeEmptyDir(binPath); err != nil {
 			aggErr = errs.Wrap(err, "Could not remove binary path")
 		}
 	}
@@ -150,7 +150,7 @@ func removeInstall(cfg configurable) error {
 		if err != nil {
 			aggErr = errs.Wrap(err, "Could not clean install path")
 		}
-		if err := removeIfEmpty(installPath); err != nil {
+		if err := removeEmptyDir(installPath); err != nil {
 			aggErr = errs.Wrap(err, "Could not remove install path")
 		}
 	}
