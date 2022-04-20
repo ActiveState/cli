@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/internal/subshell"
 )
 
 func (u *Uninstall) runUninstall() error {
@@ -62,14 +61,14 @@ func (u *Uninstall) runUninstall() error {
 	return nil
 }
 
-func removeConfig(configPath string, cfg configurable, out output.Outputer) error {
+func removeConfig(configPath string, out output.Outputer) error {
 	logFile, err := ioutil.TempFile("", "state-clean-config")
 	if err != nil {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
 	out.Print(locale.Tr("clean_config_message_windows", logFile.Name()))
-	return removePaths(logFile.Name(), cfg, configPath)
+	return removePaths(logFile.Name(), configPath)
 }
 
 func removeInstall(logFile string, cfg configurable) error {
@@ -97,10 +96,10 @@ func removeInstall(logFile string, cfg configurable) error {
 		paths = append(paths, transitionalStateTool)
 	}
 
-	return removePaths(logFile, cfg, paths...)
+	return removePaths(logFile, paths...)
 }
 
-func removePaths(logFile string, cfg configurable, paths ...string) error {
+func removePaths(logFile string, paths ...string) error {
 	logging.Debug("Removing paths: %v", paths)
 	scriptName := "removePaths"
 	scriptBlock, err := assets.ReadFileBytes(fmt.Sprintf("scripts/%s.bat", scriptName))
@@ -120,7 +119,7 @@ func removePaths(logFile string, cfg configurable, paths ...string) error {
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	_, err = exeutils.ExecuteAndForget(subshell.DetectShellBinary(cfg), args)
+	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}
