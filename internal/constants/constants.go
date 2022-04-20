@@ -418,3 +418,6 @@ const PipShim = "pip"
 
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
+
+// MacOSApplicationName is the name of the ActiveState Desktop app on MacOS.
+const MacOSApplicationName = "ActiveState Desktop (Preview).app"

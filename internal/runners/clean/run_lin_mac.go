@@ -34,17 +34,15 @@ func (u *Uninstall) runUninstall() error {
 	}
 
 	err = removeInstall(u.cfg)
-	if err != nil {
+	if errors.Is(err, errDirNotEmpty) {
+		u.out.Notice(locale.Tl("uninstall_warn_not_empty", "[WARNING]Unable to remove all files in the directory {{.V0}}[/RESET]"))
+	} else if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
 
 	err = removeEnvPaths(u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
-	}
-
-	if aggErr != nil {
-		return aggErr
 	}
 
 	path := u.cfg.ConfigPath()
@@ -56,6 +54,10 @@ func (u *Uninstall) runUninstall() error {
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
 
+	}
+
+	if aggErr != nil {
+		return aggErr
 	}
 
 	u.out.Print(locale.T("clean_success_message"))
@@ -138,14 +140,18 @@ func removeInstall(cfg configurable) error {
 
 	// Remove the installation directory after all of the executables have been removed
 	if fileutils.DirExists(binPath) {
-		empty, err := fileutils.IsEmptyDir(binPath)
-		if err == nil && empty {
-			removeErr := os.RemoveAll(binPath)
-			if err != nil {
-				aggErr = errs.Wrap(removeErr, "Could not remove install path")
-			}
-		} else if err != nil {
-			aggErr = errs.Wrap(aggErr, "Could not check if installation path is empty")
+		if err := removeIfEmpty(binPath); err != nil {
+			aggErr = errs.Wrap(err, "Could not remove binary path")
+		}
+	}
+
+	if fileutils.DirExists(installPath) {
+		err = cleanInstallDir(installPath)
+		if err != nil {
+			aggErr = errs.Wrap(err, "Could not clean install path")
+		}
+		if err := removeIfEmpty(installPath); err != nil {
+			aggErr = errs.Wrap(err, "Could not remove install path")
 		}
 	}
 
