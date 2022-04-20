@@ -50,19 +50,19 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
-			return "", errs.Wrap(err, "Cannot locate HTTP port of ipc server")
+			return "", locale.WrapError(err, "svcctl_cannot_locate_http", "Cannot locate HTTP port of ipc server")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
 		if err := startAndWait(ctx, ipComm, exec); err != nil {
-			return "", errs.Wrap(err, "Cannot start ipc server at %q", exec)
+			return "", locale.WrapError(err, "svcctl_cannot_start_server", "Cannot start ipc server at {{.V0}}", exec)
 		}
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", errs.Wrap(err, "Cannot locate HTTP port of ipc server after start succeeded")
+			return "", locale.WrapError(err, "svcctl_cannot_locate_http_after_start", "Cannot locate HTTP port of ipc server after start succeeded")
 		}
 	}
 
@@ -81,7 +81,7 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 
 	addr, err = comm.GetHTTPAddr(ctx)
 	if err != nil {
-		return "", errs.Wrap(err, "HTTP address request failed")
+		return "", locale.WrapError(err, "svcctl_http_addr_req_fail", "HTTP address request failed")
 	}
 
 	return addr, nil
@@ -93,7 +93,7 @@ func StopServer(ipComm IPCommunicator) error {
 
 	err := stopAndWait(ctx, ipComm)
 	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
-		return errs.Wrap(err, "Cannot stop ipc server")
+		return locale.WrapError(err, "svcctl_cannot_stop_server", "Cannot stop ipc server")
 	}
 
 	return nil
@@ -103,18 +103,18 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return errs.New("File %q not found", exec)
+		return locale.NewError("svcctl_file_not_found", "File not found")
 	}
 
 	args := []string{"foreground"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
-		return errs.Wrap(err, "Execute and forget %q", exec)
+		return locale.NewError("svcctl_cannot_exec_and_forget", "Cannot execute and forget: {{.V0}}", err.Error())
 	}
 
 	logging.Debug("Waiting for state-svc")
 	if err := waitUp(ctx, ipComm); err != nil {
-		return errs.Wrap(err, "Wait failed")
+		return locale.WrapError(err, "svcctl_wait_failed", "Wait failed")
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= 32; try++ {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return locale.WrapError(ctx.Err(), "svcctl_wait_timeout", "Timed out after {{.V0}}", time.Since(start).String())
 		default:
 		}
 
@@ -141,7 +141,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 				continue
 			}
 			if !errors.Is(err, ctlErrNotUp) {
-				return errs.Wrap(err, "Ping failed")
+				return locale.WrapError(err, "svcctl_ping_failed", "Ping failed")
 			}
 			elapsed := time.Since(tryStart)
 			time.Sleep(timeout - elapsed)
@@ -155,12 +155,12 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 	if err := ipComm.StopServer(ctx); err != nil {
-		return errs.Wrap(err, "IPC stop server request failed")
+		return locale.WrapError(err, "svcctl_stop_req_failed", "IPC stop server request failed")
 	}
 
 	logging.Debug("Waiting for state-svc to die")
 	if err := waitDown(ctx, ipComm); err != nil {
-		return errs.Wrap(err, "Wait failed")
+		return locale.WrapError(err, "svcctl_wait_failed", "Wait failed")
 	}
 
 	return nil
@@ -171,7 +171,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= 32; try++ {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return locale.WrapError(ctx.Err(), "svcctl_wait_timeout", "Timed out after {{.V0}}", time.Since(start).String())
 		default:
 		}
 
@@ -189,7 +189,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 			if errors.Is(err, ctlErrNotUp) {
 				return nil
 			}
-			return errs.Wrap(err, "Ping failed")
+			return locale.WrapError(err, "svcctl_ping_failed", "Ping failed")
 		}
 		elapsed := time.Since(tryStart)
 		time.Sleep(timeout - elapsed)
