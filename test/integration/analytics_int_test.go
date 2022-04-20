@@ -71,7 +71,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events
 	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
-	time.Sleep(time.Duration(heartbeatInterval)*time.Millisecond + 100*time.Millisecond) // account for latency
+	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
@@ -82,7 +82,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	time.Sleep((time.Duration(heartbeatInterval)*time.Millisecond + 100*time.Millisecond)) // account for latency
+	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond))
 
 	events = suite.parseEvents()
 	suite.Require().NotEmpty(events)
