@@ -22,7 +22,15 @@ import (
 )
 
 var (
-	commonTimeout = time.Millisecond * 750
+	pingRetryIterations = 32
+	commonTimeout       = func() time.Duration {
+		var acc int
+		// alg to set max timeout matches ping backoff alg
+		for i := 1; i <= pingRetryIterations; i++ {
+			acc += i * i
+		}
+		return time.Millisecond * time.Duration(acc)
+	}()
 )
 
 type IPCommunicator interface {
@@ -120,12 +128,17 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 	return nil
 }
 
+var (
+	waitTimeoutL10nKey = "svcctl_wait_timeout"
+	waitTimeoutL10nVal = "Timed out after {{.V0}}"
+)
+
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 	start := time.Now()
-	for try := 1; try <= 32; try++ {
+	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), "svcctl_wait_timeout", "Timed out after {{.V0}}", time.Since(start).String())
+			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
 		default:
 		}
 
@@ -150,7 +163,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 		return nil
 	}
 
-	return locale.NewError("err_svcmanager_wait")
+	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
@@ -168,10 +181,10 @@ func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 
 func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 	start := time.Now()
-	for try := 1; try <= 32; try++ {
+	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), "svcctl_wait_timeout", "Timed out after {{.V0}}", time.Since(start).String())
+			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
 		default:
 		}
 
@@ -195,7 +208,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 		time.Sleep(timeout - elapsed)
 	}
 
-	return locale.NewError("err_svcmanager_wait")
+	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
