@@ -23,8 +23,6 @@ func (l *Test1Handler) SetFormatter(f Formatter) {
 func (l *Test1Handler) SetVerbose(v bool) {
 }
 
-func (l *Test1Handler) SetConfig(cfg config) {}
-
 func (l *Test1Handler) Output() io.Writer {
 	return nil
 }
@@ -152,8 +150,6 @@ func (l *TestHandler) Output() io.Writer {
 
 func (l *TestHandler) SetVerbose(v bool) {
 }
-
-func (l *TestHandler) SetConfig(cfg config) {}
 
 func (l *TestHandler) Printf(msg string, args ...interface{}) {
 }
