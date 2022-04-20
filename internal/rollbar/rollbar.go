@@ -71,7 +71,7 @@ func SetupRollbar(token string) {
 var currentCfg config
 
 func SetConfig(cfg config) {
-	currentCfg = config
+	currentCfg = cfg
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
