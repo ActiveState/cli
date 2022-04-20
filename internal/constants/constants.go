@@ -362,7 +362,7 @@ const UnstableConfig = "optin.unstable"
 const ReportErrorsConfig = "report.errors"
 
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
-const ReportAnalayticsConfig = "report.analytics"
+const ReportAnalyticsConfig = "report.analytics"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"

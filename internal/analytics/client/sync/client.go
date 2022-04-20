@@ -83,7 +83,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		a.cfg = cfg
 	}
 
-	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
+	if a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig) {
 		a.sendReports = false
 	}
 
