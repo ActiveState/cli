@@ -33,6 +33,7 @@ type Client struct {
 	sessionToken     string
 	updateTag        string
 	closed           bool
+	cfg              *config.Instance
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -49,6 +50,7 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 	a.output = o
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
+	a.cfg = cfg
 
 	if condition.InUnitTest() {
 		return a
@@ -56,10 +58,10 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 
 	a.svcModel = svcModel
 
-	a.sessionToken = cfg.GetString(ac.CfgSessionToken)
+	a.sessionToken = a.cfg.GetString(ac.CfgSessionToken)
 	tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName)
 	if !ok {
-		tag = cfg.GetString(updater.CfgUpdateTag)
+		tag = a.cfg.GetString(updater.CfgUpdateTag)
 	}
 	a.updateTag = tag
 
@@ -91,8 +93,12 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
-	if a.closed {
+	switch {
+	case a.closed:
 		logging.Debug("Client is closed, not sending event")
+		return nil
+	case a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig):
+		logging.Debug("Analytics are disabled; not sending event")
 		return nil
 	}
 
