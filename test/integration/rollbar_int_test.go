@@ -11,11 +11,7 @@ func TestRollbarReportConfig(t *testing.T) {
 	ts := e2e.New(t, true)
 	defer ts.Close()
 
-	cp := ts.Spawn("--version")
-	cp.Expect("Version")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("config", "set", constants.ReportErrorsConfig, "false")
+	cp := ts.Spawn("config", "set", constants.ReportErrorsConfig, "false")
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 }
