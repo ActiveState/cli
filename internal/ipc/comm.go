@@ -39,10 +39,10 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 	return val, nil
 }
 
-func stopHandler(stop func() error) RequestHandler {
+func stopHandler(stop func()) RequestHandler {
 	return func(key string) (string, bool) {
 		if key == keyStop {
-			_ = stop()
+			stop()
 			return valStop, true
 		}
 

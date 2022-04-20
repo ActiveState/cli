@@ -147,14 +147,12 @@ func (ipc *Server) Start() error {
 	return nil
 }
 
-func (ipc *Server) Shutdown() error {
+func (ipc *Server) Shutdown() {
 	select {
 	case <-ipc.donec:
-		return nil
 	default:
 		close(ipc.donec)
 		ipc.cancel()
-		return nil
 	}
 }
 

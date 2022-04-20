@@ -68,9 +68,7 @@ func (s *service) Stop() error {
 		return errs.Wrap(err, "Failed to stop server")
 	}
 
-	if err := s.ipcSrv.Shutdown(); err != nil {
-		return errs.Wrap(err, "Failed to stop ipc server")
-	}
+	s.ipcSrv.Shutdown()
 
 	return nil
 }

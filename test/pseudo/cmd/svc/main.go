@@ -24,7 +24,7 @@ type namedClose struct {
 }
 
 type gracefulShutdowner interface {
-	Shutdown() error
+	Shutdown()
 	Wait() error
 }
 
@@ -33,9 +33,7 @@ type gracefulShutdownerWrap struct {
 }
 
 func (s gracefulShutdownerWrap) Close() error {
-	if err := s.gracefulShutdowner.Shutdown(); err != nil {
-		return err
-	}
+	s.gracefulShutdowner.Shutdown()
 
 	return s.gracefulShutdowner.Wait()
 }
