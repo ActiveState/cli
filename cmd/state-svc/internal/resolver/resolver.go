@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -29,22 +30,25 @@ type Resolver struct {
 	cache          *cache.Cache
 	projectIDCache *projectcache.ID
 	an             *sync.Client
+	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client) *Resolver {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) *Resolver {
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 		projectcache.NewID(),
 		an,
+		sync.New(cfg, auth),
 		rtwatcher.New(cfg, an),
 	}
 }
 
 func (r *Resolver) Close() error {
+	r.anForClient.Close()
 	return r.rtwatch.Close()
 }
 
@@ -144,7 +148,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		return nil
 	})
 
-	r.an.EventWithLabel(category, action, label, dims)
+	r.anForClient.EventWithLabel(category, action, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

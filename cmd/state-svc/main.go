@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -97,7 +97,7 @@ func run(cfg *config.Instance) (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 	auth := authentication.New(cfg)
-	an := anaSvc.New(cfg, auth)
+	an := anaSync.New(cfg, auth)
 	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
@@ -156,7 +156,7 @@ func run(cfg *config.Instance) (rerr error) {
 				if err := auth.Sync(); err != nil {
 					logging.Warning("Could not sync authenticated state: %s", err.Error())
 				}
-				return runForeground(cfg, an)
+				return runForeground(cfg, an, auth)
 			},
 		),
 	)
@@ -164,12 +164,12 @@ func run(cfg *config.Instance) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
+func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authentication.Auth) error {
 	logging.Debug("Running in Foreground")
 
 	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
 	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, an, shutdown)
+	p := NewService(cfg, an, auth, shutdown)
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
