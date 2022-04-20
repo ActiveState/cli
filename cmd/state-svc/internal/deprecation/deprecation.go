@@ -73,13 +73,13 @@ func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
 		return nil, nil
 	}
 
+	if !constvers.NumberIsProduction(constants.Version) {
+		return nil, nil
+	}
+
 	infos, ok := data.([]info)
 	if !ok {
 		return nil, errs.New("Unexpected cache entry for deprecation info")
-	}
-
-	if !constvers.NumberIsProduction(constants.Version) {
-		return nil, nil
 	}
 
 	versionInfo, err := version.NewVersion(constants.Version)
@@ -154,9 +154,7 @@ func (checker *Checker) fetchDeprecationInfo() ([]info, error) {
 }
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
-	client := retryhttp.DefaultClient
-
-	resp, err := client.Get(constants.DeprecationInfoURL)
+	resp, err := retryhttp.DefaultClient.Get(constants.DeprecationInfoURL)
 	if err != nil {
 		// Check for timeout by evaluating the error string. Yeah this is dumb, thank the http package for that.
 		if strings.Contains(err.Error(), "Client.Timeout") || strings.Contains(err.Error(), "context deadline exceeded") {
