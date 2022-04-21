@@ -77,7 +77,7 @@ func onReady() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
+	rollbar.SetConfig(cfg)
 
 	err = run(cfg)
 	if err != nil {

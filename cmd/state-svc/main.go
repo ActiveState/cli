@@ -64,8 +64,8 @@ func main() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
+	rollbar.SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)

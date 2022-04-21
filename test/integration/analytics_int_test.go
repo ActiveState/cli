@@ -248,7 +248,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
-	cp = ts.Spawn("config", "set", constants.ReportAnalayticsConfig, "false")
+	cp = ts.Spawn("config", "set", constants.ReportAnalyticsConfig, "false")
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 
