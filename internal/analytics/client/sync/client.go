@@ -3,6 +3,7 @@ package sync
 import (
 	"os"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -88,7 +89,8 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		a.cfg = cfg
 	}
 
-	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
+	if (a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig)) ||
+		strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true" {
 		a.sendReports = false
 	}
 
