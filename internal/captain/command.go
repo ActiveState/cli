@@ -525,7 +525,7 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
-	if c.unstable {
+	if c.unstable && c.out.Type() != output.EditorV0FormatName {
 		if !c.cfg.GetBool(constants.UnstableConfig) {
 			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
@@ -538,11 +538,26 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	// Send GA events unless they are handled in the runners...
 	if c.analytics != nil {
-		var label string
+		var label []string
 		if len(args) > 0 && (args[0] == constants.PpmShim || args[0] == constants.PipShim) {
-			label = args[0]
+			label = append(label, args[0])
 		}
-		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, label)
+
+		c.cobra.Flags().VisitAll(func(cobraFlag *pflag.Flag) {
+			if !cobraFlag.Changed {
+				return
+			}
+
+			var name string
+			if cobraFlag.Name != "" {
+				name = "--" + cobraFlag.Name
+			} else {
+				name = "-" + cobraFlag.Shorthand
+			}
+			label = append(label, name)
+		})
+
+		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, strings.Join(label, " "))
 
 		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
 			c.analytics.Event(anaConsts.CatShim, shim)
@@ -768,7 +783,7 @@ func childCommands(cmd *Command) string {
 	var group string
 	table := table.New([]string{"", ""})
 	table.HideHeaders = true
-	for _, child := range cmd.Children() {
+	for _, child := range cmd.AvailableChildren() {
 		if group != child.Group().String() && child.Group().String() != "" {
 			group = child.Group().String()
 			table.AddRow([]string{""})

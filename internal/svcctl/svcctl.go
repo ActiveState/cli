@@ -48,6 +48,8 @@ func NewDefaultIPCClient() *ipc.Client {
 func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
+		logging.Debug("Could not locate state-svc, attempting to start it..")
+
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
 			return "", errs.Wrap(err, "Cannot locate HTTP port of ipc server")
 		}
@@ -82,6 +84,8 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	if err != nil {
 		return "", errs.Wrap(err, "HTTP address request failed")
 	}
+
+	logging.Debug("Located state-svc at %s", addr)
 
 	return addr, nil
 }
