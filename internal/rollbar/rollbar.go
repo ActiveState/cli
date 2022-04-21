@@ -68,10 +68,10 @@ func SetupRollbar(token string) {
 	})
 }
 
-var currentCfg config
+var reportingDisabled bool
 
 func SetConfig(cfg config) {
-	currentCfg = cfg
+	reportingDisabled = cfg != nil && !cfg.Closed() && cfg.IsSet(constants.ReportErrorsConfig) && !cfg.GetBool(constants.ReportErrorsConfig)
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
@@ -95,8 +95,7 @@ func Wait() { rollbar.Wait() }
 func logToRollbar(critical bool, message string, args ...interface{}) {
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	isPublicChannel := constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch
-	reportingDisabled := currentCfg != nil && !currentCfg.Closed() && currentCfg.IsSet(constants.ReportErrorsConfig) && !currentCfg.GetBool(constants.ReportErrorsConfig)
-	if !isPublicChannel || !condition.BuiltViaCI() || !reportingDisabled {
+	if !isPublicChannel || !condition.BuiltViaCI() || reportingDisabled {
 		return
 	}
 

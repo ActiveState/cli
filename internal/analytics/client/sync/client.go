@@ -37,6 +37,7 @@ type Client struct {
 	customDimensions *dimensions.Values
 	cfg              *config.Instance
 	eventWaitGroup   *sync.WaitGroup
+	sendReports      bool
 	reporters        []Reporter
 }
 
@@ -46,6 +47,7 @@ var _ analytics.Dispatcher = &Client{}
 func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
+		sendReports:    true,
 	}
 
 	installSource, err := storage.InstallSource()
@@ -79,6 +81,10 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 			tag = cfg.GetString(updater.CfgUpdateTag)
 		}
 		a.cfg = cfg
+	}
+
+	if a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig) {
+		a.sendReports = false
 	}
 
 	userID := ""
@@ -126,7 +132,7 @@ func (a *Client) Wait() {
 
 // Events returns a channel to feed eventData directly to the report loop
 func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
-	if a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig) {
+	if !a.sendReports {
 		return
 	}
 
@@ -184,4 +190,5 @@ func handlePanics(err interface{}, stack []byte) {
 }
 
 func (a *Client) Close() {
+	a.sendReports = false
 }
