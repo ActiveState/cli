@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
@@ -40,6 +41,8 @@ type Values struct {
 	Headless         *string
 	InstanceID       *string
 	CommitID         *string
+	Command          *string
+	Sequence         *int
 
 	preProcessor func(*Values) error
 }
@@ -91,6 +94,8 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(""),
 		p.StrP(instanceid.ID()),
 		p.StrP(""),
+		p.StrP(osutils.ExecutableName()),
+		p.IntP(0),
 		nil,
 	}
 }
