@@ -76,14 +76,22 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
+				expectStateToolInstallation(cp)
+				cp.ExpectExitCode(0)
+
+				// Start a new shell session with `state` in $PATH.
+				cp = ts.SpawnCmdWithOpts("bash", e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
-			}
+				expectStateToolInstallation(cp)
+				cp.ExpectExitCode(0)
 
-			expectStateToolInstallation(cp)
+				// Start a new shell session with `state` in %PATH%.
+				cp = ts.SpawnCmdWithOpts("cmd.exe", e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+			}
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
