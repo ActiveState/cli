@@ -267,7 +267,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	suite.assertSequentialEvents(events)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) TestSequence() {
+func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	suite.OnlyRunForTags(tagsuite.Analytics)
 
 	ts := e2e.New(suite.T(), true)
@@ -280,6 +280,16 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequence() {
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	events := suite.parseEvents(ts)
 	suite.assertSequentialEvents(events)
+
+	found := false
+	for _, ev := range events {
+		if ev.Category == "run-command" && ev.Action == "" && ev.Label == "--version" {
+			found = true
+			break
+		}
+	}
+
+	suite.True(found, "Should have run-command event with flags, actual: %s", suite.summarizeEvents(events))
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
