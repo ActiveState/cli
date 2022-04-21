@@ -96,8 +96,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	case a.closed:
 		logging.Debug("Client is closed, not sending event")
 		return nil
-	case (a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig)) ||
-		strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true":
+	case strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true":
 		logging.Debug("Analytics are disabled; not sending event")
 		return nil
 	}
