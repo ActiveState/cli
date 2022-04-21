@@ -347,6 +347,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
 		out.Print("State Tool Package Manager has been successfully installed.")
+		out.Print("Please restart your shell or open a new one in order to start using the [ACTIONABLE]state[/RESET] command.")
 	}
 
 	return nil
@@ -403,6 +404,9 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 		if err = <-ss.Errors(); err != nil {
 			return errs.Wrap(err, "Subshell execution; error returned: %s", errs.JoinMessage(err))
+		}
+		if err := ss.Deactivate(); err != nil {
+			return errs.Wrap(err, "Subshell exit; error returned: %s", errs.JoinMessage(err))
 		}
 	}
 
