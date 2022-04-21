@@ -397,17 +397,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
-	case !isUpdate:
-		ss := subshell.New(cfg)
-		if err := ss.Activate(nil, cfg, out); err != nil {
-			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
-		}
-		if err = <-ss.Errors(); err != nil {
-			return errs.Wrap(err, "Subshell execution; error returned: %s", errs.JoinMessage(err))
-		}
-		if err := ss.Deactivate(); err != nil {
-			return errs.Wrap(err, "Subshell exit; error returned: %s", errs.JoinMessage(err))
-		}
 	}
 
 	return nil
