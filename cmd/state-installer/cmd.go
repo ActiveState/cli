@@ -346,7 +346,8 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
 		out.Print("State Tool Package Manager has been successfully installed.")
-		out.Print("Please restart your shell or open a new one in order to start using the [ACTIONABLE]state[/RESET] command.")
+		out.Print("")
+		out.Print("[ACTIONABLE]Please restart your shell or open a new one to start using the[/RESET] state [ACTIONABLE]command.[/RESET]")
 	}
 
 	return nil
