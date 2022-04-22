@@ -45,10 +45,15 @@ func (s *Set) Run(params SetParams) error {
 		return locale.WrapError(err, "err_config_set_event", "Could not store config value, if this continues to happen please contact support.")
 	}
 
-	err = s.cfg.Set(params.Key.String(), value)
+	key := params.Key.String()
+
+	err = s.cfg.Set(key, value)
 	if err != nil {
 		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
 	}
+
+	// Notify listeners that this key has changed.
+	configMediator.NotifyListeners(key)
 
 	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
 	return nil
