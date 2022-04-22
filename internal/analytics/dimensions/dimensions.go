@@ -29,7 +29,6 @@ type Values struct {
 	OSName           *string
 	OSVersion        *string
 	InstallSource    *string
-	MachineID        *string
 	UniqID           *string
 	SessionToken     *string
 	UpdateTag        *string
@@ -53,10 +52,6 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
-	machineID := machineid.UniqID()
-	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		multilog.Error("unknown machine id: %s", machineID)
-	}
 	deviceID := uniqid.Text()
 
 	var userIDString string
@@ -82,7 +77,6 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(osName),
 		p.StrP(osVersion),
 		p.StrP(installSource),
-		p.StrP(machineID),
 		p.StrP(deviceID),
 		p.StrP(sessionToken),
 		p.StrP(updateTag),
