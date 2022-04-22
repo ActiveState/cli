@@ -37,5 +37,9 @@ type Query {
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  configChanged(key: String!): ConfigChangedResponse
 }
 
+type ConfigChangedResponse {
+  received: Boolean!
+}

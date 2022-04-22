@@ -1,18 +1,23 @@
 package config
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/spf13/cast"
 )
 
 type Set struct {
-	out output.Outputer
-	cfg *config.Instance
+	out      output.Outputer
+	cfg      *config.Instance
+	svcModel *model.SvcModel
 }
 
 type SetParams struct {
@@ -21,7 +26,7 @@ type SetParams struct {
 }
 
 func NewSet(prime primeable) *Set {
-	return &Set{prime.Output(), prime.Config()}
+	return &Set{prime.Output(), prime.Config(), prime.SvcModel()}
 }
 
 func (s *Set) Run(params SetParams) error {
@@ -54,6 +59,11 @@ func (s *Set) Run(params SetParams) error {
 
 	// Notify listeners that this key has changed.
 	configMediator.NotifyListeners(key)
+
+	// Notify state-svc that this key has changed.
+	if err := s.svcModel.ConfigChanged(context.Background(), key); err != nil {
+		logging.Debug("Failed to report config change via state-svc: %s", errs.JoinMessage(err))
+	}
 
 	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
 	return nil
