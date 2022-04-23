@@ -61,8 +61,10 @@ func (s *Set) Run(params SetParams) error {
 	configMediator.NotifyListeners(key)
 
 	// Notify state-svc that this key has changed.
-	if err := s.svcModel.ConfigChanged(context.Background(), key); err != nil {
-		logging.Debug("Failed to report config change via state-svc: %s", errs.JoinMessage(err))
+	if s.svcModel != nil {
+		if err := s.svcModel.ConfigChanged(context.Background(), key); err != nil {
+			logging.Debug("Failed to report config change via state-svc: %s", errs.JoinMessage(err))
+		}
 	}
 
 	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))

@@ -13,7 +13,7 @@ func (e *ConfigChanged) Query() string {
 	    configChanged(key: $key) {
 	      received
 	    }
-  }`
+	}`
 }
 
 func (e *ConfigChanged) Vars() map[string]interface{} {
