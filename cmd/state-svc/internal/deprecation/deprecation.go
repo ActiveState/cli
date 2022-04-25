@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	constvers "github.com/ActiveState/cli/internal/constants/version"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
@@ -70,10 +69,6 @@ func NewChecker(configuration configurable) *Checker {
 func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
 	data, exists := checker.cache.Get(cacheKey)
 	if !exists {
-		return nil, nil
-	}
-
-	if !constvers.NumberIsProduction(constants.Version) {
 		return nil, nil
 	}
 
