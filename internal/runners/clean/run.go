@@ -2,14 +2,9 @@ package clean
 
 import (
 	"os"
-	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/runners/prepare"
@@ -59,61 +54,6 @@ func removeEnvPaths(cfg configurable) error {
 
 	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
 		return errs.Wrap(err, "Failed to remove legacy install path")
-	}
-
-	return nil
-}
-
-var errDirNotEmpty = errs.New("Not empty")
-
-func removeEmptyDir(dir string) error {
-	empty, err := fileutils.IsEmptyDir(dir)
-	if err == nil && empty {
-		removeErr := os.RemoveAll(dir)
-		if err != nil {
-			return errs.Wrap(removeErr, "Could not remove directory")
-		}
-	} else if err != nil {
-		return errs.Wrap(err, "Could not check if directory is empty")
-	}
-
-	if !empty {
-		return errDirNotEmpty
-	}
-
-	return nil
-}
-
-func cleanInstallDir(dir string) error {
-	var asFiles = []string{
-		installation.InstallDirMarker,
-		constants.StateInstallerCmd + exeutils.Extension,
-
-		// Remove all of the state tool executables and finally the
-		// bin directory
-		filepath.Join(installation.BinDirName, appinfo.StateApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.SvcApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.TrayApp().Exec()),
-		installation.BinDirName,
-
-		// The system directory is on MacOS only and contains the tray
-		// application files. It is safe for us to remove this directory
-		// without first inspecting the contents.
-		"system",
-	}
-
-	for _, file := range asFiles {
-		f := filepath.Join(dir, file)
-
-		var err error
-		if fileutils.IsDir(f) && fileutils.DirExists(f) {
-			err = os.RemoveAll(f)
-		} else if fileutils.FileExists(f) {
-			err = os.Remove(f)
-		}
-		if err != nil {
-			return errs.Wrap(err, "Could not clean install directory")
-		}
 	}
 
 	return nil
