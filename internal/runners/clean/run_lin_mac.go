@@ -88,14 +88,10 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(cfg configurable) error {
-	stateInfo := appinfo.StateApp()
-	stateSvcInfo := appinfo.SvcApp()
-	stateTrayInfo := appinfo.TrayApp()
-
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := installmgr.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", stateTrayInfo.Name())
+		return errs.Wrap(err, "Failed to stop %s", appinfo.TrayApp().Name())
 	}
 
 	var aggErr error
@@ -105,22 +101,6 @@ func removeInstall(cfg configurable) error {
 	installPath, err := installation.InstallPathFromExecPath()
 	if err != nil {
 		aggErr = errs.Wrap(aggErr, "Could not get installation path")
-	}
-
-	// We only want to remove the bin directory under the branch path
-	binPath, err := installation.BinPathFromInstallPath(installPath)
-	if err != nil {
-		aggErr = errs.Wrap(aggErr, "Could not get bin path from install path")
-	}
-
-	for _, info := range []*appinfo.AppInfo{stateInfo, stateSvcInfo, stateTrayInfo} {
-		err := os.Remove(info.Exec())
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
-			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", info.Exec(), err)
-		}
 	}
 
 	if transitionalStatePath := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStatePath != "" {
@@ -136,13 +116,6 @@ func removeInstall(cfg configurable) error {
 
 	if err := installmgr.RemoveSystemFiles(appPath); err != nil {
 		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
-	}
-
-	// Remove the installation directory after all of the executables have been removed
-	if fileutils.DirExists(binPath) {
-		if err := removeEmptyDir(binPath); err != nil {
-			aggErr = errs.Wrap(err, "Could not remove binary path")
-		}
 	}
 
 	if fileutils.DirExists(installPath) {
