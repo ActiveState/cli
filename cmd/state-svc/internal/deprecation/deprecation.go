@@ -89,7 +89,7 @@ func (checker *Checker) pollDeprecationInfo() {
 		case <-timer.C:
 			err := checker.Refresh()
 			if err != nil {
-				multilog.Critical("Could not update deprecation information %s", errs.JoinMessage(err))
+				multilog.Error("Could not update deprecation information %s", errs.JoinMessage(err))
 				return
 			}
 		case <-checker.done:
