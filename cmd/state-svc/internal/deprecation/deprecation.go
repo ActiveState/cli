@@ -69,31 +69,15 @@ func NewChecker(configuration configurable) *Checker {
 func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
 	data, exists := checker.cache.Get(cacheKey)
 	if !exists {
+		logging.Debug("No deprecation information cached")
 		return nil, nil
 	}
 
-	infos, ok := data.([]info)
+	deprecationInfo, ok := data.(*graph.DeprecationInfo)
 	if !ok {
 		return nil, errs.New("Unexpected cache entry for deprecation info")
 	}
-
-	versionInfo, err := version.NewVersion(constants.Version)
-	if err != nil {
-		return nil, errs.Wrap(err, "Invalid version number: %s", constants.Version)
-	}
-
-	for _, info := range infos {
-		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
-			return &graph.DeprecationInfo{
-				Version:     info.Version,
-				Date:        info.Date.Format(constants.DateFormatUser),
-				DateReached: info.DateReached,
-				Reason:      info.Reason,
-			}, nil
-		}
-	}
-
-	return nil, nil
+	return deprecationInfo, nil
 }
 
 func (checker *Checker) pollDeprecationInfo() {
@@ -115,13 +99,30 @@ func (checker *Checker) pollDeprecationInfo() {
 }
 
 func (checker *Checker) Refresh() error {
-	deprecated, err := checker.fetchDeprecationInfo()
+	infos, err := checker.fetchDeprecationInfo()
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch deprecation information")
 	}
-	if deprecated != nil {
-		checker.cache.Set(cacheKey, deprecated, cache.DefaultExpiration)
+	if infos == nil {
+		return nil
 	}
+
+	versionInfo, err := version.NewVersion(constants.Version)
+	if err != nil {
+		return errs.Wrap(err, "Invalid version number: %s", constants.Version)
+	}
+
+	for _, info := range infos {
+		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
+			checker.cache.Set(cacheKey, &graph.DeprecationInfo{
+				Version:     info.Version,
+				Date:        info.Date.Format(constants.DateFormatUser),
+				DateReached: info.DateReached,
+				Reason:      info.Reason,
+			}, cache.DefaultExpiration)
+		}
+	}
+
 	return nil
 }
 
