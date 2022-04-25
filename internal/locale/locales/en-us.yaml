@@ -1763,7 +1763,7 @@ update_permission_err:
     Error received: {{.V1}}
 err_update_in_progress:
   other: |
-    A State Tool update appears to already be running.
+    A State Tool update already appears to be running.
     Please close any open shells, open a new one, and then try this command again.
     If this issue persists please manually delete [ACTIONABLE]{{.V0}}[/RESET].
 auto_update_to_version:
