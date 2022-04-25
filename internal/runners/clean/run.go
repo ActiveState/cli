@@ -16,8 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
-var asFiles = []string{installation.InstallDirMarker, constants.StateInstallerCmd + exeutils.Extension, filepath.Join("system", constants.MacOSApplicationName), "system"}
-
 func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)
 	if err != nil {
@@ -86,15 +84,26 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
+	var asFiles = []string{
+		installation.InstallDirMarker,
+		constants.StateInstallerCmd + exeutils.Extension,
+		// The system directory is on MacOS only and contains the tray
+		// application files. It is safe for us to remove this directory
+		// without first inspecting the contents.
+		"system",
+	}
+
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)
-		if !fileutils.FileExists(f) {
-			continue
-		}
 
-		err := os.Remove(f)
+		var err error
+		if fileutils.IsDir(f) && fileutils.DirExists(f) {
+			err = os.RemoveAll(f)
+		} else if fileutils.FileExists(f) {
+			err = os.Remove(f)
+		}
 		if err != nil {
-			return errs.Wrap(err, "Could not remove file: %s", f)
+			return errs.Wrap(err, "Could not clean install directory")
 		}
 	}
 
