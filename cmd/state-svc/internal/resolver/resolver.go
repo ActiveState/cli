@@ -35,7 +35,13 @@ type Resolver struct {
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client, checker *deprecation.Checker) *Resolver {
+func New(cfg *config.Instance, an *sync.Client) (*Resolver, error) {
+	checker := deprecation.NewChecker(cfg)
+	err := checker.Refresh()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not refresh deprecation info")
+	}
+
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
@@ -43,11 +49,18 @@ func New(cfg *config.Instance, an *sync.Client, checker *deprecation.Checker) *R
 		projectcache.NewID(),
 		an,
 		rtwatcher.New(cfg, an),
-	}
+	}, nil
 }
 
 func (r *Resolver) Close() error {
-	return r.rtwatch.Close()
+	r.deprecation.Close()
+
+	err := r.rtwatch.Close()
+	if err != nil {
+		return errs.Wrap(err, "Could not close runtime watcher")
+	}
+
+	return nil
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic

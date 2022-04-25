@@ -14,7 +14,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/constants"
@@ -33,13 +32,18 @@ type Server struct {
 	analytics   *sync.Client
 }
 
-func New(cfg *config.Instance, an *sync.Client, checker *deprecation.Checker, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *sync.Client, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{shutdown: shutdown, resolver: resolver.New(cfg, an, checker), analytics: an}
+	resolver, err := resolver.New(cfg, an)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to initialize new resolver")
+	}
+
+	s := &Server{shutdown: shutdown, resolver: resolver, analytics: an}
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener
