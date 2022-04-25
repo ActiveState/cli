@@ -74,7 +74,7 @@ func main() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
+	rollbar.SetConfig(cfg)
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)

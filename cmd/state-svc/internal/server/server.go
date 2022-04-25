@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -32,13 +33,13 @@ type Server struct {
 	analytics   *sync.Client
 }
 
-func New(cfg *config.Instance, an *sync.Client, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth, shutdown context.CancelFunc) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	resolver, err := resolver.New(cfg, an)
+	resolver, err := resolver.New(cfg, an, auth)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to initialize new resolver")
 	}

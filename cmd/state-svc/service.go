@@ -13,25 +13,27 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type service struct {
 	cfg      *config.Instance
 	an       *anaSvc.Client
+	auth     *authentication.Auth
 	shutdown context.CancelFunc
 	server   *server.Server
 	ipcSrv   *ipc.Server
 }
 
-func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
-	return &service{cfg: cfg, an: an, shutdown: shutdown}
+func NewService(cfg *config.Instance, an *anaSvc.Client, auth *authentication.Auth, shutdown context.CancelFunc) *service {
+	return &service{cfg: cfg, an: an, auth: auth, shutdown: shutdown}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg, s.an, s.shutdown)
+	s.server, err = server.New(s.cfg, s.an, s.auth, s.shutdown)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}

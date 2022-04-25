@@ -123,6 +123,9 @@ const ShimEnvVarName = "ACTIVESTATE_SHIM"
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 
+// DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
+const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -362,7 +365,7 @@ const UnstableConfig = "optin.unstable"
 const ReportErrorsConfig = "report.errors"
 
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
-const ReportAnalayticsConfig = "report.analytics"
+const ReportAnalyticsConfig = "report.analytics"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"

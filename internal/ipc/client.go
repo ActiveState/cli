@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
+	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Client struct {
@@ -14,6 +15,8 @@ type Client struct {
 }
 
 func NewClient(n *SockPath) *Client {
+	logging.Debug("Initializing ipc client with socket: %s", n)
+
 	return &Client{
 		sockpath: n,
 	}

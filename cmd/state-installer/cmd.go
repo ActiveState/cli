@@ -89,7 +89,7 @@ func main() {
 		exitCode = 1
 	}
 
-	logging.CurrentHandler().SetConfig(cfg)
+	rollbar.SetConfig(cfg)
 
 	// Set up machineid, allowing us to anonymously group errors and analytics
 	machineid.Configure(cfg)

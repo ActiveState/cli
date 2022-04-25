@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -30,37 +31,33 @@ type Resolver struct {
 	deprecation    *deprecation.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
+	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client) (*Resolver, error) {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
 	checker := deprecation.NewChecker(cfg)
 	err := checker.Refresh()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not refresh deprecation info")
 	}
-
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 		checker,
 		projectcache.NewID(),
 		an,
+		sync.New(cfg, auth),
 		rtwatcher.New(cfg, an),
 	}, nil
 }
 
 func (r *Resolver) Close() error {
 	r.deprecation.Close()
-
-	err := r.rtwatch.Close()
-	if err != nil {
-		return errs.Wrap(err, "Could not close runtime watcher")
-	}
-
-	return nil
+	r.anForClient.Close()
+	return r.rtwatch.Close()
 }
 
 // Seems gqlgen supplies this so you can separate your resolver and query resolver logic
@@ -159,7 +156,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		return nil
 	})
 
-	r.an.EventWithLabel(category, action, label, dims)
+	r.anForClient.EventWithLabel(category, action, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

@@ -6,17 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/ActiveState/cli/internal/constants"
 )
 
 var defaultMaxEntries = 1000
-
-type config interface {
-	GetBool(key string) bool
-	IsSet(key string) bool
-	Closed() bool
-}
 
 type entry struct {
 	ctx     *MessageContext
@@ -27,13 +19,11 @@ type entry struct {
 type fileHandler struct {
 	formatter Formatter
 	file      *os.File
-	cfg       config
 	mu        sync.Mutex
 	verbose   safeBool
 	wg        *sync.WaitGroup
 	queue     chan entry
 	quit      chan struct{}
-	report    bool
 	closed    bool
 }
 
@@ -41,13 +31,11 @@ func newFileHandler() *fileHandler {
 	handler := fileHandler{
 		DefaultFormatter,
 		nil,
-		nil,
 		sync.Mutex{},
 		safeBool{},
 		&sync.WaitGroup{},
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
-		true,
 		false,
 	}
 	handler.wg.Add(1)
@@ -84,13 +72,6 @@ func (l *fileHandler) SetVerbose(v bool) {
 
 func (l *fileHandler) Output() io.Writer {
 	return l.file
-}
-
-func (l *fileHandler) SetConfig(cfg config) {
-	l.cfg = cfg
-	if l.cfg != nil && !l.cfg.Closed() && l.cfg.IsSet(constants.ReportErrorsConfig) {
-		l.report = l.cfg.GetBool(constants.ReportErrorsConfig)
-	}
 }
 
 func (l *fileHandler) Emit(ctx *MessageContext, message string, args ...interface{}) error {
