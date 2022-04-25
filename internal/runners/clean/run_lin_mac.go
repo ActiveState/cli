@@ -35,7 +35,7 @@ func (u *Uninstall) runUninstall() error {
 
 	err = removeInstall(u.cfg)
 	if errors.Is(err, errDirNotEmpty) {
-		u.out.Notice(locale.Tl("uninstall_warn_not_empty", "[WARNING]Unable to remove all files in the directory {{.V0}}[/RESET]"))
+		u.out.Notice(locale.T("uninstall_warn_not_empty", errs.JoinMessage(err)))
 	} else if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -124,7 +124,7 @@ func removeInstall(cfg configurable) error {
 			aggErr = errs.Wrap(err, "Could not clean install path")
 		}
 		if err := removeEmptyDir(installPath); err != nil {
-			aggErr = errs.Wrap(err, "Could not remove install path")
+			aggErr = errs.Wrap(err, "Could not remove install path: %s", installPath)
 		}
 	}
 

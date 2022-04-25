@@ -1868,3 +1868,8 @@ err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
 err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
+uninstall_warn_not_empty:
+  other: |
+    [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
+    The directory may contain unrecognized files.
+    Encountered error: {{.V0}}
