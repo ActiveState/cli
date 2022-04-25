@@ -1108,6 +1108,10 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
+commit_failed_push_tip:
+  other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
+commit_failed_pull_tip:
+  other: Ensure any remote changes have been pulled in by running [ACTIONABLE]state pull[/RESET]. Then try running your command again.
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_added:
