@@ -418,3 +418,6 @@ const PipShim = "pip"
 
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
+
+// IconFileSuffix is used to suffix the name of State Tool icon files.
+const IconFileSuffix = "_generated.ico"

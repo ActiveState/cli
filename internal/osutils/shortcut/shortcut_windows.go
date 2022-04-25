@@ -8,6 +8,7 @@ import (
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -99,7 +100,7 @@ func (s *Shortcut) setIcon(path string) error {
 func (s *Shortcut) SetIconBlob(blob []byte) error {
 	logging.Debug("Setting Icon blob")
 
-	filepath := filepath.Join(filepath.Dir(s.target), strings.Split(filepath.Base(s.target), ".")[0]+"_generated.ico")
+	filepath := filepath.Join(filepath.Dir(s.target), strings.Split(filepath.Base(s.target), ".")[0]+constants.IconFileSuffix)
 	if fileutils.FileExists(filepath) {
 		if err := os.Remove(filepath); err != nil {
 			return errs.Wrap(err, "Could not remove old ico file: %s", filepath)
