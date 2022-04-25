@@ -102,7 +102,7 @@ func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
 }
 
 func (checker *Checker) pollDeprecationInfo() {
-	timer := time.NewTicker(1 * time.Minute)
+	timer := time.NewTicker(1 * time.Hour)
 	defer timer.Stop()
 
 	for {
