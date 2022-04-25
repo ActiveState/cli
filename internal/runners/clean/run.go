@@ -1,7 +1,6 @@
 package clean
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -95,8 +94,6 @@ func cleanInstallDir(dir string) error {
 		filepath.Join(installation.BinDirName, appinfo.StateApp().Exec()),
 		filepath.Join(installation.BinDirName, appinfo.SvcApp().Exec()),
 		filepath.Join(installation.BinDirName, appinfo.TrayApp().Exec()),
-		// Windows specific icon file in bin directory
-		filepath.Join(installation.BinDirName, fmt.Sprintf("%s%s", constants.StateTrayCmd, constants.IconFileSuffix)),
 		installation.BinDirName,
 
 		// The system directory is on MacOS only and contains the tray
