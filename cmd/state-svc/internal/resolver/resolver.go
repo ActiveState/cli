@@ -166,6 +166,6 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
-	configMediator.NotifyListeners(key)
+	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
 }

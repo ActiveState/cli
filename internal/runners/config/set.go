@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -61,9 +62,9 @@ func (s *Set) Run(params SetParams) error {
 	configMediator.NotifyListeners(key)
 
 	// Notify state-svc that this key has changed.
-	if s.svcModel != nil {
+	if !condition.InStateSvc() && s.svcModel != nil {
 		if err := s.svcModel.ConfigChanged(context.Background(), key); err != nil {
-			logging.Debug("Failed to report config change via state-svc: %s", errs.JoinMessage(err))
+			logging.Error("Failed to report config change via state-svc: %s", errs.JoinMessage(err))
 		}
 	}
 

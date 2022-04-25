@@ -27,3 +27,7 @@ func OnCI() bool {
 func BuiltViaCI() bool {
 	return constants.OnCI == "true"
 }
+
+func InStateSvc() bool {
+	return strings.HasSuffix(os.Args[0], constants.StateSvcCmd)
+}

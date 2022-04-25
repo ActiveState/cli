@@ -71,9 +71,6 @@ func main() {
 	}
 
 	runErr := run(cfg)
-	if runErr == nil {
-		runErr = cfg.Close()
-	}
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
 		if locale.IsInputError(runErr) {
