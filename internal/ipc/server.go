@@ -32,26 +32,28 @@ type Server struct {
 	reqHandlers []RequestHandler
 	ctx         context.Context
 	cancel      context.CancelFunc
-	wg          *sync.WaitGroup
+	errsc       chan error
+	donec       chan struct{}
 }
 
 // NewServer constructs a reference to a Server instance which can be populated
 // with called-defined handlers, and is preconfigured with ping and stop
 // handlers as a low-level flexibility.
-func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
-	ctx, cancel := context.WithCancel(context.Background())
+func NewServer(topCtx context.Context, spath *SockPath, reqHandlers ...RequestHandler) *Server {
+	ctx, cancel := context.WithCancel(topCtx)
 
 	ipc := Server{
 		spath:       spath,
 		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
 		ctx:         ctx,
 		cancel:      cancel,
-		wg:          &sync.WaitGroup{},
+		errsc:       make(chan error),
+		donec:       make(chan struct{}),
 	}
 
 	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
 	ipc.reqHandlers = append(ipc.reqHandlers, reqHandlers...)
-	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(&ipc))
+	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(ipc.Shutdown))
 
 	return &ipc
 }
@@ -84,15 +86,21 @@ func (ipc *Server) Start() error {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
-	defer listener.Close()
 
 	// Produce (accept) and consume (route to handler) connections.
 	conns := make(chan net.Conn)
-	errsc := make(chan error)
 
 	go func() {
 		var wg sync.WaitGroup
-		defer close(errsc)
+		defer close(ipc.errsc)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			<-ipc.donec
+			listener.Close()
+		}()
 
 		wg.Add(1)
 		go func() {
@@ -101,16 +109,19 @@ func (ipc *Server) Start() error {
 
 			// Continually accept connections and feed them into the relevant channel.
 			for {
+				// At this time, the context.Context that is
+				// passed into the flisten construction func
+				// does not halt the listener. Close() must be
+				// called to halt and "doneness" managed.
+				err := accept(&wg, conns, listener)
 				select {
-				case <-ipc.ctx.Done():
+				case <-ipc.donec:
 					return
 				default:
-					if err := accept(conns, listener); err != nil {
-						if !errors.Is(err, context.Canceled) {
-							errsc <- errs.Wrap(err, "Unexpected accept error")
-						}
-						return
-					}
+				}
+				if err != nil {
+					ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
+					return
 				}
 			}
 		}()
@@ -121,9 +132,9 @@ func (ipc *Server) Start() error {
 
 			// Continually route incomming connections to the appropriate handler.
 			for {
-				if err := routeToHandler(ipc.wg, conns, ipc.reqHandlers); err != nil {
+				if err := routeToHandler(&wg, conns, ipc.reqHandlers); err != nil {
 					if !errors.Is(err, ctlErrConnsClosed) {
-						logging.Error("unexpected routeToHandler error: %v", err)
+						logging.Error("Unexpected routeToHandler error: %v", err)
 					}
 					break
 				}
@@ -133,8 +144,21 @@ func (ipc *Server) Start() error {
 		wg.Wait()
 	}()
 
+	return nil
+}
+
+func (ipc *Server) Shutdown() {
+	select {
+	case <-ipc.donec:
+	default:
+		close(ipc.donec)
+		ipc.cancel()
+	}
+}
+
+func (ipc *Server) Wait() error {
 	var retErr error
-	for err := range errsc {
+	for err := range ipc.errsc {
 		if err != nil && retErr == nil {
 			retErr = err
 		}
@@ -142,26 +166,13 @@ func (ipc *Server) Start() error {
 	return retErr
 }
 
-func (ipc *Server) Close() error {
-	select {
-	case <-ipc.ctx.Done():
-	default:
-		ipc.cancel()
-	}
-	return nil
-}
-
-func (ipc *Server) Wait() error {
-	ipc.wg.Wait()
-	return nil
-}
-
-func accept(conns chan net.Conn, l net.Listener) error {
+func accept(wg *sync.WaitGroup, conns chan net.Conn, l net.Listener) error {
 	conn, err := l.Accept()
 	if err != nil {
 		return err
 	}
 
+	wg.Add(1)
 	conns <- conn
 
 	return nil
@@ -174,7 +185,6 @@ func routeToHandler(wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []Reque
 			return ctlErrConnsClosed
 		}
 
-		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			defer conn.Close()
@@ -193,7 +203,7 @@ func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return errs.Wrap(err, "Failed to read from connection")
+		return errs.Wrap(err, "Failed to read from client connection")
 	}
 
 	key := string(buf[:n])
@@ -207,7 +217,7 @@ func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 	}
 
 	if _, err := conn.Write([]byte(output)); err != nil {
-		return errs.Wrap(err, "Failed to write to connection")
+		return errs.Wrap(err, "Failed to write to client connection")
 	}
 
 	return nil

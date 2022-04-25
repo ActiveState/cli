@@ -167,45 +167,42 @@ func run(cfg *config.Instance) (rerr error) {
 func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authentication.Auth) error {
 	logging.Debug("Running in Foreground")
 
-	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
-	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, an, auth, shutdown)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	p := NewService(ctx, cfg, an, auth)
+
+	if err := p.Start(); err != nil {
+		return errs.Wrap(err, "Could not start service")
+	}
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
 	go func() {
 		defer close(sig)
-		oscall, ok := <-sig
-		if !ok {
-			return
+
+		select {
+		case oscall, ok := <-sig:
+			if !ok {
+				return
+			}
+			logging.Debug("system call:%+v", oscall)
+			// issue a service shutdown on interrupt
+			cancel()
+			if err := p.Stop(); err != nil {
+				logging.Debug("Service stop failed: %v", err)
+			}
+		case <-ctx.Done():
 		}
-		logging.Debug("system call:%+v", oscall)
-		// issue a service shutdown on interrupt
-		shutdown()
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
-	serverErr := make(chan error)
-	go func() {
-		err := p.Start()
-		if err != nil {
-			err = errs.Wrap(err, "Could not start service")
-		}
-
-		serverErr <- err
-	}()
-
-	// cancellation of context issues server shutdown
-	<-ctx.Done()
-	if err := p.Stop(); err != nil {
-		return errs.Wrap(err, "Failed to stop service")
+	if err := p.Wait(); err != nil {
+		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
 
-	p.Wait()
-
-	err := <-serverErr
-	return err
+	return nil
 }
 
 func runStart(out output.Outputer) error {
