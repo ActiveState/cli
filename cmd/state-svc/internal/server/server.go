@@ -24,7 +24,6 @@ import (
 )
 
 type Server struct {
-	shutdown    context.CancelFunc
 	resolver    *resolver.Resolver
 	graphServer *handler.Server
 	listener    net.Listener
@@ -33,7 +32,7 @@ type Server struct {
 	analytics   *sync.Client
 }
 
-func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth, shutdown context.CancelFunc) (*Server, error) {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Server, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to listen")
@@ -44,7 +43,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth, shutd
 		return nil, errs.Wrap(err, "Failed to initialize new resolver")
 	}
 
-	s := &Server{shutdown: shutdown, resolver: resolver, analytics: an}
+	s := &Server{resolver: resolver, analytics: an}
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener
