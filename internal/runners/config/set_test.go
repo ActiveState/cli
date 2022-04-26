@@ -15,7 +15,7 @@ func TestSetUnknownKey(t *testing.T) {
 	cfg.Set("unknown", nil)
 
 	outputer := outputhelper.NewCatcher()
-	set := Set{outputer, cfg}
+	set := Set{outputer, cfg, nil}
 	params := SetParams{"unknown", "true"}
 
 	// Trying to set an unknown config key should error.
