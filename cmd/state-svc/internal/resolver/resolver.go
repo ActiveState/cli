@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/patrickmn/go-cache"
@@ -162,4 +163,9 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
+	go configMediator.NotifyListeners(key)
+	return &graph.ConfigChangedResponse{Received: true}, nil
 }

@@ -24,8 +24,18 @@ type config interface {
 	Closed() bool
 }
 
+var currentCfg config
+
+var reportingDisabled bool
+
+func readConfig() {
+	reportingDisabled = currentCfg != nil && !currentCfg.Closed() && currentCfg.IsSet(constants.ReportErrorsConfig) && !currentCfg.GetBool(constants.ReportErrorsConfig)
+	logging.Debug("Sending Rollbar reports? %v", reportingDisabled)
+}
+
 func init() {
 	configMediator.RegisterOption(constants.ReportErrorsConfig, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+	configMediator.AddListener(constants.ReportErrorsConfig, readConfig)
 }
 
 // CurrentCmd holds the value of the current command being invoked
@@ -67,10 +77,9 @@ func SetupRollbar(token string) {
 	})
 }
 
-var reportingDisabled bool
-
 func SetConfig(cfg config) {
-	reportingDisabled = cfg != nil && !cfg.Closed() && cfg.IsSet(constants.ReportErrorsConfig) && !cfg.GetBool(constants.ReportErrorsConfig)
+	currentCfg = cfg
+	readConfig()
 }
 
 func UpdateRollbarPerson(userID, username, email string) {

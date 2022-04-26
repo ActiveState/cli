@@ -1108,6 +1108,10 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
+commit_failed_push_tip:
+  other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
+commit_failed_pull_tip:
+  other: Ensure any remote changes have been pulled in by running [ACTIONABLE]state pull[/RESET]. Then try running your command again.
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_added:
@@ -1742,7 +1746,7 @@ err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
 solver_err:
-  other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
+  other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -1763,7 +1767,8 @@ update_permission_err:
     Error received: {{.V1}}
 err_update_in_progress:
   other: |
-    A State Tool update appears to already be running.
+    A State Tool update already appears to be running.
+    Please close any open shells, open a new one, and then try this command again.
     If this issue persists please manually delete [ACTIONABLE]{{.V0}}[/RESET].
 auto_update_to_version:
   other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
