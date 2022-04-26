@@ -58,19 +58,19 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
-			return "", locale.WrapError(err, "svcctl_cannot_locate_http", "Cannot locate service HTTP address")
+			return "", err
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
 		if err := startAndWait(ctx, ipComm, exec); err != nil {
-			return "", locale.WrapError(err, "svcctl_cannot_start_service", "Cannot start service")
+			return "", err
 		}
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", locale.WrapError(err, "svcctl_cannot_locate_http_after_start", "Cannot locate service HTTP address after start succeeded")
+			return "", err
 		}
 	}
 
@@ -101,7 +101,7 @@ func StopServer(ipComm IPCommunicator) error {
 
 	err := stopAndWait(ctx, ipComm)
 	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
-		return locale.WrapError(err, "svcctl_cannot_stop_server", "Cannot stop service")
+		return err
 	}
 
 	return nil
