@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
@@ -64,6 +65,22 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 
 	if fileutils.FileExists(ts.TrayExe) {
 		suite.Fail("State tray executable should not exist after uninstall")
+	}
+
+	if runtime.GOOS == "darwin" {
+		if fileutils.DirExists(filepath.Join(ts.Dirs.Bin, "system")) {
+			suite.Fail("system directory should not exist after uninstall")
+		}
+	}
+
+	if runtime.GOOS == "windows" {
+		if fileutils.FileExists(filepath.Join(ts.Dirs.Bin, "state-tray_generated.ico")) {
+			suite.Fail("Generated icon file should not exist after uninstall")
+		}
+	}
+
+	if fileutils.DirExists(ts.Dirs.Bin) {
+		suite.Fail("system directory should not exist after uninstall")
 	}
 }
 
