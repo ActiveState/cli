@@ -58,19 +58,19 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
-			return "", locale.WrapError(err, "svcctl_cannot_locate_http", "Cannot locate HTTP port of ipc server")
+			return "", locale.WrapError(err, "svcctl_cannot_locate_http", "Cannot locate service HTTP address")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
 		if err := startAndWait(ctx, ipComm, exec); err != nil {
-			return "", locale.WrapError(err, "svcctl_cannot_start_server", "Cannot start ipc server at {{.V0}}", exec)
+			return "", locale.WrapError(err, "svcctl_cannot_start_service", "Cannot start service")
 		}
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", locale.WrapError(err, "svcctl_cannot_locate_http_after_start", "Cannot locate HTTP port of ipc server after start succeeded")
+			return "", locale.WrapError(err, "svcctl_cannot_locate_http_after_start", "Cannot locate service HTTP address after start succeeded")
 		}
 	}
 
@@ -89,7 +89,7 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 
 	addr, err = comm.GetHTTPAddr(ctx)
 	if err != nil {
-		return "", locale.WrapError(err, "svcctl_http_addr_req_fail", "HTTP address request failed")
+		return "", locale.WrapError(err, "svcctl_http_addr_req_fail", "Request for service HTTP address failed")
 	}
 
 	return addr, nil
@@ -101,7 +101,7 @@ func StopServer(ipComm IPCommunicator) error {
 
 	err := stopAndWait(ctx, ipComm)
 	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
-		return locale.WrapError(err, "svcctl_cannot_stop_server", "Cannot stop ipc server")
+		return locale.WrapError(err, "svcctl_cannot_stop_server", "Cannot stop service")
 	}
 
 	return nil
@@ -111,18 +111,18 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return locale.NewError("svcctl_file_not_found", "File not found")
+		return locale.NewError("svcctl_file_not_found", "Service communications file not found")
 	}
 
 	args := []string{"foreground"}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
-		return locale.NewError("svcctl_cannot_exec_and_forget", "Cannot execute and forget: {{.V0}}", err.Error())
+		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
 	}
 
-	logging.Debug("Waiting for state-svc")
+	logging.Debug("Waiting for service")
 	if err := waitUp(ctx, ipComm); err != nil {
-		return locale.WrapError(err, "svcctl_wait_failed", "Wait failed")
+		return locale.WrapError(err, "svcctl_wait_startup_failed", "Waiting for service startup confirmation failed")
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 
 var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
-	waitTimeoutL10nVal = "Timed out after {{.V0}}"
+	waitTimeoutL10nVal = "Timed out waiting for service to start ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
 )
 
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
@@ -154,7 +154,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 				continue
 			}
 			if !errors.Is(err, ctlErrNotUp) {
-				return locale.WrapError(err, "svcctl_ping_failed", "Ping failed")
+				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
 			}
 			elapsed := time.Since(tryStart)
 			time.Sleep(timeout - elapsed)
@@ -163,17 +163,17 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 		return nil
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
+	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).Round(time.Millisecond).String())
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
 	if err := ipComm.StopServer(ctx); err != nil {
-		return locale.WrapError(err, "svcctl_stop_req_failed", "IPC stop server request failed")
+		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")
 	}
 
-	logging.Debug("Waiting for state-svc to die")
+	logging.Debug("Waiting for service to die")
 	if err := waitDown(ctx, ipComm); err != nil {
-		return locale.WrapError(err, "svcctl_wait_failed", "Wait failed")
+		return locale.WrapError(err, "svcctl_wait_shutdown_failed", "Waiting for service shutdown confirmation failed")
 	}
 
 	return nil
@@ -202,13 +202,13 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 			if errors.Is(err, ctlErrNotUp) {
 				return nil
 			}
-			return locale.WrapError(err, "svcctl_ping_failed", "Ping failed")
+			return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
 		}
 		elapsed := time.Since(tryStart)
 		time.Sleep(timeout - elapsed)
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
+	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).Round(time.Millisecond).String())
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
@@ -217,7 +217,7 @@ func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) err
 
 	_, err := ipComm.PingServer(ctx)
 	if err != nil {
-		return asRequestTimeoutErr(asNotUpError(err))
+		return asRequestTimeoutCtlErr(asNotUpCtlErr(err))
 	}
 
 	return nil
