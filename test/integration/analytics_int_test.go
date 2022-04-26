@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -23,6 +22,23 @@ import (
 type AnalyticsIntegrationTestSuite struct {
 	tagsuite.Suite
 	eventsfile string
+}
+
+func svcLog(configDir string) string {
+	files := fileutils.ListDirSimple(filepath.Join(configDir, "logs"), false)
+	for _, file := range files {
+		if !strings.HasPrefix(file, "state-svc") {
+			continue
+		}
+		b := fileutils.ReadFileUnsafe(filepath.Join(configDir, "logs", file))
+		if !strings.Contains(string(b), "state-svc foreground") {
+			continue
+		}
+
+		return string(b)
+	}
+
+	return ""
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
@@ -58,10 +74,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, cp, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart, cp.Snapshot())
 
 	// Runtime:success events
-	suite.assertNEvents(events, cp, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess, cp.Snapshot())
 
 	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount > 2 {
@@ -70,8 +86,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		suite.Fail("Received %d heartbeats, realistically we should at most have gotten 2", heartbeatInitialCount)
 	}
 
+	log := svcLog(ts.Dirs.Config)
 	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, cp, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, log)
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
@@ -79,7 +96,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, cp, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, cp.Snapshot())
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -98,7 +115,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, cp, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, cp.Snapshot())
 
 	suite.assertSequentialEvents(events)
 }
@@ -110,11 +127,11 @@ func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestL
 	return len(filteredEvents)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, cp *termtest.ConsoleProcess,
-	expectedN int, category, action string) {
+func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
+	expectedN int, category, action string, errMsg string) {
 	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
 		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nOutput:\n%s",
-		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), cp.Snapshot())
+		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []reporters.TestLogEntry) {
