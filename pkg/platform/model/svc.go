@@ -96,3 +96,15 @@ func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string,
 
 	return nil
 }
+
+func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
+	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+
+	r := request.NewConfigChanged(key)
+	u := graph.ConfigChangedResponse{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error sending configchanged event via state-svc")
+	}
+
+	return nil
+}
