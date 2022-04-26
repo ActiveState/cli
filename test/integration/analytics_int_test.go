@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -57,10 +58,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart)
+	suite.assertNEvents(events, cp, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart)
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
+	suite.assertNEvents(events, cp, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
 
 	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount > 2 {
@@ -70,7 +71,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, cp, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
@@ -78,7 +79,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, cp, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -97,7 +98,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	suite.assertNEvents(events, cp, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	suite.assertSequentialEvents(events)
 }
@@ -109,9 +110,11 @@ func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestL
 	return len(filteredEvents)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, expectedN int, category, action string) {
+func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, cp *termtest.ConsoleProcess,
+	expectedN int, category, action string) {
 	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
-		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s", expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events))
+		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nOutput:\n%s",
+		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), cp.Snapshot())
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []reporters.TestLogEntry) {
