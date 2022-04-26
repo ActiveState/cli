@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -84,7 +83,7 @@ func main() {
 	}
 }
 
-func run(cfg *config.Instance) (rerr error) {
+func run(cfg *config.Instance) error {
 	args := os.Args
 
 	cfg, err := config.New()
@@ -101,6 +100,9 @@ func run(cfg *config.Instance) (rerr error) {
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
 	})
+	if err != nil {
+		return err
+	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
