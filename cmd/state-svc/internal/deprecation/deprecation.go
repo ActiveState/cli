@@ -99,34 +99,20 @@ func (checker *Checker) pollDeprecationInfo() {
 }
 
 func (checker *Checker) Refresh() error {
-	infos, err := checker.fetchDeprecationInfo()
+	info, err := checker.fetchDeprecationInfo()
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch deprecation information")
 	}
-	if infos == nil {
+	if info == nil {
 		return nil
 	}
 
-	versionInfo, err := version.NewVersion(constants.Version)
-	if err != nil {
-		return errs.Wrap(err, "Invalid version number: %s", constants.Version)
-	}
-
-	for _, info := range infos {
-		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
-			checker.cache.Set(cacheKey, &graph.DeprecationInfo{
-				Version:     info.Version,
-				Date:        info.Date.Format(constants.DateFormatUser),
-				DateReached: info.DateReached,
-				Reason:      info.Reason,
-			}, cache.DefaultExpiration)
-		}
-	}
+	checker.cache.Set(cacheKey, info, cache.DefaultExpiration)
 
 	return nil
 }
 
-func (checker *Checker) fetchDeprecationInfo() ([]info, error) {
+func (checker *Checker) fetchDeprecationInfo() (*graph.DeprecationInfo, error) {
 	logging.Debug("Fetching deprecation information from S3")
 
 	code, body, err := checker.fetchDeprecationInfoBody()
@@ -146,7 +132,28 @@ func (checker *Checker) fetchDeprecationInfo() ([]info, error) {
 		return nil, locale.NewError("err_deprection_code", "", strconv.Itoa(code))
 	}
 
-	return initializeInfo(body)
+	infos, err := initializeInfo(body)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not intialize deprecation info")
+	}
+
+	versionInfo, err := version.NewVersion(constants.Version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Invalid version number: %s", constants.Version)
+	}
+
+	for _, info := range infos {
+		if versionInfo.LessThan(info.versionInfo) || versionInfo.Equal(info.versionInfo) {
+			return &graph.DeprecationInfo{
+				Version:     info.Version,
+				Date:        info.Date.Format(constants.DateFormatUser),
+				DateReached: info.DateReached,
+				Reason:      info.Reason,
+			}, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (checker *Checker) fetchDeprecationInfoBody() (int, []byte, error) {
