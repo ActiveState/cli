@@ -40,6 +40,11 @@ func init() {
 
 func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
+
+	if condition.IsLTS() {
+		return false, nil
+	}
+
 	defer func() {
 		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
 			multilog.Error("Failed to store last update check: %s", errs.JoinMessage(err))
