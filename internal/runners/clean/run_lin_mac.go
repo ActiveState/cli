@@ -179,7 +179,7 @@ func cleanInstallDir(dir string) error {
 		f := filepath.Join(dir, file)
 
 		var err error
-		if fileutils.IsDir(f) && fileutils.DirExists(f) {
+		if fileutils.DirExists(f) && fileutils.IsDir(f) {
 			err = os.RemoveAll(f)
 		} else if fileutils.FileExists(f) {
 			err = os.Remove(f)
