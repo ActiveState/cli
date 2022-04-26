@@ -111,7 +111,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return locale.NewError("svcctl_file_not_found", "Service communications file not found")
+		return locale.NewError("svcctl_file_not_found", "Service executable not found")
 	}
 
 	args := []string{"foreground"}
