@@ -24,17 +24,19 @@ type AnalyticsIntegrationTestSuite struct {
 	eventsfile string
 }
 
-func svcLog(configDir string) string {
-	files := fileutils.ListDirSimple(filepath.Join(configDir, "logs"), false)
+func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
+	logDir := filepath.Join(configDir, "logs")
+	files := fileutils.ListDirSimple(logDir, false)
 	for _, file := range files {
 		if !strings.HasPrefix(file, "state-svc") {
 			continue
 		}
-		b := fileutils.ReadFileUnsafe(filepath.Join(configDir, "logs", file))
+		b := fileutils.ReadFileUnsafe(filepath.Join(logDir, file))
 		if !strings.Contains(string(b), "state-svc foreground") {
 			continue
 		}
 
+		suite.Fail("Could not find state-svc log, checked under %s, found: %v", logDir, files)
 		return string(b)
 	}
 
@@ -95,7 +97,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, svcLog(ts.Dirs.Config))
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, suite.svcLog(ts.Dirs.Config))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
