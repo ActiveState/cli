@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -90,10 +89,6 @@ func main() {
 	}
 
 	rollbar.SetConfig(cfg)
-
-	// Set up machineid, allowing us to anonymously group errors and analytics
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
 
 	// Set up output handler
 	out, err := output.New("plain", &output.Config{

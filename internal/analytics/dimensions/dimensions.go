@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -113,8 +112,8 @@ func (v *Values) PreProcess() error {
 		}
 	}
 
-	if p.PStr(v.UniqID) == machineid.FallbackID {
-		return errs.New("machine id was set to fallback id when creating analytics event")
+	if p.PStr(v.UniqID) == "" {
+		return errs.New("device id is unset when creating analytics event")
 	}
 
 	return nil

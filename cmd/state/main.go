@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -145,10 +144,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
-
-	// set global configuration instances
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
