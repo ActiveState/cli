@@ -86,12 +86,6 @@ func main() {
 func run(cfg *config.Instance) error {
 	args := os.Args
 
-	cfg, err := config.New()
-	if err != nil {
-		return errs.Wrap(err, "Could not initialize config")
-	}
-	defer rtutils.Closer(cfg.Close, &rerr)
-
 	auth := authentication.New(cfg)
 	an := anaSync.New(cfg, auth)
 	defer an.Wait()
