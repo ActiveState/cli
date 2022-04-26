@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -64,8 +64,8 @@ func main() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
+	rollbar.SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -97,7 +97,7 @@ func run(cfg *config.Instance) (rerr error) {
 	machineid.Configure(cfg)
 	machineid.SetErrorLogger(logging.Error)
 	auth := authentication.New(cfg)
-	an := anaSvc.New(cfg, auth)
+	an := anaSync.New(cfg, auth)
 	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
@@ -156,7 +156,7 @@ func run(cfg *config.Instance) (rerr error) {
 				if err := auth.Sync(); err != nil {
 					logging.Warning("Could not sync authenticated state: %s", err.Error())
 				}
-				return runForeground(cfg, an)
+				return runForeground(cfg, an, auth)
 			},
 		),
 	)
@@ -164,48 +164,45 @@ func run(cfg *config.Instance) (rerr error) {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSvc.Client) error {
+func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authentication.Auth) error {
 	logging.Debug("Running in Foreground")
 
-	// create a global context for the service: When cancelled we issue a shutdown here, and wait for it to finish
-	ctx, shutdown := context.WithCancel(context.Background())
-	p := NewService(cfg, an, shutdown)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	p := NewService(ctx, cfg, an, auth)
+
+	if err := p.Start(); err != nil {
+		return errs.Wrap(err, "Could not start service")
+	}
 
 	// Handle sigterm
 	sig := make(chan os.Signal, 1)
 	go func() {
 		defer close(sig)
-		oscall, ok := <-sig
-		if !ok {
-			return
+
+		select {
+		case oscall, ok := <-sig:
+			if !ok {
+				return
+			}
+			logging.Debug("system call:%+v", oscall)
+			// issue a service shutdown on interrupt
+			cancel()
+			if err := p.Stop(); err != nil {
+				logging.Debug("Service stop failed: %v", err)
+			}
+		case <-ctx.Done():
 		}
-		logging.Debug("system call:%+v", oscall)
-		// issue a service shutdown on interrupt
-		shutdown()
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
-	serverErr := make(chan error)
-	go func() {
-		err := p.Start()
-		if err != nil {
-			err = errs.Wrap(err, "Could not start service")
-		}
-
-		serverErr <- err
-	}()
-
-	// cancellation of context issues server shutdown
-	<-ctx.Done()
-	if err := p.Stop(); err != nil {
-		return errs.Wrap(err, "Failed to stop service")
+	if err := p.Wait(); err != nil {
+		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
 
-	p.Wait()
-
-	err := <-serverErr
-	return err
+	return nil
 }
 
 func runStart(out output.Outputer) error {

@@ -414,7 +414,7 @@ flag_state_run_list_description:
 error_state_run_undefined_name:
   other: The script name must be provided
 error_state_run_unknown_name:
-  other: The script '[NOTICE]{{.V0}}[/RESET]' is not defined in activestate.yaml.
+  other: "[ERROR]The script [/RESET]'[NOTICE]{{.V0}}[/RESET]' [ERROR]is not defined in activestate.yaml.[/RESET]"
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:

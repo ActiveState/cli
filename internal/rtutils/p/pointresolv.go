@@ -6,6 +6,10 @@ func StrP(v string) *string {
 	return &v
 }
 
+func IntP(v int) *int {
+	return &v
+}
+
 func PStr(v *string) string {
 	if v == nil {
 		return ""
