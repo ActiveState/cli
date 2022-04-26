@@ -36,10 +36,10 @@ func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
 			continue
 		}
 
-		suite.Fail("Could not find state-svc log, checked under %s, found: %v", logDir, files)
 		return string(b)
 	}
 
+	suite.Fail("Could not find state-svc log, checked under %s, found: %v", logDir, files)
 	return ""
 }
 
@@ -131,7 +131,7 @@ func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestL
 func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
 	expectedN int, category, action string, errMsg string) {
 	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
-		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nOutput:\n%s",
+		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
 		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
 }
 
