@@ -43,18 +43,19 @@ func (s *Serve) Run() (string, error) {
 	return l.Addr().String(), nil
 }
 
-func (s *Serve) Wait() error {
-	if err := <-s.errs; err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-	return nil
-}
-
 func (s *Serve) Close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
-	return s.h.Shutdown(ctx)
+	if err := s.h.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	if err := <-s.errs; err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
 }
 
 var handleInfoPath = "/info"
