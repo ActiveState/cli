@@ -45,5 +45,9 @@ type Query {
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
   checkDeprecation: DeprecationInfo
+  configChanged(key: String!): ConfigChangedResponse
 }
 
+type ConfigChangedResponse {
+  received: Boolean!
+}

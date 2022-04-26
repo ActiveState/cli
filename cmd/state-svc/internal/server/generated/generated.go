@@ -54,6 +54,10 @@ type ComplexityRoot struct {
 		Version  func(childComplexity int) int
 	}
 
+	ConfigChangedResponse struct {
+		Received func(childComplexity int) int
+	}
+
 	DeprecationInfo struct {
 		Date        func(childComplexity int) int
 		DateReached func(childComplexity int) int
@@ -70,6 +74,7 @@ type ComplexityRoot struct {
 		AnalyticsEvent   func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
 		AvailableUpdate  func(childComplexity int) int
 		CheckDeprecation func(childComplexity int) int
+		ConfigChanged    func(childComplexity int, key string) int
 		Projects         func(childComplexity int) int
 		RuntimeUsage     func(childComplexity int, pid int, exec string, dimensionsJSON string) int
 		Version          func(childComplexity int) int
@@ -99,6 +104,7 @@ type QueryResolver interface {
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
 	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
+	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 }
 
 type executableSchema struct {
@@ -157,6 +163,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AvailableUpdate.Version(childComplexity), true
+
+	case "ConfigChangedResponse.received":
+		if e.complexity.ConfigChangedResponse.Received == nil {
+			break
+		}
+
+		return e.complexity.ConfigChangedResponse.Received(childComplexity), true
 
 	case "DeprecationInfo.date":
 		if e.complexity.DeprecationInfo.Date == nil {
@@ -225,6 +238,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CheckDeprecation(childComplexity), true
+
+	case "Query.configChanged":
+		if e.complexity.Query.ConfigChanged == nil {
+			break
+		}
+
+		args, err := ec.field_Query_configChanged_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ConfigChanged(childComplexity, args["key"].(string)), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -398,8 +423,12 @@ type Query {
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
   checkDeprecation: DeprecationInfo
+  configChanged(key: String!): ConfigChangedResponse
 }
 
+type ConfigChangedResponse {
+  received: Boolean!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -462,6 +491,21 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["dimensionsJson"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
 	return args, nil
 }
 
@@ -744,6 +788,41 @@ func (ec *executionContext) _AvailableUpdate_sha256(ctx context.Context, field g
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ConfigChangedResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.ConfigChangedResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ConfigChangedResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Received, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeprecationInfo_version(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
@@ -1163,6 +1242,45 @@ func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field g
 	res := resTmp.(*graph.DeprecationInfo)
 	fc.Result = res
 	return ec.marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_configChanged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_configChanged_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ConfigChanged(rctx, args["key"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.ConfigChangedResponse)
+	fc.Result = res
+	return ec.marshalOConfigChangedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐConfigChangedResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2650,6 +2768,33 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 	return out
 }
 
+var configChangedResponseImplementors = []string{"ConfigChangedResponse"}
+
+func (ec *executionContext) _ConfigChangedResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.ConfigChangedResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configChangedResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigChangedResponse")
+		case "received":
+			out.Values[i] = ec._ConfigChangedResponse_received(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var deprecationInfoImplementors = []string{"DeprecationInfo"}
 
 func (ec *executionContext) _DeprecationInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.DeprecationInfo) graphql.Marshaler {
@@ -2806,6 +2951,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_checkDeprecation(ctx, field)
+				return res
+			})
+		case "configChanged":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_configChanged(ctx, field)
 				return res
 			})
 		case "__type":
@@ -3556,6 +3712,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalOConfigChangedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐConfigChangedResponse(ctx context.Context, sel ast.SelectionSet, v *graph.ConfigChangedResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ConfigChangedResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx context.Context, sel ast.SelectionSet, v *graph.DeprecationInfo) graphql.Marshaler {

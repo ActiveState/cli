@@ -14,6 +14,10 @@ type AvailableUpdate struct {
 	Sha256   string `json:"sha256"`
 }
 
+type ConfigChangedResponse struct {
+	Received bool `json:"received"`
+}
+
 type DeprecationInfo struct {
 	Version     string `json:"version"`
 	Date        string `json:"date"`
