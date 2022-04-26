@@ -86,9 +86,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		suite.Fail("Received %d heartbeats, realistically we should at most have gotten 2", heartbeatInitialCount)
 	}
 
-	log := svcLog(ts.Dirs.Config)
 	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, log)
+	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, cp.Snapshot())
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
@@ -96,7 +95,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, cp.Snapshot())
+	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, svcLog(ts.Dirs.Config))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
