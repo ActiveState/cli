@@ -382,7 +382,6 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
-		AnonID:         uniqid.Text(),
 		UniqueDeviceID: uniqid.Text(),
 	}
 

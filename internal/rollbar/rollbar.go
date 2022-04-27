@@ -92,7 +92,7 @@ func UpdateRollbarPerson(userID, username, email string) {
 	}
 
 	custom["UserID"] = userID
-	custom["MachineID"] = uniqid.Text()
+	custom["DeviceID"] = uniqid.Text()
 
 	rollbar.SetCustom(custom)
 }
