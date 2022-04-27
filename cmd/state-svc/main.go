@@ -98,7 +98,7 @@ func run(cfg *config.Instance) error {
 		ErrWriter: os.Stderr,
 	})
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not initialize outputer")
 	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)

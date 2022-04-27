@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/deprecation"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -223,17 +223,16 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 
 		// Check for deprecation
-		deprecated, err := deprecation.Check(cfg)
+		deprecationInfo, err := svcmodel.CheckDeprecation(context.Background())
 		if err != nil {
 			multilog.Error("Could not check for deprecation: %s", err.Error())
 		}
-		if deprecated != nil {
-			date := deprecated.Date.Format(constants.DateFormatUser)
-			if !deprecated.DateReached {
+		if deprecationInfo != nil {
+			if !deprecationInfo.DateReached {
 				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
-				out.Notice(locale.Tr("warn_deprecation", date, deprecated.Reason))
+				out.Notice(locale.Tr("warn_deprecation", deprecationInfo.Date, deprecationInfo.Reason))
 			} else {
-				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", date, deprecated.Reason)
+				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", deprecationInfo.Date, deprecationInfo.Reason)
 			}
 		}
 

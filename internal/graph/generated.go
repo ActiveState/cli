@@ -18,6 +18,13 @@ type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
 
+type DeprecationInfo struct {
+	Version     string `json:"version"`
+	Date        string `json:"date"`
+	DateReached bool   `json:"dateReached"`
+	Reason      string `json:"reason"`
+}
+
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`
