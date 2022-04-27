@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -45,8 +46,8 @@ func main() {
 			exitCode = 1
 		}
 
-		if cfg != nil {
-			events.Close("config", cfg.Close)
+		if err := cfg.Close(); err != nil {
+			multilog.Error("Failed to close config: %v", err)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -55,8 +56,7 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
-	var err error
-	cfg, err = config.New()
+	cfg, err := config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
@@ -87,6 +87,8 @@ func main() {
 func run(cfg *config.Instance) error {
 	args := os.Args
 
+	machineid.Configure(cfg)
+	machineid.SetErrorLogger(logging.Error)
 	auth := authentication.New(cfg)
 	an := anaSync.New(cfg, auth)
 	defer an.Wait()
@@ -96,7 +98,7 @@ func run(cfg *config.Instance) error {
 		ErrWriter: os.Stderr,
 	})
 	if err != nil {
-		return errs.Wrap(err, "Could not initialize outputer")
+		return err
 	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
@@ -226,14 +228,10 @@ func runStatus(out output.Outputer) error {
 	if err != nil {
 		return errs.Wrap(err, "Service cannot be reached")
 	}
+
 	out.Print(fmt.Sprintf("Port: %s", port))
 	out.Print(fmt.Sprintf("Dashboard: http://127.0.0.1%s", port))
-
-	logfile, err := svcctl.LogFileName(ipcClient)
-	if err != nil {
-		return errs.Wrap(err, "Service could not locate log file")
-	}
-	out.Print(fmt.Sprintf("Log: %s", logging.FilePathFor(logfile)))
+	out.Print(fmt.Sprintf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(os.Getpid()))))
 
 	return nil
 }
