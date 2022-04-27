@@ -231,7 +231,7 @@ func runStatus(out output.Outputer) error {
 
 	out.Print(fmt.Sprintf("Port: %s", port))
 	out.Print(fmt.Sprintf("Dashboard: http://127.0.0.1%s", port))
-	//fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
+	out.Print(fmt.Sprintf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(os.Getpid()))))
 
 	return nil
 }
