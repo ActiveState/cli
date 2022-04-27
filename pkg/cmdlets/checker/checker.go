@@ -58,8 +58,13 @@ func CommitsBehind(p *project.Project) (int, error) {
 
 func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 	defer profile.Measure("RunUpdateNotifier", time.Now())
-	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+
+	// the following timeout may clip requests. this is acceptable in order
+	// to reduce the maximum delay caused by the backend query that the
+	// service will need to make.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*1250)
 	defer cancel()
+
 	up, err := svc.CheckUpdate(ctx)
 	if err != nil {
 		var timeoutErr net.Error

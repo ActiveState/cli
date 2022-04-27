@@ -13,10 +13,6 @@ import (
 	"github.com/machinebox/graphql"
 )
 
-var (
-	SvcTimeoutMinimal = time.Millisecond * 500
-)
-
 type SvcModel struct {
 	client *gqlclient.Client
 }
