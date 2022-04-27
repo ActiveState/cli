@@ -70,7 +70,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", err
+			return "", errs.Wrap(err, "After start succeeded...")
 		}
 	}
 
