@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 
@@ -93,7 +92,7 @@ func UpdateRollbarPerson(userID, username, email string) {
 	}
 
 	custom["UserID"] = userID
-	custom["MachineID"] = machineid.UniqID()
+	custom["DeviceID"] = uniqid.Text()
 
 	rollbar.SetCustom(custom)
 }

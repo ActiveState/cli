@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -62,10 +61,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
-	machineID := machineid.UniqID()
-	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		multilog.Error("unknown machine id: %s", machineID)
-	}
 	deviceID := uniqid.Text()
 
 	osName := sysinfo.OS().String()
@@ -104,7 +99,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		OSName:        p.StrP(osName),
 		OSVersion:     p.StrP(osVersion),
 		InstallSource: p.StrP(installSource),
-		MachineID:     p.StrP(machineID),
 		UniqID:        p.StrP(deviceID),
 		SessionToken:  p.StrP(sessionToken),
 		UpdateTag:     p.StrP(tag),

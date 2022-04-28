@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -87,8 +86,6 @@ func main() {
 func run(cfg *config.Instance) error {
 	args := os.Args
 
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
 	auth := authentication.New(cfg)
 	an := anaSync.New(cfg, auth)
 	defer an.Wait()
