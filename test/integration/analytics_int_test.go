@@ -29,11 +29,11 @@ func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
 	files := fileutils.ListDirSimple(logDir, false)
 	lines := []string{}
 	for _, file := range files {
-		if !strings.HasPrefix(file, "state-svc") {
+		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
 			continue
 		}
-		b := fileutils.ReadFileUnsafe(filepath.Join(logDir, file))
-		lines = append(lines, file+":"+strings.Split(string(b), "\n")[0])
+		b := fileutils.ReadFileUnsafe(file)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
 		if !strings.Contains(string(b), "state-svc foreground") {
 			continue
 		}
