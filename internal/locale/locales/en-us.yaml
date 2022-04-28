@@ -1848,6 +1848,11 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+secrets_unstable_warning:
+  other: |
+    The use of secrets is still in beta. If you want to opt-in to unstable features, run the following command:
+
+    [ACTIONABLE]state config set optin.unstable true[/RESET]
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
