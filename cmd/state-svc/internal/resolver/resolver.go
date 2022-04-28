@@ -122,7 +122,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
-	logging.Debug("Analytics event resolver")
+	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
 	label := ""
 	if _label != nil {

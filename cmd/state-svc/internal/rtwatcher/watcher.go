@@ -43,6 +43,7 @@ func New(cfg *config.Instance, an *sync.Client) *Watcher {
 	}
 
 	if v := os.Getenv(constants.HeartbeatIntervalEnvVarName); v != "" {
+		logging.Debug("Received custom heartbeat interval: %s", v)
 		vv, err := strconv.Atoi(v)
 		if err != nil {
 			logging.Warning("Invalid value for %s: %s", constants.HeartbeatIntervalEnvVarName, v)
@@ -58,6 +59,7 @@ func New(cfg *config.Instance, an *sync.Client) *Watcher {
 func (w *Watcher) ticker(cb func()) {
 	defer panics.LogPanics(recover(), debug.Stack())
 
+	logging.Debug("Starting watcher ticker with interval %s", w.interval.String())
 	ticker := time.NewTicker(w.interval)
 	for {
 		select {
