@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -29,7 +28,6 @@ type Values struct {
 	OSName           *string
 	OSVersion        *string
 	InstallSource    *string
-	MachineID        *string
 	UniqID           *string
 	SessionToken     *string
 	UpdateTag        *string
@@ -53,10 +51,6 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
-	machineID := machineid.UniqID()
-	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		multilog.Error("unknown machine id: %s", machineID)
-	}
 	deviceID := uniqid.Text()
 
 	var userIDString string
@@ -82,7 +76,6 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(osName),
 		p.StrP(osVersion),
 		p.StrP(installSource),
-		p.StrP(machineID),
 		p.StrP(deviceID),
 		p.StrP(sessionToken),
 		p.StrP(updateTag),
@@ -119,8 +112,8 @@ func (v *Values) PreProcess() error {
 		}
 	}
 
-	if p.PStr(v.UniqID) == machineid.FallbackID {
-		return errs.New("machine id was set to fallback id when creating analytics event")
+	if p.PStr(v.UniqID) == "" {
+		return errs.New("device id is unset when creating analytics event")
 	}
 
 	return nil

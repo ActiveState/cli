@@ -31,11 +31,23 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
+type DeprecationInfo {
+  version: String!
+  date: String!
+  dateReached: Boolean!
+  reason: String!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  checkDeprecation: DeprecationInfo
+  configChanged(key: String!): ConfigChangedResponse
 }
 
+type ConfigChangedResponse {
+  received: Boolean!
+}

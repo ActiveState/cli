@@ -13,10 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -361,7 +361,7 @@ func (s *Auth) CreateToken() error {
 		}
 	}
 
-	key := constants.APITokenName + ":" + machineid.UniqID()
+	key := constants.APITokenName + ":" + uniqid.Text()
 	token, err := s.NewAPIKey(key)
 	if err != nil {
 		return err

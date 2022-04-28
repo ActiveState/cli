@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
@@ -383,7 +382,6 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		Changeset:      changeset,
 		Message:        commitMessage,
 		ParentCommitID: parentCommitID,
-		AnonID:         machineid.UniqID(),
 		UniqueDeviceID: uniqid.Text(),
 	}
 

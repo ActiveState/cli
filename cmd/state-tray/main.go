@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rollbar"
@@ -89,9 +88,6 @@ func onReady() {
 }
 
 func run(cfg *config.Instance) (rerr error) {
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
-
 	running, err := isTrayRunning(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")

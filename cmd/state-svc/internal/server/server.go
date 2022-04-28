@@ -38,7 +38,12 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Ser
 		return nil, errs.Wrap(err, "Failed to listen")
 	}
 
-	s := &Server{resolver: resolver.New(cfg, an, auth), analytics: an}
+	resolver, err := resolver.New(cfg, an, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to initialize new resolver")
+	}
+
+	s := &Server{resolver: resolver, analytics: an}
 
 	s.graphServer = newGraphServer(s.resolver)
 	s.listener = listener

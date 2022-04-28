@@ -33,7 +33,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	err = removeInstall(logFile.Name(), u.cfg.ConfigPath(), u.cfg.GetString(installation.CfgTransitionalStateToolPath))
+	err = removeInstall(logFile.Name(), u.cfg)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
 	}
@@ -71,9 +71,10 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(logFile, configPath, transitionalStateTool string) error {
+func removeInstall(logFile string, cfg configurable) error {
 	svcInfo := appinfo.SvcApp()
 	trayInfo := appinfo.TrayApp()
+	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
 	var aggErr error
 	for _, info := range []*appinfo.AppInfo{svcInfo, trayInfo} {
 		err := os.Remove(info.Exec())
@@ -89,8 +90,9 @@ func removeInstall(logFile, configPath, transitionalStateTool string) error {
 		return aggErr
 	}
 
-	paths := []string{filepath.Dir(appinfo.StateApp().Exec()), configPath}
-	// If the transitional state tool path is known, we remove it.  This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
+	// Schedule removal of the branch name directory and the config directory
+	paths := []string{filepath.Dir(filepath.Dir(appinfo.StateApp().Exec())), cfg.ConfigPath()}
+	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)
 	}
@@ -117,6 +119,7 @@ func removePaths(logFile string, paths ...string) error {
 
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
+
 	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")

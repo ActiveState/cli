@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
 
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 )
 
 type Request interface {
@@ -92,7 +92,7 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 		}
 	}
 
-	graphRequest.Header.Set("X-Requestor", machineid.UniqID())
+	graphRequest.Header.Set("X-Requestor", uniqid.Text())
 
 	return c.graphqlClient.Run(ctx, graphRequest, &response)
 }
