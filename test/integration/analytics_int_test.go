@@ -41,7 +41,7 @@ func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
 		return string(b)
 	}
 
-	suite.Failf("Could not find state-svc log, checked under %s, found: %v", logDir, lines)
+	suite.Fail(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
 	return ""
 }
 
