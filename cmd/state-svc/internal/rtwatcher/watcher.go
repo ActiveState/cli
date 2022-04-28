@@ -64,8 +64,10 @@ func (w *Watcher) ticker(cb func()) {
 	for {
 		select {
 		case <-ticker.C:
+			logging.Debug("tick")
 			cb()
 		case <-w.stop:
+			logging.Debug("Stopping watcher ticker")
 			return
 		}
 	}
@@ -82,6 +84,7 @@ func (w *Watcher) check() {
 			// Don't return yet, the conditional below still needs to clear this entry
 		}
 		if !running {
+			logging.Debug("Runtime process %d:%s is not running, removing from watcher", e.PID, e.Exec)
 			w.watching = append(w.watching[:i], w.watching[i+1:]...)
 			continue
 		}
