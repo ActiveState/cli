@@ -62,13 +62,13 @@ func NewCalculateTaxOK() *CalculateTaxOK {
 Success
 */
 type CalculateTaxOK struct {
-	Payload int64
+	Payload float64
 }
 
 func (o *CalculateTaxOK) Error() string {
 	return fmt.Sprintf("[POST /taxes][%d] calculateTaxOK  %+v", 200, o.Payload)
 }
-func (o *CalculateTaxOK) GetPayload() int64 {
+func (o *CalculateTaxOK) GetPayload() float64 {
 	return o.Payload
 }
 

@@ -24,6 +24,9 @@ type IngredientOptionResources struct {
 	// Minimum: 0.1
 	Cpus float64 `json:"cpus,omitempty"`
 
+	// Additional host feature requirements. Values are single values. Ranges (e.g. [1-5]) are not currently supported.
+	HostAttributes map[string]string `json:"host_attributes,omitempty"`
+
 	// The minimum amount of memory in megabytes to make available to the build.
 	// Maximum: 131072
 	// Minimum: 1

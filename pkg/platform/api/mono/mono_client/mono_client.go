@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/s3"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/status"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/tiers"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/trials"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 )
@@ -76,6 +77,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Mono {
 	cli.S3 = s3.New(transport, formats)
 	cli.Status = status.New(transport, formats)
 	cli.Tiers = tiers.New(transport, formats)
+	cli.Trials = trials.New(transport, formats)
 	cli.Users = users.New(transport, formats)
 	cli.VersionControl = version_control.New(transport, formats)
 	return cli
@@ -142,6 +144,8 @@ type Mono struct {
 
 	Tiers tiers.ClientService
 
+	Trials trials.ClientService
+
 	Users users.ClientService
 
 	VersionControl version_control.ClientService
@@ -162,6 +166,7 @@ func (c *Mono) SetTransport(transport runtime.ClientTransport) {
 	c.S3.SetTransport(transport)
 	c.Status.SetTransport(transport)
 	c.Tiers.SetTransport(transport)
+	c.Trials.SetTransport(transport)
 	c.Users.SetTransport(transport)
 	c.VersionControl.SetTransport(transport)
 }

@@ -41,6 +41,12 @@ func (o *QuitOrganizationReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return nil, result
+	case 404:
+		result := NewQuitOrganizationNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewQuitOrganizationInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -135,6 +141,38 @@ func (o *QuitOrganizationForbidden) GetPayload() *mono_models.Message {
 }
 
 func (o *QuitOrganizationForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewQuitOrganizationNotFound creates a QuitOrganizationNotFound with default headers values
+func NewQuitOrganizationNotFound() *QuitOrganizationNotFound {
+	return &QuitOrganizationNotFound{}
+}
+
+/* QuitOrganizationNotFound describes a response with status code 404, with default header values.
+
+User or Org Not Found
+*/
+type QuitOrganizationNotFound struct {
+	Payload *mono_models.Message
+}
+
+func (o *QuitOrganizationNotFound) Error() string {
+	return fmt.Sprintf("[DELETE /organizations/{organizationName}/members/{username}][%d] quitOrganizationNotFound  %+v", 404, o.Payload)
+}
+func (o *QuitOrganizationNotFound) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *QuitOrganizationNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Message)
 

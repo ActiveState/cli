@@ -24,7 +24,7 @@ type IngredientVersionRevisionPagedList struct {
 
 	// A page of ingredient version revisions
 	// Required: true
-	IngredientVersionRevisions []*IngredientVersionRevision `json:"ingredient_version_revisions"`
+	IngredientVersionRevisions []*FullIngredientVersion `json:"ingredient_version_revisions"`
 
 	// links
 	// Required: true

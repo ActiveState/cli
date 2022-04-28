@@ -27,6 +27,9 @@ type DeviceCodeComplete struct {
 	// The lifetime in seconds of the access token.
 	ExpiresIn int64 `json:"expires_in,omitempty"`
 
+	// If true tells client not to use polling.
+	Nopoll bool `json:"nopoll,omitempty"`
+
 	// API key stored and use to get new JET access_tokens when they expire
 	RefreshToken *NewToken `json:"refresh_token,omitempty"`
 

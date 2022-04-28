@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
@@ -61,6 +62,12 @@ func NewAddIngredientVersionParamsWithHTTPClient(client *http.Client) *AddIngred
 */
 type AddIngredientVersionParams struct {
 
+	/* DisableSmartImport.
+
+	   Disables the smart-import feature for this import
+	*/
+	DisableSmartImport *bool
+
 	// IngredientID.
 	//
 	// Format: uuid
@@ -86,7 +93,18 @@ func (o *AddIngredientVersionParams) WithDefaults() *AddIngredientVersionParams 
 //
 // All values with no default are reset to their zero value.
 func (o *AddIngredientVersionParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		disableSmartImportDefault = bool(false)
+	)
+
+	val := AddIngredientVersionParams{
+		DisableSmartImport: &disableSmartImportDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the add ingredient version params
@@ -122,6 +140,17 @@ func (o *AddIngredientVersionParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDisableSmartImport adds the disableSmartImport to the add ingredient version params
+func (o *AddIngredientVersionParams) WithDisableSmartImport(disableSmartImport *bool) *AddIngredientVersionParams {
+	o.SetDisableSmartImport(disableSmartImport)
+	return o
+}
+
+// SetDisableSmartImport adds the disableSmartImport to the add ingredient version params
+func (o *AddIngredientVersionParams) SetDisableSmartImport(disableSmartImport *bool) {
+	o.DisableSmartImport = disableSmartImport
+}
+
 // WithIngredientID adds the ingredientID to the add ingredient version params
 func (o *AddIngredientVersionParams) WithIngredientID(ingredientID strfmt.UUID) *AddIngredientVersionParams {
 	o.SetIngredientID(ingredientID)
@@ -151,6 +180,23 @@ func (o *AddIngredientVersionParams) WriteToRequest(r runtime.ClientRequest, reg
 		return err
 	}
 	var res []error
+
+	if o.DisableSmartImport != nil {
+
+		// query param disable_smart_import
+		var qrDisableSmartImport bool
+
+		if o.DisableSmartImport != nil {
+			qrDisableSmartImport = *o.DisableSmartImport
+		}
+		qDisableSmartImport := swag.FormatBool(qrDisableSmartImport)
+		if qDisableSmartImport != "" {
+
+			if err := r.SetQueryParam("disable_smart_import", qDisableSmartImport); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param ingredient_id
 	if err := r.SetPathParam("ingredient_id", o.IngredientID.String()); err != nil {

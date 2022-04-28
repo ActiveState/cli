@@ -19,6 +19,10 @@ import (
 // swagger:model TaxOptions
 type TaxOptions struct {
 
+	// active runtimes
+	// Required: true
+	ActiveRuntimes int64 `json:"activeRuntimes"`
+
 	// org URL name
 	// Required: true
 	OrgURLName string `json:"orgURLName"`
@@ -30,15 +34,15 @@ type TaxOptions struct {
 	// tier name
 	// Required: true
 	TierName string `json:"tierName"`
-
-	// users
-	// Required: true
-	Users int64 `json:"users"`
 }
 
 // Validate validates this tax options
 func (m *TaxOptions) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateActiveRuntimes(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateOrgURLName(formats); err != nil {
 		res = append(res, err)
@@ -52,13 +56,18 @@ func (m *TaxOptions) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateUsers(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *TaxOptions) validateActiveRuntimes(formats strfmt.Registry) error {
+
+	if err := validate.Required("activeRuntimes", "body", int64(m.ActiveRuntimes)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -92,15 +101,6 @@ func (m *TaxOptions) validateShippingAddress(formats strfmt.Registry) error {
 func (m *TaxOptions) validateTierName(formats strfmt.Registry) error {
 
 	if err := validate.RequiredString("tierName", "body", m.TierName); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *TaxOptions) validateUsers(formats strfmt.Registry) error {
-
-	if err := validate.Required("users", "body", int64(m.Users)); err != nil {
 		return err
 	}
 
