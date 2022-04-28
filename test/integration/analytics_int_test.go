@@ -38,7 +38,7 @@ func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
 			continue
 		}
 
-		return string(b)
+		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
 	suite.Fail(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))

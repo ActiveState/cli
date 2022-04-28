@@ -47,6 +47,7 @@ func New(cfg *config.Instance, an analytics) *Watcher {
 	}
 
 	if v := os.Getenv(constants.HeartbeatIntervalEnvVarName); v != "" {
+		logging.Debug("Received custom heartbeat interval: %s", v)
 		vv, err := strconv.Atoi(v)
 		if err != nil {
 			logging.Warning("Invalid value for %s: %s", constants.HeartbeatIntervalEnvVarName, v)
