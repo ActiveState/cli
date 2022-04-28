@@ -55,13 +55,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
-	heartbeatInterval := 5000 // in milliseconds
+	heartbeatInterval := 500 // in milliseconds
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
 		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 			fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 		),
 	)
@@ -93,7 +92,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events
 	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, cp.Snapshot())
 
-	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond))
+	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond) * 2)
 
 	events = suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
