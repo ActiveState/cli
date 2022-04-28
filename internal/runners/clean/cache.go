@@ -46,10 +46,6 @@ func (c *Cache) Run(params *CacheParams) error {
 		return locale.NewError("err_clean_cache_activated")
 	}
 
-	if err := stopServices(c.config, c.output, c.ipComm, params.Force); err != nil {
-		return errs.Wrap(err, "Failed to stop services.")
-	}
-
 	if params.Project != "" {
 		paths := projectfile.GetProjectPaths(c.config, params.Project)
 
