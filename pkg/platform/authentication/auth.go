@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	model "github.com/ActiveState/cli/pkg/platform/model/auth"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"

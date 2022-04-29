@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	model "github.com/ActiveState/cli/pkg/platform/model/auth"
+	"github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/strfmt"
 )
 
