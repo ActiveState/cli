@@ -65,5 +65,5 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return initRunner.Run(&params)
 		},
-	).SetGroup(EnvironmentGroup)
+	).SetGroup(EnvironmentGroup).SetUnstable(true)
 }
