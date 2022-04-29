@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 )
 
@@ -89,7 +90,7 @@ func (w *Watcher) check() {
 			continue
 		}
 
-		w.RecordUsage(e)
+		go w.RecordUsage(e)
 	}
 }
 
@@ -116,6 +117,7 @@ func (w *Watcher) Close() error {
 
 func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
 	logging.Debug("Watching %s (%d)", exec, pid)
+	dims.Sequence = p.IntP(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, dims}
 	w.watching = append(w.watching, e)
 	w.RecordUsage(e)

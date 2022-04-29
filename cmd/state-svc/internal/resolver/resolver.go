@@ -44,14 +44,15 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not refresh deprecation info")
 	}
+	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 		checker,
 		projectcache.NewID(),
 		an,
-		sync.New(cfg, auth),
-		rtwatcher.New(cfg, an),
+		anForClient,
+		rtwatcher.New(cfg, anForClient),
 	}, nil
 }
 
