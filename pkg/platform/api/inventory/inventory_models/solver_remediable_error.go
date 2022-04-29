@@ -24,8 +24,11 @@ import (
 type SolverRemediableError struct {
 
 	// The type of solver error that occurred
-	// Enum: [REQUIREMENT_CONFLICTS_WITH_PLATFORM]
+	// Enum: [REQUIREMENT_CONFLICTS_WITH_PLATFORM REQUIREMENT_UNAVAILABLE REQUIREMENT_UNAVAILABLE_AT_TIMESTAMP TRANSITIVE_DEPENDENCY_UNAVAILABLE TRANSITIVE_DEPENDENCY_UNAVAILABLE_AT_TIMESTAMP]
 	ErrorType string `json:"error_type,omitempty"`
+
+	// A list of requirements, transitive dependencies, or platforms that caused this error
+	Incompatibilities []*SolverIncompatibility `json:"incompatibilities"`
 
 	// The requirements that caused the error
 	Requirements []*OrderRequirement `json:"requirements"`
@@ -39,6 +42,10 @@ func (m *SolverRemediableError) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateErrorType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIncompatibilities(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -60,7 +67,7 @@ var solverRemediableErrorTypeErrorTypePropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["REQUIREMENT_CONFLICTS_WITH_PLATFORM"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["REQUIREMENT_CONFLICTS_WITH_PLATFORM","REQUIREMENT_UNAVAILABLE","REQUIREMENT_UNAVAILABLE_AT_TIMESTAMP","TRANSITIVE_DEPENDENCY_UNAVAILABLE","TRANSITIVE_DEPENDENCY_UNAVAILABLE_AT_TIMESTAMP"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -72,6 +79,18 @@ const (
 
 	// SolverRemediableErrorErrorTypeREQUIREMENTCONFLICTSWITHPLATFORM captures enum value "REQUIREMENT_CONFLICTS_WITH_PLATFORM"
 	SolverRemediableErrorErrorTypeREQUIREMENTCONFLICTSWITHPLATFORM string = "REQUIREMENT_CONFLICTS_WITH_PLATFORM"
+
+	// SolverRemediableErrorErrorTypeREQUIREMENTUNAVAILABLE captures enum value "REQUIREMENT_UNAVAILABLE"
+	SolverRemediableErrorErrorTypeREQUIREMENTUNAVAILABLE string = "REQUIREMENT_UNAVAILABLE"
+
+	// SolverRemediableErrorErrorTypeREQUIREMENTUNAVAILABLEATTIMESTAMP captures enum value "REQUIREMENT_UNAVAILABLE_AT_TIMESTAMP"
+	SolverRemediableErrorErrorTypeREQUIREMENTUNAVAILABLEATTIMESTAMP string = "REQUIREMENT_UNAVAILABLE_AT_TIMESTAMP"
+
+	// SolverRemediableErrorErrorTypeTRANSITIVEDEPENDENCYUNAVAILABLE captures enum value "TRANSITIVE_DEPENDENCY_UNAVAILABLE"
+	SolverRemediableErrorErrorTypeTRANSITIVEDEPENDENCYUNAVAILABLE string = "TRANSITIVE_DEPENDENCY_UNAVAILABLE"
+
+	// SolverRemediableErrorErrorTypeTRANSITIVEDEPENDENCYUNAVAILABLEATTIMESTAMP captures enum value "TRANSITIVE_DEPENDENCY_UNAVAILABLE_AT_TIMESTAMP"
+	SolverRemediableErrorErrorTypeTRANSITIVEDEPENDENCYUNAVAILABLEATTIMESTAMP string = "TRANSITIVE_DEPENDENCY_UNAVAILABLE_AT_TIMESTAMP"
 )
 
 // prop value enum
@@ -90,6 +109,30 @@ func (m *SolverRemediableError) validateErrorType(formats strfmt.Registry) error
 	// value enum
 	if err := m.validateErrorTypeEnum("error_type", "body", m.ErrorType); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (m *SolverRemediableError) validateIncompatibilities(formats strfmt.Registry) error {
+	if swag.IsZero(m.Incompatibilities) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Incompatibilities); i++ {
+		if swag.IsZero(m.Incompatibilities[i]) { // not required
+			continue
+		}
+
+		if m.Incompatibilities[i] != nil {
+			if err := m.Incompatibilities[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("incompatibilities" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -147,6 +190,10 @@ func (m *SolverRemediableError) validateSuggestedRemediations(formats strfmt.Reg
 func (m *SolverRemediableError) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateIncompatibilities(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateRequirements(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -158,6 +205,24 @@ func (m *SolverRemediableError) ContextValidate(ctx context.Context, formats str
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *SolverRemediableError) contextValidateIncompatibilities(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Incompatibilities); i++ {
+
+		if m.Incompatibilities[i] != nil {
+			if err := m.Incompatibilities[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("incompatibilities" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

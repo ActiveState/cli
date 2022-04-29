@@ -388,7 +388,7 @@ func (s *Auth) SaveToken(token string) error {
 // NewAPIKey returns a new api key from the backend or the relevant failure.
 func (s *Auth) NewAPIKey(name string) (string, error) {
 	params := authentication.NewAddTokenParams()
-	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
+	params.SetTokenOptions(&mono_models.TokenEditable{Name: name, DeviceID: uniqid.Text()})
 
 	client, err := s.ClientSafe()
 	if err != nil {

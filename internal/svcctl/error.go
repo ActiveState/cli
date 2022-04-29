@@ -15,7 +15,7 @@ var (
 	ctlErrRequestTimeout = errors.New("request timeout")
 )
 
-func asRequestTimeoutErr(err error) error {
+func asRequestTimeoutCtlErr(err error) error {
 	opErr := &net.OpError{}
 	if errors.Is(err, os.ErrDeadlineExceeded) || (errors.As(err, &opErr) && opErr.Timeout()) {
 		return ctlErrRequestTimeout
@@ -23,7 +23,7 @@ func asRequestTimeoutErr(err error) error {
 	return err
 }
 
-func asNotUpError(err error) error {
+func asNotUpCtlErr(err error) error {
 	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
 		return ctlErrNotUp
 	}
