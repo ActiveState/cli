@@ -2,10 +2,10 @@ package resolver
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/patrickmn/go-cache"
@@ -28,6 +29,7 @@ import (
 type Resolver struct {
 	cfg            *config.Instance
 	cache          *cache.Cache
+	deprecation    *deprecation.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
@@ -36,18 +38,26 @@ type Resolver struct {
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) *Resolver {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
+	checker := deprecation.NewChecker(cfg)
+	err := checker.Refresh()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not refresh deprecation info")
+	}
+	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
+		checker,
 		projectcache.NewID(),
 		an,
-		sync.New(cfg, auth),
-		rtwatcher.New(cfg, an),
-	}
+		anForClient,
+		rtwatcher.New(cfg, anForClient),
+	}, nil
 }
 
 func (r *Resolver) Close() error {
+	r.deprecation.Close()
 	r.anForClient.Close()
 	return r.rtwatch.Close()
 }
@@ -86,7 +96,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 
 	update, err := updater.NewDefaultChecker(r.cfg).Check()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
+		return nil, errs.Wrap(err, "Failed to check for available update")
 	}
 	if update == nil {
 		return nil, nil
@@ -155,7 +165,6 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 
 func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
-
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
@@ -164,4 +173,20 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	logging.Debug("Check deprecation resolver")
+
+	deprecated, err := r.deprecation.Check()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not fetch deprecation information")
+	}
+
+	return deprecated, nil
+}
+
+func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
+	go configMediator.NotifyListeners(key)
+	return &graph.ConfigChangedResponse{Received: true}, nil
 }
