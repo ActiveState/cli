@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+
+file="hello.zig"
+binf="${file%.*}"
+bdir="build"
+
+zig build-exe --strip -static -O ReleaseFast "${file}"
+mkdir -p "${bdir}"
+mv "${binf}" "${bdir}/zig-${binf}"

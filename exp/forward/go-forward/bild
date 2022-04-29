@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+
+x="build/$(basename "${PWD}")"
+go build -o "${x}" -ldflags="-s -w"
+rm "${x}-packed" >/dev/null
+upx "${x}" -o "${x}-packed" >/dev/null
