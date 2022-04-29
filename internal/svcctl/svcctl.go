@@ -1,5 +1,7 @@
 // Package svcctl provides functions that make use of an IPC device, as well as
-// common IPC handlers and requesters.
+// common IPC handlers and requesters. The intent is to guard the authority and
+// uniqueness of the state service, so localized error messages refer to the
+// "service" rather than just the IPC server.
 package svcctl
 
 import (
@@ -58,19 +60,19 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		if !errs.Matches(err, &ipc.ServerDownError{}) {
-			return "", err
+			return "", errs.Wrap(err, "Cannot locate HTTP port of service")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
 		if err := startAndWait(ctx, ipComm, exec); err != nil {
-			return "", err
+			return "", errs.Wrap(err, "Cannot start service at %q", exec)
 		}
 
 		addr, err = LocateHTTP(ipComm)
 		if err != nil {
-			return "", errs.Wrap(err, "After start succeeded...")
+			return "", errs.Wrap(err, "Cannot locate HTTP port of service after start succeeded")
 		}
 	}
 
@@ -101,7 +103,7 @@ func StopServer(ipComm IPCommunicator) error {
 
 	err := stopAndWait(ctx, ipComm)
 	if err != nil && !errs.Matches(err, &ipc.ServerDownError{}) {
-		return err
+		return errs.Wrap(err, "Cannot stop service")
 	}
 
 	return nil
