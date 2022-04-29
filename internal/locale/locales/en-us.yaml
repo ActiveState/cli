@@ -1850,7 +1850,7 @@ unstable_command_warning:
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 secrets_unstable_warning:
   other: |
-    The use of secrets is still in beta. If you want to opt-in to unstable features, run the following command:
+    The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 err_update_corrupt_install:

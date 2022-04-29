@@ -77,6 +77,7 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
 	suite.cfg, err = config.New()
+	suite.cfg.Set(constants.UnstableConfig, true)
 	suite.Require().NoError(err)
 }
 
