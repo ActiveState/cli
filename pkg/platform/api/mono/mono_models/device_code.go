@@ -30,6 +30,9 @@ type DeviceCode struct {
 	// Interval at which to poll for credentials
 	Interval int64 `json:"interval,omitempty"`
 
+	// If true tells client not to use polling.
+	Nopoll bool `json:"nopoll,omitempty"`
+
 	// Code to be enter when user opens verification_uri
 	// Required: true
 	UserCode *string `json:"user_code"`
