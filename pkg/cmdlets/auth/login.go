@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -240,9 +241,25 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
 
-	// Wait for user to complete authentication
-	if err := auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
-		return locale.WrapError(err, "err_auth_device")
+	if !response.Nopoll {
+		// Wait for user to complete authentication
+		if err := auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
+	} else {
+		// This is the non-default behavior. If Nopoll = true we fall back on prompting the user to continue. It is a
+		// failsafe we can use in case polling overloads our API.
+		var cont bool
+		var err error
+		for !cont {
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), p.BoolP(false))
+			if err != nil {
+				return errs.Wrap(err, "Prompt failed")
+			}
+		}
+		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode)); err != nil {
+			return locale.WrapError(err, "err_auth_device")
+		}
 	}
 
 	if err := auth.CreateToken(); err != nil {
