@@ -9,11 +9,11 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	promptMock "github.com/ActiveState/cli/internal/prompt/mock"
+	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -65,8 +65,8 @@ func (suite *VarPromptingExpanderTestSuite) BeforeTest(suiteName, testName strin
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
+	suite.cfg = &configMock.Mock{}
+	suite.cfg.Set(constants.UnstableConfig, true)
 }
 
 func (suite *VarPromptingExpanderTestSuite) AfterTest(suiteName, testName string) {

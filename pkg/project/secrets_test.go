@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
@@ -76,8 +76,8 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.New()
-	suite.Require().NoError(err)
+	suite.cfg = &configMock.Mock{}
+	suite.cfg.Set(constants.UnstableConfig, true)
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
