@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
+	configMock "github.com/ActiveState/cli/internal/keypairs/mock"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -76,9 +76,8 @@ func (suite *SecretsExpanderTestSuite) BeforeTest(suiteName, testName string) {
 	suite.graphMock = mock.Init()
 	suite.graphMock.ProjectByOrgAndName(mock.NoOptions)
 
-	suite.cfg, err = config.New()
+	suite.cfg = &configMock.Mock{}
 	suite.cfg.Set(constants.UnstableConfig, true)
-	suite.Require().NoError(err)
 }
 
 func (suite *SecretsExpanderTestSuite) AfterTest(suiteName, testName string) {
