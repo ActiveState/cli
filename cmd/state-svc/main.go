@@ -229,7 +229,7 @@ func runStatus(out output.Outputer) error {
 		return errs.Wrap(err, "Service cannot be reached")
 	}
 
-	logfile, err := svcctl.LocateLogFile(ipcClient)
+	logfile, err := svcctl.LogFileName(ipcClient)
 	if err != nil {
 		return errs.Wrap(err, "Service could not locate log file")
 	}
