@@ -2,10 +2,10 @@ package rtwatcher
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/shirou/gopsutil/process"
 )
@@ -28,20 +28,20 @@ func (e entry) IsRunning() (bool, error) {
 		return false, errs.Wrap(err, "Could not find process: %d", e.PID)
 	}
 
-	exe, err := proc.Exe()
+	args, err := proc.CmdlineSlice()
 	if err != nil {
-		return false, errs.Wrap(err, "Could not get executable of process: %d", e.PID)
+		return false, errs.Wrap(err, "Could not check args of process: %d", e.PID)
 	}
 
-	match, err := fileutils.PathsMatch(exe, e.Exec)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not compare paths: %s, %s", exe, e.Exec)
+	if len(args) == 0 {
+		return false, errs.New("Process args are empty: %d", e.PID)
 	}
-	if match {
+
+	if filepath.Clean(args[0]) == filepath.Clean(e.Exec) {
 		logging.Debug("Process %d matched", e.PID)
 		return true, nil
 	}
 
-	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, exe, e.Exec)
+	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, filepath.Clean(args[0]), filepath.Clean(e.Exec))
 	return false, nil
 }
