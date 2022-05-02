@@ -2,10 +2,10 @@ package rtwatcher
 
 import (
 	"errors"
-	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/shirou/gopsutil/process"
 )
@@ -37,11 +37,15 @@ func (e entry) IsRunning() (bool, error) {
 		return false, errs.New("Process args are empty: %d", e.PID)
 	}
 
-	if filepath.Clean(args[0]) == filepath.Clean(e.Exec) {
+	match, err := fileutils.PathsMatch(args[0], e.Exec)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not compare paths: %s, %s", args[0], e.Exec)
+	}
+	if match {
 		logging.Debug("Process %d matched", e.PID)
 		return true, nil
 	}
 
-	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, filepath.Clean(args[0]), filepath.Clean(e.Exec))
+	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, args[0], e.Exec)
 	return false, nil
 }
