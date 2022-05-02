@@ -90,6 +90,22 @@ func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
 	return addr, nil
 }
 
+func LocateLogFile(ipComm IPCommunicator) (string, error) {
+	comm := NewComm(ipComm)
+
+	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
+	defer cancel()
+
+	logfile, err := comm.GetLogFile(ctx)
+	if err != nil {
+		return "", errs.Wrap(err, "Log file request failed")
+	}
+
+	logging.Debug("Located log file at %s", logfile)
+
+	return logfile, nil
+}
+
 func StopServer(ipComm IPCommunicator) error {
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 	defer cancel()
