@@ -6,8 +6,22 @@ func StrP(v string) *string {
 	return &v
 }
 
+func PstrP(v *string) *string {
+	if v == nil {
+		return nil
+	}
+	return StrP(*v)
+}
+
 func IntP(v int) *int {
 	return &v
+}
+
+func PintP(v *int) *int {
+	if v == nil {
+		return nil
+	}
+	return IntP(*v)
 }
 
 func PStr(v *string) string {

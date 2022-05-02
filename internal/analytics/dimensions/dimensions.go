@@ -93,9 +93,34 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	}
 }
 
+func (v *Values) Clone() *Values {
+	return &Values{
+		Version:          p.PstrP(v.Version),
+		BranchName:       p.PstrP(v.BranchName),
+		UserID:           p.PstrP(v.UserID),
+		OSName:           p.PstrP(v.OSName),
+		OSVersion:        p.PstrP(v.OSVersion),
+		InstallSource:    p.PstrP(v.InstallSource),
+		UniqID:           p.PstrP(v.UniqID),
+		SessionToken:     p.PstrP(v.SessionToken),
+		UpdateTag:        p.PstrP(v.UpdateTag),
+		ProjectNameSpace: p.PstrP(v.ProjectNameSpace),
+		OutputType:       p.PstrP(v.OutputType),
+		ProjectID:        p.PstrP(v.ProjectID),
+		Flags:            p.PstrP(v.Flags),
+		Trigger:          p.PstrP(v.Trigger),
+		Headless:         p.PstrP(v.Headless),
+		InstanceID:       p.PstrP(v.InstanceID),
+		CommitID:         p.PstrP(v.CommitID),
+		Command:          p.PstrP(v.Command),
+		Sequence:         p.PintP(v.Sequence),
+		preProcessor:     v.preProcessor,
+	}
+}
+
 func (m *Values) Merge(mergeWith ...*Values) {
 	for _, dim := range mergeWith {
-		if err := mergo.Merge(m, dim, mergo.WithOverride); err != nil {
+		if err := mergo.Merge(m, dim, mergo.WithOverride, mergo.WithOverwriteWithEmptyValue); err != nil {
 			multilog.Critical("Could not merge dimension maps: %s", errs.JoinMessage(err))
 		}
 	}
