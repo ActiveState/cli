@@ -352,9 +352,6 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// SvcLogConfig is the config key for the state service log file
-const SvcLogConfig = "svc.log"
-
 // UnstableConfig is the config key used to determine if a command is unstable
 const UnstableConfig = "optin.unstable"
 

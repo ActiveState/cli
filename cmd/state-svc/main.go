@@ -139,7 +139,7 @@ func run(cfg *config.Instance) error {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStatus")
-				return runStatus(out, cfg)
+				return runStatus(out)
 			},
 		),
 		captain.NewCommand(
@@ -221,7 +221,7 @@ func runStop() error {
 	return nil
 }
 
-func runStatus(out output.Outputer, cfg *config.Instance) error {
+func runStatus(out output.Outputer) error {
 	ipcClient := svcctl.NewDefaultIPCClient()
 	// Don't run in background if we're already running
 	port, err := svcctl.LocateHTTP(ipcClient)
@@ -229,9 +229,14 @@ func runStatus(out output.Outputer, cfg *config.Instance) error {
 		return errs.Wrap(err, "Service cannot be reached")
 	}
 
+	logfile, err := svcctl.LocateLogFile(ipcClient)
+	if err != nil {
+		return errs.Wrap(err, "Service could not locate log file")
+	}
+
 	out.Print(fmt.Sprintf("Port: %s", port))
 	out.Print(fmt.Sprintf("Dashboard: http://127.0.0.1%s", port))
-	out.Print(fmt.Sprintf("Log: %s\n", cfg.GetString(constants.SvcLogConfig)))
+	out.Print(fmt.Sprintf("Log: %s\n", logging.FilePathFor(logfile)))
 
 	return nil
 }

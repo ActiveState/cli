@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/logging"
@@ -53,17 +51,12 @@ func (s *service) Start() error {
 	spath := svcctl.NewIPCSockPathFromGlobals()
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
-		svcctl.LogFileHandler(logging.FileName()),
+		svcctl.LogFileHandler(":" + strconv.Itoa(s.server.Port())),
 	}
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")
-	}
-
-	err = s.cfg.Set(constants.SvcLogConfig, logging.FilePathFor(logging.FileNameFor(os.Getpid())))
-	if err != nil {
-		return errs.Wrap(err, "Failed to set log file path in config")
 	}
 
 	return nil
