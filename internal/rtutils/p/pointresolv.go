@@ -24,13 +24,6 @@ func PintP(v *int) *int {
 	return IntP(*v)
 }
 
-func PInt(v *int) int {
-	if v == nil {
-		return -1
-	}
-	return *v
-}
-
 func PStr(v *string) string {
 	if v == nil {
 		return ""

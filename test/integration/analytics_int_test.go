@@ -221,7 +221,9 @@ func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []repo
 			}
 		} else {
 			if *ev.Dimensions.Sequence != 0 {
-				suite.Fail(fmt.Sprintf("Sequence should start at 0, got: %v", suite.summarizeEventSequence([]reporters.TestLogEntry{ev})))
+				suite.Fail(fmt.Sprintf("Sequence should start at 0, got: %v\nevents:\n %v",
+					suite.summarizeEventSequence([]reporters.TestLogEntry{ev}),
+					suite.summarizeEventSequence(events)))
 			}
 		}
 		seq[key] = *ev.Dimensions.Sequence
@@ -240,7 +242,7 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.T
 func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []reporters.TestLogEntry) string {
 	summary := []string{}
 	for _, event := range events {
-		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)",
+		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)\n",
 			event.Category, event.Action, event.Label,
 			*event.Dimensions.Command, (*event.Dimensions.InstanceID)[0:6], *event.Dimensions.Sequence))
 	}
@@ -325,6 +327,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
 	cp := ts.Spawn("--version")
 	cp.Expect("Version")
 	cp.ExpectExitCode(0)
@@ -336,6 +340,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.ExpectExitCode(0)
 
 	initialEvents := len(suite.parseEvents(ts))
+	initialEvents := suite.parseEvents(ts)
+	suite.assertSequentialEvents(initialEvents)
 
 	cp = ts.Spawn("--version")
 	cp.Expect("Version")
@@ -343,8 +349,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 
 	events := suite.parseEvents(ts)
 	currentEvents := len(events)
-	if currentEvents > initialEvents {
-		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-initialEvents)
+	if currentEvents > len(initialEvents) {
+		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-len(initialEvents))
 	}
 
 	suite.assertSequentialEvents(events)
