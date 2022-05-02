@@ -1,4 +1,4 @@
-package mock
+package config_test
 
 import (
 	"github.com/ActiveState/cli/internal/keypairs"

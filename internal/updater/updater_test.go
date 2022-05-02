@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	configMock "github.com/ActiveState/cli/internal/keypairs/mock"
+	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
