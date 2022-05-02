@@ -42,6 +42,6 @@ func (e entry) IsRunning() (bool, error) {
 		return true, nil
 	}
 
-	logging.Debug("Process %d not matched", e.PID)
+	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, filepath.Clean(args[0]), filepath.Clean(e.Exec))
 	return false, nil
 }

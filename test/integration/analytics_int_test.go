@@ -192,8 +192,8 @@ func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.Tes
 func (suite *AnalyticsIntegrationTestSuite) assertGtEvents(events []reporters.TestLogEntry,
 	greaterThanN int, category, action string, errMsg string) {
 	suite.Assert().Greater(suite.countEvents(events, category, action), greaterThanN,
-		"Expected more than %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
-		greaterThanN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
+		fmt.Sprintf("Expected more than %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
+			greaterThanN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg))
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []reporters.TestLogEntry) {

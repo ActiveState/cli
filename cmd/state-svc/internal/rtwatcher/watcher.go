@@ -73,8 +73,6 @@ func (w *Watcher) ticker(cb func()) {
 }
 
 func (w *Watcher) check() {
-	logging.Debug("Checking for runtime processes")
-
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
 		running, err := e.IsRunning()
