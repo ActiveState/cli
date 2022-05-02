@@ -49,6 +49,6 @@ func (c *Comm) GetHTTPAddr(ctx context.Context) (string, error) {
 	return c.req.Request(ctx, KeyHTTPAddr)
 }
 
-func (c *Comm) GetLogFile(ctx context.Context) (string, error) {
+func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 	return c.req.Request(ctx, KeyLogFile)
 }
