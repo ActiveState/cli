@@ -339,7 +339,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 
-	initialEvents := len(suite.parseEvents(ts))
 	initialEvents := suite.parseEvents(ts)
 	suite.assertSequentialEvents(initialEvents)
 
