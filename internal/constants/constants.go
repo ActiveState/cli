@@ -385,6 +385,9 @@ const StateTrayCmd = "state-tray"
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
 
+// StateUpdateDialogCmd is the name of the state update dialog binary
+const StateUpdateDialogCmd = "state-update-dialog"
+
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
