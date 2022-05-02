@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ActiveState/cli/internal/ipc"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 var (
@@ -39,7 +38,7 @@ func HTTPAddrHandler(addr string) ipc.RequestHandler {
 func LogFileHandler(logFile string) ipc.RequestHandler {
 	return func(input string) (string, bool) {
 		if input == KeyLogFile {
-			return logging.FileName(), true
+			return logFile, true
 		}
 		return "", false
 	}
