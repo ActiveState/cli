@@ -29,7 +29,7 @@ func OnCI() bool {
 }
 
 func IsLTS() bool {
-	return strings.HasPrefix(constants.BranchName, "lts-")
+	return strings.HasPrefix(constants.BranchName, "LTS")
 }
 
 func BuiltViaCI() bool {
