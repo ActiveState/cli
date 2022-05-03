@@ -3,7 +3,7 @@ package flisten
 import (
 	"errors"
 
-	"golang.org/x/sys/windows"
+	win "golang.org/x/sys/windows"
 )
 
 func asInUseError(err error) error {
@@ -15,8 +15,17 @@ func asInUseError(err error) error {
 }
 
 func asConnRefusedError(err error) error {
-	if errors.Is(err, windows.WSAECONNREFUSED) || errors.Is(err, windows.WSAENETDOWN) {
+	if errorIs(err, win.WSAECONNREFUSED, win.WSAENETDOWN) {
 		return ErrConnRefused
 	}
 	return err
+}
+
+func errorIs(err error, errs ...error) bool {
+	for _, e := range errs {
+		if errors.Is(err, e) {
+			return true
+		}
+	}
+	return false
 }
