@@ -101,7 +101,7 @@ func LogFileName(ipComm IPCommunicator) (string, error) {
 		return "", errs.Wrap(err, "Log file request failed")
 	}
 
-	logging.Debug("Log file name %s", logfile)
+	logging.Debug("Service returned log file: %s", logfile)
 
 	return logfile, nil
 }
