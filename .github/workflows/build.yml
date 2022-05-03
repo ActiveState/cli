@@ -306,13 +306,13 @@ jobs:
         with:
           payload: |
             {
-              "text": "Nightly integration test failure(s): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+              "text": "Nightly integration test failure(s) on ${{ runner.os }}: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Nightly integration test failure(s): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                    "text": "Nightly integration test failure(s) on ${{ runner.os }}: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]
