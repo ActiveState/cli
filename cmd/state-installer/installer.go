@@ -2,19 +2,20 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -120,15 +121,27 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
+	stateInfo, err := appinfo.NewInDir(binDir, appinfo.State)
+	if err != nil {
+		return locale.WrapError(err, "err_state_info")
+	}
+
+	fmt.Println("Exec:", stateInfo.Exec())
+
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), []string{"_prepare"}, []string{}); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(binDir).Exec(), []string{}); err != nil {
+		trayInfo, err := appinfo.NewInDir(binDir, appinfo.Tray)
+		if err != nil {
+			return locale.WrapError(err, "err_tray_info_dir", "", binDir)
+		}
+
+		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
 			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}

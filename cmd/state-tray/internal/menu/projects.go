@@ -5,9 +5,10 @@ import (
 	"unicode/utf8"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/getlantern/systray"
@@ -35,7 +36,7 @@ func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
 	return &LocalProjectsUpdater{menuItem, []*localProjectsMenuItem{}}
 }
 
-func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
+func (u *LocalProjectsUpdater) Update(projects []*graph.Project) error {
 	u.removeItems()
 
 	u.items = []*localProjectsMenuItem{}
@@ -54,7 +55,14 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) {
 		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}
 
-	u.startEventLoops()
+	stateApp, err := appinfo.New(appinfo.State)
+	if err != nil {
+		return locale.WrapError(err, "err_state_info")
+	}
+
+	u.startEventLoops(stateApp)
+
+	return nil
 }
 
 func trimEntry(entry string) string {
@@ -73,23 +81,23 @@ func (u *LocalProjectsUpdater) removeItems() {
 	}
 }
 
-func (u *LocalProjectsUpdater) startEventLoops() {
+func (u *LocalProjectsUpdater) startEventLoops(info *appinfo.Info) {
 	for _, item := range u.items {
-		go item.eventLoop()
+		go item.eventLoop(info)
 	}
 }
 
-func (i *localProjectsMenuItem) eventLoop() {
+func (i *localProjectsMenuItem) eventLoop(info *appinfo.Info) {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
 			if i.customCallback != nil {
 				i.customCallback()
 			} else {
-				cmd := fmt.Sprintf("%s activate %s --path %s", appinfo.StateApp().Exec(), i.namespace, i.location)
+				cmd := fmt.Sprintf("%s activate %s --path %s", info.Exec(), i.namespace, i.location)
 				ns, err := project.ParseNamespace(i.namespace)
 				if err != nil || !ns.IsValid() {
-					cmd = fmt.Sprintf("%s activate --path %s", appinfo.StateApp().Exec(), i.location)
+					cmd = fmt.Sprintf("%s activate --path %s", info.Exec(), i.location)
 				}
 				err = open.TerminalAndWait(cmd)
 				if err != nil {

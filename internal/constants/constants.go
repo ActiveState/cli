@@ -379,6 +379,9 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// InstallerName is the name we give to our state-installer executable
+const InstallerName = "State Installer"
+
 // StateTrayCmd is the name of the state tray binary
 const StateTrayCmd = "state-tray"
 

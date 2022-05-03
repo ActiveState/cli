@@ -9,10 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -42,64 +41,20 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
-	appinfo.StateApp(target).Exec()
-	stateExec := appinfo.StateApp(target).Exec()
-	suite.Contains(stateExec, target, "Ensure we're not grabbing state tool from integration test bin dir")
+	stateInfo, err := appinfo.NewInDir(target, appinfo.State)
+	suite.NoError(err)
 
-	stateExecResolved, err := fileutils.ResolvePath(stateExec)
-	suite.Require().NoError(err)
+	serviceInfo, err := appinfo.NewInDir(target, appinfo.Service)
+	suite.NoError(err)
 
-	serviceExec := appinfo.SvcApp(target).Exec()
-	fileutils.TargetExists(serviceExec)
-
-	// Verify that launched subshell has State tool on PATH
-	cp.WaitForInput()
-	cp.SendLine("state --version")
-	cp.Expect("Version")
-	cp.WaitForInput()
-
-	if runtime.GOOS == "windows" {
-		cp.SendLine("where state")
-	} else {
-		cp.SendLine("which state")
-	}
-	cp.WaitForInput()
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
-
-	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
-	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
-		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
-	}
+	fmt.Println("output:", cp.Snapshot())
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
-	suite.FileExists(appinfo.StateApp(target).Exec())
-	suite.FileExists(appinfo.SvcApp(target).Exec())
+	suite.FileExists(stateInfo.Exec())
+	suite.FileExists(serviceInfo.Exec())
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
-}
-
-func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
-	if runtime.GOOS != "windows" {
-		suite.T().Skip("Only Windows has incompatibility logic")
-	}
-	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Compatibility, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	target := filepath.Join(ts.Dirs.Work, "installation")
-
-	// Run installer with source-path flag (ie. install from this local path)
-	cp := ts.SpawnCmdWithOpts(
-		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
-		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
-	)
-
-	// Assert output
-	cp.Expect("not compatible")
-	cp.ExpectExitCode(1)
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {

@@ -11,13 +11,13 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
@@ -153,7 +153,10 @@ func run(cfg *config.Instance) (rerr error) {
 	)
 	systray.AddSeparator()
 
-	trayInfo := appinfo.TrayApp()
+	trayInfo, err := appinfo.New(appinfo.Tray)
+	if err != nil {
+		return locale.WrapError(err, "err_tray_info")
+	}
 
 	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
 	enabled, err := as.IsEnabled()
@@ -179,11 +182,21 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
+	stateApp, err := appinfo.New(appinfo.State)
+	if err != nil {
+		return locale.WrapError(err, "err_state_info")
+	}
+
+	updateAppInfo, err := appinfo.New(appinfo.Update)
+	if err != nil {
+		return locale.WrapError(err, "err_update_info")
+	}
+
 	for {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			err = open.TerminalAndWait(appinfo.StateApp().Exec() + " --version")
+			err = open.TerminalAndWait(stateApp.Exec() + " --version")
 			if err != nil {
 				multilog.Error("Could not open command prompt: %v", err)
 			}
@@ -243,9 +256,8 @@ func run(cfg *config.Instance) (rerr error) {
 			}
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
-			updlgInfo := appinfo.UpdateDialogApp()
-			if err := execute(updlgInfo.Exec(), nil); err != nil {
-				return errs.New("Could not execute: %s", updlgInfo.Name())
+			if err := execute(updateAppInfo.Exec(), nil); err != nil {
+				return errs.New("Could not execute: %s", constants.UpdateDialogName)
 			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")

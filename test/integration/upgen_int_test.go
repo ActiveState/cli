@@ -7,12 +7,11 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
@@ -30,11 +29,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	if runtime.GOOS == "windows" {
 		ext = ".zip"
 	}
-	hostArch := runtime.GOARCH
-	if runtime.GOOS == "darwin" && hostArch == "arm64" {
-		hostArch = "amd64"
-	}
-	platform := runtime.GOOS + "-" + hostArch
+	platform := runtime.GOOS + "-" + runtime.GOARCH
 
 	archivePath := filepath.Join(root, "build/update", constants.BranchName, constants.Version, platform, fmt.Sprintf("state-%s-%s%s", platform, constants.Version, ext))
 	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
@@ -57,10 +52,9 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	baseDir := filepath.Join(tempPath, constants.ToplevelInstallArchiveDir)
-	stateExec := filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt)
-
-	cp = ts.SpawnCmd(stateExec, "--version")
+	state, err := appinfo.NewInDir(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin"), appinfo.State)
+	suite.Require().NoError(err)
+	cp = ts.SpawnCmd(state.Exec(), "--version")
 	cp.Expect(constants.RevisionHashShort)
 	cp.ExpectExitCode(0)
 }

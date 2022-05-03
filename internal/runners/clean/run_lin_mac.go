@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -18,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -39,7 +39,7 @@ func (u *Uninstall) runUninstall() error {
 	if errors.Is(err, errDirNotEmpty) {
 		u.out.Notice(locale.T("uninstall_warn_not_empty", errs.JoinMessage(err)))
 	} else if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
 	}
 
 	err = removeEnvPaths(u.cfg)
@@ -93,7 +93,7 @@ func removeInstall(cfg configurable) error {
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := installmgr.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", appinfo.TrayApp().Name())
+		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
 	}
 
 	var aggErr error
@@ -164,9 +164,9 @@ func cleanInstallDir(dir string) error {
 
 		// Remove all of the state tool executables and finally the
 		// bin directory
-		filepath.Join(installation.BinDirName, appinfo.StateApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.SvcApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.TrayApp().Exec()),
+		filepath.Join(installation.BinDirName, constants.StateCmd+osutils.ExeExt),
+		filepath.Join(installation.BinDirName, constants.ServiceCommandName+osutils.ExeExt),
+		filepath.Join(installation.BinDirName, constants.StateTrayCmd+osutils.ExeExt),
 		installation.BinDirName,
 
 		// The system directory is on MacOS only and contains the tray
