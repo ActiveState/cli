@@ -227,7 +227,7 @@ jobs:
 
       - # === Deploy for Nightly Integration Tests ===
         name: Deploy for Nightly Integration Tests
-        if: github.event_name == 'schedule' || github.ref == 'refs/heads/mitchell/dx-894'
+        if: github.event_name == 'schedule' || github.ref_name == 'mitchell/dx-894'
         shell: bash
         run: |
           state run deploy-updates
@@ -279,7 +279,7 @@ jobs:
 
       - # === Nightly Integration Tests ===
         name: Nightly Integration Tests
-        if: github.event_name == 'schedule' || github.ref == 'refs/heads/mitchell/dx-894'
+        if: github.event_name == 'schedule' || github.ref_name == 'mitchell/dx-894'
         shell: bash
         run:
           export TEST_SUITE_TAGS="all"
