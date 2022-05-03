@@ -7,7 +7,7 @@ import (
 )
 
 func asInUseError(err error) error {
-	if errors.Is(err, windows.WSAEADDRINUSE) {
+	if errors.Is(err, win.WSAEADDRINUSE) {
 		return ErrInUse
 	}
 
