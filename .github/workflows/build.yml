@@ -213,8 +213,8 @@ jobs:
           echo "Labels: $LABELS"
           echo "Target Branch: $TARGET_BRANCH"
 
-          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "LTS"* ]; then
-            echo "Not running because no test labels were set nor beta or release were targeted."
+          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
+            echo "Not running because no test labels were set nor beta, release or LTS were targeted."
             exit 0
           fi
 
