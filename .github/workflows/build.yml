@@ -280,6 +280,7 @@ jobs:
 
       - # === Nightly Integration Tests ===
         name: Nightly Integration Tests
+        id: nightly_integration_tests
         #if: github.event_name == 'schedule'
         shell: bash
         run: |
@@ -289,6 +290,7 @@ jobs:
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
+        continue-on-error: true
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -296,6 +298,29 @@ jobs:
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Notify Slack of Nightly Integration Test Failures ===
+        name: Notify Slack of Nightly Integration Test Failures
+        #if: github.event_name == 'schedule' && steps.nightly_integration_tests.outcome == 'failure'
+        if: steps.nightly_integration_tests.outcome == 'failure'
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Nightly integration test failure(s): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Nightly integration test failure(s): ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
