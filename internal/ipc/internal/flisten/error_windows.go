@@ -15,7 +15,7 @@ func asInUseError(err error) error {
 }
 
 func asConnRefusedError(err error) error {
-	if errorIs(err, win.WSAECONNREFUSED, win.WSAENETDOWN) {
+	if errorIs(err, win.WSAECONNREFUSED, win.WSAENETDOWN, win.WSAEINVAL) {
 		return ErrConnRefused
 	}
 	return err
