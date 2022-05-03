@@ -281,7 +281,7 @@ jobs:
         name: Nightly Integration Tests
         #if: github.event_name == 'schedule'
         shell: bash
-        run:
+        run: |
           export TEST_SUITE_TAGS="all"
           set +e
           SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
