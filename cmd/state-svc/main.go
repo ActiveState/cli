@@ -226,9 +226,14 @@ func runStatus(out output.Outputer) error {
 		return errs.Wrap(err, "Service cannot be reached")
 	}
 
+	logfile, err := svcctl.LogFileName(ipcClient)
+	if err != nil {
+		return errs.Wrap(err, "Service could not locate log file")
+	}
+
 	out.Print(fmt.Sprintf("Port: %s", port))
 	out.Print(fmt.Sprintf("Dashboard: http://127.0.0.1%s", port))
-	//fmt.Printf("Log: %s\n", logging.FilePathFor(logging.FileNameFor(*pid)))
+	out.Print(fmt.Sprintf("Log: %s", logging.FilePathFor(logfile)))
 
 	return nil
 }
