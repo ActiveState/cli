@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -102,7 +102,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			state := appinfo.StateApp(installDir)
+			state, err := appinfo.NewInDir(installDir, appinfo.State)
+			require.NoError(suite.T(), err)
 			suite.FileExists(state.Exec())
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
@@ -203,7 +204,8 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	state := appinfo.StateApp(installDir)
+	state, err := appinfo.NewInDir(installDir, appinfo.State)
+	require.NoError(suite.T(), err)
 	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}

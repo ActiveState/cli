@@ -4,34 +4,38 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
-type executable string
+type executable int
 
 const (
-	State     = constants.StateCmd
-	Service   = constants.StateSvcCmd
-	Tray      = constants.StateTrayCmd
-	Installer = constants.StateInstallerCmd
-	Update    = constants.StateUpdateDialogCmd
+	State = iota
+	Service
+	Tray
+	Installer
+	Update
 )
 
-type appInfo struct {
-	executable string
+var appdata = map[executable]*Info{
+	State:     {cmd: constants.StateCmd, name: constants.StateAppName},
+	Service:   {cmd: constants.StateSvcCmd, name: constants.SvcAppName},
+	Tray:      {cmd: constants.StateTrayCmd, name: constants.TrayAppName},
+	Installer: {cmd: constants.StateInstallerCmd, name: constants.InstallerName},
+	Update:    {cmd: constants.StateUpdateDialogCmd, name: constants.UpdateDialogName},
 }
 
-func NewAppInfo(exec executable) (*appInfo, error) {
-	if condition.InUnitTest() {
-		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
-		rootPath := environment.GetRootPathUnsafe()
-		return &appInfo{executable: filepath.Join(rootPath, "build")}, nil
-	}
+type Info struct {
+	executable string
+	cmd        string
+	name       string
+}
 
+func New(exec executable) (*Info, error) {
 	path, err := os.Executable()
 	if err != nil {
 		multilog.Error("Could not determine executable: %v", err)
@@ -47,11 +51,26 @@ func NewAppInfo(exec executable) (*appInfo, error) {
 	}
 	path = pathEvaled
 
-	return &appInfo{
-		executable: filepath.Join(filepath.Dir(path), string(exec)),
-	}, nil
+	info := appdata[exec]
+	info.executable = filepath.Join(filepath.Dir(path), info.cmd+osutils.ExeExt)
+	return info, nil
 }
 
-func (a *appInfo) Exec() string {
+func NewInDir(baseDir string, exec executable) (*Info, error) {
+	path, err := installation.BinPathFromInstallPath(baseDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get bin path from base directory")
+	}
+
+	info := appdata[exec]
+	info.executable = filepath.Join(path, info.cmd+osutils.ExeExt)
+	return info, nil
+}
+
+func (a *Info) Exec() string {
 	return a.executable
+}
+
+func (a *Info) Name() string {
+	return a.name
 }

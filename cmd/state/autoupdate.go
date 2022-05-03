@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -88,7 +88,13 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
-	code := relaunch(args)
+
+	stateInfo, err := appinfo.New(appinfo.State)
+	if err != nil {
+		return false, locale.WrapError(err, "err_state_info")
+	}
+
+	code := relaunch(stateInfo.Exec(), args)
 	if code != 0 {
 		return true, &forwardExitError{code}
 	}
@@ -148,8 +154,8 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
-func relaunch(args []string) int {
-	code, _, err := exeutils.ExecuteAndPipeStd(appinfo.StateApp().Exec(), args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+func relaunch(exec string, args []string) int {
+	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		logging.Debug("Forwarded command after auto-updating failed. Exit code: %d", code)
 		return code

@@ -105,7 +105,10 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	// OS specific preparations
-	r.prepareOS()
+	err := r.prepareOS()
+	if err != nil {
+		return errs.Wrap(err, "Could not prepare OS")
+	}
 
 	if err := updateConfigKey(r.cfg, oldGlobalDefaultPrefname, constants.GlobalDefaultPrefname); err != nil {
 		r.reportError(locale.Tl("err_prepare_config", "Could not update stale config keys, error recieved: {{.V0}}", errs.JoinMessage(err)), err)

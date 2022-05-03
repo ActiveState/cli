@@ -1,10 +1,10 @@
 package clean
 
 import (
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -15,8 +15,15 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 	cleanForceTip := locale.Tl("clean_force_tip", "You can re-run the command with the [ACTIONABLE]--force[/RESET] flag.")
 
 	// On Windows we need to halt the state tray and the state service before we can remove them
-	svcInfo := appinfo.SvcApp()
-	trayInfo := appinfo.TrayApp()
+	svcInfo, err := appinfo.New(appinfo.Service)
+	if err != nil {
+		return locale.WrapError(err, "err_service_info")
+	}
+
+	trayInfo, err := appinfo.New(appinfo.Tray)
+	if err != nil {
+		return locale.WrapError(err, "err_tray_info")
+	}
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now

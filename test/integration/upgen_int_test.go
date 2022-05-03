@@ -9,9 +9,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
@@ -52,7 +52,8 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	state := appinfo.StateApp(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin"))
+	state, err := appinfo.NewInDir(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin"), appinfo.State)
+	suite.Require().NoError(err)
 	cp = ts.SpawnCmd(state.Exec(), "--version")
 	cp.Expect(constants.RevisionHashShort)
 	cp.ExpectExitCode(0)

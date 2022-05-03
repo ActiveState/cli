@@ -14,12 +14,12 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -145,8 +145,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
+	svcInfo, err := appinfo.New(appinfo.Service)
+	if err != nil {
+		return errs.Wrap(err, "Could not get service info")
+	}
+
 	ipcClient := svcctl.NewDefaultIPCClient()
-	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcInfo.Exec())
 	if err != nil {
 		return locale.WrapError(err, "start_svc_failed", "Failed to start state-svc at state tool invocation")
 	}

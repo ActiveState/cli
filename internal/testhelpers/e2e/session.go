@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -19,10 +20,10 @@ import (
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -139,10 +140,14 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo := appinfo.StateApp(buildDir)
-	svcInfo := appinfo.SvcApp(buildDir)
-	trayInfo := appinfo.TrayApp(buildDir)
-	installInfo := appinfo.InstallerApp(buildDir)
+	stateInfo, err := appinfo.NewInDir(buildDir, appinfo.State)
+	assert.NoError(t, err)
+	svcInfo, err := appinfo.NewInDir(buildDir, appinfo.Service)
+	assert.NoError(t, err)
+	trayInfo, err := appinfo.NewInDir(buildDir, appinfo.Tray)
+	assert.NoError(t, err)
+	installInfo, err := appinfo.NewInDir(buildDir, appinfo.Installer)
+	assert.NoError(t, err)
 
 	if !fileutils.FileExists(stateInfo.Exec()) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")

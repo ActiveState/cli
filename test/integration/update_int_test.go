@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -125,7 +125,8 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	suite.Require().NoError(err)
 	defer cfg.Close()
 
-	stateExe := appinfo.StateApp(baseDir)
+	stateExe, err := appinfo.NewInDir(baseDir, appinfo.State)
+	suite.Require().NoError(err)
 
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("update"),
@@ -259,7 +260,8 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
-	stateExe := appinfo.StateApp(baseDir)
+	stateExe, err := appinfo.NewInDir(baseDir, appinfo.State)
+	suite.Require().NoError(err)
 
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
@@ -300,7 +302,10 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 	}
 	cp.Expect("Installation Complete", time.Second*30)
 
-	suite.FileExists(appinfo.StateApp(dir).Exec())
+	stateInfo, err := appinfo.NewInDir(dir, appinfo.State)
+	suite.Require().NoError(err)
+
+	suite.FileExists(stateInfo.Exec())
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {

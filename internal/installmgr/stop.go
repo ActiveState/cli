@@ -6,12 +6,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -41,7 +41,10 @@ func StopRunning(installPath string) (rerr error) {
 }
 
 func stopTray(installPath string, cfg *config.Instance) error {
-	trayInfo := appinfo.TrayApp(installPath)
+	trayInfo, err := appinfo.New(appinfo.Tray)
+	if err != nil {
+		return locale.WrapError(err, "err_tray_info")
+	}
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
@@ -52,7 +55,10 @@ func stopTray(installPath string, cfg *config.Instance) error {
 }
 
 func stopSvc(installPath string) error {
-	svcInfo := appinfo.SvcApp(installPath)
+	svcInfo, err := appinfo.NewInDir(installPath, appinfo.Service)
+	if err != nil {
+		return locale.WrapError(err, "err_service_info_dir", "", installPath)
+	}
 
 	if fileutils.FileExists(svcInfo.Exec()) {
 		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)

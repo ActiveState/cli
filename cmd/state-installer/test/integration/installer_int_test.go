@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -8,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -40,9 +41,17 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
+	stateInfo, err := appinfo.NewInDir(target, appinfo.State)
+	suite.NoError(err)
+
+	serviceInfo, err := appinfo.NewInDir(target, appinfo.Service)
+	suite.NoError(err)
+
+	fmt.Println("output:", cp.Snapshot())
+
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
-	suite.FileExists(appinfo.StateApp(target).Exec())
-	suite.FileExists(appinfo.SvcApp(target).Exec())
+	suite.FileExists(stateInfo.Exec())
+	suite.FileExists(serviceInfo.Exec())
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
