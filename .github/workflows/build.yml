@@ -14,6 +14,9 @@ name: Build-Test-Deploy
       - opened
       - synchronize
       - reopened
+  schedule:
+    - cron: 0 0 * * *
+  workflow_dispatch:
 
 # === JOBS ===
 jobs:
@@ -202,7 +205,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: github.ref != 'refs/heads/release'
+        if: github.ref != 'refs/heads/release' && github.ref != 'refs/heads/master'
         shell: bash
         run: |
           set +e
@@ -224,9 +227,20 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - # === Deploy for Nightly Integration Tests ===
+        name: Deploy for Nightly Integration Tests
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          state run deploy-updates
+          state run deploy-installers
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
       - # === Integration Tests ===
         name: Integration Tests
-        if: github.ref != 'refs/heads/release'
+        if: github.ref != 'refs/heads/release' && github.ref != 'refs/heads/master'
         shell: bash
         run: |
           LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
@@ -249,9 +263,28 @@ jobs:
             exit 0
           fi
 
-          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
+          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+          set +e
+          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          CODE=$?
+          cat build/integration-tests.out | gotestfmt
+          exit $CODE
+        env:
+          INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
+          INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
+          INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
+          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Nightly Integration Tests ===
+        name: Nightly Integration Tests
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run:
+          export TEST_SUITE_TAGS="all"
           set +e
           SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?
