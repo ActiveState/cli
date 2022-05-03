@@ -414,7 +414,7 @@ flag_state_run_list_description:
 error_state_run_undefined_name:
   other: The script name must be provided
 error_state_run_unknown_name:
-  other: The script '[NOTICE]{{.V0}}[/RESET]' is not defined in activestate.yaml.
+  other: "[ERROR]The script [/RESET]'[NOTICE]{{.V0}}[/RESET]' [ERROR]is not defined in activestate.yaml.[/RESET]"
 error_state_run_activate:
   other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
@@ -1108,6 +1108,10 @@ commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
 err_cannot_remove_existing:
   other: "The already configured packages were not able to be overwritten"
+commit_failed_push_tip:
+  other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
+commit_failed_pull_tip:
+  other: Ensure any remote changes have been pulled in by running [ACTIONABLE]state pull[/RESET]. Then try running your command again.
 err_branch_not_bare:
   other: Branch is not bare and is unable to be initialized as such
 err_package_added:
@@ -1652,6 +1656,10 @@ err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
   other: Could not add state protocol
+err_preparestart_shortcut:
+  other: Could not create shortcut for {{.V0}}
+err_preparestart_icon:
+  other: Could not set icon for shortcut file {{.V0}}
 confirm:
   other: Please Confirm
 err_no_project:
@@ -1701,8 +1709,6 @@ err_refresh_runtime:
   other: "Failed to update runtime"
 browser_fallback:
   other: "Could not open {{.V0}} in your browser.\nYou can copy and paste the following URL manually in the address line of your browser:\n[NOTICE]{{.V1}}[/RESET]"
-err_svcmanager_wait:
-  other: "Timed out waiting for state-svc to start. Are you running software that could prevent State Tool from running local processes / servers?"
 err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
@@ -1738,7 +1744,7 @@ err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
 solver_err:
-  other: The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}
+  other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -1759,7 +1765,8 @@ update_permission_err:
     Error received: {{.V1}}
 err_update_in_progress:
   other: |
-    A State Tool update appears to already be running.
+    A State Tool update already appears to be running.
+    Please close any open shells, open a new one, and then try this command again.
     If this issue persists please manually delete [ACTIONABLE]{{.V0}}[/RESET].
 auto_update_to_version:
   other: Updating State Tool from [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].
@@ -1839,11 +1846,16 @@ unstable_command_warning:
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
+secrets_unstable_warning:
+  other: |
+    The secrets feature is currently unstable and not ready for production use. If you want to opt-in to unstable features, run the following command:
+
+    [ACTIONABLE]state config set optin.unstable true[/RESET]
 err_update_corrupt_install:
   other: |
     Unfortunately your current installation appears to have been corrupted. Please reinstall the State Tool by first
     uninstalling it and then running the installation process again.
-    
+
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
@@ -1864,3 +1876,8 @@ err_uninstall_privilege_mismatch:
   other: "The State Tool was installed as administrator. To uninstall please run [ACTIONABLE]state clean uninstall[/RESET] as administrator."
 err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
+uninstall_warn_not_empty:
+  other: |
+    [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
+    The directory may contain unrecognized files.
+    Encountered error: {{.V0}}

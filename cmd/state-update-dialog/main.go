@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -46,8 +45,8 @@ func main() {
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
 	rollbar.SetupRollbar(constants.StateTrayRollbarToken) // We're using the state tray project cause it's closely related
+	rollbar.SetConfig(cfg)
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
@@ -68,9 +67,6 @@ func run(cfg *config.Instance) (rerr error) {
 		return errs.Wrap(err, "Could not initialize config")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
-
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
 
 	a := NewApp(cfg)
 	if err := a.Start(); err != nil {

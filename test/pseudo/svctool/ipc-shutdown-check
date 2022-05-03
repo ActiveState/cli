@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+for ((i = 0; i < 100; i++)); do
+  state-svc foreground &> /dev/null &
+  sleep 1
+  out=$(state-svc stop 2>&1)
+  echo "${out}" | grep "connection reset" > /dev/null && echo "ouch" && echo exit 1
+done

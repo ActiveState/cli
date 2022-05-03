@@ -77,21 +77,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -110,6 +110,7 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
+	to = filepath.Join(to, filepath.Base(from))
 	if fileutils.TargetExists(to) {
 		return to
 	}
@@ -130,7 +131,7 @@ func (s *Session) CopyExeToDir(from, to string) string {
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
-	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
+	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
@@ -196,9 +197,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	session.InstallerExe = session.CopyExeToDir(installExe, dirs.base)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
 
-	err = fileutils.Touch(filepath.Join(dirs.base, installation.InstallDirMarker))
+	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
 
 	return session

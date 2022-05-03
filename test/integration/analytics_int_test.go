@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
-	events := suite.parseEvents()
+	events := suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
@@ -73,7 +74,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
 
-	events = suite.parseEvents()
+	events = suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
@@ -84,7 +85,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond))
 
-	events = suite.parseEvents()
+	events = suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
 
 	// Ensure any analytics events from the state tool have the instance ID set
@@ -97,6 +98,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
 	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+
+	suite.assertSequentialEvents(events)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestLogEntry, category, action string) int {
@@ -111,6 +114,34 @@ func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.Tes
 		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s", expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events))
 }
 
+func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []reporters.TestLogEntry) {
+	seq := map[string]int{}
+
+	// Since sequence is established client-side and then reported async it's possible that the sequence does not match the
+	// slice ordering of events
+	sort.Slice(events, func(i, j int) bool {
+		return *events[i].Dimensions.Sequence < *events[j].Dimensions.Sequence
+	})
+
+	for i, ev := range events {
+		// Sequence is per instance ID
+		key := (*ev.Dimensions.InstanceID)[0:6]
+		if v, ok := seq[key]; ok {
+			if (v + 1) != *ev.Dimensions.Sequence {
+				suite.Failf(fmt.Sprintf("Events are not sequential, expected %d but got %d", v+1, *ev.Dimensions.Sequence),
+					suite.summarizeEventSequence([]reporters.TestLogEntry{
+						events[i-1], ev,
+					}))
+			}
+		} else {
+			if *ev.Dimensions.Sequence != 0 {
+				suite.Fail("Sequence should start at 0, got: %v", suite.summarizeEventSequence([]reporters.TestLogEntry{ev}))
+			}
+		}
+		seq[key] = *ev.Dimensions.Sequence
+	}
+}
+
 func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.TestLogEntry) string {
 	summary := []string{}
 	for _, event := range events {
@@ -119,7 +150,23 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.T
 	return strings.Join(summary, "\n")
 }
 
-func (suite *AnalyticsIntegrationTestSuite) parseEvents() []reporters.TestLogEntry {
+func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []reporters.TestLogEntry) string {
+	summary := []string{}
+	for _, event := range events {
+		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)",
+			event.Category, event.Action, event.Label,
+			*event.Dimensions.Command, (*event.Dimensions.InstanceID)[0:6], *event.Dimensions.Sequence))
+	}
+	return strings.Join(summary, "\n")
+}
+
+func (suite *AnalyticsIntegrationTestSuite) parseEvents(s *e2e.Session) []reporters.TestLogEntry {
+	// Stop svc to ensure all events are sent
+	cp := s.SpawnCmd(s.SvcExe, "stop")
+	cp.ExpectExitCode(0)
+
+	time.Sleep(time.Second) // give svc time to process events
+
 	suite.Require().FileExists(suite.eventsfile)
 
 	b, err := fileutils.ReadFile(suite.eventsfile)
@@ -174,7 +221,7 @@ scripts:
 	cp.Wait()
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
-	events := suite.parseEvents()
+	events := suite.parseEvents(ts)
 
 	var found int
 	for _, event := range events {
@@ -190,7 +237,7 @@ scripts:
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestSend() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
+	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -201,22 +248,48 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
-	cp = ts.Spawn("config", "set", constants.ReportAnalayticsConfig, "false")
+	cp = ts.Spawn("config", "set", constants.ReportAnalyticsConfig, "false")
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 
-	fmt.Println("Initial events:", suite.parseEvents())
-	initialEvents := len(suite.parseEvents())
+	initialEvents := len(suite.parseEvents(ts))
 
 	cp = ts.Spawn("--version")
 	cp.Expect("Version")
 	cp.ExpectExitCode(0)
 
-	fmt.Println("Current events:", suite.parseEvents())
-	currentEvents := len(suite.parseEvents())
-	if len(suite.parseEvents()) > initialEvents {
+	events := suite.parseEvents(ts)
+	currentEvents := len(events)
+	if currentEvents > initialEvents {
 		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-initialEvents)
 	}
+
+	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.Spawn("--version")
+	cp.Expect("Version")
+	cp.ExpectExitCode(0)
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := suite.parseEvents(ts)
+	suite.assertSequentialEvents(events)
+
+	found := false
+	for _, ev := range events {
+		if ev.Category == "run-command" && ev.Action == "" && ev.Label == "--version" {
+			found = true
+			break
+		}
+	}
+
+	suite.True(found, "Should have run-command event with flags, actual: %s", suite.summarizeEvents(events))
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

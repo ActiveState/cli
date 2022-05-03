@@ -31,6 +31,9 @@ type CurrentUser struct {
 	// is superuser
 	IsSuperuser bool `json:"is_superuser,omitempty"`
 
+	// is superuser readonly
+	IsSuperuserReadonly bool `json:"is_superuser_readonly,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

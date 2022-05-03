@@ -61,7 +61,7 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
 
-	// Todo: https://www.pivotaltracker.com/story/show/178205825
+	// TODO: https://activestatef.atlassian.net/browse/DX-866
 	if u.AvailableUpdate.Version == "" {
 		return nil, nil
 	}
@@ -92,6 +92,34 @@ func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string,
 	u := graph.RuntimeUsageResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return errs.Wrap(err, "Error sending runtime usage event via state-svc")
+	}
+
+	return nil
+}
+
+func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	defer profile.Measure("svc:CheckDeprecation", time.Now())
+
+	r := request.NewDeprecationRequest()
+	u := graph.DeprecationInfo{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error sending deprecation request")
+	}
+
+	// TODO: https://activestatef.atlassian.net/browse/DX-866
+	if u.Date == "" {
+		return nil, nil
+	}
+	return &u, nil
+}
+
+func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
+	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+
+	r := request.NewConfigChanged(key)
+	u := graph.ConfigChangedResponse{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error sending configchanged event via state-svc")
 	}
 
 	return nil

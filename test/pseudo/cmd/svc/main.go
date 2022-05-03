@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"path"
-	"sync"
 	"syscall"
 	"time"
 
@@ -24,12 +23,26 @@ type namedClose struct {
 	io.Closer
 }
 
+type gracefulShutdowner interface {
+	Shutdown()
+	Wait() error
+}
+
+type gracefulShutdownerWrap struct {
+	gracefulShutdowner
+}
+
+func (s gracefulShutdownerWrap) Close() error {
+	s.gracefulShutdowner.Shutdown()
+
+	return s.gracefulShutdowner.Wait()
+}
+
 func main() {
-	if err := run(); err != nil {
+	if exitCode, err := run(); err != nil {
 		cmd := path.Base(os.Args[0])
 		fmt.Fprintf(os.Stderr, "%s: %s\n", cmd, err)
 
-		exitCode := 1
 		if errors.Is(err, ipc.ErrInUse) {
 			exitCode = 7
 		}
@@ -37,7 +50,7 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (int, error) {
 	var (
 		channel = "default"
 		svcName = "svc"
@@ -48,10 +61,13 @@ func run() error {
 	flag.StringVar(&channel, "c", channel, "channel name")
 	flag.Parse()
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	httpSrv := serve.New()
 	addr, err := httpSrv.Run()
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	spath := intsvcctl.NewIPCSockPath()
@@ -59,75 +75,43 @@ func run() error {
 	reqHandlers := []ipc.RequestHandler{
 		svcctl.HTTPAddrHandler(addr),
 	}
-	ipcSrv := ipc.NewServer(spath, reqHandlers...)
+	ipcSrv := ipc.NewServer(ctx, spath, reqHandlers...)
 	ipcClient := ipc.NewClient(spath)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	if err := ipcSrv.Start(); err != nil {
+		return 2, err
+	}
 
 	errs := make(chan error)
 
 	callOnSysSigs(ctx, svcName, cancel)
 	callWhenNotVerified(ctx, errs, svcName, addr, ipcClient, cancel)
-	shutDownOnDone(
+
+	return closeOnCancel(
 		ctx,
 		svcName,
-		namedClose{"ipc", ipcSrv},
 		namedClose{"http", httpSrv},
+		namedClose{"ipc", gracefulShutdownerWrap{ipcSrv}},
 	)
-
-	go func() {
-		defer close(errs)
-
-		var wg sync.WaitGroup
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			defer cancel()
-
-			if err = ipcSrv.Start(); err != nil {
-				errs <- err
-			}
-		}()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			if err = httpSrv.Wait(); err != nil {
-				errs <- err
-			}
-		}()
-
-		fmt.Printf("%s: waiting\n", svcName)
-		wg.Wait()
-	}()
-
-	var reportErr error
-	for err := range errs {
-		if reportErr == nil {
-			cancel()
-			reportErr = err
-		}
-
-		fmt.Fprintf(os.Stderr, "%s (outputing all): %s\n", svcName, err)
-	}
-
-	return reportErr
 }
 
-func shutDownOnDone(ctx context.Context, svcName string, ncs ...namedClose) {
-	go func() {
-		<-ctx.Done()
+func closeOnCancel(ctx context.Context, svcName string, ncs ...namedClose) (int, error) {
+	<-ctx.Done()
 
-		for _, nc := range ncs {
-			fmt.Printf("%s: closing %s\n", svcName, nc.name)
-			if err := nc.Close(); err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
+	var exitCode int
+	var retErr error
+
+	for _, nc := range ncs {
+		fmt.Printf("%s: closing %s\n", svcName, nc.name)
+		if err := nc.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", svcName, err)
+			if retErr != nil {
+				exitCode = 3
+				retErr = err
 			}
 		}
-	}()
+	}
+
+	return exitCode, retErr
 }
 
 func callOnSysSigs(ctx context.Context, svcName string, fn func()) {

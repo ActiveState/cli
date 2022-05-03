@@ -51,19 +51,19 @@ func NewGetIngredientVersionOK() *GetIngredientVersionOK {
 The retrieved ingredient version
 */
 type GetIngredientVersionOK struct {
-	Payload *inventory_models.IngredientVersionRevision
+	Payload *inventory_models.FullIngredientVersion
 }
 
 func (o *GetIngredientVersionOK) Error() string {
 	return fmt.Sprintf("[GET /v1/ingredients/{ingredient_id}/versions/{ingredient_version_id}][%d] getIngredientVersionOK  %+v", 200, o.Payload)
 }
-func (o *GetIngredientVersionOK) GetPayload() *inventory_models.IngredientVersionRevision {
+func (o *GetIngredientVersionOK) GetPayload() *inventory_models.FullIngredientVersion {
 	return o.Payload
 }
 
 func (o *GetIngredientVersionOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(inventory_models.IngredientVersionRevision)
+	o.Payload = new(inventory_models.FullIngredientVersion)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

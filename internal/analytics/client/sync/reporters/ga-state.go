@@ -73,15 +73,15 @@ func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Valu
 func legacyDimensionMap(d *dimensions.Values) map[string]string {
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
-		// "1": "hostname (deprected)"
-		"2":  p.PStr(d.Version),
-		"3":  p.PStr(d.BranchName),
-		"4":  p.PStr(d.UserID),
-		"5":  p.PStr(d.OutputType),
-		"6":  p.PStr(d.OSName),
-		"7":  p.PStr(d.OSVersion),
-		"8":  p.PStr(d.InstallSource),
-		"9":  p.PStr(d.MachineID),
+		// "1": "hostname (deprecated)"
+		"2": p.PStr(d.Version),
+		"3": p.PStr(d.BranchName),
+		"4": p.PStr(d.UserID),
+		"5": p.PStr(d.OutputType),
+		"6": p.PStr(d.OSName),
+		"7": p.PStr(d.OSVersion),
+		"8": p.PStr(d.InstallSource),
+		// "9":  "machineID (deprecated in favor of uniqID)"
 		"10": p.PStr(d.ProjectNameSpace),
 		"11": p.PStr(d.SessionToken),
 		"12": p.PStr(d.UniqID),

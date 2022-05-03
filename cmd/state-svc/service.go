@@ -13,25 +13,27 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
 type service struct {
-	cfg      *config.Instance
-	an       *anaSvc.Client
-	shutdown context.CancelFunc
-	server   *server.Server
-	ipcSrv   *ipc.Server
+	ctx    context.Context
+	cfg    *config.Instance
+	an     *anaSvc.Client
+	auth   *authentication.Auth
+	server *server.Server
+	ipcSrv *ipc.Server
 }
 
-func NewService(cfg *config.Instance, an *anaSvc.Client, shutdown context.CancelFunc) *service {
-	return &service{cfg: cfg, an: an, shutdown: shutdown}
+func NewService(ctx context.Context, cfg *config.Instance, an *anaSvc.Client, auth *authentication.Auth) *service {
+	return &service{ctx: ctx, cfg: cfg, an: an, auth: auth}
 }
 
 func (s *service) Start() error {
 	logging.Debug("service:Start")
 
 	var err error
-	s.server, err = server.New(s.cfg, s.an, s.shutdown)
+	s.server, err = server.New(s.cfg, s.an, s.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not create server")
 	}
@@ -45,13 +47,12 @@ func (s *service) Start() error {
 			}
 		}
 	}()
-	defer s.shutdown()
 
 	spath := svcctl.NewIPCSockPathFromGlobals()
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
 	}
-	s.ipcSrv = ipc.NewServer(spath, reqHandlers...)
+	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
 		return errs.Wrap(err, "Failed to start server")
@@ -69,13 +70,14 @@ func (s *service) Stop() error {
 		return errs.Wrap(err, "Failed to stop server")
 	}
 
-	if err := s.ipcSrv.Close(); err != nil {
-		return errs.Wrap(err, "Failed to stop ipc server")
-	}
+	s.ipcSrv.Shutdown()
 
 	return nil
 }
 
-func (s *service) Wait() {
-	_ = s.ipcSrv.Wait()
+func (s *service) Wait() error {
+	if err := s.ipcSrv.Wait(); err != nil {
+		return errs.Wrap(err, "IPC server operating failure")
+	}
+	return nil
 }

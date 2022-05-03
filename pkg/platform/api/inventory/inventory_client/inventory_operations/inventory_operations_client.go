@@ -172,6 +172,8 @@ type ClientService interface {
 
 	GetKernels(params *GetKernelsParams, opts ...ClientOption) (*GetKernelsOK, error)
 
+	GetLatestTimestamp(params *GetLatestTimestampParams, opts ...ClientOption) (*GetLatestTimestampOK, error)
+
 	GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcOK, error)
 
 	GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOption) (*GetLibcVersionOK, error)
@@ -2951,6 +2953,43 @@ func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*Ge
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetKernelsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetLatestTimestamp Retrieve the latest timestamp to use for solve requests
+*/
+func (a *Client) GetLatestTimestamp(params *GetLatestTimestampParams, opts ...ClientOption) (*GetLatestTimestampOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetLatestTimestampParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getLatestTimestamp",
+		Method:             "GET",
+		PathPattern:        "/v1/latest-timestamp",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &GetLatestTimestampReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetLatestTimestampOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetLatestTimestampDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

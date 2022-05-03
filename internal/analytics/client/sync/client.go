@@ -3,6 +3,7 @@ package sync
 import (
 	"os"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -14,9 +15,11 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
@@ -39,6 +42,8 @@ type Client struct {
 	eventWaitGroup   *sync.WaitGroup
 	sendReports      bool
 	reporters        []Reporter
+	sequence         int
+	auth             *authentication.Auth
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -48,6 +53,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
+		auth:           auth,
 	}
 
 	installSource, err := storage.InstallSource()
@@ -55,10 +61,6 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
 	}
 
-	machineID := machineid.UniqID()
-	if machineID == machineid.UnknownID || machineID == machineid.FallbackID {
-		multilog.Error("unknown machine id: %s", machineID)
-	}
 	deviceID := uniqid.Text()
 
 	osName := sysinfo.OS().String()
@@ -83,9 +85,8 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		a.cfg = cfg
 	}
 
-	if a.cfg.IsSet(constants.ReportAnalayticsConfig) && !a.cfg.GetBool(constants.ReportAnalayticsConfig) {
-		a.sendReports = false
-	}
+	a.readConfig()
+	configMediator.AddListener(constants.ReportAnalyticsConfig, a.readConfig)
 
 	userID := ""
 	if auth != nil && auth.UserID() != nil {
@@ -98,12 +99,14 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		OSName:        p.StrP(osName),
 		OSVersion:     p.StrP(osVersion),
 		InstallSource: p.StrP(installSource),
-		MachineID:     p.StrP(machineID),
 		UniqID:        p.StrP(deviceID),
 		SessionToken:  p.StrP(sessionToken),
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
 		Flags:         p.StrP(dimensions.CalculateFlags()),
+		InstanceID:    p.StrP(instanceid.ID()),
+		Command:       p.StrP(osutils.ExecutableName()),
+		Sequence:      p.IntP(0),
 	}
 
 	a.customDimensions = customDimensions
@@ -120,6 +123,13 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	}
 
 	return a
+}
+
+func (a *Client) readConfig() {
+	doNotReport := (!a.cfg.Closed() && a.cfg.IsSet(constants.ReportAnalyticsConfig) && !a.cfg.GetBool(constants.ReportAnalyticsConfig)) ||
+		strings.ToLower(os.Getenv(constants.DisableAnalyticsEnvVarName)) == "true"
+	a.sendReports = !doNotReport
+	logging.Debug("Sending Google Analytics reports? %v", a.sendReports)
 }
 
 func (a *Client) NewReporter(rep Reporter) {
@@ -150,6 +160,15 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 	a.EventWithLabel(category, action, "", dims...)
 }
 
+func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
+	_actualDims := *target
+	actualDims := &_actualDims
+	for _, dim := range dims {
+		actualDims.Merge(dim)
+	}
+	return actualDims
+}
+
 func (a *Client) EventWithLabel(category string, action, label string, dims ...*dimensions.Values) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
@@ -162,11 +181,14 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 		return
 	}
 
-	_actualDims := *a.customDimensions
-	actualDims := &_actualDims
-	for _, dim := range dims {
-		actualDims.Merge(dim)
+	if a.auth != nil && a.auth.UserID() != nil {
+		a.customDimensions.UserID = p.StrP(string(*a.auth.UserID()))
 	}
+
+	a.customDimensions.Sequence = p.IntP(a.sequence)
+	a.sequence++
+
+	actualDims := mergeDimensions(a.customDimensions, dims...)
 
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
@@ -190,5 +212,6 @@ func handlePanics(err interface{}, stack []byte) {
 }
 
 func (a *Client) Close() {
+	a.Wait()
 	a.sendReports = false
 }

@@ -17,6 +17,9 @@ import (
 // swagger:model TokenEditable
 type TokenEditable struct {
 
+	// device ID
+	DeviceID string `json:"deviceID,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 }

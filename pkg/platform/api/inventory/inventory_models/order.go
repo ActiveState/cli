@@ -47,7 +47,7 @@ type Order struct {
 	Requirements []*OrderRequirement `json:"requirements"`
 
 	// The version of the solver to use to solve this order. If not specified, the solver version will be selected automatically.
-	// Maximum: 1
+	// Maximum: 2
 	// Minimum: 0
 	SolverVersion *int64 `json:"solver_version,omitempty"`
 
@@ -189,7 +189,7 @@ func (m *Order) validateSolverVersion(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.MaximumInt("solver_version", "body", *m.SolverVersion, 1, false); err != nil {
+	if err := validate.MaximumInt("solver_version", "body", *m.SolverVersion, 2, false); err != nil {
 		return err
 	}
 

@@ -19,6 +19,10 @@ import (
 // swagger:model InvoiceInfo
 type InvoiceInfo struct {
 
+	// active runtimes
+	// Required: true
+	ActiveRuntimes *int64 `json:"activeRuntimes"`
+
 	// billing address
 	// Required: true
 	BillingAddress *AddressInfo `json:"billingAddress"`
@@ -38,15 +42,15 @@ type InvoiceInfo struct {
 	// tier name
 	// Required: true
 	TierName *string `json:"tierName"`
-
-	// users
-	// Required: true
-	Users *int64 `json:"users"`
 }
 
 // Validate validates this invoice info
 func (m *InvoiceInfo) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateActiveRuntimes(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateBillingAddress(formats); err != nil {
 		res = append(res, err)
@@ -68,13 +72,18 @@ func (m *InvoiceInfo) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateUsers(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *InvoiceInfo) validateActiveRuntimes(formats strfmt.Registry) error {
+
+	if err := validate.Required("activeRuntimes", "body", m.ActiveRuntimes); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -135,15 +144,6 @@ func (m *InvoiceInfo) validateStripeToken(formats strfmt.Registry) error {
 func (m *InvoiceInfo) validateTierName(formats strfmt.Registry) error {
 
 	if err := validate.Required("tierName", "body", m.TierName); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *InvoiceInfo) validateUsers(formats strfmt.Registry) error {
-
-	if err := validate.Required("users", "body", m.Users); err != nil {
 		return err
 	}
 
