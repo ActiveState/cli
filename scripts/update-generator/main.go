@@ -15,19 +15,20 @@ import (
 	"github.com/ActiveState/archiver"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
 var exit = os.Exit
 
 var outputDirFlag, platformFlag, branchFlag, versionFlag *string
-var latestFlag *bool
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] [--latest] <directory>")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <directory>")
 }
 
 func main() {
@@ -46,7 +47,6 @@ func init() {
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
 	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
 	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
-	latestFlag = flag.Bool("latest", false, "This update should be the latest for the given branch.")
 }
 
 func fetchPlatform() string {
@@ -100,19 +100,39 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
 
-	infoPath := filepath.Join(outputPath, relVersionedPath, "info.json")
+	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
 	err = ioutil.WriteFile(infoPath, b, 0755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}
 
-	if latestFlag != nil && *latestFlag {
-		fmt.Printf("Generating info.json for latest: %s\n", infoPath)
-		err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relChannelPath, filepath.Base(infoPath)))
-		if err != nil {
-			return errs.Wrap(err, "Could not copy info.json file")
-		}
+	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
+	if err != nil {
+		return errs.Wrap(err, "Could not copy info.json file")
+	}
+
+	return nil
+}
+
+func createInstaller(outputPath, channel, platform string) error {
+	root := environment.GetRootPathUnsafe()
+	installer := filepath.Join(root, "build", "state-installer"+osutils.ExeExt)
+	if !fileutils.FileExists(installer) {
+		return errs.New("state-installer does not exist in build dir")
+	}
+
+	archive, archiveExt := archiveMeta()
+	relArchivePath := filepath.Join(channel, platform, "state-installer"+archiveExt)
+	archivePath := filepath.Join(outputPath, relArchivePath)
+
+	// Remove archive path if it already exists
+	_ = os.Remove(archivePath)
+	// Create main archive
+	fmt.Printf("Creating %s\n", archivePath)
+	err := archive.Archive([]string{installer}, archivePath)
+	if err != nil {
+		return errs.Wrap(err, "Archiving failed")
 	}
 
 	return nil
@@ -141,6 +161,10 @@ func run() error {
 	os.MkdirAll(outputDir, 0755)
 
 	if err := createUpdate(outputDir, branch, version, platform, target); err != nil {
+		return err
+	}
+
+	if err := createInstaller(outputDir, branch, platform); err != nil {
 		return err
 	}
 
