@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -41,13 +40,11 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
-	stateInfo, err := appinfo.NewInDir(target, appinfo.State)
+	stateInfo, err := appinfo.NewInDir(filepath.Join(target, "bin"), appinfo.State)
 	suite.NoError(err)
 
-	serviceInfo, err := appinfo.NewInDir(target, appinfo.Service)
+	serviceInfo, err := appinfo.NewInDir(filepath.Join(target, "bin"), appinfo.Service)
 	suite.NoError(err)
-
-	fmt.Println("output:", cp.Snapshot())
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(stateInfo.Exec())

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
@@ -64,6 +65,12 @@ func NewInDir(baseDir string, exec executable) (*Info, error) {
 
 	info := appdata[exec]
 	info.executable = filepath.Join(path, info.cmd+osutils.ExeExt)
+
+	// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
+	if condition.InTest() {
+		info.executable = filepath.Join(baseDir, info.cmd+osutils.ExeExt)
+	}
+
 	return info, nil
 }
 
