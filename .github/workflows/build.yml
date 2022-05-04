@@ -285,12 +285,12 @@ jobs:
         name: Nightly Integration Tests
         id: nightly_integration_tests
         #if: github.event_name == 'schedule'
-        timeout-minutes: 30
+        timeout-minutes: 60
         shell: bash
         run: |
           export TEST_SUITE_TAGS="all"
           set +e
-          SHELL='' go test -timeout 30m -v `go list ./... | grep integration` &> build/integration-tests.out
+          SHELL='' go test -timeout 60m -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
