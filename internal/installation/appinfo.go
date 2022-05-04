@@ -60,7 +60,7 @@ func NewAppInfo(exec executable) (*AppInfo, error) {
 func NewAppInfoInDir(baseDir string, exec executable) (*AppInfo, error) {
 	var path string
 	var err error
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 		rootPath := environment.GetRootPathUnsafe()
 		path = filepath.Join(rootPath, "build")
