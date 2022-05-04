@@ -281,6 +281,7 @@ jobs:
         name: Nightly Integration Tests
         id: nightly_integration_tests
         if: github.event_name == 'schedule'
+        timeout-minutes: 30
         shell: bash
         run: |
           export TEST_SUITE_TAGS="all"
