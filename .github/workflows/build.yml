@@ -286,7 +286,7 @@ jobs:
         run: |
           export TEST_SUITE_TAGS="all"
           set +e
-          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          SHELL='' go test -timeout 30m -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
@@ -327,7 +327,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "plain_text",
-                    "text": "Select the ${{ runner.name }} job and expand 'Nightly Integration Tests' to inspect the failures."
+                    "text": "Select the ${{ matrix.platform }} job and expand 'Nightly Integration Tests' to inspect the failures."
                   }
                 }
               ]
