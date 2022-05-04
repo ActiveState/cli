@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -71,7 +71,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 }
 
 func EnsureStartedAndLocateHTTP() (addr string, err error) {
-	svcInfo, err := appinfo.New(appinfo.Service)
+	svcInfo, err := installation.NewAppInfo(installation.ServiceApp)
 	if err != nil {
 		return "", locale.WrapError(err, "err_service_info")
 	}

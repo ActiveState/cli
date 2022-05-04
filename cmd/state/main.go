@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -136,7 +136,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
-	svcInfo, err := appinfo.New(appinfo.Service)
+	svcInfo, err := installation.NewAppInfo(installation.ServiceApp)
 	if err != nil {
 		return errs.Wrap(err, "Could not get service info")
 	}

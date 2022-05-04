@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -89,7 +89,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
 
-	stateInfo, err := appinfo.New(appinfo.State)
+	stateInfo, err := installation.NewAppInfo(installation.StateApp)
 	if err != nil {
 		return false, locale.WrapError(err, "err_state_info")
 	}

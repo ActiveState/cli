@@ -10,7 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -40,10 +40,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
-	stateInfo, err := appinfo.NewInDir(filepath.Join(target, "bin"), appinfo.State)
+	stateInfo, err := installation.NewAppInfoInDir(filepath.Join(target, "bin"), installation.StateApp)
 	suite.NoError(err)
 
-	serviceInfo, err := appinfo.NewInDir(filepath.Join(target, "bin"), appinfo.Service)
+	serviceInfo, err := installation.NewAppInfoInDir(filepath.Join(target, "bin"), installation.ServiceApp)
 	suite.NoError(err)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)

@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
@@ -55,7 +55,7 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) error {
 		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}
 
-	stateApp, err := appinfo.New(appinfo.State)
+	stateApp, err := installation.NewAppInfo(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
@@ -81,13 +81,13 @@ func (u *LocalProjectsUpdater) removeItems() {
 	}
 }
 
-func (u *LocalProjectsUpdater) startEventLoops(info *appinfo.Info) {
+func (u *LocalProjectsUpdater) startEventLoops(info *installation.AppInfo) {
 	for _, item := range u.items {
 		go item.eventLoop(info)
 	}
 }
 
-func (i *localProjectsMenuItem) eventLoop(info *appinfo.Info) {
+func (i *localProjectsMenuItem) eventLoop(info *installation.AppInfo) {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:

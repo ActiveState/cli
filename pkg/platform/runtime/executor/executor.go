@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -143,7 +143,7 @@ func (f *Executor) createExecutor(exe string) error {
 		}
 	}
 
-	stateInfo, err := appinfo.New(appinfo.State)
+	stateInfo, err := installation.NewAppInfo(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}

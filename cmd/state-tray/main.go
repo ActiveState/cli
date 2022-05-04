@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
@@ -153,7 +153,7 @@ func run(cfg *config.Instance) (rerr error) {
 	)
 	systray.AddSeparator()
 
-	trayInfo, err := appinfo.New(appinfo.Tray)
+	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -182,12 +182,12 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
-	stateApp, err := appinfo.New(appinfo.State)
+	stateApp, err := installation.NewAppInfo(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
-	updateAppInfo, err := appinfo.New(appinfo.Update)
+	updateAppInfo, err := installation.NewAppInfo(installation.UpdateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_update_info")
 	}

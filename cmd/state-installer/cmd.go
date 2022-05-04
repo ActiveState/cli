@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -336,7 +335,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	stateInfo, err := appinfo.NewInDir(installPath, appinfo.State)
+	stateInfo, err := installation.NewAppInfoInDir(installPath, installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}

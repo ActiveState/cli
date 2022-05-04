@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
@@ -15,7 +15,7 @@ import (
 )
 
 func (r *Prepare) prepareOS() error {
-	trayInfo, err := appinfo.New(appinfo.Tray)
+	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -76,7 +76,7 @@ func prependHomeDir(path string) (string, error) {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo, err := appinfo.New(appinfo.Tray)
+	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}
