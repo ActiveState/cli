@@ -70,7 +70,6 @@ func NewAppInfoInDir(baseDir string, exec executable) (*AppInfo, error) {
 
 	// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 	if condition.InTest() {
-		fmt.Println("In test")
 		info.executable = filepath.Join(baseDir, info.cmd+osutils.ExeExt)
 	}
 

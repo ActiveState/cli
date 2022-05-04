@@ -1,6 +1,7 @@
 package condition
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -13,6 +14,7 @@ var inTest = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") 
 
 // InUnitTest returns true when the app is being tested
 func InUnitTest() bool {
+	fmt.Println("In test:", inTest)
 	return inTest
 }
 
