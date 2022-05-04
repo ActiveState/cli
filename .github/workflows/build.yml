@@ -308,8 +308,14 @@ jobs:
         with:
           payload: |
             {
-              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
               "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Nightly integration test failure(s) on ${{ runner.os }}"
+                  }
+                }
                 {
                   "type": "section",
                   "text": {
