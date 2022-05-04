@@ -318,7 +318,10 @@ jobs:
                 },
                 {
                   "type": "section",
-                  "text": "Select the ${{ runner.name }} job and expand 'Nightly Integration Tests' to inspect the failures."
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Select the ${{ runner.name }} job and expand 'Nightly Integration Tests' to inspect the failures."
+                  }
                 }
               ]
             }
