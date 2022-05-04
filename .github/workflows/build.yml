@@ -306,14 +306,18 @@ jobs:
         with:
           payload: |
             {
-              "text": "Nightly integration test failure(s) on ${{ runner.os }}: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Nightly integration test failure(s) on ${{ runner.os }}: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    "text": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
+                },
+                {
+                  "type": "section",
+                  "text": "Select the ${{ runner.name }} job and expand 'Nightly Integration Tests' to inspect the failures."
                 }
               ]
             }
