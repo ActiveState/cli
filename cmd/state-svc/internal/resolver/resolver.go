@@ -44,14 +44,15 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not refresh deprecation info")
 	}
+	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
 		cache.New(12*time.Hour, time.Hour),
 		checker,
 		projectcache.NewID(),
 		an,
-		sync.New(cfg, auth),
-		rtwatcher.New(cfg, an),
+		anForClient,
+		rtwatcher.New(cfg, anForClient),
 	}, nil
 }
 
@@ -131,7 +132,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
-	logging.Debug("Analytics event resolver")
+	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
 	label := ""
 	if _label != nil {
@@ -163,7 +164,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 }
 
 func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
-	logging.Debug("Runtime usage resolver")
+	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
