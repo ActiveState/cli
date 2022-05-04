@@ -2,9 +2,11 @@ package e2e
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -424,6 +426,61 @@ func (s *Session) Close() error {
 	}
 
 	return nil
+}
+
+func (s *Session) SvcLog() string {
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	files := fileutils.ListDirSimple(logDir, false)
+	lines := []string{}
+	for _, file := range files {
+		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
+			continue
+		}
+		b := fileutils.ReadFileUnsafe(file)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
+		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
+			continue
+		}
+
+		return string(b) + "\n\nCurrent time: " + time.Now().String()
+	}
+
+	panic(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
+
+	return ""
+}
+
+func (s *Session) StateLog() string {
+	rx := regexp.MustCompile(`state-\d`)
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	var result string
+	var newest time.Time
+	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+		if !rx.MatchString(f.Name()) {
+			return nil
+		}
+
+		info, err := f.Info()
+		if err != nil {
+			panic("Could not get file info")
+		}
+
+		ts := info.ModTime()
+		if ts.After(newest) {
+			result = path
+			newest = ts
+		}
+
+		return nil
+	})
+
+	if result == "" {
+		panic("Could not find log file")
+		return ""
+	}
+
+	b := fileutils.ReadFileUnsafe(result)
+	return string(b) + "\n\nCurrent time: " + time.Now().String()
 }
 
 func RunningOnCI() bool {
