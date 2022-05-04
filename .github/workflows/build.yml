@@ -38,7 +38,6 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 30
 
     # === OS Specific Steps ===
     steps:
@@ -265,8 +264,12 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+          TIMEOUT=10m
+          if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
+            TIMEOUT=30m
+          fi
           set +e
-          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
