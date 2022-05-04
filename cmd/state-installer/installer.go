@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -124,8 +123,6 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
-
-	fmt.Println("Exec:", stateInfo.Exec())
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
