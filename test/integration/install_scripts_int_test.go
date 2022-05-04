@@ -102,7 +102,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			state, err := installation.NewAppInfoInDir(installDir, installation.StateApp)
+			state, err := installation.NewAppInfoInDir(filepath.Join(installDir, "bin"), installation.StateApp)
 			require.NoError(suite.T(), err)
 			suite.FileExists(state.Exec())
 
@@ -204,7 +204,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	state, err := installation.NewAppInfoInDir(installDir, installation.StateApp)
+	state, err := installation.NewAppInfoInDir(filepath.Join(installDir, "bin"), installation.StateApp)
 	require.NoError(suite.T(), err)
 	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
 	cp.ExpectExitCode(0)
