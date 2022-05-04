@@ -7,7 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-func (r *Prepare) prepareOS() {
+func (r *Prepare) prepareOS() error {
+	return nil
 }
 
 // InstalledPreparedFiles returns the files installed by the prepare command
