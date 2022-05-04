@@ -1,7 +1,6 @@
 package installation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -58,20 +57,21 @@ func NewAppInfo(exec executable) (*AppInfo, error) {
 }
 
 func NewAppInfoInDir(baseDir string, exec executable) (*AppInfo, error) {
-	fmt.Println("Checking path:", baseDir)
-	path, err := BinPathFromInstallPath(baseDir)
-	if err != nil {
-		fmt.Println("err:", errs.JoinMessage(err))
-		return nil, errs.Wrap(err, "Could not get bin path from base directory")
+	var path string
+	var err error
+
+	// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
+	if condition.InTest() {
+		path = baseDir
+	} else {
+		path, err = BinPathFromInstallPath(baseDir)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get bin path from base directory")
+		}
 	}
 
 	info := appdata[exec]
 	info.executable = filepath.Join(path, info.cmd+osutils.ExeExt)
-
-	// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
-	if condition.InTest() {
-		info.executable = filepath.Join(baseDir, info.cmd+osutils.ExeExt)
-	}
 
 	return info, nil
 }
