@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/machinebox/graphql"
@@ -98,18 +99,21 @@ func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string,
 }
 
 func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	logging.Debug("Checking for deprecation")
 	defer profile.Measure("svc:CheckDeprecation", time.Now())
 
 	r := request.NewDeprecationRequest()
-	u := graph.DeprecationInfo{}
-	if err := m.request(ctx, r, &u); err != nil {
+	uu := graph.DeprecationResponse{}
+	if err := m.request(ctx, r, &uu); err != nil {
 		return nil, errs.Wrap(err, "Error sending deprecation request")
 	}
 
+	u := uu.CheckDeprecation
 	// TODO: https://activestatef.atlassian.net/browse/DX-866
 	if u.Date == "" {
 		return nil, nil
 	}
+
 	return &u, nil
 }
 

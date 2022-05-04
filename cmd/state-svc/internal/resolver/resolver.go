@@ -42,8 +42,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	checker := deprecation.NewChecker(cfg)
 	err := checker.Refresh()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not refresh deprecation info")
+		logging.Error("Could not refresh deprecation info during resolver initialization: %s", errs.JoinMessage(err))
 	}
+
 	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
@@ -147,12 +148,12 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
 	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
 		values.ProjectID = nil
-		if values.ProjectNameSpace == nil {
+		if values.ProjectNameSpace == nil || *values.ProjectNameSpace == "" {
 			return nil
 		}
 		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
 		if err != nil {
-			return errs.Wrap(err, "Could not resolve project ID")
+			logging.Error("Could not resolve project ID for analytics: %s", errs.JoinMessage(err))
 		}
 		values.ProjectID = &id
 		return nil
@@ -180,7 +181,7 @@ func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 
 	deprecated, err := r.deprecation.Check()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch deprecation information")
+		return nil, errs.Wrap(err, "Could not check deprecation information")
 	}
 
 	return deprecated, nil
