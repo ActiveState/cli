@@ -27,7 +27,7 @@ var latestFlag *bool
 
 func printUsage() {
 	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] --latest <directory>")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] [--latest] <directory>")
 }
 
 func main() {
