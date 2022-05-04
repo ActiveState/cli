@@ -1,4 +1,4 @@
-package appinfo
+package installation
 
 import (
 	"os"
@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -15,28 +14,28 @@ import (
 type executable int
 
 const (
-	State = iota
-	Service
-	Tray
-	Installer
-	Update
+	StateApp = iota
+	ServiceApp
+	TrayApp
+	InstallerApp
+	UpdateApp
 )
 
-var appdata = map[executable]*Info{
-	State:     {cmd: constants.StateCmd, name: constants.StateAppName},
-	Service:   {cmd: constants.StateSvcCmd, name: constants.SvcAppName},
-	Tray:      {cmd: constants.StateTrayCmd, name: constants.TrayAppName},
-	Installer: {cmd: constants.StateInstallerCmd, name: constants.InstallerName},
-	Update:    {cmd: constants.StateUpdateDialogCmd, name: constants.UpdateDialogName},
+var appdata = map[executable]*AppInfo{
+	StateApp:     {cmd: constants.StateCmd, name: constants.StateAppName},
+	ServiceApp:   {cmd: constants.StateSvcCmd, name: constants.SvcAppName},
+	TrayApp:      {cmd: constants.StateTrayCmd, name: constants.TrayAppName},
+	InstallerApp: {cmd: constants.StateInstallerCmd, name: constants.InstallerName},
+	UpdateApp:    {cmd: constants.StateUpdateDialogCmd, name: constants.UpdateDialogName},
 }
 
-type Info struct {
+type AppInfo struct {
 	executable string
 	cmd        string
 	name       string
 }
 
-func New(exec executable) (*Info, error) {
+func NewAppInfo(exec executable) (*AppInfo, error) {
 	path, err := os.Executable()
 	if err != nil {
 		multilog.Error("Could not determine executable: %v", err)
@@ -57,8 +56,8 @@ func New(exec executable) (*Info, error) {
 	return info, nil
 }
 
-func NewInDir(baseDir string, exec executable) (*Info, error) {
-	path, err := installation.BinPathFromInstallPath(baseDir)
+func NewAppInfoInDir(baseDir string, exec executable) (*AppInfo, error) {
+	path, err := BinPathFromInstallPath(baseDir)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get bin path from base directory")
 	}
@@ -74,10 +73,10 @@ func NewInDir(baseDir string, exec executable) (*Info, error) {
 	return info, nil
 }
 
-func (a *Info) Exec() string {
+func (a *AppInfo) Exec() string {
 	return a.executable
 }
 
-func (a *Info) Name() string {
+func (a *AppInfo) Name() string {
 	return a.name
 }

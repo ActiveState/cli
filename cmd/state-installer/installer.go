@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -121,7 +120,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
-	stateInfo, err := appinfo.NewInDir(binDir, appinfo.State)
+	stateInfo, err := installation.NewAppInfoInDir(binDir, installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
@@ -136,7 +135,7 @@ func (i *Installer) Install() (rerr error) {
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		trayInfo, err := appinfo.NewInDir(binDir, appinfo.Tray)
+		trayInfo, err := installation.NewAppInfoInDir(binDir, installation.TrayApp)
 		if err != nil {
 			return locale.WrapError(err, "err_tray_info_dir", "", binDir)
 		}

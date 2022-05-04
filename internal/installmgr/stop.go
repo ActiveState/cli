@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -41,7 +41,7 @@ func StopRunning(installPath string) (rerr error) {
 }
 
 func stopTray(installPath string, cfg *config.Instance) error {
-	trayInfo, err := appinfo.New(appinfo.Tray)
+	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -55,7 +55,7 @@ func stopTray(installPath string, cfg *config.Instance) error {
 }
 
 func stopSvc(installPath string) error {
-	svcInfo, err := appinfo.NewInDir(installPath, appinfo.Service)
+	svcInfo, err := installation.NewAppInfoInDir(installPath, installation.ServiceApp)
 	if err != nil {
 		return locale.WrapError(err, "err_service_info_dir", "", installPath)
 	}

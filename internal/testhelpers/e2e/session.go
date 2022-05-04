@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installation/appinfo"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -140,13 +139,13 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo, err := appinfo.NewInDir(buildDir, appinfo.State)
+	stateInfo, err := installation.NewAppInfoInDir(buildDir, installation.StateApp)
 	assert.NoError(t, err)
-	svcInfo, err := appinfo.NewInDir(buildDir, appinfo.Service)
+	svcInfo, err := installation.NewAppInfoInDir(buildDir, installation.ServiceApp)
 	assert.NoError(t, err)
-	trayInfo, err := appinfo.NewInDir(buildDir, appinfo.Tray)
+	trayInfo, err := installation.NewAppInfoInDir(buildDir, installation.TrayApp)
 	assert.NoError(t, err)
-	installInfo, err := appinfo.NewInDir(buildDir, appinfo.Installer)
+	installInfo, err := installation.NewAppInfoInDir(buildDir, installation.InstallerApp)
 	assert.NoError(t, err)
 
 	if !fileutils.FileExists(stateInfo.Exec()) {
