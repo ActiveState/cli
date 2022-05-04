@@ -4,6 +4,7 @@ package environment
 
 import (
 	"errors"
+	"fmt"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -20,7 +21,9 @@ func GetRootPath() (string, error) {
 		return "", errors.New("Could not call Caller(0)")
 	}
 
+	fmt.Println("Caller file:", file)
 	abs := filepath.Dir(file)
+	fmt.Println("Absolute path:", abs)
 
 	// If we're receiving a relative path resolve it to absolute
 	if abs[0:1] != "/" && abs[1:2] != ":" {
