@@ -308,6 +308,7 @@ jobs:
         with:
           payload: |
             {
+              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
               "blocks": [
                 {
                   "type": "section",
