@@ -315,7 +315,7 @@ jobs:
                     "type": "plain_text",
                     "text": "Nightly integration test failure(s) on ${{ runner.os }}"
                   }
-                }
+                },
                 {
                   "type": "section",
                   "text": {
