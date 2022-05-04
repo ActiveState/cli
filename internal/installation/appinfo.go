@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -59,10 +60,10 @@ func NewAppInfo(exec executable) (*AppInfo, error) {
 func NewAppInfoInDir(baseDir string, exec executable) (*AppInfo, error) {
 	var path string
 	var err error
-
-	// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
 	if condition.InTest() {
-		path = baseDir
+		// Work around tests creating a temp file, but we need the original (ie. the one from the build dir)
+		rootPath := environment.GetRootPathUnsafe()
+		path = filepath.Join(rootPath, "build")
 	} else {
 		path, err = BinPathFromInstallPath(baseDir)
 		if err != nil {
