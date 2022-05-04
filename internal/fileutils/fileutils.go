@@ -839,7 +839,7 @@ func IsDir(path string) bool {
 func ResolvePath(path string) (string, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", errs.Wrap(err, "cannot get absolute filepath of %q", path)
+		return path, errs.Wrap(err, "cannot get absolute filepath of %q", path)
 	}
 
 	if !TargetExists(path) {
@@ -848,7 +848,7 @@ func ResolvePath(path string) (string, error) {
 
 	evalPath, err := filepath.EvalSymlinks(absPath)
 	if err != nil {
-		return "", errs.Wrap(err, "cannot evaluate symlink %q", absPath)
+		return absPath, errs.Wrap(err, "cannot evaluate symlink %q", absPath)
 	}
 
 	return evalPath, nil
@@ -1047,6 +1047,25 @@ func CaseSensitivePath(path string) (string, error) {
 	}
 
 	return matches[0], nil
+}
+
+// PathsMatch checks if all the given paths resolve to the same value
+func PathsMatch(paths ...string) (bool, error) {
+	for _, path := range paths[1:] {
+		p1, err := ResolvePath(path)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not resolve path %s", path)
+		}
+		p2, err := ResolvePath(paths[0])
+		if err != nil {
+			return false, errs.Wrap(err, "Could not resolve path %s", paths[0])
+		}
+		if p1 != p2 {
+			logging.Debug("Path %s does not match %s", p1, p2)
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func globPath(path string) string {

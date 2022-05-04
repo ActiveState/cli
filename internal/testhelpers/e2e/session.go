@@ -179,6 +179,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
+		constants.DisableUpdates + "=true",
 	}...)
 
 	if updatePath {

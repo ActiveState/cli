@@ -7,6 +7,7 @@ name: Build-Test-Deploy
       - master
       - beta
       - release
+      - LTS*
   pull_request:
     types:
       - labeled
@@ -183,7 +184,7 @@ jobs:
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
@@ -197,7 +198,18 @@ jobs:
       - # === Generate Update ===
         name: Generate Update
         shell: bash
-        run: state run generate-update
+        run: |
+          set +e
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          LABELCHECK="$(echo $LABELS | grep "Deploy: latest")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
+          set -e
+
+          if [ "$LABELCHECK" == "" ]; then
+            state run generate-update
+          else
+            echo "Generating update for latest release"
+            state run generate-update --latest
+          fi
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -212,8 +224,8 @@ jobs:
           echo "Labels: $LABELS"
           echo "Target Branch: $TARGET_BRANCH"
 
-          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
-            echo "Not running because no test labels were set nor beta or release were targeted."
+          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
+            echo "Not running because no test labels were set nor beta, release or LTS were targeted."
             exit 0
           fi
 
@@ -243,7 +255,7 @@ jobs:
           TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
           echo "Target branch: $TARGET_BRANCH"
 
-          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
             echo "Not running because no test labels were set nor beta or release were targeted."
             exit 0
           fi
@@ -283,7 +295,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
 
     # === Deploy Steps ===
     steps:

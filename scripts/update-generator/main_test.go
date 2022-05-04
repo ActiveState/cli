@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -14,6 +15,7 @@ import (
 )
 
 func TestCreateUpdate(t *testing.T) {
+	latestFlag = p.BoolP(true)
 	dir, err := ioutil.TempDir(os.TempDir(), "update-generator-test")
 	if err != nil {
 		log.Fatalf("Cannot create temp dir: %s", err.Error())
