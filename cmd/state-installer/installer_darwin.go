@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
@@ -45,7 +45,11 @@ func (i *Installer) installLauncher() error {
 		return errs.Wrap(err, "Could not create application directory")
 	}
 
-	fromTray := appinfo.TrayApp(i.path)
+	fromTray, err := installation.NewAppInfoInDir(i.path, installation.TrayApp)
+	if err != nil {
+		return locale.WrapError(err, "err_tray_info")
+	}
+
 	exeName := filepath.Base(fromTray.Exec())
 	toTray := filepath.Join(launcherPath, constants.MacOSApplicationName, "Contents", "MacOS", exeName)
 	err = createNewSymlink(fromTray.Exec(), toTray)
