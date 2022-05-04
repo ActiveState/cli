@@ -202,10 +202,9 @@ jobs:
           set +e
           LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
           LABELCHECK="$(echo $LABELS | grep "Deploy: latest")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
           set -e
 
-          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "master" ]; then
+          if [ "$LABELCHECK" == "" ]; then
             state run generate-update
           else
             echo "Generating update for latest release"
