@@ -131,6 +131,12 @@ progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
 $FETCH $TMPDIR/$ARCHIVE $STATEURL
+if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" == "curl" -a -z "`file -b $TMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
+  rm -f $TMPDIR/$ARCHIVE
+  progress_fail
+  error "Could not download the State Tool installer at $STATEURL. Please try again."
+  exit 1
+fi
 
 # Verify checksum if possible.
 if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
@@ -145,14 +151,9 @@ fi
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVVE' '$TMPDIRW'}"
+  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVE' '$TMPDIRW'}"
 else
-  tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR
-fi
-if [ $? -ne 0 ]; then
-  progress_fail
-  error "Could not download the State Tool installer at $STATEURL. Please try again."
-  exit 1
+  tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
 fi
 
 chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
