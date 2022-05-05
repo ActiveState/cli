@@ -139,7 +139,7 @@ catch [System.Exception]
     progress_fail
     Write-Error "Could not download $zipURL to $zipPath."
     Write-Error $_.Exception.Message
-    return 1
+    exit 1
 }
 
 # Verify checksum if possible.
@@ -150,7 +150,7 @@ if ($checksum -and $hash -ne $checksum)
     Write-Warning "Expected: $checksum"
     Write-Warning "Received: $hash"
     Write-Warning "Aborting installation"
-    return 1
+    exit 1
 }
 
 # Extract it.
@@ -162,7 +162,7 @@ catch
 {
     progress_fail
     Write-Error $_.Exception.Message
-    return 1
+    exit 1
 }
 progress_done
 
