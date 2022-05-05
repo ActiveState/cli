@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 )
 
@@ -158,15 +157,30 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
+	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	if err != nil {
+		return locale.WrapError(err, "err_state_info")
+	}
+
+	serviceInfo, err := installation.NewAppInfo(installation.ServiceApp)
+	if err != nil {
+		return locale.WrapError(err, "err_service_info")
+	}
+
+	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	if err != nil {
+		return locale.WrapError(err, "err_tray_info")
+	}
+
 	var asFiles = []string{
 		installation.InstallDirMarker,
 		constants.StateInstallerCmd + exeutils.Extension,
 
 		// Remove all of the state tool executables and finally the
 		// bin directory
-		filepath.Join(installation.BinDirName, constants.StateCmd+osutils.ExeExt),
-		filepath.Join(installation.BinDirName, constants.ServiceCommandName+osutils.ExeExt),
-		filepath.Join(installation.BinDirName, constants.StateTrayCmd+osutils.ExeExt),
+		filepath.Join(installation.BinDirName, stateInfo.Exec()),
+		filepath.Join(installation.BinDirName, serviceInfo.Exec()),
+		filepath.Join(installation.BinDirName, trayInfo.Exec()),
 		installation.BinDirName,
 
 		// The system directory is on MacOS only and contains the tray
