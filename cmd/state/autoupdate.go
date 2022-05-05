@@ -90,13 +90,9 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
 
-	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	code, err := relaunch(args)
 	if err != nil {
-		return false, locale.WrapError(err, "err_state_info")
-	}
-
-	code := relaunch(stateInfo.Exec(), args)
-	if code != 0 {
+		logging.Error("Failed to relaunch: %s", errs.JoinMessage(err))
 		return true, &forwardExitError{code}
 	}
 
@@ -165,14 +161,18 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
-func relaunch(exec string, args []string) int {
-	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+func relaunch(args []string) (int, error) {
+	stateInfo, err := installation.NewAppInfo(installation.StateApp)
 	if err != nil {
-		logging.Debug("Forwarded command after auto-updating failed. Exit code: %d", code)
-		return code
+		return -1, locale.WrapError(err, "err_state_info")
 	}
 
-	return code
+	code, _, err := exeutils.ExecuteAndPipeStd(stateInfo.Exec(), args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+	if err != nil {
+		return code, errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)
+	}
+
+	return code, nil
 }
 
 func isFreshInstall() bool {
