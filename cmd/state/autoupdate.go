@@ -83,7 +83,6 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 			logging.Debug("Update already in progress")
 			return false, nil
 		}
-		fmt.Println("err:", err)
 		return false, locale.WrapError(err, "auto_update_failed")
 	}
 
