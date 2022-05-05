@@ -37,7 +37,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		ActivateByCommand string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
-		{"install-prbranch", "", constants.BranchName, "", ""},
+		{"install-prbranch", "", "", "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
 		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
@@ -96,7 +96,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			cp.SendLine("state --version")
-			cp.Expect("Branch")
+			cp.Expect("Version " + constants.Version)
+			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
