@@ -121,7 +121,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	suite.testUpdate(ts, ts.Dirs.Bin)
+	suite.testUpdate(ts, filepath.Dir(ts.Dirs.Bin))
 }
 
 func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
