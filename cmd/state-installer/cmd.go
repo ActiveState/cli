@@ -42,7 +42,6 @@ type Params struct {
 	updateTag       string
 	branch          string
 	command         string
-	version         string
 	force           bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
@@ -105,6 +104,7 @@ func main() {
 	}
 
 	var garbageBool bool
+	var garbageString string
 
 	// We have old install one liners around that use `-activate` instead of `--activate`
 	processedArgs := os.Args
@@ -154,12 +154,6 @@ func main() {
 				Value:       params.activateDefault,
 			},
 			{
-				Name:        "version",
-				Shorthand:   "v",
-				Description: "The version of the State Tool to install",
-				Value:       &params.version,
-			},
-			{
 				Name:        "force",
 				Shorthand:   "f",
 				Description: "Force the installation, overwriting any version of the State Tool already installed",
@@ -183,6 +177,7 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
+			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
 			{

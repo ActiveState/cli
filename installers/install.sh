@@ -9,6 +9,8 @@ BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 INSTALLERNAME="state-install/state-installer"
 # Channel the installer will target
 CHANNEL='release'
+# The version to install (autodetermined to be the latest if left unspecified)
+VERSION=""
 # the download exetension
 DOWNLOADEXT=".tar.gz"
 # the installer extension
@@ -23,15 +25,19 @@ if [ "$SESSION_TOKEN" != "$SESSION_TOKEN_VERIFY" ]; then
   SESSION_TOKEN_VALUE=$SESSION_TOKEN
 fi
 
-parseChannel() {
+getopt() {
+  opt=$1; shift
+  default=$1; shift
   i=0
-  for arg in ${@}; do
-    i=$((i + 1)) && [ "${arg}" != "-b" ] && continue
-    echo "${@}" | cut -d' ' -f$((${i} + 1)) && return
+  for arg in $@; do
+    i=$((i + 1)) && [ "${arg}" != "$opt" ] && continue
+    echo "$@" | cut -d' ' -f$(($i + 1)) && return
   done
-  echo $CHANNEL
+  echo $default
 }
-CHANNEL=$(parseChannel "$@")
+
+CHANNEL=$(getopt "-b" "$CHANNEL" $@)
+VERSION=$(getopt "-v" "$VERSION" $@)
 
 if [ -z "${TERM}" ] || [ "${TERM}" = "dumb" ]; then
   OUTPUT_OK=""
@@ -63,6 +69,7 @@ error () {
 case `uname -s` in
 Linux)
   OS="linux"
+  DOWNLOADEXT=".tar.gz"
   ;;
 *BSD)
   OS=`uname -s | tr '[A-Z]' '[a-z]'`
@@ -71,6 +78,7 @@ Linux)
   ;;
 Darwin)
   OS="darwin"
+  DOWNLOADEXT=".tar.gz"
   SHA256SUM="shasum -a 256"
   ;;
 MINGW*|MSYS*)
@@ -99,21 +107,26 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-# Determine the latest version to fetch.
-STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
-$FETCH $TMPDIR/info.json $STATEURL || exit 1
-
-# Parse info.
-VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
 if [ -z "$VERSION" ]; then
-  error "Unable to retrieve the latest version number"
-  exit 1
-fi
-SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
-RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
-rm $TMPDIR/info.json
+  # Determine the latest version to fetch.
+  STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+  $FETCH $TMPDIR/info.json $STATEURL || exit 1
 
-# Fetch the latest version.
+  # Parse info.
+  VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
+  if [ -z "$VERSION" ]; then
+    error "Unable to retrieve the latest version number"
+    exit 1
+  fi
+  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
+  rm $TMPDIR/info.json
+
+else
+  RELURL="$CHANNEL/$VERSION/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
+fi
+
+# Fetch the requested or latest version.
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
@@ -123,8 +136,8 @@ if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
   exit 1
 fi
 
-# Verify checksum.
-if [ "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
+# Verify checksum if possible.
+if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
   error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
