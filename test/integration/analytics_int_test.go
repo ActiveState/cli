@@ -3,9 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -14,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -25,58 +22,6 @@ import (
 type AnalyticsIntegrationTestSuite struct {
 	tagsuite.Suite
 	eventsfile string
-}
-
-func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
-	logDir := filepath.Join(configDir, "logs")
-	files := fileutils.ListDirSimple(logDir, false)
-	lines := []string{}
-	for _, file := range files {
-		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
-			continue
-		}
-		b := fileutils.ReadFileUnsafe(file)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
-		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
-			continue
-		}
-
-		return string(b) + "\n\nCurrent time: " + time.Now().String()
-	}
-
-	suite.Fail(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
-	return ""
-}
-
-func (suite *AnalyticsIntegrationTestSuite) stateLog(configDir string) string {
-	rx := regexp.MustCompile(`state-\d`)
-	logDir := filepath.Join(configDir, "logs")
-	var result string
-	var newest time.Time
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
-		if !rx.MatchString(f.Name()) {
-			return nil
-		}
-
-		info, err := f.Info()
-		suite.Require().NoError(err)
-
-		ts := info.ModTime()
-		if ts.After(newest) {
-			result = path
-			newest = ts
-		}
-
-		return nil
-	})
-
-	if result == "" {
-		suite.Fail("Could not find log file")
-		return ""
-	}
-
-	b := fileutils.ReadFileUnsafe(result)
-	return string(b) + "\n\nCurrent time: " + time.Now().String()
 }
 
 // TestActivateEvents ensures that the right events are sent when we activate
@@ -120,12 +65,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
@@ -142,7 +87,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -162,7 +107,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
 			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {

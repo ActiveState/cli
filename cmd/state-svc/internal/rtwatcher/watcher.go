@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
@@ -23,14 +22,18 @@ const defaultInterval = 1 * time.Minute
 const CfgKey = "runtime-watchers"
 
 type Watcher struct {
-	an       *sync.Client
+	an       analytics
 	cfg      *config.Instance
 	watching []entry
 	stop     chan struct{}
 	interval time.Duration
 }
 
-func New(cfg *config.Instance, an *sync.Client) *Watcher {
+type analytics interface {
+	Event(category string, action string, dim ...*dimensions.Values)
+}
+
+func New(cfg *config.Instance, an analytics) *Watcher {
 	w := &Watcher{an: an, stop: make(chan struct{}, 1), cfg: cfg, interval: defaultInterval}
 
 	if watchersJson := w.cfg.GetString(CfgKey); watchersJson != "" {
@@ -73,6 +76,7 @@ func (w *Watcher) ticker(cb func()) {
 }
 
 func (w *Watcher) check() {
+	watching := w.watching[:0]
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
 		running, err := e.IsRunning()
@@ -82,12 +86,13 @@ func (w *Watcher) check() {
 		}
 		if !running {
 			logging.Debug("Runtime process %d:%s is not running, removing from watcher", e.PID, e.Exec)
-			w.watching = append(w.watching[:i], w.watching[i+1:]...)
 			continue
 		}
+		watching = append(watching, e)
 
 		go w.RecordUsage(e)
 	}
+	w.watching = watching
 }
 
 func (w *Watcher) RecordUsage(e entry) {
