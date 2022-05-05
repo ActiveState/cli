@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
@@ -52,9 +52,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	state, err := installation.NewAppInfoInDir(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin"), installation.StateApp)
-	suite.Require().NoError(err)
-	cp = ts.SpawnCmd(state.Exec(), "--version")
+	cp = ts.SpawnCmd(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir, "bin", constants.StateCmd+osutils.ExeExt), "--version")
 	cp.Expect(constants.RevisionHashShort)
 	cp.ExpectExitCode(0)
 }
