@@ -24,6 +24,10 @@ type AnalyticsIntegrationTestSuite struct {
 	eventsfile string
 }
 
+// TestActivateEvents ensures that the right events are sent when we activate
+// Note the heartbeat code especially is a little awkward as we have to account for timing offsets between state and
+// state-svc. For that reason we tend to assert "greater than" rather than equals, because checking for equals introduces
+// race conditions into the testing suite (not the state tool itself).
 func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
 
@@ -34,13 +38,15 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
-	heartbeatInterval := 5000 // in milliseconds
+	heartbeatInterval := 1000 // in milliseconds
+	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
+	sleepTime = sleepTime + (sleepTime / 2)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
 		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			constants.DisableRuntime+"=false",
 			fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 		),
 	)
@@ -57,36 +63,51 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess)
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
-	if heartbeatInitialCount > 2 {
+	if heartbeatInitialCount < 2 {
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
-		suite.Fail("Received %d heartbeats, realistically we should at most have gotten 2", heartbeatInitialCount)
+		suite.Fail(fmt.Sprintf("Received %d heartbeats, realistically we should at least have gotten 2", heartbeatInitialCount))
 	}
 
-	// Runtime-use:heartbeat events
-	suite.assertNEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
-
-	time.Sleep(time.Duration(heartbeatInterval) * time.Millisecond)
+	time.Sleep(sleepTime)
 
 	events = suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
 
-	// Runtime-use:heartbeat events - should now be +1 because we waited <heartbeatInterval>
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
+	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	time.Sleep((time.Duration(heartbeatInterval) * time.Millisecond))
+	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
 	events = suite.parseEvents(ts)
 	suite.Require().NotEmpty(events)
+	eventsAfterExit := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+
+	time.Sleep(sleepTime)
+
+	events = suite.parseEvents(ts)
+	suite.Require().NotEmpty(events)
+	eventsAfterWait := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+
+	suite.Equal(eventsAfterExit, eventsAfterWait,
+		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
+			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
@@ -95,9 +116,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		}
 		suite.NotEmpty(e.Dimensions.InstanceID)
 	}
-
-	// Runtime-use:heartbeat events - should still be +1 because we exited the process so it's no longer using the runtime
-	suite.assertNEvents(events, heartbeatInitialCount+1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	suite.assertSequentialEvents(events)
 }
@@ -109,9 +127,18 @@ func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestL
 	return len(filteredEvents)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry, expectedN int, category, action string) {
+func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
+	expectedN int, category, action string, errMsg string) {
 	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
-		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s", expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events))
+		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
+		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) assertGtEvents(events []reporters.TestLogEntry,
+	greaterThanN int, category, action string, errMsg string) {
+	suite.Assert().Greater(suite.countEvents(events, category, action), greaterThanN,
+		fmt.Sprintf("Expected more than %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
+			greaterThanN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg))
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []reporters.TestLogEntry) {
@@ -123,22 +150,29 @@ func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []repo
 		return *events[i].Dimensions.Sequence < *events[j].Dimensions.Sequence
 	})
 
-	for i, ev := range events {
+	var lastEvent reporters.TestLogEntry
+	for _, ev := range events {
+		if *ev.Dimensions.Sequence == -1 {
+			continue // The sequence of this event is irrelevant
+		}
 		// Sequence is per instance ID
 		key := (*ev.Dimensions.InstanceID)[0:6]
 		if v, ok := seq[key]; ok {
 			if (v + 1) != *ev.Dimensions.Sequence {
 				suite.Failf(fmt.Sprintf("Events are not sequential, expected %d but got %d", v+1, *ev.Dimensions.Sequence),
 					suite.summarizeEventSequence([]reporters.TestLogEntry{
-						events[i-1], ev,
+						lastEvent, ev,
 					}))
 			}
 		} else {
 			if *ev.Dimensions.Sequence != 0 {
-				suite.Fail("Sequence should start at 0, got: %v", suite.summarizeEventSequence([]reporters.TestLogEntry{ev}))
+				suite.Fail(fmt.Sprintf("Sequence should start at 0, got: %v\nevents:\n %v",
+					suite.summarizeEventSequence([]reporters.TestLogEntry{ev}),
+					suite.summarizeEventSequence(events)))
 			}
 		}
 		seq[key] = *ev.Dimensions.Sequence
+		lastEvent = ev
 	}
 }
 
@@ -153,7 +187,7 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.T
 func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []reporters.TestLogEntry) string {
 	summary := []string{}
 	for _, event := range events {
-		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)",
+		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)\n",
 			event.Category, event.Action, event.Label,
 			*event.Dimensions.Command, (*event.Dimensions.InstanceID)[0:6], *event.Dimensions.Sequence))
 	}
@@ -161,10 +195,6 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 }
 
 func (suite *AnalyticsIntegrationTestSuite) parseEvents(s *e2e.Session) []reporters.TestLogEntry {
-	// Stop svc to ensure all events are sent
-	cp := s.SpawnCmd(s.SvcExe, "stop")
-	cp.ExpectExitCode(0)
-
 	time.Sleep(time.Second) // give svc time to process events
 
 	suite.Require().FileExists(suite.eventsfile)
@@ -242,6 +272,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
 	cp := ts.Spawn("--version")
 	cp.Expect("Version")
 	cp.ExpectExitCode(0)
@@ -252,7 +284,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 
-	initialEvents := len(suite.parseEvents(ts))
+	initialEvents := suite.parseEvents(ts)
+	suite.assertSequentialEvents(initialEvents)
 
 	cp = ts.Spawn("--version")
 	cp.Expect("Version")
@@ -260,8 +293,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 
 	events := suite.parseEvents(ts)
 	currentEvents := len(events)
-	if currentEvents > initialEvents {
-		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-initialEvents)
+	if currentEvents > len(initialEvents) {
+		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-len(initialEvents))
 	}
 
 	suite.assertSequentialEvents(events)

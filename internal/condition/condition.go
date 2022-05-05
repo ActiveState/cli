@@ -24,6 +24,10 @@ func OnCI() bool {
 	return os.Getenv("CI") != "" || os.Getenv("BUILDER_OUTPUT") != ""
 }
 
+func IsLTS() bool {
+	return strings.HasPrefix(constants.BranchName, "LTS")
+}
+
 func BuiltViaCI() bool {
 	return constants.OnCI == "true"
 }
