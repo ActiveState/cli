@@ -155,7 +155,6 @@ if [ $OS = "windows" ]; then
 else
   tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
 fi
-
 chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
 progress_done
 echo ""
