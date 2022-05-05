@@ -152,6 +152,31 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), ts.Dirs.Work)
+	args := []string{script, "-t", ts.Dirs.Work}
+	args = append(args, "-v", "does-not-exist")
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs(args...),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
+			e2e.AppendEnv("SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	}
+	cp.Expect("Could not download")
+	cp.ExpectLongString("does-not-exist")
+	cp.ExpectExitCode(1)
+}
+
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
 func scriptPath(t *testing.T, targetDir string) string {
 	ext := ".ps1"

@@ -130,11 +130,7 @@ fi
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
-if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
-  progress_fail
-  error "Could not fetch the State Tool installer at $STATEURL. Please try again."
-  exit 1
-fi
+$FETCH $TMPDIR/$ARCHIVE $STATEURL
 
 # Verify checksum if possible.
 if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
@@ -151,8 +147,14 @@ if [ $OS = "windows" ]; then
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
   powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVVE' '$TMPDIRW'}"
 else
-  tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
+  tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR
 fi
+if [ $? -ne 0 ]; then
+  progress_fail
+  error "Could not download the State Tool installer at $STATEURL. Please try again."
+  exit 1
+fi
+
 chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
 progress_done
 echo ""

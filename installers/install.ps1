@@ -66,12 +66,12 @@ function download([string] $url, [string] $out)
         {
             if ($Retrycount -gt 5)
             {
-                Write-Error "Could not Download after 5 retries."
+                Write-Error "Could not download after 5 retries."
                 throw $_
             }
             else
             {
-                Write-Host "Could not Download, retrying..."
+                Write-Host "Could not download, retrying..."
                 Write-Host $_
                 $Retrycount = $Retrycount + 1
             }
