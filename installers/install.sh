@@ -8,7 +8,7 @@ BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Path to the installer executable in the archive.
 INSTALLERNAME="state-install/state-installer"
 # Channel the installer will target
-CHANNEL="release"
+CHANNEL='release'
 # The version to install (autodetermined to be the latest if left unspecified)
 VERSION=""
 # the download exetension
@@ -130,16 +130,9 @@ fi
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
-$FETCH $TMPDIR/$ARCHIVE $STATEURL
-# wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
-# wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
-# If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
-# command. (The XML error will be reported as a 'text' type.)
-# If wget returned an error or curl fetched a "forbidden" response, raise an error and exit.
-if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" == "curl" -a -z "`file -b $TMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
-  rm -f $TMPDIR/$ARCHIVE
+if ! $FETCH $TMPDIR/$ARCHIVE $STATEURL ; then
   progress_fail
-  error "Could not download the State Tool installer at $STATEURL. Please try again."
+  error "Could not fetch the State Tool installer at $STATEURL. Please try again."
   exit 1
 fi
 
@@ -156,7 +149,7 @@ fi
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
   TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVE' '$TMPDIRW'}"
+  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVVE' '$TMPDIRW'}"
 else
   tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
 fi

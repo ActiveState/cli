@@ -30,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 const AnalyticsCat = "installer"
@@ -41,6 +40,7 @@ type Params struct {
 	sourceInstaller string
 	path            string
 	updateTag       string
+	branch          string
 	command         string
 	force           bool
 	activate        *project.Namespaced
@@ -64,8 +64,8 @@ func main() {
 			exitCode = 1
 		}
 
-		if cfg != nil {
-			events.Close("config", cfg.Close)
+		if err := cfg.Close(); err != nil {
+			multilog.Error("Failed to close config: %v", err)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
@@ -80,8 +80,7 @@ func main() {
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
 
 	// Set up configuration handler
-	var err error
-	cfg, err = config.New()
+	cfg, err := config.New()
 	if err != nil {
 		multilog.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -129,6 +128,16 @@ func main() {
 		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
+				Name:        "channel",
+				Description: "Defaults to 'release'.  Specify an alternative channel to install from (eg. beta)",
+				Value:       &params.branch,
+			},
+			{
+				Shorthand: "b", // backwards compatibility
+				Hidden:    true,
+				Value:     &params.branch,
+			},
+			{
 				Name:        "command",
 				Shorthand:   "c",
 				Description: "Run any command after the install script has completed",
@@ -168,8 +177,6 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
-			{Name: "channel", Hidden: true, Value: &garbageString},
-			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
@@ -197,9 +204,7 @@ func main() {
 
 		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		if !errs.IsSilent(err) {
-			out.Error(err.Error())
-		}
+		out.Error(err.Error())
 		return
 	}
 
@@ -209,16 +214,21 @@ func main() {
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
+	targetBranch := params.branch
+	if targetBranch == "" {
+		targetBranch = constants.BranchName
+	}
+
 	if params.path == "" {
 		var err error
-		params.path, err = installation.InstallPathForBranch(constants.BranchName)
+		params.path, err = installation.InstallPathForBranch(targetBranch)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, targetBranch)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -302,12 +312,6 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 			`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 	}
 
-	if err := assertCompatibility(); err != nil {
-		// Don't wrap, we want the error from assertCompatibility to be returned -- installer doesn't have intelligent error handling yet
-		// https://activestatef.atlassian.net/browse/DX-957
-		return err
-	}
-
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
@@ -362,7 +366,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-command-err", err.Error())
-			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
+			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
@@ -371,7 +375,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-err", err.Error())
-			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err)))
+			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
@@ -380,11 +384,10 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
-			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
+			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
-		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -397,17 +400,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 }
 
 func envSlice(binPath string) []string {
-	return []string{
-		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
-		constants.DisableErrorTipsEnvVarName + "=true",
-	}
-}
-
-func envMap(binPath string) map[string]string {
-	return map[string]string{
-		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
-		constants.DisableErrorTipsEnvVarName: "true",
-	}
+	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir
@@ -433,17 +426,4 @@ func resolveInstallPath(path string) (string, error) {
 	} else {
 		return installation.DefaultInstallPath()
 	}
-}
-
-func assertCompatibility() error {
-	if sysinfo.OS() == sysinfo.Windows {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
-			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
-		} else if osv.Major < 10 || (osv.Major == 10 && osv.Micro < 17134) {
-			return locale.WrapError(err, "windows_compatibility_error")
-		}
-	}
-
-	return nil
 }
