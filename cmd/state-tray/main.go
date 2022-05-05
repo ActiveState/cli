@@ -169,7 +169,10 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
-	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
+	localProjectsUpdater, err := menu.NewLocalProjectsUpdater(mProjects)
+	if err != nil {
+		return errs.Wrap(err, "Could not create local projects updater")
+	}
 
 	localProjects, err := model.LocalProjects(context.Background())
 	if err != nil {
