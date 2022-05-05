@@ -206,7 +206,7 @@ jobs:
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
-          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
             set +e
             LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
             LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
@@ -233,7 +233,7 @@ jobs:
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
-          if [ "$GITHUB_EVENT_NAME" != "pull_request" ]; then
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
             LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
             IFS=',' read -r -a TESTS <<< "$LABELS"
             TEST_SUITE_TAGS=""
@@ -269,7 +269,7 @@ jobs:
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -280,7 +280,7 @@ jobs:
 
       - # === Notify Slack of Nightly Integration Test Failures ===
         name: Notify Slack of Nightly Integration Test Failures
-        if: github.event_name == 'pull_request' && steps.integration_tests.outcome == 'failure'
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
