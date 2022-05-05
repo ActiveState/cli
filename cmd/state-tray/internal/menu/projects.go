@@ -15,8 +15,9 @@ import (
 )
 
 type LocalProjectsUpdater struct {
-	menuItem *systray.MenuItem
-	items    []*localProjectsMenuItem
+	menuItem  *systray.MenuItem
+	items     []*localProjectsMenuItem
+	stateInfo *installation.AppInfo
 }
 
 type localProjectsMenuItem struct {
@@ -32,8 +33,12 @@ const (
 	ellipsis       = "\u2026"
 )
 
-func NewLocalProjectsUpdater(menuItem *systray.MenuItem) *LocalProjectsUpdater {
-	return &LocalProjectsUpdater{menuItem, []*localProjectsMenuItem{}}
+func NewLocalProjectsUpdater(menuItem *systray.MenuItem) (*LocalProjectsUpdater, error) {
+	stateApp, err := installation.NewAppInfo(installation.StateApp)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_state_info")
+	}
+	return &LocalProjectsUpdater{menuItem, []*localProjectsMenuItem{}, stateApp}, nil
 }
 
 func (u *LocalProjectsUpdater) Update(projects []*graph.Project) error {
@@ -55,12 +60,7 @@ func (u *LocalProjectsUpdater) Update(projects []*graph.Project) error {
 		u.items = append(u.items, &localProjectsMenuItem{mitem, "", "", cb, make(chan struct{})})
 	}
 
-	stateApp, err := installation.NewAppInfo(installation.StateApp)
-	if err != nil {
-		return locale.WrapError(err, "err_state_info")
-	}
-
-	u.startEventLoops(stateApp)
+	u.startEventLoops()
 
 	return nil
 }
@@ -81,9 +81,9 @@ func (u *LocalProjectsUpdater) removeItems() {
 	}
 }
 
-func (u *LocalProjectsUpdater) startEventLoops(info *installation.AppInfo) {
+func (u *LocalProjectsUpdater) startEventLoops() {
 	for _, item := range u.items {
-		go item.eventLoop(info)
+		go item.eventLoop(u.stateInfo)
 	}
 }
 
