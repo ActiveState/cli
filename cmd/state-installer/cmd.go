@@ -133,11 +133,6 @@ func main() {
 				Value:       &params.branch,
 			},
 			{
-				Shorthand: "b", // backwards compatibility
-				Hidden:    true,
-				Value:     &params.branch,
-			},
-			{
 				Name:        "command",
 				Shorthand:   "c",
 				Description: "Run any command after the install script has completed",
@@ -177,6 +172,7 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
+			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
