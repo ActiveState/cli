@@ -282,7 +282,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
-	cp.Expect("Done")
+	cp.Expect("Done", 5*time.Minute)
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
@@ -303,7 +303,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 			e2e.AppendEnv("SHELL="),
 		)
 	}
-	cp.Expect("Installation Complete", time.Second*30)
+	cp.Expect("Installation Complete", 5*time.Minute)
 
 	stateInfo, err := installation.NewAppInfoInDir(dir, installation.StateApp)
 	suite.Require().NoError(err)
