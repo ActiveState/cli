@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -128,9 +129,6 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	suite.Require().NoError(err)
 	defer cfg.Close()
 
-	stateExe, err := installation.NewAppInfoInDir(baseDir, installation.StateApp)
-	suite.Require().NoError(err)
-
 	spawnOpts := []e2e.SpawnOptions{
 		e2e.WithArgs("update"),
 		e2e.AppendEnv(suite.env(false, true)...),
@@ -139,7 +137,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp := ts.SpawnCmdWithOpts(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt), spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
 }
@@ -263,9 +261,6 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 }
 
 func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
-	stateExe, err := installation.NewAppInfoInDir(baseDir, installation.StateApp)
-	suite.Require().NoError(err)
-
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
 
@@ -279,7 +274,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp := ts.SpawnCmdWithOpts(stateExe.Exec(), spawnOpts...)
+	cp := ts.SpawnCmdWithOpts(filepath.Join(baseDir, "bin", constants.StateCmd+osutils.ExeExt), spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.Expect("Done", 5*time.Minute)
@@ -305,10 +300,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 	}
 	cp.Expect("Installation Complete", 5*time.Minute)
 
-	stateInfo, err := installation.NewAppInfoInDir(dir, installation.StateApp)
-	suite.Require().NoError(err)
-
-	suite.FileExists(stateInfo.Exec())
+	suite.FileExists(filepath.Join(dir, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
@@ -318,7 +310,8 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 	defer ts.Close()
 
 	installDir := filepath.Join(ts.Dirs.Work, "install")
-	fileutils.MkdirUnlessExists(installDir)
+	err := fileutils.MkdirUnlessExists(installDir)
+	suite.NoError(err)
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
