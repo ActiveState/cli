@@ -440,7 +440,7 @@ Error: {{.Error}}
 			"Z":            sectionEnd,
 		})
 		if err != nil {
-			s.t.Fatalf("Parsing template failed: %")
+			s.t.Fatalf("Parsing template failed: %s", err)
 		}
 		s.t.Fatal(v)
 	}
