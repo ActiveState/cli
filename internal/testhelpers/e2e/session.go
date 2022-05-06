@@ -14,12 +14,12 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
@@ -139,14 +139,10 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateExec, err := installation.NewExecInDir(buildDir, installation.StateApp)
-	assert.NoError(t, err)
-	svcExec, err := installation.NewExecInDir(buildDir, installation.ServiceApp)
-	assert.NoError(t, err)
-	trayExec, err := installation.NewExecInDir(buildDir, installation.TrayApp)
-	assert.NoError(t, err)
-	installExec, err := installation.NewExecInDir(buildDir, installation.InstallerApp)
-	assert.NoError(t, err)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
+	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
+	installExec := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
 
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
