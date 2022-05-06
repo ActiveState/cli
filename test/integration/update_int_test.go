@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -137,7 +136,10 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp := ts.SpawnCmdWithOpts(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt), spawnOpts...)
+	stateExec, err := installation.NewExecInDir(baseDir, installation.StateExec)
+	suite.NoError(err)
+
+	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
 	cp.Expect("Installing Update")
 }
@@ -274,7 +276,10 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	cp := ts.SpawnCmdWithOpts(filepath.Join(baseDir, "bin", constants.StateCmd+osutils.ExeExt), spawnOpts...)
+	stateExec, err := installation.NewExecInDir(baseDir, installation.StateExec)
+	suite.NoError(err)
+
+	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
 	cp.Expect("Done", 5*time.Minute)
@@ -300,7 +305,10 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 	}
 	cp.Expect("Installation Complete", 5*time.Minute)
 
-	suite.FileExists(filepath.Join(dir, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
+	stateExec, err := installation.NewExecInDir(dir, installation.StateExec)
+	suite.NoError(err)
+
+	suite.FileExists(stateExec)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {

@@ -120,7 +120,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			suite.FileExists(filepath.Join(installDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
+			stateExec, err := installation.NewExecInDir(installDir, installation.StateExec)
+			suite.NoError(err)
+			suite.FileExists(stateExec)
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
@@ -245,7 +247,10 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	cp := ts.SpawnCmd(filepath.Join(installDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt), "--version", "--output=json")
+	stateExec, err := installation.NewExecInDir(installDir, installation.StateExec)
+	suite.NoError(err)
+
+	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
