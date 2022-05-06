@@ -45,14 +45,14 @@ func (i *Installer) installLauncher() error {
 		return errs.Wrap(err, "Could not create application directory")
 	}
 
-	fromTray, err := installation.NewAppInfoInDir(i.path, installation.TrayApp)
+	trayExec, err := installation.NewExecInDir(i.path, installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
 
-	exeName := filepath.Base(fromTray.Exec())
+	exeName := filepath.Base(trayExec)
 	toTray := filepath.Join(launcherPath, constants.MacOSApplicationName, "Contents", "MacOS", exeName)
-	err = createNewSymlink(fromTray.Exec(), toTray)
+	err = createNewSymlink(trayExec, toTray)
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}
