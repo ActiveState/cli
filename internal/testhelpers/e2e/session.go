@@ -143,29 +143,29 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo, err := installation.NewAppInfoInDir(buildDir, installation.StateApp)
+	stateExec, err := installation.NewExecInDir(buildDir, installation.StateApp)
 	assert.NoError(t, err)
-	svcInfo, err := installation.NewAppInfoInDir(buildDir, installation.ServiceApp)
+	svcExec, err := installation.NewExecInDir(buildDir, installation.ServiceApp)
 	assert.NoError(t, err)
-	trayInfo, err := installation.NewAppInfoInDir(buildDir, installation.TrayApp)
+	trayExec, err := installation.NewExecInDir(buildDir, installation.TrayApp)
 	assert.NoError(t, err)
-	installInfo, err := installation.NewAppInfoInDir(buildDir, installation.InstallerApp)
+	installExec, err := installation.NewExecInDir(buildDir, installation.InstallerApp)
 	assert.NoError(t, err)
 
-	if !fileutils.FileExists(stateInfo.Exec()) {
+	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
-	if !fileutils.FileExists(svcInfo.Exec()) {
+	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayInfo.Exec()) {
+	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	if !fileutils.FileExists(installInfo.Exec()) {
+	if !fileutils.FileExists(installExec) {
 		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
 	}
 
-	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
+	return stateExec, svcExec, trayExec, installExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
