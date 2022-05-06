@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -354,7 +355,7 @@ func (c *Command) interceptFunc() InterceptFunc {
 // and add a warning banner for those who have.
 func (c *Command) SetUnstable(unstable bool) *Command {
 	c.unstable = unstable
-	if !c.cfg.GetBool(constants.UnstableConfig) {
+	if !condition.OptInUnstable(c.cfg) {
 		c.cobra.Hidden = unstable
 	}
 	return c
@@ -526,7 +527,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
 	if c.unstable && c.out.Type() != output.EditorV0FormatName {
-		if !c.cfg.GetBool(constants.UnstableConfig) {
+		if !condition.OptInUnstable(c.cfg) {
 			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
