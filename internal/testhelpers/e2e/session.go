@@ -410,9 +410,8 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 		var sectionStart, sectionEnd string
 		sectionStart = "\n=== "
 		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			ts := fmt.Sprintf("%d", time.Now().Unix())
-			sectionStart = "\\e[0Ksection_start:" + ts + ":section\\r\\e[0K"
-			sectionEnd = "\\e[0Ksection_end:" + ts + ":section\\r\\e[0K"
+			sectionStart = "##[group]"
+			sectionEnd = "##[endgroup]"
 		}
 
 		v, err := strutils.ParseTemplate(`
