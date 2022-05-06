@@ -16,7 +16,9 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -388,8 +390,60 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
-func observeExpectFn(s *Session) expect.ExpectObserver {
+func observeExpectFn2(s *Session) expect.ExpectObserver {
 	return termtest.TestExpectObserveFn(s.t)
+}
+
+func observeExpectFn(s *Session) expect.ExpectObserver {
+	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
+		if err == nil {
+			return
+		}
+
+		var value string
+		var sep string
+		for _, matcher := range matchers {
+			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
+			sep = ", "
+		}
+
+		var sectionStart, sectionEnd string
+		sectionStart = "\n=== "
+		if os.Getenv("GITHUB_ACTIONS") == "true" {
+			ts := fmt.Sprintf("%d", time.Now().Unix())
+			sectionStart = "\\e[0Ksection_start:" + ts + ":section\\r\\e[0K"
+			sectionEnd = "\\e[0Ksection_end:" + ts + ":section\\r\\e[0K"
+		}
+
+		v, err := strutils.ParseTemplate(`
+Could not meet expectation: '{{.Expectation}}'
+Error: {{.Error}}
+{{.A}}Stack: 
+{{.Stacktrace}}{{.Z}}
+{{.A}}Terminal snapshot:
+{{.Snapshot}}{{.Z}}
+{{.A}}Parsed output:
+{{.ParsedOutput}}{{.Z}}
+{{.A}}State Tool Log:
+{{.StateLog}}{{.Z}}
+{{.A}}State Svc Log:
+{{.SvcLog}}{{.Z}}
+`, map[string]interface{}{
+			"Expectation":  value,
+			"Error":        err,
+			"Stacktrace":   stacktrace.Get().String(),
+			"Snapshot":     ms.TermState.String(),
+			"ParsedOutput": fmt.Sprintf("%+q", ms.Buf.String()),
+			"StateLog":     s.MostRecentStateLog(),
+			"SvcLog":       s.SvcLog(),
+			"A":            sectionStart,
+			"Z":            sectionEnd,
+		})
+		if err != nil {
+			s.t.Fatalf("Parsing template failed: %")
+		}
+		s.t.Fatal(v)
+	}
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
@@ -430,6 +484,9 @@ func (s *Session) Close() error {
 
 func (s *Session) SvcLog() string {
 	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
 	files := fileutils.ListDirSimple(logDir, false)
 	lines := []string{}
 	for _, file := range files {
@@ -450,12 +507,18 @@ func (s *Session) SvcLog() string {
 	return ""
 }
 
-func (s *Session) StateLog() string {
+func (s *Session) MostRecentStateLog() string {
 	rx := regexp.MustCompile(`state-\d`)
 	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
 	var result string
 	var newest time.Time
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 		if !rx.MatchString(f.Name()) {
 			return nil
 		}
@@ -473,6 +536,9 @@ func (s *Session) StateLog() string {
 
 		return nil
 	})
+	if err != nil {
+		panic(fmt.Sprintf("Could not walk log dir: %v", err))
+	}
 
 	if result == "" {
 		panic("Could not find log file")
