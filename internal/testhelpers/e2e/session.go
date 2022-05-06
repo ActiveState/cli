@@ -498,7 +498,9 @@ func (s *Session) SvcLog() string {
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	panic(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
+	logging.Debug("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
+
+	return ""
 }
 
 func (s *Session) MostRecentStateLog() string {
