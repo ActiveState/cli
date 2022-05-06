@@ -45,6 +45,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
 	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.ServiceCommandName+osutils.ExeExt))
 
+	// Run state tool so test doesn't panic trying to find the log file
+	cp = ts.Spawn("--version")
+	cp.Expect("version")
+
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
 }
