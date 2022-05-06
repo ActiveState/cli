@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -37,7 +38,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		ActivateByCommand string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
-		{"install-prbranch", "", constants.BranchName, "", ""},
+		{"install-prbranch", "", "", "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
 		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
@@ -48,7 +49,23 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			script := scriptPath(suite.T(), ts.Dirs.Work)
+			// Determine URL of install script.
+			baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+			scriptBaseName := "install."
+			if runtime.GOOS != "windows" {
+				scriptBaseName += "sh"
+			} else {
+				scriptBaseName += "ps1"
+			}
+			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+
+			// Fetch it.
+			b, err := download.GetDirect(scriptUrl)
+			suite.Require().NoError(err)
+			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
+			suite.Require().NoError(fileutils.WriteFile(script, b))
+
+			// Construct installer command to execute.
 			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script, "-t", installDir}
 			if tt.Channel != "" {
@@ -96,7 +113,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			cp.SendLine("state --version")
-			cp.Expect("Branch")
+			cp.Expect("Version " + constants.Version)
+			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
@@ -148,6 +166,31 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 		)
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), ts.Dirs.Work)
+	args := []string{script, "-t", ts.Dirs.Work}
+	args = append(args, "-v", "does-not-exist")
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs(args...),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
+			e2e.AppendEnv("SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	}
+	cp.Expect("Could not download")
+	cp.ExpectLongString("does-not-exist")
 	cp.ExpectExitCode(1)
 }
 
