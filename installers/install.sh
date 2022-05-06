@@ -165,4 +165,4 @@ progress_done
 echo ""
 
 # Run the installer.
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@" --channel="$CHANNEL" --source-installer="install.sh"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
