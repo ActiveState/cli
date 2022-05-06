@@ -314,7 +314,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
-      - # === Fail If Nightly Integration Tests Failed ===
+      - # === Fail If Nightly Integration Tests Failed (Expand 'Integration Tests' above for more information) ===
         name: Fail If Nightly Integration Tests Failed
         if: github.event_name == 'pull_request' && steps.integration_tests.outcome == 'failure'
         shell: bash
