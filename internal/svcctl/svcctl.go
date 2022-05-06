@@ -71,7 +71,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 }
 
 func EnsureStartedAndLocateHTTP() (addr string, err error) {
-	svcExec, err := installation.NewExec(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
 		return "", locale.WrapError(err, "err_service_info")
 	}

@@ -13,19 +13,19 @@ import (
 type executableType int
 
 const (
-	StateApp = iota
-	ServiceApp
-	TrayApp
-	InstallerApp
-	UpdateApp
+	StateExec executableType = iota
+	ServiceExec
+	TrayExec
+	InstallerExec
+	UpdateExec
 )
 
 var execData = map[executableType]string{
-	StateApp:     constants.StateCmd + osutils.ExeExt,
-	ServiceApp:   constants.StateSvcCmd + osutils.ExeExt,
-	TrayApp:      constants.StateTrayCmd + osutils.ExeExt,
-	InstallerApp: constants.StateInstallerCmd + osutils.ExeExt,
-	UpdateApp:    constants.StateUpdateDialogCmd + osutils.ExeExt,
+	StateExec:     constants.StateCmd + osutils.ExeExt,
+	ServiceExec:   constants.StateSvcCmd + osutils.ExeExt,
+	TrayExec:      constants.StateTrayCmd + osutils.ExeExt,
+	InstallerExec: constants.StateInstallerCmd + osutils.ExeExt,
+	UpdateExec:    constants.StateUpdateDialogCmd + osutils.ExeExt,
 }
 
 func NewExec(exec executableType) (string, error) {

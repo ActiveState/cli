@@ -157,17 +157,17 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
-	stateExec, err := installation.NewExec(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
-	serviceExec, err := installation.NewExec(installation.ServiceApp)
+	serviceExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
 		return locale.WrapError(err, "err_service_info")
 	}
 
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}

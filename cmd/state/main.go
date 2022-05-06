@@ -136,7 +136,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
-	svcExec, err := installation.NewExec(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
 		return errs.Wrap(err, "Could not get service info")
 	}

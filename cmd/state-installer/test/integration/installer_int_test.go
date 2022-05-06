@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -42,12 +41,18 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
+	stateExec, err := installation.NewExecInDir(installation.BinDirName, installation.StateExec)
+	suite.NoError(err)
+
+	serviceExec, err := installation.NewExecInDir(installation.BinDirName, installation.ServiceExec)
+	suite.NoError(err)
+
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
-	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
-	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.ServiceCommandName+osutils.ExeExt))
+	suite.FileExists(stateExec)
+	suite.FileExists(serviceExec)
 
 	// Run state tool so test doesn't panic trying to find the log file
-	cp = ts.SpawnCmd(filepath.Join(target, installation.BinDirName, constants.StateCmd+osutils.ExeExt), "--version")
+	cp = ts.SpawnCmd(stateExec, "--version")
 	cp.Expect("Version")
 
 	// Assert that the config was written (ie. RC files or windows registry)

@@ -153,7 +153,7 @@ func run(cfg *config.Instance) (rerr error) {
 	)
 	systray.AddSeparator()
 
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -185,12 +185,12 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
-	stateExec, err := installation.NewExec(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
-	updateExec, err := installation.NewExec(installation.UpdateApp)
+	updateExec, err := installation.NewExec(installation.UpdateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_update_info")
 	}
