@@ -40,7 +40,6 @@ type Params struct {
 	sourceInstaller string
 	path            string
 	updateTag       string
-	branch          string
 	command         string
 	force           bool
 	activate        *project.Namespaced
@@ -128,16 +127,6 @@ func main() {
 		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
-				Name:        "channel",
-				Description: "Defaults to 'release'.  Specify an alternative channel to install from (eg. beta)",
-				Value:       &params.branch,
-			},
-			{
-				Shorthand: "b", // backwards compatibility
-				Hidden:    true,
-				Value:     &params.branch,
-			},
-			{
 				Name:        "command",
 				Shorthand:   "c",
 				Description: "Run any command after the install script has completed",
@@ -177,6 +166,8 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
+			{Name: "channel", Hidden: true, Value: &garbageString},
+			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
@@ -214,21 +205,16 @@ func main() {
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
-	targetBranch := params.branch
-	if targetBranch == "" {
-		targetBranch = constants.BranchName
-	}
-
 	if params.path == "" {
 		var err error
-		params.path, err = installation.InstallPathForBranch(targetBranch)
+		params.path, err = installation.InstallPathForBranch(constants.BranchName)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, targetBranch)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
