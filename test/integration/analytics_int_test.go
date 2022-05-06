@@ -65,12 +65,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
@@ -87,7 +87,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -107,7 +107,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
 			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.StateLog(), ts.SvcLog()))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
