@@ -32,14 +32,14 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "err_state_info")
 	}
 
 	err = removeInstall(logFile.Name(), u.cfg)
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateInfo.Exec()))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateExec))
 	}
 
 	err = removeCache(storage.CachePath())
@@ -76,25 +76,25 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(logFile string, cfg configurable) error {
-	svcInfo, err := installation.NewAppInfo(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceApp)
 	if err != nil {
 		return locale.WrapError(err, "err_service_info")
 	}
 
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
 
 	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
 	var aggErr error
-	for _, info := range []*installation.AppInfo{svcInfo, trayInfo} {
-		err := os.Remove(info.Exec())
+	for _, exec := range []string{svcExec, trayExec} {
+		err := os.Remove(exec)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
-			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", info.Exec(), err.Error())
+			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", exec, err.Error())
 		}
 	}
 
@@ -102,13 +102,13 @@ func removeInstall(logFile string, cfg configurable) error {
 		return aggErr
 	}
 
-	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
 	// Schedule removal of the branch name directory and the config directory
-	paths := []string{filepath.Dir(filepath.Dir(stateInfo.Exec())), cfg.ConfigPath()}
+	paths := []string{filepath.Dir(filepath.Dir(stateExec)), cfg.ConfigPath()}
 	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)

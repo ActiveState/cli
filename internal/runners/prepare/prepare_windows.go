@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
@@ -36,12 +37,12 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
-	trayApp, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
 
-	sc := shortcut.New(shortcutDir, trayApp.Name(), trayApp.Exec())
+	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
 
 	err = sc.Enable()
 	if err != nil {
@@ -126,12 +127,12 @@ func setStateProtocol() error {
 // InstalledPreparedFiles returns the files installed by the state _prepare command
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}
 
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	name, exec := constants.TrayAppName, trayExec
 
 	as, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
@@ -140,7 +141,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		files = append(files, as)
 	}
 
-	sc := shortcut.New(shortcutDir, trayInfo.Name(), trayInfo.Exec())
+	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
 	files = append(files, filepath.Dir(sc.Path()))
 
 	return files, nil
