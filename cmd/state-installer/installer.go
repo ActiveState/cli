@@ -120,7 +120,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	logging.Debug("Bin directory: %s", binDir)
-	stateExec, err := installation.NewExecInDir(binDir, installation.StateApp)
+	stateExec, err := installation.NewExecInDir(binDir, installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
@@ -133,7 +133,7 @@ func (i *Installer) Install() (rerr error) {
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		trayExec, err := installation.NewExecInDir(binDir, installation.TrayApp)
+		trayExec, err := installation.NewExecInDir(binDir, installation.TrayExec)
 		if err != nil {
 			return locale.WrapError(err, "err_tray_info_dir", "", binDir)
 		}

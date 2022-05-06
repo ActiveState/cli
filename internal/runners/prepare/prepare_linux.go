@@ -15,7 +15,7 @@ import (
 )
 
 func (r *Prepare) prepareOS() error {
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -76,7 +76,7 @@ func prependHomeDir(path string) (string, error) {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}

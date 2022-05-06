@@ -162,7 +162,7 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
 func relaunch(args []string) (int, error) {
-	stateExec, err := installation.NewExec(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
 		return -1, locale.WrapError(err, "err_state_info")
 	}

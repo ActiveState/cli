@@ -340,7 +340,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return errs.Wrap(err, "Could not detect installation bin path")
 	}
 
-	stateExe, err := installation.NewExecInDir(installPath, installation.StateApp)
+	stateExe, err := installation.NewExecInDir(installPath, installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
