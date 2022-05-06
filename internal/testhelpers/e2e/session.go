@@ -416,8 +416,10 @@ Could not meet expectation: '{{.Expectation}}'
 Error: {{.Error}}
 {{.A}}Stack: 
 {{.Stacktrace}}{{.Z}}
-{{.A}}Terminal snapshot:
-{{.Snapshot}}{{.Z}}
+{{.A}}Partial Terminal snapshot:
+{{.PartialSnapshot}}{{.Z}}
+{{.A}}Full Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
 {{.A}}Parsed output:
 {{.ParsedOutput}}{{.Z}}
 {{.A}}State Tool Log:
@@ -425,15 +427,16 @@ Error: {{.Error}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
 `, map[string]interface{}{
-			"Expectation":  value,
-			"Error":        err,
-			"Stacktrace":   stacktrace.Get().String(),
-			"Snapshot":     ms.TermState.String(),
-			"ParsedOutput": fmt.Sprintf("%+q", ms.Buf.String()),
-			"StateLog":     s.MostRecentStateLog(),
-			"SvcLog":       s.SvcLog(),
-			"A":            sectionStart,
-			"Z":            sectionEnd,
+			"Expectation":     value,
+			"Error":           err,
+			"Stacktrace":      stacktrace.Get().String(),
+			"PartialSnapshot": ms.TermState.String(),
+			"FullSnapshot":    s.cp.Snapshot(),
+			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
+			"StateLog":        s.MostRecentStateLog(),
+			"SvcLog":          s.SvcLog(),
+			"A":               sectionStart,
+			"Z":               sectionEnd,
 		})
 		if err != nil {
 			s.t.Fatalf("Parsing template failed: %s", err)
