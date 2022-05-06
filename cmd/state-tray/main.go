@@ -153,12 +153,12 @@ func run(cfg *config.Instance) (rerr error) {
 	)
 	systray.AddSeparator()
 
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
 
-	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
+	as := autostart.New(constants.TrayAppName, trayExec, cfg)
 	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -185,12 +185,12 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
-	stateApp, err := installation.NewAppInfo(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
-	updateAppInfo, err := installation.NewAppInfo(installation.UpdateApp)
+	updateExec, err := installation.NewExec(installation.UpdateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_update_info")
 	}
@@ -199,7 +199,7 @@ func run(cfg *config.Instance) (rerr error) {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			err = open.TerminalAndWait(stateApp.Exec() + " --version")
+			err = open.TerminalAndWait(stateExec + " --version")
 			if err != nil {
 				multilog.Error("Could not open command prompt: %v", err)
 			}
@@ -259,7 +259,7 @@ func run(cfg *config.Instance) (rerr error) {
 			}
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
-			if err := execute(updateAppInfo.Exec(), nil); err != nil {
+			if err := execute(updateExec, nil); err != nil {
 				return errs.New("Could not execute: %s", constants.UpdateDialogName)
 			}
 		case <-mQuit.ClickedCh:

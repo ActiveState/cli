@@ -71,11 +71,11 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 }
 
 func EnsureStartedAndLocateHTTP() (addr string, err error) {
-	svcInfo, err := installation.NewAppInfo(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceApp)
 	if err != nil {
 		return "", locale.WrapError(err, "err_service_info")
 	}
-	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcInfo.Exec())
+	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcExec)
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {

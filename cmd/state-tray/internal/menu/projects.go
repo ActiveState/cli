@@ -17,7 +17,7 @@ import (
 type LocalProjectsUpdater struct {
 	menuItem  *systray.MenuItem
 	items     []*localProjectsMenuItem
-	stateInfo *installation.AppInfo
+	stateExec string
 }
 
 type localProjectsMenuItem struct {
@@ -34,7 +34,7 @@ const (
 )
 
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) (*LocalProjectsUpdater, error) {
-	stateApp, err := installation.NewAppInfo(installation.StateApp)
+	stateApp, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_state_info")
 	}
@@ -83,21 +83,21 @@ func (u *LocalProjectsUpdater) removeItems() {
 
 func (u *LocalProjectsUpdater) startEventLoops() {
 	for _, item := range u.items {
-		go item.eventLoop(u.stateInfo)
+		go item.eventLoop(u.stateExec)
 	}
 }
 
-func (i *localProjectsMenuItem) eventLoop(info *installation.AppInfo) {
+func (i *localProjectsMenuItem) eventLoop(exec string) {
 	for {
 		select {
 		case <-i.menuItem.ClickedCh:
 			if i.customCallback != nil {
 				i.customCallback()
 			} else {
-				cmd := fmt.Sprintf("%s activate %s --path %s", info.Exec(), i.namespace, i.location)
+				cmd := fmt.Sprintf("%s activate %s --path %s", exec, i.namespace, i.location)
 				ns, err := project.ParseNamespace(i.namespace)
 				if err != nil || !ns.IsValid() {
-					cmd = fmt.Sprintf("%s activate --path %s", info.Exec(), i.location)
+					cmd = fmt.Sprintf("%s activate --path %s", exec, i.location)
 				}
 				err = open.TerminalAndWait(cmd)
 				if err != nil {
