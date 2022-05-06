@@ -32,7 +32,7 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	stateExec, err := installation.NewExec(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
 		aggErr = locale.WrapError(aggErr, "err_state_info")
 	}
@@ -76,12 +76,12 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(logFile string, cfg configurable) error {
-	svcExec, err := installation.NewExec(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
 		return locale.WrapError(err, "err_service_info")
 	}
 
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -102,7 +102,7 @@ func removeInstall(logFile string, cfg configurable) error {
 		return aggErr
 	}
 
-	stateExec, err := installation.NewExec(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
