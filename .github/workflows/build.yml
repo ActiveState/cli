@@ -314,6 +314,12 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
+      - # === Fail If Nightly Integration Tests Failed (Expand 'Integration Tests' above for more information) ===
+        name: Fail If Nightly Integration Tests Failed
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
+        shell: bash
+        run: exit 1
+
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
         uses: actions/upload-artifact@v2
