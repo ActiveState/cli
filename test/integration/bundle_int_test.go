@@ -149,8 +149,8 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=python")
-	cp.ExpectLongString("Currently no bundle of the provided name is available on the ActiveState Platform")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("No bundles in our catalog match")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
