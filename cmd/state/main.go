@@ -145,13 +145,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
-	svcInfo, err := installation.NewAppInfo(installation.ServiceApp)
+	svcExec, err := installation.NewExec(installation.ServiceApp)
 	if err != nil {
 		return errs.Wrap(err, "Could not get service info")
 	}
 
 	ipcClient := svcctl.NewDefaultIPCClient()
-	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcInfo.Exec())
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec)
 	if err != nil {
 		return locale.WrapError(err, "start_svc_failed", "Failed to start state-svc at state tool invocation")
 	}

@@ -143,13 +143,13 @@ func (f *Executor) createExecutor(exe string) error {
 		}
 	}
 
-	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
 	tplParams := map[string]interface{}{
-		"state":      stateInfo.Exec(),
+		"state":      stateExec,
 		"exe":        filepath.Base(exe),
 		"targetPath": f.targetPath,
 		"denote":     []string{executorDenoter, denoteTarget},

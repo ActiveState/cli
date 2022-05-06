@@ -157,17 +157,17 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
-	stateInfo, err := installation.NewAppInfo(installation.StateApp)
+	stateExec, err := installation.NewExec(installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
-	serviceInfo, err := installation.NewAppInfo(installation.ServiceApp)
+	serviceExec, err := installation.NewExec(installation.ServiceApp)
 	if err != nil {
 		return locale.WrapError(err, "err_service_info")
 	}
 
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -178,9 +178,9 @@ func cleanInstallDir(dir string) error {
 
 		// Remove all of the state tool executables and finally the
 		// bin directory
-		filepath.Join(installation.BinDirName, stateInfo.Exec()),
-		filepath.Join(installation.BinDirName, serviceInfo.Exec()),
-		filepath.Join(installation.BinDirName, trayInfo.Exec()),
+		filepath.Join(installation.BinDirName, stateExec),
+		filepath.Join(installation.BinDirName, serviceExec),
+		filepath.Join(installation.BinDirName, trayExec),
 		installation.BinDirName,
 
 		// The system directory is on MacOS only and contains the tray

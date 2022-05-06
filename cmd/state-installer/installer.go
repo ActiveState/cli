@@ -119,25 +119,25 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
-	stateInfo, err := installation.NewAppInfoInDir(binDir, installation.StateApp)
+	stateExec, err := installation.NewExecInDir(binDir, installation.StateApp)
 	if err != nil {
 		return locale.WrapError(err, "err_state_info")
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(stateInfo.Exec(), "_prepare"); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(stateExec, "_prepare"); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		trayInfo, err := installation.NewAppInfoInDir(binDir, installation.TrayApp)
+		trayExec, err := installation.NewExecInDir(binDir, installation.TrayApp)
 		if err != nil {
 			return locale.WrapError(err, "err_tray_info_dir", "", binDir)
 		}
 
-		if _, err := exeutils.ExecuteAndForget(trayInfo.Exec(), []string{}); err != nil {
+		if _, err := exeutils.ExecuteAndForget(trayExec, []string{}); err != nil {
 			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}

@@ -15,12 +15,12 @@ import (
 )
 
 func (r *Prepare) prepareOS() error {
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
 
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	name, exec := constants.TrayAppName, trayExec
 
 	if err := r.setupDesktopApplicationFile(name, exec); err != nil {
 		r.reportError(locale.Tr(
@@ -76,12 +76,12 @@ func prependHomeDir(path string) (string, error) {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}
 
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	name, exec := constants.TrayAppName, trayExec
 
 	shortcut, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
