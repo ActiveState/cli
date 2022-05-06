@@ -69,6 +69,8 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 }
 
 func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
+	// If you need to run this test comment the next line and provide a commit that has no CVE's
+	suite.T().Skip("Skipping test because due to the nature of CVE's it's impossible to nail down a commit without CVE's.")
 	suite.OnlyRunForTags(tagsuite.Cve)
 
 	ts := e2e.New(suite.T(), false)
