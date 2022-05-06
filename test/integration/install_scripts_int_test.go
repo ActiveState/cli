@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -37,7 +38,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		ActivateByCommand string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
-		{"install-prbranch", "", constants.BranchName, "", ""},
+		{"install-prbranch", "", "", "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
 		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
@@ -48,7 +49,23 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			script := scriptPath(suite.T(), ts.Dirs.Work)
+			// Determine URL of install script.
+			baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+			scriptBaseName := "install."
+			if runtime.GOOS != "windows" {
+				scriptBaseName += "sh"
+			} else {
+				scriptBaseName += "ps1"
+			}
+			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+
+			// Fetch it.
+			b, err := download.GetDirect(scriptUrl)
+			suite.Require().NoError(err)
+			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
+			suite.Require().NoError(fileutils.WriteFile(script, b))
+
+			// Construct installer command to execute.
 			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script, "-t", installDir}
 			if tt.Channel != "" {
@@ -96,7 +113,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			cp.SendLine("state --version")
-			cp.Expect("Branch")
+			cp.Expect("Version " + constants.Version)
+			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
