@@ -49,13 +49,13 @@ func NewExecInDir(baseDir string, exec executableType) (string, error) {
 				return "", errs.Wrap(err, "Could not get absolute directory of os.Args[0]")
 			}
 		}
-	}
 
-	pathEvaled, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not eval symlinks")
+		pathEvaled, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not eval symlinks")
+		}
+		path = pathEvaled
 	}
-	path = pathEvaled
 
 	return filepath.Join(filepath.Dir(path), execData[exec]), nil
 }
