@@ -54,8 +54,8 @@ func NewExecInDir(baseDir string, exec executableType) (string, error) {
 		if err != nil {
 			return "", errs.Wrap(err, "Could not eval symlinks")
 		}
-		path = pathEvaled
+		path = filepath.Dir(pathEvaled)
 	}
 
-	return filepath.Join(filepath.Dir(path), execData[exec]), nil
+	return filepath.Join(path, execData[exec]), nil
 }
