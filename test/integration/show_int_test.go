@@ -17,16 +17,6 @@ type ShowIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ShowIntegrationTestSuite) TestFailure() {
-	suite.OnlyRunForTags(tagsuite.Show)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("show")
-	cp.Expect("String that won't ever appear")
-	cp.ExpectExitCode(0)
-}
-
 func (suite *ShowIntegrationTestSuite) TestShow() {
 	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)
