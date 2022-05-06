@@ -37,7 +37,7 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_info")
 	}
@@ -127,7 +127,7 @@ func setStateProtocol() error {
 // InstalledPreparedFiles returns the files installed by the state _prepare command
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.NewExec(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}
