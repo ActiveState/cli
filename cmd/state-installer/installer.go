@@ -122,7 +122,7 @@ func (i *Installer) Install() (rerr error) {
 	logging.Debug("Bin directory: %s", binDir)
 	stateExec, err := installation.NewExecInDir(binDir, installation.StateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_state_info")
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
@@ -135,7 +135,7 @@ func (i *Installer) Install() (rerr error) {
 	if trayRunning {
 		trayExec, err := installation.NewExecInDir(binDir, installation.TrayExec)
 		if err != nil {
-			return locale.WrapError(err, "err_tray_info_dir", "", binDir)
+			return locale.WrapError(err, "err_tray_exec_dir", "", binDir)
 		}
 
 		if _, err := exeutils.ExecuteAndForget(trayExec, []string{}); err != nil {

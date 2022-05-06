@@ -155,7 +155,7 @@ func run(cfg *config.Instance) (rerr error) {
 
 	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
-		return locale.WrapError(err, "err_tray_info")
+		return locale.WrapError(err, "err_tray_exec")
 	}
 
 	as := autostart.New(constants.TrayAppName, trayExec, cfg)
@@ -187,12 +187,12 @@ func run(cfg *config.Instance) (rerr error) {
 
 	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_state_info")
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	updateExec, err := installation.NewExec(installation.UpdateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_update_info")
+		return locale.WrapError(err, "err_update_exec")
 	}
 
 	for {

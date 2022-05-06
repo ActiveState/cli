@@ -342,7 +342,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 
 	stateExe, err := installation.NewExecInDir(installPath, installation.StateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_state_info")
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	// Execute requested command, these are mutually exclusive

@@ -34,7 +34,7 @@ func (u *Uninstall) runUninstall() error {
 
 	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		aggErr = locale.WrapError(aggErr, "err_state_info")
+		aggErr = locale.WrapError(aggErr, "err_state_exec")
 	}
 
 	err = removeInstall(logFile.Name(), u.cfg)
@@ -78,12 +78,12 @@ func removeConfig(configPath string, out output.Outputer) error {
 func removeInstall(logFile string, cfg configurable) error {
 	svcExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
-		return locale.WrapError(err, "err_service_info")
+		return locale.WrapError(err, "err_service_exec")
 	}
 
 	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
-		return locale.WrapError(err, "err_tray_info")
+		return locale.WrapError(err, "err_tray_exec")
 	}
 
 	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
@@ -104,7 +104,7 @@ func removeInstall(logFile string, cfg configurable) error {
 
 	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_state_info")
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	// Schedule removal of the branch name directory and the config directory

@@ -1881,19 +1881,19 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
-err_state_info:
-  other: Could not get state info
-err_service_info:
-  other: Could not get service info
-err_tray_info:
-  other: Could not get state tray info
-err_update_info:
-  other: Could not get update dialog app info
-err_state_info_dir:
-  other: Could not get state info from directory {{.V0}}
-err_service_info_dir:
-  other: Could not get service info from directory {{.V0}}
-err_tray_info_dir:
-  other: Could not get tray info from directory {{.V0}}
-err_update_info_dir:
-  other: Could not get update dialog app info from directory {{.V0}}
+err_state_exec:
+  other: Could not get state exec
+err_service_exec:
+  other: Could not get service exec
+err_tray_exec:
+  other: Could not get state tray exec
+err_update_exec:
+  other: Could not get update dialog exec
+err_state_exec_dir:
+  other: Could not get state exec from directory {{.V0}}
+err_service_exec_dir:
+  other: Could not get service exec from directory {{.V0}}
+err_tray_exec_dir:
+  other: Could not get tray exec from directory {{.V0}}
+err_update_exec_dir:
+  other: Could not get update dialog app exec from directory {{.V0}}

@@ -17,7 +17,7 @@ import (
 func (r *Prepare) prepareOS() error {
 	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
-		return locale.WrapError(err, "err_tray_info")
+		return locale.WrapError(err, "err_tray_exec")
 	}
 
 	name, exec := constants.TrayAppName, trayExec
@@ -78,7 +78,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
 	trayExec, err := installation.NewExec(installation.TrayExec)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_info")
+		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
 	name, exec := constants.TrayAppName, trayExec

@@ -47,7 +47,7 @@ func (i *Installer) installLauncher() error {
 
 	trayExec, err := installation.NewExecInDir(i.path, installation.TrayExec)
 	if err != nil {
-		return locale.WrapError(err, "err_tray_info")
+		return locale.WrapError(err, "err_tray_exec")
 	}
 
 	exeName := filepath.Base(trayExec)

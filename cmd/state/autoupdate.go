@@ -153,7 +153,7 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 func relaunch(args []string) (int, error) {
 	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		return -1, locale.WrapError(err, "err_state_info")
+		return -1, locale.WrapError(err, "err_state_exec")
 	}
 
 	code, _, err := exeutils.ExecuteAndPipeStd(stateExec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
