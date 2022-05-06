@@ -2,10 +2,8 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/stretchr/testify/suite"
