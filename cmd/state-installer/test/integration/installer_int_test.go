@@ -41,10 +41,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
-	stateExec, err := installation.NewExecInDir(installation.BinDirName, installation.StateExec)
+	stateExec, err := installation.NewExecInDir(target, installation.StateExec)
 	suite.NoError(err)
 
-	serviceExec, err := installation.NewExecInDir(installation.BinDirName, installation.ServiceExec)
+	serviceExec, err := installation.NewExecInDir(target, installation.ServiceExec)
 	suite.NoError(err)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
