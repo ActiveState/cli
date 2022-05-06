@@ -1,6 +1,7 @@
 package prepare
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -14,11 +15,11 @@ func (r *Prepare) prepareOS() error {
 // InstalledPreparedFiles returns the files installed by the prepare command
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo, err := installation.NewAppInfo(installation.TrayApp)
+	trayExec, err := installation.NewExec(installation.TrayApp)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_info")
 	}
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	name, exec := constants.TrayAppName, trayExec
 
 	sc, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
