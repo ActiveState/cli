@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 const (
@@ -78,7 +77,6 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not detect install root")
 	}
-	logging.Debug("Found install root:", installPath)
 
 	return filepath.Join(installPath, BinDirName), nil
 }

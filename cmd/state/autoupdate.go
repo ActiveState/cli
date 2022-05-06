@@ -91,7 +91,6 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	code, err := relaunch(args)
 	if err != nil {
-		logging.Error("Failed to relaunch: %s", errs.JoinMessage(err))
 		return true, &forwardExitError{code}
 	}
 

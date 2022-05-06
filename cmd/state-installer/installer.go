@@ -119,7 +119,6 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
-	logging.Debug("Bin directory: %s", binDir)
 	stateExec, err := installation.NewExecInDir(binDir, installation.StateExec)
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
