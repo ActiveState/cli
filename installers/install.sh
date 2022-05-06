@@ -8,7 +8,7 @@ BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Path to the installer executable in the archive.
 INSTALLERNAME="state-install/state-installer"
 # Channel the installer will target
-CHANNEL='release'
+CHANNEL="release"
 # The version to install (autodetermined to be the latest if left unspecified)
 VERSION=""
 # the download exetension
