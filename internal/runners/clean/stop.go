@@ -18,7 +18,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 	// On Windows we need to halt the state tray and the state service before we can remove them
 	svcExec, err := installation.NewExec(installation.ServiceExec)
 	if err != nil {
-		return locale.WrapError(err, "err_service_info")
+		return locale.WrapError(err, "err_service_exec")
 	}
 
 	// Todo: https://www.pivotaltracker.com/story/show/177585085

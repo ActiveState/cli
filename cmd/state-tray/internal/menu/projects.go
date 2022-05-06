@@ -36,7 +36,7 @@ const (
 func NewLocalProjectsUpdater(menuItem *systray.MenuItem) (*LocalProjectsUpdater, error) {
 	stateApp, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_state_info")
+		return nil, locale.WrapError(err, "err_state_exec")
 	}
 	return &LocalProjectsUpdater{menuItem, []*localProjectsMenuItem{}, stateApp}, nil
 }

@@ -145,7 +145,7 @@ func (f *Executor) createExecutor(exe string) error {
 
 	stateExec, err := installation.NewExec(installation.StateExec)
 	if err != nil {
-		return locale.WrapError(err, "err_state_info")
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	tplParams := map[string]interface{}{
