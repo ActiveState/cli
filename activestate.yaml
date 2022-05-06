@@ -266,7 +266,7 @@ scripts:
       cp installers/legacy-install.sh $INSTALLERS_DIR/legacy-install${constants.SCRIPT_EXT}
 
       if [ "$BRANCH" != "" ]; then
-        sed "s/\(CHANNEL[[:space:]]*=[[:space:]]*\)\"release\"/\\1\"${BRANCH/\//\\/}\"/" installers/install${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
+        sed "s/\(CHANNEL[[:space:]]*=[[:space:]]*\)'release'/\\1'${BRANCH/\//\\/}'/" installers/install${constants.SCRIPT_EXT} > $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       else
         cp installers/install${constants.SCRIPT_EXT} $INSTALLERS_DIR/install${constants.SCRIPT_EXT}
       fi
