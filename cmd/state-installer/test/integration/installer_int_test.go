@@ -42,13 +42,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
-	// Run state tool so test doesn't panic trying to find the log file
-	cp = ts.Spawn("--version")
-	cp.Expect("version")
-
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
 	suite.FileExists(filepath.Join(target, installation.BinDirName, constants.ServiceCommandName+osutils.ExeExt))
+
+	// Run state tool so test doesn't panic trying to find the log file
+	cp = ts.SpawnCmd(filepath.Join(target, installation.BinDirName, constants.StateCmd+osutils.ExeExt), "--version")
+	cp.Expect("Version")
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
