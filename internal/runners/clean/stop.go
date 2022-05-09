@@ -16,7 +16,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 	cleanForceTip := locale.Tl("clean_force_tip", "You can re-run the command with the [ACTIONABLE]--force[/RESET] flag.")
 
 	// On Windows we need to halt the state tray and the state service before we can remove them
-	svcExec, err := installation.NewExec(installation.ServiceExec)
+	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
 	}

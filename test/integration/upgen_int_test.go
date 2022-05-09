@@ -52,7 +52,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 
 	cp.ExpectExitCode(0)
 
-	stateExec, err := installation.NewExecInDir(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir), installation.StateExec)
+	stateExec, err := installation.StateExecFromDir(filepath.Join(tempPath, constants.ToplevelInstallArchiveDir))
 	suite.NoError(err)
 
 	cp = ts.SpawnCmd(stateExec, "--version")
