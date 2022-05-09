@@ -34,7 +34,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 
 	// Check if we error out on conflicts properly
 	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
-	cp.Expect(`Could not create project`)
+	cp.Expect(`You already have a project with the name`)
 	cp.ExpectExitCode(1)
 }
 
