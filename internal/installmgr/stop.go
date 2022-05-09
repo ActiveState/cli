@@ -50,7 +50,7 @@ func stopTray(installPath string, cfg *config.Instance) error {
 }
 
 func stopSvc(installPath string) error {
-	svcExec, err := installation.NewExecInDir(installPath, installation.ServiceExec)
+	svcExec, err := installation.ServiceExecFromDir(installPath)
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec_dir", "", installPath)
 	}

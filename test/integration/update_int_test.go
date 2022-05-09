@@ -133,7 +133,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	stateExec, err := installation.NewExecInDir(baseDir, installation.StateExec)
+	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
@@ -273,7 +273,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		spawnOpts = append(spawnOpts, opts...)
 	}
 
-	stateExec, err := installation.NewExecInDir(baseDir, installation.StateExec)
+	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
@@ -302,7 +302,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 	}
 	cp.Expect("Installation Complete", 5*time.Minute)
 
-	stateExec, err := installation.NewExecInDir(dir, installation.StateExec)
+	stateExec, err := installation.StateExecFromDir(dir)
 	suite.NoError(err)
 
 	suite.FileExists(stateExec)

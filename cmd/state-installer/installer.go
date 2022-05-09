@@ -119,7 +119,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
-	stateExec, err := installation.NewExecInDir(binDir, installation.StateExec)
+	stateExec, err := installation.StateExecFromDir(binDir)
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
@@ -132,7 +132,7 @@ func (i *Installer) Install() (rerr error) {
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		trayExec, err := installation.NewExecInDir(binDir, installation.TrayExec)
+		trayExec, err := installation.TrayExecFromDir(binDir)
 		if err != nil {
 			return locale.WrapError(err, "err_tray_exec_dir", "", binDir)
 		}

@@ -143,7 +143,7 @@ func (f *Executor) createExecutor(exe string) error {
 		}
 	}
 
-	stateExec, err := installation.NewExec(installation.StateExec)
+	stateExec, err := installation.StateExec()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}

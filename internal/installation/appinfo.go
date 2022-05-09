@@ -11,26 +11,26 @@ import (
 type executableType int
 
 const (
-	StateExec executableType = iota
-	ServiceExec
-	TrayExec
-	InstallerExec
-	UpdateExec
+	state executableType = iota
+	service
+	tray
+	installer
+	update
 )
 
 var execData = map[executableType]string{
-	StateExec:     constants.StateCmd + osutils.ExeExt,
-	ServiceExec:   constants.StateSvcCmd + osutils.ExeExt,
-	TrayExec:      constants.StateTrayCmd + osutils.ExeExt,
-	InstallerExec: constants.StateInstallerCmd + osutils.ExeExt,
-	UpdateExec:    constants.StateUpdateDialogCmd + osutils.ExeExt,
+	state:     constants.StateCmd + osutils.ExeExt,
+	service:   constants.StateSvcCmd + osutils.ExeExt,
+	tray:      constants.StateTrayCmd + osutils.ExeExt,
+	installer: constants.StateInstallerCmd + osutils.ExeExt,
+	update:    constants.StateUpdateDialogCmd + osutils.ExeExt,
 }
 
-func NewExec(exec executableType) (string, error) {
-	return NewExecInDir("", exec)
+func newExec(exec executableType) (string, error) {
+	return newExecFromDir("", exec)
 }
 
-func NewExecInDir(baseDir string, exec executableType) (string, error) {
+func newExecFromDir(baseDir string, exec executableType) (string, error) {
 	var path string
 	var err error
 	if baseDir != "" {
@@ -43,4 +43,44 @@ func NewExecInDir(baseDir string, exec executableType) (string, error) {
 	}
 
 	return filepath.Join(path, execData[exec]), nil
+}
+
+func StateExec() (string, error) {
+	return newExec(state)
+}
+
+func StateExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, state)
+}
+
+func ServiceExec() (string, error) {
+	return newExec(service)
+}
+
+func ServiceExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, service)
+}
+
+func TrayExec() (string, error) {
+	return newExec(tray)
+}
+
+func TrayExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, tray)
+}
+
+func InstallerExec() (string, error) {
+	return newExec(installer)
+}
+
+func InstallerExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, installer)
+}
+
+func UpdateExec() (string, error) {
+	return newExec(update)
+}
+
+func NewUpdateExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, update)
 }
