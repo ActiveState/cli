@@ -528,10 +528,10 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	if c.unstable && c.out.Type() != output.EditorV0FormatName {
 		if !condition.OptInUnstable(c.cfg) {
-			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
+			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
-		c.out.Print(locale.T("unstable_feature_banner"))
+		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
 
 	subCommandString := c.UseFull()
