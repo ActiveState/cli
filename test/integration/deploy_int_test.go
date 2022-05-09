@@ -32,24 +32,27 @@ func init() {
 }
 
 func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", prj, "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.WithArgs("deploy", prj, "--path", targetPath),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	case "darwin":
 		// On MacOS the command is the same as Linux, however some binaries
 		// already exist at /usr/local/bin so we use the --force flag
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", prj, "--path", filepath.Join(ts.Dirs.Work, "target"), "--force"),
+			e2e.WithArgs("deploy", prj, "--path", targetPath, "--force"),
 			e2e.AppendEnv("SHELL=bash"),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	default:
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", prj, "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.WithArgs("deploy", prj, "--path", targetPath),
 			e2e.AppendEnv("SHELL=bash"),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
@@ -61,7 +64,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
 		cp.Expect("Symlinking", 30*time.Second)
 	}
 	cp.Expect("Deployment Information", 60*time.Second)
-	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
+	cp.Expect(targetPath) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
@@ -83,15 +86,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	suite.deploy(ts, "ActiveState-CLI/Perl")
 
-	suite.checkSymlink("perl", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("perl", ts.Dirs.Bin, targetPath)
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",
-			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
+			e2e.WithArgs("/k", filepath.Join(targetPath, "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
@@ -100,7 +106,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 			"/bin/bash",
 			e2e.AppendEnv("PROMPT_COMMAND="),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
+		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(targetPath, "bin", "shell.sh")))
 	}
 
 	errorLevel := "echo $?"
@@ -156,15 +162,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	suite.deploy(ts, "ActiveState-CLI/Python3")
 
-	suite.checkSymlink("python3", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("python3", ts.Dirs.Bin, targetPath)
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",
-			e2e.WithArgs("/k", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.bat")),
+			e2e.WithArgs("/k", filepath.Join(targetPath, "bin", "shell.bat")),
 			e2e.AppendEnv("PATHEXT=.COM;.EXE;.BAT;.LNK", "SHELL="),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
@@ -173,7 +182,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 			"/bin/bash",
 			e2e.AppendEnv("PROMPT_COMMAND="),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(ts.Dirs.Work, "target", "bin", "shell.sh")))
+		cp.SendLine(fmt.Sprintf("source %s\n", filepath.Join(targetPath, "bin", "shell.sh")))
 	}
 
 	errorLevel := "echo $?"
@@ -212,7 +221,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	targetDir := filepath.Join(ts.Dirs.Work, "target")
+	targetDir, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
 	if fileutils.TargetExists(targetDir) {
 		isEmpty, err := fileutils.IsEmptyDir(targetDir)
 		suite.Require().NoError(err)
@@ -246,9 +256,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	// Install step is required
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("need to run the install step")
@@ -257,13 +270,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", targetPath),
 			e2e.AppendEnv("SHELL=bash"),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", targetPath),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	}
@@ -274,7 +287,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"), "--user"),
+			e2e.WithArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", targetPath, "--user"),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 		cp.Expect("Configuring shell", 60*time.Second)
@@ -282,11 +295,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), filepath.Join(ts.Dirs.Work, "target"), "Windows user PATH should contain our target dir")
+		suite.Contains(string(out), targetPath, "Windows user PATH should contain our target dir")
 	}
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	if runtime.GOOS != "windows" {
 		// Test bashrc
 		homeDir, err := os.UserHomeDir()
@@ -295,14 +311,12 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), filepath.Join(ts.Dirs.Work, "target"), "bashrc should contain our target dir")
+		suite.Contains(string(bashContents), targetPath, "bashrc should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-
-		targetDir := filepath.Join(ts.Dirs.Work, "target")
-		suite.containsWindowsDirectory(string(out), targetDir, "Windows system PATH should contain our target dir")
+		suite.containsWindowsDirectory(string(out), targetPath, "Windows system PATH should contain our target dir")
 	}
 }
 
@@ -326,9 +340,12 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	ts := e2e.New(suite.T(), false, "SHELL=")
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	// Install step is required
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("need to run the install step")
@@ -337,12 +354,12 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 
 	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", targetPath),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target"), "--force"),
+			e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", targetPath, "--force"),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 	}
@@ -352,7 +369,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	}
 	cp.ExpectExitCode(0)
 
-	suite.checkSymlink("python3", ts.Dirs.Bin, filepath.Join(ts.Dirs.Work, "target"))
+	suite.checkSymlink("python3", ts.Dirs.Bin, targetPath)
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
@@ -360,9 +377,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	// Install step is required
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("need to run the install step")
@@ -370,11 +390,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	suite.InstallAndAssert(ts)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect(filepath.Join(ts.Dirs.Work, "target")) // expect bin dir
+	cp.Expect(targetPath) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
@@ -392,12 +412,15 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	suite.Require().NoError(err)
+
 	suite.InstallAndAssert(ts)
 
 	pathDir := fileutils.TempDirUnsafe()
 	defer os.RemoveAll(pathDir)
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
@@ -405,12 +428,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 
 	// we do not symlink on windows anymore
 	if runtime.GOOS != "windows" {
-		suite.True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, "target", "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
+		suite.True(fileutils.FileExists(filepath.Join(targetPath, "bin", "python3"+symlinkExt)), "Python3 symlink should have been written")
 	}
 
 	// Running deploy a second time should not cause any errors (cache is properly picked up)
 	cpx := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "symlink", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv(fmt.Sprintf("PATH=%s", pathDir)), // Avoid conflicts
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
