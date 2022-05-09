@@ -1717,7 +1717,7 @@ err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
-err_package_no_packages:
+err_package_info_no_packages:
   other: No packages in our catalog are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
   other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
