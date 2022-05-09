@@ -68,6 +68,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("push")
+	cp.Expect("continue?")
+	cp.Send("Y")
 	cp.Expect("Creating project")
 	cp.Expect("Project has been updated")
 	cp.ExpectExitCode(0)
@@ -75,7 +77,6 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
-	cp.Expect("3.6.6")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages", "install", "python")
