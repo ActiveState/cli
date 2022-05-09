@@ -71,7 +71,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("continue?")
 	cp.Send("Y")
 	cp.Expect("Creating project")
-	cp.Expect("Project has been updated")
+	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages")
