@@ -75,7 +75,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
-		filepath.Join(installerDir, constants.StateInstallerCmd+osutils.ExeExt),
+		filepath.Join(installerDir, constants.ToplevelInstallArchiveDir, constants.StateInstallerCmd+osutils.ExeExt),
 		e2e.WithArgs(target, "--source-path", installerDir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
