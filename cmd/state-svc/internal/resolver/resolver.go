@@ -147,7 +147,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
 	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
 		values.ProjectID = nil
-		if values.ProjectNameSpace == nil {
+		if values.ProjectNameSpace == nil || *values.ProjectNameSpace == "" {
 			return nil
 		}
 		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
