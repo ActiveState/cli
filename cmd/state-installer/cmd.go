@@ -234,6 +234,12 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
+	if condition.OnCI() {
+		if _, err := storage.InstallSource(); err == nil {
+			return errs.New("Cannot run state-installer from an installation directory. Run it from an installer instead.")
+		}
+	}
+
 	// Detect state tool alongside installer executable
 	installerPath := filepath.Dir(osutils.Executable())
 	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)

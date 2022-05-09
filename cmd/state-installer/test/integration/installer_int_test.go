@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +11,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -21,24 +25,64 @@ type InstallerIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
+func (suite *InstallerIntegrationTestSuite) TestInstallFromInstallationError() {
+	suite.OnlyRunForTags(tagsuite.Installer)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnCmdWithOpts(
+		ts.InstallerExe,
+		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation"), "--source-path", ts.Dirs.Base),
+		e2e.AppendEnv(constants.DisableUpdates+"=false"))
+
+	cp.Expect("Cannot run state-installer from an installation directory.")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Determine URL of installer archive.
+	baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+	archiveExt := "tar.gz"
+	if runtime.GOOS == "windows" {
+		archiveExt = "zip"
+	}
+	archiveUrl := fmt.Sprintf("%s/%s/%s/%s-amd64/state-%s-amd64-%s.%s",
+		baseUrl,
+		constants.BranchName,
+		constants.Version,
+		runtime.GOOS,
+		runtime.GOOS,
+		constants.Version,
+		archiveExt)
+
+	// Fetch it.
+	b, err := download.GetDirect(archiveUrl)
+	suite.Require().NoError(err)
+
+	// Extract it.
+	installerDir := filepath.Join(ts.Dirs.Work, "installer")
+	if runtime.GOOS != "windows" {
+		suite.Require().NoError(unarchiver.NewTarGzBlob(b).Unarchive(installerDir))
+	} else {
+		suite.Require().NoError(unarchiver.NewZipBlob(b).Unarchive(installerDir))
+	}
+
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
-		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
+		filepath.Join(installerDir, constants.StateInstallerCmd+osutils.ExeExt),
+		e2e.WithArgs(target, "--source-path", installerDir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"))
 
 	// Assert output
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
-	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(appinfo.StateApp(target).Exec())
