@@ -129,6 +129,10 @@ func unwrapError(err error) (int, error) {
 		}
 	}
 
+	if hasMarshaller {
+		return code, err
+	}
+
 	return code, &OutputError{err}
 }
 
