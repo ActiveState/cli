@@ -121,14 +121,14 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free_legacy",
+		"Community Tier (Free)",
 		false,
 	}
 
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.TrimmedSnapshot())
+	suite.Contains(cp.TrimmedSnapshot(), string(expected))
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
