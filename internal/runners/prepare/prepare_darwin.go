@@ -15,7 +15,7 @@ func (r *Prepare) prepareOS() error {
 // InstalledPreparedFiles returns the files installed by the prepare command
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.NewExec(installation.TrayExec)
+	trayExec, err := installation.TrayExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}

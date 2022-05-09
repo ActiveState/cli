@@ -45,7 +45,7 @@ func (i *Installer) installLauncher() error {
 		return errs.Wrap(err, "Could not create application directory")
 	}
 
-	trayExec, err := installation.NewExecInDir(i.path, installation.TrayExec)
+	trayExec, err := installation.TrayExecFromDir(i.path)
 	if err != nil {
 		return locale.WrapError(err, "err_tray_exec")
 	}
