@@ -45,7 +45,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	defer ts.Close()
 
 	// Determine URL of installer archive.
-	baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+	baseUrl := "https://state-tool.s3.amazonaws.com/update/state"
 	archiveExt := "tar.gz"
 	if runtime.GOOS == "windows" {
 		archiveExt = "zip"
