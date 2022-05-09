@@ -196,7 +196,7 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 	suite.setupConfigFile(ts)
 
 	cp := ts.Spawn("scripts", "--output", "editor.v0")
-	cp.Expect(`[{"name":"first-script"},{"name":"second-script"},{"name":"super-script"}]`)
+	cp.Expect(`[{"name":"first-script"},{"name":"second-script"},{"name":"super-script"},{"name":"testenv"}]`)
 	cp.ExpectExitCode(0)
 }
 
