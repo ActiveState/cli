@@ -231,7 +231,6 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Default Project")
 	cp.Expect("Activated")
 	cp.WaitForInput(120 * time.Second)
 
