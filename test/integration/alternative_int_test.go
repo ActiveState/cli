@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -47,8 +48,10 @@ func (suite *AlternativeArtifactIntegrationTestSuite) TestRelocation() {
 		matchReString = `-L\"([^ ]+)installdir`
 	}
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Profile: "default",
-		Config:  aws.Config{Region: aws.String("us-east-1")},
+		Config: aws.Config{
+			CredentialsChainVerboseErrors: p.BoolP(false),
+			Region:                        aws.String("us-east-1"),
+		},
 	})
 	suite.Require().NoError(err, "could not create aws session")
 	s3c := s3.New(sess)
