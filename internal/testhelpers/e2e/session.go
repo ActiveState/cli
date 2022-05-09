@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -26,7 +27,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -143,25 +143,25 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo := appinfo.StateApp(buildDir)
-	svcInfo := appinfo.SvcApp(buildDir)
-	trayInfo := appinfo.TrayApp(buildDir)
-	installInfo := appinfo.InstallerApp(buildDir)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
+	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
+	installExec := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
 
-	if !fileutils.FileExists(stateInfo.Exec()) {
+	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
-	if !fileutils.FileExists(svcInfo.Exec()) {
+	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayInfo.Exec()) {
+	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	if !fileutils.FileExists(installInfo.Exec()) {
+	if !fileutils.FileExists(installExec) {
 		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
 	}
 
-	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
+	return stateExec, svcExec, trayExec, installExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -390,10 +390,6 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
-func observeExpectFn2(s *Session) expect.ExpectObserver {
-	return termtest.TestExpectObserveFn(s.t)
-}
-
 func observeExpectFn(s *Session) expect.ExpectObserver {
 	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
 		if err == nil {
@@ -502,8 +498,6 @@ func (s *Session) SvcLog() string {
 	}
 
 	panic(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
-
-	return ""
 }
 
 func (s *Session) MostRecentStateLog() string {
@@ -541,7 +535,6 @@ func (s *Session) MostRecentStateLog() string {
 
 	if result == "" {
 		panic("Could not find log file")
-		return ""
 	}
 
 	b := fileutils.ReadFileUnsafe(result)

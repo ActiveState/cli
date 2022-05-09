@@ -1,19 +1,25 @@
 package prepare
 
 import (
-	"github.com/ActiveState/cli/internal/appinfo"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-func (r *Prepare) prepareOS() {
+func (r *Prepare) prepareOS() error {
+	return nil
 }
 
 // InstalledPreparedFiles returns the files installed by the prepare command
-func InstalledPreparedFiles(cfg autostart.Configurable) []string {
+func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_tray_exec")
+	}
+	name, exec := constants.TrayAppName, trayExec
 
 	sc, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
@@ -22,5 +28,5 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 		files = append(files, sc)
 	}
 
-	return files
+	return files, nil
 }

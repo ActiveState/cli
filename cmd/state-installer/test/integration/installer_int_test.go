@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -32,7 +32,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
 		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
-		e2e.AppendEnv(constants.DisableUpdates+"=false"))
+		e2e.AppendEnv(constants.DisableUpdates+"=false"),
+	)
 
 	// Assert output
 	cp.Expect("Installing State Tool")
@@ -40,9 +41,19 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
+	stateExec, err := installation.StateExecFromDir(target)
+	suite.NoError(err)
+
+	serviceExec, err := installation.ServiceExecFromDir(target)
+	suite.NoError(err)
+
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
-	suite.FileExists(appinfo.StateApp(target).Exec())
-	suite.FileExists(appinfo.SvcApp(target).Exec())
+	suite.FileExists(stateExec)
+	suite.FileExists(serviceExec)
+
+	// Run state tool so test doesn't panic trying to find the log file
+	cp = ts.SpawnCmd(stateExec, "--version")
+	cp.Expect("Version")
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)

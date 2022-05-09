@@ -3,10 +3,10 @@ package prepare
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
@@ -14,9 +14,13 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func (r *Prepare) prepareOS() {
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+func (r *Prepare) prepareOS() error {
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return locale.WrapError(err, "err_tray_exec")
+	}
+
+	name, exec := constants.TrayAppName, trayExec
 
 	if err := r.setupDesktopApplicationFile(name, exec); err != nil {
 		r.reportError(locale.Tr(
@@ -25,7 +29,7 @@ func (r *Prepare) prepareOS() {
 		), err)
 	}
 
-	return
+	return nil
 }
 
 func (r *Prepare) setupDesktopApplicationFile(name, exec string) error {
@@ -70,10 +74,14 @@ func prependHomeDir(path string) (string, error) {
 }
 
 // InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg autostart.Configurable) []string {
+func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_tray_exec")
+	}
+
+	name, exec := constants.TrayAppName, trayExec
 
 	shortcut, err := autostart.New(name, exec, cfg).Path()
 	if err != nil {
@@ -95,5 +103,6 @@ func InstalledPreparedFiles(cfg autostart.Configurable) []string {
 	} else {
 		files = append(files, filepath.Join(iconsDir, constants.TrayIconFileName))
 	}
-	return files
+
+	return files, nil
 }
