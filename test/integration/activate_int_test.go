@@ -46,7 +46,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
-	cp.Expect("Activated")
+	cp.Expect("Activated", 30*time.Second)
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
