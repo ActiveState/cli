@@ -157,37 +157,25 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
-	stateExec, err := installation.StateExec()
+	execs, err := installation.Executables()
 	if err != nil {
-		return locale.WrapError(err, "err_state_exec")
-	}
-
-	serviceExec, err := installation.ServiceExec()
-	if err != nil {
-		return locale.WrapError(err, "err_service_exec")
-	}
-
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
+		return errs.Wrap(err, "Could not get executable paths")
 	}
 
 	var asFiles = []string{
 		installation.InstallDirMarker,
 		constants.StateInstallerCmd + exeutils.Extension,
-
-		// Remove all of the state tool executables and finally the
-		// bin directory
-		filepath.Join(installation.BinDirName, stateExec),
-		filepath.Join(installation.BinDirName, serviceExec),
-		filepath.Join(installation.BinDirName, trayExec),
-		installation.BinDirName,
-
-		// The system directory is on MacOS only and contains the tray
-		// application files. It is safe for us to remove this directory
-		// without first inspecting the contents.
-		"system",
 	}
+
+	// Remove all of the state tool executables and finally the
+	// bin directory
+	asFiles = append(asFiles, execs...)
+	asFiles = append(asFiles, installation.BinDirName)
+
+	// The system directory is on MacOS only and contains the tray
+	// application files. It is safe for us to remove this directory
+	// without first inspecting the contents.
+	asFiles = append(asFiles, "system")
 
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)

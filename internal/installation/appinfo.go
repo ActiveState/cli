@@ -84,3 +84,15 @@ func UpdateExec() (string, error) {
 func NewUpdateExecFromDir(baseDir string) (string, error) {
 	return newExecFromDir(baseDir, update)
 }
+
+func Executables() ([]string, error) {
+	var execs []string
+	for _, data := range execData {
+		exec, err := newExec(installer)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get executable data for command: %s", data)
+		}
+		execs = append(execs, exec)
+	}
+	return execs, nil
+}
