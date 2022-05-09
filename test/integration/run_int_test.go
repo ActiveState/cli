@@ -134,10 +134,6 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 // tests that convenience commands for activestate.yaml scripts are available
 // in bash subshells from the activated state
 func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("bash subshells are not supported by our tests on windows")
-	}
-
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -235,7 +231,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated", 40*time.Second)
+	cp.Expect("Activated")
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
@@ -279,35 +275,6 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 
 	cp := ts.Spawn("run", "badLanguage")
 	cp.Expect("The language for this script is not supported", 5*time.Second)
-}
-
-func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Testing exec of Perl with variables is not applicable on Windows")
-	}
-
-	suite.OnlyRunForTags(tagsuite.Run)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-    project: https://platform.activestate.com/ActiveState-CLI/Perl-5.32?commitID=a4762408-def6-41e4-b709-4cb548765005
-	`))
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"PERL_VERSION=does_not_exist",
-		),
-	)
-	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
-
-	cp.SendLine("perl -MEnglish -e 'print $PERL_VERSION'")
-	cp.Expect("v5.32.0")
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
