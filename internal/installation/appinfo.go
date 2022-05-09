@@ -39,7 +39,7 @@ func newExecFromDir(baseDir string, exec executableType) (string, error) {
 			return "", errs.Wrap(err, "Could not get bin path from base directory")
 		}
 	} else {
-		path = osutils.Executable()
+		path = filepath.Dir(osutils.Executable())
 	}
 
 	return filepath.Join(path, execData[exec]), nil
