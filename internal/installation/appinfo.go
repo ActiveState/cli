@@ -1,12 +1,10 @@
 package installation
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -41,16 +39,7 @@ func NewExecInDir(baseDir string, exec executableType) (string, error) {
 			return "", errs.Wrap(err, "Could not get bin path from base directory")
 		}
 	} else {
-		path, err = os.Executable()
-		if err != nil {
-			multilog.Error("Could not determine executable: %v", err)
-			path, err = filepath.Abs(os.Args[0])
-			if err != nil {
-				return "", errs.Wrap(err, "Could not get absolute directory of os.Args[0]")
-			}
-		}
-
-		pathEvaled, err := filepath.EvalSymlinks(path)
+		pathEvaled, err := filepath.EvalSymlinks(osutils.Executable())
 		if err != nil {
 			return "", errs.Wrap(err, "Could not eval symlinks")
 		}
