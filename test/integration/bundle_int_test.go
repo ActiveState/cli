@@ -185,7 +185,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectRe("(?:Bundle added|being built)", 45*time.Second)
+		cp.ExpectRe("successfully installed", 45*time.Second)
 		cp.Wait()
 	})
 
