@@ -179,7 +179,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("bundles", "install", "non-existing")
 		cp.Expect("No results found for search term")
-		cp.ExpectLongString("to see more results run `state bundles search non-existing`")
+		cp.ExpectLongString(`Run "state search non-existing" to find alternatives`)
 		cp.Wait()
 	})
 
