@@ -32,10 +32,7 @@ func init() {
 	}
 }
 
-func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string) {
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
-	suite.Require().NoError(err)
-
+func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, targetPath string) {
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
@@ -89,10 +86,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
-	suite.deploy(ts, "ActiveState-CLI/Perl")
+	suite.deploy(ts, "ActiveState-CLI/Perl", targetPath)
 
 	suite.checkSymlink("perl", ts.Dirs.Bin, targetID.String())
 
@@ -170,7 +167,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
-	suite.deploy(ts, "ActiveState-CLI/Python3")
+	suite.deploy(ts, "ActiveState-CLI/Python3", targetPath)
 
 	suite.checkSymlink("python3", ts.Dirs.Bin, targetID.String())
 
@@ -234,16 +231,16 @@ func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 		suite.True(isEmpty, "Target dir should be empty before we start")
 	}
 
-	suite.InstallAndAssert(ts)
+	suite.InstallAndAssert(ts, targetDir)
 
 	isEmpty, err := fileutils.IsEmptyDir(targetDir)
 	suite.Require().NoError(err)
 	suite.False(isEmpty, "Target dir should have artifacts written to it")
 }
 
-func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session) {
+func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session, targetPath string) {
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "install", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "install", "ActiveState-CLI/Python3", "--path", targetPath),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
@@ -273,7 +270,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
-	suite.InstallAndAssert(ts)
+	suite.InstallAndAssert(ts, targetPath)
 
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnWithOpts(
@@ -356,7 +353,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
-	suite.InstallAndAssert(ts)
+	suite.InstallAndAssert(ts, targetPath)
 
 	if runtime.GOOS != "darwin" {
 		cp = ts.SpawnWithOpts(
@@ -395,7 +392,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
-	suite.InstallAndAssert(ts)
+	suite.InstallAndAssert(ts, targetPath)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("deploy", "report", "ActiveState-CLI/Python3", "--path", targetPath),
@@ -423,7 +420,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
 	suite.Require().NoError(err)
 
-	suite.InstallAndAssert(ts)
+	suite.InstallAndAssert(ts, targetPath)
 
 	pathDir := fileutils.TempDirUnsafe()
 	defer os.RemoveAll(pathDir)
