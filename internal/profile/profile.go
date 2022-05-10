@@ -35,6 +35,8 @@ func CPU() (cleanUp func() error, err error) {
 
 func Measure(name string, start time.Time) {
 	if profilingEnabled {
-		logging.Debug("Profiling: %s took %s\n", name, time.Since(start))
+		msg := fmt.Sprintf("Profiling: %s took %s\n", name, time.Since(start))
+		logging.Debug(msg)
+		fmt.Print(msg)
 	}
 }

@@ -22,7 +22,7 @@ type PerformanceIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *PerformanceIntegrationTestSuite) TestShow() {
+func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -42,6 +42,7 @@ func (suite *PerformanceIntegrationTestSuite) TestShow() {
 		cp.ExpectExitCode(0)
 		end := time.Since(start)
 		if firstEntry == "" {
+			time.Sleep(time.Second) // give svc time to process
 			firstEntry = cp.Snapshot()
 			firstStateLog = ts.MostRecentStateLog()
 			firstSvcLog = ts.SvcLog()
