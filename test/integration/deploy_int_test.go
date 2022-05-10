@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/termtest"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -162,7 +163,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	targetID, err := uuid.NewUUID()
+	suite.Require().NoError(err)
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
 	suite.deploy(ts, "ActiveState-CLI/Python3")
@@ -213,7 +216,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	suite.AssertConfig(ts)
+	suite.AssertConfig(ts, targetID.String())
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
@@ -256,7 +259,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	targetID, err := uuid.NewUUID()
+	suite.Require().NoError(err)
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
 	// Install step is required
@@ -283,7 +288,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 	cp.Expect("Configuring shell", 60*time.Second)
 	cp.ExpectExitCode(0)
-	suite.AssertConfig(ts)
+	suite.AssertConfig(ts, targetID.String())
 
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnWithOpts(
@@ -295,11 +300,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), targetPath, "Windows user PATH should contain our target dir")
+		suite.Contains(string(out), targetID.String(), "Windows user PATH should contain our target dir")
 	}
 }
 
-func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
+func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
 	suite.Require().NoError(err)
 
@@ -311,12 +316,12 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), targetPath, "bashrc should contain our target dir")
+		suite.Contains(string(bashContents), targetID, "bashrc should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.containsWindowsDirectory(string(out), targetPath, "Windows system PATH should contain our target dir")
+		suite.containsWindowsDirectory(string(out), targetID, "Windows system PATH should contain our target dir")
 	}
 }
 
