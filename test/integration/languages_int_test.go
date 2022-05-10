@@ -89,7 +89,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(0, 60*time.Second)
 
 	cp = ts.Spawn("pull")
-	cp.ExpectLongString("has been updated to the latest version available")
+	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages")
