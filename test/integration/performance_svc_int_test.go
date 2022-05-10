@@ -70,7 +70,19 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service analytics request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+		}
+	})
+
+	suite.Run("Query Update", func() {
+		t := time.Now()
+		svcmodel := model.NewSvcModel(svcPort)
+		_, err := svcmodel.CheckUpdate(context.Background())
+		suite.Require().NoError(err, errs.JoinMessage(err))
+		duration := time.Since(t)
+
+		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
+			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
 		}
 	})
 
