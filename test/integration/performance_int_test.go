@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -25,18 +27,20 @@ func (suite *PerformanceIntegrationTestSuite) TestShow() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
+	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
+	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
+
 	var firstEntry string
 	times := []time.Duration{}
 	var total int64
 	for x := 0; x < StateVersionTotalSamples+1; x++ {
 		start := time.Now()
-		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("--version"),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
-		cp.ExpectExitCode(0)
+		stdout, stderr, err := exeutils.ExecSimple(ts.Exe, []string{"--version"}, []string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"})
+		suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 		end := time.Since(start)
 		if firstEntry == "" {
-			firstEntry = cp.Snapshot()
+			firstEntry = stdout
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc
@@ -55,7 +59,8 @@ Minimum: %s
 Total: %s
 Totals: %v
 
-Output of first run: %s`,
+Output of first run:
+%s`,
 				avg.String(),
 				StateVersionMaxTime.String(),
 				time.Duration(total).String(),

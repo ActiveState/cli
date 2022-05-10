@@ -81,21 +81,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -114,12 +114,16 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
-	to = filepath.Join(to, filepath.Base(from))
+	var err error
+	to, err = filepath.Abs(filepath.Join(to, filepath.Base(from)))
+	if err != nil {
+		s.t.Fatal(err)
+	}
 	if fileutils.TargetExists(to) {
 		return to
 	}
 
-	err := fileutils.CopyFile(from, to)
+	err = fileutils.CopyFile(from, to)
 	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
