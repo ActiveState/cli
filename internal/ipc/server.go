@@ -3,6 +3,7 @@ package ipc
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -98,13 +99,13 @@ func (ipc *Server) Start() error {
 		go func() {
 			defer wg.Done()
 
+			fmt.Println("waiting for done channel closure")
 			<-ipc.donec
+			fmt.Println("closing listener")
 			listener.Close()
 		}()
 
-		wg.Add(1)
 		go func() {
-			defer wg.Done()
 			defer close(conns)
 
 			// Continually accept connections and feed them into the relevant channel.
@@ -141,7 +142,9 @@ func (ipc *Server) Start() error {
 			}
 		}()
 
+		fmt.Println("waiting for doneWG")
 		wg.Wait()
+		fmt.Println("DONE")
 	}()
 
 	return nil
