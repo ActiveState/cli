@@ -87,12 +87,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	targetID, err := uuid.NewUUID()
+	suite.Require().NoError(err)
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
 	suite.Require().NoError(err)
 
 	suite.deploy(ts, "ActiveState-CLI/Perl")
 
-	suite.checkSymlink("perl", ts.Dirs.Bin, targetPath)
+	suite.checkSymlink("perl", ts.Dirs.Bin, targetID.String())
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
@@ -132,7 +134,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workDir string) {
+func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, targetID string) {
 	if runtime.GOOS != "Linux" {
 		return
 	}
@@ -151,7 +153,7 @@ func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, workD
 	}
 	link, err := os.Readlink(execPath)
 	suite.Require().NoError(err)
-	suite.Contains(link, workDir, "%s executable resolves to the one on our target dir", name)
+	suite.Contains(link, targetID, "%s executable resolves to the one on our target dir", name)
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
@@ -170,7 +172,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 
 	suite.deploy(ts, "ActiveState-CLI/Python3")
 
-	suite.checkSymlink("python3", ts.Dirs.Bin, targetPath)
+	suite.checkSymlink("python3", ts.Dirs.Bin, targetID.String())
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
@@ -305,9 +307,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
-	suite.Require().NoError(err)
-
 	if runtime.GOOS != "windows" {
 		// Test bashrc
 		homeDir, err := os.UserHomeDir()
@@ -345,7 +344,9 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	ts := e2e.New(suite.T(), false, "SHELL=")
 	defer ts.Close()
 
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	targetID, err := uuid.NewUUID()
+	suite.Require().NoError(err)
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
 	// Install step is required
@@ -374,7 +375,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	}
 	cp.ExpectExitCode(0)
 
-	suite.checkSymlink("python3", ts.Dirs.Bin, targetPath)
+	suite.checkSymlink("python3", ts.Dirs.Bin, targetID.String())
 }
 
 func (suite *DeployIntegrationTestSuite) TestDeployReport() {
@@ -382,7 +383,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "target"))
+	targetID, err := uuid.NewUUID()
+	suite.Require().NoError(err)
+	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
 	// Install step is required
@@ -399,7 +402,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect(targetPath) // expect bin dir
+	cp.Expect(targetID.String()) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
