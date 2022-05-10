@@ -46,6 +46,8 @@ func NewDefaultIPCClient() *ipc.Client {
 }
 
 func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
+	defer profile.Measure("svcctl:EnsureExecStartedAndLocateHTTP", time.Now())
+
 	addr, err = LocateHTTP(ipComm)
 	if err != nil {
 		logging.Debug("Could not locate state-svc, attempting to start it..")
@@ -79,6 +81,8 @@ func EnsureStartedAndLocateHTTP() (addr string, err error) {
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
+	defer profile.Measure("svcctl:LocateHTTP", time.Now())
+
 	comm := NewComm(ipComm)
 
 	ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
