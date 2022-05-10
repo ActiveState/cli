@@ -44,6 +44,8 @@ import (
 )
 
 func main() {
+	startTime := time.Now()
+
 	var exitCode int
 	// Set up logging
 	rollbar.SetupRollbar(constants.StateToolRollbarToken)
@@ -61,6 +63,8 @@ func main() {
 		}
 
 		events.Close("config", cfg.Close)
+
+		profile.Measure("main", startTime)
 
 		// exit with exitCode
 		os.Exit(exitCode)
