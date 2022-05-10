@@ -199,7 +199,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("(?:Bundle removed|being built)", 30*time.Second)
+		cp.ExpectRe("Bundle uninstalled", 30*time.Second)
 		cp.Wait()
 	})
 }
