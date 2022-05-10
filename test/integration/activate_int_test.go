@@ -427,7 +427,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
+	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`, 60*time.Second)
 	cp.ExpectExitCode(0)
 }
 
