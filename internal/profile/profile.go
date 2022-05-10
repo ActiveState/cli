@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/felixge/fgprof"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -34,6 +35,6 @@ func CPU() (cleanUp func() error, err error) {
 
 func Measure(name string, start time.Time) {
 	if profilingEnabled {
-		fmt.Printf("%s took %s\n", name, time.Since(start))
+		logging.Debug("Profiling: %s took %s\n", name, time.Since(start))
 	}
 }

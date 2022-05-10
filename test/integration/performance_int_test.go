@@ -31,16 +31,20 @@ func (suite *PerformanceIntegrationTestSuite) TestShow() {
 	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 
-	var firstEntry string
+	var firstEntry, firstStateLog, firstSvcLog string
 	times := []time.Duration{}
 	var total int64
 	for x := 0; x < StateVersionTotalSamples+1; x++ {
 		start := time.Now()
-		stdout, stderr, err := exeutils.ExecSimple(ts.Exe, []string{"--version"}, []string{"ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"})
-		suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
+		cp := ts.SpawnWithOpts(
+			e2e.WithArgs("--version"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
+		cp.ExpectExitCode(0)
 		end := time.Since(start)
 		if firstEntry == "" {
-			firstEntry = stdout
+			firstEntry = cp.Snapshot()
+			firstStateLog = ts.MostRecentStateLog()
+			firstSvcLog = ts.SvcLog()
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc
@@ -60,12 +64,20 @@ Total: %s
 Totals: %v
 
 Output of first run:
+%s
+
+State Tool log:
+%s
+
+Svc log:
 %s`,
 				avg.String(),
 				StateVersionMaxTime.String(),
 				time.Duration(total).String(),
 				times,
-				firstEntry))
+				firstEntry,
+				firstStateLog,
+				firstSvcLog))
 	}
 }
 
