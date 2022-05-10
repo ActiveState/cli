@@ -344,9 +344,9 @@ err_api_forbidden:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
+  other: "[ERROR]The requested project[/RESET] [NOTICE]{{.V0}}[/RESET] [ERROR]does not exist under[/RESET] [NOTICE]{{.V1}}[/RESET]. [ERROR]Please ensure the owner is correct and that the project has been created.[/RESET]"
 err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found. If this is a private project you may need to authenticate with 'state auth'.
+  other: "[ERROR]The requested project[/RESET] [NOTICE]{{.V0}}/{{.V1}}[/RESET] [ERROR]could not be found. If this is a private project you may need to authenticate with 'state auth'.[/RESET]"
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
