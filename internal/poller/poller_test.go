@@ -7,7 +7,7 @@ import (
 
 func TestPoller(t *testing.T) {
 	x := 0
-	interval := time.Millisecond * 10
+	interval := time.Millisecond * 100
 	p := New(interval, func() (interface{}, error) {
 		defer func() { x++ }()
 		return x, nil
@@ -15,7 +15,7 @@ func TestPoller(t *testing.T) {
 	defer p.Close()
 
 	time.Sleep(time.Millisecond)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		v, ok := p.ValueFromCache().(int)
 		if !ok {
 			t.Fatalf("expected int, got %T", v)

@@ -65,6 +65,8 @@ func main() {
 
 		profile.Measure("main", startTime)
 
+		profile.Measure("main", startTime)
+
 		// exit with exitCode
 		os.Exit(exitCode)
 	}()
