@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -32,7 +31,7 @@ func init() {
 	}
 }
 
-func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, targetPath string) {
+func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, targetPath string, targetID string) {
 	var cp *termtest.ConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
@@ -62,7 +61,7 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, tar
 		cp.Expect("Symlinking", 30*time.Second)
 	}
 	cp.Expect("Deployment Information", 60*time.Second)
-	cp.Expect(targetPath) // expect bin dir
+	cp.Expect(targetID) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
@@ -89,7 +88,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
-	suite.deploy(ts, "ActiveState-CLI/Perl", targetPath)
+	suite.deploy(ts, "ActiveState-CLI/Perl", targetPath, targetID.String())
 
 	suite.checkSymlink("perl", ts.Dirs.Bin, targetID.String())
 
@@ -167,7 +166,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
 	suite.Require().NoError(err)
 
-	suite.deploy(ts, "ActiveState-CLI/Python3", targetPath)
+	suite.deploy(ts, "ActiveState-CLI/Python3", targetPath, targetID.String())
 
 	suite.checkSymlink("python3", ts.Dirs.Bin, targetID.String())
 
@@ -317,18 +316,7 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.containsWindowsDirectory(string(out), targetID, "Windows system PATH should contain our target dir")
-	}
-}
-
-func (suite *DeployIntegrationTestSuite) containsWindowsDirectory(out, dir, message string) {
-	// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
-	shortPath, err := fileutils.GetShortPathName(dir)
-	suite.Require().NoError(err)
-	longPath, err := fileutils.GetLongPathName(dir)
-	suite.Require().NoError(err)
-	if !strings.Contains(out, shortPath) && !strings.Contains(out, longPath) && !strings.Contains(out, dir) {
-		suite.T().Errorf("%s: %s does not contain \"%s\", \"%s\" or \"%s\"", message, out, dir, shortPath, longPath)
+		suite.Contains(string(out), targetID, "bashrc should contain our target dir")
 	}
 }
 
