@@ -91,7 +91,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	code, err := relaunch(args)
 	if err != nil {
-		return true, &forwardExitError{code}
+		return true, errs.WrapExitCode(err, code)
 	}
 
 	return true, nil
