@@ -96,7 +96,7 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
 
-	if isSilent(err) {
+	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
 	}
@@ -130,17 +130,4 @@ func unwrapError(err error) (int, error) {
 	}
 
 	return code, &OutputError{err}
-}
-
-type SilencedError struct{ error }
-
-func (s *SilencedError) Unwrap() error { return s.error }
-
-func (s *SilencedError) IsSilent() bool { return true }
-
-func isSilent(err error) bool {
-	var silentErr interface {
-		IsSilent() bool
-	}
-	return errors.As(err, &silentErr) && silentErr.IsSilent()
 }
