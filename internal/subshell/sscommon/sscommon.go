@@ -48,7 +48,7 @@ func Start(cmd *exec.Cmd) chan error {
 					return
 				}
 
-				errors <- errs.Silence(eerr)
+				errors <- errs.WrapExitCode(eerr, code)
 				return
 			}
 
@@ -175,7 +175,7 @@ func runDirect(env []string, name string, args ...string) error {
 	err := runCmd.Run()
 	// silence exit code errors
 	if eerr, ok := err.(*exec.ExitError); ok {
-		return errs.Silence(eerr)
+		return errs.WrapExitCode(eerr, eerr.ExitCode())
 	}
 	return err
 }
