@@ -41,7 +41,7 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 		suite.language = "python3"
 		suite.languageFull = "python3@3.10.1"
 		suite.baseProject = "ActiveState-CLI/small-python"
-		suite.extraPackage = "bzip2@1.0.8"
+		suite.extraPackage = "trender@1.0.8"
 	}
 }
 
