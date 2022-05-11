@@ -23,7 +23,7 @@ type PerformanceSvcIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *PerformanceIntegrationTestSuite) AfterTest(suiteName, testName string) {
+func (suite *PerformanceIntegrationTestSuite) TearDownSuite() {
 	ipcClient := svcctl.NewDefaultIPCClient()
 	err := svcctl.StopServer(ipcClient)
 	suite.Require().NoError(err)
