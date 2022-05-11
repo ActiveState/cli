@@ -389,7 +389,10 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 }
 
 func envSlice(binPath string) []string {
-	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+	return []string{
+		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		constants.DisableErrorTipsEnvVarName + "=true",
+	}
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir

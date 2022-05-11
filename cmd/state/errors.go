@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -65,9 +66,11 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
-	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
-	for _, tip := range errorTips {
-		outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+	if _, disableTips := os.LookupEnv(constants.DisableErrorTipsEnvVarName); !disableTips {
+		outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+		for _, tip := range errorTips {
+			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+		}
 	}
 	return strings.Join(outLines, "\n")
 }
