@@ -407,6 +407,11 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
+	snapshot := ""
+	if s.cp != nil {
+		snapshot = s.cp.Snapshot()
+	}
+
 	v, err := strutils.ParseTemplate(`
 {{.Prefix}}{{.A}}Stack: 
 {{.Stacktrace}}{{.Z}}
@@ -419,7 +424,7 @@ func (s *Session) DebugMessage(prefix string) string {
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": s.cp.Snapshot(),
+		"FullSnapshot": snapshot,
 		"StateLog":     s.MostRecentStateLog(),
 		"SvcLog":       s.SvcLog(),
 		"A":            sectionStart,
