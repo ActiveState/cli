@@ -266,7 +266,7 @@ jobs:
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
           TIMEOUT=10m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
-            TIMEOUT=90m
+            TIMEOUT=30m
           fi
           set +e
           SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep integration` &> build/integration-tests.out
