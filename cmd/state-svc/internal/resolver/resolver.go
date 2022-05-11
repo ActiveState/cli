@@ -24,12 +24,10 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
 	cfg            *config.Instance
-	cache          *cache.Cache
 	depPoller      *poller.Poller
 	updatePoller   *poller.Poller
 	projectIDCache *projectcache.ID
@@ -42,19 +40,18 @@ type Resolver struct {
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
 	depchecker := deprecation.NewChecker(cfg)
-	pollDep := poller.New(15*time.Minute, func() (interface{}, error) {
+	pollDep := poller.New(1*time.Hour, func() (interface{}, error) {
 		return depchecker.Check()
 	})
 
 	upchecker := updater.NewDefaultChecker(cfg)
-	pollUpdate := poller.New(15*time.Minute, func() (interface{}, error) {
+	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
 		return upchecker.Check()
 	})
 
 	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
-		cache.New(12*time.Hour, time.Hour),
 		pollDep,
 		pollUpdate,
 		projectcache.NewID(),
