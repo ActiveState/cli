@@ -16,25 +16,24 @@ func TestPoller(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 10)
 
-	timer := time.NewTicker(interval)
+	timer := time.NewTicker(interval * 2)
 	defer timer.Stop()
 
 	done := make(chan struct{})
 
 	go func() {
-		i := 0
+		last := -1
 		for {
 			select {
 			case <-timer.C:
-				i++
 				v, ok := p.ValueFromCache().(int)
 				if !ok {
 					t.Logf("expected int, got %T", v)
 					t.Fail()
 				}
 
-				if v != i {
-					t.Logf("expected %d, got %d", i, v)
+				if v <= last {
+					t.Logf("expected %d to have incremented since last run", v)
 					t.Fail()
 				}
 			case <-done:
