@@ -29,11 +29,13 @@ func TestPoller(t *testing.T) {
 				i++
 				v, ok := p.ValueFromCache().(int)
 				if !ok {
-					t.Fatalf("expected int, got %T", v)
+					t.Logf("expected int, got %T", v)
+					t.Fail()
 				}
 
 				if v != i {
-					t.Fatalf("expected %d, got %d", i, v)
+					t.Logf("expected %d, got %d", i, v)
+					t.Fail()
 				}
 			case <-done:
 				return
