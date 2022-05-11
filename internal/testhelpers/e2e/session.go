@@ -395,6 +395,43 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
+func (s *Session) DebugMessage(prefix string) string {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
+
+	if prefix != "" {
+		prefix = prefix + "\n"
+	}
+
+	v, err := strutils.ParseTemplate(`
+{{.Prefix}}{{.A}}Stack: 
+{{.Stacktrace}}{{.Z}}
+{{.A}}Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
+{{.A}}State Tool Log:
+{{.StateLog}}{{.Z}}
+{{.A}}State Svc Log:
+{{.SvcLog}}{{.Z}}
+`, map[string]interface{}{
+		"Prefix":       prefix,
+		"Stacktrace":   stacktrace.Get().String(),
+		"FullSnapshot": s.cp.Snapshot(),
+		"StateLog":     s.MostRecentStateLog(),
+		"SvcLog":       s.SvcLog(),
+		"A":            sectionStart,
+		"Z":            sectionEnd,
+	})
+	if err != nil {
+		s.t.Fatalf("Parsing template failed: %s", err)
+	}
+
+	return v
+}
+
 func observeExpectFn(s *Session) expect.ExpectObserver {
 	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
 		if err == nil {
