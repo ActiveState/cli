@@ -121,10 +121,11 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.SendLine("ptar -h")
 	cp.Expect("a tar-like program written in perl")
 
-	cp.SendLine("ppm --version")
-	cp.Expect("not found")
-	cp.SendLine(errorLevel)
-	cp.Expect("0")
+	// Disabled for the moment: https://activestatef.atlassian.net/browse/DX-943
+	// cp.SendLine("ppm --version")
+	// cp.Expect("not found")
+	// cp.SendLine(errorLevel)
+	// cp.Expect("0")
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
