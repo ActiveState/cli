@@ -51,7 +51,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 		t := time.Now()
 		svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec)
-		suite.Require().NoError(err, errs.JoinMessage(err))
+		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcEnsureStartMaxTime.Nanoseconds() {
@@ -63,7 +63,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		t := time.Now()
 		svcmodel := model.NewSvcModel(svcPort)
 		_, err := svcmodel.StateVersion(context.Background())
-		suite.Require().NoError(err, errs.JoinMessage(err))
+		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
@@ -75,7 +75,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		t := time.Now()
 		svcmodel := model.NewSvcModel(svcPort)
 		err := svcmodel.AnalyticsEvent(context.Background(), "performance-test", "performance-test", "performance-test", "{}")
-		suite.Require().NoError(err, errs.JoinMessage(err), ts.DebugMessage(errs.JoinMessage(err)))
+		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
@@ -98,7 +98,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 	suite.Run("StopServer", func() {
 		t := time.Now()
 		err := svcctl.StopServer(ipcClient)
-		suite.Require().NoError(err, errs.JoinMessage(err), ts.DebugMessage(errs.JoinMessage(err)))
+		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcStopMaxTime.Nanoseconds() {
