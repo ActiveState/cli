@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -516,11 +517,13 @@ func (s *Session) Close() error {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
+	
+	a := auth.New(cfg)
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user)
+		err := cleanUser(s.t, user, a)
 		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, err)
+			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
