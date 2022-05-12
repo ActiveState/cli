@@ -13,19 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
-type silentExitCodeError struct {
-	error
-}
-
-func (se silentExitCodeError) Unwrap() error {
-	return se.error
-}
-
-// IsSilent returns true, as no State Tool error message should be written for errors caused inside the sub-shell
-func (se silentExitCodeError) IsSilent() bool {
-	return true
-}
-
 func NewCommand(command string, args []string, env []string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
 	if env != nil {
@@ -61,7 +48,7 @@ func Start(cmd *exec.Cmd) chan error {
 					return
 				}
 
-				errors <- silentExitCodeError{eerr}
+				errors <- errs.Silence(errs.WrapExitCode(eerr, code))
 				return
 			}
 
@@ -188,7 +175,7 @@ func runDirect(env []string, name string, args ...string) error {
 	err := runCmd.Run()
 	// silence exit code errors
 	if eerr, ok := err.(*exec.ExitError); ok {
-		return silentExitCodeError{eerr}
+		return errs.Silence(errs.WrapExitCode(eerr, eerr.ExitCode()))
 	}
 	return err
 }
