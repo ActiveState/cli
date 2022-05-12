@@ -127,7 +127,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	// cp.SendLine(errorLevel)
 	// cp.Expect("0")
 
-	cp.SendLine("exit")
+	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
 }
 
