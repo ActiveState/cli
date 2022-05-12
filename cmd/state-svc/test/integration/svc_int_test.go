@@ -111,7 +111,6 @@ func (suite *SvcIntegrationTestSuite) TestResolveRequestsBeforeStop() {
 	cp2 := ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("update"))
 	cp.Signal(syscall.SIGINT)
 	cp2.Expect("Updating")
-	cp2.Expect("Done")
 	cp2.ExpectExitCode(0)
 }
 
