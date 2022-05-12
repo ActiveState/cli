@@ -12,7 +12,7 @@ func Silence(err error) *silencedError {
 	return &silencedError{err}
 }
 
-func (s *silencedError) Error() string { return s.err.Error() }
+func (s *silencedError) Error() string { return "silencedError" }
 
 func (s *silencedError) Unwrap() error { return s.err }
 
