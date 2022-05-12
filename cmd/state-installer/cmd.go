@@ -355,7 +355,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-command-err", err.Error())
-			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
@@ -364,7 +364,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-err", err.Error())
-			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err)))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
@@ -373,7 +373,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
-			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
@@ -389,7 +389,10 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 }
 
 func envSlice(binPath string) []string {
-	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+	return []string{
+		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		constants.DisableErrorTipsEnvVarName + "=true",
+	}
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir

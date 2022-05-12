@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/condition"
@@ -65,9 +66,11 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
-	outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
-	for _, tip := range errorTips {
-		outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
+		outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+		for _, tip := range errorTips {
+			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+		}
 	}
 	return strings.Join(outLines, "\n")
 }
@@ -96,7 +99,7 @@ func unwrapError(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
 
-	if isSilent(err) {
+	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
 	}
@@ -130,17 +133,4 @@ func unwrapError(err error) (int, error) {
 	}
 
 	return code, &OutputError{err}
-}
-
-type SilencedError struct{ error }
-
-func (s *SilencedError) Unwrap() error { return s.error }
-
-func (s *SilencedError) IsSilent() bool { return true }
-
-func isSilent(err error) bool {
-	var silentErr interface {
-		IsSilent() bool
-	}
-	return errors.As(err, &silentErr) && silentErr.IsSilent()
 }
