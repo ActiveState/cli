@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -226,6 +227,9 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 			// We don't need to sleep for this type of error because,
 			// by definition, this is a timeout, and time has already elapsed.
 			if errors.Is(err, ctlErrRequestTimeout) {
+				continue
+			}
+			if errors.Is(err, io.EOF) {
 				continue
 			}
 			if errors.Is(err, ctlErrNotUp) {
