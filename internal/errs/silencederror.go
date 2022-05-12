@@ -5,14 +5,16 @@ import (
 )
 
 type silencedError struct {
-	error
+	err error
 }
 
-func Silence(err error) silencedError {
-	return silencedError{err}
+func Silence(err error) *silencedError {
+	return &silencedError{err}
 }
 
-func (s *silencedError) Unwrap() error { return s.error }
+func (s *silencedError) Error() string { return s.err.Error() }
+
+func (s *silencedError) Unwrap() error { return s.err }
 
 func (s *silencedError) IsSilent() bool { return true }
 

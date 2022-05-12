@@ -25,15 +25,6 @@ import (
 
 const CfgKeyLastCheck = "auto_update_lastcheck"
 
-type forwardExitError struct {
-	code int
-}
-
-func (fe *forwardExitError) Error() string  { return "forwardExitError" }
-func (fe *forwardExitError) Unwrap() error  { return nil }
-func (fe *forwardExitError) IsSilent() bool { return true }
-func (fe *forwardExitError) ExitCode() int  { return fe.code }
-
 func init() {
 	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
@@ -92,7 +83,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	code, err := relaunch(args)
 	if err != nil {
-		return true, errs.WrapExitCode(err, code, false)
+		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	return true, nil
