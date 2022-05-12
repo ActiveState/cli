@@ -11,10 +11,9 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type InstallerIntegrationTestSuite struct {
