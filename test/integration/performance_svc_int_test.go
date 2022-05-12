@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -86,7 +87,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		t := time.Now()
 		svcmodel := model.NewSvcModel(svcPort)
 		_, err := svcmodel.CheckUpdate(context.Background())
-		suite.Require().NoError(err, ts.DebugMessage(errs.JoinMessage(err)))
+		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
