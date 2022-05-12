@@ -77,14 +77,10 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		go func() {
 			ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
 		}()
+		time.Sleep(50 * time.Millisecond)
 	}
 	time.Sleep(1 * time.Second) // allow for some time to spawn the processes
 	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses())
-
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.ExpectExitCode(0)
-
-	suite.Equal(oldCount, suite.GetNumStateSvcProcesses())
 }
 
 func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
