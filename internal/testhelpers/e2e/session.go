@@ -547,9 +547,7 @@ func (s *Session) SvcLog() string {
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	logging.Debug("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
-
-	return ""
+	return fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
 func (s *Session) MostRecentStateLog() string {
@@ -586,7 +584,7 @@ func (s *Session) MostRecentStateLog() string {
 	}
 
 	if result == "" {
-		panic("Could not find log file")
+		return fmt.Sprintf("Could not find state log, checked under %s", logDir)
 	}
 
 	b := fileutils.ReadFileUnsafe(result)
