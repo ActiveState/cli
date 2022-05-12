@@ -39,9 +39,9 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 	suite.extraPackage2 = "DateTime"
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
-		suite.languageFull = "python3@3.10.1"
+		suite.languageFull = "python3"
 		suite.baseProject = "ActiveState-CLI/small-python"
-		suite.extraPackage = "trender@1.0.8"
+		suite.extraPackage = "trender"
 	}
 }
 
