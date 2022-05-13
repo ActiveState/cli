@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
@@ -44,7 +45,7 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 		graphqlClient: graphql.NewClient(url, opts...),
 		timeout:       timeout,
 	}
-	// client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
+	client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 	return client
 }
 
