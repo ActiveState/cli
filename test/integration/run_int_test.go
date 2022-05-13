@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/termtest"
@@ -282,5 +283,11 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 }
 
 func TestRunIntegrationTestSuite(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			singlethread.PrintNotClosedThreads()
+			panic(r)
+		}
+	}()
 	suite.Run(t, new(RunIntegrationTestSuite))
 }
