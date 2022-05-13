@@ -7,6 +7,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/shirou/gopsutil/process"
@@ -32,11 +34,18 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
+	cp.ExpectRe("Port:\\s+:\\d+")
+	cp.ExpectRe("Log:\\s+.+?\\.log")
 	cp.ExpectExitCode(0)
+
+	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
+	suite.True(fileutils.TargetExists(sockFile))
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
 	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
+
+	suite.False(fileutils.TargetExists(sockFile))
 }
 
 func (suite *SvcIntegrationTestSuite) TestSignals() {
@@ -98,20 +107,6 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 	}
 
 	return count
-}
-
-func (suite *SvcIntegrationTestSuite) TestResolveRequestsBeforeStop() {
-	suite.OnlyRunForTags(tagsuite.Service)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
-	cp.Expect("Starting")
-
-	cp2 := ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("update"))
-	cp.Signal(syscall.SIGINT)
-	cp2.Expect("Updating")
-	cp2.ExpectExitCode(0)
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {
