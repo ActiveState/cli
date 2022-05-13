@@ -368,7 +368,8 @@ func (s *Session) CreateNewUser() string {
 
 	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
 
-	p.Expect("Terms of Service")
+	p.Expect("I accept")
+	time.Sleep(time.Millisecond * 100)
 	p.Send("y")
 	p.Expect("username:")
 	p.Send(username)
