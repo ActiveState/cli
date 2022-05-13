@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -88,9 +87,6 @@ func (ipc *Server) Start() error {
 		}
 	}
 
-	// Produce (accept) and consume (route to handler) connections.
-	conns := make(chan net.Conn)
-
 	go func() {
 		var wg sync.WaitGroup
 		defer close(ipc.errsc)
@@ -99,22 +95,20 @@ func (ipc *Server) Start() error {
 		go func() {
 			defer wg.Done()
 
-			fmt.Println("waiting for done channel closure")
+			logging.Debug("waiting for done channel closure")
 			<-ipc.donec
-			fmt.Println("closing listener")
+			logging.Debug("closing listener")
 			listener.Close()
 		}()
 
 		go func() {
-			defer close(conns)
-
-			// Continually accept connections and feed them into the relevant channel.
+			// Continually accept connections and route them to the correct handler.
 			for {
 				// At this time, the context.Context that is
 				// passed into the flisten construction func
 				// does not halt the listener. Close() must be
 				// called to halt and "doneness" managed.
-				err := accept(&wg, conns, listener)
+				err := accept(&wg, listener, ipc.reqHandlers)
 				select {
 				case <-ipc.donec:
 					return
@@ -127,24 +121,7 @@ func (ipc *Server) Start() error {
 			}
 		}()
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			// Continually route incomming connections to the appropriate handler.
-			for {
-				if err := routeToHandler(&wg, conns, ipc.reqHandlers); err != nil {
-					if !errors.Is(err, ctlErrConnsClosed) {
-						logging.Error("Unexpected routeToHandler error: %v", err)
-					}
-					break
-				}
-			}
-		}()
-
-		fmt.Println("waiting for doneWG")
 		wg.Wait()
-		fmt.Println("DONE")
 	}()
 
 	return nil
@@ -169,37 +146,26 @@ func (ipc *Server) Wait() error {
 	return retErr
 }
 
-func accept(wg *sync.WaitGroup, conns chan net.Conn, l net.Listener) error {
+func accept(wg *sync.WaitGroup, l net.Listener, reqHandlers []RequestHandler) error {
 	conn, err := l.Accept()
 	if err != nil {
+		logging.Debug(err.Error())
 		return err
 	}
 
 	wg.Add(1)
-	conns <- conn
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+
+		if err := handleMatching(conn, reqHandlers); err != nil {
+			logging.Debug(err.Error())
+			logging.Error("Unexpected IPC request handling error: %v", err)
+			return
+		}
+	}()
 
 	return nil
-}
-
-func routeToHandler(wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []RequestHandler) error {
-	select {
-	case conn, ok := <-conns:
-		if !ok {
-			return ctlErrConnsClosed
-		}
-
-		go func() {
-			defer wg.Done()
-			defer conn.Close()
-
-			if err := handleMatching(conn, reqHandlers); err != nil {
-				logging.Error("unexpected ipc request handling error: %v", err)
-				return
-			}
-		}()
-
-		return nil
-	}
 }
 
 func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
