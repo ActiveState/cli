@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-	"fmt"
 )
 
 // Key/Value associations. Keys start with rare characters to try to ensure
@@ -43,7 +42,6 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 func stopHandler(stop func()) RequestHandler {
 	return func(key string) (string, bool) {
 		if key == keyStop {
-			fmt.Println("STOP")
 			stop()
 			return valStop, true
 		}

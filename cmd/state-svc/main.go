@@ -212,7 +212,6 @@ func runStart(out output.Outputer) error {
 
 func runStop() error {
 	ipcClient := svcctl.NewDefaultIPCClient()
-	fmt.Println("CALLING STOP")
 	if err := svcctl.StopServer(ipcClient); err != nil {
 		return errs.Wrap(err, "Could not stop serviceManager")
 	}

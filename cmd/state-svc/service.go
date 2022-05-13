@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -68,7 +67,6 @@ func (s *service) Stop() error {
 		return errs.New("Can't stop service as it was never started")
 	}
 
-	fmt.Println("stopping ipc server")
 	if err := s.server.Shutdown(); err != nil {
 		return errs.Wrap(err, "Failed to stop server")
 	}
