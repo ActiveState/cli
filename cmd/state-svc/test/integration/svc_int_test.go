@@ -81,10 +81,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	oldCount := suite.GetNumStateSvcProcesses()
-	if e2e.RunningOnCI() {
-		suite.Equal(oldCount, 0) // no state-svc processes should be running on CI
-	}
+	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes
 	for i := 1; i <= 10; i++ {
 		go func() {
 			ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
