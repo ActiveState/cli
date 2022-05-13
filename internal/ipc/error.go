@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 )
 
@@ -34,7 +35,7 @@ func (e *ServerDownError) Unwrap() error {
 }
 
 func asServerDownError(err error) error {
-	if errors.Is(err, flisten.ErrFileNotExist) || errors.Is(err, flisten.ErrConnRefused) {
+	if errs.IsAny(err, flisten.ErrFileNotExist, flisten.ErrConnRefused) {
 		return NewServerDownError(err)
 	}
 	return err

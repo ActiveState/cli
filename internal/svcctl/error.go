@@ -27,7 +27,7 @@ func asRequestTimeoutCtlErr(err error) error {
 }
 
 func asTempNotUpCtlErr(err error) error {
-	if errors.Is(err, io.EOF) || errors.Is(err, syscall.ECONNRESET) {
+	if errs.IsAny(err, io.EOF, syscall.ECONNRESET, syscall.EPIPE) {
 		return ctlErrTempNotUp
 	}
 	return err

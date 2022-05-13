@@ -3,6 +3,7 @@ package flisten
 import (
 	"errors"
 
+	"github.com/ActiveState/cli/internal/errs"
 	win "golang.org/x/sys/windows"
 )
 
@@ -15,7 +16,7 @@ func asInUseError(err error) error {
 }
 
 func asConnRefusedError(err error) error {
-	if errorIs(err, win.WSAECONNREFUSED, win.WSAENETDOWN, win.WSAEINVAL) {
+	if errs.IsAny(err, win.WSAECONNREFUSED, win.WSAENETDOWN, win.WSAEINVAL) {
 		return ErrConnRefused
 	}
 	return err
