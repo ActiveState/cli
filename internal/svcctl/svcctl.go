@@ -151,7 +151,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 
 var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
-	waitTimeoutL10nVal = "Timed out waiting for service to start ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
+	waitTimeoutL10nVal = "Timed out waiting for service to respond ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
 )
 
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
