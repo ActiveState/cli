@@ -14,8 +14,8 @@ type Dial struct {
 
 func NewDial() *Dial {
 	return &Dial{
-		slow:  os.Getenv("FLISTEN_SLOW") != "",
-		debug: os.Getenv("FLISTEN_DEBUG") != "",
+		slow:  os.Getenv("FLISTEN_SLOW") == "true",
+		debug: os.Getenv("FLISTEN_DEBUG") == "true",
 	}
 }
 

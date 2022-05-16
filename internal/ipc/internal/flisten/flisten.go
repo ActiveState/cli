@@ -45,8 +45,7 @@ func New(ctx context.Context, spath *sockpath.SockPath, network string) (*FListe
 		Listener: l,
 	}
 
-	slow := os.Getenv("FLISTEN_SLOW") != ""
-	if slow {
+	if os.Getenv("FLISTEN_SLOW") == "true" {
 		f.Listener = newListenSlow(l)
 	}
 
@@ -75,7 +74,7 @@ type listenSlow struct {
 func newListenSlow(listener net.Listener) *listenSlow {
 	return &listenSlow{
 		Listener: listener,
-		debug:    os.Getenv("FLISTEN_DEBUG") != "",
+		debug:    os.Getenv("FLISTEN_DEBUG") == "true",
 	}
 }
 
