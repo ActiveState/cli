@@ -44,10 +44,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	var svcPort string
-
-	svcmodel := model.NewSvcModel(svcPort)
-	svcmodel.EnableDebugLog()
-
+	
 	suite.Run("StartServer", func() {
 		svcExec, err := installation.ServiceExecFromDir(ts.Dirs.Bin)
 		suite.Require().NoError(err, errs.JoinMessage(err))
@@ -61,6 +58,9 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 			suite.Fail(fmt.Sprintf("Service start took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
 		}
 	})
+
+	svcmodel := model.NewSvcModel(svcPort)
+	svcmodel.EnableDebugLog()
 
 	suite.Run("Query StateVersion", func() {
 		t := time.Now()
