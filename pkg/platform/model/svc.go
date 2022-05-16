@@ -30,6 +30,11 @@ func NewSvcModel(port string) *SvcModel {
 	}
 }
 
+// EnableDebugLog turns on debug logging
+func (m *SvcModel) EnableDebugLog() {
+	m.client.EnableDebugLog()
+}
+
 func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
 	defer profile.Measure("SvcModel:request", time.Now())
 	return m.client.RunWithContext(ctx, request, resp)
