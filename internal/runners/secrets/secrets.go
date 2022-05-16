@@ -60,7 +60,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
-	if l.proj == nil {
+	if l.proj == nil || l.proj.Source() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 	if err := checkSecretsAccess(l.proj); err != nil {
