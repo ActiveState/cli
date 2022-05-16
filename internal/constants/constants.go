@@ -126,9 +126,13 @@ const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
 const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
+// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
+const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
 const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
+
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
