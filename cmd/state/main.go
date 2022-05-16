@@ -139,8 +139,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
-	logging.CurrentHandler().SetVerbose(verbose)
+	args, hasVerboseArg := removeVerboseArg(args)
+	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || hasVerboseArg)
 
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
@@ -260,15 +260,18 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	return err
 }
 
-func argsHaveVerbose(args []string) bool {
-	for _, arg := range args {
+// Returns copy of args with any "-v" or "--verbose" flag removed, and true if such a flag was removed.
+func removeVerboseArg(args []string) ([]string, bool) {
+	isRunOrExec := len(args) > 1 && (args[1] == "run" || args[1] == "exec")
+	for i, arg := range args {
 		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
 		if arg == "--" {
-			return false
+			return args, false
 		}
-		if arg == "--verbose" || arg == "-v" {
-			return true
+		if (arg == "--verbose" || arg == "-v") && (!isRunOrExec || i <= 2) {
+			ret := append(args[:i], args[i+1:]...)
+			return ret, true
 		}
 	}
-	return false
+	return args, false
 }
