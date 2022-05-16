@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -37,7 +38,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 		ActivateByCommand string
 	}{
 		// {"install-release-latest", "", "release", "", ""},
-		{"install-prbranch", "", constants.BranchName, "", ""},
+		{"install-prbranch", "", "", "", ""},
 		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
 		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
 		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
@@ -48,7 +49,23 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			script := scriptPath(suite.T(), ts.Dirs.Work)
+			// Determine URL of install script.
+			baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
+			scriptBaseName := "install."
+			if runtime.GOOS != "windows" {
+				scriptBaseName += "sh"
+			} else {
+				scriptBaseName += "ps1"
+			}
+			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+
+			// Fetch it.
+			b, err := download.GetDirect(scriptUrl)
+			suite.Require().NoError(err)
+			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
+			suite.Require().NoError(fileutils.WriteFile(script, b))
+
+			// Construct installer command to execute.
 			installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script, "-t", installDir}
 			if tt.Channel != "" {
@@ -96,14 +113,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			cp.SendLine("state --version")
-			cp.Expect("Branch")
+			cp.Expect("Version " + constants.Version)
+			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
 			cp.ExpectExitCode(0)
 
-			state := appinfo.StateApp(installDir)
-			suite.FileExists(state.Exec())
+			stateExec, err := installation.StateExecFromDir(installDir)
+			suite.NoError(err)
+			suite.FileExists(stateExec)
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
@@ -152,6 +171,31 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
+	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	script := scriptPath(suite.T(), ts.Dirs.Work)
+	args := []string{script, "-t", ts.Dirs.Work}
+	args = append(args, "-v", "does-not-exist")
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs(args...),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	} else {
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
+			e2e.AppendEnv("SHELL="),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		)
+	}
+	cp.Expect("Could not download")
+	cp.ExpectLongString("does-not-exist")
+	cp.ExpectExitCode(1)
+}
+
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead
 func scriptPath(t *testing.T, targetDir string) string {
 	ext := ".ps1"
@@ -176,7 +220,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", time.Second*40)
+	cp.Expect("Installation Complete", time.Minute)
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
@@ -203,8 +247,10 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	state := appinfo.StateApp(installDir)
-	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
+	stateExec, err := installation.StateExecFromDir(installDir)
+	suite.NoError(err)
+
+	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")

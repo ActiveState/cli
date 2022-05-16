@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -40,9 +39,7 @@ type Params struct {
 	sourceInstaller string
 	path            string
 	updateTag       string
-	branch          string
 	command         string
-	version         string
 	force           bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
@@ -105,6 +102,7 @@ func main() {
 	}
 
 	var garbageBool bool
+	var garbageString string
 
 	// We have old install one liners around that use `-activate` instead of `--activate`
 	processedArgs := os.Args
@@ -128,16 +126,6 @@ func main() {
 		primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an),
 		[]*captain.Flag{ // The naming of these flags is slightly inconsistent due to backwards compatibility requirements
 			{
-				Name:        "channel",
-				Description: "Defaults to 'release'.  Specify an alternative channel to install from (eg. beta)",
-				Value:       &params.branch,
-			},
-			{
-				Shorthand: "b", // backwards compatibility
-				Hidden:    true,
-				Value:     &params.branch,
-			},
-			{
 				Name:        "command",
 				Shorthand:   "c",
 				Description: "Run any command after the install script has completed",
@@ -152,12 +140,6 @@ func main() {
 				Name:        "activate-default",
 				Description: "Activate a project and make it the system default",
 				Value:       params.activateDefault,
-			},
-			{
-				Name:        "version",
-				Shorthand:   "v",
-				Description: "The version of the State Tool to install",
-				Value:       &params.version,
 			},
 			{
 				Name:        "force",
@@ -183,6 +165,9 @@ func main() {
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
+			{Name: "channel", Hidden: true, Value: &garbageString},
+			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
+			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
 			{
@@ -219,21 +204,16 @@ func main() {
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
-	targetBranch := params.branch
-	if targetBranch == "" {
-		targetBranch = constants.BranchName
-	}
-
 	if params.path == "" {
 		var err error
-		params.path, err = installation.InstallPathForBranch(targetBranch)
+		params.path, err = installation.InstallPathForBranch(constants.BranchName)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, targetBranch)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -355,10 +335,14 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	stateExe := appinfo.StateApp(installPath).Exec()
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
+	}
+
+	stateExe, err := installation.StateExecFromDir(installPath)
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	// Execute requested command, these are mutually exclusive
@@ -371,7 +355,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-command-err", err.Error())
-			return errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
 		}
 	// Activate provided --activate Namespace
 	case params.activate.IsValid():
@@ -380,7 +364,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-err", err.Error())
-			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err)))
 		}
 	// Activate provided --activate-default Namespace
 	case params.activateDefault.IsValid():
@@ -389,7 +373,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
-			return errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err))
+			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
@@ -405,7 +389,10 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 }
 
 func envSlice(binPath string) []string {
-	return []string{"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH")}
+	return []string{
+		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		constants.DisableErrorTipsEnvVarName + "=true",
+	}
 }
 
 // storeInstallSource writes the name of the install client (eg. install.sh) to the appdata dir

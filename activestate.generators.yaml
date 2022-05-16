@@ -55,9 +55,10 @@ scripts:
     value: python3 scripts/locale-generator.py
   - name: generate-update
     language: bash
-    description: Generate versioned update files
+    description: Generate update files
     value: |
       set -e
+      export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
       echo "# Create temp dir to generate bits"
@@ -76,12 +77,12 @@ scripts:
       mkdir -p ./build/update
       if [ ! -z $constants.SYSTRAY_APP ]; then
         echo "# Copy systray app"
-        #mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP
-        #cp -r $BUILD_TARGET_DIR/$constants.SYSTRAY_APP $TEMPDIR/system
+        mkdir -p $TEMPDIR/system/$constants.SYSTRAY_APP
+        cp -r $BUILD_TARGET_DIR/$constants.SYSTRAY_APP $TEMPDIR/system
       fi
 
       echo "# Generate update from temp dir"
-      go run scripts/update-generator/main.go $@ -o ./build/update $TEMPDIR
+      go run scripts/update-generator/main.go -o ./build/update $TEMPDIR
 
       echo "# Remove temp dir"
       rm -rf $TEMPDIR

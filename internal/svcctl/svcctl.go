@@ -12,11 +12,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -81,7 +81,11 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 }
 
 func EnsureStartedAndLocateHTTP() (addr string, err error) {
-	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), appinfo.SvcApp().Exec())
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return "", locale.WrapError(err, "err_service_exec")
+	}
+	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcExec)
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {

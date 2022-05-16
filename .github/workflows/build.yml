@@ -14,6 +14,8 @@ name: Build-Test-Deploy
       - opened
       - synchronize
       - reopened
+  schedule:
+    - cron: 0 0 * * *
 
 # === JOBS ===
 jobs:
@@ -36,7 +38,6 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    timeout-minutes: 30
 
     # === OS Specific Steps ===
     steps:
@@ -198,35 +199,26 @@ jobs:
       - # === Generate Update ===
         name: Generate Update
         shell: bash
-        run: |
-          set +e
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          LABELCHECK="$(echo $LABELS | grep "Deploy: latest")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
-          set -e
-
-          if [ "$LABELCHECK" == "" ]; then
-            state run generate-update
-          else
-            echo "Generating update for latest release"
-            state run generate-update --latest
-          fi
+        run: state run generate-update
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
-          set +e
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-          set -e
-          echo "Labels: $LABELS"
-          echo "Target Branch: $TARGET_BRANCH"
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            set +e
+            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+            LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
+            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+            set -e
+            echo "Labels: $LABELS"
+            echo "Target Branch: $TARGET_BRANCH"
 
-          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
-            echo "Not running because no test labels were set nor beta, release or LTS were targeted."
-            exit 0
+            if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
+              echo "Not running because no test labels were set nor beta, release or LTS were targeted."
+              exit 0
+            fi
           fi
 
           state run deploy-updates
@@ -237,37 +229,47 @@ jobs:
 
       - # === Integration Tests ===
         name: Integration Tests
+        id: integration_tests
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          IFS=',' read -r -a TESTS <<< "$LABELS"
-          TEST_SUITE_TAGS=""
-          for i in "${TESTS[@]}"; do
-            START=${i%:*}
-            if [ "$START" == "Test" ]; then
-              TAG=${i##*:}
-              TAG=$(echo $TAG | xargs)
-              TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+            IFS=',' read -r -a TESTS <<< "$LABELS"
+            TEST_SUITE_TAGS=""
+            for i in "${TESTS[@]}"; do
+              START=${i%:*}
+              if [ "$START" == "Test" ]; then
+                TAG=${i##*:}
+                TAG=$(echo $TAG | xargs)
+                TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
+              fi
+            done
+
+            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+            echo "Target branch: $TARGET_BRANCH"
+
+            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
+              echo "Not running because no test labels were set nor beta or release were targeted."
+              exit 0
             fi
-          done
-
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-          echo "Target branch: $TARGET_BRANCH"
-
-          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
-            echo "Not running because no test labels were set nor beta or release were targeted."
-            exit 0
+          else
+            TEST_SUITE_TAGS="all"
           fi
 
-          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
+          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+          TIMEOUT=10m
+          if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
+            TIMEOUT=90m
+          fi
           set +e
-          SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
+        continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -275,6 +277,48 @@ jobs:
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Notify Slack of Nightly Integration Test Failures ===
+        name: Notify Slack of Nightly Integration Test Failures
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Nightly integration test failure(s) on ${{ runner.os }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Select the '${{ matrix.platform }}' job and expand 'Integration Tests' to inspect the failures."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - # === Fail If Nightly Integration Tests Failed (Expand 'Integration Tests' above for more information) ===
+        name: Fail If Nightly Integration Tests Failed
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
+        shell: bash
+        run: exit 1
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts

@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -39,7 +38,7 @@ func (u *Uninstall) runUninstall() error {
 	if errors.Is(err, errDirNotEmpty) {
 		u.out.Notice(locale.T("uninstall_warn_not_empty", errs.JoinMessage(err)))
 	} else if err != nil {
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(appinfo.StateApp().Exec()))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
 	}
 
 	err = removeEnvPaths(u.cfg)
@@ -93,7 +92,7 @@ func removeInstall(cfg configurable) error {
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := installmgr.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", appinfo.TrayApp().Name())
+		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
 	}
 
 	var aggErr error
@@ -158,22 +157,25 @@ func removeEmptyDir(dir string) error {
 }
 
 func cleanInstallDir(dir string) error {
+	execs, err := installation.Executables()
+	if err != nil {
+		return errs.Wrap(err, "Could not get executable paths")
+	}
+
 	var asFiles = []string{
 		installation.InstallDirMarker,
 		constants.StateInstallerCmd + exeutils.Extension,
-
-		// Remove all of the state tool executables and finally the
-		// bin directory
-		filepath.Join(installation.BinDirName, appinfo.StateApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.SvcApp().Exec()),
-		filepath.Join(installation.BinDirName, appinfo.TrayApp().Exec()),
-		installation.BinDirName,
-
-		// The system directory is on MacOS only and contains the tray
-		// application files. It is safe for us to remove this directory
-		// without first inspecting the contents.
-		"system",
 	}
+
+	// Remove all of the state tool executables and finally the
+	// bin directory
+	asFiles = append(asFiles, execs...)
+	asFiles = append(asFiles, installation.BinDirName)
+
+	// The system directory is on MacOS only and contains the tray
+	// application files. It is safe for us to remove this directory
+	// without first inspecting the contents.
+	asFiles = append(asFiles, "system")
 
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)

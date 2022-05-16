@@ -129,6 +129,11 @@ const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
 
+// DisableErrorTipsEnvVarName disables the display of tips in error messages.
+// This should only be used by the installer so-as not to pollute error message output.
+const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
+
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -382,11 +387,17 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// InstallerName is the name we give to our state-installer executable
+const InstallerName = "State Installer"
+
 // StateTrayCmd is the name of the state tray binary
 const StateTrayCmd = "state-tray"
 
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
+
+// StateUpdateDialogCmd is the name of the state update dialog binary
+const StateUpdateDialogCmd = "state-update-dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411

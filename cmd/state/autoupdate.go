@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
@@ -24,15 +24,6 @@ import (
 )
 
 const CfgKeyLastCheck = "auto_update_lastcheck"
-
-type forwardExitError struct {
-	code int
-}
-
-func (fe *forwardExitError) Error() string  { return "forwardExitError" }
-func (fe *forwardExitError) Unwrap() error  { return nil }
-func (fe *forwardExitError) IsSilent() bool { return true }
-func (fe *forwardExitError) ExitCode() int  { return fe.code }
 
 func init() {
 	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
@@ -89,9 +80,10 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
-	code := relaunch(args)
-	if code != 0 {
-		return true, &forwardExitError{code}
+
+	code, err := relaunch(args)
+	if err != nil {
+		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	return true, nil
@@ -159,14 +151,18 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 
 // When an update was found and applied, re-launch the update with the current
 // arguments and wait for return before exitting.
-func relaunch(args []string) int {
-	code, _, err := exeutils.ExecuteAndPipeStd(appinfo.StateApp().Exec(), args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+func relaunch(args []string) (int, error) {
+	exec, err := installation.StateExec()
 	if err != nil {
-		logging.Debug("Forwarded command after auto-updating failed. Exit code: %d", code)
-		return code
+		return -1, locale.WrapError(err, "err_state_exec")
 	}
 
-	return code
+	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+	if err != nil {
+		return code, errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)
+	}
+
+	return code, nil
 }
 
 func isFreshInstall() bool {

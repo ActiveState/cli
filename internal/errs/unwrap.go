@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// UnwrapExitCode checks if the given error is a failure of type FailExecCmdExit and
+// UnwrapExitCode checks if the given error is a failure of type ExitCodeable and
 // returns the ExitCode of the process that failed with this error
 func UnwrapExitCode(err error) int {
 	if err == nil {
