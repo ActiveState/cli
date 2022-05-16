@@ -90,7 +90,7 @@ func getCmdOutput(cmdString string) string {
 	return strings.Trim(out.String(), "\n")
 }
 
-func mustVersionWithRevision(ver *semver.Version, revision string) string {
+func mustVersionWithRevision(ver semver.Version, revision string) string {
 	v, err := version.VersionWithRevision(ver, revision)
 	if err != nil {
 		log.Fatalf("failed to add")

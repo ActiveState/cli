@@ -147,7 +147,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		}
 		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
 		if err != nil {
-			return errs.Wrap(err, "Could not resolve project ID")
+			logging.Error("Could not resolve project ID for analytics: %s", errs.JoinMessage(err))
 		}
 		values.ProjectID = &id
 		return nil

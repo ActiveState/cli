@@ -130,6 +130,9 @@ const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
+// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
+const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
 const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
