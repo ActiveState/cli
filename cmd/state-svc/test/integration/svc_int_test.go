@@ -1,6 +1,9 @@
 package integration
 
 import (
+	"net"
+	"path/filepath"
+	"regexp"
 	"syscall"
 	"testing"
 	"time"
@@ -31,20 +34,37 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
+	time.Sleep(500 * time.Millisecond) // wait for service to start up
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
-	cp.ExpectRe("Port:\\s+:\\d+")
-	cp.ExpectRe("Log:\\s+.+?\\.log")
-	cp.ExpectExitCode(0)
 
+	// Verify it created a socket file.
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
 	suite.True(fileutils.TargetExists(sockFile))
+
+	// Verify the server is running on its reported port.
+	cp.ExpectRe("Port:\\s+:\\d+")
+	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
+	port := portRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
+	_, err := net.Listen("tcp", "localhost:"+port)
+	suite.Error(err)
+
+	// Verify it created and wrote to its reported log file.
+	cp.ExpectRe("Log:\\s+.+?\\.log")
+	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
+	logFile := logRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
+	suite.True(fileutils.FileExists(logFile))
+	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0)
+
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
 	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
+	time.Sleep(500 * time.Millisecond) // wait for service to stop
 
+	// Verify it deleted its socket file.
 	suite.False(fileutils.TargetExists(sockFile))
 }
 
@@ -64,6 +84,9 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
+	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
+	suite.False(fileutils.TargetExists(sockFile))
+
 	// SIGTERM
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
 	cp.Expect("Starting")
@@ -74,6 +97,8 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
+
+	suite.False(fileutils.TargetExists(sockFile))
 }
 
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
@@ -88,7 +113,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		}()
 		time.Sleep(50 * time.Millisecond)
 	}
-	time.Sleep(1 * time.Second) // allow for some time to spawn the processes
+	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
 	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses())
 }
 
@@ -100,6 +125,7 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 	for _, p := range procs {
 		name, err := p.Name()
 		suite.NoError(err)
+		name = filepath.Base(name) // just in case an absolute path is returned
 
 		if svcName := constants.ServiceCommandName + exeutils.Extension; name == svcName {
 			count++
