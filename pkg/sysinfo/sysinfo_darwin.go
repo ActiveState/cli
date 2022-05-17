@@ -22,8 +22,6 @@ func OS() OsInfo {
 	return Mac
 }
 
-const VersionOverrideEnvVar = "ACTIVESTATE_CLI_OSVERSION_OVERRIDE"
-
 var (
 	versionRegex      = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
 	plistVersionRegex = regexp.MustCompile("(?s)ProductVersion.*?([\\d\\.]+)")
