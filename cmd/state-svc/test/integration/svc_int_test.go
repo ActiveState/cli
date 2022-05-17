@@ -44,7 +44,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	suite.True(fileutils.TargetExists(sockFile))
 
 	// Verify the server is running on its reported port.
-	cp.ExpectRe("Port:\\s+:\\d+")
+	cp.ExpectRe("Port:\\s+:\\d+\\s")
 	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
 	port := portRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
 	_, err := net.Listen("tcp", "localhost:"+port)
@@ -64,8 +64,11 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
 
-	// Verify it deleted its socket file.
+	// Verify it deleted its socket file and the port is free.
 	suite.False(fileutils.TargetExists(sockFile))
+	server, err := net.Listen("tcp", "localhost:"+port)
+	suite.NoError(err)
+	server.Close()
 }
 
 func (suite *SvcIntegrationTestSuite) TestSignals() {
@@ -108,10 +111,8 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 
 	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes
 	for i := 1; i <= 10; i++ {
-		go func() {
-			ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
-		}()
-		time.Sleep(50 * time.Millisecond)
+		go ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
+		time.Sleep(10 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
 	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses())
