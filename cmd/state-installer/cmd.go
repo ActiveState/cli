@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 const AnalyticsCat = "installer"
@@ -298,6 +299,10 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 			`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 	}
 
+	if err := assertCompatibility(); err != nil {
+		return errs.Wrap(err, "Cannot install as State Tool is incompatible with this platform.")
+	}
+
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
@@ -419,4 +424,17 @@ func resolveInstallPath(path string) (string, error) {
 	} else {
 		return installation.DefaultInstallPath()
 	}
+}
+
+func assertCompatibility() error {
+	if sysinfo.OS() == sysinfo.Windows {
+		osv, err := sysinfo.OSVersion()
+		if err != nil {
+			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
+		} else if osv.Major < 10 || osv.Micro < 17134 {
+			return locale.WrapError(err, "windows_compatibility_warning")
+		}
+	}
+
+	return nil
 }

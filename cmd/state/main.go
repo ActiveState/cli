@@ -37,8 +37,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -87,11 +85,6 @@ func main() {
 	if err != nil {
 		multilog.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
-		exitCode = 1
-		return
-	}
-
-	if !assertCompatibility(out) {
 		exitCode = 1
 		return
 	}
@@ -256,29 +249,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	return err
-}
-
-func assertCompatibility(out output.Outputer) bool {
-	if sysinfo.OS() != sysinfo.Windows {
-		return true
-	}
-
-	osv, err := sysinfo.OSVersion()
-	if err != nil {
-		out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
-		out.Notice(locale.Tr(
-			"windows_compatibility_warning",
-			err.Error(),
-		))
-	} else if osv.Major < 10 || osv.Micro < 17134 {
-		out.Error(output.Heading(locale.Tl("compatibility_error", "Incompatible Windows Version")))
-		out.Error(locale.Tr(
-			"windows_compatibility_warning",
-		))
-		return false
-	}
-
-	return true
 }
 
 func argsHaveVerbose(args []string) bool {
