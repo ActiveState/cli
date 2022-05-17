@@ -179,7 +179,7 @@ func osVersionMatches(version string) bool {
 	if osVersionOverride != "" {
 		// When writing tests, this string should be of the form:
 		// [major].[minor].[micro] [os free-form name]
-		osVersion = &sysinfo.OSVersionInfo{}
+		osVersion = &sysinfo.OSVersionInfo{&sysinfo.VersionInfo{}, ""}
 		fmt.Sscanf(osVersionOverride, "%d.%d.%d %s", &osVersion.Major, &osVersion.Minor, &osVersion.Micro, &osVersion.Name)
 		osVersion.Version = fmt.Sprintf("%d.%d.%d", osVersion.Major, osVersion.Minor, osVersion.Micro)
 		osVersionErr = nil
