@@ -228,17 +228,22 @@ jobs:
         if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          IFS=',' read -r -a TESTS <<< "$LABELS"
-          TEST_SUITE_TAGS=""
-          for i in "${TESTS[@]}"; do
-            START=${i%:*}
-            if [ "$START" == "Test" ]; then
-              TAG=${i##*:}
-              TAG=$(echo $TAG | xargs)
-              TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
-            fi
-          done
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+            IFS=',' read -r -a TESTS <<< "$LABELS"
+            TEST_SUITE_TAGS=""
+            for i in "${TESTS[@]}"; do
+              START=${i%:*}
+              if [ "$START" == "Test" ]; then
+                TAG=${i##*:}
+                TAG=$(echo $TAG | xargs)
+                if [[ "$TEST_SUITE_TAGS" == "" ]]; then
+                  TEST_SUITE_TAGS=$TAG
+                else
+                  TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
+                fi
+              fi
+            done
 
           TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
           echo "Target branch: $TARGET_BRANCH"
@@ -251,6 +256,10 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
+          TIMEOUT=10m
+          if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
+            TIMEOUT=60m
+          fi
           set +e
           SHELL='' go test -v `go list ./... | grep integration` &> build/integration-tests.out
           CODE=$?

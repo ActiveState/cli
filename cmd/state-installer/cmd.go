@@ -63,8 +63,8 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config: %v", err)
+		if cfg != nil {
+			events.Close("config", cfg.Close)
 		}
 
 		if err := events.WaitForEvents(5*time.Second, rollbar.Wait, an.Wait, logging.Close); err != nil {
@@ -79,7 +79,8 @@ func main() {
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
 
 	// Set up configuration handler
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Error("Could not set up configuration handler: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, err.Error())

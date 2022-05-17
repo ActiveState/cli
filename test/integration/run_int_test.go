@@ -134,6 +134,10 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 // tests that convenience commands for activestate.yaml scripts are available
 // in bash subshells from the activated state
 func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("bash subshells are not supported by our tests on windows")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -231,8 +235,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.WithArgs("activate"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Default Project")
-	cp.Expect("Activated")
+	cp.Expect("Activated", 40*time.Second)
 	cp.WaitForInput(120 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))

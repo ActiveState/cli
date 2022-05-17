@@ -1881,3 +1881,29 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
+err_state_exec:
+  other: Could not get state exec
+err_service_exec:
+  other: Could not get service exec
+err_tray_exec:
+  other: Could not get state tray exec
+err_update_exec:
+  other: Could not get update dialog exec
+err_state_exec_dir:
+  other: Could not get state exec from directory {{.V0}}
+err_service_exec_dir:
+  other: Could not get service exec from directory {{.V0}}
+err_tray_exec_dir:
+  other: Could not get tray exec from directory {{.V0}}
+err_update_exec_dir:
+  other: Could not get update dialog app exec from directory {{.V0}}
+err_search_no_package:
+  other: |
+    No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+err_search_no_bundle:
+  other: |
+    No bundles in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+search_request_package:
+  other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+search_request_bundle:
+  other: "Request a bundle at [ACTIONABLE]https://community.activestate.com/[/RESET]"

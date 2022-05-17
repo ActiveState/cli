@@ -109,7 +109,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.WaitForInput()
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-				cp.Expect("ActiveState Software Inc.")
+				cp.Expect("ActiveState")
 			}
 
 			cp.SendLine("state --version")

@@ -46,7 +46,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
-	cp.Expect("Activated")
+	cp.Expect("Activated", 30*time.Second)
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
@@ -427,7 +427,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
+	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`, 60*time.Second)
 	cp.ExpectExitCode(0)
 }
 
