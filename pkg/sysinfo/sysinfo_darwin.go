@@ -23,7 +23,6 @@ func OS() OsInfo {
 }
 
 var (
-	versionRegex      = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
 	plistVersionRegex = regexp.MustCompile("(?s)ProductVersion.*?([\\d\\.]+)")
 )
 
@@ -33,44 +32,28 @@ func OSVersion() (*OSVersionInfo, error) {
 		return cached.(*OSVersionInfo), nil
 	}
 
-	var version string
 	if v := os.Getenv(VersionOverrideEnvVar); v != "" {
-		version = v
-	} else {
-		var err error
-		// Fetch OS version.
-		version, err = getDarwinProductVersion()
+		vInfo, err := parseVersionInfo(v)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to determine OS version: %v", err)
+			return nil, fmt.Errorf("Could not parse version info: %w", err)
 		}
+		return &OSVersionInfo{vInfo, "spoofed"}, nil
 	}
 
-	// Parse OS version parts.
-	parts := versionRegex.FindStringSubmatch(version)
-	if len(parts) == 0 {
-		return nil, fmt.Errorf("Unable to parse version string '%s'", version)
-	}
-
-	major, err := strconv.Atoi(parts[1])
+	// Fetch OS version.
+	version, err := getDarwinProductVersion()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[1], version)
+		return nil, fmt.Errorf("Unable to determine OS version: %v", err)
 	}
 
-	minor, err := strconv.Atoi(parts[2])
+	vInfo, err := parseVersionInfo(version)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[2], version)
+		return nil, fmt.Errorf("Unable to parse OS version: %w", err)
 	}
 
-	var micro int = 0
-	if parts[3] != "" {
-		micro, err = strconv.Atoi(parts[3])
-		if err != nil {
-			return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[3], version)
-		}
-	}
 	// Fetch OS name.
 	name, err := exec.Command("sw_vers", "-productName").Output()
-	info := &OSVersionInfo{version, major, minor, micro, string(name)}
+	info := &OSVersionInfo{vInfo, string(name)}
 	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
 	return info, nil
 }

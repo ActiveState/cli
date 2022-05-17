@@ -20,6 +20,8 @@ const (
 	compilersCacheKey     = "compilers"
 )
 
+var versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
+
 // OsInfo represents an OS returned by OS().
 type OsInfo int
 
@@ -47,13 +49,17 @@ func (i OsInfo) String() string {
 	}
 }
 
-// OSVersionInfo represents an OS version returned by OSVersion().
-type OSVersionInfo struct {
+type VersionInfo struct {
 	Version string // raw version string
 	Major   int    // major version number
 	Minor   int    // minor version number
 	Micro   int    // micro version number
-	Name    string // free-form name string (varies by OS)
+}
+
+// OSVersionInfo represents an OS version returned by OSVersion().
+type OSVersionInfo struct {
+	*VersionInfo
+	Name string // free-form name string (varies by OS)
 }
 
 // ArchInfo represents an architecture returned by Architecture().
@@ -174,4 +180,35 @@ func getCompilerVersion(args []string) (int, int, error) {
 	major, _ := strconv.Atoi(parts[1])
 	minor, _ := strconv.Atoi(parts[2])
 	return major, minor, nil
+}
+
+func parseVersionInfo(v string) (*VersionInfo, error) {
+	parts := versionRegex.FindStringSubmatch(v)
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("Unable to parse version string '%s'", v)
+	}
+
+	major, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[1], v)
+	}
+
+	minor, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[2], v)
+	}
+
+	var micro int = 0
+	if parts[3] != "" {
+		micro, err = strconv.Atoi(parts[3])
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[3], v)
+		}
+	}
+
+	return &VersionInfo{
+		Major: major,
+		Minor: minor,
+		Micro: micro,
+	}, nil
 }
