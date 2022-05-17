@@ -4,6 +4,7 @@ import (
 	"net"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"syscall"
 	"testing"
 	"time"
