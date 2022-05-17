@@ -79,6 +79,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	// SIGINT (^C)
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
 	cp.Expect("Starting")
+	time.Sleep(1 * time.Second) // wait for the service to start up
 	cp.Signal(syscall.SIGINT)
 	cp.Expect("caught a signal: interrupt")
 	cp.ExpectNotExitCode(0)
@@ -93,9 +94,10 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	// SIGTERM
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
 	cp.Expect("Starting")
+	time.Sleep(1 * time.Second) // wait for the service to start up
 	cp.Signal(syscall.SIGTERM)
 	suite.NotContains(cp.TrimmedSnapshot(), "caught a signal")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0) // should exit gracefully
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
