@@ -60,7 +60,7 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams) error {
-	if l.proj == nil || l.proj.Source() == nil {
+	if l.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 	if err := checkSecretsAccess(l.proj); err != nil {
@@ -115,6 +115,9 @@ func (l *listOutput) MarshalOutput(format output.Format) interface{} {
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
 // usable localized error.
 func checkSecretsAccess(proj *project.Project) error {
+	if proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	allowed, err := access.Secrets(proj.Owner())
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_access")
