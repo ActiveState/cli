@@ -27,14 +27,14 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		"--path", filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal(cp.TrimmedSnapshot(), "")
+	suite.Equal("", cp.TrimmedSnapshot())
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("push", "--output", "editor"),
 		e2e.WithWorkDirectory(wd),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal(cp.TrimmedSnapshot(), "")
+	suite.Equal("", cp.TrimmedSnapshot())
 
 	// check that pushed project exists
 	cp = ts.Spawn("show", namespace)

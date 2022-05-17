@@ -45,6 +45,7 @@ func init() {
 	if locale == "" {
 		cfg, err := config.New()
 		if err == nil {
+			defer cfg.Close()
 			locale = cfg.GetString("Locale")
 			if locale == "" {
 				locale = "en-US"

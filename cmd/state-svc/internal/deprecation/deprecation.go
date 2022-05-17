@@ -15,10 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/hashicorp/go-version"
-	"github.com/patrickmn/go-cache"
 )
 
 const (
@@ -41,8 +39,6 @@ type info struct {
 // Checker is the struct that we use to do checks with
 type Checker struct {
 	config configurable
-	cache  *cache.Cache
-	done   chan struct{}
 }
 
 // configurable defines the configuration function used by the functions in this package
@@ -57,11 +53,7 @@ type configurable interface {
 func NewChecker(configuration configurable) *Checker {
 	checker := &Checker{
 		configuration,
-		cache.New(15*time.Minute, 5*time.Minute),
-		make(chan struct{}),
 	}
-
-	go checker.pollDeprecationInfo()
 
 	return checker
 }
@@ -69,51 +61,12 @@ func NewChecker(configuration configurable) *Checker {
 // Check will Check if the current version of the tool is deprecated and returns deprecation info if it is.
 // This uses a fairly short timeout to Check against our deprecation url, so this should not be considered conclusive.
 func (checker *Checker) Check() (*graph.DeprecationInfo, error) {
-	data, exists := checker.cache.Get(cacheKey)
-	if !exists {
-		logging.Debug("No deprecation information cached")
-		return nil, nil
-	}
-
-	deprecationInfo, ok := data.(*graph.DeprecationInfo)
-	if !ok {
-		return nil, errs.New("Unexpected cache entry for deprecation info")
-	}
-	return deprecationInfo, nil
-}
-
-func (checker *Checker) pollDeprecationInfo() {
-	timer := time.NewTicker(1 * time.Hour)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-timer.C:
-			err := checker.Refresh()
-			if err != nil {
-				multilog.Error("Could not update deprecation information %s", errs.JoinMessage(err))
-				return
-			}
-		case <-checker.done:
-			return
-		}
-	}
-}
-
-func (checker *Checker) Refresh() error {
-	logging.Debug("Refreshing deprecation information")
-
-	info, err := checker.fetchDeprecationInfo()
+	deprecationInfo, err := checker.fetchDeprecationInfo()
 	if err != nil {
-		return errs.Wrap(err, "Could not fetch deprecation information")
-	}
-	if info == nil {
-		return nil
+		return nil, errs.Wrap(err, "Could not fetch deprecation information")
 	}
 
-	checker.cache.Set(cacheKey, info, cache.DefaultExpiration)
-
-	return nil
+	return deprecationInfo, nil
 }
 
 func (checker *Checker) fetchDeprecationInfo() (*graph.DeprecationInfo, error) {
@@ -215,7 +168,3 @@ func initializeInfo(data []byte) ([]info, error) {
 	return info, nil
 }
 
-func (checker *Checker) Close() {
-	logging.Debug("Closing deprecation checker")
-	checker.done <- struct{}{}
-}

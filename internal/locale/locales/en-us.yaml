@@ -1897,3 +1897,13 @@ err_tray_exec_dir:
   other: Could not get tray exec from directory {{.V0}}
 err_update_exec_dir:
   other: Could not get update dialog app exec from directory {{.V0}}
+err_search_no_package:
+  other: |
+    No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+err_search_no_bundle:
+  other: |
+    No bundles in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+search_request_package:
+  other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+search_request_bundle:
+  other: "Request a bundle at [ACTIONABLE]https://community.activestate.com/[/RESET]"

@@ -106,7 +106,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version", "--verbose"))
+	// Give svc time to check for updates and cache the info
+	time.Sleep(2 * time.Second)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"))
 	cp.Expect("Update Available")
 	cp.ExpectExitCode(0)
 }
