@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -85,17 +84,9 @@ func main() {
 		return
 	}
 
-	if runtime.GOOS == "windows" {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
-			logging.Debug("Could not retrieve os version info: %v", err)
-		} else if osv.Major < 10 {
-			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
-			out.Notice(locale.Tr(
-				"windows_compatibility_warning",
-				constants.ForumsURL,
-			))
-		}
+	if !assertCompatibility(out) {
+		exitCode = 1
+		return
 	}
 
 	// Set up our legacy outputer
@@ -258,6 +249,29 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	return err
+}
+
+func assertCompatibility(out output.Outputer) bool {
+	if sysinfo.OS() != sysinfo.Windows {
+		return true
+	}
+
+	osv, err := sysinfo.OSVersion()
+	if err != nil {
+		out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
+		out.Notice(locale.Tr(
+			"windows_compatibility_warning",
+			err.Error(),
+		))
+	} else if osv.Major < 10 || osv.Micro < 17134 {
+		out.Error(output.Heading(locale.Tl("compatibility_error", "Incompatible Windows Version")))
+		out.Error(locale.Tr(
+			"windows_compatibility_warning",
+		))
+		return false
+	}
+
+	return true
 }
 
 func argsHaveVerbose(args []string) bool {
