@@ -73,7 +73,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
-	cp := ts.Spawn("pull")
+	cp := ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
@@ -84,11 +84,8 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
 	}
 	mainBranchCommitID := pjfile.CommitID()
 
-	cp = ts.Spawn("branch", "switch", "secondbranch")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("branch", "switch", "secondbranch"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.Expect("Updating Runtime")
-	cp.Expect("Downloading missing artifacts", 60*time.Second)
-	cp.Expect("Updating missing artifacts")
-	cp.Expect("Installing")
 	cp.ExpectLongString("Successfully switched to branch: secondbranch", 60*time.Second)
 	cp.ExpectExitCode(0)
 

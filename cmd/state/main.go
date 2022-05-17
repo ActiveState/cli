@@ -44,6 +44,8 @@ import (
 )
 
 func main() {
+	startTime := time.Now()
+
 	var exitCode int
 	// Set up logging
 	rollbar.SetupRollbar(constants.StateToolRollbarToken)
@@ -60,13 +62,18 @@ func main() {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
-		events.Close("config", cfg.Close)
+		if cfg != nil {
+			events.Close("config", cfg.Close)
+		}
+
+		profile.Measure("main", startTime)
 
 		// exit with exitCode
 		os.Exit(exitCode)
 	}()
 
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))

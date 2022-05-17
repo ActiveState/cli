@@ -27,9 +27,10 @@ func Close(name string, closer func() error) {
 }
 
 func WaitForEvents(t time.Duration, events ...func()) error {
-	defer profile.Measure("event:WaitForEvents", time.Now())
+	defer profile.Measure(fmt.Sprintf("event:WaitForEvents (%d)", len(events)), time.Now())
 	wg := make(chan struct{})
 	go func() {
+		defer profile.Measure("event:WaitForEvents:loop", time.Now())
 		for n, event := range events {
 			func() {
 				defer profile.Measure(fmt.Sprintf("event:WaitForEvents:%d", n), time.Now())

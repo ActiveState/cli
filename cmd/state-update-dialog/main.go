@@ -28,8 +28,10 @@ func main() {
 			exitCode = 1
 		}
 
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %v", err)
+		if cfg != nil {
+			if err := cfg.Close(); err != nil {
+				multilog.Error("Failed to close config after exiting systray: %v", err)
+			}
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -38,7 +40,8 @@ func main() {
 		os.Exit(exitCode)
 	}()
 
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))

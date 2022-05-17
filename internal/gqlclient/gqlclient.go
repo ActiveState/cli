@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
@@ -44,12 +46,19 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 		graphqlClient: graphql.NewClient(url, opts...),
 		timeout:       timeout,
 	}
-	// client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) == "true" {
+		client.EnableDebugLog()
+	}
 	return client
 }
 
 func New(url string, timeout time.Duration) *Client {
 	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
+}
+
+// EnableDebugLog turns on debug logging
+func (c *Client) EnableDebugLog() {
+	c.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 }
 
 func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {
