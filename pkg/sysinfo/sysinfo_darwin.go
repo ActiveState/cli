@@ -22,7 +22,10 @@ func OS() OsInfo {
 	return Mac
 }
 
+const VersionOverrideEnvVar = "ACTIVESTATE_CLI_OSVERSION_OVERRIDE"
+
 var (
+	versionRegex      = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
 	plistVersionRegex = regexp.MustCompile("(?s)ProductVersion.*?([\\d\\.]+)")
 )
 
@@ -32,28 +35,44 @@ func OSVersion() (*OSVersionInfo, error) {
 		return cached.(*OSVersionInfo), nil
 	}
 
+	var version string
 	if v := os.Getenv(VersionOverrideEnvVar); v != "" {
-		vInfo, err := parseVersionInfo(v)
+		version = v
+	} else {
+		var err error
+		// Fetch OS version.
+		version, err = getDarwinProductVersion()
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse version info: %w", err)
+			return nil, fmt.Errorf("Unable to determine OS version: %v", err)
 		}
-		return &OSVersionInfo{vInfo, "spoofed"}, nil
 	}
 
-	// Fetch OS version.
-	version, err := getDarwinProductVersion()
+	// Parse OS version parts.
+	parts := versionRegex.FindStringSubmatch(version)
+	if len(parts) == 0 {
+		return nil, fmt.Errorf("Unable to parse version string '%s'", version)
+	}
+
+	major, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to determine OS version: %v", err)
+		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[1], version)
 	}
 
-	vInfo, err := parseVersionInfo(version)
+	minor, err := strconv.Atoi(parts[2])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse OS version: %w", err)
+		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[2], version)
 	}
 
+	var micro int = 0
+	if parts[3] != "" {
+		micro, err = strconv.Atoi(parts[3])
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[3], version)
+		}
+	}
 	// Fetch OS name.
 	name, err := exec.Command("sw_vers", "-productName").Output()
-	info := &OSVersionInfo{vInfo, string(name)}
+	info := &OSVersionInfo{version, major, minor, micro, string(name)}
 	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
 	return info, nil
 }
@@ -120,7 +139,7 @@ func getDarwinProductVersion() (string, error) {
 
 	version, err := exec.Command("sw_vers", "-productVersion").Output()
 	if err != nil {
-		return "", locale.WrapError(err, "Could not detect your OS version, error received: %s", err.Error())
+		return "", locale.WrapError(err, "Could not detect your OS version, error received: %v", err)
 	}
 	return string(bytes.TrimSpace(version)), nil
 }
