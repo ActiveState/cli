@@ -300,7 +300,9 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	}
 
 	if err := assertCompatibility(); err != nil {
-		return errs.Wrap(err, "Cannot install as State Tool is incompatible with this platform.")
+		// Don't wrap, we want the error from assertCompatibility to be returned -- installer doesn't have intelligent error handling yet
+		// https://activestatef.atlassian.net/browse/DX-957
+		return err
 	}
 
 	installer, err := NewInstaller(cfg, out, params)
