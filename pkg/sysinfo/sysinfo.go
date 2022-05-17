@@ -11,6 +11,8 @@ import (
 
 var sysinfoCache *cache.Cache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
+const VersionOverrideEnvVar = "ACTIVESTATE_CLI_OSVERSION_OVERRIDE"
+
 // Cache keys used for storing/retrieving computed system information.
 const (
 	osVersionInfoCacheKey = "osVersionInfo"
