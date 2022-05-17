@@ -61,6 +61,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Only Windows has incompatibility logic")
+	}
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Compatibility, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
