@@ -72,6 +72,10 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 }
 
 func (suite *SvcIntegrationTestSuite) TestSignals() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Windows does not support signal sending.")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
