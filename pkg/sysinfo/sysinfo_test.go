@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/performance"
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TestPerformance tests the speed at which critical sysinfo methods execute
@@ -31,12 +30,6 @@ func TestPerformance(t *testing.T) {
 		}, 10, maxDuration)
 		assert.NoError(t, err)
 	})
-}
-
-func TestGetDarwinProductVersionFromFS(t *testing.T) {
-	productVersion, err := getDarwinProductVersionFromFS()
-	require.NoError(t, err)
-	assert.NotEmpty(t, productVersion)
 }
 
 func TestOSVersionInfoCached(t *testing.T) {
