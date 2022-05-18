@@ -355,7 +355,7 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// UnstableConfig is the config key used to determine if a command is unstable
+// UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
