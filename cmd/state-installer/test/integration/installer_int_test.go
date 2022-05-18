@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -46,6 +47,28 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
+}
+
+func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Only Windows has incompatibility logic")
+	}
+	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Compatibility, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	target := filepath.Join(ts.Dirs.Work, "installation")
+
+	// Run installer with source-path flag (ie. install from this local path)
+	cp := ts.SpawnCmdWithOpts(
+		ts.InstallerExe,
+		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
+		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
+	)
+
+	// Assert output
+	cp.Expect("not compatible")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {

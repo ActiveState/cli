@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 const AnalyticsCat = "installer"
@@ -299,6 +300,12 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 			`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 	}
 
+	if err := assertCompatibility(); err != nil {
+		// Don't wrap, we want the error from assertCompatibility to be returned -- installer doesn't have intelligent error handling yet
+		// https://activestatef.atlassian.net/browse/DX-957
+		return err
+	}
+
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
@@ -416,4 +423,17 @@ func resolveInstallPath(path string) (string, error) {
 	} else {
 		return installation.DefaultInstallPath()
 	}
+}
+
+func assertCompatibility() error {
+	if sysinfo.OS() == sysinfo.Windows {
+		osv, err := sysinfo.OSVersion()
+		if err != nil {
+			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
+		} else if osv.Major < 10 || (osv.Major == 10 && osv.Micro < 17134) {
+			return locale.WrapError(err, "windows_compatibility_error")
+		}
+	}
+
+	return nil
 }

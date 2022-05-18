@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -38,8 +37,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -90,19 +87,6 @@ func main() {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
-	}
-
-	if runtime.GOOS == "windows" {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
-			logging.Debug("Could not retrieve os version info: %v", err)
-		} else if osv.Major < 10 {
-			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
-			out.Notice(locale.Tr(
-				"windows_compatibility_warning",
-				constants.ForumsURL,
-			))
-		}
 	}
 
 	// Set up our legacy outputer
