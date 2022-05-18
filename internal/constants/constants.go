@@ -366,13 +366,7 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// SvcConfigPort is the config key used for storing the svc port
-const SvcConfigPort = "svc-port"
-
-// SvcConfigPid is the config key used for storing the svc pid
-const SvcConfigPid = "svc-pid"
-
-// UnstableConfig is the config key used to determine if a command is unstable
+// UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
