@@ -294,7 +294,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
     project: https://platform.activestate.com/ActiveState-CLI/Perl-5.32?commitID=a4762408-def6-41e4-b709-4cb548765005
 	`))
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
