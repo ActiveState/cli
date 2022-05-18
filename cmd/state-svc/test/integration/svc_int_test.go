@@ -42,7 +42,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 
 	// Verify it created a socket file.
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	suite.True(fileutils.TargetExists(sockFile))
+	suite.True(fileutils.TargetExists(sockFile), "socket file '"+sockFile+"' does not exist")
 
 	// Verify the server is running on its reported port.
 	cp.ExpectRe("Port:\\s+:\\d+\\s")
@@ -55,8 +55,8 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp.ExpectRe("Log:\\s+.+?\\.log")
 	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
 	logFile := logRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
-	suite.True(fileutils.FileExists(logFile))
-	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0)
+	suite.True(fileutils.FileExists(logFile), "log file '"+logFile+"' does not exist")
+	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0, "log file is empty")
 
 	cp.ExpectExitCode(0)
 
@@ -66,7 +66,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
 
 	// Verify it deleted its socket file and the port is free.
-	suite.False(fileutils.TargetExists(sockFile))
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 	server, err := net.Listen("tcp", "localhost:"+port)
 	suite.NoError(err)
 	server.Close()
@@ -94,7 +94,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.ExpectExitCode(1)
 
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	suite.False(fileutils.TargetExists(sockFile))
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 
 	// SIGTERM
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
@@ -108,7 +108,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
-	suite.False(fileutils.TargetExists(sockFile))
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 }
 
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
