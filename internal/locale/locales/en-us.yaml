@@ -1838,7 +1838,7 @@ progress_commit:
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 unstable_feature_banner:
-  other: "[HEADING]█ Beta Feature: This feature is still in beta and may be unstable.[/RESET]"
+  other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
   other: |
     This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
@@ -1905,3 +1905,5 @@ search_request_package:
   other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
 search_request_bundle:
   other: "Request a bundle at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+beta_suffix:
+  other: " (Beta)"
