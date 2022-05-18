@@ -19,6 +19,7 @@ func (suite *ShellEscaperTestSuite) TestBashEscaper() {
 	suite.Equal(`"quoted\nquote"`, escaper.Quote("quoted\nquote"))
 	suite.Equal(`"quote\\"`, escaper.Quote(`quote\`))
 	suite.Equal(`"quote\"quote"`, escaper.Quote(`quote"quote`))
+	suite.Equal(`"\$FOO"`, escaper.Quote(`$FOO`))
 }
 
 func (suite *ShellEscaperTestSuite) TestBatchEscaper() {
