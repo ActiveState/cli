@@ -1627,7 +1627,14 @@ ppm_convert_ask_feedback:
     run [ACTIONABLE]`state --help`[/RESET] or check out [ACTIONABLE]{{.Docs}}[/RESET]
 windows_compatibility_warning:
   other: |
-    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+    Unable to detect your Windows version. You may encounter issues; please ensure you are running at least Windows 10 build 17134.1.
+    
+    Error received: {{.V0}}
+windows_compatibility_error:
+  other: |
+    Unfortunately State Tool is not compatible with your version of Windows.
+    
+    The minimum version supported is Windows 10 build 17134.1.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:
@@ -1785,8 +1792,6 @@ err_ping_version_mismatch:
     The installed version of the State Tool Service does not match that of the client.
     Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
     If this issue persists please reinstall the State Tool.
-err_learn_open:
-  other: "Could not open cheat sheet in browser"
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_directory_in_use:
