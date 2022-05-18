@@ -1,7 +1,6 @@
 package ipc
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -10,10 +9,8 @@ import (
 
 var (
 	// expose internal errors for outside inspection
-	ErrInUse = flisten.ErrInUse
-
-	// control errors for flow control
-	ctlErrConnsClosed = errors.New("Connections channel closed")
+	ErrInUse    = flisten.ErrInUse
+	ErrConnLost = flisten.ErrConnLost
 )
 
 type ServerDownError struct {

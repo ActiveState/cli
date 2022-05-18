@@ -6,6 +6,26 @@ import (
 	"time"
 )
 
+type errorConvConn struct {
+	net.Conn
+}
+
+func newErrorConvConn(c net.Conn) *errorConvConn {
+	return &errorConvConn{
+		Conn: c,
+	}
+}
+
+func (c *errorConvConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	return n, asConnLostError(err)
+}
+
+func (c *errorConvConn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	return n, asConnLostError(err)
+}
+
 func noopPrint(a ...interface{})  {}
 func fmtPrintln(a ...interface{}) { _, _ = fmt.Println(a...) }
 

@@ -1,12 +1,9 @@
 package svcctl
 
 import (
-	"context"
 	"errors"
-	"io"
 	"net"
 	"os"
-	"syscall"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
@@ -27,14 +24,14 @@ func asRequestTimeoutCtlErr(err error) error {
 }
 
 func asTempNotUpCtlErr(err error) error {
-	if errs.IsAny(err, io.EOF, syscall.ECONNRESET, syscall.EPIPE) {
+	if errors.Is(err, ipc.ErrConnLost) {
 		return ctlErrTempNotUp
 	}
 	return err
 }
 
 func asNotUpCtlErr(err error) error {
-	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
+	if errs.Matches(err, &ipc.ServerDownError{}) {
 		return ctlErrNotUp
 	}
 	return err
