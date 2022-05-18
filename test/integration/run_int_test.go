@@ -282,10 +282,6 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Testing exec of Perl with variables is not applicable on Windows")
-	}
-
 	suite.OnlyRunForTags(tagsuite.Run)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
