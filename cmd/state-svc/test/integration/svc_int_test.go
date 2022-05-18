@@ -131,12 +131,11 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 
 	count := 0
 	for _, p := range procs {
-		name, err := p.Name()
-		suite.NoError(err)
-		name = filepath.Base(name) // just in case an absolute path is returned
-
-		if svcName := constants.ServiceCommandName + exeutils.Extension; name == svcName {
-			count++
+		if name, err := p.Name(); err == nil {
+			name = filepath.Base(name) // just in case an absolute path is returned
+			if svcName := constants.ServiceCommandName + exeutils.Extension; name == svcName {
+				count++
+			}
 		}
 	}
 
