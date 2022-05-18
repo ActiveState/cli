@@ -433,7 +433,7 @@ func assertCompatibility() error {
 		osv, err := sysinfo.OSVersion()
 		if err != nil {
 			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
-		} else if osv.Major < 10 || osv.Micro < 17134 {
+		} else if osv.Major < 10 || (osv.Major == 10 && osv.Micro < 17134) {
 			return locale.WrapError(err, "windows_compatibility_error")
 		}
 	}
