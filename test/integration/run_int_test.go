@@ -296,7 +296,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"PERL_VERSION=does_not_exist",
+		),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
