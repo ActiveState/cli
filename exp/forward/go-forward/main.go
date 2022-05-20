@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -30,5 +29,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fmt.Println(string(buf[:n]))
+	_ = n
+	//fmt.Println(string(buf[:n]))
 }

@@ -20,7 +20,8 @@ fn sendMsgToServer(path: []const u8) !void {
     var buf: [1024]u8 = undefined;
     var resp_size = try conn.read(buf[0..]);
 
-    try stdout.print("{s}\n", .{buf[0..resp_size]});
+    _ = resp_size;
+    //try stdout.print("{s}\n", .{buf[0..resp_size]});
 }
 
 pub fn main() !void {
