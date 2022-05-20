@@ -9,8 +9,10 @@ bins=(
   "./zig-forward/build/zig-forward"
 )
 
+sockFile="${1}"
+
 for bin in ${bins[@]}; do
   echo "--- --- ---"
   ls -lahs ${bin%% *} | cut -d" " -f1,10
-  perf stat -r 100 -B ${bin} > /dev/null
+  perf stat -r 100 -B ${bin} ${sockFile} > /dev/null
 done
