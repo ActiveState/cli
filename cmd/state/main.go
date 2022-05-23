@@ -130,8 +130,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
-	logging.CurrentHandler().SetVerbose(verbose)
+	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || argsHaveVerbose(args))
 
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
@@ -252,12 +251,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 }
 
 func argsHaveVerbose(args []string) bool {
-	for _, arg := range args {
+	var isRunOrExec bool
+	nextArg := 0
+
+	for i, arg := range args {
+		if arg == "run" || arg == "exec" {
+			isRunOrExec = true
+			nextArg = i + 1
+		}
+
 		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
 		if arg == "--" {
 			return false
 		}
-		if arg == "--verbose" || arg == "-v" {
+		if (arg == "--verbose" || arg == "-v") && (!isRunOrExec || i == nextArg) {
 			return true
 		}
 	}
