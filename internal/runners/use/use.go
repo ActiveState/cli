@@ -98,12 +98,15 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(fmt.Sprintf(`[NOTICE]Switched to[/RESET] [ACTIONABLE]%s[/RESET]`, params.Namespace.Project))
+	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET]",
+		locale.Tl("use_notice_switched_to", "Switched to"),
+		params.Namespace.Project),
+	)
 
 	if rt.GOOS == "windows" {
-		u.out.Notice(locale.Tl("use_reset_notice_windows", "Note you may need to start a new command prompt to fully update your environment."))
+		u.out.Notice(locale.T("use_reset_notice_windows"))
 	} else {
-		u.out.Notice(locale.Tl("use_reset_notice", "Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment."))
+		u.out.Notice(locale.T("use_reset_notice"))
 	}
 
 	return nil

@@ -9,8 +9,6 @@ import (
 )
 
 func newUseCommand(prime *primer.Values) *captain.Command {
-	runner := use.NewUse(prime)
-
 	params := &use.Params{
 		Namespace: &project.Namespaced{},
 	}
@@ -18,7 +16,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"use",
 		"",
-		"Use the given project runtime as the default for your system",
+		locale.Tl("use_description", "Use the given project runtime as the default for your system"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
@@ -30,8 +28,22 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
+			return use.NewUse(prime).Run(params)
 		},
 	).SetGroup(EnvironmentGroup)
 	return cmd
+}
+
+func newUseResetCommand(prime *primer.Values) *captain.Command {
+	return captain.NewCommand(
+		"reset",
+		"",
+		locale.Tl("reset_description", "Reset your default project runtime"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(_ *captain.Command, _ []string) error {
+			return use.NewReset(prime).Run()
+		},
+	)
 }
