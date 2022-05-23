@@ -67,7 +67,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
-	cp.Expect("Reset")
+	cp.Expect("Reset default project runtime")
+	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
 	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, "python3")), "previous runtime python3 is still on PATH")
