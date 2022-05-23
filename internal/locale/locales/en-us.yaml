@@ -1628,12 +1628,12 @@ ppm_convert_ask_feedback:
 windows_compatibility_warning:
   other: |
     Unable to detect your Windows version. You may encounter issues; please ensure you are running at least Windows 10 build 17134.1.
-    
+
     Error received: {{.V0}}
 windows_compatibility_error:
   other: |
     Unfortunately State Tool is not compatible with your version of Windows.
-    
+
     The minimum version supported is Windows 10 build 17134.1.
 exec_description:
   other: Intercept and run a script via a project runtime environment

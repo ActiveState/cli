@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -50,6 +51,29 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Python 3.9.10")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *UseIntegrationTestSuite) TestReset() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
+	cp.Expect("Reset")
+	cp.ExpectExitCode(0)
+
+	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, "python3")), "previous runtime python3 is still on PATH")
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
+	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
 }
 
