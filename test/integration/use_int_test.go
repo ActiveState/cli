@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -66,14 +67,15 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	)
 	cp.ExpectExitCode(0)
 
-	suite.True(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, "python3")))
+	python3Exe := "python3" + osutils.ExeExt
+	suite.True(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, python3Exe)), python3Exe+" not found")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
-	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, "python3")), "previous runtime python3 is still on PATH")
+	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, python3Exe)), python3Exe+" still exists")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No global default project to reset")
