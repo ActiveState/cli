@@ -260,13 +260,12 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 }
 
 func argsHaveVerbose(args []string) bool {
-	var commandFound, isRunOrExec bool
+	var isRunOrExec bool
 	nextArg := 0
 
 	for i, arg := range args {
-		if i > 0 && !commandFound && !strings.HasPrefix(arg, "-") {
-			commandFound = true
-			isRunOrExec = arg == "run" || arg == "exec"
+		if arg == "run" || arg == "exec" {
+			isRunOrExec = true
 			nextArg = i + 1
 		}
 
