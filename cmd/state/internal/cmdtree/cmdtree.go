@@ -226,6 +226,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Name:        "verbose",
 				Shorthand:   "v",
 				Description: locale.T("flag_state_verbose_description"),
+				Persist:     true,
 				OnUse: func() {
 					if !condition.InUnitTest() {
 						logging.CurrentHandler().SetVerbose(true)
