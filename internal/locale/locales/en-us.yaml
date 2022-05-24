@@ -1848,7 +1848,7 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
   other: |
-    This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
+    The command '[ACTIONABLE]state {{.V0}}[/RESET]' is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 secrets_unstable_warning:
