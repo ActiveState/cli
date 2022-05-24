@@ -590,12 +590,12 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		c.out.Notice(output.Title(c.title + suffix))
 	}
 
-	if c.unstable && c.out.Type() != output.EditorV0FormatName {
-		if !c.cfg.GetBool(constants.UnstableConfig) {
-			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
+	if c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName) {
+		if !condition.OptInUnstable(c.cfg) {
+			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
-		c.out.Print(locale.T("unstable_feature_banner"))
+		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
 
 	intercept := c.interceptFunc()
