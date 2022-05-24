@@ -67,15 +67,15 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	)
 	cp.ExpectExitCode(0)
 
-	python3Exe := "python3" + osutils.ExeExt
-	suite.True(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, python3Exe)), python3Exe+" not found")
+	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
-	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.DefaultBin, python3Exe)), python3Exe+" still exists")
+	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No global default project to reset")
