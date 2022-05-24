@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
+
+	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 func main() {
@@ -31,4 +34,11 @@ func main() {
 
 	_ = n
 	//fmt.Println(string(buf[:n]))
+
+	code, _, err := exeutils.ExecuteAndPipeStd("/usr/bin/python3", os.Args[2:], os.Environ())
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(42)
+	}
+	os.Exit(code)
 }

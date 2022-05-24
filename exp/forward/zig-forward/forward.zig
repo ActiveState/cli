@@ -3,7 +3,7 @@ const std = @import("std");
 const net = std.net;
 const testing = std.testing;
 
-const client_msg = "http-addr";
+const clientMsg = "http-addr";
 
 fn sendMsgToServer(path: []const u8) !void {
     const stdout = std.io.getStdOut().writer();
@@ -15,13 +15,13 @@ fn sendMsgToServer(path: []const u8) !void {
 
     defer conn.close();
 
-    _ = try conn.write(client_msg);
+    _ = try conn.write(clientMsg);
 
     var buf: [1024]u8 = undefined;
-    var resp_size = try conn.read(buf[0..]);
+    var respSize = try conn.read(buf[0..]);
 
-    _ = resp_size;
-    //try stdout.print("{s}\n", .{buf[0..resp_size]});
+    _ = respSize;
+    //try stdout.print("{s}\n", .{buf[0..respSize]});
 }
 
 pub fn main() !void {
@@ -33,18 +33,33 @@ pub fn main() !void {
 
     var a: std.mem.Allocator = arena.allocator();
 
-    var arg_it = try process.argsWithAllocator(a);
-    _ = arg_it.skip();
+    var argIt = try process.argsWithAllocator(a);
+    defer argIt.deinit();
 
-    const path = try arg_it.next(a) orelse {
+    _ = argIt.skip();
+
+    const path = try argIt.next(a) orelse {
         try stdout.print("expected first arg to be server addr\n", .{});
         return error.InvalidArgs;
     };
 
-    const client_thread = std.Thread.spawn(.{}, sendMsgToServer, .{path}) catch |err| {
+    const clientThread = std.Thread.spawn(.{}, sendMsgToServer, .{path}) catch |err| {
         try stdout.print("test\n", .{});
         try stdout.print("{s}\n", .{err});
         return err;
     };
-    defer client_thread.join();
+    clientThread.join();
+
+    var usrArgs = try process.argsAlloc(a);
+    defer process.argsFree(a, usrArgs);
+
+    var cmdArgs = std.ArrayList([]const u8).init(a);
+    defer cmdArgs.deinit();
+    try cmdArgs.append("/usr/bin/python3");
+    try cmdArgs.appendSlice(usrArgs[2..]);
+
+    const childProc = try std.ChildProcess.init(cmdArgs.items, a);
+    defer childProc.deinit();
+    var term = try childProc.spawnAndWait();
+    std.os.exit(term.Exited);
 }

@@ -11,8 +11,10 @@ bins=(
 
 sockFile="${1}"
 
+perf stat -r 100 -B /usr/bin/python3 -c "print('234')" > /dev/null
+
 for bin in ${bins[@]}; do
   echo "--- --- ---"
   ls -lahs ${bin%% *} | cut -d" " -f1,10
-  perf stat -r 100 -B ${bin} ${sockFile} > /dev/null
+  perf stat -r 100 -B ${bin} ${sockFile} -c "print('234')" > /dev/null
 done
