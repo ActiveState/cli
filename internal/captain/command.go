@@ -591,7 +591,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.unstable && c.out.Type() != output.EditorV0FormatName {
-		if !c.cfg.GetBool(constants.UnstableConfig) {
+		if !condition.OptInUnstable(c.cfg) {
 			c.out.Print(locale.Tr("unstable_command_warning", c.Name()))
 			return nil
 		}
