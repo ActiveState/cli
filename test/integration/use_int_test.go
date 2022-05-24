@@ -68,6 +68,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	if runtime.GOOS == "windows" {
+		python3Exe = python3Exe + ".bat"
+	}
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
