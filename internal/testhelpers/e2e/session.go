@@ -16,9 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -26,7 +28,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -81,21 +82,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -114,12 +115,16 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
-	to = filepath.Join(to, filepath.Base(from))
+	var err error
+	to, err = filepath.Abs(filepath.Join(to, filepath.Base(from)))
+	if err != nil {
+		s.t.Fatal(err)
+	}
 	if fileutils.TargetExists(to) {
 		return to
 	}
 
-	err := fileutils.CopyFile(from, to)
+	err = fileutils.CopyFile(from, to)
 	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
@@ -143,25 +148,25 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo := appinfo.StateApp(buildDir)
-	svcInfo := appinfo.SvcApp(buildDir)
-	trayInfo := appinfo.TrayApp(buildDir)
-	installInfo := appinfo.InstallerApp(buildDir)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
+	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
+	installExec := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
 
-	if !fileutils.FileExists(stateInfo.Exec()) {
+	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
-	if !fileutils.FileExists(svcInfo.Exec()) {
+	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayInfo.Exec()) {
+	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	if !fileutils.FileExists(installInfo.Exec()) {
+	if !fileutils.FileExists(installExec) {
 		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
 	}
 
-	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
+	return stateExec, svcExec, trayExec, installExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -180,6 +185,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
+		constants.OptinUnstableEnvVarName + "=true",
 	}...)
 
 	if updatePath {
@@ -362,7 +368,8 @@ func (s *Session) CreateNewUser() string {
 
 	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
 
-	p.Expect("Terms of Service")
+	p.Expect("I accept")
+	time.Sleep(time.Millisecond * 100)
 	p.Send("y")
 	p.Expect("username:")
 	p.Send(username)
@@ -390,8 +397,46 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
-func observeExpectFn2(s *Session) expect.ExpectObserver {
-	return termtest.TestExpectObserveFn(s.t)
+func (s *Session) DebugMessage(prefix string) string {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
+
+	if prefix != "" {
+		prefix = prefix + "\n"
+	}
+
+	snapshot := ""
+	if s.cp != nil {
+		snapshot = s.cp.Snapshot()
+	}
+
+	v, err := strutils.ParseTemplate(`
+{{.Prefix}}{{.A}}Stack: 
+{{.Stacktrace}}{{.Z}}
+{{.A}}Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
+{{.A}}State Tool Log:
+{{.StateLog}}{{.Z}}
+{{.A}}State Svc Log:
+{{.SvcLog}}{{.Z}}
+`, map[string]interface{}{
+		"Prefix":       prefix,
+		"Stacktrace":   stacktrace.Get().String(),
+		"FullSnapshot": snapshot,
+		"StateLog":     s.MostRecentStateLog(),
+		"SvcLog":       s.SvcLog(),
+		"A":            sectionStart,
+		"Z":            sectionEnd,
+	})
+	if err != nil {
+		s.t.Fatalf("Parsing template failed: %s", err)
+	}
+
+	return v
 }
 
 func observeExpectFn(s *Session) expect.ExpectObserver {
@@ -419,8 +464,10 @@ Could not meet expectation: '{{.Expectation}}'
 Error: {{.Error}}
 {{.A}}Stack: 
 {{.Stacktrace}}{{.Z}}
-{{.A}}Terminal snapshot:
-{{.Snapshot}}{{.Z}}
+{{.A}}Partial Terminal snapshot:
+{{.PartialSnapshot}}{{.Z}}
+{{.A}}Full Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
 {{.A}}Parsed output:
 {{.ParsedOutput}}{{.Z}}
 {{.A}}State Tool Log:
@@ -428,15 +475,16 @@ Error: {{.Error}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
 `, map[string]interface{}{
-			"Expectation":  value,
-			"Error":        err,
-			"Stacktrace":   stacktrace.Get().String(),
-			"Snapshot":     ms.TermState.String(),
-			"ParsedOutput": fmt.Sprintf("%+q", ms.Buf.String()),
-			"StateLog":     s.MostRecentStateLog(),
-			"SvcLog":       s.SvcLog(),
-			"A":            sectionStart,
-			"Z":            sectionEnd,
+			"Expectation":     value,
+			"Error":           err,
+			"Stacktrace":      stacktrace.Get().String(),
+			"PartialSnapshot": ms.TermState.String(),
+			"FullSnapshot":    s.cp.Snapshot(),
+			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
+			"StateLog":        s.MostRecentStateLog(),
+			"SvcLog":          s.SvcLog(),
+			"A":               sectionStart,
+			"Z":               sectionEnd,
 		})
 		if err != nil {
 			s.t.Fatalf("Parsing template failed: %s", err)
@@ -470,11 +518,13 @@ func (s *Session) Close() error {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
+	
+	a := auth.New(cfg)
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user)
+		err := cleanUser(s.t, user, a)
 		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, err)
+			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
@@ -501,9 +551,7 @@ func (s *Session) SvcLog() string {
 		return string(b) + "\n\nCurrent time: " + time.Now().String()
 	}
 
-	panic(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
-
-	return ""
+	return fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
 func (s *Session) MostRecentStateLog() string {
@@ -540,8 +588,7 @@ func (s *Session) MostRecentStateLog() string {
 	}
 
 	if result == "" {
-		panic("Could not find log file")
-		return ""
+		return fmt.Sprintf("Could not find state log, checked under %s", logDir)
 	}
 
 	b := fileutils.ReadFileUnsafe(result)

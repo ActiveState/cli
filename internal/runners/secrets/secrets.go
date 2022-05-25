@@ -115,6 +115,9 @@ func (l *listOutput) MarshalOutput(format output.Format) interface{} {
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly
 // usable localized error.
 func checkSecretsAccess(proj *project.Project) error {
+	if proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
 	allowed, err := access.Secrets(proj.Owner())
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_access")

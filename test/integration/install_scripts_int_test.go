@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -109,7 +109,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.WaitForInput()
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-				cp.Expect("ActiveState Software Inc.")
+				cp.Expect("ActiveState")
 			}
 
 			cp.SendLine("state --version")
@@ -120,8 +120,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			state := appinfo.StateApp(installDir)
-			suite.FileExists(state.Exec())
+			stateExec, err := installation.StateExecFromDir(installDir)
+			suite.NoError(err)
+			suite.FileExists(stateExec)
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
@@ -219,7 +220,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", time.Second*40)
+	cp.Expect("Installation Complete", time.Minute)
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
@@ -246,8 +247,10 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
-	state := appinfo.StateApp(installDir)
-	cp := ts.SpawnCmd(state.Exec(), "--version", "--output=json")
+	stateExec, err := installation.StateExecFromDir(installDir)
+	suite.NoError(err)
+
+	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")

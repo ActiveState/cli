@@ -32,7 +32,7 @@ type Instance struct {
 }
 
 func New() (*Instance, error) {
-	defer profile.Measure("config.NewCustom", time.Now())
+	defer profile.Measure("config.New", time.Now())
 	return NewCustom("", singlethread.New(), true)
 }
 
@@ -63,15 +63,21 @@ func NewCustom(localPath string, thread *singlethread.Thread, closeThread bool) 
 	path := filepath.Join(i.appDataDir, C.InternalConfigFileName)
 	_, err = os.Stat(path)
 	isNew := err != nil
+
+	t := time.Now()
 	i.db, err = sql.Open("sqlite", fmt.Sprintf(`%s`, path))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create sqlite connection to %s", path)
 	}
+	profile.Measure("config.sqlOpen", t)
 
+	t = time.Now()
 	_, err = i.db.Exec(`CREATE TABLE IF NOT EXISTS config (key string NOT NULL PRIMARY KEY, value text)`)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not seed settings database")
 	}
+	profile.Measure("config.createTable", t)
+
 	if isNew {
 		if err := i.importLegacyConfig(); err != nil {
 			// This is unfortunate but not a case we're handling beyond effectively resetting the users config
@@ -243,6 +249,7 @@ func (i *Instance) ConfigPath() string {
 }
 
 func (i *Instance) importLegacyConfig() (returnErr error) {
+	defer profile.Measure("config.importLegacyConfig", time.Now())
 	fpath := filepath.Join(i.appDataDir, C.InternalConfigFileNameLegacy)
 	defer func() {
 		if returnErr != nil {

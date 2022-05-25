@@ -126,6 +126,20 @@ const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
 const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
+
+// OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
+const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
+
+// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
+const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+
+// DisableErrorTipsEnvVarName disables the display of tips in error messages.
+// This should only be used by the installer so-as not to pollute error message output.
+const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
+
+// DebugServiceRequestsEnvVarName is used to instruct State Tool to turn on debug logging of service requests
+const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -352,7 +366,7 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// UnstableConfig is the config key used to determine if a command is unstable
+// UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
@@ -379,11 +393,17 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// InstallerName is the name we give to our state-installer executable
+const InstallerName = "State Installer"
+
 // StateTrayCmd is the name of the state tray binary
 const StateTrayCmd = "state-tray"
 
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
+
+// StateUpdateDialogCmd is the name of the state update dialog binary
+const StateUpdateDialogCmd = "state-update-dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411

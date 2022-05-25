@@ -21,7 +21,10 @@ func removeCache(cachePath string) error {
 }
 
 func undoPrepare(cfg configurable) error {
-	toRemove := prepare.InstalledPreparedFiles(cfg)
+	toRemove, err := prepare.InstalledPreparedFiles(cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_prepared_files", "Could not determine files to remove")
+	}
 
 	var aggErr error
 	for _, f := range toRemove {

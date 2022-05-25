@@ -6,12 +6,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -41,26 +41,27 @@ func StopRunning(installPath string) (rerr error) {
 }
 
 func stopTray(installPath string, cfg *config.Instance) error {
-	trayInfo := appinfo.TrayApp(installPath)
-
 	// Todo: https://www.pivotaltracker.com/story/show/177585085
 	// Yes this is awkward right now
 	if err := StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", trayInfo.Name())
+		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
 	}
 	return nil
 }
 
 func stopSvc(installPath string) error {
-	svcInfo := appinfo.SvcApp(installPath)
+	svcExec, err := installation.ServiceExecFromDir(installPath)
+	if err != nil {
+		return locale.WrapError(err, "err_service_exec_dir", "", installPath)
+	}
 
-	if fileutils.FileExists(svcInfo.Exec()) {
-		exitCode, _, err := exeutils.Execute(svcInfo.Exec(), []string{"stop"}, nil)
+	if fileutils.FileExists(svcExec) {
+		exitCode, _, err := exeutils.Execute(svcExec, []string{"stop"}, nil)
 		if err != nil {
 			// We don't return these errors because we want to fall back on killing the process
-			multilog.Error("Stopping %s returned error: %s", svcInfo.Name(), errs.JoinMessage(err))
+			multilog.Error("Stopping %s returned error: %s", constants.SvcAppName, errs.JoinMessage(err))
 		} else if exitCode != 0 {
-			multilog.Error("Stopping %s exited with code %d", svcInfo.Name(), exitCode)
+			multilog.Error("Stopping %s exited with code %d", constants.SvcAppName, exitCode)
 		}
 	}
 

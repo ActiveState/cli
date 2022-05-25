@@ -29,6 +29,12 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 			if name == "-h" || name == "--help" {
 				prime.Output().Print(ccmd.UsageText())
 				return nil
+			} else if name == "-v" || name == "--verbose" {
+				if len(args) > 1 {
+					name, args = args[1], args[1:]
+				} else {
+					name, args = "", []string{}
+				}
 			}
 
 			if name != "" && len(args) > 0 {
