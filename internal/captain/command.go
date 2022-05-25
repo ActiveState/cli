@@ -526,14 +526,6 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
-	if c.unstable && c.out.Type() != output.EditorV0FormatName {
-		if !condition.OptInUnstable(c.cfg) {
-			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
-			return nil
-		}
-		c.out.Notice(locale.T("unstable_feature_banner"))
-	}
-
 	subCommandString := c.UseFull()
 	rollbar.CurrentCmd = appEventPrefix + subCommandString
 
@@ -591,7 +583,19 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.out != nil && c.title != "" {
-		c.out.Notice(output.Title(c.title))
+		suffix := ""
+		if c.unstable {
+			suffix = locale.T("beta_suffix")
+		}
+		c.out.Notice(output.Title(c.title + suffix))
+	}
+
+	if c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName) {
+		if !condition.OptInUnstable(c.cfg) {
+			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+			return nil
+		}
+		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
 
 	intercept := c.interceptFunc()

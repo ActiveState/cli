@@ -31,6 +31,12 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 			if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
 				prime.Output().Print(ccmd.UsageText())
 				return nil
+			} else if len(args) > 0 && (args[0] == "-v" || args[0] == "--verbose") {
+				if len(args) > 1 {
+					args = args[1:]
+				} else {
+					args = []string{}
+				}
 			}
 
 			return runner.Run(params, args...)
