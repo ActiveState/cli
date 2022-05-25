@@ -140,7 +140,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 
 var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
-	waitTimeoutL10nVal = "Timed out waiting for service to start ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
+	waitTimeoutL10nVal = "Timed out waiting for service to respond ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
 )
 
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
@@ -215,7 +215,9 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 			if errors.Is(err, ctlErrNotUp) {
 				return nil
 			}
-			return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+			if !errors.Is(err, ctlErrTempNotUp) {
+				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+			}
 		}
 		elapsed := time.Since(tryStart)
 		time.Sleep(timeout - elapsed)
@@ -230,7 +232,7 @@ func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) err
 
 	_, err := ipComm.PingServer(ctx)
 	if err != nil {
-		return asRequestTimeoutCtlErr(asNotUpCtlErr(err))
+		return asRequestTimeoutCtlErr(asNotUpCtlErr(asTempNotUpCtlErr(err)))
 	}
 
 	return nil
