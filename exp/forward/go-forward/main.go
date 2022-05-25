@@ -11,10 +11,14 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatalln("first arg should be path to socket file")
+		log.Fatalln("first arg should be a path to socket file")
+	}
+	if len(os.Args) < 3 {
+		log.Fatalln("second arg should be a path to a language runtime")
 	}
 
 	path := os.Args[1]
+	runt := os.Args[2]
 
 	conn, err := net.Dial("unix", path)
 	if err != nil {
@@ -35,7 +39,7 @@ func main() {
 	_ = n
 	//fmt.Println(string(buf[:n]))
 
-	code, _, err := exeutils.ExecuteAndPipeStd("/usr/bin/python3", os.Args[2:], os.Environ())
+	code, _, err := exeutils.ExecuteAndPipeStd(runt, os.Args[3:], os.Environ())
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(42)

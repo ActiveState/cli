@@ -6,10 +6,10 @@ const testing = std.testing;
 const clientMsg = "http-addr";
 
 fn sendMsgToServer(path: []const u8) !void {
-    const stdout = std.io.getStdOut().writer();
+    const stderr = std.io.getStdErr().writer();
 
     const conn = net.connectUnixSocket(path) catch |err| {
-        try stdout.print("{s}\n", .{err});
+        try stderr.print("{s}\n", .{err});
         return err;
     };
 
@@ -21,11 +21,11 @@ fn sendMsgToServer(path: []const u8) !void {
     var respSize = try conn.read(buf[0..]);
 
     _ = respSize;
-    //try stdout.print("{s}\n", .{buf[0..respSize]});
+    //try stderr.print("{s}\n", .{buf[0..respSize]});
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    const stderr = std.io.getStdErr().writer();
     const process = std.process;
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
@@ -39,13 +39,18 @@ pub fn main() !void {
     _ = argIt.skip();
 
     const path = try argIt.next(a) orelse {
-        try stdout.print("expected first arg to be server addr\n", .{});
+        try stderr.print("first arg should be a path to socket file\n", .{});
+        return error.InvalidArgs;
+    };
+
+    const runt = try argIt.next(a) orelse {
+        try stderr.print("second arg should be a path to a language runtime", .{});
         return error.InvalidArgs;
     };
 
     const clientThread = std.Thread.spawn(.{}, sendMsgToServer, .{path}) catch |err| {
-        try stdout.print("test\n", .{});
-        try stdout.print("{s}\n", .{err});
+        try stderr.print("test\n", .{});
+        try stderr.print("{s}\n", .{err});
         return err;
     };
     clientThread.join();
@@ -55,8 +60,8 @@ pub fn main() !void {
 
     var cmdArgs = std.ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
-    try cmdArgs.append("/usr/bin/python3");
-    try cmdArgs.appendSlice(usrArgs[2..]);
+    try cmdArgs.append(runt);
+    try cmdArgs.appendSlice(usrArgs[3..]);
 
     const childProc = try std.ChildProcess.init(cmdArgs.items, a);
     defer childProc.deinit();
