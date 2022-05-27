@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"

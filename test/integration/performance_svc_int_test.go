@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -46,11 +45,8 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 	var svcPort string
 	
 	suite.Run("StartServer", func() {
-		svcExec, err := installation.ServiceExecFromDir(ts.Dirs.Bin)
-		suite.Require().NoError(err, errs.JoinMessage(err))
-
 		t := time.Now()
-		svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec)
+		svcPort, err = svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, ts.SvcExe)
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
