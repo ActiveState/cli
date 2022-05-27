@@ -31,6 +31,7 @@ type Params struct {
 
 type primeable interface {
 	primer.Auther
+	primer.Prompter
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
