@@ -1,6 +1,7 @@
 package reporters
 
 import (
+	"strconv"
 	"strings"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -91,5 +92,7 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"17": p.PStr(d.InstanceID),
 		"18": p.PStr(d.Headless),
 		"19": p.PStr(d.CommitID),
+		"20": p.PStr(d.Command),
+		"21": strconv.Itoa(p.PInt(d.Sequence)),
 	}
 }
