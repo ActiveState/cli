@@ -88,6 +88,7 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 
 	projectDir := cfg.GetString(constants.GlobalDefaultPrefname)
 	if projectDir == "" {
+		logging.Debug("No global project is set.")
 		return false, nil // nothing to reset
 	}
 
