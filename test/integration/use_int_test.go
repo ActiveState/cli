@@ -85,7 +85,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Continue?")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
