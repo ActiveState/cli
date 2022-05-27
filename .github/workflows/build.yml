@@ -245,12 +245,16 @@ jobs:
               fi
             done
 
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-          echo "Target branch: $TARGET_BRANCH"
-
-          if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
-            echo "Not running because no test labels were set nor beta or release were targeted."
-            exit 0
+            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+            echo "Target branch: $TARGET_BRANCH"
+  
+            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
+              echo "Not running because no test labels were set nor beta or release were targeted."
+              exit 0
+            fi
+          
+          else
+            TEST_SUITE_TAGS="all"
           fi
 
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
