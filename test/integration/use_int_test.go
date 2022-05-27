@@ -5,8 +5,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -73,6 +75,12 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	}
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
+	cfg, err := config.New()
+	suite.NoError(err)
+	rcfile, err := subshell.New(cfg).RcFile()
+	suite.NoError(err)
+	suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
@@ -83,6 +91,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
+
+	suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {
