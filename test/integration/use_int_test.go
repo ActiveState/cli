@@ -78,8 +78,10 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	suite.NoError(err)
-	suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+	if runtime.GOOS != "windows" {
+		suite.NoError(err)
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Reset default project runtime")
@@ -92,7 +94,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
 
-	suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
+	if runtime.GOOS != "windows" {
+		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
+	}
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {
