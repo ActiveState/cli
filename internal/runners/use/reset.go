@@ -11,22 +11,43 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 )
 
+type confirmAble interface {
+	Confirm(title, message string, defaultChoice *bool) (bool, error)
+}
+
 type Reset struct {
+	confirm  confirmAble
 	out      output.Outputer
 	config   *config.Instance
 	subshell subshell.SubShell
 }
 
+type ResetParams struct {
+	Force bool
+}
+
 func NewReset(prime primeable) *Reset {
 	return &Reset{
+		prime.Prompt(),
 		prime.Output(),
 		prime.Config(),
 		prime.Subshell(),
 	}
 }
 
-func (u *Reset) Run() error {
+func (u *Reset) Run(params *ResetParams) error {
 	logging.Debug("Resetting default project runtime")
+
+	if !params.Force {
+		ok, err := u.confirm.Confirm(locale.T("confirm"),
+			locale.Tl("clean_config_confirm", "You are about to reset your default project runtime. Continue?"), new(bool))
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil
+		}
+	}
 
 	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)
 	if err != nil {
