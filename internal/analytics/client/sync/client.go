@@ -161,8 +161,7 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 }
 
 func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
-	_actualDims := *target
-	actualDims := &_actualDims
+	actualDims := target.Clone()
 	for _, dim := range dims {
 		actualDims.Merge(dim)
 	}
@@ -193,6 +192,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
 	}
+
 
 	a.eventWaitGroup.Add(1)
 	// We do not wait for the events to be processed, just scheduling them

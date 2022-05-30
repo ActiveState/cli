@@ -1627,7 +1627,14 @@ ppm_convert_ask_feedback:
     run [ACTIONABLE]`state --help`[/RESET] or check out [ACTIONABLE]{{.Docs}}[/RESET]
 windows_compatibility_warning:
   other: |
-    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+    Unable to detect your Windows version. You may encounter issues; please ensure you are running at least Windows 10 build 17134.1.
+    
+    Error received: {{.V0}}
+windows_compatibility_error:
+  other: |
+    Unfortunately State Tool is not compatible with your version of Windows.
+    
+    The minimum version supported is Windows 10 build 17134.1.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:
@@ -1717,7 +1724,7 @@ err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
-err_package_no_packages:
+err_package_info_no_packages:
   other: No packages in our catalog are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
   other: "Valid package names can be searched using [ACTIONABLE]`state search {package_name}`[/RESET]"
@@ -1785,8 +1792,6 @@ err_ping_version_mismatch:
     The installed version of the State Tool Service does not match that of the client.
     Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
     If this issue persists please reinstall the State Tool.
-err_learn_open:
-  other: "Could not open cheat sheet in browser"
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_directory_in_use:
@@ -1840,10 +1845,10 @@ progress_commit:
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 unstable_feature_banner:
-  other: "[HEADING]█ Beta Feature: This feature is still in beta and may be unstable.[/RESET]"
+  other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
   other: |
-    This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
+    The command '[ACTIONABLE]state {{.V0}}[/RESET]' is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 secrets_unstable_warning:
@@ -1881,3 +1886,31 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
+err_state_exec:
+  other: Could not get state exec
+err_service_exec:
+  other: Could not get service exec
+err_tray_exec:
+  other: Could not get state tray exec
+err_update_exec:
+  other: Could not get update dialog exec
+err_state_exec_dir:
+  other: Could not get state exec from directory {{.V0}}
+err_service_exec_dir:
+  other: Could not get service exec from directory {{.V0}}
+err_tray_exec_dir:
+  other: Could not get tray exec from directory {{.V0}}
+err_update_exec_dir:
+  other: Could not get update dialog app exec from directory {{.V0}}
+err_search_no_package:
+  other: |
+    No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+err_search_no_bundle:
+  other: |
+    No bundles in our catalog match [NOTICE]"{{.V0}}"[/RESET].
+search_request_package:
+  other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+search_request_bundle:
+  other: "Request a bundle at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+beta_suffix:
+  other: " (Beta)"

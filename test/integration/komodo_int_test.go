@@ -121,14 +121,14 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"free_legacy",
+		"Community Tier (Free)",
 		false,
 	}
 
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Equal(fmt.Sprintf("[%s]", string(expected)), cp.TrimmedSnapshot())
+	suite.Contains(cp.TrimmedSnapshot(), string(expected))
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
@@ -196,7 +196,7 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 	suite.setupConfigFile(ts)
 
 	cp := ts.Spawn("scripts", "--output", "editor.v0")
-	cp.Expect(`[{"name":"first-script"},{"name":"second-script"},{"name":"super-script"}]`)
+	cp.Expect(`[{"name":"first-script"},{"name":"second-script"},{"name":"super-script"},{"name":"testenv"}]`)
 	cp.ExpectExitCode(0)
 }
 

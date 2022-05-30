@@ -16,6 +16,8 @@ $script:ARCHIVENAME = "state-installer.zip"
 $script:INSTALLERNAME = "state-install\\state-installer.exe"
 # Channel the installer will target
 $script:CHANNEL = "release"
+# The version to install (autodetermined to be the latest if left unspecified)
+$script:VERSION = ""
 
 $script:SESSION_TOKEN_VERIFY = -join ("{", "TOKEN", "}")
 $script:SESSION_TOKEN = "{TOKEN}"
@@ -26,20 +28,21 @@ if ("$SESSION_TOKEN" -ne "$SESSION_TOKEN_VERIFY")
     $script:SESSION_TOKEN_VALUE = $script:SESSION_TOKEN
 }
 
-function parseChannel([string[]]$arr)
+function getopt([string] $opt, [string] $default, [string[]] $arr)
 {
     for ($i = 0; $i -le $arr.Length; $i++)
     {
         $arg = $arr[$i]
-        if ($arg -eq "-b" -And $arr.Length -ge ($i + 2))
+        if ($arg -eq $opt -and $arr.Length -ge ($i + 2))
         {
             return $arr[$i + 1]
         }
     }
-    return $script:CHANNEL
+    return $default
 }
 
-$script:CHANNEL = parseChannel $args
+$script:CHANNEL = getopt "-b" $script:CHANNEL $args
+$script:VERSION = getopt "-v" $script:VERSION $args
 
 function download([string] $url, [string] $out)
 {
@@ -63,12 +66,12 @@ function download([string] $url, [string] $out)
         {
             if ($Retrycount -gt 5)
             {
-                Write-Error "Could not Download after 5 retries."
+                Write-Error "Could not download after 5 retries."
                 throw $_
             }
             else
             {
-                Write-Host "Could not Download, retrying..."
+                Write-Host "Could not download, retrying..."
                 Write-Host $_
                 $Retrycount = $Retrycount + 1
             }
@@ -110,14 +113,18 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-# Determine the latest version to fetch and parse info.
-$jsonURL="$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
-$infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
-$version = $infoJson.Version
-$checksum = $infoJson.Sha256
-$relUrl = $infoJson.Path
+if (!$script:VERSION) {
+  # Determine the latest version to fetch and parse info.
+  $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
+  $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+  $version = $infoJson.Version
+  $checksum = $infoJson.Sha256
+  $relUrl = $infoJson.Path
+} else {
+  $relUrl = "$script:CHANNEL/$script:VERSION/windows-amd64/state-windows-amd64-$script:VERSION.zip"
+}
 
-# Fetch the latest version.
+# Fetch the requested or latest version.
 progress "Preparing Installer for State Tool Package Manager version $version"
 $zipURL = "$script:BASEFILEURL/$relUrl"
 $tmpParentPath = tempDir
@@ -132,18 +139,18 @@ catch [System.Exception]
     progress_fail
     Write-Error "Could not download $zipURL to $zipPath."
     Write-Error $_.Exception.Message
-    return 1
+    exit 1
 }
 
-# Verify checksum.
+# Verify checksum if possible.
 $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-if ($hash -ne $checksum)
+if ($checksum -and $hash -ne $checksum)
 {
     Write-Warning "SHA256 sum did not match:"
     Write-Warning "Expected: $checksum"
     Write-Warning "Received: $hash"
     Write-Warning "Aborting installation"
-    return 1
+    exit 1
 }
 
 # Extract it.
@@ -155,7 +162,7 @@ catch
 {
     progress_fail
     Write-Error $_.Exception.Message
-    return 1
+    exit 1
 }
 progress_done
 

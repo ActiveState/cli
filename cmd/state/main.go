@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -38,12 +37,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
+	startTime := time.Now()
+
 	var exitCode int
 	// Set up logging
 	rollbar.SetupRollbar(constants.StateToolRollbarToken)
@@ -60,13 +59,18 @@ func main() {
 			logging.Warning("Failed waiting for events: %v", err)
 		}
 
-		events.Close("config", cfg.Close)
+		if cfg != nil {
+			events.Close("config", cfg.Close)
+		}
+
+		profile.Measure("main", startTime)
 
 		// exit with exitCode
 		os.Exit(exitCode)
 	}()
 
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
@@ -83,19 +87,6 @@ func main() {
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
 		exitCode = 1
 		return
-	}
-
-	if runtime.GOOS == "windows" {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
-			logging.Debug("Could not retrieve os version info: %v", err)
-		} else if osv.Major < 10 {
-			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
-			out.Notice(locale.Tr(
-				"windows_compatibility_warning",
-				constants.ForumsURL,
-			))
-		}
 	}
 
 	// Set up our legacy outputer

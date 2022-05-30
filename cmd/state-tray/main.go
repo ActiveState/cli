@@ -59,8 +59,8 @@ func onReady() {
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
 
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %v", err)
+		if cfg != nil {
+			events.Close("config", cfg.Close)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -69,7 +69,8 @@ func onReady() {
 		os.Exit(exitCode)
 	}()
 
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
@@ -260,11 +261,7 @@ func onExit() {
 		multilog.Error("Could not get configuration object on Systray exit")
 		return
 	}
-	defer func() {
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %v", err)
-		}
-	}()
+	defer events.Close("config", cfg.Close)
 	err = cfg.GetThenSet(installmgr.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
 		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {

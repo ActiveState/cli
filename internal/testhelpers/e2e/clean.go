@@ -5,14 +5,13 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-func cleanUser(t *testing.T, username string) error {
+func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 	if os.Getenv(constants.APIHostEnvVarName) == "" {
 		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
 		if err != nil {
@@ -23,9 +22,9 @@ func cleanUser(t *testing.T, username string) error {
 		}()
 	}
 
-	err := auth.AuthenticateWithCredentials(&mono_models.Credentials{
+	err := auth.AuthenticateWithModel(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
-	}, authentication.LegacyGet())
+	})
 	if err != nil {
 		return err
 	}

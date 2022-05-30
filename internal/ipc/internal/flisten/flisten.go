@@ -45,6 +45,10 @@ func New(ctx context.Context, spath *sockpath.SockPath, network string) (*FListe
 		Listener: l,
 	}
 
+	if os.Getenv("FLISTEN_SLOW") == "true" {
+		f.Listener = newListenSlow(l)
+	}
+
 	if err := os.Chmod(sockpath, 0700); err != nil {
 		_ = f.Close()
 		return nil, errs.Wrap(err, "Cannot set file mode for %q", sockpath)
@@ -60,4 +64,27 @@ func NewWithCleanup(ctx context.Context, spath *sockpath.SockPath, network strin
 	}
 
 	return New(ctx, spath, network)
+}
+
+type listenSlow struct {
+	net.Listener
+	debug bool
+}
+
+func newListenSlow(listener net.Listener) *listenSlow {
+	return &listenSlow{
+		Listener: listener,
+		debug:    os.Getenv("FLISTEN_DEBUG") == "true",
+	}
+}
+
+func (l *listenSlow) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+
+	c = newSlowConn(c, l.debug)
+
+	return c, nil
 }

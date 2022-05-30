@@ -1,7 +1,6 @@
 package svcctl
 
 import (
-	"context"
 	"errors"
 	"net"
 	"os"
@@ -12,6 +11,7 @@ import (
 
 var (
 	ctlErrNotUp          = errors.New("server not up")
+	ctlErrTempNotUp      = errors.New("server may not be up")
 	ctlErrRequestTimeout = errors.New("request timeout")
 )
 
@@ -23,8 +23,15 @@ func asRequestTimeoutCtlErr(err error) error {
 	return err
 }
 
+func asTempNotUpCtlErr(err error) error {
+	if errors.Is(err, ipc.ErrConnLost) {
+		return ctlErrTempNotUp
+	}
+	return err
+}
+
 func asNotUpCtlErr(err error) error {
-	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
+	if errs.Matches(err, &ipc.ServerDownError{}) {
 		return ctlErrNotUp
 	}
 	return err
