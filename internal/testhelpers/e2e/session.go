@@ -13,13 +13,21 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -28,14 +36,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -462,7 +462,7 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 		v, err := strutils.ParseTemplate(`
 Could not meet expectation: '{{.Expectation}}'
 Error: {{.Error}}
-{{.A}}Stack: 
+{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
 {{.A}}Partial Terminal snapshot:
 {{.PartialSnapshot}}{{.Z}}
