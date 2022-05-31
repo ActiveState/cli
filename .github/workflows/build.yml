@@ -14,7 +14,6 @@ name: Build-Test-Deploy
       - opened
       - synchronize
       - reopened
-      - closed
   schedule:
     - cron: 0 0 * * *
 
@@ -39,10 +38,6 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    if: |
-      ! github.event.pull_request.merged || 
-      contains("master,beta,release", github.event.pull_request.base.ref) || 
-      startsWith(github.event.pull_request.base.ref, "LTS")
 
     # === OS Specific Steps ===
     steps:
