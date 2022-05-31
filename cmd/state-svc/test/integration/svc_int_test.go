@@ -96,6 +96,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
 	if runtime.GOOS != "linux" {
 		// TODO: this fails on only Linux for some reason, but it is not reproducable outside of CI
+		// https://activestatef.atlassian.net/browse/DX-964
 		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 	}
 
@@ -113,6 +114,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 
 	if runtime.GOOS != "linux" {
 		// TODO: this fails on only Linux for some reason, but it is not reproducable outside of CI
+		// https://activestatef.atlassian.net/browse/DX-964
 		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 	}
 }
