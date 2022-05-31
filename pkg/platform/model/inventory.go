@@ -230,7 +230,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				*rtPf.CPUArchitecture.Name,
 				*rtPf.CPUArchitecture.BitWidth,
 			)
-			if hostArch != platformArch {
+			if overwriteArch(hostPlatform, hostArch) != platformArch {
 				continue
 			}
 
