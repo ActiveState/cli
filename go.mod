@@ -14,6 +14,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/andygrunwald/go-jira v1.15.1
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go v1.34.28
 	github.com/blang/semver v3.5.1+incompatible
@@ -35,6 +36,7 @@ require (
 	github.com/go-openapi/validate v0.20.2
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/google/go-github/v45 v45.0.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-cleanhttp v0.5.1
@@ -81,8 +83,9 @@ require (
 	github.com/yuin/goldmark v1.3.5
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
 	golang.org/x/text v0.3.6
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
