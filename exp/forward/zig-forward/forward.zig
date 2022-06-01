@@ -1,27 +1,20 @@
 // from https://zig-by-example.github.io/tcp-connection.html
 const std = @import("std");
+const builtin = @import("builtin");
 const net = std.net;
 const testing = std.testing;
 
-const clientMsg = "http-addr";
+const clientMsgFmt = "heart:{d}";
 
-fn sendMsgToServer(path: []const u8) !void {
-    const stderr = std.io.getStdErr().writer();
-
-    const conn = net.connectUnixSocket(path) catch |err| {
-        try stderr.print("{s}\n", .{err});
-        return err;
-    };
-
+fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32) !void {
+    const conn = try net.connectUnixSocket(path);
     defer conn.close();
 
+    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{pid});
     _ = try conn.write(clientMsg);
 
     var buf: [1024]u8 = undefined;
-    var respSize = try conn.read(buf[0..]);
-
-    _ = respSize;
-    //try stderr.print("{s}\n", .{buf[0..respSize]});
+    _ = try conn.read(buf[0..]);
 }
 
 pub fn main() !void {
@@ -48,11 +41,17 @@ pub fn main() !void {
         return error.InvalidArgs;
     };
 
-    const clientThread = std.Thread.spawn(.{}, sendMsgToServer, .{path}) catch |err| {
-        try stderr.print("test\n", .{});
-        try stderr.print("{s}\n", .{err});
-        return err;
-    };
+    var pid: i32 = undefined;
+    switch (builtin.os.tag) {
+            .windows => {
+                pid = @bitCast(i32,std.os.windows.kernel32.GetCurrentProcessId());
+            },
+            else => {
+                pid = std.os.system.getpid();
+            },
+    }
+
+    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{a, path, pid});
     clientThread.join();
 
     var usrArgs = try process.argsAlloc(a);
