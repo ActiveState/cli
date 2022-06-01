@@ -53,7 +53,6 @@ func run() error {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	ghClient := github.NewClient(tc)
-	_ = ghClient
 
 	// Grab target stories from jira
 	issues, _, err := jiraClient.Issue.Search(fmt.Sprintf(`project = "DX" AND fixVersion=%s ORDER BY created DESC`, targetVersion), nil)
