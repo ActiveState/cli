@@ -268,7 +268,7 @@ func platformArchToHostArch(arch, bits string) string {
 	return "unrecognized"
 }
 
-func overwriteArch(platform, arch string) string {
+func fallbackArch(platform, arch string) string {
 	// On the M1 Mac platform we default to
 	// amd64 as the platform does not support arm.
 	if arch == "arm64" && platform == sysinfo.Mac.String() {
