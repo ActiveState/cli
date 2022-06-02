@@ -64,6 +64,7 @@ const (
 	Performance   = "performance"
 	Deprecation   = "deprecation"
 	Compatibility = "compatibility"
+	Service       = "service"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests
