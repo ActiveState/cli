@@ -4,26 +4,22 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/sliceutils"
-	"github.com/andygrunwald/go-jira"
+	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
+	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/google/go-github/v45/github"
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 )
 
 // cutoff tells the script not to look at PRs before this date.
 // You want to set this to the date when development on the given version started
 var cutoff, _ = time.Parse("2006-Jan-02", "2022-Apr-25")
-
-var issueKeyRx = regexp.MustCompile(`(?i)(DX-\d+)`)
 
 func main() {
 	if err := run(); err != nil {
@@ -39,20 +35,8 @@ func run() error {
 	}
 	targetVersion := os.Args[1]
 
-	// Init jira client
-	tp := &jira.BasicAuthTransport{
-		Username: os.Getenv("JIRA_USERNAME"),
-		Password: os.Getenv("JIRA_TOKEN"),
-	}
-	jiraClient, _ := jira.NewClient(tp.Client(), "https://activestatef.atlassian.net/")
-
-	// Init github client
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	ghClient := github.NewClient(tc)
+	jiraClient := jira_helpers.InitClient()
+	ghClient := github_helpers.InitClient()
 
 	// Grab target stories from jira
 	issues, _, err := jiraClient.Issue.Search(fmt.Sprintf(`project = "DX" AND fixVersion=%s ORDER BY created DESC`, targetVersion), nil)
@@ -88,7 +72,7 @@ func run() error {
 
 		commit := pr.GetMergeCommitSHA()[0:7]
 
-		jiraIssueID := extractJiraIssueID(pr)
+		jiraIssueID := github_helpers.ExtractJiraIssueID(pr)
 		if jiraIssueID == nil {
 			missingIDs = append(missingIDs, fmt.Sprintf("%s (branch: %s, commit: %s): %s", *pr.Title, pr.Head.GetRef(), commit, pr.Links.GetHTML().GetHRef()))
 			continue
@@ -162,28 +146,4 @@ func orderCommits(hashes []string) []string {
 		}
 	}
 	return ordered
-}
-
-// extractJiraIssueID tries to extract the jira issue ID from either the PR title or the branch name
-func extractJiraIssueID(pr *github.PullRequest) *string {
-	if pr.Title == nil {
-		panic(fmt.Sprintf("PR title is nil: %#v", pr))
-	}
-	if pr.Head == nil || pr.Head.Ref == nil {
-		panic(fmt.Sprintf("Head or head ref is nil: %#v", pr))
-	}
-
-	// Extract from title
-	matches := issueKeyRx.FindStringSubmatch(*pr.Title)
-	if len(matches) == 2 {
-		return p.StrP(strings.ToUpper(matches[1]))
-	}
-
-	// Extract from branch
-	matches = issueKeyRx.FindStringSubmatch(*pr.Head.Ref)
-	if len(matches) == 2 {
-		return p.StrP(strings.ToUpper(matches[1]))
-	}
-
-	return nil
 }

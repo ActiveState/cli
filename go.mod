@@ -18,6 +18,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go v1.34.28
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/codemodus/relay v0.0.0-20200814173335-acf94137159e
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect

@@ -1,0 +1,119 @@
+package main
+
+import (
+	"testing"
+
+	"github.com/ActiveState/cli/internal/environment"
+	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
+	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/stretchr/testify/suite"
+	"golang.org/x/net/context"
+	"gopkg.in/src-d/go-git.v4"
+)
+
+type MainTestSuite struct {
+	suite.Suite
+}
+
+func (suite *MainTestSuite) TestGetMergePR() {
+	var commitWithMerge = "c4d8519113ac3eb0ac565179787619bae96b7498"
+	var commitWithoutMerge = "d18992f370ada0fd179fb4cdced811e77c7b1136"
+
+	ghClient := github_helpers.InitClient()
+	repo, err := git.PlainOpen(environment.GetRootPathUnsafe())
+	suite.Require().NoError(err)
+
+	suite.Require().NotNil(getMergedPR(ghClient, commitWithMerge, repo))
+	suite.Require().Nil(getMergedPR(ghClient, commitWithoutMerge, repo))
+}
+
+func (suite *MainTestSuite) TestGetJiraIssueFromPR() {
+	var prWithJiraIssue = 1872
+	var prWithoutJiraIssue = 1717
+
+	jiraClient := jira_helpers.InitClient()
+	ghClient := github_helpers.InitClient()
+
+	{
+		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithJiraIssue)
+		suite.Require().NoError(err)
+		suite.Require().NotNil(getJiraIssueFromPR(jiraClient, pr))
+	}
+
+	{
+		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithoutJiraIssue)
+		suite.Require().NoError(err)
+		suite.Require().Nil(getJiraIssueFromPR(jiraClient, pr))
+	}
+}
+
+func (suite *MainTestSuite) TestGetTargetFixVersion() {
+	var jiraIssueWithFixVersion = "DX-964"
+	var jiraIssueWithArchivedFixVersion = "DX-497"
+	var jiraIssueWithoutFixVersion = "DX-968"
+
+	jiraClient := jira_helpers.InitClient()
+
+	{
+		issue, _, err := jiraClient.Issue.Get(jiraIssueWithFixVersion, nil)
+		suite.Require().NoError(err)
+		suite.Require().NotNil(getTargetFixVersion(issue, false))
+	}
+
+	{
+		issue, _, err := jiraClient.Issue.Get(jiraIssueWithArchivedFixVersion, nil)
+		suite.Require().NoError(err)
+		suite.Require().Nil(getTargetFixVersion(issue, true))
+	}
+
+	{
+		issue, _, err := jiraClient.Issue.Get(jiraIssueWithoutFixVersion, nil)
+		suite.Require().NoError(err)
+		suite.Require().Nil(getTargetFixVersion(issue, true))
+	}
+}
+
+func (suite *MainTestSuite) TestTargetPR() {
+	var keywordForOpenVersionPR = "1.2.3"
+	var prefixForOpenVersionPR = "1.2.3-RC"
+	var keywordForClosedVersionPR = "v0.32.0"
+	var prefixForClosedVersionPR = "v0.32.0-RC"
+
+	ghClient := github_helpers.InitClient()
+
+	{
+		rcnum, pr := getTargetPR(ghClient, keywordForOpenVersionPR, prefixForOpenVersionPR)
+		suite.Require().Equal(1, rcnum)
+		suite.Require().NotNil(pr)
+	}
+
+	{
+		rcnum, pr := getTargetPR(ghClient, keywordForClosedVersionPR, prefixForClosedVersionPR)
+		suite.Require().Equal(2, rcnum)
+		suite.Require().Nil(pr)
+	}
+}
+
+func (suite *MainTestSuite) TestTargetPRMissingMergedPR() {
+	var prWithMergeAssertion = 1868
+	var prWithFailedMergeAssertion = 1867
+	var prMergeAssertion = 1824
+
+	ghClient := github_helpers.InitClient()
+
+	{
+		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithMergeAssertion)
+		suite.Require().NoError(err)
+		suite.Require().False(targetPRMissingMergedPR(ghClient, pr, prMergeAssertion)) // Already has merge
+	}
+
+	{
+		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithFailedMergeAssertion)
+		suite.Require().NoError(err)
+		suite.Require().True(targetPRMissingMergedPR(ghClient, pr, prMergeAssertion)) // Doesn't have merge
+	}
+}
+
+func TestMainTestSuite(t *testing.T) {
+	suite.Run(t, new(MainTestSuite))
+}
