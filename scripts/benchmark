@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+
+if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "1" ]]; then
+  sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
+fi
+
+perf stat -r 100 -B ${@} > /dev/null
