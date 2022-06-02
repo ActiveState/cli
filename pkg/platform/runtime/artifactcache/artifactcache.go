@@ -98,6 +98,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	}
 	size := stat.Size()
 
+	if size > cache.maxSize {
+		logging.Debug("Cannot avoid exceeding cache size; not storing artifact")
+		return nil
+	}
+
 	for cache.currentSize+size > cache.maxSize {
 		logging.Debug("Storing artifact in cache would exceed cache size; finding least-recently accessed artifact")
 		var lastAccessed *cachedArtifact
@@ -109,7 +114,7 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 
 		if lastAccessed == nil {
 			logging.Debug("Cannot avoid exceeding cache size; not storing artifact")
-			return nil
+			return nil // avoid infinite loop, but this really shouldn't happen...
 		}
 
 		logging.Debug("Removing artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
