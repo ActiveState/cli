@@ -4,13 +4,13 @@ const builtin = @import("builtin");
 const net = std.net;
 const testing = std.testing;
 
-const clientMsgFmt = "heart:{d}";
+const clientMsgFmt = "heart:{d}:{s}";
 
-fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32) !void {
+fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
     const conn = try net.connectUnixSocket(path);
     defer conn.close();
 
-    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{pid});
+    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{pid, exec});
     _ = try conn.write(clientMsg);
 
     var buf: [1024]u8 = undefined;
@@ -51,7 +51,9 @@ pub fn main() !void {
             },
     }
 
-    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{a, path, pid});
+    const exec = "example";
+
+    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{a, path, pid, exec});
     clientThread.join();
 
     var usrArgs = try process.argsAlloc(a);
