@@ -134,7 +134,7 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		if suite.GetNumStateSvcProcesses() == oldCount+1 {
 			break
 		}
-		time.Sleep(1 * time.Second) // keep waiting
+		time.Sleep(2 * time.Second) // keep waiting
 	}
 	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses(), "spawning multiple state processes should only result in one more state-svc process")
 }
