@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -117,7 +116,6 @@ func (r *resolveExec) ReportRuntimeUsage(ctx context.Context, pid, exec string) 
 		multilog.Critical("Could not marshal dimensions in proxied runtime-usage report: %s", errs.JoinMessage(err))
 	}
 
-	fmt.Println(pidNum, exec, dimsJSON)
 	_, err = r.resolver.RuntimeUsage(ctx, pidNum, exec, dimsJSON)
 	if err != nil {
 		multilog.Critical("Could not proxy runtime-usage report: %s", errs.JoinMessage(err))

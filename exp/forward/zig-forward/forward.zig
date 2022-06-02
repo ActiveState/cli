@@ -51,7 +51,7 @@ pub fn main() !void {
             },
     }
 
-    const exec = "example";
+    const exec = try std.fs.selfExePathAlloc(a);
 
     const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{a, path, pid, exec});
     clientThread.join();
