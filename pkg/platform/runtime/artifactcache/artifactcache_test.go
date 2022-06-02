@@ -98,4 +98,15 @@ func TestCache(t *testing.T) {
 	assert.NotNil(t, reloaded.artifacts[testArtifacts[2]])
 	assert.NotNil(t, reloaded.artifacts[testArtifacts[3]])
 	assert.NotNil(t, reloaded.artifacts[testArtifacts[5]])
+
+	// Test too small of a cache max size.
+	dir, err = os.MkdirTemp("", "")
+	assert.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	cache, err = newWithDirAndSize(dir, 1) // bytes
+	assert.NoError(t, err)
+	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2])))
+	assert.Equal(t, cache.currentSize, int64(0))
+	assert.Empty(t, cache.artifacts)
 }

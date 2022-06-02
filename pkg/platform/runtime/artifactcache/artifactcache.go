@@ -106,15 +106,19 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 				lastAccessed = artifact
 			}
 		}
-		if lastAccessed != nil {
-			logging.Debug("Removing artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
-			err := os.Remove(lastAccessed.ArchivePath)
-			if err != nil {
-				return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
-			}
-			delete(cache.artifacts, lastAccessed.Id)
-			cache.currentSize -= lastAccessed.Size
+
+		if lastAccessed == nil {
+			logging.Debug("Cannot avoid exceeding cache size; not storing artifact")
+			return nil
 		}
+
+		logging.Debug("Removing artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
+		err := os.Remove(lastAccessed.ArchivePath)
+		if err != nil {
+			return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
+		}
+		delete(cache.artifacts, lastAccessed.Id)
+		cache.currentSize -= lastAccessed.Size
 	}
 
 	targetPath := filepath.Join(cache.dir, string(a))
