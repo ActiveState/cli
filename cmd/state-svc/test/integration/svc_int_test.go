@@ -130,7 +130,13 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
-	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses())
+	for attempts := 10; attempts > 0; attempts-- {
+		if suite.GetNumStateSvcProcesses() == oldCount+1 {
+			break
+		}
+		time.Sleep(2 * time.Second) // keep waiting
+	}
+	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses(), "spawning multiple state processes should only result in one more state-svc process")
 }
 
 func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
