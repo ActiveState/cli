@@ -133,9 +133,9 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	}
 
 	logging.Debug("Storing artifact '%s'", targetPath)
-	cached := &cachedArtifact{a, targetPath, stat.Size(), time.Now().Unix()}
+	cached := &cachedArtifact{a, targetPath, size, time.Now().Unix()}
 	cache.artifacts[a] = cached
-	cache.currentSize += cached.Size
+	cache.currentSize += size
 
 	return nil
 }

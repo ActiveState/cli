@@ -36,7 +36,7 @@ func TestCache(t *testing.T) {
 	cache, err := newWithDirAndSize(dir, 10) // bytes
 	assert.NoError(t, err)
 	assert.Equal(t, cache.dir, dir)
-	assert.False(t, fileutils.FileExists(cache.infoJson))
+	assert.False(t, fileutils.FileExists(cache.infoJson)) // not yet
 	assert.Equal(t, cache.maxSize, int64(10))
 	assert.Equal(t, cache.currentSize, int64(0))
 	assert.Empty(t, cache.artifacts)
@@ -50,10 +50,10 @@ func TestCache(t *testing.T) {
 	testArtifactFile := osutil.GetTestFile(string(testArtifacts[1]))
 	err = cache.Store(testArtifacts[1], testArtifactFile)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, cache.artifacts)
+	assert.Equal(t, len(cache.artifacts), 1)
 	assert.Equal(t, cache.currentSize, int64(1))
 
-	cached := cache.artifacts[testArtifacts[1]]
+	cached := cache.artifacts[testArtifacts[1]] // will test cache.Get() later; avoid last access time update
 	assert.Equal(t, cached.Id, testArtifacts[1])
 	assert.Equal(t, cached.ArchivePath, filepath.Join(cache.dir, string(testArtifacts[1])))
 	assert.Equal(t, cached.Size, int64(1))
@@ -107,7 +107,7 @@ func TestCache(t *testing.T) {
 	cache, err = newWithDirAndSize(dir, 1) // bytes
 	assert.NoError(t, err)
 	cache.Store(testArtifacts[1], osutil.GetTestFile(string(testArtifacts[1])))
-	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2])))
+	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2]))) // should not store nor erase existing artifacts
 	assert.Equal(t, cache.currentSize, int64(1))
 	assert.Equal(t, len(cache.artifacts), 1)
 	assert.NotNil(t, cache.artifacts[testArtifacts[1]])
