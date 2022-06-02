@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -30,6 +31,7 @@ type ArtifactCache struct {
 	maxSize     int64 // bytes
 	currentSize int64 // bytes
 	artifacts   map[artifact.ArtifactID]*cachedArtifact
+	mutex       sync.Mutex
 }
 
 const MB int64 = 1024 * 1024
@@ -74,13 +76,16 @@ func newWithDirAndSize(dir string, maxSize int64) (*ArtifactCache, error) {
 	}
 
 	logging.Debug("Opened artifact cache at '%s' containing %d artifacts occupying %.1f/%.1f MB", dir, len(artifactMap), float64(currentSize)/float64(MB), float64(maxSize)/float64(MB))
-	return &ArtifactCache{dir, infoJson, maxSize, currentSize, artifactMap}, nil
+	return &ArtifactCache{dir, infoJson, maxSize, currentSize, artifactMap, sync.Mutex{}}, nil
 }
 
 // Get returns the path to the cached artifact with the given id along with true if it exists.
 // Otherwise returns an empty string and false.
 // Updates the access timestamp if possible so that this artifact is not removed anytime soon.
 func (cache *ArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+
 	if artifact, found := cache.artifacts[a]; found {
 		logging.Debug("Fetched artifact '%s' as '%s'; updating access time", string(a), artifact.ArchivePath)
 		artifact.LastAccessTime = time.Now().Unix()
@@ -92,6 +97,9 @@ func (cache *ArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
 // Stores the given artifact in the cache.
 // If the cache is too small, removes the least-recently accessed artifacts to make room.
 func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) error {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+
 	stat, err := os.Stat(archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Unable to stat artifact '%s'. Does it exist?", archivePath)
