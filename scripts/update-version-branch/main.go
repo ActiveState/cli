@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -19,7 +20,7 @@ import (
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/config"
 )
 
 var commitMessagePrefix = "Merge pull request #"
@@ -32,13 +33,21 @@ func main() {
 
 	// Validate Input
 	{
-		if os.Getenv("GITHUB_EVENT") != "push" || os.Getenv("GITHUB_REF_NAME") != "master" {
+		// Verify input args
+		if len(os.Args) != 2 {
+			r.Check(errs.New("Usage: update-version-branch <sha-of-desired-pr>"))
+			return
+		}
+
+		// Only run on push to master, unless we're not on CI
+		if condition.OnCI() && (os.Getenv("GITHUB_EVENT") != "push" || os.Getenv("GITHUB_REF_NAME") != "master") {
 			fmt.Println("Not a push event targeting master")
 			return
 		}
 
-		if len(os.Args) != 2 {
-			r.Check(errs.New("Usage: update-version-branch <sha-of-desired-pr>"))
+		// Ensure our worktree is clean so we don't accidentally clobber anything
+		if v := diffFiles(); v != "" {
+			r.Check(errs.New("Working tree is not clean:\n%s", v))
 			return
 		}
 	}
@@ -53,8 +62,21 @@ func main() {
 	repo, err := git.PlainOpen(path)
 	r.Check(err)
 
+	// Ensure that whatever we do, we end up back where we started
+	repoHead, err := repo.Head()
+	r.Check(err)
+	r = relay.New(func(error) {
+		curHead, err := repo.Head()
+		r.Check(err)
+
+		if curHead.Hash().String() != repoHead.Hash().String() {
+			checkout(repoHead.Hash().String())
+		}
+		relay.DefaultHandler()(err)
+	})
+
 	// Retrieve Relevant Pr
-	mergedPR := getMergedPR(ghClient, shaOfMergedPR, repo)
+	mergedPR := getMergedPR(ghClient, shaOfMergedPR)
 	if mergedPR == nil {
 		return
 	}
@@ -75,20 +97,30 @@ func main() {
 	targetBranchPrefix := fmt.Sprintf("%s-RC", strings.Replace(fixVersion.Name, ".", "_", -1)) // Dots in branch names tend to be trouble
 
 	// Retrieve Relevant Fixversion Pr
+	var prName string
+	var branchName string
 	rcNumber, targetPR := getTargetPR(ghClient, fixVersion.Name, prTitlePrefix)
+	if targetPR != nil {
+		// Check If Target Pr Already Contains Our Commit
+		if !targetPRMissingMergedPR(ghClient, targetPR, mergedPR.GetNumber()) {
+			return
+		}
 
-	// Create Relevant Fixversion Pr If None Exists
-	if targetPR == nil {
-		targetPR = createTargetPR(ghClient, fixVersion.Name, prTitlePrefix, targetBranchPrefix, rcNumber)
+		prName = targetPR.GetTitle()
+		branchName = targetPR.GetHead().GetRef()
+	} else {
+		// Set PR and branch names for PR that we'll be creating
+		prName = fmt.Sprintf("%s%d", prTitlePrefix, rcNumber)
+		branchName = fmt.Sprintf("%s%d", targetBranchPrefix, rcNumber)
+
+		createBranch(repo, branchName)
 	}
 
-	// Check If Target Pr Already Contains Our Commit
-	if !targetPRMissingMergedPR(ghClient, targetPR, mergedPR.GetNumber()) {
-		return
-	}
+	// Ensure
+	defer checkout(repoHead.Hash().String())
 
 	// Check Out Rc Branch So We Can Cherry Pick
-	checkout(targetPR.GetHead().GetRef())
+	checkout(branchName)
 
 	// Cherry Pick the merge commit to the RC branch
 	cherryPick(shaOfMergedPR)
@@ -99,16 +131,21 @@ func main() {
 	// Check Out Original Commit
 	checkout(shaOfMergedPR)
 
+	// Create Relevant Fixversion Pr If None Exists
+	if targetPR == nil {
+		targetPR = createTargetPR(ghClient, fixVersion.Name, prName, branchName)
+	}
+
 	fmt.Println("Done")
 }
 
-func getMergedPR(gh *github.Client, sha string, repo *git.Repository) *github.PullRequest {
-	commit, err := repo.CommitObject(plumbing.NewHash(sha))
+func getMergedPR(gh *github.Client, sha string) *github.PullRequest {
+	commit, _, err := gh.Git.GetCommit(context.Background(), "ActiveState", "cli", sha)
 	r.Check(err)
 
-	match := commitMessageRx.FindStringSubmatch(commit.Message)
+	match := commitMessageRx.FindStringSubmatch(*commit.Message)
 	if len(match) != 2 {
-		fmt.Printf("Commit message '%s' does not match regexp '%s' -- skipping\n", commit.Message, commitMessageRx)
+		fmt.Printf("Commit message '%s' does not match regexp '%s' -- skipping\n", *commit.Message, commitMessageRx)
 		return nil
 	}
 	mergedPRID, err := strconv.Atoi(match[1])
@@ -116,6 +153,8 @@ func getMergedPR(gh *github.Client, sha string, repo *git.Repository) *github.Pu
 
 	mergedPR, _, err := gh.PullRequests.Get(context.Background(), "ActiveState", "cli", mergedPRID)
 	r.Check(err)
+
+	fmt.Printf("Extracted PR %d from provided sha\n", mergedPRID)
 
 	return mergedPR
 }
@@ -129,6 +168,8 @@ func getJiraIssueFromPR(jiraClient *jira.Client, pr *github.PullRequest) *jira.I
 
 	jiraIssue, _, err := jiraClient.Issue.Get(*jiraIssueID, nil)
 	r.Check(err)
+
+	fmt.Printf("Extracted Jira issue %s from PR %d\n", jiraIssue.Key, pr.ID)
 
 	return jiraIssue
 }
@@ -144,6 +185,8 @@ func getTargetFixVersion(issue *jira.Issue, verifyActive bool) *jira.FixVersion 
 		fmt.Printf("Skipping because fixVersion '%s' has either been archived or released\n", fixVersion.Name)
 		return nil
 	}
+
+	fmt.Printf("Extracted fixVersion %s from Jira issue %s\n", fixVersion.Name, issue.Key)
 
 	return fixVersion
 }
@@ -174,22 +217,33 @@ func getTargetPR(ghClient *github.Client, version string, prefix string) (int, *
 	if targetIssue != nil {
 		targetPR, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", *targetIssue.Number)
 		r.Check(err)
+
+		fmt.Printf("Found PR %s for fixVersion '%s'\n", *targetIssue.Number, version)
 		return rcNumber, targetPR
 	}
 
 	return rcNumber, nil
 }
 
-func createTargetPR(ghClient *github.Client, fixVersion string, prTitlePrefix string, targetBranchPrefix string, rcNumber int) *github.PullRequest {
-	prName := fmt.Sprintf("%s%d", prTitlePrefix, rcNumber)
-	branchName := fmt.Sprintf("%s%d", targetBranchPrefix, rcNumber)
-	fmt.Printf("Creating PR for fixVersion '%s' with name '%s'\n", fixVersion, prName)
+func createBranch(repo *git.Repository, name string) {
+	fmt.Printf("Creating branch '%s' from beta\n", name)
 
+	checkout("beta")
+
+	repo.CreateBranch(&config.Branch{
+		Name:   name,
+		Remote: "origin",
+	})
+}
+
+func createTargetPR(ghClient *github.Client, fixVersion string, prName string, branchName string) *github.PullRequest {
 	payload := &github.NewPullRequest{
 		Title: &prName,
 		Head:  &branchName,
 		Base:  p.StrP("beta"),
 	}
+
+	fmt.Printf("Creating PR for fixVersion: %s, with name: %s\n", fixVersion, prName)
 
 	targetPR, _, err := ghClient.PullRequests.Create(context.Background(), "ActiveState", "cli", payload)
 	r.Check(err)
@@ -234,4 +288,10 @@ func cherryPick(sha string) {
 	if code != 0 {
 		r.Check(errs.New("git cherry-pick returned code %d", code))
 	}
+}
+
+func diffFiles() string {
+	stdout, _, err := exeutils.ExecSimple("git", []string{"diff-files", "-p"}, []string{})
+	r.Check(err)
+	return strings.TrimSpace(stdout)
 }

@@ -3,12 +3,10 @@ package main
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/environment"
 	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
 	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
-	"gopkg.in/src-d/go-git.v4"
 )
 
 type MainTestSuite struct {
@@ -20,11 +18,9 @@ func (suite *MainTestSuite) TestGetMergePR() {
 	var commitWithoutMerge = "d18992f370ada0fd179fb4cdced811e77c7b1136"
 
 	ghClient := github_helpers.InitClient()
-	repo, err := git.PlainOpen(environment.GetRootPathUnsafe())
-	suite.Require().NoError(err)
 
-	suite.Require().NotNil(getMergedPR(ghClient, commitWithMerge, repo))
-	suite.Require().Nil(getMergedPR(ghClient, commitWithoutMerge, repo))
+	suite.Require().NotNil(getMergedPR(ghClient, commitWithMerge))
+	suite.Require().Nil(getMergedPR(ghClient, commitWithoutMerge))
 }
 
 func (suite *MainTestSuite) TestGetJiraIssueFromPR() {
