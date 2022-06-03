@@ -20,7 +20,6 @@ import (
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
 )
 
 var commitMessagePrefix = "Merge pull request #"
@@ -70,7 +69,7 @@ func main() {
 		r.Check(err)
 
 		if curHead.Hash().String() != repoHead.Hash().String() {
-			checkout(repoHead.Hash().String())
+			checkout(repoHead.Name().String())
 		}
 		relay.DefaultHandler()(err)
 	})
@@ -110,7 +109,7 @@ func main() {
 		prName = fixVersion.Name
 		branchName = strings.Replace(fixVersion.Name, ".", "_", -1)
 
-		createBranch(repo, branchName)
+		createBranch(branchName)
 	}
 
 	// Ensure
@@ -217,16 +216,17 @@ func getTargetPR(ghClient *github.Client, version string) *github.PullRequest {
 	return nil
 }
 
-func createBranch(repo *git.Repository, name string) {
+func createBranch(name string) {
 	fmt.Printf("Creating branch '%s' from beta\n", name)
 
 	checkout("beta")
 
-	err := repo.CreateBranch(&config.Branch{
-		Name:   name,
-		Remote: "origin",
-	})
+	// Technically the go-git lib is supposed to support this, but it's so low level it's not immediately evident how to work with it
+	code, _, err := exeutils.ExecuteAndPipeStd("git", []string{"branch", name}, []string{})
 	r.Check(err)
+	if code != 0 {
+		r.Check(errs.New("git checkout returned code %d", code))
+	}
 }
 
 func createTargetPR(ghClient *github.Client, fixVersion string, prName string, branchName string) *github.PullRequest {
