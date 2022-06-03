@@ -112,9 +112,6 @@ func main() {
 		createBranch(branchName)
 	}
 
-	// Ensure
-	defer checkout(repoHead.Hash().String())
-
 	// Check Out Rc Branch So We Can Cherry Pick
 	checkout(branchName)
 
@@ -125,7 +122,7 @@ func main() {
 	r.Check(repo.Push(&git.PushOptions{RemoteName: "origin/" + branchName}))
 
 	// Check Out Original Commit
-	checkout(shaOfMergedPR)
+	checkout(repoHead.Name().String())
 
 	// Create Relevant Fixversion Pr If None Exists
 	if targetPR == nil {
