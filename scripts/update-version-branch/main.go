@@ -118,6 +118,8 @@ func main() {
 
 		execute("git", "checkout", "beta")
 		execute("git", "branch", branchName)
+		execute("git", "checkout", branchName)
+		execute("git", "push", "--set-upstream", "origin", branchName)
 	}
 
 	remoteBranchName := "origin/" + branchName
@@ -130,7 +132,7 @@ func main() {
 
 	// Push changes to RC branch
 	fmt.Printf("Pushing %s to %s\n", branchName, remoteBranchName)
-	execute("git", "push", "-u")
+	execute("git", "push")
 
 	// Check Out Original Commit
 	execute("git", "checkout", repoHead.Name().Short())
