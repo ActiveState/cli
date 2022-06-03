@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/scripts/internal/github-helpers"
@@ -76,7 +79,7 @@ func main() {
 		fmt.Printf("Failed with error: %s (%v)\n%s\n", errs.JoinMessage(err), err, stacktrace.Get().String())
 		if curHead.Hash().String() != repoHead.Hash().String() {
 			fmt.Println("Reverting checkout")
-			checkout(repoHead.Name().Short())
+			execute("git", "checkout", repoHead.Name().Short())
 		}
 
 		os.Exit(1)
@@ -117,23 +120,24 @@ func main() {
 		prName = fixVersion.Name
 		branchName = strings.Replace(fixVersion.Name, ".", "_", -1)
 
-		createBranch(branchName)
+		execute("git", "checkout", "beta")
+		execute("git", "branch", branchName)
 	}
 
 	remoteBranchName := "origin/" + branchName
 
 	// Check Out Rc Branch So We Can Cherry Pick
-	checkout(branchName)
+	execute("git", "checkout", branchName)
 
 	// Cherry Pick the merge commit to the RC branch
-	cherryPick(shaOfMergedPR)
+	execute("git", "cherry-pick", "-m", "1", shaOfMergedPR)
 
 	// Push changes to RC branch
 	fmt.Printf("Pushing %s to %s\n", branchName, remoteBranchName)
-	push()
+	execute("git", "push", "-u")
 
 	// Check Out Original Commit
-	checkout(repoHead.Name().Short())
+	execute("git", "checkout", repoHead.Name().Short())
 
 	// Create Relevant Fixversion Pr If None Exists
 	if targetPR == nil {
@@ -224,19 +228,6 @@ func getTargetPR(ghClient *github.Client, version string) *github.PullRequest {
 	return nil
 }
 
-func createBranch(name string) {
-	fmt.Printf("Creating branch '%s' from beta\n", name)
-
-	checkout("beta")
-
-	// Technically the go-git lib is supposed to support this, but it's so low level it's not immediately evident how to work with it
-	code, _, err := exeutils.Execute("git", []string{"branch", name}, nil)
-	r.Check(err)
-	if code != 0 {
-		r.Check(errs.New("git checkout returned code %d", code))
-	}
-}
-
 func createTargetPR(ghClient *github.Client, fixVersion string, prName string, branchName string) *github.PullRequest {
 	payload := &github.NewPullRequest{
 		Title: &prName,
@@ -272,36 +263,28 @@ func targetPRMissingMergedPR(ghClient *github.Client, targetPR *github.PullReque
 	return !found
 }
 
-func checkout(target string) {
-	fmt.Printf("Checking out %s\n", target)
-	// Technically the go-git lib is supposed to support this, but it's non-evident where this functionality is hidden and not worth my time
-	code, _, err := exeutils.Execute("git", []string{"checkout", target}, nil)
-	r.Check(err)
-	if code != 0 {
-		r.Check(errs.New("git checkout returned code %d", code))
-	}
-}
-
-func cherryPick(sha string) {
-	fmt.Println("Cherry Picking merged PR to RC branch")
-	code, _, err := exeutils.Execute("git", []string{"cherry-pick", "-m", "1", sha}, nil)
-	r.Check(err)
-	if code != 0 {
-		r.Check(errs.New("git cherry-pick returned code %d", code))
-	}
-}
-
-func push() {
-	fmt.Printf("Pushing to remote\n")
-	code, _, err := exeutils.Execute("git", []string{"push", "-u"}, nil)
-	r.Check(err)
-	if code != 0 {
-		r.Check(errs.New("git push returned code %d", code))
-	}
-}
-
 func diffFiles() string {
 	stdout, _, err := exeutils.ExecSimple("git", []string{"diff-files", "-p"}, []string{})
 	r.Check(err)
 	return strings.TrimSpace(stdout)
+}
+
+func execute(args ...string) {
+	fmt.Printf("Executing: %#v\n", args)
+	c := exec.Command(args[0], args[1:]...)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	c.Stdout = &stdout
+	c.Stderr = &stderr
+
+	err := c.Run()
+	if err != nil {
+		err = errs.Wrap(err, fmt.Sprintf("stdout: %s\nstderr: %s", stdout.String(), stderr.String()))
+	}
+
+	r.Check(err)
+	code := osutils.CmdExitCode(c)
+	if code != 0 {
+		r.Check(errs.New("%#v returned code %d", args, code))
+	}
 }
