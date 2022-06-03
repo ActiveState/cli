@@ -68,11 +68,7 @@ func main() {
 	// Ensure that whatever we do, we end up back where we started
 	repoHead, err := repo.Head()
 	r.Check(err)
-	r = relay.New(func(error) {
-		if err == nil {
-			err = errs.New("Called with err=nil:\n%s", stacktrace.Get().String())
-		}
-
+	r = relay.New(func(err error) {
 		curHead, err2 := repo.Head()
 		r.Check(err2)
 
