@@ -23,7 +23,6 @@ type ActivateIntegrationTestSuite struct {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
-	fmt.Println("TEST")
 	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate, tagsuite.Critical)
 	suite.activatePython("3")
 }
@@ -142,7 +141,6 @@ func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapsh
 }
 
 func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraEnv ...string) {
-	fmt.Println("TEST")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -154,7 +152,6 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.AppendEnv(extraEnv...),
 	)
 
-	fmt.Println("TEST")
 	cp.Expect("Activated")
 	// ensure that shell is functional
 	cp.WaitForInput()

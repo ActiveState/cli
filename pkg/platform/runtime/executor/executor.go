@@ -74,7 +74,6 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 
 	for _, exe := range exes {
 		if err := f.createExecutor(exe); err != nil {
-			fmt.Println(errs.JoinMessage(err))
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
