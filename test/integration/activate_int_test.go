@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -577,4 +578,25 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 	files, err := fileutils.ListDir(artifactCacheDir, false)
 	suite.NoError(err)
 	suite.True(len(files) > 1, "artifact cache is empty") // ignore json file
+
+	// Clear all cached data except artifact cache.
+	// This removes the runtime so that it needs to be created again.
+	files, err = fileutils.ListDir(ts.Dirs.Cache, true)
+	suite.NoError(err)
+	for _, entry := range files {
+		if entry.IsDir() && entry.RelativePath() != constants.ArtifactMetaDir {
+			fmt.Println("removing " + entry.Path())
+			os.RemoveAll(entry.Path())
+		}
+	}
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+	)
+
+	cp.Expect("Fetched cached artifact")
+	cp.Expect("Activated")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
