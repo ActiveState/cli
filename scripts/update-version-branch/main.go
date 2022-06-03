@@ -219,7 +219,7 @@ func createBranch(name string) {
 	checkout("beta")
 
 	// Technically the go-git lib is supposed to support this, but it's so low level it's not immediately evident how to work with it
-	code, _, err := exeutils.ExecuteAndPipeStd("git", []string{"branch", name}, []string{})
+	code, _, err := exeutils.Execute("git", []string{"branch", name}, nil)
 	r.Check(err)
 	if code != 0 {
 		r.Check(errs.New("git checkout returned code %d", code))
@@ -264,7 +264,7 @@ func targetPRMissingMergedPR(ghClient *github.Client, targetPR *github.PullReque
 func checkout(target string) {
 	fmt.Printf("Checking out %s\n", target)
 	// Technically the go-git lib is supposed to support this, but it's non-evident where this functionality is hidden and not worth my time
-	code, _, err := exeutils.ExecuteAndPipeStd("git", []string{"checkout", target}, []string{})
+	code, _, err := exeutils.Execute("git", []string{"checkout", target}, nil)
 	r.Check(err)
 	if code != 0 {
 		r.Check(errs.New("git checkout returned code %d", code))
@@ -273,7 +273,7 @@ func checkout(target string) {
 
 func cherryPick(sha string) {
 	fmt.Println("Cherry Picking merged PR to RC branch")
-	code, _, err := exeutils.ExecuteAndPipeStd("git", []string{"cherry-pick", "-m", "1", sha}, []string{})
+	code, _, err := exeutils.Execute("git", []string{"cherry-pick", "-m", "1", sha}, nil)
 	r.Check(err)
 	if code != 0 {
 		r.Check(errs.New("git cherry-pick returned code %d", code))
