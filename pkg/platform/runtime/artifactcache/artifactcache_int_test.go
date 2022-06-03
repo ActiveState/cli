@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCache(t *testing.T) {
@@ -29,12 +30,12 @@ func TestCache(t *testing.T) {
 	}
 
 	dir, err := os.MkdirTemp("", "")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	// Test cache creation.
 	cache, err := newWithDirAndSize(dir, 10) // bytes
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, cache.dir, dir)
 	assert.False(t, fileutils.FileExists(cache.infoJson)) // not yet
 	assert.Equal(t, cache.maxSize, int64(10))
@@ -49,7 +50,7 @@ func TestCache(t *testing.T) {
 	// Test cache.Store().
 	testArtifactFile := osutil.GetTestFile(string(testArtifacts[1]))
 	err = cache.Store(testArtifacts[1], testArtifactFile)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(cache.artifacts), 1)
 	assert.Equal(t, cache.currentSize, int64(1))
 
@@ -88,11 +89,11 @@ func TestCache(t *testing.T) {
 
 	// Test cache.Save().
 	err = cache.Save()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, fileutils.FileExists(cache.infoJson))
 
 	reloaded, err := newWithDirAndSize(cache.dir, 10)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, reloaded.currentSize, int64(10))
 	assert.Equal(t, len(reloaded.artifacts), 3)
 	assert.NotNil(t, reloaded.artifacts[testArtifacts[2]])
@@ -101,11 +102,11 @@ func TestCache(t *testing.T) {
 
 	// Test too small of a cache max size.
 	dir, err = os.MkdirTemp("", "")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
 	cache, err = newWithDirAndSize(dir, 1) // bytes
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	cache.Store(testArtifacts[1], osutil.GetTestFile(string(testArtifacts[1])))
 	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2]))) // should not store nor erase existing artifacts
 	assert.Equal(t, cache.currentSize, int64(1))
