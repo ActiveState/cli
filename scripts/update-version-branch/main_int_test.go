@@ -70,22 +70,18 @@ func (suite *MainTestSuite) TestGetTargetFixVersion() {
 }
 
 func (suite *MainTestSuite) TestTargetPR() {
-	var keywordForOpenVersionPR = "1.2.3"
 	var prefixForOpenVersionPR = "1.2.3-RC"
-	var keywordForClosedVersionPR = "v0.32.0"
 	var prefixForClosedVersionPR = "v0.32.0-RC"
 
 	ghClient := github_helpers.InitClient()
 
 	{
-		rcnum, pr := getTargetPR(ghClient, keywordForOpenVersionPR, prefixForOpenVersionPR)
-		suite.Require().Equal(1, rcnum)
+		pr := getTargetPR(ghClient, prefixForOpenVersionPR)
 		suite.Require().NotNil(pr)
 	}
 
 	{
-		rcnum, pr := getTargetPR(ghClient, keywordForClosedVersionPR, prefixForClosedVersionPR)
-		suite.Require().Equal(2, rcnum)
+		pr := getTargetPR(ghClient, prefixForClosedVersionPR)
 		suite.Require().Nil(pr)
 	}
 }

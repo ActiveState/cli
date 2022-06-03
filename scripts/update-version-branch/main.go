@@ -93,13 +93,10 @@ func main() {
 		return
 	}
 
-	prTitlePrefix := fmt.Sprintf("%s-RC", fixVersion.Name)
-	targetBranchPrefix := fmt.Sprintf("%s-RC", strings.Replace(fixVersion.Name, ".", "_", -1)) // Dots in branch names tend to be trouble
-
 	// Retrieve Relevant Fixversion Pr
 	var prName string
 	var branchName string
-	rcNumber, targetPR := getTargetPR(ghClient, fixVersion.Name, prTitlePrefix)
+	targetPR := getTargetPR(ghClient, fixVersion.Name)
 	if targetPR != nil {
 		// Check If Target Pr Already Contains Our Commit
 		if !targetPRMissingMergedPR(ghClient, targetPR, mergedPR.GetNumber()) {
@@ -110,8 +107,8 @@ func main() {
 		branchName = targetPR.GetHead().GetRef()
 	} else {
 		// Set PR and branch names for PR that we'll be creating
-		prName = fmt.Sprintf("%s%d", prTitlePrefix, rcNumber)
-		branchName = fmt.Sprintf("%s%d", targetBranchPrefix, rcNumber)
+		prName = fixVersion.Name
+		branchName = strings.Replace(fixVersion.Name, ".", "_", -1)
 
 		createBranch(repo, branchName)
 	}
@@ -191,25 +188,20 @@ func getTargetFixVersion(issue *jira.Issue, verifyActive bool) *jira.FixVersion 
 	return fixVersion
 }
 
-func getTargetPR(ghClient *github.Client, version string, prefix string) (int, *github.PullRequest) {
-	var rcNumber = 1
+func getTargetPR(ghClient *github.Client, version string) *github.PullRequest {
 	var targetIssue *github.Issue
-	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli is:pr %s", version), nil)
+	searchTerm := strings.Split(version, "-")[0] // GitHub search doesn't support Dashes. I'm not joking.. This is real..
+	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli is:pr %s", searchTerm), nil)
 	r.Check(err)
 
 	for _, issue := range issues.Issues {
-		if issue.Title == nil || !strings.HasPrefix(*issue.Title, prefix) {
-			// You might be wondering: "Why do we need both the version and the prefix, can't we just search for the prefix?"
-			// Well unfortunately GitHub seems incapable of searching for keywords with dash characters, at least when I tested it.
-			continue
-		}
-		if issue.State != nil && *issue.State == "closed" {
-			rcNumber++
+		if issue.Title == nil || !strings.HasPrefix(*issue.Title, version) ||
+			issue.State != nil && *issue.State == "closed" {
 			continue
 		}
 		if targetIssue != nil {
 			r.Check(errs.New("Multiple open PRs found for fixVersion '%s'", version))
-			return -1, nil
+			return nil
 		}
 		targetIssue = issue
 	}
@@ -219,10 +211,10 @@ func getTargetPR(ghClient *github.Client, version string, prefix string) (int, *
 		r.Check(err)
 
 		fmt.Printf("Found PR %s for fixVersion '%s'\n", *targetIssue.Number, version)
-		return rcNumber, targetPR
+		return targetPR
 	}
 
-	return rcNumber, nil
+	return nil
 }
 
 func createBranch(repo *git.Repository, name string) {
@@ -230,10 +222,11 @@ func createBranch(repo *git.Repository, name string) {
 
 	checkout("beta")
 
-	repo.CreateBranch(&config.Branch{
+	err := repo.CreateBranch(&config.Branch{
 		Name:   name,
 		Remote: "origin",
 	})
+	r.Check(err)
 }
 
 func createTargetPR(ghClient *github.Client, fixVersion string, prName string, branchName string) *github.PullRequest {
