@@ -122,7 +122,7 @@ func main() {
 	cherryPick(shaOfMergedPR)
 
 	// Push changes to RC branch
-	r.Check(repo.Push(nil))
+	r.Check(repo.Push(&git.PushOptions{RemoteName: "origin/" + branchName}))
 
 	// Check Out Original Commit
 	checkout(shaOfMergedPR)
