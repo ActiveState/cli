@@ -73,8 +73,8 @@ func main() {
 			err = errs.New("Called with err=nil:\n%s", stacktrace.Get().String())
 		}
 
-		curHead, err := repo.Head()
-		r.Check(err)
+		curHead, err2 := repo.Head()
+		r.Check(err2)
 
 		fmt.Printf("Failed with error: %s (%v)\n%s\n", errs.JoinMessage(err), err, stacktrace.Get().String())
 		if curHead.Hash().String() != repoHead.Hash().String() {
