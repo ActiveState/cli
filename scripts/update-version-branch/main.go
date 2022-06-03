@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/scripts/internal/github-helpers"
 	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
@@ -65,13 +66,20 @@ func main() {
 	repoHead, err := repo.Head()
 	r.Check(err)
 	r = relay.New(func(error) {
+		if err == nil {
+			err = errs.New("Called with err=nil:\n%s", stacktrace.Get().String())
+		}
+
 		curHead, err := repo.Head()
 		r.Check(err)
 
+		fmt.Printf("Failed with error: %s (%v)\n%s\n", errs.JoinMessage(err), err, stacktrace.Get().String())
 		if curHead.Hash().String() != repoHead.Hash().String() {
-			checkout(repoHead.Name().String())
+			fmt.Println("Reverting checkout")
+			checkout(repoHead.Name().Short())
 		}
-		relay.DefaultHandler()(err)
+
+		os.Exit(1)
 	})
 
 	// Retrieve Relevant Pr
@@ -112,6 +120,8 @@ func main() {
 		createBranch(branchName)
 	}
 
+	remoteBranchName := "origin/" + branchName
+
 	// Check Out Rc Branch So We Can Cherry Pick
 	checkout(branchName)
 
@@ -119,10 +129,11 @@ func main() {
 	cherryPick(shaOfMergedPR)
 
 	// Push changes to RC branch
-	r.Check(repo.Push(&git.PushOptions{RemoteName: "origin/" + branchName}))
+	fmt.Printf("Pushing %s to %s\n", branchName, remoteBranchName)
+	push()
 
 	// Check Out Original Commit
-	checkout(repoHead.Name().String())
+	checkout(repoHead.Name().Short())
 
 	// Create Relevant Fixversion Pr If None Exists
 	if targetPR == nil {
@@ -277,6 +288,15 @@ func cherryPick(sha string) {
 	r.Check(err)
 	if code != 0 {
 		r.Check(errs.New("git cherry-pick returned code %d", code))
+	}
+}
+
+func push() {
+	fmt.Printf("Pushing to remote\n")
+	code, _, err := exeutils.Execute("git", []string{"push", "-u"}, nil)
+	r.Check(err)
+	if code != 0 {
+		r.Check(errs.New("git push returned code %d", code))
 	}
 }
 
