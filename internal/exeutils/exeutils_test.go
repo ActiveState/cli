@@ -1,6 +1,7 @@
 package exeutils
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -72,4 +73,48 @@ func TestExecuteAndPipeStd(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "--out--\n", out, "captures output")
+}
+
+func TestExecuteAndPipeStdExitCode(t *testing.T) {
+	type args struct {
+		command string
+		arg     []string
+		env     []string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantCode int
+		wantErr  assert.ErrorAssertionFunc
+	}{
+		{
+			"Successful execution",
+			args{
+				"bash",
+				[]string{"-c", "exit 0"},
+				[]string{},
+			},
+			0,
+			assert.NoError,
+		},
+		{
+			"Failed execution",
+			args{
+				"bash",
+				[]string{"-c", "exit 1"},
+				[]string{},
+			},
+			1,
+			assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, _, err := ExecuteAndPipeStd(tt.args.command, tt.args.arg, tt.args.env)
+			if !tt.wantErr(t, err, fmt.Sprintf("ExecuteAndPipeStd(%v, %v, %v)", tt.args.command, tt.args.arg, tt.args.env)) {
+				return
+			}
+			assert.Equalf(t, tt.wantCode, got, "ExecuteAndPipeStd(%v, %v, %v)", tt.args.command, tt.args.arg, tt.args.env)
+		})
+	}
 }
