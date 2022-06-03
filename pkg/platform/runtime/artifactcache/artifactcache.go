@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -27,12 +28,14 @@ type cachedArtifact struct {
 // ArtifactCache is a cache of downloaded artifacts from the ActiveState Platform.
 // The State Tool prefers to use this cache instead of redownloading artifacts.
 type ArtifactCache struct {
-	dir         string
-	infoJson    string
-	maxSize     int64 // bytes
-	currentSize int64 // bytes
-	artifacts   map[artifact.ArtifactID]*cachedArtifact
-	mutex       sync.Mutex
+	dir              string
+	infoJson         string
+	maxSize          int64 // bytes
+	currentSize      int64 // bytes
+	artifacts        map[artifact.ArtifactID]*cachedArtifact
+	mutex            sync.Mutex
+	timeSpentCopying time.Duration
+	sizeCopied       int64 //bytes
 }
 
 const MB int64 = 1024 * 1024
@@ -77,7 +80,7 @@ func newWithDirAndSize(dir string, maxSize int64) (*ArtifactCache, error) {
 	}
 
 	logging.Debug("Opened artifact cache at '%s' containing %d artifacts occupying %.1f/%.1f MB", dir, len(artifactMap), float64(currentSize)/float64(MB), float64(maxSize)/float64(MB))
-	return &ArtifactCache{dir, infoJson, maxSize, currentSize, artifactMap, sync.Mutex{}}, nil
+	return &ArtifactCache{dir, infoJson, maxSize, currentSize, artifactMap, sync.Mutex{}, 0, 0}, nil
 }
 
 // Get returns the path to the cached artifact with the given id along with true if it exists.
@@ -137,7 +140,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	}
 
 	targetPath := filepath.Join(cache.dir, string(a))
+	startTime := time.Now()
 	err = fileutils.CopyFile(archivePath, targetPath)
+	endTime := time.Now()
+	cache.timeSpentCopying += endTime.Sub(startTime)
+	cache.sizeCopied += size
 	if err != nil {
 		return errs.Wrap(err, "Unable to copy artifact '%s' into cache as '%s'", archivePath, targetPath)
 	}
@@ -169,6 +176,12 @@ func (cache *ArtifactCache) Save() error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to write artifact cache's "+cache.infoJson)
 	}
+
+	if cache.timeSpentCopying > 5*time.Second {
+		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts from cache", float64(cache.timeSpentCopying)/float64(time.Second), float64(cache.sizeCopied)/float64(MB))
+	}
+	cache.timeSpentCopying = 0 // reset
+	cache.sizeCopied = 0       //reset
 
 	return nil
 }
