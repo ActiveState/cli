@@ -114,6 +114,10 @@ jobs:
             {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Executor",
+                "Args": ["state", "run", "build-exec"]
             }
           ]
           EOF
