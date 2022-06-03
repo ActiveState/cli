@@ -43,7 +43,7 @@ func New() (*ArtifactCache, error) {
 	if sizeOverride, err := strconv.Atoi(os.Getenv(constants.ArtifactCacheSizeEnvVarName)); err != nil && sizeOverride > 0 {
 		maxSize = int64(sizeOverride) * MB
 	}
-	return newWithDirAndSize(filepath.Join(storage.CachePath(), constants.ArtifactMetaDir), maxSize)
+	return newWithDirAndSize(storage.ArtifactCacheDir(), maxSize)
 }
 
 func newWithDirAndSize(dir string, maxSize int64) (*ArtifactCache, error) {
