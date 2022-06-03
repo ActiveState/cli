@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 
@@ -87,7 +88,7 @@ func (cache *ArtifactCache) Get(a artifact.ArtifactID) (string, bool) {
 	defer cache.mutex.Unlock()
 
 	if artifact, found := cache.artifacts[a]; found {
-		logging.Debug("Fetched artifact '%s' as '%s'; updating access time", string(a), artifact.ArchivePath)
+		logging.Debug("Fetched cached artifact '%s' as '%s'; updating access time", string(a), artifact.ArchivePath)
 		artifact.LastAccessTime = time.Now().Unix()
 		return artifact.ArchivePath, true
 	}
@@ -108,6 +109,7 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 
 	if size > cache.maxSize {
 		logging.Debug("Cannot avoid exceeding cache size; not storing artifact")
+		rollbar.Error("Artifact '%s' is %.1fMB, which exceeds the cache size of %.1fMB", a, float64(size)/float64(MB), float64(cache.maxSize)/float64(MB))
 		return nil
 	}
 
@@ -121,11 +123,11 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 		}
 
 		if lastAccessed == nil {
-			logging.Debug("Cannot avoid exceeding cache size; not storing artifact")
+			rollbar.Error("Cannot avoid exceeding cache size; not storing artifact.")
 			return nil // avoid infinite loop, but this really shouldn't happen...
 		}
 
-		logging.Debug("Removing artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
+		logging.Debug("Removing cached artifact '%s' last accessed on %s", lastAccessed.ArchivePath, time.Unix(lastAccessed.LastAccessTime, 0).Format(time.UnixDate))
 		err := os.Remove(lastAccessed.ArchivePath)
 		if err != nil {
 			return errs.Wrap(err, "Unable to remove cached artifact '%s'", lastAccessed.ArchivePath)
