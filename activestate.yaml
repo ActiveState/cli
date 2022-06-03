@@ -137,6 +137,20 @@ scripts:
       if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
+  - name: build-exec
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      dir="./cmd/${appName}"
+      target=""; [[ "${BUILD_TARGET}" == "state.exe" ]] && target="-target x86_64-windows.win10_rs4"
+      extension=""; [[ "${BUILD_TARGET}" == "state.exe" ]] && extension=".exe"
+      srcFiles="${dir}/${appName}.zig"
+      binFile="${appName}${extension}"
+
+      zig build-exe --strip -static -O ReleaseFast ${target} "${srcFiles}"
+      mv "${binFile}" "${BUILD_TARGET_PREFIX_DIR}"
+
   - name: build-all
     description: Builds all our tools
     standalone: true

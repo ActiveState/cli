@@ -126,7 +126,6 @@ const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
 const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
-
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
@@ -404,6 +403,9 @@ const UpdateDialogName = "State Update Dialog"
 
 // StateUpdateDialogCmd is the name of the state update dialog binary
 const StateUpdateDialogCmd = "state-update-dialog"
+
+// StateExecutorCmd is the name of the state executor binary
+const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411

@@ -4,4 +4,4 @@
 # {{.}}
 {{end}}
 
-"{{.state}}" exec --path "{{.targetPath}}" -- {{.exe}} "$@"
+"{{.stateExec}}" "{{.stateSock}}" "{{.targetPath}}/{{.exe}}" "$@"

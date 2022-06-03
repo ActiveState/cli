@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -73,6 +74,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 
 	for _, exe := range exes {
 		if err := f.createExecutor(exe); err != nil {
+			fmt.Println(errs.JoinMessage(err))
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -143,15 +145,16 @@ func (f *Executor) createExecutor(exe string) error {
 		}
 	}
 
-	stateExec, err := installation.StateExec()
+	executorExec, err := installation.ExecutorExec()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
 	tplParams := map[string]interface{}{
-		"state":      stateExec,
+		"stateExec":  executorExec,
+		"stateSock":  svcctl.NewIPCSockPathFromGlobals().String(),
 		"exe":        filepath.Base(exe),
-		"targetPath": f.targetPath,
+		"targetPath": f.targetPath + "/bin",
 		"denote":     []string{executorDenoter, denoteTarget},
 	}
 	boxFile := "executor.sh"
@@ -168,6 +171,7 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
+		fmt.Println(errs.JoinMessage(err))
 		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
 	}
 

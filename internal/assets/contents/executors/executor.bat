@@ -4,4 +4,4 @@
 REM {{.}}
 {{end}}
 
-"{{.state}}" exec --path "{{.targetPath}}" -- {{.exe}} %*
+"{{.state-exec}}" "{{.state-sock}}" "{{.targetPath}}\{{.exe}}" %*
