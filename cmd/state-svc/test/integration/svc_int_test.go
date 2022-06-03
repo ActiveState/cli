@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,6 +74,12 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 }
 
 func (suite *SvcIntegrationTestSuite) TestSignals() {
+	if condition.OnCI() {
+		// https://activestatef.atlassian.net/browse/DX-964
+		// https://activestatef.atlassian.net/browse/DX-980
+		suite.T().Skip("Signal handling on CI is unstable and unreliable")
+	}
+
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Windows does not support signal sending.")
 	}
@@ -94,11 +101,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.ExpectExitCode(1)
 
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	if runtime.GOOS == "windows" {
-		// TODO: this fails on Linux and macOS for some reason, but it is not reproducable outside of CI
-		// https://activestatef.atlassian.net/browse/DX-964
-		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
-	}
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 
 	// SIGTERM
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
@@ -112,11 +115,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
-	if runtime.GOOS == "windows" {
-		// TODO: this fails on Linux and macOS for some reason, but it is not reproducable outside of CI
-		// https://activestatef.atlassian.net/browse/DX-964
-		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
-	}
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 }
 
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
