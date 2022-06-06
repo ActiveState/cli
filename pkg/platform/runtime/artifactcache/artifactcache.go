@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -42,6 +43,8 @@ const MB int64 = 1024 * 1024
 // New returns a new artifact cache in the State Tool's cache directory with the default maximum size of 500MB.
 func New() (*ArtifactCache, error) {
 	var maxSize int64 = 500 * MB
+	// TODO: size should be configurable and the user should be warned of an invalid size.
+	// https://activestatef.atlassian.net/browse/DX-984
 	if sizeOverride, err := strconv.Atoi(os.Getenv(constants.ArtifactCacheSizeEnvVarName)); err != nil && sizeOverride > 0 {
 		maxSize = int64(sizeOverride) * MB
 	}
@@ -141,8 +144,7 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	targetPath := filepath.Join(cache.dir, string(a))
 	startTime := time.Now()
 	err = fileutils.CopyFile(archivePath, targetPath)
-	endTime := time.Now()
-	cache.timeSpentCopying += endTime.Sub(startTime)
+	cache.timeSpentCopying += time.Since(startTime)
 	cache.sizeCopied += size
 	if err != nil {
 		return errs.Wrap(err, "Unable to copy artifact '%s' into cache as '%s'", archivePath, targetPath)
@@ -177,7 +179,7 @@ func (cache *ArtifactCache) Save() error {
 	}
 
 	if cache.timeSpentCopying > 5*time.Second {
-		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts from cache", float64(cache.timeSpentCopying)/float64(time.Second), float64(cache.sizeCopied)/float64(MB))
+		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds, float64(cache.sizeCopied)/float64(MB))
 	}
 	cache.timeSpentCopying = 0 // reset
 	cache.sizeCopied = 0       //reset
