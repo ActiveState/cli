@@ -241,7 +241,7 @@ func createTargetPR(ghClient *github.Client, fixVersion *jira.FixVersion, prName
 		Title: &prName,
 		Head:  &branchName,
 		Base:  p.StrP("beta"),
-		Body:  p.StrP(u.String()),
+		Body:  p.StrP(fmt.Sprintf(`[View %s tickets on Jira](%s)`, fixVersion.Name, u.String())),
 	}
 
 	fmt.Printf("Creating PR for fixVersion: %s, with name: %s\n", fixVersion.Name, prName)
@@ -255,7 +255,8 @@ func createTargetPR(ghClient *github.Client, fixVersion *jira.FixVersion, prName
 }
 
 func updateTargetPR(client *github.Client, pr *github.PullRequest, issue *jira.Issue) {
-	body := fmt.Sprintf(`%s\n* [%s](https://activestatef.atlassian.net/browse/%s)`, *pr.Body, issue.Fields.Description, issue.Key)
+	body := fmt.Sprintf("%s\n* %s [%s](https://activestatef.atlassian.net/browse/%s) [%d](%s)",
+		*pr.Body, issue.Fields.Summary, issue.Key, issue.Key, *pr.Number, pr.Links.GetHTML().GetHRef())
 	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", *pr.Number, &github.PullRequest{Body: &body})
 	r.Check(err)
 }
