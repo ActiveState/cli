@@ -42,6 +42,7 @@ type Params struct {
 	updateTag       string
 	command         string
 	force           bool
+	isUpdate        bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
 }
@@ -150,6 +151,12 @@ func main() {
 				Value:       &params.force,
 			},
 			{
+				Name:        "update",
+				Shorthand:   "u",
+				Description: "Force update behaviour for the installer",
+				Value:       &params.isUpdate,
+			},
+			{
 				Name:   "source-installer",
 				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
 				Value:  &params.sourceInstaller,
@@ -237,39 +244,21 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
-	// Detect state tool alongside installer executable
-	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-
-	// Detect whether this is a fresh install or an update
-	isUpdate := false
-	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
-		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
-		params.sourcePath = installerPath
-		break
-	case params.force:
-		logging.Debug("Not using update flow as --force was passed")
-		break // When ran with `--force` we always use the install UX
-	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
-		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
-		logging.Debug("Using update flow as installer is alongside payload")
-		isUpdate = true
-		params.sourcePath = installerPath
-	case stateToolInstalled:
-		// This should trigger AFTER the check above where sourcePath is defined
-		logging.Debug("Using update flow as state tool is already installed")
-		isUpdate = true
+	// Older versions of the state tool will not include the --update flag, so we
+	// need to use the legacy way of checking for update
+	// This code whould be removed in the future
+	if !params.isUpdate {
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, params)
 	}
 
 	route := "install"
-	if isUpdate {
+	if params.isUpdate {
 		route = "update"
 	}
 	an.Event(AnalyticsFunnelCat, route)
 
 	// Check if state tool already installed
-	if !isUpdate && !params.force && stateToolInstalled {
+	if !params.isUpdate && !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
@@ -278,11 +267,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
+		if err := installOrUpdateFromLocalSource(out, cfg, an, params, params.isUpdate); err != nil {
 			return err
 		}
 		storeInstallSource(params.sourceInstaller)
-		return postInstallEvents(out, cfg, an, params, isUpdate)
+		return postInstallEvents(out, cfg, an, params, params.isUpdate)
 	}
 
 	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
@@ -441,4 +430,32 @@ func assertCompatibility() error {
 	}
 
 	return nil
+}
+
+func determineLegacyUpdate(stateToolInstalled bool, params *Params) bool {
+	// Detect state tool alongside installer executable
+	installerPath := filepath.Dir(osutils.Executable())
+	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+
+	// Detect whether this is a fresh install or an update
+	isUpdate := false
+	switch {
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+		params.sourcePath = installerPath
+	case params.force:
+		// When ran with `--force` we always use the install UX
+		logging.Debug("Not using update flow as --force was passed")
+	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
+		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
+		logging.Debug("Using update flow as installer is alongside payload")
+		isUpdate = true
+		params.sourcePath = installerPath
+	case stateToolInstalled:
+		// This should trigger AFTER the check above where sourcePath is defined
+		logging.Debug("Using update flow as state tool is already installed")
+		isUpdate = true
+	}
+
+	return isUpdate
 }
