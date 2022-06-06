@@ -246,7 +246,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
-	// This code whould be removed in the future
+	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, params)
 	}
