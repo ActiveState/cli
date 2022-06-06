@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -139,8 +140,10 @@ func main() {
 
 	// Create Relevant Fixversion Pr If None Exists
 	if targetPR == nil {
-		targetPR = createTargetPR(ghClient, fixVersion.Name, prName, branchName)
+		targetPR = createTargetPR(ghClient, fixVersion, prName, branchName)
 	}
+
+	updateTargetPR(ghClient, targetPR, jiraIssue)
 
 	fmt.Println("Done")
 }
@@ -226,14 +229,22 @@ func getTargetPR(ghClient *github.Client, version string) *github.PullRequest {
 	return nil
 }
 
-func createTargetPR(ghClient *github.Client, fixVersion string, prName string, branchName string) *github.PullRequest {
+func createTargetPR(ghClient *github.Client, fixVersion *jira.FixVersion, prName string, branchName string) *github.PullRequest {
+	u, err := url.Parse("https://activestatef.atlassian.net/jira/software/c/projects/DX/issues/")
+	r.Check(err)
+
+	q := u.Query()
+	q.Set("jql", fmt.Sprintf(`project = "DX" AND fixVersion=%s ORDER BY created DESC`, fixVersion.Name))
+	u.RawQuery = q.Encode()
+
 	payload := &github.NewPullRequest{
 		Title: &prName,
 		Head:  &branchName,
 		Base:  p.StrP("beta"),
+		Body:  p.StrP(u.String()),
 	}
 
-	fmt.Printf("Creating PR for fixVersion: %s, with name: %s\n", fixVersion, prName)
+	fmt.Printf("Creating PR for fixVersion: %s, with name: %s\n", fixVersion.Name, prName)
 
 	targetPR, _, err := ghClient.PullRequests.Create(context.Background(), "ActiveState", "cli", payload)
 	r.Check(err)
@@ -241,6 +252,12 @@ func createTargetPR(ghClient *github.Client, fixVersion string, prName string, b
 	r.Check(err2)
 
 	return targetPR
+}
+
+func updateTargetPR(client *github.Client, pr *github.PullRequest, issue *jira.Issue) {
+	body := fmt.Sprintf(`%s\n* [%s](https://activestatef.atlassian.net/browse/%s)`, *pr.Body, issue.Fields.Description, issue.Key)
+	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", *pr.Number, &github.PullRequest{Body: &body})
+	r.Check(err)
 }
 
 func targetPRMissingMergedPR(ghClient *github.Client, targetPR *github.PullRequest, seekPR int) bool {
