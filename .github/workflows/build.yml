@@ -367,6 +367,12 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install Zig ===
+        name: Install Zig
+        uses: actions/setup-zig
+        with:
+          version: 0.9.1
+
       - # === Setup ===
         name: Setup
         shell: bash
