@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
@@ -113,11 +114,12 @@ type Targeter interface {
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
 type Setup struct {
-	model     ModelProvider
-	target    Targeter
-	events    Events
-	store     *store.Store
-	analytics analytics.Dispatcher
+	model         ModelProvider
+	target        Targeter
+	events        Events
+	store         *store.Store
+	analytics     analytics.Dispatcher
+	artifactCache *artifactcache.ArtifactCache
 }
 
 // ModelProvider is the interface for all functions that involve backend communication
@@ -149,7 +151,11 @@ func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analy
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
 func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.Dispatcher) *Setup {
-	return &Setup{model, target, msgHandler, store.New(target.Dir()), an}
+	cache, err := artifactcache.New()
+	if err != nil {
+		multilog.Error("Could not create artifact cache: %v", err)
+	}
+	return &Setup{model, target, msgHandler, store.New(target.Dir()), an, cache}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -246,6 +252,10 @@ func (s *Setup) Update() error {
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	if err != nil {
 		return err
+	}
+	err = s.artifactCache.Save()
+	if err != nil {
+		multilog.Error("Could not save artifact cache updates: %v", err)
 	}
 
 	edGlobal, err := s.store.UpdateEnviron(buildResult.OrderedArtifacts())
@@ -422,14 +432,23 @@ func (s *Setup) setupArtifact(buildEngine model.BuildEngine, a artifact.Artifact
 	}
 
 	unarchiver := as.Unarchiver()
-	archivePath := filepath.Join(targetDir, a.String()+unarchiver.Ext())
-	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a)
-	if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
-		err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
-		s.events.ArtifactStepFailed(events.Download, a, err.Error())
-		return err
+	var archivePath string
+	if cachedPath, found := s.artifactCache.Get(a); found {
+		archivePath = cachedPath
+	} else {
+		archivePath = filepath.Join(targetDir, a.String()+unarchiver.Ext())
+		downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a)
+		if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
+			err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
+			s.events.ArtifactStepFailed(events.Download, a, err.Error())
+			return err
+		}
+		s.events.ArtifactStepCompleted(events.Download, a)
+		err = s.artifactCache.Store(a, archivePath)
+		if err != nil {
+			multilog.Error("Could not store artifact in cache: %v", err)
+		}
 	}
-	s.events.ArtifactStepCompleted(events.Download, a)
 
 	unpackedDir := filepath.Join(targetDir, a.String())
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
