@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -129,7 +130,7 @@ func main() {
 	execute("git", "checkout", branchName)
 
 	// Cherry Pick the merge commit to the RC branch
-	execute("git", "cherry-pick", "-m", "1", shaOfMergedPR)
+	cherryPick(shaOfMergedPR)
 
 	// Push changes to RC branch
 	fmt.Printf("Pushing %s to %s\n", branchName, remoteBranchName)
@@ -143,7 +144,7 @@ func main() {
 		targetPR = createTargetPR(ghClient, fixVersion, prName, branchName)
 	}
 
-	updateTargetPR(ghClient, targetPR, jiraIssue)
+	updateTargetPR(ghClient, targetPR, mergedPR, jiraIssue)
 
 	fmt.Println("Done")
 }
@@ -254,10 +255,10 @@ func createTargetPR(ghClient *github.Client, fixVersion *jira.FixVersion, prName
 	return targetPR
 }
 
-func updateTargetPR(client *github.Client, pr *github.PullRequest, issue *jira.Issue) {
-	body := fmt.Sprintf("%s\n* %s [%s](https://activestatef.atlassian.net/browse/%s) [%d](%s)",
-		*pr.Body, issue.Fields.Summary, issue.Key, issue.Key, *pr.Number, pr.Links.GetHTML().GetHRef())
-	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", *pr.Number, &github.PullRequest{Body: &body})
+func updateTargetPR(client *github.Client, targetPR *github.PullRequest, sourcePR *github.PullRequest, issue *jira.Issue) {
+	body := fmt.Sprintf("%s\n* %s [%s](https://activestatef.atlassian.net/browse/%s) [#%d](%s)",
+		*targetPR.Body, issue.Fields.Summary, issue.Key, issue.Key, *sourcePR.Number, sourcePR.Links.GetHTML().GetHRef())
+	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", *targetPR.Number, &github.PullRequest{Body: &body})
 	r.Check(err)
 }
 
@@ -285,7 +286,31 @@ func diffFiles() string {
 	return strings.TrimSpace(stdout)
 }
 
-func execute(args ...string) {
+func cherryPick(shaOfMergedPR string) {
+	err := executeWithErr("git", "cherry-pick", "-m", "1", shaOfMergedPR)
+	if err == nil {
+		return
+	}
+
+	if condition.OnCI() {
+		r.Check(errs.New(`
+Cherry picking failed. Please run this script locally and address the failure:
+state run update-version-branch %s
+`, shaOfMergedPR))
+	}
+
+	var resp bool
+	err2 := survey.AskOne(&survey.Confirm{
+		Message: "Cherry picking failed. Please manually address failure and then continue. Ready?",
+		Default: true,
+	}, &resp, nil)
+	r.Check(err2)
+	if !resp {
+		r.Check(errs.New("Cancelled"))
+	}
+}
+
+func executeWithErr(args ...string) error {
 	fmt.Printf("Executing: %#v\n", args)
 	c := exec.Command(args[0], args[1:]...)
 	var stdout bytes.Buffer
@@ -295,12 +320,17 @@ func execute(args ...string) {
 
 	err := c.Run()
 	if err != nil {
-		err = errs.Wrap(err, fmt.Sprintf("stdout: %s\nstderr: %s", stdout.String(), stderr.String()))
+		return errs.Wrap(err, fmt.Sprintf("stdout: %s\nstderr: %s", stdout.String(), stderr.String()))
 	}
 
-	r.Check(err)
 	code := osutils.CmdExitCode(c)
 	if code != 0 {
-		r.Check(errs.New("%#v returned code %d", args, code))
+		return errs.New("%#v returned code %d", args, code)
 	}
+
+	return nil
+}
+
+func execute(args ...string) {
+	r.Check(executeWithErr(args...))
 }
