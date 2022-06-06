@@ -170,6 +170,11 @@ jobs:
         if: runner.os == 'macOS'
         run: parallelize results Build-Systray-App
 
+      - # === "Build: Executor" ===
+        name: "Build: Executor"
+        shell: bash
+        run: parallelize results Build-Executor
+
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
         shell: bash
