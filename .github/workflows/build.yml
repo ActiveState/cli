@@ -369,7 +369,7 @@ jobs:
 
       - # === Install Zig ===
         name: Install Zig
-        uses: actions/setup-zig
+        uses: actions/setup-zig@v1
         with:
           version: 0.9.1
 
