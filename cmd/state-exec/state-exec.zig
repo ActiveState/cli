@@ -37,9 +37,22 @@ pub fn main() !void {
     };
 
     const runt = try argIt.next(a) orelse {
-        try stderr.print("second arg should be a path to a language runtime", .{});
+        try stderr.print("second arg should be a path to a language runtime\n", .{});
         return error.InvalidArgs;
     };
+
+    try stderr.print("{s}\n", .{runt});
+    const dirName = std.fs.path.dirname(runt) orelse {
+        try stderr.print("second arg should be a path to a language runtime\n", .{});
+        return error.InvalidArgs;
+    };
+    var dir = try std.fs.openDirAbsolute(dirName, .{.iterate = true});
+    defer dir.close();
+    var dirIt = dir.iterate(); 
+    while (try dirIt.next()) |file| {
+        try stderr.print("{s}, ", .{file.name});
+    }
+    try stderr.print("\n", .{});
 
     var pid: i32 = undefined;
     switch (builtin.os.tag) {
