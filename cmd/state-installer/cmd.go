@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -29,20 +30,22 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/inconshreveable/mousetrap"
 )
 
 const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	sourcePath      string
-	sourceInstaller string
-	path            string
-	updateTag       string
-	command         string
-	force           bool
-	activate        *project.Namespaced
-	activateDefault *project.Namespaced
+	sourcePath        string
+	sourceInstaller   string
+	path              string
+	updateTag         string
+	command           string
+	force             bool
+	startedByExplorer bool
+	activate          *project.Namespaced
+	activateDefault   *project.Namespaced
 }
 
 func newParams() *Params {
@@ -120,6 +123,12 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "start")
 
 	params := newParams()
+
+	if mousetrap.StartedByExplorer() {
+		params.startedByExplorer = true
+		captain.DisableMousetrap()
+	}
+
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
@@ -241,7 +250,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// Detect whether this is a fresh install or an update
 	isUpdate := false
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || params.startedByExplorer) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 		params.sourcePath = installerPath
 		break
@@ -378,6 +387,12 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
+		if runtime.GOOS == "windows" {
+			env := osutils.EnvSliceToMap(os.Environ())
+			path := binPath + string(os.PathListSeparator) + env["Path"]
+			env["Path"] = path
+			ss.SetEnv(env)
+		}
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
