@@ -4,4 +4,4 @@
 REM {{.}}
 {{end}}
 
-"{{.stateExec}}" "{{.stateSock}}" "{{.targetPath}}\{{.exe}}" %*
+"{{.stateExec}}" "{{.stateSock}}" "{{.target}}" %*

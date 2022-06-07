@@ -150,11 +150,10 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	tplParams := map[string]interface{}{
-		"stateExec":  executorExec,
-		"stateSock":  svcctl.NewIPCSockPathFromGlobals().String(),
-		"exe":        filepath.Base(exe),
-		"targetPath": f.targetPath + "/bin",
-		"denote":     []string{executorDenoter, denoteTarget},
+		"stateExec": executorExec,
+		"stateSock": svcctl.NewIPCSockPathFromGlobals().String(),
+		"target":    exe,
+		"denote":    []string{executorDenoter, denoteTarget},
 	}
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
