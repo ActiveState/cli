@@ -149,6 +149,7 @@ scripts:
       binFile="${appName}${extension}"
 
       zig build-exe --strip -static -O ReleaseFast ${target} "${srcFiles}"
+      mkdir -p "${BUILD_TARGET_PREFIX_DIR}"
       mv "${binFile}" "${BUILD_TARGET_PREFIX_DIR}"
 
   - name: build-all
