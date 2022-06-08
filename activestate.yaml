@@ -138,19 +138,31 @@ scripts:
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
   - name: build-exec
+    if: eq .OS.Name "Linux"
     description: Builds the State Executor application
     language: bash
     value: |
       appName="state-exec"
-      dir="./cmd/${appName}"
-      target=""; [[ "${BUILD_TARGET}" == "state.exe" ]] && target="-target x86_64-windows.win10_rs4"
-      extension=""; [[ "${BUILD_TARGET}" == "state.exe" ]] && extension=".exe"
-      srcFiles="${dir}/${appName}.zig"
-      binFile="${appName}${extension}"
+      zig build-exe --strip -static -O ReleaseFast "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
 
-      zig build-exe --strip -static -O ReleaseFast ${target} "${srcFiles}"
-      mkdir -p "${BUILD_TARGET_PREFIX_DIR}"
-      mv "${binFile}" "${BUILD_TARGET_PREFIX_DIR}"
+  - name: build-exec
+    if: eq .OS.Name "MacOS"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      zig build-exe --strip -O ReleaseFast "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+
+  - name: build-exec
+    if: eq .OS.Name "Windows"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
 
   - name: build-all
     description: Builds all our tools
