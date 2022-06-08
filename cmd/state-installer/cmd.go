@@ -205,6 +205,10 @@ func main() {
 		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		out.Error(err.Error())
+		if params.startedByExplorer {
+			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
+			fmt.Scanln()
+		}
 		return
 	}
 
@@ -291,6 +295,9 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params, isUpdate)
 	}
 
+	if params.startedByExplorer {
+		return locale.NewError("err_install_explorer", "Installer must be started in the same directory as the install playload")
+	}
 	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
 }
 
@@ -387,6 +394,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
+		// Workaround for: https://activestatef.atlassian.net/browse/DX-986
 		if runtime.GOOS == "windows" {
 			env := osutils.EnvSliceToMap(os.Environ())
 			path := binPath + string(os.PathListSeparator) + env["Path"]
