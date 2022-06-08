@@ -41,15 +41,7 @@ pub fn main() !void {
         return error.InvalidArgs;
     };
 
-    var pid: i32 = undefined;
-    switch (builtin.os.tag) {
-            .windows => {
-                pid = @bitCast(i32,std.os.windows.kernel32.GetCurrentProcessId());
-            },
-            else => {
-                pid = std.os.system.getpid();
-            },
-    }
+    var pid: i32 = @truncate(i32, @bitCast(i64, std.Thread.getCurrentId()));
 
     const exec = try std.fs.selfExePathAlloc(a);
 
