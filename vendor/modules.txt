@@ -268,6 +268,7 @@ github.com/hpcloud/tail/winfile
 ## explicit
 github.com/imdario/mergo
 # github.com/inconshreveable/mousetrap v1.0.0
+## explicit
 github.com/inconshreveable/mousetrap
 # github.com/jackmordaunt/icns v1.0.0
 github.com/jackmordaunt/icns
