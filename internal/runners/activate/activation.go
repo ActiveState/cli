@@ -7,7 +7,6 @@ import (
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -73,7 +72,6 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 
 	err = <-r.subshell.Errors()
 	if err != nil {
-		logging.Debug(errs.JoinMessage(err))
 		return locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")
 	}
 
