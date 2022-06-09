@@ -430,7 +430,9 @@ jobs:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
       SHELL: bash
-      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 10
     if: github.ref_name != "" || github.ref == "refs/heads/master"
 
