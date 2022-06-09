@@ -190,6 +190,10 @@ func getTargetFixVersion(issue *jira.Issue, verifyActive bool) *jira.FixVersion 
 		return nil
 	}
 
+	if len(issue.Fields.FixVersions) > 1 {
+		r.Check(errs.New("Jira issue has multiple fixVersions assigned: %s. This is incompatible with our workflow.", issue.Key))
+	}
+
 	fixVersion := issue.Fields.FixVersions[0]
 	if verifyActive && (fixVersion.Archived != nil && *fixVersion.Archived) || (fixVersion.Released != nil && *fixVersion.Released) {
 		fmt.Printf("Skipping because fixVersion '%s' has either been archived or released\n", fixVersion.Name)

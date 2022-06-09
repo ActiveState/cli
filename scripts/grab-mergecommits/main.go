@@ -12,9 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/sliceutils"
 	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
 	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
-	"github.com/google/go-github/v45/github"
 	"github.com/thoas/go-funk"
-	"golang.org/x/net/context"
 )
 
 // cutoff tells the script not to look at PRs before this date.
@@ -53,7 +51,7 @@ func run() error {
 	fmt.Printf("Found %d issues: %v\n", len(issues), funk.Keys(jiraIssueIDs))
 
 	// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
-	prs, err := fetchPRs(ghClient)
+	prs, err := github_helpers.FetchPRs(ghClient, cutoff, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not find PRs")
 	}
@@ -63,9 +61,6 @@ func run() error {
 	missingIDs := []string{}
 	resultCommits := []string{}
 	for _, pr := range prs {
-		if pr.UpdatedAt.Before(cutoff) {
-			continue // Before our adoption of jira
-		}
 		if pr.MergeCommitSHA == nil || *pr.MergeCommitSHA == "" || pr.Base.GetRef() != "master" {
 			continue
 		}
@@ -90,39 +85,6 @@ func run() error {
 	fmt.Printf("\nMissing Jira ID:\n%s\n\nCommits to merge: %s\n", strings.Join(missingIDs, "\n"), strings.Join(orderCommits(resultCommits), " "))
 
 	return nil
-}
-
-// fetchPRs fetches all PRs and iterates over all available pages
-func fetchPRs(ghClient *github.Client) ([]*github.PullRequest, error) {
-	page := 1
-	result := []*github.PullRequest{}
-	for x := 0; x < 10; x++ { // Hard limit of 1000 most recent PRs
-		// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
-		prs, _, err := ghClient.PullRequests.List(context.Background(), "ActiveState", "cli", &github.PullRequestListOptions{
-			State:     "closed",
-			Base:      "master",
-			Sort:      "updated",
-			Direction: "desc",
-			ListOptions: github.ListOptions{
-				Page:    page,
-				PerPage: 100,
-			},
-		})
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not find PRs")
-		}
-		fmt.Printf("Processing %d PRs on page %d\n", len(prs), page)
-		if len(prs) < 100 {
-			break
-		}
-		if len(prs) > 0 && prs[0].UpdatedAt.Before(cutoff) {
-			break // The rest of the PRs are too old to care about
-		}
-		result = append(result, prs...)
-		page++
-	}
-
-	return result, nil
 }
 
 // Order the commits by calling out to `git merge-base --is-ancestor commit1 commit2`
