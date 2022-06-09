@@ -40,7 +40,7 @@ func main() {
 	{
 		// Verify input args
 		if len(os.Args) != 2 {
-			r.Check(errs.New("Usage: update-version-branch <sha-of-desired-pr>"))
+			r.Check(errs.New("Usage: update-rc <sha-of-merged-pr>"))
 			return
 		}
 
