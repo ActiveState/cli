@@ -399,6 +399,13 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/update-rc/main.go $1
+  - name: verify-rc
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/verify-rc/main.go $1
 events:
   - name: activate
     if: ne .Shell "cmd"
