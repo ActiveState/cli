@@ -392,13 +392,13 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/grab-mergecommits/main.go $1
-  - name: update-version-branch
+  - name: update-rc
     language: bash
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/update-version-branch/main.go $1
+      go run $project.path()/scripts/update-rc/main.go $1
 events:
   - name: activate
     if: ne .Shell "cmd"
