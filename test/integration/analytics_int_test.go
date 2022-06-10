@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -42,13 +43,17 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
 	sleepTime = sleepTime + (sleepTime / 2)
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
+	env := []string{
+		constants.DisableRuntime + "=false",
+		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
+	}
+	if runtime.GOOS == "windows" {
+		env = append(env, "SHELL=cmd.exe")
+	}
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(
-			constants.DisableRuntime+"=false",
-			fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
-		),
+		e2e.AppendEnv(env...),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
