@@ -130,7 +130,9 @@ func main() {
 	execute("git", "checkout", branchName)
 
 	// Cherry Pick the merge commit to the RC branch
-	cherryPick(shaOfMergedPR)
+	if !cherryPick(shaOfMergedPR) {
+		execute("git", "checkout", repoHead.Name().Short())
+	}
 
 	// Push changes to RC branch
 	fmt.Printf("Pushing %s to %s\n", branchName, remoteBranchName)
@@ -290,10 +292,10 @@ func diffFiles() string {
 	return strings.TrimSpace(stdout)
 }
 
-func cherryPick(shaOfMergedPR string) {
+func cherryPick(shaOfMergedPR string) bool {
 	err := executeWithErr("git", "cherry-pick", "-m", "1", shaOfMergedPR)
 	if err == nil {
-		return
+		return true
 	}
 
 	if condition.OnCI() {
@@ -309,9 +311,12 @@ state run update-version-branch %s
 		Default: true,
 	}, &resp, nil)
 	r.Check(err2)
+
 	if !resp {
-		r.Check(errs.New("Cancelled"))
+		r.Check(executeWithErr("git", "cherry-pick", "--abort"))
 	}
+
+	return resp
 }
 
 func executeWithErr(args ...string) error {
