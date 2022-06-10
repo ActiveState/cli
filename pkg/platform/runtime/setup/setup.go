@@ -658,6 +658,7 @@ func (s *Setup) installFromDir() error {
 	if err != nil {
 		return errs.Wrap(err, "Cannot read from directory to install from")
 	}
+	s.events.TotalArtifacts(len(artifacts))
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), artifactsDir)
 
 	artifactIDs := make([]artifact.ArtifactID, len(artifacts))
@@ -669,9 +670,10 @@ func (s *Setup) installFromDir() error {
 		defer close(bgErrs)
 		wp := workerpool.New(MaxConcurrency)
 		for i, a := range artifacts {
-			filename := filepath.Base(a.Path())[0:strings.Index(a.Path(), ".")]
-			artifactID := artifact.ArtifactID(filename)
-			wp.Submit(s.setupArtifactSubmitFunction(artifact.ArtifactDownload{artifactID, a.Path(), "", ""}, setup, bgErrs))
+			filename := a.Path()
+			filenameNoExt := filepath.Base(filename[0:strings.Index(filename, ".")])
+			artifactID := artifact.ArtifactID(filenameNoExt)
+			wp.Submit(s.setupArtifactSubmitFunction(artifact.ArtifactDownload{artifactID, filename, "", ""}, setup, bgErrs))
 			artifactIDs[i] = artifactID
 		}
 		wp.StopWait()
