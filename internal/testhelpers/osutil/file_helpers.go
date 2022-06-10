@@ -32,10 +32,15 @@ func StatConfigFile(configPath, fileName string) (os.FileInfo, error) {
 	return os.Stat(filepath.Join(configPath, fileName))
 }
 
+// GetTestDataDir returns the path to the caller's `testdata` directory.
+func GetTestDataDir() string {
+	callerPath := getCallerPath()
+	return filepath.Join(callerPath, "testdata")
+}
+
 // GetTestFile returns the path to the given fileName in the calling function's `testdata` directory.
 func GetTestFile(fileName string) string {
-	callerPath := getCallerPath()
-	return filepath.Join(callerPath, "testdata", fileName)
+	return filepath.Join(GetTestDataDir(), fileName)
 }
 
 // ReadTestFile will read the contents of a file from the `testdata` directory relative to the
