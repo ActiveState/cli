@@ -102,6 +102,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
