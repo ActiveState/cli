@@ -390,8 +390,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
 	ts := e2e.New(suite.T(), true)
-	err := ts.ClearCache()
-	suite.Require().NoError(err)
+	//err := ts.ClearCache()
+	//suite.Require().NoError(err)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
@@ -406,9 +406,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	if true {
-		return
-	}
 	// next activation is cached
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
