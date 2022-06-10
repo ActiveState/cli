@@ -132,6 +132,7 @@ func main() {
 	// Cherry Pick the merge commit to the RC branch
 	if !cherryPick(shaOfMergedPR) {
 		execute("git", "checkout", repoHead.Name().Short())
+		return
 	}
 
 	// Push changes to RC branch
