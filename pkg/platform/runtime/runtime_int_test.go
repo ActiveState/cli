@@ -62,8 +62,7 @@ func TestOfflineInstaller(t *testing.T) {
 
 	analytics := blackhole.New()
 	mockProgress := &testhelper.MockProgressOutput{}
-	output := outputhelper.NewCatcher()
-	logfile, err := buildlogfile.New(output)
+	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	require.NoError(t, err)
 	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
 
