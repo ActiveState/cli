@@ -389,9 +389,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
-	ts := e2e.NewNoPathUpdate(suite.T(), true)
-	//err := ts.ClearCache()
-	//suite.Require().NoError(err)
+	ts := e2e.New(suite.T(), true)
+	err := ts.ClearCache()
+	suite.Require().NoError(err)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
@@ -401,17 +401,29 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
 	cp.Expect("Activated")
+	t := suite.T()
 
-	//suite.assertCompletedStatusBarReport(cp.Snapshot())
-	//cp.WaitForInput()
-	//cp.SendLine("exit")
-	//cp.ExpectExitCode(0)
-	cp.WaitForInput(40 * time.Second) // drop
-	cp.SendLine("exit")               // drop
-	cp.ExpectExitCode(0)              // drop
-	if true {
-		return
+	des, err := fileutils.ListDir(ts.Dirs.Cache, true)
+	suite.Require().NoError(err)
+	for _, de := range des {
+		if strings.HasSuffix(de.Path(), "exec") {
+			xdes, err := fileutils.ListDir(de.Path(), true)
+			suite.Require().NoError(err)
+			for _, xde := range xdes {
+				t.Log(xde.Path())
+				if strings.Contains(xde.Path(), "python3") {
+					bs, err := fileutils.ReadFile(xde.Path())
+					suite.Require().NoError(err)
+					t.Log(string(bs))
+				}
+			}
+		}
 	}
+
+	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 
 	// next activation is cached
 	cp = ts.SpawnWithOpts(
