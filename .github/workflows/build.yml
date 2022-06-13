@@ -434,7 +434,7 @@ jobs:
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 10
-    if: github.ref_name != "" || github.ref == "refs/heads/master"
+    if: github.ref_name != '' || github.ref == 'refs/heads/master'
 
     # === Deploy Steps ===
     steps:
