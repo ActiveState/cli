@@ -425,7 +425,7 @@ func envSlice(binPath string) []string {
 
 func envMap(binPath string) map[string]string {
 	return map[string]string{
-		"PATH":                               binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
