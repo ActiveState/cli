@@ -462,11 +462,11 @@ jobs:
       - # === Verify RC ===
         name: Verify RC Branch
         shell: bash
-        if: github.ref_name != ""
+        if: github.ref_name != ''
         run: go run scripts/verify-rc/main.go ${GITHUB_REF_NAME//\/*/}
 
       - # === Update RC Branch ===
         name: Update RC Branch
         shell: bash
-        if: github.ref == "refs/heads/master"
+        if: github.ref == 'refs/heads/master'
         run: go run scripts/update-rc/main.go $GITHUB_SHA
