@@ -3,6 +3,7 @@ package jira_helpers
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
 )
@@ -15,6 +16,9 @@ func InitClient() *jira.Client {
 		Username: username,
 		Password: password,
 	}
-	jiraClient, _ := jira.NewClient(tp.Client(), "https://activestatef.atlassian.net/")
+	jiraClient, err := jira.NewClient(tp.Client(), "https://activestatef.atlassian.net/")
+	if err != nil {
+		panic(errs.Wrap(err, "Failed to create JIRA client"))
+	}
 	return jiraClient
 }
