@@ -262,26 +262,26 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, cfg, an, params, true)
+		return postInstallEvents(out, cfg, an, params)
 	}
 
 	// if sourcePath was provided we're already using the right installer, so proceed with installation
 	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, an, params, params.isUpdate); err != nil {
+		if err := installOrUpdateFromLocalSource(out, cfg, an, params); err != nil {
 			return err
 		}
 		storeInstallSource(params.sourceInstaller)
-		return postInstallEvents(out, cfg, an, params, params.isUpdate)
+		return postInstallEvents(out, cfg, an, params)
 	}
 
 	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
-	if !isUpdate {
+	if !params.isUpdate {
 		// install.sh or install.ps1 downloaded this installer and is running it.
 		out.Print(output.Title("Installing State Tool Package Manager"))
 		out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
@@ -302,7 +302,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	if isUpdate {
+	if params.isUpdate {
 		out.Fprint(os.Stdout, "• Installing Update... ")
 	} else {
 		out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
@@ -317,7 +317,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	an.Event(AnalyticsFunnelCat, "post-installer")
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	if !isUpdate {
+	if !params.isUpdate {
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
 		out.Print("State Tool Package Manager has been successfully installed.")
@@ -326,7 +326,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
 	installPath, err := resolveInstallPath(params.path)
@@ -374,7 +374,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !isUpdate:
+	case !params.isUpdate:
 		ss := subshell.New(cfg)
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
