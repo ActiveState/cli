@@ -57,9 +57,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.SendLine("state --version")
 	cp.Expect("Version")
 	if runtime.GOOS == "windows" {
-		cp.SendLine("where state")
+		cp = ts.SpawnCmd("where", "state")
 	} else {
-		cp.SendLine("which state")
+		cp = ts.SpawnCmd("which", "state")
 	}
 	cp.WaitForInput()
 	fmt.Println("Snapshot:", cp.TrimmedSnapshot())
