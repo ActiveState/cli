@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -30,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/inconshreveable/mousetrap"
 )
 
@@ -204,11 +204,15 @@ func main() {
 
 		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		out.Error(err.Error())
+		if !errs.IsSilent(err) {
+			out.Error(err.Error())
+		}
+
 		if params.startedByExplorer {
 			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
 			fmt.Scanln()
 		}
+
 		return
 	}
 
@@ -314,6 +318,12 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 			`available at: [ACTIONABLE]https://www.activestate.com/company/privacy-policy[/RESET]` + "\n")
 	}
 
+	if err := assertCompatibility(); err != nil {
+		// Don't wrap, we want the error from assertCompatibility to be returned -- installer doesn't have intelligent error handling yet
+		// https://activestatef.atlassian.net/browse/DX-957
+		return err
+	}
+
 	installer, err := NewInstaller(cfg, out, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
@@ -394,13 +404,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !isUpdate:
 		ss := subshell.New(cfg)
-		// Workaround for: https://activestatef.atlassian.net/browse/DX-986
-		if runtime.GOOS == "windows" {
-			env := osutils.EnvSliceToMap(os.Environ())
-			path := binPath + string(os.PathListSeparator) + env["Path"]
-			env["Path"] = path
-			ss.SetEnv(env)
-		}
+		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -416,6 +420,13 @@ func envSlice(binPath string) []string {
 	return []string{
 		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName + "=true",
+	}
+}
+
+func envMap(binPath string) map[string]string {
+	return map[string]string{
+		"PATH":                               binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
 
@@ -442,4 +453,17 @@ func resolveInstallPath(path string) (string, error) {
 	} else {
 		return installation.DefaultInstallPath()
 	}
+}
+
+func assertCompatibility() error {
+	if sysinfo.OS() == sysinfo.Windows {
+		osv, err := sysinfo.OSVersion()
+		if err != nil {
+			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
+		} else if osv.Major < 10 || (osv.Major == 10 && osv.Micro < 17134) {
+			return locale.WrapError(err, "windows_compatibility_error")
+		}
+	}
+
+	return nil
 }

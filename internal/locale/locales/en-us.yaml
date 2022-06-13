@@ -1627,7 +1627,14 @@ ppm_convert_ask_feedback:
     run [ACTIONABLE]`state --help`[/RESET] or check out [ACTIONABLE]{{.Docs}}[/RESET]
 windows_compatibility_warning:
   other: |
-    Warning: State Tool is untested on Windows versions below 10. If you encounter issues please consider reporting them on {{.V0}}
+    Unable to detect your Windows version. You may encounter issues; please ensure you are running at least Windows 10 build 17134.1.
+
+    Error received: {{.V0}}
+windows_compatibility_error:
+  other: |
+    Unfortunately State Tool is not compatible with your version of Windows.
+
+    The minimum version supported is Windows 10 build 17134.1.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:
@@ -1838,10 +1845,10 @@ progress_commit:
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 unstable_feature_banner:
-  other: "[HEADING]█ Beta Feature: This feature is still in beta and may be unstable.[/RESET]"
+  other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
   other: |
-    This feature [ACTIONABLE]state {{.V0}}[/RESET] is still in beta. If you want to opt-in to unstable features, run the following command:
+    The command '[ACTIONABLE]state {{.V0}}[/RESET]' is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 secrets_unstable_warning:
@@ -1905,3 +1912,11 @@ search_request_package:
   other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
 search_request_bundle:
   other: "Request a bundle at [ACTIONABLE]https://community.activestate.com/[/RESET]"
+beta_suffix:
+  other: " (Beta)"
+err_globaldefault_update_env:
+  other: Could not write to user environment
+use_reset_notice_windows:
+  other: Note you may need to start a new command prompt to fully update your environment.
+use_reset_notice:
+  other: Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment.

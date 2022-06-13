@@ -52,7 +52,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 	}
 
 	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true); err != nil {
-		return locale.WrapError(err, "err_globaldefault_update_env", "Could not write to user environment.")
+		return locale.WrapError(err, "err_globaldefault_update_env")
 	}
 
 	return nil
@@ -81,4 +81,33 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	return nil
+}
+
+func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
+	logging.Debug("Resetting globaldefault")
+
+	projectDir := cfg.GetString(constants.GlobalDefaultPrefname)
+	if projectDir == "" {
+		logging.Debug("No global project is set.")
+		return false, nil // nothing to reset
+	}
+
+	fw := executor.NewWithBinPath(projectDir, BinDir())
+	err := fw.Cleanup()
+	if err != nil {
+		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
+	}
+
+	envUpdates := map[string]string{}
+	err = subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true)
+	if err != nil {
+		return false, locale.WrapError(err, "err_globaldefault_update_env")
+	}
+
+	err = cfg.Set(constants.GlobalDefaultPrefname, "")
+	if err != nil {
+		return false, locale.WrapError(err, "err_reset_default_config", "Could not reset default project in config file")
+	}
+
+	return true, nil
 }

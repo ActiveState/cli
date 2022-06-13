@@ -11,7 +11,7 @@ import (
 
 type Client struct {
 	sockpath *SockPath
-	dialer   flisten.Dialer
+	dialer   *flisten.Dial
 }
 
 func NewClient(n *SockPath) *Client {
@@ -19,6 +19,7 @@ func NewClient(n *SockPath) *Client {
 
 	return &Client{
 		sockpath: n,
+		dialer:   flisten.NewDial(),
 	}
 }
 

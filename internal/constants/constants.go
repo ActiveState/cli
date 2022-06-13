@@ -126,7 +126,6 @@ const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
 const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
-
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
@@ -160,6 +159,10 @@ const ArtifactCacheFileName = "artifact_cache.json"
 
 // ArtifactMetaDir is the directory in which we store meta information about artifacts
 const ArtifactMetaDir = "artifacts"
+
+// ArtifactCacheSizeEnvVarName is the maximum size in MB of the artifact cache.
+// The default is 500MB.
+const ArtifactCacheSizeEnvVarName = "ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
@@ -366,7 +369,7 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// UnstableConfig is the config key used to determine if a command is unstable
+// UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -38,8 +37,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -92,19 +89,6 @@ func main() {
 		return
 	}
 
-	if runtime.GOOS == "windows" {
-		osv, err := sysinfo.OSVersion()
-		if err != nil {
-			logging.Debug("Could not retrieve os version info: %v", err)
-		} else if osv.Major < 10 {
-			out.Notice(output.Heading(locale.Tl("compatibility_warning", "Compatibility Warning")))
-			out.Notice(locale.Tr(
-				"windows_compatibility_warning",
-				constants.ForumsURL,
-			))
-		}
-	}
-
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
@@ -146,8 +130,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
-	logging.CurrentHandler().SetVerbose(verbose)
+	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || argsHaveVerbose(args))
 
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
@@ -268,12 +251,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 }
 
 func argsHaveVerbose(args []string) bool {
-	for _, arg := range args {
+	var isRunOrExec bool
+	nextArg := 0
+
+	for i, arg := range args {
+		if arg == "run" || arg == "exec" {
+			isRunOrExec = true
+			nextArg = i + 1
+		}
+
 		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
 		if arg == "--" {
 			return false
 		}
-		if arg == "--verbose" || arg == "-v" {
+		if (arg == "--verbose" || arg == "-v") && (!isRunOrExec || i == nextArg) {
 			return true
 		}
 	}

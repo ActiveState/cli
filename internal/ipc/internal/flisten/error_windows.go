@@ -2,7 +2,10 @@ package flisten
 
 import (
 	"errors"
+	"io"
+	"syscall"
 
+	"github.com/ActiveState/cli/internal/errs"
 	win "golang.org/x/sys/windows"
 )
 
@@ -15,17 +18,15 @@ func asInUseError(err error) error {
 }
 
 func asConnRefusedError(err error) error {
-	if errorIs(err, win.WSAECONNREFUSED, win.WSAENETDOWN, win.WSAEINVAL) {
+	if errs.IsAny(err, win.WSAECONNREFUSED, win.WSAENETDOWN, win.WSAEINVAL) {
 		return ErrConnRefused
 	}
 	return err
 }
 
-func errorIs(err error, errs ...error) bool {
-	for _, e := range errs {
-		if errors.Is(err, e) {
-			return true
-		}
+func asConnLostError(err error) error {
+	if errs.IsAny(err, io.EOF, syscall.ECONNRESET, syscall.EPIPE, win.WSAECONNRESET, win.WSAENETRESET) {
+		return ErrConnLost
 	}
-	return false
+	return err
 }
