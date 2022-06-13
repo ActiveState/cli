@@ -54,19 +54,19 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Verify that launched subshell has State tool on PATH
 	cp.WaitForInput()
-	cp.Send("state --version")
+	cp.SendLine("state --version")
 	cp.Expect("Version")
 	if runtime.GOOS == "windows" {
-		cp.Send("where state")
+		cp.SendLine("where state")
 	} else {
-		cp.Send("which state")
+		cp.SendLine("which state")
 	}
 	cp.WaitForInput()
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
-	cp.Send("exit")
+	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
@@ -120,7 +120,7 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Contains(string(bashContents), filepath.Join(ts.Dirs.Work), "rc file should contain our target dir")
 	} else {
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
