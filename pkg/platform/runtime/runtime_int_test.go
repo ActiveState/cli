@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -53,6 +54,11 @@ func TestOfflineInstaller(t *testing.T) {
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	require.NoError(t, err)
 	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
+
+	if value, set := os.LookupEnv(constants.DisableRuntime); set {
+		os.Setenv(constants.DisableRuntime, "false")
+		defer os.Setenv(constants.DisableRuntime, value)
+	}
 
 	rt, err := New(offlineTarget, analytics, nil)
 	require.Error(t, err)
