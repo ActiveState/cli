@@ -262,6 +262,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
+		params.isUpdate = true
 		return postInstallEvents(out, cfg, an, params)
 	}
 
