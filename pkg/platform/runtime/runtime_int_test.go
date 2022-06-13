@@ -37,18 +37,6 @@ func TestOfflineInstaller(t *testing.T) {
 		"10": "009D20C9-0E38-44E8-A095-7B6FEF01D7DA",
 	}
 	const artifactsPerArtifact = 2 // files/artifacts per artifact.tar.gz
-	testFileContents := map[string]string{
-		"1":  "1",
-		"2":  "02",
-		"3":  "003",
-		"4":  "0004",
-		"5":  "00005",
-		"6":  "000006",
-		"7":  "0000007",
-		"8":  "00000008",
-		"9":  "000000009",
-		"10": "0000000010",
-	}
 
 	dir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
@@ -83,9 +71,8 @@ func TestOfflineInstaller(t *testing.T) {
 	assert.Equal(t, len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactCompletedCalled)
 	assert.Equal(t, 0, mockProgress.ArtifactFailureCalled)
 
-	for name, contents := range testFileContents {
-		filename := filepath.Join(dir, "tmp", name) // each file is in a "tmp" dir in the archive
+	for filename, _ := range testArtifacts {
+		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		assert.True(t, fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
-		assert.Equal(t, contents, string(fileutils.ReadFileUnsafe(filename)))
 	}
 }
