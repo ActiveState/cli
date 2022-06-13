@@ -109,10 +109,10 @@ type Targeter interface {
 	Headless() bool
 	Trigger() target.Trigger
 
-	// OnlyUseCache communicates that this target should only use cached runtime information (ie. don't check for updates)
-	OnlyUseCache() bool
-	// OnlyInstallFromDir communicates that this target should only install artifacts from the given directory (i.e. offline installer)
-	OnlyInstallFromDir() *string
+	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)
+	ReadOnly() bool
+	// InstallFromDir communicates that this target should only install artifacts from the given directory (i.e. offline installer)
+	InstallFromDir() *string
 }
 
 // Setup provides methods to setup a fully-function runtime that *only* requires interactions with the local file system.
@@ -165,7 +165,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
-	if s.target.OnlyInstallFromDir() != nil {
+	if s.target.InstallFromDir() != nil {
 		return s.installFromDir()
 	}
 	return s.updateFromRecipe()
@@ -420,7 +420,7 @@ func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, as Arti
 
 	unarchiver := as.Unarchiver()
 	var archivePath string
-	if s.target.OnlyInstallFromDir() != nil {
+	if s.target.InstallFromDir() != nil {
 		archivePath = unsignedURI
 	} else if cachedPath, found := s.artifactCache.Get(a); found {
 		archivePath = cachedPath
@@ -562,7 +562,7 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifac
 }
 
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
-	if s.target.OnlyInstallFromDir() != nil {
+	if s.target.InstallFromDir() != nil {
 		return alternative.NewArtifactSetup(a, s.store), nil // offline installer artifacts are in this format
 	}
 
@@ -649,7 +649,7 @@ func (s *Setup) completeSetup(artifacts []artifact.ArtifactID) error {
 }
 
 func (s *Setup) installFromDir() error {
-	artifactsDir := s.target.OnlyInstallFromDir()
+	artifactsDir := s.target.InstallFromDir()
 	if artifactsDir == nil {
 		return errs.New("Cannot install from a directory that is nil")
 	}

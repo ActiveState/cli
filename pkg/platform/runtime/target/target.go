@@ -97,11 +97,11 @@ func (p *ProjectTarget) Headless() bool {
 	return p.Project.IsHeadless()
 }
 
-func (p *ProjectTarget) OnlyUseCache() bool {
+func (p *ProjectTarget) ReadOnly() bool {
 	return false
 }
 
-func (p *ProjectTarget) OnlyInstallFromDir() *string {
+func (p *ProjectTarget) InstallFromDir() *string {
 	return nil
 }
 
@@ -162,11 +162,11 @@ func (c *CustomTarget) Headless() bool {
 	return c.headless
 }
 
-func (c *CustomTarget) OnlyUseCache() bool {
+func (c *CustomTarget) ReadOnly() bool {
 	return c.commitUUID == ""
 }
 
-func (c *CustomTarget) OnlyInstallFromDir() *string {
+func (c *CustomTarget) InstallFromDir() *string {
 	return nil
 }
 
@@ -212,10 +212,10 @@ func (i *InstallationTarget) Headless() bool {
 	return false
 }
 
-func (i *InstallationTarget) OnlyUseCache() bool {
+func (i *InstallationTarget) ReadOnly() bool {
 	return true
 }
 
-func (i *InstallationTarget) OnlyInstallFromDir() *string {
+func (i *InstallationTarget) InstallFromDir() *string {
 	return &i.artifactsDir
 }
