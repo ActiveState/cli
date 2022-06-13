@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
-	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/github-helpers"
+	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 )

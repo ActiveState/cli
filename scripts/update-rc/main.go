@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/scripts/internal/github-helpers"
-	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/codemodus/relay"
 	"github.com/google/go-github/v45/github"

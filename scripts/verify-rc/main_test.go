@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
+	"github.com/ActiveState/cli/scripts/internal/github-helpers"
 	"github.com/codemodus/relay"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"

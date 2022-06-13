@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
-	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/github-helpers"
+	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/codemodus/relay"
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/net/context"

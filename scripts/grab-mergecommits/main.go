@@ -10,8 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
-	github_helpers "github.com/ActiveState/cli/scripts/internal/github-helpers"
-	jira_helpers "github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/github-helpers"
+	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
 	"github.com/thoas/go-funk"
 )
 
