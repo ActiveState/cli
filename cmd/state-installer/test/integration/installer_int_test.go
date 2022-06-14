@@ -63,12 +63,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	} else {
 		cp.SendLine("which state")
 	}
-	cp.Expect(target)
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	fmt.Println("Snapshot:", cp.Snapshot())
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
