@@ -54,20 +54,23 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Verify that launched subshell has State tool on PATH
 	cp.WaitForInput()
-	cp.Send("state --version")
+	cp.SendLine("state --version")
 	cp.Expect("Version")
+	cp.WaitForInput()
+
 	if runtime.GOOS == "windows" {
-		cp.Send("where state")
+		cp.SendLine("where state")
 	} else {
-		cp.Send("which state")
+		cp.SendLine("which state")
 	}
 	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
-	cp.Send("exit")
-	cp.ExpectExitCode(0)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(appinfo.StateApp(target).Exec())
