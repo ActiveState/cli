@@ -56,11 +56,14 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.WaitForInput()
 	cp.SendLine("state --version")
 	cp.Expect("Version")
+	cp.WaitForInput()
+
 	if runtime.GOOS == "windows" {
 		cp.SendLine("where state")
 	} else {
 		cp.SendLine("which state")
 	}
+	cp.Expect("state")
 	cp.WaitForInput()
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
