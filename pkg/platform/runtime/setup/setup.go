@@ -38,7 +38,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/installer"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/offline"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -165,10 +165,15 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
+	// TODO: this should be refactored into a single flow that uses different layers that provide
+	// artifacts, whether they be downloaded from the Platform or provided by an offline installer.
+	// Ultimately, the setup mechanic should not care how artifacts are sourced. Once they are,
+	// they should all be setup and installed in one place.
+	// This will be addressed in the refactor specified by https://activestatef.atlassian.net/browse/DX-846
 	if s.target.InstallFromDir() != nil {
-		return s.installFromDir()
+		return s.installFromDir() // install artifacts from directory (i.e. offline installer)
 	}
-	return s.updateFromRecipe()
+	return s.updateFromRecipe() // install artifacts obtained by querying the Platform for a recipe
 }
 
 func (s *Setup) updateFromRecipe() error {
@@ -563,6 +568,8 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifac
 
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
 	if s.target.InstallFromDir() != nil {
+		// Temporary workaround for offline installer artifacts
+		// https://activestatef.atlassian.net/browse/DX-846
 		return alternative.NewArtifactSetup(a, s.store), nil // offline installer artifacts are in this format
 	}
 

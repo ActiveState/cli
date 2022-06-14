@@ -47,7 +47,7 @@ func TestOfflineInstaller(t *testing.T) {
 	name := "testName"
 	commitID := strfmt.UUID("000000000-0000-0000-0000-000000000000")
 	artifactsDir := osutil.GetTestDataDir()
-	offlineTarget := target.NewInstallationTarget(owner, name, commitID, dir, artifactsDir)
+	offlineTarget := target.NewOfflineTarget(owner, name, commitID, dir, artifactsDir)
 
 	analytics := blackhole.New()
 	mockProgress := &testhelper.MockProgressOutput{}

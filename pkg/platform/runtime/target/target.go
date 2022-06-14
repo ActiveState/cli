@@ -170,7 +170,7 @@ func (c *CustomTarget) InstallFromDir() *string {
 	return nil
 }
 
-type InstallationTarget struct {
+type OfflineTarget struct {
 	owner        string
 	name         string
 	commitUUID   strfmt.UUID
@@ -178,44 +178,44 @@ type InstallationTarget struct {
 	artifactsDir string
 }
 
-func NewInstallationTarget(owner string, name string, commitUUID strfmt.UUID, dir string, artifactsDir string) *InstallationTarget {
+func NewOfflineTarget(owner string, name string, commitUUID strfmt.UUID, dir string, artifactsDir string) *OfflineTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &InstallationTarget{owner, name, commitUUID, dir, artifactsDir}
+	return &OfflineTarget{owner, name, commitUUID, dir, artifactsDir}
 }
 
-func (i *InstallationTarget) Owner() string {
+func (i *OfflineTarget) Owner() string {
 	return i.owner
 }
 
-func (i *InstallationTarget) Name() string {
+func (i *OfflineTarget) Name() string {
 	return i.name
 }
 
-func (i *InstallationTarget) CommitUUID() strfmt.UUID {
+func (i *OfflineTarget) CommitUUID() strfmt.UUID {
 	return i.commitUUID
 }
 
-func (i *InstallationTarget) Dir() string {
+func (i *OfflineTarget) Dir() string {
 	return i.dir
 }
 
-func (i *InstallationTarget) Trigger() Trigger {
+func (i *OfflineTarget) Trigger() Trigger {
 	return triggerUnknown
 }
 
-func (i *InstallationTarget) Headless() bool {
+func (i *OfflineTarget) Headless() bool {
 	return false
 }
 
-func (i *InstallationTarget) ReadOnly() bool {
-	return true
+func (i *OfflineTarget) ReadOnly() bool {
+	return false
 }
 
-func (i *InstallationTarget) InstallFromDir() *string {
+func (i *OfflineTarget) InstallFromDir() *string {
 	return &i.artifactsDir
 }

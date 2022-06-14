@@ -7,6 +7,9 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
+// This is a temporary implementation to facilitate offline installs using the existing runtime setup mechanism.
+// It will eventually be removed during the refactor specified in https://activestatef.atlassian.net/browse/DX-846
+
 type Setup struct {
 	store *store.Store
 }
