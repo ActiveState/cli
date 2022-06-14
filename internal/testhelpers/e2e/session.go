@@ -439,6 +439,7 @@ func (s *Session) DebugMessage(prefix string) string {
 }
 
 func observeExpectFn(s *Session) expect.ExpectObserver {
+	outerStack := stacktrace.Get().String()
 	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
 		if err == nil {
 			return
@@ -463,6 +464,8 @@ Could not meet expectation: '{{.Expectation}}'
 Error: {{.Error}}
 {{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
+{{.A}}Outer Stack: 
+{{.OuterStacktrace}}{{.Z}}
 {{.A}}Partial Terminal snapshot:
 {{.PartialSnapshot}}{{.Z}}
 {{.A}}Full Terminal snapshot:
@@ -477,6 +480,7 @@ Error: {{.Error}}
 			"Expectation":     value,
 			"Error":           err,
 			"Stacktrace":      stacktrace.Get().String(),
+			"OuterStacktrace": outerStack,
 			"PartialSnapshot": ms.TermState.String(),
 			"FullSnapshot":    s.cp.Snapshot(),
 			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),

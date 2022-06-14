@@ -8,10 +8,13 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -54,20 +57,21 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Verify that launched subshell has State tool on PATH
 	cp.WaitForInput()
-	cp.Send("state --version")
-	cp.Expect("Version")
 	if runtime.GOOS == "windows" {
-		cp.Send("where state")
+		cp.SendLine("where state")
 	} else {
-		cp.Send("which state")
+		cp.SendLine("which state")
 	}
 	cp.WaitForInput()
+	cp.SendLine("state --version")
+	cp.Expect("Version")
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
-	cp.Send("exit")
-	cp.ExpectExitCode(0)
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0, time.Second)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(stateExec)
@@ -120,7 +124,9 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Contains(string(bashContents), filepath.Join(ts.Dirs.Work), "rc file should contain our target dir")
 	} else {
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
+		isAdmin, err := osutils.IsAdmin()
+		suite.Require().NoError(err)
+		out, err := exec.Command("reg", "query", cmd.GetEnvironmentPath(!isAdmin), "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
@@ -129,7 +135,7 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		longPath, err := fileutils.GetLongPathName(ts.Dirs.Work)
 		suite.Require().NoError(err)
 		if !strings.Contains(string(out), shortPath) && !strings.Contains(string(out), longPath) && !strings.Contains(string(out), ts.Dirs.Work) {
-			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" or \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
+			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" and \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
 		}
 	}
 }
