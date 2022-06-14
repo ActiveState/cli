@@ -61,6 +61,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	} else {
 		cp = ts.SpawnCmd("which", "state")
 	}
+	cp.ExpectExitCode(0)
 	// cp.WaitForInput()
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
