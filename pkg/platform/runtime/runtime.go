@@ -57,7 +57,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	}
 
 	if !rt.store.MarkerIsValid(target.CommitUUID()) {
-		if target.ReadOnly() && target.InstallFromDir() == nil {
+		if target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
 			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
