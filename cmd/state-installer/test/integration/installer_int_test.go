@@ -59,33 +59,28 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.WaitForInput()
 
 	if runtime.GOOS == "windows" {
-		fmt.Println("Sending where")
 		cp.SendLine("where state")
-		cp.WaitForInput()
-		cp.Send("echo %PATH%")
 	} else {
-		fmt.Println("Sending which")
 		cp.SendLine("which state")
-		cp.WaitForInput()
-		cp.SendLine("echo $PATH")
 	}
 	cp.Expect(target)
 	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
 	fmt.Println("Snapshot:", cp.Snapshot())
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(stateExec)
 	suite.FileExists(serviceExec)
 
 	// Run state tool so test doesn't panic trying to find the log file
-	// cp = ts.SpawnCmd(stateExec, "--version")
-	// cp.Expect("Version")
+	cp = ts.SpawnCmd(stateExec, "--version")
+	cp.Expect("Version")
 
 	// Assert that the config was written (ie. RC files or windows registry)
 	suite.AssertConfig(ts)
