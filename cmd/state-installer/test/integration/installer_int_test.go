@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -59,19 +60,25 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Version")
 
 	if runtime.GOOS == "windows" {
-		cp.SendLine("where state")
+		cp := ts.Spawn("where", "state")
+		cp.WaitForInput()
+		fmt.Println("Untrimmed snapshot:", cp.Snapshot())
+		snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
+		if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
+			suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
+		}
 	} else {
-		cp.SendLine("which state")
+		cp := ts.Spawn("which", "state")
+		cp.WaitForInput()
+		fmt.Println("Untrimmed snapshot:", cp.Snapshot())
+		snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
+		if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
+			suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
+		}
 	}
 
-	cp.WaitForInput()
-	fmt.Println("Untrimmed snapshot:", cp.Snapshot())
-	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
-	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
-		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
-	}
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, time.Second)
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(stateExec)
