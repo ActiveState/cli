@@ -170,13 +170,51 @@ func (s *Setup) Update() error {
 	// Ultimately, the setup mechanic should not care how artifacts are sourced. Once they are,
 	// they should all be setup and installed in one place.
 	// This will be addressed in the refactor specified by https://activestatef.atlassian.net/browse/DX-846
+	var artifacts []artifact.ArtifactID
+	var err error
 	if s.target.InstallFromDir() != nil {
-		return s.installFromDir() // install artifacts from directory (i.e. offline installer)
+		artifacts, err = s.installFromDir() // install artifacts from directory (i.e. offline installer)
+		if err != nil {
+			return errs.Wrap(err, "Error installing from directory")
+		}
+	} else {
+		artifacts, err = s.updateFromRecipe() // install artifacts obtained by querying the Platform for a recipe
+		if err != nil {
+			return errs.Wrap(err, "Error installing from recipe")
+		}
 	}
-	return s.updateFromRecipe() // install artifacts obtained by querying the Platform for a recipe
+
+	edGlobal, err := s.store.UpdateEnviron(artifacts)
+	if err != nil {
+		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
+	// Create executors
+	execPath := ExecDir(s.target.Dir())
+	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
+		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
+	}
+
+	exePaths, err := edGlobal.ExecutablePaths()
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
+	}
+
+	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
+	if err := exec.Update(exePaths); err != nil {
+		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
+	}
+
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
+		return errs.Wrap(err, "Could not mark install as complete.")
+	}
+
+	return nil
 }
 
-func (s *Setup) updateFromRecipe() error {
+func (s *Setup) updateFromRecipe() ([]artifact.ArtifactID, error) {
+	var noArtifacts []artifact.ArtifactID // in case of errors
+
 	// Request build
 	s.events.SolverStart()
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
@@ -184,9 +222,9 @@ func (s *Setup) updateFromRecipe() error {
 		serr := &apimodel.SolverError{}
 		if errors.As(err, &serr) {
 			s.events.SolverError(serr)
-			return formatSolverError(serr)
+			return noArtifacts, formatSolverError(serr)
 		}
-		return errs.Wrap(err, "Failed to fetch build result")
+		return noArtifacts, errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	s.events.SolverSuccess()
@@ -195,7 +233,7 @@ func (s *Setup) updateFromRecipe() error {
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
-		return errs.Wrap(err, "Failed to select setup implementation")
+		return noArtifacts, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
@@ -207,9 +245,9 @@ func (s *Setup) updateFromRecipe() error {
 				localeID = "build_status_in_progress_headless"
 				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
 			}
-			return locale.WrapInputError(err, localeID, "", messageURL)
+			return noArtifacts, locale.WrapInputError(err, localeID, "", messageURL)
 		}
-		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
+		return noArtifacts, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
 	failedArtifacts := artifact.NewFailedArtifactsFromBuild(buildResult.BuildStatusResponse)
@@ -233,7 +271,7 @@ func (s *Setup) updateFromRecipe() error {
 
 	if buildResult.BuildStatus == headchef.Failed {
 		s.events.BuildFinished()
-		return locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+		return noArtifacts, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -246,7 +284,7 @@ func (s *Setup) updateFromRecipe() error {
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
+		return noArtifacts, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
 	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
@@ -256,7 +294,7 @@ func (s *Setup) updateFromRecipe() error {
 		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
 		if err != nil {
-			return locale.WrapError(err, "Failed to clean installation path")
+			return noArtifacts, locale.WrapError(err, "Failed to clean installation path")
 		}
 	}
 
@@ -268,7 +306,7 @@ func (s *Setup) updateFromRecipe() error {
 
 	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	if err != nil {
-		return err
+		return noArtifacts, err
 	}
 	err = s.artifactCache.Save()
 	if err != nil {
@@ -283,10 +321,10 @@ func (s *Setup) updateFromRecipe() error {
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
-		return errs.Wrap(err, "Could not save recipe file.")
+		return noArtifacts, errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	return s.completeSetup(buildResult.OrderedArtifacts())
+	return buildResult.OrderedArtifacts(), nil
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {
@@ -626,44 +664,17 @@ func formatSolverError(serr *apimodel.SolverError) error {
 	return err
 }
 
-func (s *Setup) completeSetup(artifacts []artifact.ArtifactID) error {
-	edGlobal, err := s.store.UpdateEnviron(artifacts)
-	if err != nil {
-		return errs.Wrap(err, "Could not save combined environment file")
-	}
+func (s *Setup) installFromDir() ([]artifact.ArtifactID, error) {
+	var noArtifacts []artifact.ArtifactID // for errors
 
-	// Create executors
-	execPath := ExecDir(s.target.Dir())
-	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
-		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
-	}
-
-	exePaths, err := edGlobal.ExecutablePaths()
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
-	}
-
-	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(exePaths); err != nil {
-		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
-	}
-
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
-		return errs.Wrap(err, "Could not mark install as complete.")
-	}
-
-	return nil
-}
-
-func (s *Setup) installFromDir() error {
 	artifactsDir := s.target.InstallFromDir()
 	if artifactsDir == nil {
-		return errs.New("Cannot install from a directory that is nil")
+		return noArtifacts, errs.New("Cannot install from a directory that is nil")
 	}
 
 	artifacts, err := fileutils.ListDir(*artifactsDir, false)
 	if err != nil {
-		return errs.Wrap(err, "Cannot read from directory to install from")
+		return noArtifacts, errs.Wrap(err, "Cannot read from directory to install from")
 	}
 	s.events.TotalArtifacts(len(artifacts))
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), artifactsDir)
@@ -686,9 +697,5 @@ func (s *Setup) installFromDir() error {
 		wp.StopWait()
 	})
 
-	if err = <-aggregatedErr; err != nil {
-		return err
-	}
-
-	return s.completeSetup(artifactIDs)
+	return artifactIDs, <-aggregatedErr
 }
