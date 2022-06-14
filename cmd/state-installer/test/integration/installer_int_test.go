@@ -61,7 +61,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	if runtime.GOOS == "windows" {
 		cp := ts.SpawnCmd("where", "state")
-		cp.WaitForInput()
+		cp.Expect("state")
 		fmt.Println("Untrimmed snapshot:", cp.Snapshot())
 		snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 		if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
@@ -69,7 +69,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 		}
 	} else {
 		cp := ts.SpawnCmd("which", "state")
-		cp.WaitForInput()
+		cp.Expect("state")
 		fmt.Println("Untrimmed snapshot:", cp.Snapshot())
 		snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 		if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
