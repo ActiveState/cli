@@ -54,13 +54,16 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Verify that launched subshell has State tool on PATH
 	cp.WaitForInput()
-	cp.SendLine("state --version")
+
+	cp = ts.SpawnCmd("state", "--version")
 	cp.Expect("Version")
+
 	if runtime.GOOS == "windows" {
 		cp.SendLine("where state")
 	} else {
 		cp.SendLine("which state")
 	}
+
 	cp.WaitForInput()
 	fmt.Println("Untrimmed snapshot:", cp.Snapshot())
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
