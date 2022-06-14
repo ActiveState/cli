@@ -1,4 +1,4 @@
-package installer
+package offline
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"

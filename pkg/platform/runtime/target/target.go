@@ -32,6 +32,7 @@ const (
 	TriggerPull      Trigger = "pull"
 	TriggerReset     Trigger = "reset"
 	TriggerRevert    Trigger = "revert"
+	TriggerOffline   Trigger = "offline"
 	triggerUnknown   Trigger = "unknown"
 )
 
@@ -205,7 +206,7 @@ func (i *OfflineTarget) Dir() string {
 }
 
 func (i *OfflineTarget) Trigger() Trigger {
-	return triggerUnknown
+	return TriggerOffline
 }
 
 func (i *OfflineTarget) Headless() bool {

@@ -353,7 +353,7 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromBuildResult(downloads, alreadyInstalled, setup)
+		err = s.installFromDownloads(downloads, alreadyInstalled, setup)
 	} else {
 		err = s.installFromBuildLog(*buildResult.Recipe.RecipeID, artifacts, downloads, alreadyInstalled, setup)
 	}
@@ -379,7 +379,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup S
 	}
 }
 
-func (s *Setup) installFromBuildResult(downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installFromDownloads(downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()
@@ -450,10 +450,10 @@ func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.Art
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
 func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, setup Setuper) error {
-  as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a)
-  if err != nil {
-    return errs.Wrap(err, "Failed to select artifact setup implementation")
-  }
+	as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a)
+	if err != nil {
+		return errs.Wrap(err, "Failed to select artifact setup implementation")
+	}
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
@@ -463,7 +463,10 @@ func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, setup S
 	unarchiver := as.Unarchiver()
 	var archivePath string
 	if s.target.InstallFromDir() != nil {
-		archivePath = unsignedURI
+		if !strings.HasPrefix(unsignedURI, "file://") {
+			return errs.New("Local artifacts must be in URI form (missing 'file://' prefix for %s)", unsignedURI)
+		}
+		archivePath = unsignedURI[len("file://"):]
 	} else if cachedPath, found := s.artifactCache.Get(a); found {
 		archivePath = cachedPath
 	} else {
@@ -680,19 +683,30 @@ func (s *Setup) installFromDir() ([]artifact.ArtifactID, error) {
 
 	artifactIDs := make([]artifact.ArtifactID, len(artifacts))
 
-	setup := installer.NewSetup(s.store)
+	setup := offline.NewSetup(s.store)
 
 	bgErrs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
 		defer close(bgErrs)
+
 		wp := workerpool.New(MaxConcurrency)
+
 		for i, a := range artifacts {
+			// Each artifact is of the form artifactID.tar.gz, so extract the artifactID from the name.
 			filename := a.Path()
-			filenameNoExt := filepath.Base(filename[0:strings.Index(filename, ".")])
+			extIndex := strings.Index(filename, ".")
+			if extIndex == -1 {
+				extIndex = len(filename)
+			}
+			filenameNoExt := filepath.Base(filename[0:extIndex])
 			artifactID := artifact.ArtifactID(filenameNoExt)
-			wp.Submit(s.setupArtifactSubmitFunction(artifact.ArtifactDownload{artifactID, filename, "", ""}, setup, bgErrs))
 			artifactIDs[i] = artifactID
+
+			// Submit the artifact for setup and install.
+			// Use "file://" prefix to indicate local URI and no need to fetch it online.
+			wp.Submit(s.setupArtifactSubmitFunction(artifact.ArtifactDownload{artifactID, "file://" + filename, "", ""}, setup, bgErrs))
 		}
+
 		wp.StopWait()
 	})
 
