@@ -60,11 +60,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("where state")
+		cp.Expect("state")
+		cp.WaitForInput()
 	} else {
 		cp.SendLine("which state")
+		cp.Expect("state")
+		cp.WaitForInput()
 	}
-	cp.Expect("state")
-	cp.WaitForInput()
 	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
