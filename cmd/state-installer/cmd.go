@@ -448,17 +448,18 @@ func assertCompatibility() error {
 }
 
 func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, params *Params) bool {
-	if params.sourcePath == "" && fileutils.FileExists(packagedStateExe) {
+	// Detect whether this is a fresh install or an update
+	var isUpdate bool
+	switch {
+	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
-		return true
-	}
-
-	if stateToolInstalled {
+		isUpdate = true
+	case stateToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
-		return true
+		isUpdate = true
 	}
 
-	return false
+	return isUpdate
 }
