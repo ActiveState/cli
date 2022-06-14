@@ -244,11 +244,17 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
+	installerPath := filepath.Dir(osutils.Executable())
+	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+	if (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || params.sourcePath == "") && fileutils.FileExists(packagedStateExe) {
+		params.sourcePath = installerPath
+	}
+
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, params)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, params)
 	}
 
 	route := "install"
@@ -398,7 +404,7 @@ func envSlice(binPath string) []string {
 
 func envMap(binPath string) map[string]string {
 	return map[string]string{
-		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"PATH":                               binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
@@ -441,30 +447,18 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, params *Params) bool {
-	// Detect state tool alongside installer executable
-	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-
-	// Detect whether this is a fresh install or an update
-	isUpdate := false
-	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
-		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
-		params.sourcePath = installerPath
-	case params.force:
-		// When ran with `--force` we always use the install UX
-		logging.Debug("Not using update flow as --force was passed")
-	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
+func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, params *Params) bool {
+	if params.sourcePath == "" && fileutils.FileExists(packagedStateExe) {
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
-		isUpdate = true
-		params.sourcePath = installerPath
-	case stateToolInstalled:
-		// This should trigger AFTER the check above where sourcePath is defined
-		logging.Debug("Using update flow as state tool is already installed")
-		isUpdate = true
+		return true
 	}
 
-	return isUpdate
+	if stateToolInstalled {
+		// This should trigger AFTER the check above where sourcePath is defined
+		logging.Debug("Using update flow as state tool is already installed")
+		return true
+	}
+
+	return false
 }
