@@ -371,13 +371,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup S
 			return
 		}
 
-		as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a.ArtifactID)
-		if err != nil {
-			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
-			return
-		}
-
-		err = s.setupArtifact(a.ArtifactID, a.UnsignedURI, as)
+		err := s.setupArtifact(a.ArtifactID, a.UnsignedURI, setup)
 		if err != nil {
 			name := setup.ResolveArtifactName(a.ArtifactID)
 			errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
@@ -455,7 +449,12 @@ func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.Art
 
 // setupArtifact sets up an individual artifact
 // The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, as ArtifactSetuper) error {
+func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, setup Setuper) error {
+  as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a)
+  if err != nil {
+    return errs.Wrap(err, "Failed to select artifact setup implementation")
+  }
+
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 		return errs.Wrap(err, "Could not create temp runtime dir")
@@ -486,7 +485,7 @@ func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, as Arti
 	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
 
 	// ensure that the unpack dir is empty
-	err := os.RemoveAll(unpackedDir)
+	err = os.RemoveAll(unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 	}
