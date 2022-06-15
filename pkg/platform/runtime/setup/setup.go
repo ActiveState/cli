@@ -164,7 +164,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
 	var artifacts []artifact.ArtifactID
-	mutex := sync.Mutex{}
+	mutex := &sync.Mutex{}
 
 	// Fetch and install each runtime artifact.
 	err := s.fetchArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
@@ -416,7 +416,8 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
 		}
 
-		archivePath, err := s.downloadArtifact(a, as)
+		unarchiver := as.Unarchiver()
+		archivePath, err := s.downloadArtifact(a, unarchiver.Ext())
 		if err != nil {
 			name := setup.ResolveArtifactName(a.ArtifactID)
 			errors <- locale.WrapError(err, "artifact_download_failed", "", name, a.ArtifactID.String())
@@ -554,8 +555,8 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 	return nil
 }
 
-//downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
-func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, as ArtifactSetuper) (string, error) {
+// downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
+func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
 		return cachedPath, nil
 	}
@@ -565,8 +566,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, as ArtifactSetuper
 		return "", errs.Wrap(err, "Could not create temp runtime dir")
 	}
 
-	unarchiver := as.Unarchiver()
-	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+unarchiver.Ext())
+	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
 	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a.ArtifactID)
 	if err := s.downloadArtifactWithProgress(a.UnsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
