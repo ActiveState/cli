@@ -38,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/alternative"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/offline"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -371,7 +370,18 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup S
 			return
 		}
 
-		err := s.setupArtifact(a.ArtifactID, a.UnsignedURI, setup)
+		as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a.ArtifactID)
+		if err != nil {
+			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
+		}
+
+		archivePath, err := s.downloadArtifact(a, as)
+		if err != nil {
+			name := setup.ResolveArtifactName(a.ArtifactID)
+			errors <- locale.WrapError(err, "artifact_download_failed", "", name, a.ArtifactID.String())
+		}
+
+		err = s.setupArtifact(a.ArtifactID, archivePath, as)
 		if err != nil {
 			name := setup.ResolveArtifactName(a.ArtifactID)
 			errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
@@ -448,53 +458,24 @@ func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.Art
 }
 
 // setupArtifact sets up an individual artifact
-// The artifact is downloaded, unpacked and then processed by the artifact setup implementation
-func (s *Setup) setupArtifact(a artifact.ArtifactID, unsignedURI string, setup Setuper) error {
-	as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a)
-	if err != nil {
-		return errs.Wrap(err, "Failed to select artifact setup implementation")
-	}
-
+// The artifact is unpacked and then processed by the artifact setup implementation
+func (s *Setup) setupArtifact(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 		return errs.Wrap(err, "Could not create temp runtime dir")
 	}
 
-	unarchiver := as.Unarchiver()
-	var archivePath string
-	if s.target.InstallFromDir() != nil {
-		if !strings.HasPrefix(unsignedURI, "file://") {
-			return errs.New("Local artifacts must be in URI form (missing 'file://' prefix for %s)", unsignedURI)
-		}
-		archivePath = unsignedURI[len("file://"):]
-	} else if cachedPath, found := s.artifactCache.Get(a); found {
-		archivePath = cachedPath
-	} else {
-		archivePath = filepath.Join(targetDir, a.String()+unarchiver.Ext())
-		downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a)
-		if err := s.downloadArtifact(unsignedURI, archivePath, downloadProgress); err != nil {
-			err := errs.Wrap(err, "Could not download artifact %s", unsignedURI)
-			s.events.ArtifactStepFailed(events.Download, a, err.Error())
-			return err
-		}
-		s.events.ArtifactStepCompleted(events.Download, a)
-		err := s.artifactCache.Store(a, archivePath)
-		if err != nil {
-			multilog.Error("Could not store artifact in cache: %v", err)
-		}
-	}
-
 	unpackedDir := filepath.Join(targetDir, a.String())
-	logging.Debug("Unarchiving %s (%s) to %s", archivePath, unsignedURI, unpackedDir)
+	logging.Debug("Unarchiving %s to %s", archivePath, unpackedDir)
 
 	// ensure that the unpack dir is empty
-	err = os.RemoveAll(unpackedDir)
+	err := os.RemoveAll(unpackedDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 	}
 
 	unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a)
-	numFiles, err := s.unpackArtifact(unarchiver, archivePath, unpackedDir, unpackProgress)
+	numFiles, err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir, unpackProgress)
 	if err != nil {
 		err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
 		s.events.ArtifactStepFailed(events.Unpack, a, err.Error())
@@ -555,9 +536,9 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 	return nil
 }
 
-// downloadArtifact retrieves the tarball for an artifactID
+// downloadArtifactWithProgress retrieves the tarball for an artifactID
 // Note: the tarball may also be retrieved from a local cache directory if that is available.
-func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress *events.IncrementalProgress) error {
+func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile string, progress *events.IncrementalProgress) error {
 	artifactURL, err := url.Parse(unsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
@@ -576,6 +557,36 @@ func (s *Setup) downloadArtifact(unsignedURI string, targetFile string, progress
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}
 	return nil
+}
+
+//downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
+func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, as ArtifactSetuper) (string, error) {
+	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
+		return cachedPath, nil
+	}
+
+	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
+		return "", errs.Wrap(err, "Could not create temp runtime dir")
+	}
+
+	unarchiver := as.Unarchiver()
+	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+unarchiver.Ext())
+	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a.ArtifactID)
+	if err := s.downloadArtifactWithProgress(a.UnsignedURI, archivePath, downloadProgress); err != nil {
+		err := errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
+		s.events.ArtifactStepFailed(events.Download, a.ArtifactID, err.Error())
+		return "", err
+	}
+
+	s.events.ArtifactStepCompleted(events.Download, a.ArtifactID)
+
+	err := s.artifactCache.Store(a.ArtifactID, archivePath)
+	if err != nil {
+		multilog.Error("Could not store artifact in cache: %v", err)
+	}
+
+	return archivePath, nil
 }
 
 func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, targetDir string, progress *events.IncrementalProgress) (int, error) {
@@ -607,12 +618,6 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifac
 }
 
 func (s *Setup) selectArtifactSetupImplementation(buildEngine model.BuildEngine, a artifact.ArtifactID) (ArtifactSetuper, error) {
-	if s.target.InstallFromDir() != nil {
-		// Temporary workaround for offline installer artifacts
-		// https://activestatef.atlassian.net/browse/DX-846
-		return alternative.NewArtifactSetup(a, s.store), nil // offline installer artifacts are in this format
-	}
-
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewArtifactSetup(a, s.store), nil
@@ -683,11 +688,9 @@ func (s *Setup) installFromDir() ([]artifact.ArtifactID, error) {
 
 	artifactIDs := make([]artifact.ArtifactID, len(artifacts))
 
-	setup := offline.NewSetup(s.store)
-
-	bgErrs, aggregatedErr := aggregateErrors()
+	errors, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
-		defer close(bgErrs)
+		defer close(errors)
 
 		wp := workerpool.New(MaxConcurrency)
 
@@ -703,8 +706,13 @@ func (s *Setup) installFromDir() ([]artifact.ArtifactID, error) {
 			artifactIDs[i] = artifactID
 
 			// Submit the artifact for setup and install.
-			// Use "file://" prefix to indicate local URI and no need to fetch it online.
-			wp.Submit(s.setupArtifactSubmitFunction(artifact.ArtifactDownload{artifactID, "file://" + filename, "", ""}, setup, bgErrs))
+			wp.Submit(func() {
+				as := alternative.NewArtifactSetup(artifactID, s.store) // offline installer artifacts are in this format
+				err = s.setupArtifact(artifactID, filename, as)
+				if err != nil {
+					errors <- locale.WrapError(err, "artifact_setup_failed", "", artifactID.String(), "")
+				}
+			})
 		}
 
 		wp.StopWait()
