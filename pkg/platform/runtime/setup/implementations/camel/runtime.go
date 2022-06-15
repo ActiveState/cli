@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
@@ -17,10 +16,6 @@ type Setup struct {
 
 func NewSetup(s *store.Store) *Setup {
 	return &Setup{s}
-}
-
-func (s *Setup) BuildEngine() model.BuildEngine {
-	return model.Camel
 }
 
 // DeleteOutdatedArtifacts deletes the entire installation directory, unless alreadyInstalled is not zero, which can happen when the executors directory needs to be re-generated.

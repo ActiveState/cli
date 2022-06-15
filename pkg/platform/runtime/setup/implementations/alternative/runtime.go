@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/thoas/go-funk"
 )
@@ -24,10 +23,6 @@ type Setup struct {
 
 func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
-}
-
-func (s *Setup) BuildEngine() model.BuildEngine {
-	return model.Alternative
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {

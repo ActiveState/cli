@@ -134,7 +134,6 @@ type ModelProvider interface {
 
 // Setuper is the interface for an implementation of a build engine's runtime setup functions.
 type Setuper interface {
-	BuildEngine() model.BuildEngine
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
@@ -352,16 +351,16 @@ func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artif
 
 	var err error
 	if buildResult.BuildReady {
-		err = s.installFromDownloads(downloads, alreadyInstalled, setup)
+		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup)
 	} else {
-		err = s.installFromBuildLog(*buildResult.Recipe.RecipeID, artifacts, downloads, alreadyInstalled, setup)
+		err = s.installFromBuildLog(buildResult, artifacts, downloads, alreadyInstalled, setup)
 	}
 
 	return err
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup Setuper, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildResult *model.BuildResult, setup Setuper, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") {
@@ -370,7 +369,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup S
 			return
 		}
 
-		as, err := s.selectArtifactSetupImplementation(setup.BuildEngine(), a.ArtifactID)
+		as, err := s.selectArtifactSetupImplementation(buildResult.BuildEngine, a.ArtifactID)
 		if err != nil {
 			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
 		}
@@ -389,7 +388,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, setup S
 	}
 }
 
-func (s *Setup) installFromDownloads(downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()
@@ -400,7 +399,7 @@ func (s *Setup) installFromDownloads(downloads []artifact.ArtifactDownload, alre
 			if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 				continue
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(a, setup, errs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 		}
 
 		wp.StopWait()
@@ -409,7 +408,7 @@ func (s *Setup) installFromDownloads(downloads []artifact.ArtifactDownload, alre
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
@@ -420,7 +419,7 @@ func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.Art
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, recipeID)
+	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, *buildResult.Recipe.RecipeID)
 	defer func() {
 		if err := buildLog.Close(); err != nil {
 			logging.Debug("Failed to close build log: %v", errs.JoinMessage(err))
@@ -445,7 +444,7 @@ func (s *Setup) installFromBuildLog(recipeID strfmt.UUID, artifacts artifact.Art
 				if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 					continue
 				}
-				wp.Submit(s.setupArtifactSubmitFunction(a, setup, errs))
+				wp.Submit(s.setupArtifactSubmitFunction(a, buildResult, setup, errs))
 			}
 		}()
 
