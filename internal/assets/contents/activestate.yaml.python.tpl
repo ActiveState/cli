@@ -50,4 +50,5 @@ events:
   - name: ACTIVATE
     value: |
         where {{.LangExe}} || which {{.LangExe}}
+        {{.LangExe}} -c "print('EXXAMPLE')"
         exit 1
