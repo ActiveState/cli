@@ -245,14 +245,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-	if (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || params.sourcePath == "") && fileutils.FileExists(packagedStateExe) {
+	if params.sourcePath == "" {
 		params.sourcePath = installerPath
 	}
 
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
+	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 	if !params.isUpdate {
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, params)
 	}
@@ -272,16 +272,11 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params)
 	}
 
-	// if sourcePath was provided we're already using the right installer, so proceed with installation
-	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, an, params); err != nil {
-			return err
-		}
-		storeInstallSource(params.sourceInstaller)
-		return postInstallEvents(out, cfg, an, params)
+	if err := installOrUpdateFromLocalSource(out, cfg, an, params); err != nil {
+		return err
 	}
-
-	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
+	storeInstallSource(params.sourceInstaller)
+	return postInstallEvents(out, cfg, an, params)
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
