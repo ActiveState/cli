@@ -44,7 +44,7 @@ func (suite *MainTestSuite) TestGetJiraIssueFromPR() {
 }
 
 func (suite *MainTestSuite) TestGetTargetFixVersion() {
-	var jiraIssueWithFixVersion = "DX-964"
+	var jiraIssueWithFixVersion = "DX-965"
 	var jiraIssueWithArchivedFixVersion = "DX-497"
 	var jiraIssueWithoutFixVersion = "DX-968"
 
