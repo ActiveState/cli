@@ -131,7 +131,6 @@ type ModelProvider interface {
 	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
-// Setuper is the interface for an implementation of a build engine's runtime setup functions.
 type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
@@ -680,15 +679,13 @@ func (s *Setup) fetchArtifactsFromInstallDir(installFunc artifactInstaller) erro
 	s.events.TotalArtifacts(len(artifacts))
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), artifactsDir)
 
-	artifactIDs := make([]artifact.ArtifactID, len(artifacts))
-
 	errors, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
 		defer close(errors)
 
 		wp := workerpool.New(MaxConcurrency)
 
-		for i, a := range artifacts {
+		for _, a := range artifacts {
 			// Each artifact is of the form artifactID.tar.gz, so extract the artifactID from the name.
 			filename := a.Path()
 			extIndex := strings.Index(filename, ".")
@@ -697,7 +694,6 @@ func (s *Setup) fetchArtifactsFromInstallDir(installFunc artifactInstaller) erro
 			}
 			filenameNoExt := filepath.Base(filename[0:extIndex])
 			artifactID := artifact.ArtifactID(filenameNoExt)
-			artifactIDs[i] = artifactID
 
 			// Submit the artifact for setup and install.
 			wp.Submit(func() {
