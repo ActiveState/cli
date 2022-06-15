@@ -169,7 +169,6 @@ func (f *Executor) createExecutor(exe string) error {
 	}
 
 	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
-		fmt.Println(errs.JoinMessage(err))
 		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
 	}
 
