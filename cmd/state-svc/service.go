@@ -61,7 +61,7 @@ func (s *service) Start() error {
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
 		svcctl.LogFileHandler(logging.FileName()),
-		svcctl.HeartBeatHandler(&resolver),
+		svcctl.HeartbeatHandler(&resolver),
 	}
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()

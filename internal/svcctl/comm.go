@@ -10,7 +10,7 @@ import (
 var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
-	KeyHeartBeat = "heart:"
+	KeyHeartbeat = "heart:"
 )
 
 type Requester interface {
@@ -58,13 +58,13 @@ type RuntimeUsageReporter interface {
 	ReportRuntimeUsage(ctx context.Context, pid, exec string)
 }
 
-func HeartBeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
+func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
-		if !strings.HasPrefix(input, KeyHeartBeat) {
+		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
 		}
 
-		data := input[len(KeyHeartBeat):]
+		data := input[len(KeyHeartbeat):]
 		var pid, exec string
 
 		ss := strings.Split(data, ":")
@@ -81,6 +81,6 @@ func HeartBeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 	}
 }
 
-func (c *Comm) SendHeartBeat(ctx context.Context, pid string) (string, error) {
-	return c.req.Request(ctx, KeyHeartBeat+pid)
+func (c *Comm) SendHeartbeat(ctx context.Context, pid string) (string, error) {
+	return c.req.Request(ctx, KeyHeartbeat+pid)
 }
