@@ -394,6 +394,14 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.Require().NoError(err)
 	defer ts.Close()
 
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Downloading")
+	cp.Expect("Installing")
+	cp.Expect("Activated")
+
 	t := suite.T()
 	des, err := fileutils.ListDir(ts.Dirs.Bin, true)
 	suite.Require().NoError(err)
@@ -422,14 +430,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 			}
 		}
 	}
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Downloading")
-	cp.Expect("Installing")
-	cp.Expect("Activated")
 
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 	cp.SendLine("exit")
