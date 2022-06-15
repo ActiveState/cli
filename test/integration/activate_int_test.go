@@ -402,7 +402,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.Expect("Installing")
 	cp.Expect("Activated")
 
-	/*t := suite.T()
+	t := suite.T()
 	des, err := fileutils.ListDir(ts.Dirs.Bin, true)
 	suite.Require().NoError(err)
 	for _, de := range des {
@@ -429,9 +429,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 				}
 			}
 		}
-	}*/
+	}
 
-	//cp.WaitForInput()
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
