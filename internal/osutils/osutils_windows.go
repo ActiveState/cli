@@ -1,5 +1,13 @@
 package osutils
 
+import (
+	"os/exec"
+
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rollbar"
+)
+
 // CmdExitCode returns the exit code of a command in a platform agnostic way
 // taken from https://www.reddit.com/r/golang/comments/1hvvnn/any_better_way_to_do_a_crossplatform_exec_and/caytqvr/
 func CmdExitCode(cmd *exec.Cmd) (code int) {
