@@ -451,6 +451,11 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, par
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+	case params.force:
+		// When ran with `--force` we always use the install UX
+		logging.Debug("Not using update flow as --force was passed")
 	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
