@@ -230,7 +230,7 @@ func getTargetPR(ghClient *github.Client, version string) *github.PullRequest {
 		targetPR, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", *targetIssue.Number)
 		r.Check(err)
 
-		fmt.Printf("Found PR %s for fixVersion '%s'\n", *targetIssue.Number, version)
+		fmt.Printf("Found PR %d for fixVersion '%s'\n", *targetIssue.Number, version)
 		return targetPR
 	}
 
