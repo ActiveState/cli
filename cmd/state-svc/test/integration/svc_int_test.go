@@ -131,6 +131,9 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Wait 2 seconds before collecting number of state-svc processes to avoid contamination from other tests
+	time.Sleep(2 * time.Second)
+
 	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes
 	for i := 1; i <= 10; i++ {
 		go ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
