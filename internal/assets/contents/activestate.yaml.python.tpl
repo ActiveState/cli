@@ -50,4 +50,4 @@ events:
   - name: ACTIVATE
     value: |
         where {{.LangExe}} || which {{.LangExe}}
-	exit 1
+        exit 1
