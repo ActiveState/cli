@@ -121,11 +121,14 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.SendLine("ptar -h")
 	cp.Expect("a tar-like program written in perl")
 
-	// Disabled for the moment: https://activestatef.atlassian.net/browse/DX-943
-	// cp.SendLine("ppm --version")
-	// cp.Expect("not found")
-	// cp.SendLine(errorLevel)
-	// cp.Expect("0")
+	// Check that PPM no longer exists.
+	// The state tool ppm shim should be used instead, but that does not exist for deployed runtimes.
+	cp.SendLine("ppm --version")
+	if runtime.GOOS == "windows" {
+		cp.Expect("not recognized")
+	} else {
+		cp.Expect("not found")
+	}
 
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
