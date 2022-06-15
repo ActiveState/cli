@@ -462,6 +462,11 @@ jobs:
           ls -ahl $bin
           printenv
 
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess
+
       - # === Verify RC ===
         name: Verify RC Branch
         shell: bash
