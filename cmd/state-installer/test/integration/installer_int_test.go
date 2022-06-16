@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,6 +41,36 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
+
+	appinfo.StateApp(target).Exec()
+	stateExec := appinfo.StateApp(target).Exec()
+	suite.Contains(stateExec, target, "Ensure we're not grabbing state tool from integration test bin dir")
+
+	stateExecResolved, err := fileutils.ResolvePath(stateExec)
+	suite.Require().NoError(err)
+
+	serviceExec := appinfo.SvcApp(target).Exec()
+	fileutils.TargetExists(serviceExec)
+
+	// Verify that launched subshell has State tool on PATH
+	cp.WaitForInput()
+	cp.SendLine("state --version")
+	cp.Expect("Version")
+	cp.WaitForInput()
+
+	if runtime.GOOS == "windows" {
+		cp.SendLine("where state")
+	} else {
+		cp.SendLine("which state")
+	}
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
+	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
+		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
+	}
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(appinfo.StateApp(target).Exec())

@@ -79,10 +79,7 @@ func stopSvc(installPath string) error {
 			continue
 		}
 
-		svcName := constants.ServiceCommandName
-		if runtime.GOOS == "windows" {
-			svcName = svcName + ".exe"
-		}
+		svcName := constants.ServiceCommandName + exeutils.Extension
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
