@@ -1708,6 +1708,8 @@ artifact_progress_step_unpack:
   other: Unpacking
 artifact_progress_step_install:
   other: Installing
+artifact_download_failed:
+  other: Failed to download artifact {{.V0}} ({{.V1}})
 artifact_setup_failed:
   other: Failed to install artifact {{.V0}} ({{.V1}})
 err_fetch_branch:
