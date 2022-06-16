@@ -27,9 +27,6 @@ type Dirs struct {
 
 // NewDirs creates all temporary directories
 func NewDirs(base string) (*Dirs, error) {
-	// TODO: Base has a bin directory already from below
-	// Instead we want a separate installer directory for the installer exe
-	// and then a payload directory which contains a bin dir
 	if base == "" {
 		tmpDir, err := ioutil.TempDir("", "")
 		if err != nil {
