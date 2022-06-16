@@ -163,17 +163,38 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
+	// Update all the runtime artifacts
+	artifacts, err := s.updateArtifacts()
+	if err != nil {
+		return errs.Wrap(err, "Failed to update artifacts")
+	}
+
+	// Update executors
+	if err := s.updateExecutors(artifacts); err != nil {
+		return errs.Wrap(err, "Failed to update executors")
+	}
+
+	// Mark installation as completed
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
+		return errs.Wrap(err, "Could not mark install as complete.")
+	}
+
+	return nil
+}
+
+func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	var artifacts []artifact.ArtifactID
 	mutex := &sync.Mutex{}
 
 	// Fetch and install each runtime artifact.
-	err := s.fetchArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
+	err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
+		// Set up target and unpack directories
 		targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 		if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 			return errs.Wrap(err, "Could not create temp runtime dir")
 		}
-
 		unpackedDir := filepath.Join(targetDir, a.String())
+
 		logging.Debug("Unarchiving %s to %s", archivePath, unpackedDir)
 
 		// ensure that the unpack dir is empty
@@ -182,6 +203,7 @@ func (s *Setup) Update() error {
 			return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 		}
 
+		// Unpack artifact archive
 		unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a)
 		numFiles, err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir, unpackProgress)
 		if err != nil {
@@ -191,22 +213,26 @@ func (s *Setup) Update() error {
 		}
 		s.events.ArtifactStepCompleted(events.Unpack, a)
 
-		envDef, err := as.EnvDef(unpackedDir)
-		if err != nil {
-			return errs.Wrap(err, "Could not collect env info for artifact")
-		}
-
+		// Set up constants used to expand environment definitions
 		cnst, err := envdef.NewConstants(s.store.InstallPath())
 		if err != nil {
 			return errs.Wrap(err, "Could not get new environment constants")
 		}
 
+		// Retrieve environment definitions for artifact
+		envDef, err := as.EnvDef(unpackedDir)
+		if err != nil {
+			return errs.Wrap(err, "Could not collect env info for artifact")
+		}
+
+		// Expand environment definitions using constants
 		envDef = envDef.ExpandVariables(cnst)
 		err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
 		if err != nil {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
+		// Move files to install directory
 		mutex.Lock()
 		artifacts = append(artifacts, a)
 		// move files to installation path in main thread, such that file operations are synchronized
@@ -216,15 +242,18 @@ func (s *Setup) Update() error {
 		return err
 	})
 	if err != nil {
-		return errs.Wrap(err, "Error setting up runtime")
+		return artifacts, errs.Wrap(err, "Error setting up runtime")
 	}
 
+	return artifacts, nil
+}
+
+func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	edGlobal, err := s.store.UpdateEnviron(artifacts)
 	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
 	}
 
-	// Create executors
 	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
@@ -240,21 +269,17 @@ func (s *Setup) Update() error {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
-		return errs.Wrap(err, "Could not mark install as complete.")
-	}
-
 	return nil
 }
 
-func (s *Setup) fetchArtifacts(installFunc artifactInstaller) error {
+func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) error {
 	if s.target.InstallFromDir() != nil {
-		return s.fetchArtifactsFromInstallDir(installFunc)
+		return s.fetchAndInstallArtifactsFromDir(installFunc)
 	}
-	return s.fetchArtifactsFromRecipe(installFunc)
+	return s.fetchAndInstallArtifactsFromRecipe(installFunc)
 }
 
-func (s *Setup) fetchArtifactsFromRecipe(installFunc artifactInstaller) error {
+func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) error {
 	// Request build
 	s.events.SolverStart()
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
@@ -344,7 +369,7 @@ func (s *Setup) fetchArtifactsFromRecipe(installFunc artifactInstaller) error {
 		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifacts(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
+	err = s.installArtifactsFromBuild(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
 	if err != nil {
 		return err
 	}
@@ -386,7 +411,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifacts(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -666,7 +691,7 @@ func formatSolverError(serr *apimodel.SolverError) error {
 	return err
 }
 
-func (s *Setup) fetchArtifactsFromInstallDir(installFunc artifactInstaller) error {
+func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) error {
 	artifactsDir := s.target.InstallFromDir()
 	if artifactsDir == nil {
 		return errs.New("Cannot install from a directory that is nil")
