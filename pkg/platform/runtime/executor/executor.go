@@ -74,11 +74,11 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 
 	for _, exe := range exes {
 		if rt.GOOS == "windows" {
-			var err error
-			exe, err = fileutils.CaseSensitivePath(exe)
+			fixedExe, err := fileutils.CaseSensitivePath(exe)
 			if err != nil {
-				return locale.NewError("err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)")
+				return locale.WrapError(err, "err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)", exe)
 			}
+			exe = fixedExe
 		}
 
 		if err := f.createExecutor(exe); err != nil {
