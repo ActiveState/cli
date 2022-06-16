@@ -19,12 +19,17 @@ type Dirs struct {
 	Work string
 	// DefaultBin is the bin directory for our default installation
 	DefaultBin string
-	// InstallerBin is the direcotry where our installer executable is kept
+	// InstallerBin is the directory where our installer executable is kept
 	InstallerBin string
+	// InstallerPayload is the directory where our installer's payload is kept
+	InstallerPayload string
 }
 
 // NewDirs creates all temporary directories
 func NewDirs(base string) (*Dirs, error) {
+	// TODO: Base has a bin directory already from below
+	// Instead we want a separate installer directory for the installer exe
+	// and then a payload directory which contains a bin dir
 	if base == "" {
 		tmpDir, err := ioutil.TempDir("", "")
 		if err != nil {
@@ -39,6 +44,7 @@ func NewDirs(base string) (*Dirs, error) {
 	work := filepath.Join(base, "work")
 	defaultBin := filepath.Join(base, "cache", "bin")
 	installerBin := filepath.Join(base, "installer")
+	installerPayload := filepath.Join(base, "installerPayload", "bin")
 
 	subdirs := []string{config, cache, bin, work, defaultBin, installerBin}
 	for _, subdir := range subdirs {
@@ -48,13 +54,14 @@ func NewDirs(base string) (*Dirs, error) {
 	}
 
 	dirs := Dirs{
-		Base:         base,
-		Config:       config,
-		Cache:        cache,
-		Bin:          bin,
-		Work:         work,
-		DefaultBin:   defaultBin,
-		InstallerBin: installerBin,
+		Base:             base,
+		Config:           config,
+		Cache:            cache,
+		Bin:              bin,
+		Work:             work,
+		DefaultBin:       defaultBin,
+		InstallerBin:     installerBin,
+		InstallerPayload: installerPayload,
 	}
 
 	return &dirs, nil

@@ -207,7 +207,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.InstallerBin)
+	session.CopyExeToDir(exe, dirs.InstallerPayload)
+	session.CopyExeToDir(svcExe, dirs.InstallerPayload)
+	session.CopyExeToDir(trayExe, dirs.InstallerPayload)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -517,7 +520,7 @@ func (s *Session) Close() error {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
-	
+
 	a := auth.New(cfg)
 
 	for _, user := range s.users {

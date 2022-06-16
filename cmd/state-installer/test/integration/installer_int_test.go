@@ -32,7 +32,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
+		e2e.WithArgs(target, "--source-path", ts.Dirs.InstallerPayload),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 	)
 
@@ -97,7 +97,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.Base),
+		e2e.WithArgs(target, "--source-path", ts.Dirs.InstallerPayload),
 		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
