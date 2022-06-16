@@ -1920,3 +1920,12 @@ use_reset_notice_windows:
   other: Note you may need to start a new command prompt to fully update your environment.
 use_reset_notice:
   other: Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment.
+svcctl_wait_timeout:
+  other: |
+    Timed out waiting for service to respond ({{.V0}} - code {{.V1}}). 
+    
+    Are you running software that could prevent State Tool from running local processes/servers?
+    
+    Please try running your command again.
+    
+    If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
