@@ -1,7 +1,6 @@
 package checkout
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -89,7 +88,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (s
 	}
 
 	language, err := getLanguage(*commitID)
-	fmt.Println("LANGUAGE =========>", language)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get language from commitID")
 	}
