@@ -41,7 +41,7 @@ func NewDirs(base string) (*Dirs, error) {
 	work := filepath.Join(base, "work")
 	defaultBin := filepath.Join(base, "cache", "bin")
 	installerBin := filepath.Join(base, "installer")
-	installerPayload := filepath.Join(base, "installerPayload", "bin")
+	installerPayload := filepath.Join(base, "installerPayload")
 
 	subdirs := []string{config, cache, bin, work, defaultBin, installerBin}
 	for _, subdir := range subdirs {
