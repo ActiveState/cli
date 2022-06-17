@@ -70,7 +70,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 				if err != nil {
 					return locale.WrapError(err, "err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)", exe)
 				}
-				exe = fixedExe
+				exe = strings.ReplaceAll(fixedExe, "c:", "C:")
 			}
 
 			exes = append(exes, exe+exeutils.Extension) // Double up on the ext so only the first on gets dropped
@@ -87,7 +87,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 			if err != nil {
 				return locale.WrapError(err, "err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)", exe)
 			}
-			exe = fixedExe
+			exe = strings.ReplaceAll(fixedExe, "c:", "C:")
 		}
 
 		if err := f.createExecutor(exe); err != nil {
