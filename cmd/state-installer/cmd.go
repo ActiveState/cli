@@ -162,11 +162,6 @@ func main() {
 				Value:  &params.sourceInstaller,
 			},
 			{
-				Name:   "source-path",
-				Hidden: true, // Source path should ideally only be used through state tool updates (ie. it's internally routed)
-				Value:  &params.sourcePath,
-			},
-			{
 				Name:      "path",
 				Shorthand: "t",
 				Hidden:    true, // Since we already expose the path as an argument, let's not confuse the user
@@ -177,6 +172,7 @@ func main() {
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
+			{Name: "source-path", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
 			{
