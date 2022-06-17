@@ -27,6 +27,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
 	// Run installer with source-path flag (ie. install from this local path)
@@ -91,6 +95,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Compatibility, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
