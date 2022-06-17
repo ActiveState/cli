@@ -36,7 +36,7 @@ const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	sourcePath      string
+	payloadPath     string
 	sourceInstaller string
 	path            string
 	updateTag       string
@@ -240,16 +240,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
-	installerPath := filepath.Dir(osutils.Executable())
-	if params.sourcePath == "" {
-		params.sourcePath = installerPath
-	}
+	// We expect the installer payload to be in the same directory as the installer itself
+	params.payloadPath = filepath.Dir(osutils.Executable())
 
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
-		packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+		packagedStateExe := filepath.Join(params.payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, params)
 	}
 
@@ -447,7 +445,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, par
 	case params.force:
 		// When ran with `--force` we always use the install UX
 		logging.Debug("Not using update flow as --force was passed")
-	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
+	case params.payloadPath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
