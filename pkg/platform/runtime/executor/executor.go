@@ -10,7 +10,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
 	"github.com/ActiveState/cli/internal/assets"
@@ -54,7 +53,7 @@ func (f *Executor) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(exes envdef.ExecutablePaths) error {
+func (f *Executor) Update(sockPath string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -90,7 +89,7 @@ func (f *Executor) Update(exes envdef.ExecutablePaths) error {
 			exe = strings.ReplaceAll(fixedExe, "c:", "C:")
 		}
 
-		if err := f.createExecutor(exe); err != nil {
+		if err := f.createExecutor(sockPath, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -130,7 +129,7 @@ func (f *Executor) Cleanup() error {
 	return nil
 }
 
-func (f *Executor) createExecutor(exe string) error {
+func (f *Executor) createExecutor(sockPath, exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
@@ -164,15 +163,6 @@ func (f *Executor) createExecutor(exe string) error {
 	executorExec, err := installation.ExecutorExec()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
-	}
-
-	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-	if rt.GOOS == "windows" {
-		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
-		if err != nil {
-			return locale.WrapError(err, "err_resolve_uniq_path", "Could not create executor as sock path resolution failed ({{.V0}}).", sockPath)
-		}
-		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
 	}
 
 	tplParams := map[string]interface{}{

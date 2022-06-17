@@ -20,7 +20,7 @@ func TestExecutor(t *testing.T) {
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Update(exes)
+		err = fw.Update("dummy/path", exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 

@@ -2,6 +2,8 @@ package globaldefault
 
 import (
 	"path/filepath"
+	rt "runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -12,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
@@ -70,9 +73,18 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	if rt.GOOS == "windows" {
+		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
+		if err != nil {
+			return locale.WrapError(err, "err_resolve_uniq_path", "Could not resolve sock path ({{.V0}}).", sockPath)
+		}
+		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
+	}
+
 	projectDir := filepath.Dir(proj.Source().Path())
 	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(exes); err != nil {
+	if err := fw.Update(sockPath, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

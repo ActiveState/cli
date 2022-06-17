@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
@@ -264,8 +266,17 @@ func (s *Setup) Update() error {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	if runtime.GOOS == "windows" {
+		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
+		if err != nil {
+			return locale.WrapError(err, "err_resolve_uniq_path", "Could not update as sock path resolution failed ({{.V0}}).", sockPath)
+		}
+		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
+	}
+
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(exePaths); err != nil {
+	if err := exec.Update(sockPath, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
