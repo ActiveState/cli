@@ -166,9 +166,18 @@ func (f *Executor) createExecutor(exe string) error {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	if rt.GOOS == "windows" {
+		fixedSockPath, err := fileutils.ResolveUniquePath(sockPath)
+		if err != nil {
+			return locale.WrapError(err, "err_resolve_uniq_path", "Could not create executor as sock path resolution failed ({{.V0}}).", sockPath)
+		}
+		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
+	}
+
 	tplParams := map[string]interface{}{
 		"stateExec": executorExec,
-		"stateSock": svcctl.NewIPCSockPathFromGlobals().String(),
+		"stateSock": sockPath,
 		"target":    exe,
 		"denote":    []string{executorDenoter, denoteTarget},
 	}
