@@ -27,9 +27,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	suite.setupPayload(ts)
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
@@ -96,9 +94,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	suite.setupPayload(ts)
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
@@ -143,6 +139,12 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 			suite.T().Errorf("registry PATH \"%s\" does not contain \"%s\", \"%s\" or \"%s\"", out, ts.Dirs.Work, shortPath, longPath)
 		}
 	}
+}
+
+func (s *InstallerIntegrationTestSuite) setupPayload(ts *e2e.Session) {
+	ts.CopyExeToDir(ts.Exe, ts.Dirs.InstallerPayload)
+	ts.CopyExeToDir(ts.SvcExe, ts.Dirs.InstallerPayload)
+	ts.CopyExeToDir(ts.TrayExe, ts.Dirs.InstallerPayload)
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
