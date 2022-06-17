@@ -142,9 +142,9 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (s *InstallerIntegrationTestSuite) setupPayload(ts *e2e.Session) {
-	ts.CopyExeToDir(ts.Exe, ts.Dirs.InstallerPayload)
-	ts.CopyExeToDir(ts.SvcExe, ts.Dirs.InstallerPayload)
-	ts.CopyExeToDir(ts.TrayExe, ts.Dirs.InstallerPayload)
+	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
