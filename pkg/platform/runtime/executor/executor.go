@@ -168,7 +168,7 @@ func (f *Executor) createExecutor(exe string) error {
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	if rt.GOOS == "windows" {
-		fixedSockPath, err := fileutils.ResolveUniquePath(sockPath)
+		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
 		if err != nil {
 			return locale.WrapError(err, "err_resolve_uniq_path", "Could not create executor as sock path resolution failed ({{.V0}}).", sockPath)
 		}
