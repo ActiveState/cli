@@ -4,4 +4,5 @@
 REM {{.}}
 {{end}}
 
+"{{.stateExec}}"
 "{{.stateExec}}" "{{.stateSock}}" "{{.target}}" %*
