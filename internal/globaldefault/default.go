@@ -2,8 +2,6 @@ package globaldefault
 
 import (
 	"path/filepath"
-	rt "runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -74,13 +72,6 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-	if rt.GOOS == "windows" {
-		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
-		if err != nil {
-			return locale.WrapError(err, "err_resolve_uniq_path", "Could not resolve sock path ({{.V0}}).", sockPath)
-		}
-		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
-	}
 
 	projectDir := filepath.Dir(proj.Source().Path())
 	fw := executor.NewWithBinPath(projectDir, BinDir())

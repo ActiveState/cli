@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -267,13 +266,6 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	}
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-	if runtime.GOOS == "windows" {
-		fixedSockPath, err := fileutils.GetLongPathName(sockPath)
-		if err != nil {
-			return locale.WrapError(err, "err_resolve_uniq_path", "Could not update as sock path resolution failed ({{.V0}}).", sockPath)
-		}
-		sockPath = strings.ReplaceAll(fixedSockPath, "c:", "C:")
-	}
 
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
 	if err := exec.Update(sockPath, exePaths); err != nil {
