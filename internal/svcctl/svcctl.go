@@ -160,7 +160,6 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error
 
 var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
-	waitTimeoutL10nVal = "Timed out waiting for service to respond ({{.V0}}). Are you running software that could prevent State Tool from running local processes/servers?"
 )
 
 func waitUp(ctx context.Context, ipComm IPCommunicator) error {
@@ -168,7 +167,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
+			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "1", constants.ForumsURL)
 		default:
 		}
 
@@ -193,7 +192,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 		return nil
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).Round(time.Millisecond).String())
+	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "2", constants.ForumsURL)
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
@@ -214,7 +213,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).String())
+			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "3", constants.ForumsURL)
 		default:
 		}
 
@@ -243,7 +242,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 		time.Sleep(timeout - elapsed)
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, waitTimeoutL10nVal, time.Since(start).Round(time.Millisecond).String())
+	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "4", constants.ForumsURL)
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
