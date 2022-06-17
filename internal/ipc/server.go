@@ -191,3 +191,5 @@ func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 
 	return nil
 }
+
+func Junk() {}
