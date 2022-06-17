@@ -34,7 +34,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Activate struct {
@@ -271,7 +270,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 
 func (r *Activate) pathToProject(path string) (*project.Project, error) {
 	projectToUse, err := project.FromExactPath(path)
-	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
+	if err != nil {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
 	}
 	return projectToUse, nil
@@ -305,7 +304,7 @@ func warningForAdministrator(out output.Outputer) {
 func parentNamespace() (string, error) {
 	path := os.Getenv(constants.ProjectEnvVarName)
 	proj, err := project.FromExactPath(filepath.Dir(path))
-	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
+	if err != nil {
 		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
 	}
 	return proj.NamespaceString(), nil
