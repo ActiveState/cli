@@ -278,9 +278,6 @@ func (p *Project) Environments() string { return p.projectfile.Environments }
 
 // New creates a new Project struct
 func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
-	if p == nil {
-		return nil, locale.NewError("err_project_projectfile", "Cannot create new project without a projectfile")
-	}
 	project := &Project{projectfile: p, Outputer: out}
 	return project, nil
 }
