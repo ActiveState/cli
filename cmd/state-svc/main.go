@@ -192,6 +192,15 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
+	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
+		fmt.Fprintln(os.Stderr, err)
+
+		cancel()
+		if err := p.Stop(); err != nil {
+			logging.Debug("Service stop failed: %v", err)
+		}
+	})
+
 	if err := p.Wait(); err != nil {
 		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
