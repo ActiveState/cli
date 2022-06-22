@@ -299,10 +299,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params, isUpdate)
 	}
 
-	if params.startedByExplorer {
-		return locale.NewError("err_install_explorer", "Installer must be started in the same directory as the install playload")
-	}
-	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
+	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. The installer must be started in the same directory as the installer payload.")
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
@@ -425,7 +422,7 @@ func envSlice(binPath string) []string {
 
 func envMap(binPath string) map[string]string {
 	return map[string]string{
-		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"PATH":                               binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
