@@ -1,19 +1,13 @@
 package auth
 
 import (
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+
+	"github.com/ActiveState/cli/pkg/cmdlets/prompts"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -34,7 +28,7 @@ type signupInput struct {
 
 // Signup will prompt the user to create an account
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	accepted, err := PromptTOS(cfg.ConfigPath(), out, prompt)
+	accepted, err := prompts.PromptOnlineTOS(out, prompt)
 	if err != nil {
 		return err
 	}
