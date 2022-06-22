@@ -124,8 +124,8 @@ func main() {
 
 	params := newParams()
 
-	if mousetrap.StartedByExplorer() {
-		params.startedByExplorer = true
+	startedByExploer := mousetrap.StartedByExplorer()
+	if startedByExploer {
 		captain.DisableMousetrap()
 	}
 
@@ -193,7 +193,7 @@ func main() {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			return execute(out, cfg, an, processedArgs[1:], params)
+			return execute(out, cfg, an, startedByExploer, processedArgs[1:], params)
 		},
 	)
 
@@ -214,7 +214,7 @@ func main() {
 			out.Error(err.Error())
 		}
 
-		if params.startedByExplorer {
+		if startedByExploer {
 			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
 			fmt.Scanln()
 		}
@@ -225,7 +225,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "success")
 }
 
-func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, startedByExplorer bool, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
 	if params.path == "" {
@@ -261,7 +261,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, params)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, startedByExplorer, params)
 	}
 
 	route := "install"
@@ -454,7 +454,7 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, params *Params) bool {
+func determineLegacyUpdate(stateToolInstalled bool, startedByExplorer bool, params *Params) bool {
 	// Detect state tool alongside installer executable
 	installerPath := filepath.Dir(osutils.Executable())
 	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
@@ -462,7 +462,7 @@ func determineLegacyUpdate(stateToolInstalled bool, params *Params) bool {
 	// Detect whether this is a fresh install or an update
 	isUpdate := false
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || startedByExplorer) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 		params.sourcePath = installerPath
 	case params.force:
