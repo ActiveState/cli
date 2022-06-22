@@ -20,6 +20,7 @@ import (
 
 type InstallerIntegrationTestSuite struct {
 	tagsuite.Suite
+	payloadDir string
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
@@ -34,7 +35,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.InstallerPayload),
+		e2e.WithArgs(target, "--source-path", suite.payloadDir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 	)
 
@@ -101,7 +102,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		ts.InstallerExe,
-		e2e.WithArgs(target, "--source-path", ts.Dirs.InstallerPayload),
+		e2e.WithArgs(target, "--source-path", suite.payloadDir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
@@ -142,9 +143,15 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (s *InstallerIntegrationTestSuite) setupPayload(ts *e2e.Session) {
-	ts.CopyExeToDir(ts.Exe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(ts.Dirs.InstallerPayload, installation.BinDirName))
+	payloadDir := filepath.Join(ts.Dirs.Base, "installerPayload")
+	err := fileutils.Mkdir(payloadDir)
+	s.NoError(err)
+
+	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
+	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
+	ts.CopyExeToDir(ts.TrayExe, filepath.Join(payloadDir, installation.BinDirName))
+
+	s.payloadDir = payloadDir
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {
