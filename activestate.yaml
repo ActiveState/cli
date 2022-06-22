@@ -75,9 +75,9 @@ scripts:
     language: bash
     description: Install OS specific deps
     value: |
-      aptin() {
+      if [ hash apt &> /dev/null ]; then
         pkgs=""
-        for pkg in "${@}"; do
+        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
@@ -85,8 +85,9 @@ scripts:
           echo Installing packages "${pkgs}"
           sudo apt-get update && sudo apt-get install ${pkgs} -y
         fi
-      }
-      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+      elif [ hash yum &> /dev/null ]; then
+        yum install -y gtk3-devel libappindicator-gtk3 webkitgtk4
+      fi
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
@@ -324,8 +325,7 @@ scripts:
       GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-  -
-    name: update-workflow-assets
+  - name: update-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
@@ -498,5 +498,5 @@ events:
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
   - name: file-changed
-    scope: [ "internal/locale/locales" ]
+    scope: ["internal/locale/locales"]
     value: build

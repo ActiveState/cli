@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-)
+ )
 
 type EventDispatcher interface {
 	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)

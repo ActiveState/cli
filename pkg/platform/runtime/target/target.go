@@ -178,33 +178,30 @@ func (c *CustomTarget) InstallFromDir() *string {
 }
 
 type OfflineTarget struct {
-	owner        string
-	name         string
-	commitUUID   strfmt.UUID
 	dir          string
 	artifactsDir string
 }
 
-func NewOfflineTarget(owner string, name string, commitUUID strfmt.UUID, dir string, artifactsDir string) *OfflineTarget {
+func NewOfflineTarget(dir string, artifactsDir string) *OfflineTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &OfflineTarget{owner, name, commitUUID, dir, artifactsDir}
+	return &OfflineTarget{dir, artifactsDir}
 }
 
 func (i *OfflineTarget) Owner() string {
-	return i.owner
+	return ""
 }
 
 func (i *OfflineTarget) Name() string {
-	return i.name
+	return ""
 }
 
 func (i *OfflineTarget) CommitUUID() strfmt.UUID {
-	return i.commitUUID
+	return ""
 }
 
 func (i *OfflineTarget) Dir() string {
