@@ -28,12 +28,13 @@ import (
 type Installer struct {
 	out          output.Outputer
 	cfg          *config.Instance
+	payloadPath  string
 	sessionToken string
 	*Params
 }
 
-func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
-	i := &Installer{cfg: cfg, out: out, Params: params}
+func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string, params *Params) (*Installer, error) {
+	i := &Installer{cfg: cfg, out: out, payloadPath: payloadPath, Params: params}
 	if err := i.sanitizeInput(); err != nil {
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}

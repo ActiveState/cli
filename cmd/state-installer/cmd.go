@@ -36,7 +36,6 @@ const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	payloadPath     string
 	sourceInstaller string
 	path            string
 	updateTag       string
@@ -241,14 +240,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// We expect the installer payload to be in the same directory as the installer itself
-	params.payloadPath = filepath.Dir(osutils.Executable())
+	payloadPath := filepath.Dir(osutils.Executable())
 
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
-		packagedStateExe := filepath.Join(params.payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, params)
+		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
 	route := "install"
@@ -266,7 +265,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params)
 	}
 
-	if err := installOrUpdateFromLocalSource(out, cfg, an, params); err != nil {
+	if err := installOrUpdateFromLocalSource(out, cfg, an, payloadPath, params); err != nil {
 		return err
 	}
 	storeInstallSource(params.sourceInstaller)
@@ -274,7 +273,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, payloadPath string, params *Params) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
 	if !params.isUpdate {
@@ -292,7 +291,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	installer, err := NewInstaller(cfg, out, params)
+	installer, err := NewInstaller(cfg, out, payloadPath, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
@@ -436,7 +435,7 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, params *Params) bool {
+func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
@@ -445,7 +444,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe string, par
 	case params.force:
 		// When ran with `--force` we always use the install UX
 		logging.Debug("Not using update flow as --force was passed")
-	case params.payloadPath == "" && fileutils.FileExists(packagedStateExe):
+	case payloadPath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
