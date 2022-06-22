@@ -124,13 +124,18 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes
+	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	time.Sleep(2 * time.Second) // allow for some time to stop the existing available process
+
+	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes (using different sock file)
 	for i := 1; i <= 10; i++ {
 		go ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
 		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
-	for attempts := 10; attempts > 0; attempts-- {
+
+	for attempts := 100; attempts > 0; attempts-- {
+		suite.T().Log("iters left:", attempts, "procs:", suite.GetNumStateSvcProcesses())
 		if suite.GetNumStateSvcProcesses() == oldCount+1 {
 			break
 		}
