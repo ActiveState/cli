@@ -17,7 +17,7 @@ import (
 
 // installLauncher installs files in the /Application directory
 func (i *Installer) installLauncher() error {
-	sourcePath := filepath.Join(i.sourcePath, "system")
+	sourcePath := filepath.Join(i.payloadPath, "system")
 	if !fileutils.DirExists(sourcePath) {
 		multilog.Error("Installation does not have a system path")
 		return nil

@@ -37,7 +37,6 @@ const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	sourcePath      string
 	sourceInstaller string
 	path            string
 	updateTag       string
@@ -169,11 +168,6 @@ func main() {
 				Value:  &params.sourceInstaller,
 			},
 			{
-				Name:   "source-path",
-				Hidden: true, // Source path should ideally only be used through state tool updates (ie. it's internally routed)
-				Value:  &params.sourcePath,
-			},
-			{
 				Name:      "path",
 				Shorthand: "t",
 				Hidden:    true, // Since we already expose the path as an argument, let's not confuse the user
@@ -184,6 +178,7 @@ func main() {
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
+			{Name: "source-path", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
 			{
@@ -257,11 +252,15 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
+	// We expect the installer payload to be in the same directory as the installer itself
+	payloadPath := filepath.Dir(osutils.Executable())
+
 	// Older versions of the state tool will not include the --update flag, so we
 	// need to use the legacy way of checking for update
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, startedByExplorer, params)
+		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, startedByExplorer, params)
 	}
 
 	route := "install"
@@ -279,20 +278,15 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		return postInstallEvents(out, cfg, an, params)
 	}
 
-	// if sourcePath was provided we're already using the right installer, so proceed with installation
-	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, an, params); err != nil {
-			return err
-		}
-		storeInstallSource(params.sourceInstaller)
-		return postInstallEvents(out, cfg, an, params)
+	if err := installOrUpdateFromLocalSource(out, cfg, an, payloadPath, params); err != nil {
+		return err
 	}
-
-	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. The installer must be started in the same directory as the installer payload.")
+	storeInstallSource(params.sourceInstaller)
+	return postInstallEvents(out, cfg, an, params)
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, payloadPath string, params *Params) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
 	if !params.isUpdate {
@@ -310,7 +304,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	installer, err := NewInstaller(cfg, out, params)
+	installer, err := NewInstaller(cfg, out, payloadPath, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
@@ -454,25 +448,19 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, startedByExplorer bool, params *Params) bool {
-	// Detect state tool alongside installer executable
-	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-
+func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, startedByExplorer bool, params *Params) bool {
 	// Detect whether this is a fresh install or an update
-	isUpdate := false
+	var isUpdate bool
 	switch {
 	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || startedByExplorer) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
-		params.sourcePath = installerPath
 	case params.force:
 		// When ran with `--force` we always use the install UX
 		logging.Debug("Not using update flow as --force was passed")
-	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
+	case payloadPath == "" && fileutils.FileExists(packagedStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
-		params.sourcePath = installerPath
 	case stateToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
