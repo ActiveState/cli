@@ -231,7 +231,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
-		// Move files to installation path, ensuring file operations are synchronized
+		// Move files to installation path, such that file operations are synchronized
 		mutex.Lock()
 		err = s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
 		mutex.Unlock()
