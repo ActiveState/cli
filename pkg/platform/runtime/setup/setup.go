@@ -183,11 +183,10 @@ func (s *Setup) Update() error {
 }
 
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
-	var artifacts []artifact.ArtifactID
 	mutex := &sync.Mutex{}
 
 	// Fetch and install each runtime artifact.
-	err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
+	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
 		// Set up target and unpack directories
 		targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 		if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
@@ -232,10 +231,8 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
-		// Move files to install directory
+		// Move files to installation path, ensuring file operations are synchronized
 		mutex.Lock()
-		artifacts = append(artifacts, a)
-		// move files to installation path in main thread, such that file operations are synchronized
 		err = s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
 		mutex.Unlock()
 
@@ -272,14 +269,18 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	return nil
 }
 
-func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) error {
+// fetchAndInstallArtifacts needs to return all artifacts needed by the runtime, even if some or
+// all of them were already installed.
+func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
 	if s.target.InstallFromDir() != nil {
 		return s.fetchAndInstallArtifactsFromDir(installFunc)
 	}
 	return s.fetchAndInstallArtifactsFromRecipe(installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) error {
+func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+	var noArtifacts []artifact.ArtifactID
+
 	// Request build
 	s.events.SolverStart()
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
@@ -287,9 +288,9 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		serr := &apimodel.SolverError{}
 		if errors.As(err, &serr) {
 			s.events.SolverError(serr)
-			return formatSolverError(serr)
+			return noArtifacts, formatSolverError(serr)
 		}
-		return errs.Wrap(err, "Failed to fetch build result")
+		return noArtifacts, errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	s.events.SolverSuccess()
@@ -298,7 +299,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
-		return errs.Wrap(err, "Failed to select setup implementation")
+		return noArtifacts, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
 	downloads, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
@@ -310,9 +311,9 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 				localeID = "build_status_in_progress_headless"
 				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
 			}
-			return locale.WrapInputError(err, localeID, "", messageURL)
+			return noArtifacts, locale.WrapInputError(err, localeID, "", messageURL)
 		}
-		return errs.Wrap(err, "could not extract artifacts that are ready to download.")
+		return noArtifacts, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
 	failedArtifacts := artifact.NewFailedArtifactsFromBuild(buildResult.BuildStatusResponse)
@@ -336,7 +337,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	if buildResult.BuildStatus == headchef.Failed {
 		s.events.BuildFinished()
-		return locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+		return noArtifacts, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -349,7 +350,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
+		return noArtifacts, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
 	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
@@ -359,7 +360,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
 		err = os.RemoveAll(s.store.InstallPath())
 		if err != nil {
-			return locale.WrapError(err, "Failed to clean installation path")
+			return noArtifacts, locale.WrapError(err, "Failed to clean installation path")
 		}
 	}
 
@@ -371,7 +372,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	err = s.installArtifactsFromBuild(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
 	if err != nil {
-		return err
+		return noArtifacts, err
 	}
 	err = s.artifactCache.Save()
 	if err != nil {
@@ -386,10 +387,10 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
-		return errs.Wrap(err, "Could not save recipe file.")
+		return noArtifacts, errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	return nil
+	return buildResult.OrderedArtifacts(), nil
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {
@@ -691,18 +692,22 @@ func formatSolverError(serr *apimodel.SolverError) error {
 	return err
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) error {
+func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+	var noArtifacts []artifact.ArtifactID
+
 	artifactsDir := s.target.InstallFromDir()
 	if artifactsDir == nil {
-		return errs.New("Cannot install from a directory that is nil")
+		return noArtifacts, errs.New("Cannot install from a directory that is nil")
 	}
 
 	artifacts, err := fileutils.ListDir(*artifactsDir, false)
 	if err != nil {
-		return errs.Wrap(err, "Cannot read from directory to install from")
+		return noArtifacts, errs.Wrap(err, "Cannot read from directory to install from")
 	}
 	s.events.TotalArtifacts(len(artifacts))
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), artifactsDir)
+
+	installedArtifacts := make([]artifact.ArtifactID, len(artifacts))
 
 	errors, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -710,7 +715,7 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) e
 
 		wp := workerpool.New(MaxConcurrency)
 
-		for _, a := range artifacts {
+		for i, a := range artifacts {
 			// Each artifact is of the form artifactID.tar.gz, so extract the artifactID from the name.
 			filename := a.Path()
 			extIndex := strings.Index(filename, ".")
@@ -719,6 +724,7 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) e
 			}
 			filenameNoExt := filepath.Base(filename[0:extIndex])
 			artifactID := artifact.ArtifactID(filenameNoExt)
+			installedArtifacts[i] = artifactID
 
 			// Submit the artifact for setup and install.
 			wp.Submit(func() {
@@ -733,5 +739,5 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) e
 		wp.StopWait()
 	})
 
-	return <-aggregatedErr
+	return installedArtifacts, <-aggregatedErr
 }
