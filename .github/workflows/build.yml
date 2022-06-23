@@ -443,9 +443,9 @@ jobs:
           VERSION="`head -n 1 $GITHUB_WORKSPACE/version.txt`"
           AUTHOR=00000000-0000-0000-0000-000000000000
           STUBFILE=$GITHUB_WORKSPACE/$STUBFILE
-          sed -ie "s/\$CHANNEL/$CHANNEL" $STUBFILE
-          sed -ie "s/\$VERSION/$VERSION" $STUBFILE
-          sed -ie "s/\$AUTHOR/$AUTHOR" $STUBFILE
+          sed -ie "s/\$CHANNEL/$CHANNEL/;" $STUBFILE
+          sed -ie "s/\$VERSION/$VERSION/;" $STUBFILE
+          sed -ie "s/\$AUTHOR/$AUTHOR/;" $STUBFILE
 
       - # === Upload Stub as Artifact ===
         name: Upload Stub as Artifact
