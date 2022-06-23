@@ -24,7 +24,7 @@ type InstallerIntegrationTestSuite struct {
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.setupPayload(ts)
@@ -142,7 +142,7 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 }
 
 func (s *InstallerIntegrationTestSuite) setupPayload(ts *e2e.Session) {
-	payloadDir := filepath.Join(filepath.Dir(ts.InstallerExe), installation.BinDirName)
+	payloadDir := filepath.Dir(ts.InstallerExe)
 	err := fileutils.Mkdir(payloadDir)
 	s.NoError(err)
 
