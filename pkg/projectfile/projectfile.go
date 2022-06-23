@@ -534,6 +534,10 @@ func (p *Project) Init() error {
 }
 
 func parse(configFilepath string) (*Project, error) {
+	if !fileutils.FileExists(configFilepath) {
+		return nil, &ErrorNoProject{locale.NewInputError("err_no_projectfile")}
+	}
+
 	dat, err := ioutil.ReadFile(configFilepath)
 	if err != nil {
 		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)

@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"net"
 	"path/filepath"
 	"regexp"
@@ -135,7 +136,13 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		}
 		time.Sleep(2 * time.Second) // keep waiting
 	}
-	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses(), "spawning multiple state processes should only result in one more state-svc process")
+
+	newCount := suite.GetNumStateSvcProcesses()
+	if newCount > oldCount+1 {
+		// We only care if we end up with more services than anticipated. We can actually end up with less than we started
+		// with due to other integration tests not always waiting for state-svc to have fully shut down before running the next test
+		suite.Fail(fmt.Sprintf("spawning multiple state processes should only result in one more state-svc process at most, newCount: %d, oldCount: %d", newCount, oldCount))
+	}
 }
 
 func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
