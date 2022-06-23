@@ -419,3 +419,64 @@ jobs:
         with:
           name: build
           path: build/
+
+  # === Platform Upload job ===
+  platform_upload:
+    name: Platform Upload
+    runs-on: ubuntu-20.04
+    #if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+    env:
+      STUBFILE: .github/workflows/platform-stub.yaml
+      CHANNEL: ${{ github.event.pull_request.base.ref }}
+
+    # === Platform Upload Steps ===
+    steps:
+
+      - # === Checkout Code ===
+        name: Checkout Code
+        uses: actions/checkout@v2
+
+      - # === Generate Stub ===
+        name: Generate Stub
+        shell: bash
+        run: |
+          VERSION="`head -n 1 $GITHUB_WORKSPACE/version.txt`"
+          AUTHOR=00000000-0000-0000-0000-000000000000
+          STUBFILE=$GITHUB_WORKSPACE/$STUBFILE
+          sed -ie "s/\$CHANNEL/$CHANNEL" $STUBFILE
+          sed -ie "s/\$VERSION/$VERSION" $STUBFILE
+          sed -ie "s/\$AUTHOR/$AUTHOR" $STUBFILE
+
+      - # === Upload Stub as Artifact ===
+        name: Upload Stub as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: platform-stub.yaml
+          path: .github/workflows/platform-sub.yaml
+
+      - # === Checkout TheHomeRepot ===
+        name: Checkout TheHomeRepot
+        uses: actions/checkout@v2
+        with:
+          repository: ActiveState/TheHomeRepot
+          path: TheHomeRepot
+
+      - # === Upload Stub ===
+        name: Upload Stub
+        if: false
+        shell: bash
+        run: |
+          apt-get install -y pipenv
+
+          cd TheHomeRepot/lib/python
+          pipenv install --dev --ignore-pipfile
+          pipenv run apikey new
+          pipenv run ingredient load -f $STUBFILE --skip-editor
+
+          VERSION="`head -n 1 $GITHUB_WORKSPACE/version.txt`"
+          pipenv run ingredient upload -n $NAME -s language/go -v $VERSION \
+            --source-uri https://github.com/ActiveState/cli/archive/refs/tags/$VERSION.tar.gz \
+            --release-date "`date -u '+%Y-%m-%dT%H:%M:%SZ'`"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
