@@ -78,6 +78,9 @@ func main() {
 	// Set up rollbar reporting
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
 
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
+
 	// Set up configuration handler
 	var err error
 	cfg, err = config.New()
