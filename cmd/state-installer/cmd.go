@@ -206,8 +206,11 @@ func main() {
 			out.Error(err.Error())
 		}
 
-		out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
-		fmt.Scanln()
+		// Installer was likely started via a double click so we keep the terminal window open
+		if noArgs() {
+			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
+			fmt.Scanln()
+		}
 
 		return
 	}
@@ -447,7 +450,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || len(os.Args[1:]) == 0) && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 	case params.force:
 		// When ran with `--force` we always use the install UX
@@ -463,4 +466,8 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	}
 
 	return isUpdate
+}
+
+func noArgs() bool {
+	return len(os.Args[1:]) == 0
 }

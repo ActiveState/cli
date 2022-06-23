@@ -168,7 +168,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 		)
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
-	cp.SendLine("")
 	cp.ExpectExitCode(1)
 }
 

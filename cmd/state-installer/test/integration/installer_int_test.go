@@ -103,7 +103,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 
 	// Assert output
 	cp.Expect("not compatible")
-	cp.SendLine("")
 	cp.ExpectExitCode(1)
 }
 
