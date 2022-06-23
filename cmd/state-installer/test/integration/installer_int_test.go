@@ -143,9 +143,6 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 
 func (s *InstallerIntegrationTestSuite) setupPayload(ts *e2e.Session) {
 	payloadDir := filepath.Dir(ts.InstallerExe)
-	err := fileutils.Mkdir(payloadDir)
-	s.NoError(err)
-
 	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
 	ts.CopyExeToDir(ts.TrayExe, filepath.Join(payloadDir, installation.BinDirName))
