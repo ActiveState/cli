@@ -2,13 +2,14 @@ package automation
 
 import (
 	"fmt"
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 type SearchAutomationTestSuite struct {
@@ -16,6 +17,8 @@ type SearchAutomationTestSuite struct {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -30,6 +33,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -40,6 +45,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -50,6 +57,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,6 +73,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -95,6 +106,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_ExactTermFlag() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+	
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
