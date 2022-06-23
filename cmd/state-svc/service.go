@@ -104,5 +104,9 @@ func (s *service) RunIfNotAuthority(checkWait time.Duration, ipComm svcctl.IPCom
 }
 
 func portText(srv *server.Server) string {
+	if srv == nil || srv.Port() <= 0 {
+		return ""
+	}
+
 	return ":" + strconv.Itoa(srv.Port())
 }
