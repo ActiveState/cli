@@ -94,7 +94,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 		}
 	}
 
-	args = append(args, "--source-path", sourcePath)
+	args = append(args, "--update")
 	args = append([]string{installTargetPath}, args...)
 	return installerPath, args, nil
 }
