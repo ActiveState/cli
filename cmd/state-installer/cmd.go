@@ -30,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/inconshreveable/mousetrap"
 )
 
 const AnalyticsCat = "installer"
@@ -123,11 +122,6 @@ func main() {
 
 	params := newParams()
 
-	startedByExploer := mousetrap.StartedByExplorer()
-	if startedByExploer {
-		captain.DisableMousetrap()
-	}
-
 	cmd := captain.NewCommand(
 		"state-installer",
 		"",
@@ -188,7 +182,7 @@ func main() {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			return execute(out, cfg, an, startedByExploer, processedArgs[1:], params)
+			return execute(out, cfg, an, processedArgs[1:], params)
 		},
 	)
 
@@ -209,10 +203,8 @@ func main() {
 			out.Error(err.Error())
 		}
 
-		if startedByExploer {
-			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
-			fmt.Scanln()
-		}
+		out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
+		fmt.Scanln()
 
 		return
 	}
@@ -220,7 +212,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "success")
 }
 
-func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, startedByExplorer bool, args []string, params *Params) error {
+func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
 	if params.path == "" {
@@ -260,7 +252,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, startedByExplorer, params)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
 	route := "install"
@@ -405,7 +397,7 @@ func envSlice(binPath string) []string {
 
 func envMap(binPath string) map[string]string {
 	return map[string]string{
-		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		"PATH":                               binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
@@ -448,11 +440,11 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, startedByExplorer bool, params *Params) bool {
+func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || startedByExplorer) && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || len(os.Args[1:]) == 0) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 	case params.force:
 		// When ran with `--force` we always use the install UX
