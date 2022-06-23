@@ -207,7 +207,7 @@ func main() {
 
 		// Installer was likely started via a double click so we keep the terminal window open
 		if noArgs() {
-			out.Print(locale.Tl("installer_pause", "Press return to close the console window..."))
+			out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
 			fmt.Scanln()
 		}
 
