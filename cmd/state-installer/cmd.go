@@ -204,17 +204,16 @@ func main() {
 		if !errs.IsSilent(err) {
 			out.Error(err.Error())
 		}
-
-		// Installer was likely started via a double click so we keep the terminal window open
-		if noArgs() {
-			out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
-			fmt.Scanln()
-		}
-
-		return
+	} else {
+		an.Event(AnalyticsFunnelCat, "success")
 	}
 
-	an.Event(AnalyticsFunnelCat, "success")
+	// Installer was likely started via a double click so we keep the terminal window open
+	if noArgs() {
+		out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
+		fmt.Scanln()
+	}
+
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
