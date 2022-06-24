@@ -78,6 +78,9 @@ func main() {
 	// Set up rollbar reporting
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
 
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
+
 	// Set up configuration handler
 	var err error
 	cfg, err = config.New()
@@ -201,10 +204,16 @@ func main() {
 		if !errs.IsSilent(err) {
 			out.Error(err.Error())
 		}
-		return
+	} else {
+		an.Event(AnalyticsFunnelCat, "success")
 	}
 
-	an.Event(AnalyticsFunnelCat, "success")
+	// Installer was likely started via a double click so we keep the terminal window open
+	if noArgs() {
+		out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
+		fmt.Scanln()
+	}
+
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
@@ -439,7 +448,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 	case params.force:
 		// When ran with `--force` we always use the install UX
@@ -455,4 +464,8 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	}
 
 	return isUpdate
+}
+
+func noArgs() bool {
+	return len(os.Args[1:]) == 0
 }
