@@ -272,6 +272,10 @@ func (s *Store) UpdateEnviron(orderedArtifacts []artifact.ArtifactID) (*envdef.E
 }
 
 func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts StoredArtifactMap) (*envdef.EnvironmentDefinition, error) {
+	if len(orderedArtifacts) == 0 {
+		return nil, errs.New("Environment cannot be updated if no artifacts were installed")
+	}
+
 	var rtGlobal *envdef.EnvironmentDefinition
 	// use artifact order as returned by the build status response form the HC for merging artifacts
 	for _, artID := range orderedArtifacts {
