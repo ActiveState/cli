@@ -48,12 +48,11 @@ type Session struct {
 	env        []string
 	retainDirs bool
 	// users created during session
-	users        []string
-	t            *testing.T
-	Exe          string
-	SvcExe       string
-	TrayExe      string
-	InstallerExe string
+	users   []string
+	t       *testing.T
+	Exe     string
+	SvcExe  string
+	TrayExe string
 }
 
 // Options for spawning a testable terminal process
@@ -142,15 +141,14 @@ func (s *Session) copyExeToBinDir(executable string) string {
 	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
-// sourceExecutablePath returns the path to the state tool that we want to test
-func executablePaths(t *testing.T) (string, string, string, string) {
+// executablePaths returns the paths to the executables that we want to test
+func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
 	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
 	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
 	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
-	installExec := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
 
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
@@ -161,11 +159,8 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	if !fileutils.FileExists(installExec) {
-		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
-	}
 
-	return stateExec, svcExec, trayExec, installExec
+	return stateExec, svcExec, trayExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -203,11 +198,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
-	exe, svcExe, trayExe, installExe := executablePaths(t)
+	exe, svcExe, trayExe := executablePaths(t)
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -517,7 +511,7 @@ func (s *Session) Close() error {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
-	
+
 	a := auth.New(cfg)
 
 	for _, user := range s.users {
