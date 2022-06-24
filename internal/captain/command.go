@@ -335,6 +335,10 @@ func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
 	c.interceptChain = fns
 }
 
+func DisableMousetrap() {
+	cobra.MousetrapHelpText = ""
+}
+
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
 		defer profile.Measure("captain:intercepter", time.Now())

@@ -2,13 +2,14 @@ package automation
 
 import (
 	"fmt"
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 type SearchAutomationTestSuite struct {
@@ -16,6 +17,8 @@ type SearchAutomationTestSuite struct {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -30,6 +33,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -40,6 +45,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -50,6 +57,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,6 +73,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -72,9 +83,9 @@ func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
 	cp.Expect("Flask-CDN")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("search", "--language", "ruby", "ao")
-	cp.Expect("kaomoji")
-	cp.Expect("mao")
+	cp = ts.Spawn("search", "--language", "ruby", "radar")
+	cp.Expect("radar-api")
+	cp.Expect("radar-app")
 	cp.ExpectExitCode(0)
 
 	url := "https://platform.activestate.com/qamainorg/public?branch=main&commitID=32e543ee-b6ab-4f59-9b28-ad830ec6980e"
@@ -85,9 +96,9 @@ func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
 	cp.Expect("Flask-CDN")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("search", "--language", "ruby", "ao")
-	cp.Expect("kaomoji")
-	cp.Expect("mao")
+	cp = ts.Spawn("search", "--language", "ruby", "radar")
+	cp.Expect("radar-api")
+	cp.Expect("radar-app")
 	cp.ExpectExitCode(0)
 	cp.Wait(5 * time.Second)
 	fmt.Println(cp.Snapshot())
@@ -95,6 +106,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_ExactTermFlag() {
+	suite.OnlyRunForTags(tagsuite.Automation)
+	
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

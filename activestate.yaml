@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=3fa81790-497b-4c02-a415-2a1487e052a5
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -355,7 +355,7 @@ scripts:
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v automation | grep -v expect | grep -v state-tray | grep -v state-svc`
     standalone: true
   - name: integration-tests
     language: bash
@@ -364,7 +364,7 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test ./test/integration -v "${@:1}" -timeout 20m
+      go test `go list ./... | grep "integration\|automation"` -v "${@:1}" -timeout 20m
   - name: clean
     language: bash
     description: Cleans out the build dir.

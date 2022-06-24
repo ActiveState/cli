@@ -92,6 +92,10 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
+	if r == DisabledRuntime {
+		return nil // nothing to do
+	}
+
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...

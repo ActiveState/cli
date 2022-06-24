@@ -28,17 +28,18 @@ import (
 type Installer struct {
 	out          output.Outputer
 	cfg          *config.Instance
+	payloadPath  string
 	sessionToken string
 	*Params
 }
 
-func NewInstaller(cfg *config.Instance, out output.Outputer, params *Params) (*Installer, error) {
-	i := &Installer{cfg: cfg, out: out, Params: params}
+func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string, params *Params) (*Installer, error) {
+	i := &Installer{cfg: cfg, out: out, payloadPath: payloadPath, Params: params}
 	if err := i.sanitizeInput(); err != nil {
 		return nil, errs.Wrap(err, "Could not sanitize input")
 	}
 
-	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.sourcePath, i.path)
+	logging.Debug("Instantiated installer with source dir: %s, target dir: %s", i.payloadPath, i.path)
 
 	return i, nil
 }
@@ -93,7 +94,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Copy all the files
-	if err := fileutils.CopyAndRenameFiles(i.sourcePath, i.path); err != nil {
+	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path); err != nil {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
