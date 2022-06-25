@@ -71,11 +71,16 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
+	env, err := runtime.Env(true, true)
+	if err != nil {
+		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
+	}
+
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 
 	projectDir := filepath.Dir(proj.Source().Path())
 	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(sockPath, exes); err != nil {
+	if err := fw.Update(sockPath, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

@@ -53,7 +53,7 @@ func (f *Executor) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(sockPath string, exes envdef.ExecutablePaths) error {
+func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -89,7 +89,7 @@ func (f *Executor) Update(sockPath string, exes envdef.ExecutablePaths) error {
 			exe = strings.ReplaceAll(fixedExe, "c:", "C:")
 		}
 
-		if err := f.createExecutor(sockPath, exe); err != nil {
+		if err := f.createExecutor(sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -129,7 +129,7 @@ func (f *Executor) Cleanup() error {
 	return nil
 }
 
-func (f *Executor) createExecutor(sockPath, exe string) error {
+func (f *Executor) createExecutor(sockPath string, env map[string]string, exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
@@ -165,12 +165,6 @@ func (f *Executor) createExecutor(sockPath, exe string) error {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	fmt.Printf(
-		"exists... exec: %t, sock: %t, target: %t\n",
-		fileutils.FileExists(executorExec),
-		fileutils.FileExists(sockPath),
-		fileutils.FileExists(exe),
-	)
 	if !fileutils.FileExists(sockPath) {
 		files, _ := ioutil.ReadDir(filepath.Dir(sockPath))
 		for _, file := range files {
@@ -183,6 +177,7 @@ func (f *Executor) createExecutor(sockPath, exe string) error {
 		"stateSock": sockPath,
 		"target":    exe,
 		"denote":    []string{executorDenoter, denoteTarget},
+		"Env":       env,
 	}
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
