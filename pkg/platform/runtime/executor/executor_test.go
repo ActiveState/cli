@@ -18,9 +18,10 @@ func TestExecutor(t *testing.T) {
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
+	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Update("dummy/path", exes)
+		err = fw.Update("dummy/path", env, exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
