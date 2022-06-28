@@ -163,7 +163,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) Update(env map[string]string) error {
+func (s *Setup) Update() error {
 	// Update all the runtime artifacts
 	artifacts, err := s.updateArtifacts()
 	if err != nil {
@@ -171,7 +171,7 @@ func (s *Setup) Update(env map[string]string) error {
 	}
 
 	// Update executors
-	if err := s.updateExecutors(env, artifacts); err != nil {
+	if err := s.updateExecutors(artifacts); err != nil {
 		return errs.Wrap(err, "Failed to update executors")
 	}
 
@@ -246,7 +246,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	return artifacts, nil
 }
 
-func (s *Setup) updateExecutors(env map[string]string, artifacts []artifact.ArtifactID) error {
+func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
@@ -262,10 +262,16 @@ func (s *Setup) updateExecutors(env map[string]string, artifacts []artifact.Arti
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
+	env, err := s.store.EnvDef()
+	if err != nil {
+		return locale.WrapError(err, "err_setup_get_store_envdef", "Could not retrieve environment")
+	}
+	envMap := env.GetEnv(true)
+
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(sockPath, env, exePaths); err != nil {
+	if err := exec.Update(sockPath, envMap, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 

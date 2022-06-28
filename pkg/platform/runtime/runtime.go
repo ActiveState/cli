@@ -98,11 +98,6 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	env, err := r.Env(true, true)
-	if err != nil {
-		return errs.Wrap(err, "Could not construct runtime environment variables")
-	}
-
 	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error
@@ -112,7 +107,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 			prod.Close()
 		}()
 
-		if err := setup.New(r.target, prod, auth, r.analytics).Update(env); err != nil {
+		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
 			setupErr = errs.Wrap(err, "Update failed")
 			return
 		}
@@ -125,7 +120,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	}()
 
 	// ... and handle and wait for the runtime events in the main thread
-	err = msgHandler.WaitForAllEvents(prod.Events())
+	err := msgHandler.WaitForAllEvents(prod.Events())
 	if err != nil {
 		multilog.Error("Error handling update events: %v", err)
 	}
