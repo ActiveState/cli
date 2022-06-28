@@ -561,7 +561,13 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Run OnUse functions for non-persistent flags
+  warnUnstableCommand := c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
+	if warnUnstableCommand && !condition.OptInUnstable(c.cfg) {
+	  c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+	  return nil
+	}
+
+  // Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
@@ -594,11 +600,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		c.out.Notice(output.Title(c.title + suffix))
 	}
 
-	if c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName) {
-		if !condition.OptInUnstable(c.cfg) {
-			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
-			return nil
-		}
+	if warnUnstableCommand {
 		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
 
