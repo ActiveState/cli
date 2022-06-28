@@ -561,13 +561,13 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		}
 	}
 
-  warnUnstableCommand := c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
+	warnUnstableCommand := c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
 	if warnUnstableCommand && !condition.OptInUnstable(c.cfg) {
-	  c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
-	  return nil
+		c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+		return nil
 	}
 
-  // Run OnUse functions for non-persistent flags
+	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 
 	for idx, arg := range c.arguments {
