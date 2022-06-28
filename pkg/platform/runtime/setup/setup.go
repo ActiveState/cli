@@ -266,7 +266,7 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	if err != nil {
 		return locale.WrapError(err, "err_setup_get_store_envdef", "Could not retrieve environment")
 	}
-	envMap := env.GetEnv(true)
+	envMap := env.GetEnv(false)
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 

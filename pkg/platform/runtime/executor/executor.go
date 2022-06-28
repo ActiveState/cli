@@ -192,6 +192,8 @@ func (f *Executor) createExecutor(sockPath string, env map[string]string, exe st
 		return errs.Wrap(err, "Could not parse %s template", boxFile)
 	}
 
+	fmt.Println(fwStr)
+
 	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
 		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
 	}
