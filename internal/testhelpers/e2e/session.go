@@ -142,7 +142,7 @@ func (s *Session) copyExeToBinDir(executable string) string {
 	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
-// sourceExecutablePath returns the path to the state tool that we want to test
+// executablePaths returns the paths to the executables that we want to test
 func executablePaths(t *testing.T) (string, string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
