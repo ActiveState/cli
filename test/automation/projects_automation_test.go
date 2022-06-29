@@ -1,7 +1,6 @@
 package automation
 
 import (
-	"fmt"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -23,8 +22,6 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_NoActProjects() {
 
 	cp := ts.Spawn("projects")
 	cp.ExpectLongString("You have not activated any projects yet")
-	cp.Wait(5 * time.Second)
-	fmt.Println(cp.Snapshot())
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
