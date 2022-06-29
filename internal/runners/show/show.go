@@ -338,9 +338,6 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 	}
 
 	if !auth.Authenticated() {
-		if localProject != nil {
-			return localProject.CommitID(), nil
-		}
 		return latestCommit.String(), nil
 	}
 
