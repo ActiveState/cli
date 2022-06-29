@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -21,8 +20,6 @@ import (
 )
 
 func TestOfflineInstaller(t *testing.T) {
-	// TODO: remove before merging
-	t.SkipNow()
 	// Each artifact of the form UUID.tar.gz has the following structure:
 	// - runtime.json (empty)
 	// - tmp (directory)
@@ -67,9 +64,6 @@ func TestOfflineInstaller(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(nil, eventHandler)
-	if err != nil {
-		t.Log(errs.JoinMessage(err))
-	}
 	require.NoError(t, err)
 
 	assert.False(t, mockProgress.BuildStartedCalled)
