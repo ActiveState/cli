@@ -722,12 +722,12 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 		for i, a := range artifacts {
 			// Each artifact is of the form artifactID.tar.gz, so extract the artifactID from the name.
 			filename := a.Path()
-			extIndex := strings.Index(filename, ".")
+			basename := filepath.Base(filename)
+			extIndex := strings.Index(basename, ".")
 			if extIndex == -1 {
-				extIndex = len(filename)
+				extIndex = len(basename)
 			}
-			filenameNoExt := filepath.Base(filename[0:extIndex])
-			artifactID := artifact.ArtifactID(filenameNoExt)
+			artifactID := artifact.ArtifactID(basename[0:extIndex])
 			installedArtifacts[i] = artifactID
 
 			// Submit the artifact for setup and install.
