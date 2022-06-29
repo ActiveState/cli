@@ -10,7 +10,7 @@ import (
 var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
-	KeyHeartbeat = "heart:"
+	KeyHeartbeat = "heart<"
 )
 
 type Requester interface {
@@ -67,7 +67,7 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		data := input[len(KeyHeartbeat):]
 		var pid, exec string
 
-		ss := strings.SplitN(data, ":", 2)
+		ss := strings.SplitN(data, "<", 2)
 		if len(ss) > 0 {
 			pid = ss[0]
 		}

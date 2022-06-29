@@ -4,7 +4,7 @@ const builtin = @import("builtin");
 const net = std.net;
 const testing = std.testing;
 
-const clientMsgFmt = "heart:{d}:{s}";
+const clientMsgFmt = "heart<{d}<{s}";
 
 fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
     const conn = try net.connectUnixSocket(path);
