@@ -597,9 +597,8 @@ func makeIndexedCommits(cs []*mono_models.Commit) indexedCommits {
 	return m
 }
 
-// countBetween returns 0 if same or if unable to determine the count. If the
-// last commit is empty, -1 is returned. Caution: Currently, the logic does not
-// verify that the first commit is "before" the last commit.
+// countBetween returns 0 if same or if unable to determine the count.
+// Caution: Currently, the logic does not verify that the first commit is "before" the last commit.
 func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	if first == last {
 		return 0, nil

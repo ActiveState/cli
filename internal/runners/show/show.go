@@ -338,6 +338,9 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 	}
 
 	if !auth.Authenticated() {
+		if localProject != nil {
+			return localProject.CommitID(), nil
+		}
 		return latestCommit.String(), nil
 	}
 
@@ -348,10 +351,11 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		}
 		behind, err := model.CommitsBehind(latestCommitID, commitID)
 		if err != nil {
-			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
+			logging.Debug("Could not determine number of commits behind latest; assuming there are local commits")
+			return fmt.Sprintf("%s %s", localProject.CommitID(), locale.T("commit_display_local")), nil
 		}
 		if behind != 0 {
-			return fmt.Sprintf("%s (%d behind latest)", localProject.CommitID(), behind), nil
+			return fmt.Sprintf("%s (%d %s)", localProject.CommitID(), behind, locale.Tl("show_commits_behind_latest", "behind latest")), nil
 		}
 		return localProject.CommitID(), nil
 	}
