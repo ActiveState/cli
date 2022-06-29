@@ -262,16 +262,15 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
-	env, err := s.store.EnvDef()
+	env, err := s.store.Environ(false)
 	if err != nil {
-		return locale.WrapError(err, "err_setup_get_store_envdef", "Could not retrieve environment")
+		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
 	}
-	envMap := env.GetEnv(false)
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(sockPath, envMap, exePaths); err != nil {
+	if err := exec.Update(sockPath, env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
