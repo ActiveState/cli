@@ -68,7 +68,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
+	cp := ts.Spawn("auth", "--token", e2e.PersistentToken, "-n")
 	cp.Expect("logged in", 40*time.Second)
 	cp.ExpectExitCode(0)
 
