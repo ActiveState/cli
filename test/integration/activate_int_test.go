@@ -403,35 +403,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.Expect("Installing")
 	cp.Expect("Activated")
 
-	t := suite.T()
-	des, err := fileutils.ListDir(ts.Dirs.Bin, true)
-	suite.Require().NoError(err)
-	for _, de := range des {
-		if strings.Contains(de.Path(), "state-exec") {
-			t.Log(de.Path())
-		}
-	}
-
-	des, err = fileutils.ListDir(ts.Dirs.Cache, true)
-	suite.Require().NoError(err)
-	for _, de := range des {
-		if fileutils.IsDir(de.Path()) && strings.HasSuffix(de.Path(), "exec") {
-			xdes, err := fileutils.ListDir(de.Path(), true)
-			suite.Require().NoError(err)
-			for _, xde := range xdes {
-				t.Log(xde.Path())
-				if strings.Contains(xde.Path(), "python3") {
-					bs, err := fileutils.ReadFile(xde.Path())
-					if err != nil {
-						t.Log(err)
-						continue
-					}
-					t.Log(string(bs))
-				}
-			}
-		}
-	}
-
 	suite.assertCompletedStatusBarReport(cp.Snapshot())
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
