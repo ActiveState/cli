@@ -67,7 +67,7 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		data := input[len(KeyHeartbeat):]
 		var pid, exec string
 
-		ss := strings.Split(data, ":")
+		ss := strings.SplitN(data, ":", 2)
 		if len(ss) > 0 {
 			pid = ss[0]
 		}
