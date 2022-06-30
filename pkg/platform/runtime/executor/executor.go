@@ -148,13 +148,6 @@ func (f *Executor) createExecutor(sockPath string, env map[string]string, exe st
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	if !fileutils.FileExists(sockPath) {
-		files, _ := ioutil.ReadDir(filepath.Dir(sockPath))
-		for _, file := range files {
-			fmt.Println(file.Name())
-		}
-	}
-
 	tplParams := map[string]interface{}{
 		"stateExec": executorExec,
 		"stateSock": sockPath,
