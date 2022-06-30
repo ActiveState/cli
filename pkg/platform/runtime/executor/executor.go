@@ -63,15 +63,6 @@ func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.Ex
 			if !strings.HasSuffix(exe, exeutils.Extension) {
 				continue
 			}
-
-			if fileutils.FileExists(exe) {
-				fixedExe, err := fileutils.CaseSensitivePath(exe)
-				if err != nil {
-					return locale.WrapError(err, "err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)", exe)
-				}
-				exe = strings.ReplaceAll(fixedExe, "c:", "C:")
-			}
-
 			exes = append(exes, exe+exeutils.Extension) // Double up on the ext so only the first on gets dropped
 		}
 	}
@@ -81,14 +72,6 @@ func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.Ex
 	}
 
 	for _, exe := range exes {
-		if rt.GOOS == "windows" && fileutils.FileExists(exe) {
-			fixedExe, err := fileutils.CaseSensitivePath(exe)
-			if err != nil {
-				return locale.WrapError(err, "err_createexecutor_path_fix", "Could not create executor for {{.V0}} (case sensitivity correction failed)", exe)
-			}
-			exe = strings.ReplaceAll(fixedExe, "c:", "C:")
-		}
-
 		if err := f.createExecutor(sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
