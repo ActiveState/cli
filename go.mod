@@ -2,8 +2,6 @@ module github.com/ActiveState/cli
 
 go 1.16
 
-replace github.com/ActiveState/cli => ./
-
 require (
 	cloud.google.com/go v0.64.0
 	github.com/99designs/gqlgen v0.13.0

@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/export"
 	"github.com/ActiveState/cli/internal/runners/export/config"
 	"github.com/ActiveState/cli/internal/runners/export/docs"
+	"github.com/ActiveState/cli/internal/runners/export/fig"
 	"github.com/ActiveState/cli/internal/runners/export/ghactions"
 )
 
@@ -176,6 +177,26 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(&params, ccmd)
 		})
 
+	cmd.SetHidden(true)
+
+	return cmd
+}
+
+func newExportFigCommand(prime *primer.Values) *captain.Command {
+	runner := fig.New(prime)
+	params := fig.Params{}
+
+	cmd := captain.NewCommand(
+		"fig",
+		locale.Tl("export_docs_title", "Export state tool command reference for use with fig"),
+		locale.Tl("export_docs_description", ""),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(&params, ccmd)
+		})
+	
 	cmd.SetHidden(true)
 
 	return cmd
