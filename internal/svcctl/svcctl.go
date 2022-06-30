@@ -11,8 +11,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -45,20 +43,10 @@ type IPCommunicator interface {
 }
 
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
-	tmpDir := os.TempDir()
-	if runtime.GOOS == "windows" {
-		fixedTmpDir, err := fileutils.GetLongPathName(tmpDir)
-		if err != nil {
-			logging.Debug(errs.JoinMessage(err))
-		} else {
-			tmpDir = strings.ReplaceAll(fixedTmpDir, "c:", "C:")
-		}
-	}
-
 	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
 
 	return &ipc.SockPath{
-		RootDir:    filepath.Join(tmpDir, subdir),
+		RootDir:    filepath.Join(os.TempDir(), subdir),
 		AppName:    constants.CommandName,
 		AppChannel: constants.BranchName,
 	}
