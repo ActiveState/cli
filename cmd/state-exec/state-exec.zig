@@ -10,7 +10,7 @@ fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32, exec: []con
     const conn = try net.connectUnixSocket(path);
     defer conn.close();
 
-    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{pid, exec});
+    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{ pid, exec });
     _ = try conn.write(clientMsg);
 
     var buf: [1024]u8 = undefined;
@@ -45,7 +45,7 @@ pub fn main() !void {
 
     const exec = try std.fs.selfExePathAlloc(a);
 
-    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{a, path, pid, exec});
+    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{ a, path, pid, exec });
     clientThread.join();
 
     var usrArgs = try process.argsAlloc(a);
