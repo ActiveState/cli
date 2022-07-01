@@ -1,4 +1,4 @@
-package artifactcache
+package integration
 
 import (
 	"os"
