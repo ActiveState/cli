@@ -47,7 +47,7 @@ func TestOfflineInstaller(t *testing.T) {
 	owner := "testOwner"
 	name := "testName"
 	commitID := strfmt.UUID("000000000-0000-0000-0000-000000000000")
-	artifactsDir := osutil.GetTestDataDir()
+	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offlineInstaller")
 	offlineTarget := target.NewOfflineTarget(owner, name, commitID, dir, artifactsDir)
 
 	analytics := blackhole.New()
