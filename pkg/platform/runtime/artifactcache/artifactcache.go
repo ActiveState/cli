@@ -35,7 +35,7 @@ type ArtifactCache struct {
 	artifacts        map[artifact.ArtifactID]*cachedArtifact
 	mutex            sync.Mutex
 	timeSpentCopying time.Duration
-	sizeCopied       int64 //bytes
+	sizeCopied       int64 // bytes
 }
 
 const MB int64 = 1024 * 1024
