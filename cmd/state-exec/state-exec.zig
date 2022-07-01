@@ -1,63 +1,84 @@
-// from https://zig-by-example.github.io/tcp-connection.html
 const std = @import("std");
 const builtin = @import("builtin");
+const ArrayList = std.ArrayList;
+const ChildProcess = std.ChildProcess;
+const fmt = std.fmt;
+const fs = std.fs;
+const heap = std.heap;
+const io = std.io;
+const mem = std.mem;
 const net = std.net;
-const testing = std.testing;
+const os = std.os;
+const process = std.process;
+const Thread = std.Thread;
 
-const clientMsgFmt = "heart<{d}<{s}";
+const ArgError = error{
+    InvalidArgOne,
+    InvalidArgTwo,
+};
 
-fn sendMsgToServer(a: std.mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
+const RunError = process.ArgIterator.InitError || ArgError;
+
+pub fn main() !void {
+    const stderr = io.getStdErr().writer();
+
+    run() catch |err| {
+        switch (err) {
+            RunError.InitError => try stderr.print("oops", .{}),
+            ArgError.InvalidArgOne => try stderr.print("first arg should be a socket file\n", .{}),
+            ArgError.InvalidArgTwo => try stderr.print("second arg should be a language runtime\n", .{}),
+        }
+        process.exit(1);
+    };
+}
+
+fn sendMsgToServer(a: mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
+    const clientMsgFmt = "heart<{d}<{s}";
+
     const conn = try net.connectUnixSocket(path);
     defer conn.close();
 
-    var clientMsg = try std.fmt.allocPrint(a, clientMsgFmt, .{ pid, exec });
+    var clientMsg = try fmt.allocPrint(a, clientMsgFmt, .{ pid, exec });
     _ = try conn.write(clientMsg);
 
     var buf: [1024]u8 = undefined;
     _ = try conn.read(buf[0..]);
 }
 
-pub fn main() !void {
-    const stderr = std.io.getStdErr().writer();
-    const process = std.process;
-
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+pub fn run() RunError!void {
+    var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
-
-    var a: std.mem.Allocator = arena.allocator();
+    const a = arena.allocator();
 
     var argIt = try process.argsWithAllocator(a);
     defer argIt.deinit();
 
     _ = argIt.skip();
-
     const path = try argIt.next(a) orelse {
-        try stderr.print("first arg should be a path to socket file\n", .{});
-        return error.InvalidArgs;
+        return ArgError.InvalidArgOne;
     };
 
     const runt = try argIt.next(a) orelse {
-        try stderr.print("second arg should be a path to a language runtime\n", .{});
-        return error.InvalidArgs;
+        return ArgError.InvalidArgTwo;
     };
 
-    var pid: i32 = @truncate(i32, @bitCast(i64, std.Thread.getCurrentId()));
+    var pid: i32 = @truncate(i32, @bitCast(i64, Thread.getCurrentId()));
 
-    const exec = try std.fs.selfExePathAlloc(a);
+    const exec = try fs.selfExePathAlloc(a);
 
-    const clientThread = try std.Thread.spawn(.{}, sendMsgToServer, .{ a, path, pid, exec });
+    const clientThread = try Thread.spawn(.{}, sendMsgToServer, .{ a, path, pid, exec });
     clientThread.join();
 
     var usrArgs = try process.argsAlloc(a);
     defer process.argsFree(a, usrArgs);
 
-    var cmdArgs = std.ArrayList([]const u8).init(a);
+    var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
     try cmdArgs.append(runt);
     try cmdArgs.appendSlice(usrArgs[3..]);
 
-    const childProc = try std.ChildProcess.init(cmdArgs.items, a);
+    const childProc = try ChildProcess.init(cmdArgs.items, a);
     defer childProc.deinit();
     var term = try childProc.spawnAndWait();
-    std.os.exit(term.Exited);
+    os.exit(term.Exited);
 }
