@@ -456,7 +456,7 @@ jobs:
       - # === Deploy ActiveStatePlatform-python environment ===
         name: Deploy ActiveStatePlatform-python environment
         shell: bash
-        run: state deploy ActiveState-CLI/ActiveStatePlatform-python
+        run: .github/deps/${{ runner.os }}/bin/state deploy ActiveState-CLI/ActiveStatePlatform-python
 
       - # === Checkout ActiveStatePlatform-python tools ===
         name: Checkout ActiveStatePlatform-python tools
