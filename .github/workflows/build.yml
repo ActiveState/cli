@@ -441,7 +441,7 @@ jobs:
         shell: bash
         run: |
           VERSION="`head -n 1 version.txt`"
-          AUTHOR=00000000-0000-0000-0000-000000000000
+          AUTHOR=df3b32c9-4b61-4e04-ae4c-ad2e8a99e54b
           sed -ie "s/\$CHANNEL/$CHANNEL/;" $STUBFILE
           sed -ie "s/\$VERSION/$VERSION/;" $STUBFILE
           sed -ie "s/\$AUTHOR/$AUTHOR/;" $STUBFILE
@@ -494,3 +494,4 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AS_PLATFORM=pr8609
