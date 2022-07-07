@@ -69,8 +69,8 @@ pub fn run() Error!void {
     defer argIt.deinit();
 
     _ = argIt.skip();
-    const path = argIt.next(a) orelse return Error.ArgMissingOne catch return Error.ArgInvalidOne;
-    const runt = argIt.next(a) orelse return Error.ArgMissingTwo catch return Error.ArgInvalidTwo;
+    const path = (argIt.next(a) orelse return Error.ArgMissingOne) catch return Error.ArgInvalidOne;
+    const runt = (argIt.next(a) orelse return Error.ArgMissingTwo) catch return Error.ArgInvalidTwo;
 
     var pid: i32 = @truncate(i32, @bitCast(i64, Thread.getCurrentId()));
 
