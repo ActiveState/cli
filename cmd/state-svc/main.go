@@ -197,7 +197,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 		cancel()
 		if err := p.Stop(); err != nil {
-			logging.Debug("Service stop failed: %v", err)
+			multilog.Critical("Service stop failed: %v", errs.JoinMessage(err))
 		}
 	})
 
