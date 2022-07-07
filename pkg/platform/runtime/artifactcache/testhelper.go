@@ -11,8 +11,8 @@ type testArtifactCache struct {
 	cache *ArtifactCache
 }
 
-// TestNew is only meant to be called from tests. Use New() instead.
-func TestNew(dir string, maxSize int64) (*testArtifactCache, error) {
+// NewTestArtifactCache is only meant to be called from tests. Use New() instead.
+func NewTestArtifactCache(dir string, maxSize int64) (*testArtifactCache, error) {
 	cache, err := newWithDirAndSize(dir, maxSize)
 	if err != nil {
 		return nil, err

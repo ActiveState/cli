@@ -35,7 +35,7 @@ func TestCache(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	// Test cache creation.
-	cache, err := artifactcache.TestNew(dir, 10) // bytes
+	cache, err := artifactcache.NewTestArtifactCache(dir, 10) // bytes
 	require.NoError(t, err)
 	assert.Equal(t, cache.Dir(), dir)
 	assert.False(t, fileutils.FileExists(cache.InfoJson())) // not yet
@@ -93,7 +93,7 @@ func TestCache(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, fileutils.FileExists(cache.InfoJson()))
 
-	reloaded, err := artifactcache.TestNew(cache.Dir(), 10)
+	reloaded, err := artifactcache.NewTestArtifactCache(cache.Dir(), 10)
 	require.NoError(t, err)
 	assert.Equal(t, reloaded.CurrentSize(), int64(10))
 	assert.Equal(t, len(reloaded.Artifacts()), 3)
@@ -106,7 +106,7 @@ func TestCache(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	cache, err = artifactcache.TestNew(dir, 1) // bytes
+	cache, err = artifactcache.NewTestArtifactCache(dir, 1) // bytes
 	require.NoError(t, err)
 	cache.Store(testArtifacts[1], osutil.GetTestFile(string(testArtifacts[1])))
 	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2]))) // should not store nor erase existing artifacts
