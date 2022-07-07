@@ -12,6 +12,8 @@ const os = std.os;
 const process = std.process;
 const Thread = std.Thread;
 
+const execName = "state-exec";
+
 const Error = error{
     ArgIterator,
     ArgInvalidOne,
@@ -30,37 +32,51 @@ const Error = error{
 pub fn main() !void {
     const stderr = io.getStdErr().writer();
 
-    run() catch |err| {
+    run(stderr) catch |err| {
+        try stderr.print("{s}: ", .{execName});
+
         switch (err) {
-            Error.ArgIterator => try stderr.print("cannot process args", .{}),
-            Error.ArgInvalidOne, Error.ArgMissingOne => try stderr.print("first arg should be a socket file\n", .{}),
-            Error.ArgInvalidTwo, Error.ArgMissingTwo => try stderr.print("second arg should be a language runtime\n", .{}),
-            Error.ArgCollector => try stderr.print("cannot setup arg collector", .{}),
-            Error.ArgCollectRunt => try stderr.print("cannot collect runtime arg", .{}),
-            Error.ArgCollectUsr => try stderr.print("cannot collect user args", .{}),
-            Error.InspectSelfPath => try stderr.print("cannot obtain path to this executable", .{}),
-            Error.ThreadSpawn => try stderr.print("cannot spawn thread for heartbeat", .{}),
-            Error.ChildProcInit => try stderr.print("cannot initialize child process for runtime", .{}),
-            Error.ChildProcSpawn => try stderr.print("cannot spawn child process for runtime", .{}),
+            Error.ArgIterator => try stderr.print("Cannot process args.\n", .{}),
+            Error.ArgInvalidOne, Error.ArgMissingOne => try stderr.print("First arg should be a socket file.\n", .{}),
+            Error.ArgInvalidTwo, Error.ArgMissingTwo => try stderr.print("Second arg should be a language runtime.\n", .{}),
+            Error.ArgCollector => try stderr.print("Cannot setup arg collector.\n", .{}),
+            Error.ArgCollectRunt => try stderr.print("Cannot collect runtime arg.\n", .{}),
+            Error.ArgCollectUsr => try stderr.print("Cannot collect user args.\n", .{}),
+            Error.InspectSelfPath => try stderr.print("Cannot obtain path to this executable.\n", .{}),
+            Error.ThreadSpawn => try stderr.print("Cannot spawn thread for heartbeat.\n", .{}),
+            Error.ChildProcInit => try stderr.print("Cannot initialize child process for runtime.\n", .{}),
+            Error.ChildProcSpawn => try stderr.print("Cannot spawn child process for runtime.\n", .{}),
         }
+
+        try stderr.print("{s}: This application is not intended to be user serviceable; Please contact support for assistance.\n", .{execName});
+
         process.exit(1);
     };
 }
 
-fn sendMsgToServer(a: mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
+fn sendMsgToServer(stderr: fs.File.Writer, a: mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
     const clientMsgFmt = "heart<{d}<{s}";
 
-    const conn = try net.connectUnixSocket(path);
+    const conn = net.connectUnixSocket(path) catch |err| {
+        try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
+        return;
+    };
     defer conn.close();
 
     var clientMsg = try fmt.allocPrint(a, clientMsgFmt, .{ pid, exec });
-    _ = try conn.write(clientMsg);
+    _ = conn.write(clientMsg) catch |err| {
+        try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
+        return;
+    };
 
     var buf: [1024]u8 = undefined;
-    _ = try conn.read(buf[0..]);
+    _ = conn.read(buf[0..]) catch |err| {
+        try stderr.print("{s}: Cannot read from socket connection: {s}.\n", .{ execName, err });
+        return;
+    };
 }
 
-pub fn run() Error!void {
+fn run(stderr: fs.File.Writer) Error!void {
     var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -76,7 +92,7 @@ pub fn run() Error!void {
 
     const exec = fs.selfExePathAlloc(a) catch return Error.InspectSelfPath;
 
-    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, path, pid, exec }) catch {
+    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ stderr, a, path, pid, exec }) catch {
         return Error.ThreadSpawn;
     };
     clientThread.join();
