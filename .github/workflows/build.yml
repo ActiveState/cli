@@ -453,27 +453,42 @@ jobs:
           name: platform-stub.yaml
           path: ${{ env.STUBFILE }}
 
-      - # === Checkout TheHomeRepot ===
-        name: Checkout TheHomeRepot
+      - # === Deploy ActiveStatePlatform-python environment ===
+        name: Deploy ActiveStatePlatform-python environment
+        shell: bash
+        run: state deploy ActiveState-CLI/ActiveStatePlatform-python
+
+      - # === Checkout ActiveStatePlatform-python tools ===
+        name: Checkout ActiveStatePlatform-python tools
         uses: actions/checkout@v2
         with:
-          repository: ActiveState/TheHomeRepot
-          path: TheHomeRepot
+          repository: ActiveState/ActiveStatePlatform-python
+          path: ActiveStatePlatform-python
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - # === Upload Stub ===
-        name: Upload Stub
-        if: false
+      - # === Setup ActiveStatePlatform-python tools ===
+        name: Setup ActiveStatePlatform-python tools
         shell: bash
         run: |
-          apt-get install -y pipenv
+          cd ActiveStatePlatform-python
+          mkdir bin
+          python3 setup.py \
+            develop \
+            --script-dir=`pwd`/bin
+            --index-url="" \
+            --find-links="" \
+            --no-deps
 
-          cd TheHomeRepot/lib/python
-          pipenv install --dev --ignore-pipfile
-          pipenv run apikey new
-          pipenv run ingredient load -f $GITHUB_WORKSPACE/$STUBFILE --skip-editor
+      - # === Upload Stub to the Platform ===
+        name: Upload Stub to the Platform
+        shell: bash
+        run: |
+          export PATH=`pwd`/ActiveStatePlatform-python/bin:$PATH
+
+          ingredient load -f $GITHUB_WORKSPACE/$STUBFILE --skip-editor
 
           VERSION="`head -n 1 $GITHUB_WORKSPACE/version.txt`"
-          pipenv run ingredient upload -n $NAME -s language/go -v $VERSION \
+          ingredient upload -n $NAME -s language/go -v $VERSION \
             --source-uri https://github.com/ActiveState/cli/archive/refs/tags/$VERSION.tar.gz \
             --release-date "`date -u '+%Y-%m-%dT%H:%M:%SZ'`"
         env:
