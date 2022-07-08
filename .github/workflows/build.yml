@@ -343,7 +343,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+    #if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
 
     # === Deploy Steps ===
     steps:
@@ -427,7 +427,7 @@ jobs:
     needs:
       - deploy
     runs-on: ubuntu-20.04
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+    #if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
     env:
       STUBFILE: deployments/platform/stub.json
       CHANNEL: ${{ github.event.pull_request.base.ref }}
@@ -470,4 +470,4 @@ jobs:
             -d @$STUBFILE
         env:
           AS_PLATFORM: pr8609.activestate.build
-          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
+          PLATFORM_API_TOKEN: MzI0OGNiYzAtOGUwZS00ODNjLWJiNmQtZmYxMzI3MjZlZDZmKk51TmdhTWVYamFtbzU5MzMq
