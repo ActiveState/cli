@@ -399,6 +399,7 @@ jobs:
         run: |
           state run deploy-updates
           state run deploy-installers
+          state run deploy-source
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -423,8 +424,10 @@ jobs:
   # === Platform Upload job ===
   platform_upload:
     name: Platform Upload
+    needs:
+      - deploy
     runs-on: ubuntu-20.04
-    #if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
     env:
       STUBFILE: deployments/platform/stub.yaml
       CHANNEL: ${{ github.event.pull_request.base.ref }}
@@ -441,57 +444,30 @@ jobs:
         shell: bash
         run: |
           VERSION="`head -n 1 version.txt`"
-          AUTHOR=df3b32c9-4b61-4e04-ae4c-ad2e8a99e54b
+          S3_URI="https://cli-src.s3.amazonaws.com/$GITHUB_REF-$VERSION.tar.gz"
+          CHECKSUM=`wget -O - "$S3_URI" | sha256sum`
+          TIMESTAMP="`date -u '+%Y-%m-%dT%H:%M:%SZ'`
           sed -ie "s/\$CHANNEL/$CHANNEL/;" $STUBFILE
+          sed -ie "s/\$TIMESTAMP/$TIMESTAMP/;" $STUBFILE
+          sed -ie "s/\$S3_URI/$S3_URI/;" $STUBFILE
+          sed -ie "s/\$CHECKSUM/$CHECKSUM/;" $STUBFILE
           sed -ie "s/\$VERSION/$VERSION/;" $STUBFILE
-          sed -ie "s/\$AUTHOR/$AUTHOR/;" $STUBFILE
 
       - # === Upload Stub as Artifact ===
         name: Upload Stub as Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: platform-stub.yaml
+          name: platform-stub.json
           path: ${{ env.STUBFILE }}
-
-      - # === Deploy ActiveStatePlatform-python environment ===
-        name: Deploy ActiveStatePlatform-python environment
-        shell: bash
-        run: .github/deps/${{ runner.os }}/bin/state deploy ActiveState-CLI/ActiveStatePlatform-python
-
-      - # === Checkout ActiveStatePlatform-python tools ===
-        name: Checkout ActiveStatePlatform-python tools
-        uses: actions/checkout@v2
-        with:
-          repository: ActiveState/ActiveStatePlatform-python
-          path: ActiveStatePlatform-python
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - # === Setup ActiveStatePlatform-python tools ===
-        name: Setup ActiveStatePlatform-python tools
-        shell: bash
-        run: |
-          cd ActiveStatePlatform-python
-          mkdir bin
-          python3 setup.py \
-            develop \
-            --script-dir=`pwd`/bin
-            --index-url="" \
-            --find-links="" \
-            --no-deps
 
       - # === Upload Stub to the Platform ===
         name: Upload Stub to the Platform
         shell: bash
         run: |
-          export PATH=`pwd`/ActiveStatePlatform-python/bin:$PATH
-
-          ingredient load -f $GITHUB_WORKSPACE/$STUBFILE --skip-editor
-
-          VERSION="`head -n 1 $GITHUB_WORKSPACE/version.txt`"
-          ingredient upload -n $NAME -s language/go -v $VERSION \
-            --source-uri https://github.com/ActiveState/cli/archive/refs/tags/$VERSION.tar.gz \
-            --release-date "`date -u '+%Y-%m-%dT%H:%M:%SZ'`"
+          curl 'https://$AS_PLATFORM/sv/inventory-api-v1/v1/ingredients/versions' \
+            -H "Authorization: Bearer $PLATFORM_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @$STUBFILE
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AS_PLATFORM: pr8609
+          AS_PLATFORM: pr8609.activestate.build
+          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}

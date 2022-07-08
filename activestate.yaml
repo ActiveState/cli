@@ -280,6 +280,27 @@ scripts:
     language: bash
     value: |
       go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
+  - name: deploy-source
+    language: bash
+    value: |
+      set -e
+
+      if [ "$GITHUB_HEAD_REF" != "" ]; then
+        BRANCH=${GITHUB_HEAD_REF}
+      elif [ "$GITHUB_REF" != "" ]; then
+        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
+      fi
+
+      if [ "$BRANCH" == "" ]; then
+        echo "Branch cannot be empty"
+        exit 1
+      fi
+
+      VERSION="`head -n 1 version.txt`"
+
+      mkdir -p build/src
+      git archive HEAD | gzip > build/src/$BRANCH-$VERSION.tar.gz
+      go run scripts/s3-deployer/main.go build/src us-east-1 cli-src /
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
@@ -297,7 +318,7 @@ scripts:
     description: Generates our github workflows
     value: |
       [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
@@ -306,7 +327,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
       popd
       rm -Rf $tmpDir
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
@@ -315,7 +336,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
       popd
       rm -Rf $tmpDir
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
