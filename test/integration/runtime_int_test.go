@@ -1,4 +1,4 @@
-package runtime
+package integration
 
 import (
 	"os"
@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
@@ -46,7 +47,7 @@ func TestOfflineInstaller(t *testing.T) {
 	owner := "testOwner"
 	name := "testName"
 	commitID := strfmt.UUID("000000000-0000-0000-0000-000000000000")
-	artifactsDir := osutil.GetTestDataDir()
+	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offlineInstaller")
 	offlineTarget := target.NewOfflineTarget(owner, name, commitID, dir, artifactsDir)
 
 	analytics := blackhole.New()
@@ -60,9 +61,9 @@ func TestOfflineInstaller(t *testing.T) {
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
 
-	rt, err := New(offlineTarget, analytics, nil)
+	rt, err := runtime.New(offlineTarget, analytics, nil)
 	require.Error(t, err)
-	assert.True(t, IsNeedsUpdateError(err), "runtime should require an update")
+	assert.True(t, runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(nil, eventHandler)
 	require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package artifactcache
+package integration
 
 import (
 	"os"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,13 +35,13 @@ func TestCache(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	// Test cache creation.
-	cache, err := newWithDirAndSize(dir, 10) // bytes
+	cache, err := artifactcache.NewTestArtifactCache(dir, 10) // bytes
 	require.NoError(t, err)
-	assert.Equal(t, cache.dir, dir)
-	assert.False(t, fileutils.FileExists(cache.infoJson)) // not yet
-	assert.Equal(t, cache.maxSize, int64(10))
-	assert.Equal(t, cache.currentSize, int64(0))
-	assert.Empty(t, cache.artifacts)
+	assert.Equal(t, cache.Dir(), dir)
+	assert.False(t, fileutils.FileExists(cache.InfoJson())) // not yet
+	assert.Equal(t, cache.MaxSize(), int64(10))
+	assert.Equal(t, cache.CurrentSize(), int64(0))
+	assert.Empty(t, cache.Artifacts())
 
 	// Test cache.Get() with empty cache.
 	path, found := cache.Get(testArtifacts[1])
@@ -51,12 +52,12 @@ func TestCache(t *testing.T) {
 	testArtifactFile := osutil.GetTestFile(string(testArtifacts[1]))
 	err = cache.Store(testArtifacts[1], testArtifactFile)
 	require.NoError(t, err)
-	assert.Equal(t, len(cache.artifacts), 1)
-	assert.Equal(t, cache.currentSize, int64(1))
+	assert.Equal(t, len(cache.Artifacts()), 1)
+	assert.Equal(t, cache.CurrentSize(), int64(1))
 
-	cached := cache.artifacts[testArtifacts[1]] // will test cache.Get() later; avoid last access time update
+	cached := cache.Artifacts()[testArtifacts[1]] // will test cache.Get() later; avoid last access time update
 	assert.Equal(t, cached.Id, testArtifacts[1])
-	assert.Equal(t, cached.ArchivePath, filepath.Join(cache.dir, string(testArtifacts[1])))
+	assert.Equal(t, cached.ArchivePath, filepath.Join(cache.Dir(), string(testArtifacts[1])))
 	assert.Equal(t, cached.Size, int64(1))
 	assert.True(t, cached.LastAccessTime > 0)
 
@@ -76,40 +77,40 @@ func TestCache(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	cache.Store(testArtifacts[3], osutil.GetTestFile(string(testArtifacts[3])))
 	cache.Store(testArtifacts[5], osutil.GetTestFile(string(testArtifacts[5])))
-	assert.Equal(t, cache.currentSize, int64(9))
-	assert.Equal(t, len(cache.artifacts), 3)
+	assert.Equal(t, cache.CurrentSize(), int64(9))
+	assert.Equal(t, len(cache.Artifacts()), 3)
 
 	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2])))
-	assert.Equal(t, cache.currentSize, int64(10))
-	assert.Equal(t, len(cache.artifacts), 3)
-	assert.Nil(t, cache.artifacts[testArtifacts[1]])
-	assert.NotNil(t, cache.artifacts[testArtifacts[2]])
-	assert.NotNil(t, cache.artifacts[testArtifacts[3]])
-	assert.NotNil(t, cache.artifacts[testArtifacts[5]])
+	assert.Equal(t, cache.CurrentSize(), int64(10))
+	assert.Equal(t, len(cache.Artifacts()), 3)
+	assert.Nil(t, cache.Artifacts()[testArtifacts[1]])
+	assert.NotNil(t, cache.Artifacts()[testArtifacts[2]])
+	assert.NotNil(t, cache.Artifacts()[testArtifacts[3]])
+	assert.NotNil(t, cache.Artifacts()[testArtifacts[5]])
 
 	// Test cache.Save().
 	err = cache.Save()
 	require.NoError(t, err)
-	assert.True(t, fileutils.FileExists(cache.infoJson))
+	assert.True(t, fileutils.FileExists(cache.InfoJson()))
 
-	reloaded, err := newWithDirAndSize(cache.dir, 10)
+	reloaded, err := artifactcache.NewTestArtifactCache(cache.Dir(), 10)
 	require.NoError(t, err)
-	assert.Equal(t, reloaded.currentSize, int64(10))
-	assert.Equal(t, len(reloaded.artifacts), 3)
-	assert.NotNil(t, reloaded.artifacts[testArtifacts[2]])
-	assert.NotNil(t, reloaded.artifacts[testArtifacts[3]])
-	assert.NotNil(t, reloaded.artifacts[testArtifacts[5]])
+	assert.Equal(t, reloaded.CurrentSize(), int64(10))
+	assert.Equal(t, len(reloaded.Artifacts()), 3)
+	assert.NotNil(t, reloaded.Artifacts()[testArtifacts[2]])
+	assert.NotNil(t, reloaded.Artifacts()[testArtifacts[3]])
+	assert.NotNil(t, reloaded.Artifacts()[testArtifacts[5]])
 
 	// Test too small of a cache max size.
 	dir, err = os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	cache, err = newWithDirAndSize(dir, 1) // bytes
+	cache, err = artifactcache.NewTestArtifactCache(dir, 1) // bytes
 	require.NoError(t, err)
 	cache.Store(testArtifacts[1], osutil.GetTestFile(string(testArtifacts[1])))
 	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2]))) // should not store nor erase existing artifacts
-	assert.Equal(t, cache.currentSize, int64(1))
-	assert.Equal(t, len(cache.artifacts), 1)
-	assert.NotNil(t, cache.artifacts[testArtifacts[1]])
+	assert.Equal(t, cache.CurrentSize(), int64(1))
+	assert.Equal(t, len(cache.Artifacts()), 1)
+	assert.NotNil(t, cache.Artifacts()[testArtifacts[1]])
 }
