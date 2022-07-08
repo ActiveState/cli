@@ -1,0 +1,71 @@
+{
+  "authors": [
+    {
+      "email": "user@example.com",
+      "name": "ActiveState",
+      "websites": ["https://platform.activestate.com"]
+    }
+  ],
+  "ingredient": {
+    "name": "statetool-$CHANNEL",
+    "primary_namespace": "language/go",
+    "description": "State Tool"
+  },
+  "versions": [
+    {
+      "copyright_text": "To be added.",
+      "license_expression": "unknown",
+      "release_timestamp": "$TIMESTAMP",
+      "platform_source_uri": "$S3_URI",
+      "source_uri": "https://example.com",
+      "source_checksum": "$CHECKSUM",
+      "version": "$VERSION",
+      "camel_extras": {},
+      "comment": "State Tool",
+      "dependencies": [
+        {
+          "feature": "alternative",
+          "namespace": "builder",
+          "requirements": [
+            {
+              "comparator": "gte",
+              "version": "0"
+            }
+          ],
+          "type": "build"
+        },
+        {
+          "feature": "statetool-builder",
+          "namespace": "builder",
+          "requirements": [
+            {
+              "comparator": "gte",
+              "version": "0"
+            }
+          ],
+          "type": "build"
+        },
+        {
+          "feature": "go",
+          "namespace": "language",
+          "requirements": [
+            {
+              "comparator": "gte",
+              "version": "0"
+            }
+          ],
+          "type": "build"
+        }
+      ],
+      "provided_features": [
+        {
+          "feature": "statetool-$CHANNEL",
+          "namespace": "language/go",
+          "version": "$VERSION"
+        }
+      ],
+      "reason": "import",
+      "status": "stable"
+    }
+  ]
+}

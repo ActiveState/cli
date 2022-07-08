@@ -429,7 +429,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
     env:
-      STUBFILE: deployments/platform/stub.yaml
+      STUBFILE: deployments/platform/stub.json
       CHANNEL: ${{ github.event.pull_request.base.ref }}
 
     # === Platform Upload Steps ===
