@@ -447,8 +447,8 @@ jobs:
         shell: bash
         run: |
           VERSION="`head -n 1 version.txt`"
-          S3_URI="s3://state-tool.s3.amazonaws.com/source/$GITHUB_HEAD_REF-$VERSION.tar.gz"
           CHECKSUM="${{ needs.deploy.outputs.source_checksum }}"
+          S3_URI="s3://platform-sources.s3.amazonaws.com/language/go/$CHECKSUM/statetool-$GITHUB_HEAD_REF-$VERSION.tar.gz"
           TIMESTAMP="`date -u '+%Y-%m-%dT%H:%M:%SZ'`"
           sed -ie "s|\$CHANNEL|$CHANNEL|;" $STUBFILE
           sed -ie "s/\$TIMESTAMP/$TIMESTAMP/;" $STUBFILE

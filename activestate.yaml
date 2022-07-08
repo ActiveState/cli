@@ -298,12 +298,12 @@ scripts:
 
       VERSION="`head -n 1 version.txt`"
 
-      BASENAME=$BRANCH-$VERSION.tar.gz
-      mkdir -p build/src/`dirname $BASENAME`
-      TGZ=build/src/$BRANCH-$VERSION.tar.gz
+      TGZ=build/src/statetool-$BRANCH-$VERSION.tar.gz
+      mkdir -p `dirname $TGZ`
       git archive HEAD | gzip > $TGZ
-      go run scripts/s3-deployer/main.go build/src us-east-1 state-tool source
-      echo "::set-output name=checksum::`sha256sum $TGZ | cut -d ' ' -f1`"
+      CHECKSUM=`sha256sum $TGZ | cut -d ' ' -f1`
+      go run scripts/s3-deployer/main.go build/src us-east-1 platform-sources language/go/$CHECKSUM
+      echo "::set-output name=checksum::$CHECKSUM"
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
