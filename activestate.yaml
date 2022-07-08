@@ -301,7 +301,7 @@ scripts:
       BASENAME=$BRANCH-$VERSION.tar.gz
       mkdir -p build/src/`dirname $BASENAME`
       git archive HEAD | gzip > build/src/$BRANCH-$VERSION.tar.gz
-      go run scripts/s3-deployer/main.go build/src us-east-1 cli-src /
+      go run scripts/s3-deployer/main.go build/src us-east-1 state-tool source
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
