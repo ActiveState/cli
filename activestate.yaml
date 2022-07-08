@@ -298,7 +298,8 @@ scripts:
 
       VERSION="`head -n 1 version.txt`"
 
-      mkdir -p build/src
+      BASENAME=$BRANCH-$VERSION.tar.gz
+      mkdir -p build/src/`dirname $BASENAME`
       git archive HEAD | gzip > build/src/$BRANCH-$VERSION.tar.gz
       go run scripts/s3-deployer/main.go build/src us-east-1 cli-src /
   - name: build-workflow-assets
