@@ -303,7 +303,7 @@ scripts:
       TGZ=build/src/$BRANCH-$VERSION.tar.gz
       git archive HEAD | gzip > $TGZ
       go run scripts/s3-deployer/main.go build/src us-east-1 state-tool source
-      echo "::set-output name=checksum::`sha256sum $TGZ`"
+      echo "::set-output name=checksum::`sha256sum $TGZ | cut -d ' ' -f1`"
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
