@@ -450,9 +450,9 @@ jobs:
           S3_URI="https://state-tool.s3.amazonaws.com/source/$GITHUB_REF-$VERSION.tar.gz"
           CHECKSUM="${{ needs.deploy.outputs.source_checksum }}"
           TIMESTAMP="`date -u '+%Y-%m-%dT%H:%M:%SZ'`"
-          sed -ie "s/\$CHANNEL/$CHANNEL/;" $STUBFILE
+          sed -ie "s|\$CHANNEL|$CHANNEL|;" $STUBFILE
           sed -ie "s/\$TIMESTAMP/$TIMESTAMP/;" $STUBFILE
-          sed -ie "s/\$S3_URI/$S3_URI/;" $STUBFILE
+          sed -ie "s|\$S3_URI|$S3_URI|;" $STUBFILE
           sed -ie "s/\$CHECKSUM/$CHECKSUM/;" $STUBFILE
           sed -ie "s/\$VERSION/$VERSION/;" $STUBFILE
 
