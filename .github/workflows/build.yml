@@ -467,7 +467,7 @@ jobs:
         name: Upload Stub to the Platform
         shell: bash
         run: |
-          curl 'https://$AS_PLATFORM/sv/inventory-api-v1/v1/ingredients/versions' \
+          curl "https://$AS_PLATFORM/sv/inventory-api-v1/v1/ingredients/versions" \
             -H "Authorization: Bearer $PLATFORM_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d @$STUBFILE
