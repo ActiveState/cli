@@ -1,3 +1,5 @@
+// +build !windows
+
 package autostart
 
 import "github.com/ActiveState/cli/internal/constants"

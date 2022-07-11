@@ -132,9 +132,9 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	name, exec := constants.TrayAppName, trayExec
+	exec := trayExec
 
-	as, err := autostart.New(name, exec, cfg).Path()
+	as, err := autostart.New(autostart.Tray, exec, cfg).Path()
 	if err != nil {
 		multilog.Error("Failed to determine autostart path for removal: %v", err)
 	} else if as != "" {

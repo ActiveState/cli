@@ -13,6 +13,8 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
+type options struct{}
+
 func (a *App) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {

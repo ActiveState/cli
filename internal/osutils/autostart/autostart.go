@@ -25,15 +25,6 @@ type App struct {
 	options options
 }
 
-type options struct {
-	launchFileName string
-	iconFileName   string
-	iconFileSource string
-	genericName    string
-	comment        string
-	keywords       string
-}
-
 type Configurable interface {
 	Set(string, interface{}) error
 	IsSet(string) bool
