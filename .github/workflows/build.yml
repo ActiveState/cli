@@ -373,12 +373,6 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - # === Install Zig ===
-        name: Install Zig
-        uses: goto-bus-stop/setup-zig@v1
-        with:
-          version: 0.9.1
-
       - # === Setup ===
         name: Setup
         shell: bash
