@@ -1,15 +1,37 @@
 package autostart
 
 import (
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
 const ConfigKeyDisabled = "SystrayAutoStartDisabled"
 
+type AppName string
+
+func (a AppName) String() string {
+	return string(a)
+}
+
+const (
+	Tray    AppName = constants.TrayAppName
+	Service         = constants.SvcAppName
+)
+
 type App struct {
-	Name string
-	Exec string
-	cfg  Configurable
+	Name    string
+	Exec    string
+	cfg     Configurable
+	options options
+}
+
+type options struct {
+	launchFileName string
+	iconFileName   string
+	iconFileSource string
+	genericName    string
+	comment        string
+	keywords       string
 }
 
 type Configurable interface {
@@ -17,11 +39,12 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name, exec string, cfg Configurable) *App {
+func New(name AppName, exec string, cfg Configurable) *App {
 	return &App{
-		Name: name,
-		Exec: exec,
-		cfg:  cfg,
+		Name:    name.String(),
+		Exec:    exec,
+		cfg:     cfg,
+		options: data[name],
 	}
 }
 
