@@ -45,13 +45,17 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 			if strings.HasSuffix(a.URI.String(), ".tar.gz") || strings.HasSuffix(a.URI.String(), ".zip") {
 				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
 			}
-
 		}
 	}
 
-	if buildStatus.Type != nil && *buildStatus.Type == headchef_models.V1BuildStatusResponseTypeBuildStarted {
+	if buildStatusType := buildStatus.Type; buildStatusType != nil {
 		logging.Debug("buildStatus=%v", buildStatus)
-		return nil, CamelRuntimeBuilding
+		switch {
+		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildStarted:
+			return nil, CamelRuntimeBuilding
+		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildFailed:
+			return nil, errs.New("Build error: %+v", buildStatus)
+		}
 	}
 
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
