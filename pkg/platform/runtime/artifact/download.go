@@ -1,9 +1,11 @@
 package artifact
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 )
@@ -54,7 +56,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildStarted:
 			return nil, CamelRuntimeBuilding
 		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildFailed:
-			return nil, errs.New("Build error: %+v", buildStatus)
+			return nil, locale.NewError("err_platform_response_build_error", "Build error: {{.V0}}", fmt.Sprintf("%+v", buildStatus))
 		}
 	}
 
