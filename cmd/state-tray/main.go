@@ -158,7 +158,7 @@ func run(cfg *config.Instance) (rerr error) {
 		return locale.WrapError(err, "err_tray_exec")
 	}
 
-	as := autostart.New(constants.TrayAppName, trayExec, cfg)
+	as := autostart.New(constants.TrayAppName, trayExec, nil, cfg)
 	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")

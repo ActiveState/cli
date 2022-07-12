@@ -29,6 +29,17 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
 
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		r.reportError(locale.Tl("err_prepare_svc_exec", "Could not get service exec, error recieved: {{.V0}}", err.Error()), err)
+	}
+
+	if svcExec != "" {
+		if err := autostart.New(autostart.Service, r.subshell.Binary(), []string{fmt.Sprintf("/C \"%s start\"", svcExec)}, r.cfg).Enable(); err != nil {
+			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
+		}
+	}
+
 	return nil
 }
 
@@ -134,7 +145,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 
 	exec := trayExec
 
-	as, err := autostart.New(autostart.Tray, exec, cfg).Path()
+	as, err := autostart.New(autostart.Tray, exec, nil, cfg).Path()
 	if err != nil {
 		multilog.Error("Failed to determine autostart path for removal: %v", err)
 	} else if as != "" {

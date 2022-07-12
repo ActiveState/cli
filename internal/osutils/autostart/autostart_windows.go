@@ -25,18 +25,26 @@ func (a *App) enable() error {
 	}
 
 	name := formattedName(a.Name)
-	s := shortcut.New(startupPath, name, a.Exec)
+	s := shortcut.New(startupPath, name, a.Exec, a.Args...)
 	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
+
 	icon, err := assets.ReadFileBytes("icon.ico")
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
+
 	err = s.SetIconBlob(icon)
 	if err != nil {
 		return errs.Wrap(err, "Could not set icon for shortcut file")
 	}
+
+	err = s.SetMinimized()
+	if err != nil {
+		return errs.Wrap(err, "Could not set shortcut to minimized")
+	}
+
 	return nil
 }
 

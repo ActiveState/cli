@@ -96,6 +96,20 @@ func (s *Shortcut) setIcon(path string) error {
 	return nil
 }
 
+func (s *Shortcut) SetMinimized() error {
+	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", 7)
+	if err != nil {
+		return errs.Wrap(err, "Could not set shortcut to run minimized")
+	}
+
+	_, err = oleutil.CallMethod(s.dispatch, "Save")
+	if err != nil {
+		return errs.Wrap(err, "Could not save Shortcut")
+	}
+
+	return nil
+}
+
 func (s *Shortcut) SetIconBlob(blob []byte) error {
 	logging.Debug("Setting Icon blob")
 

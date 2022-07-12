@@ -21,6 +21,7 @@ const (
 type App struct {
 	Name    string
 	Exec    string
+	Args    []string
 	cfg     Configurable
 	options options
 }
@@ -30,10 +31,11 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name AppName, exec string, cfg Configurable) *App {
+func New(name AppName, exec string, args []string, cfg Configurable) *App {
 	return &App{
 		Name:    name.String(),
 		Exec:    exec,
+		Args:    args,
 		cfg:     cfg,
 		options: data[name],
 	}
