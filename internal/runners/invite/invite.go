@@ -18,8 +18,8 @@ import (
 const MaxParallelRequests = 10
 
 type Params struct {
-	Org       Org
-	Role      Role
+	Org       string
+	Role      string
 	EmailList string
 }
 
@@ -48,14 +48,28 @@ func (i *invite) Run(params *Params) error {
 		return locale.NewInputError("err_no_projectfile", "Must be in a project directory.")
 	}
 
-	org := params.Org
+	var org Org
+	if params.Org != "" {
+		err := org.Set(params.Org)
+		if err != nil {
+			return err
+		}
+	}
+
 	if org.String() == "" {
-		if err := (&org).Set(i.project.Owner()); err != nil {
+		if err := org.Set(i.project.Owner()); err != nil {
 			return locale.WrapInputError(err, "err_invite_org_current", "Could not use the owner of your current project.")
 		}
 	}
 
-	role := params.Role
+	var role Role
+	if params.Role != "" {
+		err := role.Set(params.Role)
+		if err != nil {
+			return err
+		}
+	}
+
 	if role == Unknown {
 		var err error
 		if role, err = i.promptForRole(); err != nil {
@@ -96,7 +110,7 @@ func (i *invite) promptForRole() (Role, error) {
 		return -1, err
 	}
 	var role Role
-	if err := (&role).Set(selection); err != nil {
+	if err := role.Set(selection); err != nil {
 		return role, err
 	}
 	return role, nil
