@@ -78,18 +78,18 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_MissingArg() {
 
 	// No `--role` argument
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--role")
-	cp.ExpectLongString("flag needs an argument: --role")
+	cp.ExpectLongString("Flag needs an argument: --role")
 	cp.ExpectExitCode(1)
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "ActiveState-CLI", "--role")
-	cp.ExpectLongString("flag needs an argument: --role")
+	cp.ExpectLongString("Flag needs an argument: --role")
 	cp.ExpectExitCode(1)
 
 	// No `--organization` argument
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization")
-	cp.ExpectLongString("flag needs an argument: --organization")
+	cp.ExpectLongString("Flag needs an argument: --organization")
 	cp.ExpectExitCode(1)
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "member", "--organization")
-	cp.ExpectLongString("flag needs an argument: --organization")
+	cp.ExpectLongString("Flag needs an argument: --organization")
 	cp.ExpectExitCode(1)
 }
 

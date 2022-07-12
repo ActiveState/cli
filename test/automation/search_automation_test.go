@@ -35,7 +35,7 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "--language")
-	cp.ExpectLongString("flag needs an argument: --language")
+	cp.ExpectLongString("Flag needs an argument: --language")
 	cp.ExpectExitCode(1)
 }
 
