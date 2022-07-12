@@ -118,7 +118,7 @@ flag_state_auth_username_description:
 flag_state_auth_password_description:
   other: The password to authenticate with
 flag_state_auth_totp_description:
-  other: The TOTP code generated via two-factor authentication
+  other: The TOTP code generated via two-factor authentication (used in conjunction with username and password flags)
 flag_state_auth_interactive_description:
   other: Sign in via your terminal, rather than your web browser.
 flag_state_auth_signup_interactive_description:
