@@ -424,6 +424,8 @@ scripts:
     language: bash
     description: "Benchmarks executable leveraging highly sensitive/accurate tooling"
     value: |
+      # example usage:
+      # state run benchmark-exec -- state-exec /tmp/state-ipc/my.sock /home/me/.cache/abcd1234/bin/python3 -c "print('123');"
       if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "1" ]]; then
           sudo sh -c 'echo 1 >/proc/sys/kernel/perf_event_paranoid'
       fi
