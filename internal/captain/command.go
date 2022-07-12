@@ -697,6 +697,13 @@ func setupSensibleErrors(err error) error {
 		return locale.NewInputError("command_flag_invalid_value", "", flagText, msg)
 	}
 
+	// pflag error of the form "flag needs an argument: <flag>, called at: "
+	if strings.Contains(errMsg, "flag needs an argument: ") {
+		flag := strings.SplitN(errMsg, ": ", 2)[1]
+		return locale.NewInputError(
+			locale.Tl("command_flag_needs_argument", "Flag needs an argument: [NOTICE]{{.V0}}[/RESET]", flag))
+	}
+
 	if pflagErrFlag := pflagFlagErrMsgFlag(errMsg); pflagErrFlag != "" {
 		return locale.NewInputError(
 			"command_flag_no_such_flag",
@@ -709,12 +716,6 @@ func setupSensibleErrors(err error) error {
 			"command_cmd_no_such_cmd",
 			"No such command: [NOTICE]{{.V0}}[/RESET]", pflagErrCmd,
 		)
-	}
-
-	if strings.Contains(errMsg, "flag needs an argument: ") {
-		flag := strings.SplitN(errMsg, ": ", 2)[1]
-		return locale.NewInputError(
-			locale.Tl("command_flag_needs_argument", "Flag needs an argument: [NOTICE]{{.V0}}[/RESET]", flag))
 	}
 
 	return err
