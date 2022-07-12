@@ -108,11 +108,13 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
+	cp.ExpectLongString("Invalid value for \"--role\" flag")
 	cp.ExpectLongString("Invalid role: first, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "noorg")
+	cp.ExpectLongString("Invalid value for \"--organization\" flag")
 	cp.ExpectLongString("Unable to find requested Organization")
 	cp.ExpectExitCode(1)
 
@@ -138,11 +140,13 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
+	cp.ExpectLongString("Invalid value for \"--role\" flag")
 	cp.ExpectLongString("Invalid role: first, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "noorg")
+	cp.ExpectLongString("Invalid value for \"--organization\" flag")
 	cp.ExpectLongString("Unable to find requested Organization")
 	cp.ExpectExitCode(1)
 
