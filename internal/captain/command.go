@@ -711,6 +711,12 @@ func setupSensibleErrors(err error) error {
 		)
 	}
 
+	if strings.Contains(errMsg, "flag needs an argument: ") {
+		flag := strings.SplitN(errMsg, ": ", 2)[1]
+		return locale.NewInputError(
+			locale.Tl("command_flag_needs_argument", "Flag needs an argument: [NOTICE]{{.V0}}[/RESET]", flag))
+	}
+
 	return err
 }
 
