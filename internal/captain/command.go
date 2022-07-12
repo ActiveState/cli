@@ -111,7 +111,6 @@ type Command struct {
 
 func NewCommand(name, title, description string, prime primer, flags []*Flag, args []*Argument, execute ExecuteFunc) *Command {
 	// Validate args
-	numRequiredArgs := 0
 	for idx, arg := range args {
 		if idx > 0 && arg.Required && !args[idx-1].Required {
 			msg := fmt.Sprintf(
@@ -119,9 +118,6 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 				arg, args[len(args)-1],
 			)
 			panic(msg)
-		}
-		if arg.Required {
-			numRequiredArgs++
 		}
 	}
 
@@ -151,7 +147,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 
 		// Restrict command line arguments by default.
 		// cmd.SetHasVariableArguments() overrides this.
-		Args: cobra.RangeArgs(numRequiredArgs, len(args)),
+		Args: cobra.MaximumNArgs(len(args)),
 
 		// Silence errors and usage, we handle that ourselves
 		SilenceErrors: true,
@@ -728,24 +724,18 @@ func setupSensibleErrors(err error) error {
 		)
 	}
 
-	// Cobra error message of the form "accepts between 0 and 0 arg(s), received 1, called at: "
-	if strings.Contains(errMsg, "accepts between ") {
-		var min, max, received int
-		n, err := fmt.Sscanf(errMsg, "accepts between %d and %d arg(s), received %d", &min, &max, &received)
-		if err != nil || n != 3 {
+	// Cobra error message of the form "accepts at most 0 arg(s), received 1, called at: "
+	if strings.Contains(errMsg, "accepts at most ") {
+		var max, received int
+		n, err := fmt.Sscanf(errMsg, "accepts at most %d arg(s), received %d", &max, &received)
+		if err != nil || n != 2 {
 			multilog.Error("Unable to parse cobra error message: %v", err)
 			return locale.NewInputError("err_cmd_unexpected_arguments", "Unexpected argument(s) given")
-		}
-		if min != max {
-			return locale.NewInputError(
-				"err_cmd_unexpected_arguments_n_m",
-				"Invalid arguments: between {{.V0}} and {{.V1}} expected, {{.V2}} received",
-				strconv.Itoa(min), strconv.Itoa(max), strconv.Itoa(received))
 		}
 		return locale.NewInputError(
 			"err_cmd_too_many_arguments",
 			"Too many arguments given: {{.V0}} expected, {{.V1}} received",
-			strconv.Itoa(min), strconv.Itoa(received))
+			strconv.Itoa(max), strconv.Itoa(received))
 	}
 
 	return err

@@ -43,9 +43,12 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cmds := []string{"", "search"}
+	cmds := [][]string{
+		[]string{"platforms"},
+		[]string{"platforms", "search"},
+	}
 	for _, cmd := range cmds {
-		cp := ts.Spawn("platforms", cmd)
+		cp := ts.Spawn(cmd...)
 		expectations := []string{
 			"Linux",
 			"4.15.0",
@@ -88,7 +91,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 		cp.Expect(expectation)
 	}
 
-	cp = ts.Spawn("platforms", "remove", platform, version)
+	cp = ts.Spawn("platforms", "remove", fmt.Sprintf("%s@%s", platform, version))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
@@ -129,7 +132,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 		cp.Expect(expectation)
 	}
 
-	cp = ts.Spawn("platforms", "remove", platform, version)
+	cp = ts.Spawn("platforms", "remove", fmt.Sprintf("%s@%s", platform, version))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
