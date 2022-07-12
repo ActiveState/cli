@@ -90,7 +90,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
 	if !revert {
-		return nil
+		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
 	revertCommit, err := model.RevertCommit(r.project.CommitUUID(), commitID)
