@@ -3,6 +3,7 @@ package resolver
 import (
 	"encoding/json"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
@@ -10,8 +11,13 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/internal/instanceid"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -168,6 +174,33 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+// ReportRuntimeUsage is an alternate version of RuntimeUsage which meets the
+// needs of the ipc package.
+func (r *Resolver) ReportRuntimeUsage(ctx context.Context, pid, exec string) {
+	dims := &dimensions.Values{
+		Trigger:          p.StrP(target.TriggerExec.String()),
+		Headless:         p.StrP("true"),
+		CommitID:         new(string),
+		ProjectNameSpace: p.StrP(project.NewNamespace("", "", "").String()),
+		InstanceID:       p.StrP(instanceid.ID()),
+	}
+
+	pidNum, err := strconv.Atoi(pid)
+	if err != nil {
+		multilog.Critical("Could not convert pid string to int in proxied runtime-usage report: %s", errs.JoinMessage(err))
+	}
+
+	dimsJSON, err := dims.Marshal()
+	if err != nil {
+		multilog.Critical("Could not marshal dimensions in proxied runtime-usage report: %s", errs.JoinMessage(err))
+	}
+
+	_, err = r.RuntimeUsage(ctx, pidNum, exec, dimsJSON)
+	if err != nil {
+		multilog.Critical("Could not proxy runtime-usage report: %s", errs.JoinMessage(err))
+	}
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
