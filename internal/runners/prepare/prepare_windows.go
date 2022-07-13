@@ -35,7 +35,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		if err := autostart.New(autostart.Service, r.subshell.Binary(), []string{fmt.Sprintf("/C \"%s start\"", svcExec)}, r.cfg).Enable(); err != nil {
+		if err := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg).Enable(); err != nil {
 			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
 		}
 	}

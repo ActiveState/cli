@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/inconshreveable/mousetrap"
 )
 
 const (
@@ -70,6 +71,9 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
+
 	runErr := run(cfg)
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
@@ -97,6 +101,10 @@ func run(cfg *config.Instance) error {
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize outputer")
+	}
+
+	if mousetrap.StartedByExplorer() {
+		return runStart(out)
 	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
