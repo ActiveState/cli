@@ -95,7 +95,7 @@ fn run(stderr: fs.File.Writer) Error!void {
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ stderr, a, path, pid, exec }) catch {
         return Error.ThreadSpawn;
     };
-    clientThread.join();
+    defer clientThread.join();
 
     var usrArgs = process.argsAlloc(a) catch return Error.ArgCollector;
     defer process.argsFree(a, usrArgs);
