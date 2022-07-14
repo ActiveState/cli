@@ -2,6 +2,7 @@ package use
 
 import (
 	"fmt"
+	"path/filepath"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -66,14 +67,34 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectPath, err := u.checkout.Run(params.Namespace, "", "")
+	projectsDir, err := storage.ProjectsDir()
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
+		return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
 	}
 
-	proj, err := project.FromPath(projectPath)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_projectfrompath")
+	projectDir := filepath.Join(projectsDir, params.Namespace.Project)
+
+	var proj *project.Project
+
+	if params.Namespace.Owner != "" {
+		logging.Debug("Checking out %s to %s", params.Namespace.String(), projectDir)
+		projectPath, err := u.checkout.Run(params.Namespace, "", projectDir)
+		if err != nil {
+			return locale.WrapError(err, "err_use_checkout_project", params.Namespace.String())
+		}
+
+		proj, err = project.FromPath(projectPath)
+		if err != nil {
+			return locale.WrapError(err, "err_use_project_frompath")
+		}
+	} else {
+		logging.Debug("Using an already checked out project: %s", projectDir)
+		proj, err = project.FromPath(projectDir)
+		if err != nil {
+			wrapped := locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+			errs.AddTips(wrapped, locale.Tl("use_checkout_first", "", params.Namespace.Project))
+			return wrapped
+		}
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)

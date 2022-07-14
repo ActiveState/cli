@@ -856,6 +856,8 @@ err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
   other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
+err_invalid_project_name:
+  other: "Invalid project name: [NOTICE]{{.V0}}[/RESET]. Names should be alphanumeric, may contain dashes and periods, and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
@@ -1868,11 +1870,17 @@ err_update_corrupt_install:
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
-  other: The namespace of the project that you wish to use
-err_checkout_project:
+  other: The namespace of the project that you wish to use. If the project has already been checked out, you can simply use the project's name instead of the entire namespace.
+err_use_cannot_determine_projects_dir:
+  other: Cannot determine where to check out project to
+err_use_checkout_project:
   other: Could not checkout project {{.V0}}
-err_project_frompath:
+err_use_project_frompath:
   other: Could not create project files
+use_checkout_first:
+  other: "Please check it out first with [ACTIONABLE]state use org/{{.V0}}[/RESET]"
+err_use_project_not_checked_out:
+  other: "The project [ACTIONABLE]{{.V0}}[/ACTIONABLE] does not exist at [ACTIONABLE]{{.V1}}[/RESET]."
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:

@@ -10,7 +10,7 @@ import (
 
 func newUseCommand(prime *primer.Values) *captain.Command {
 	params := &use.Params{
-		Namespace: &project.Namespaced{},
+		Namespace: &project.Namespaced{AllowOmitOwner: true},
 	}
 
 	cmd := captain.NewCommand(
