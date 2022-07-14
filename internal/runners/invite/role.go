@@ -42,6 +42,8 @@ func (r *Role) Set(v string) error {
 		*r = Owner
 	case "member":
 		*r = Member
+	case "":
+		*r = Member
 	default:
 		*r = Unknown
 		if v == "" {
