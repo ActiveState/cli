@@ -71,9 +71,6 @@ func main() {
 		logging.CurrentHandler().SetVerbose(true)
 	}
 
-	// Allow starting the installer via a double click
-	captain.DisableMousetrap()
-
 	runErr := run(cfg)
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
@@ -104,6 +101,8 @@ func run(cfg *config.Instance) error {
 	}
 
 	if mousetrap.StartedByExplorer() {
+		// Allow starting the installer via a double click
+		captain.DisableMousetrap()
 		return runStart(out)
 	}
 
