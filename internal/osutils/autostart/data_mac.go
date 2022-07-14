@@ -1,3 +1,6 @@
+//go:build darwin
+// +build darwin
+
 package autostart
 
 var data = map[AppName]options{
