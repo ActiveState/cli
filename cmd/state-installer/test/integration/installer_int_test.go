@@ -150,7 +150,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.SendLine("state activate ActiveState/DoesNotExist")
 	cp.WaitForInput()
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.Wait()
 	suite.Assert().Contains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
 }
 
