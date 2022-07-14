@@ -41,7 +41,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("You are not authenticated")
+	cp.ExpectLongString("Could not use the owner of your current project") // can report a better message when DX-740 is addressed
 	cp.ExpectExitCode(1)
 }
 
@@ -56,7 +56,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("You are not authenticated")
+	cp.ExpectLongString("Could not use the owner of your current project") // can report a better message when DX-740 is addressed
 	cp.ExpectExitCode(1)
 }
 
