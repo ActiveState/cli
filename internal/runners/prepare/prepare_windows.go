@@ -143,11 +143,21 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	exec := trayExec
-
-	as, err := autostart.New(autostart.Tray, exec, nil, cfg).Path()
+	as, err := autostart.New(autostart.Tray, trayExec, nil, cfg).Path()
 	if err != nil {
-		multilog.Error("Failed to determine autostart path for removal: %v", err)
+		multilog.Error("Failed to determine tray autostart path for removal: %v", err)
+	} else if as != "" {
+		files = append(files, as)
+	}
+
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_svc_exec")
+	}
+
+	as, err = autostart.New(autostart.Service, svcExec, []string{"start"}, cfg).Path()
+	if err != nil {
+		multilog.Error("Failed to determine service autostart path for removal: %v", err)
 	} else if as != "" {
 		files = append(files, as)
 	}
