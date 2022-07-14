@@ -147,7 +147,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 	)
 
-	cp.Send("state activate ActiveState/DoesNotExist")
+	cp.SendLine("state activate ActiveState/DoesNotExist")
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
