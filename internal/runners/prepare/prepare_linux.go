@@ -18,7 +18,7 @@ func (r *Prepare) prepareOS() error {
 		return locale.WrapError(err, "err_tray_exec")
 	}
 
-	trayShortcut := autostart.New(autostart.Tray, trayExec, r.cfg)
+	trayShortcut := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
 	err = trayShortcut.Enable()
 	if err != nil {
 		r.reportError(locale.Tr(
@@ -32,7 +32,7 @@ func (r *Prepare) prepareOS() error {
 		return locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortuct := autostart.New(autostart.Service, svcExec, r.cfg)
+	svcShortuct := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
 	err = svcShortuct.Enable()
 	if err != nil {
 		r.reportError(locale.Tr(
@@ -60,7 +60,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	trayShortcut, err := autostart.New(autostart.Tray, trayExec, cfg).Path()
+	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, cfg).Path()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if trayShortcut != "" {
@@ -72,7 +72,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortuct, err := autostart.New(autostart.Service, svcExec, cfg).Path()
+	svcShortuct, err := autostart.New(autostart.Service, svcExec, []string{"start"}, cfg).Path()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if svcShortuct != "" {
