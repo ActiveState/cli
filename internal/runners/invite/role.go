@@ -46,9 +46,6 @@ func (r *Role) Set(v string) error {
 		*r = Member
 	default:
 		*r = Unknown
-		if v == "" {
-			return locale.NewInputError("err_invite_unspecified_role", "You must specify a role, should be one of: {{.V0}}", strings.Join(roleNames(), ", "))
-		}
 		return locale.NewInputError("err_invite_invalid_role", "Invalid role: {{.V0}}, should be one of: {{.V1}}", v, strings.Join(roleNames(), ", "))
 	}
 	return nil
