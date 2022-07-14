@@ -15,7 +15,10 @@ import (
 func (r *Prepare) prepareOS() error {
 	trayExec, err := installation.TrayExec()
 	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
+		r.reportError(locale.Tr(
+			"err_prepare_tray_exec",
+			"Could not get tray executable: {{.V0}}", err.Error(),
+		), err)
 	}
 
 	trayShortcut := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
@@ -29,7 +32,10 @@ func (r *Prepare) prepareOS() error {
 
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		return locale.WrapError(err, "err_svc_exec")
+		r.reportError(locale.Tr(
+			"err_prepare_service_executable",
+			"Could not get service executable: {{.V0}}", err.Error(),
+		), err)
 	}
 
 	svcShortuct := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)

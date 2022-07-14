@@ -13,8 +13,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-const launchFileMacOS = "com.activestate.platform.state-tray.plist"
-
 func (a *App) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
@@ -30,7 +28,7 @@ func (a *App) enable() error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	launchFile, err := assets.ReadFileBytes(launchFileMacOS)
+	launchFile, err := assets.ReadFileBytes(a.options.launchFileName)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -70,5 +68,5 @@ func (a *App) Path() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(dir, "Library/LaunchAgents", launchFileMacOS), nil
+	return filepath.Join(dir, "Library/LaunchAgents", a.options.launchFileName), nil
 }
