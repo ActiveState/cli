@@ -118,7 +118,7 @@ flag_state_auth_username_description:
 flag_state_auth_password_description:
   other: The password to authenticate with
 flag_state_auth_totp_description:
-  other: The TOTP code generated via two-factor authentication
+  other: The TOTP code generated via two-factor authentication (must be used in conjunction with username and password flags)
 flag_state_auth_interactive_description:
   other: Sign in via your terminal, rather than your web browser.
 flag_state_auth_signup_interactive_description:
@@ -1708,6 +1708,8 @@ artifact_progress_step_unpack:
   other: Unpacking
 artifact_progress_step_install:
   other: Installing
+artifact_download_failed:
+  other: Failed to download artifact {{.V0}} ({{.V1}})
 artifact_setup_failed:
   other: Failed to install artifact {{.V0}} ({{.V1}})
 err_fetch_branch:
@@ -1920,3 +1922,12 @@ use_reset_notice_windows:
   other: Note you may need to start a new command prompt to fully update your environment.
 use_reset_notice:
   other: Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment.
+svcctl_wait_timeout:
+  other: |
+    Timed out waiting for service to respond ({{.V0}} - code {{.V1}}).
+
+    Are you running software that could prevent State Tool from running local processes/servers?
+
+    Please try running your command again.
+
+    If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]

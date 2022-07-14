@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"net"
 	"path/filepath"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,6 +75,12 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 }
 
 func (suite *SvcIntegrationTestSuite) TestSignals() {
+	if condition.OnCI() {
+		// https://activestatef.atlassian.net/browse/DX-964
+		// https://activestatef.atlassian.net/browse/DX-980
+		suite.T().Skip("Signal handling on CI is unstable and unreliable")
+	}
+
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Windows does not support signal sending.")
 	}
@@ -94,11 +102,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.ExpectExitCode(1)
 
 	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	if runtime.GOOS != "linux" {
-		// TODO: this fails on only Linux for some reason, but it is not reproducable outside of CI
-		// https://activestatef.atlassian.net/browse/DX-964
-		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
-	}
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 
 	// SIGTERM
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
@@ -112,11 +116,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
-	if runtime.GOOS != "linux" {
-		// TODO: this fails on only Linux for some reason, but it is not reproducable outside of CI
-		// https://activestatef.atlassian.net/browse/DX-964
-		suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
-	}
+	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 }
 
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
@@ -130,7 +130,19 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
-	suite.Equal(oldCount+1, suite.GetNumStateSvcProcesses())
+	for attempts := 10; attempts > 0; attempts-- {
+		if suite.GetNumStateSvcProcesses() == oldCount+1 {
+			break
+		}
+		time.Sleep(2 * time.Second) // keep waiting
+	}
+
+	newCount := suite.GetNumStateSvcProcesses()
+	if newCount > oldCount+1 {
+		// We only care if we end up with more services than anticipated. We can actually end up with less than we started
+		// with due to other integration tests not always waiting for state-svc to have fully shut down before running the next test
+		suite.Fail(fmt.Sprintf("spawning multiple state processes should only result in one more state-svc process at most, newCount: %d, oldCount: %d", newCount, oldCount))
+	}
 }
 
 func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {

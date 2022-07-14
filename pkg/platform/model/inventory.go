@@ -209,6 +209,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	}
 
 	var pids []strfmt.UUID
+	var fallback []strfmt.UUID
 	for _, platformID := range platformIDs {
 		for _, rtPf := range runtimePlatforms {
 			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
@@ -230,6 +231,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				*rtPf.CPUArchitecture.Name,
 				*rtPf.CPUArchitecture.BitWidth,
 			)
+			if fallbackArch(hostPlatform, hostArch) == platformArch {
+				fallback = append(fallback, platformID)
+			}
 			if hostArch != platformArch {
 				continue
 			}
@@ -239,13 +243,16 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		}
 	}
 
-	if len(pids) == 0 {
-		return nil, &ErrNoMatchingPlatform{locale.NewInputError(
-			"err_no_platform_data_remains", "", hostPlatform, hostArch,
-		)}
+	if len(pids) > 0 {
+		return pids, nil
+	}
+	if len(fallback) > 0 {
+		return fallback, nil
 	}
 
-	return pids, nil
+	return nil, &ErrNoMatchingPlatform{locale.NewInputError(
+		"err_no_platform_data_remains", "", hostPlatform, hostArch,
+	)}
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {

@@ -325,6 +325,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 	)
 
 	cmd.SetHidden(true)
+	cmd.SetHasVariableArguments()
 
 	a.parent.AddChildren(cmd)
 }

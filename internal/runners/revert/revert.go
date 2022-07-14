@@ -90,7 +90,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}
 	if !revert {
-		return nil
+		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
 	revertCommit, err := model.RevertCommit(r.project.CommitUUID(), commitID)
@@ -113,7 +113,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(locale.Tl("revert_success", "Sucessfully reverted to commit: {{.V0}}", params.CommitID))
+	r.out.Print(locale.Tl("revert_success", "Successfully reverted to commit: {{.V0}}", params.CommitID))
 	r.out.Print(locale.T("operation_success_local"))
 	return nil
 }

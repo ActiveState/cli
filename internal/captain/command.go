@@ -145,6 +145,10 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		PersistentPreRun: cmd.persistRunner,
 		RunE:             cmd.runner,
 
+		// Restrict command line arguments by default.
+		// cmd.SetHasVariableArguments() overrides this.
+		Args: cobra.MaximumNArgs(len(args)),
+
 		// Silence errors and usage, we handle that ourselves
 		SilenceErrors: true,
 		SilenceUsage:  true,
@@ -335,6 +339,10 @@ func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
 	c.interceptChain = fns
 }
 
+func DisableMousetrap() {
+	cobra.MousetrapHelpText = ""
+}
+
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
 		defer profile.Measure("captain:intercepter", time.Now())
@@ -370,6 +378,15 @@ func (c *Command) SetGroup(group CommandGroup) *Command {
 
 func (c *Command) Group() CommandGroup {
 	return c.group
+}
+
+// SetHasVariableArguments allows a captain Command to accept a variable number of command line
+// arguments.
+// By default, captain has Cobra restrict the command line arguments accepted to those given in the
+// []*Argument list to NewCommand().
+func (c *Command) SetHasVariableArguments() *Command {
+	c.cobra.Args = nil
+	return c
 }
 
 func (c *Command) SkipChecks() bool {
@@ -557,6 +574,12 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		}
 	}
 
+	warnUnstableCommand := c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
+	if warnUnstableCommand && !condition.OptInUnstable(c.cfg) {
+		c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+		return nil
+	}
+
 	// Run OnUse functions for non-persistent flags
 	c.runFlags(false)
 
@@ -590,11 +613,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		c.out.Notice(output.Title(c.title + suffix))
 	}
 
-	if c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName) {
-		if !condition.OptInUnstable(c.cfg) {
-			c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
-			return nil
-		}
+	if warnUnstableCommand {
 		c.out.Notice(locale.T("unstable_feature_banner"))
 	}
 
@@ -691,6 +710,13 @@ func setupSensibleErrors(err error) error {
 		return locale.NewInputError("command_flag_invalid_value", "", flagText, msg)
 	}
 
+	// pflag error of the form "flag needs an argument: <flag>, called at: "
+	if strings.Contains(errMsg, "flag needs an argument: ") {
+		flag := strings.SplitN(errMsg, ": ", 2)[1]
+		return locale.NewInputError(
+			locale.Tl("command_flag_needs_argument", "Flag needs an argument: [NOTICE]{{.V0}}[/RESET]", flag))
+	}
+
 	if pflagErrFlag := pflagFlagErrMsgFlag(errMsg); pflagErrFlag != "" {
 		return locale.NewInputError(
 			"command_flag_no_such_flag",
@@ -703,6 +729,20 @@ func setupSensibleErrors(err error) error {
 			"command_cmd_no_such_cmd",
 			"No such command: [NOTICE]{{.V0}}[/RESET]", pflagErrCmd,
 		)
+	}
+
+	// Cobra error message of the form "accepts at most 0 arg(s), received 1, called at: "
+	if strings.Contains(errMsg, "accepts at most ") {
+		var max, received int
+		n, err := fmt.Sscanf(errMsg, "accepts at most %d arg(s), received %d", &max, &received)
+		if err != nil || n != 2 {
+			multilog.Error("Unable to parse cobra error message: %v", err)
+			return locale.NewInputError("err_cmd_unexpected_arguments", "Unexpected argument(s) given")
+		}
+		return locale.NewInputError(
+			"err_cmd_too_many_arguments",
+			"Too many arguments given: {{.V0}} expected, {{.V1}} received",
+			strconv.Itoa(max), strconv.Itoa(received))
 	}
 
 	return err

@@ -3,89 +3,11 @@ package events
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type mockProgressOutput struct {
-	buildStarted            bool
-	buildCompleted          bool
-	buildTotal              int64
-	buildCurrent            int
-	installationStarted     int
-	installationTotal       int64
-	installationCurrent     int
-	artifactStartedCalled   int
-	artifactIncrementCalled int
-	artifactCompletedCalled int
-	artifactFailureCalled   int
-}
-
-func (mpo *mockProgressOutput) BuildStarted(total int64) error {
-	mpo.buildStarted = true
-	mpo.buildTotal = total
-	return nil
-}
-func (mpo *mockProgressOutput) BuildCompleted(bool) error {
-	mpo.buildCompleted = true
-	return nil
-}
-
-func (mpo *mockProgressOutput) BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error {
-	return nil
-}
-func (mpo *mockProgressOutput) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error {
-	mpo.buildCurrent++
-	return nil
-}
-func (mpo *mockProgressOutput) BuildArtifactFailure(artifactID artifact.ArtifactID, artifactName, logURI string, errorMessage string, cachedBuild bool) error {
-	return nil
-}
-func (mpo *mockProgressOutput) BuildArtifactProgress(artifactID artifact.ArtifactID, artifactName, timeStamp, message, facility, pipeName, source string) error {
-	return nil
-}
-
-func (mpo *mockProgressOutput) InstallationStarted(total int64) error {
-	mpo.installationStarted++
-	mpo.installationTotal = total
-	return nil
-}
-func (mpo *mockProgressOutput) InstallationStatusUpdate(current, total int64) error {
-	mpo.installationCurrent = int(current)
-	return nil
-}
-func (mpo *mockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {
-	mpo.artifactStartedCalled++
-	return nil
-}
-func (mpo *mockProgressOutput) ArtifactStepIncrement(artifact.ArtifactID, string, string, int64) error {
-	mpo.artifactIncrementCalled++
-	return nil
-}
-func (mpo *mockProgressOutput) ArtifactStepCompleted(artifact.ArtifactID, string, string) error {
-	mpo.artifactCompletedCalled++
-	return nil
-}
-func (mpo *mockProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, string, string) error {
-	mpo.artifactFailureCalled++
-	return nil
-}
-func (mpo *mockProgressOutput) StillBuilding(numCompleted, numTotal int) error {
-	return nil
-}
-func (mpo *mockProgressOutput) SolverStart() error {
-	return nil
-}
-
-func (mpo *mockProgressOutput) SolverSuccess() error {
-	return nil
-}
-func (mpo *mockProgressOutput) SolverError(serr *model.SolverError) error {
-	return nil
-}
-func (mpo *mockProgressOutput) Close() error { return nil }
 
 func TestRuntimeEventConsumer(t *testing.T) {
 	ids := []artifact.ArtifactID{"1", "2"}
@@ -206,7 +128,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			evCh := make(chan SetupEventer)
-			mock := &mockProgressOutput{}
+			mock := &testhelper.MockProgressOutput{}
 			consumer := NewRuntimeEventConsumer(mock, nil)
 
 			go func() {
@@ -219,17 +141,17 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			err := consumer.Consume(evCh)
 			require.NoError(t, err)
 
-			assert.Equal(t, tc.expectedBuildStarted, mock.buildStarted)
-			assert.Equal(t, tc.expectedBuildCompleted, mock.buildCompleted)
-			assert.Equal(t, tc.expectedBuildTotal, mock.buildTotal)
-			assert.Equal(t, tc.expectedBuildCurrent, mock.buildCurrent)
-			assert.Equal(t, tc.expectedInstallationTotal, mock.installationTotal)
-			assert.Equal(t, tc.expectedInstallationCurrent, mock.installationCurrent)
-			assert.Equal(t, tc.expectedInstallationStarted, mock.installationStarted)
-			assert.Equal(t, tc.expectedArtifactStartedCalled, mock.artifactStartedCalled)
-			assert.Equal(t, tc.expectedArtifactIncrementCalled, mock.artifactIncrementCalled)
-			assert.Equal(t, tc.expectedArtifactCompletedCalled, mock.artifactCompletedCalled)
-			assert.Equal(t, tc.expectedArtifactFailureCalled, mock.artifactFailureCalled)
+			assert.Equal(t, tc.expectedBuildStarted, mock.BuildStartedCalled)
+			assert.Equal(t, tc.expectedBuildCompleted, mock.BuildCompletedCalled)
+			assert.Equal(t, tc.expectedBuildTotal, mock.BuildTotal)
+			assert.Equal(t, tc.expectedBuildCurrent, mock.BuildCurrent)
+			assert.Equal(t, tc.expectedInstallationStarted, mock.InstallationStartedCalled)
+			assert.Equal(t, tc.expectedInstallationTotal, mock.InstallationTotal)
+			assert.Equal(t, tc.expectedInstallationCurrent, mock.InstallationCurrent)
+			assert.Equal(t, tc.expectedArtifactStartedCalled, mock.ArtifactStartedCalled)
+			assert.Equal(t, tc.expectedArtifactIncrementCalled, mock.ArtifactIncrementCalled)
+			assert.Equal(t, tc.expectedArtifactCompletedCalled, mock.ArtifactCompletedCalled)
+			assert.Equal(t, tc.expectedArtifactFailureCalled, mock.ArtifactFailureCalled)
 		})
 	}
 }

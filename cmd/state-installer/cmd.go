@@ -36,12 +36,12 @@ const AnalyticsCat = "installer"
 const AnalyticsFunnelCat = "installer-funnel"
 
 type Params struct {
-	sourcePath      string
 	sourceInstaller string
 	path            string
 	updateTag       string
 	command         string
 	force           bool
+	isUpdate        bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
 }
@@ -77,6 +77,9 @@ func main() {
 	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "")
 	// Set up rollbar reporting
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
+
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
 
 	// Set up configuration handler
 	var err error
@@ -150,14 +153,15 @@ func main() {
 				Value:       &params.force,
 			},
 			{
+				Name:        "update",
+				Shorthand:   "u",
+				Description: "Force update behaviour for the installer",
+				Value:       &params.isUpdate,
+			},
+			{
 				Name:   "source-installer",
 				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
 				Value:  &params.sourceInstaller,
-			},
-			{
-				Name:   "source-path",
-				Hidden: true, // Source path should ideally only be used through state tool updates (ie. it's internally routed)
-				Value:  &params.sourcePath,
 			},
 			{
 				Name:      "path",
@@ -170,6 +174,7 @@ func main() {
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
 			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
+			{Name: "source-path", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
 			{
@@ -199,10 +204,16 @@ func main() {
 		if !errs.IsSilent(err) {
 			out.Error(err.Error())
 		}
-		return
+	} else {
+		an.Event(AnalyticsFunnelCat, "success")
 	}
 
-	an.Event(AnalyticsFunnelCat, "success")
+	// Installer was likely started via a double click so we keep the terminal window open
+	if noArgs() {
+		out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
+		fmt.Scanln()
+	}
+
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
@@ -237,62 +248,44 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		}
 	}
 
-	// Detect state tool alongside installer executable
-	installerPath := filepath.Dir(osutils.Executable())
-	packagedStateExe := filepath.Join(installerPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+	// We expect the installer payload to be in the same directory as the installer itself
+	payloadPath := filepath.Dir(osutils.Executable())
 
-	// Detect whether this is a fresh install or an update
-	isUpdate := false
-	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
-		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
-		params.sourcePath = installerPath
-		break
-	case params.force:
-		logging.Debug("Not using update flow as --force was passed")
-		break // When ran with `--force` we always use the install UX
-	case params.sourcePath == "" && fileutils.FileExists(packagedStateExe):
-		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
-		logging.Debug("Using update flow as installer is alongside payload")
-		isUpdate = true
-		params.sourcePath = installerPath
-	case stateToolInstalled:
-		// This should trigger AFTER the check above where sourcePath is defined
-		logging.Debug("Using update flow as state tool is already installed")
-		isUpdate = true
+	// Older versions of the state tool will not include the --update flag, so we
+	// need to use the legacy way of checking for update
+	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
+	if !params.isUpdate {
+		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
+		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
 	route := "install"
-	if isUpdate {
+	if params.isUpdate {
 		route = "update"
 	}
 	an.Event(AnalyticsFunnelCat, route)
 
 	// Check if state tool already installed
-	if !isUpdate && !params.force && stateToolInstalled {
+	if !params.isUpdate && !params.force && stateToolInstalled {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")
-		return postInstallEvents(out, cfg, an, params, true)
+		params.isUpdate = true
+		return postInstallEvents(out, cfg, an, params)
 	}
 
-	// if sourcePath was provided we're already using the right installer, so proceed with installation
-	if params.sourcePath != "" {
-		if err := installOrUpdateFromLocalSource(out, cfg, an, params, isUpdate); err != nil {
-			return err
-		}
-		storeInstallSource(params.sourceInstaller)
-		return postInstallEvents(out, cfg, an, params, isUpdate)
+	if err := installOrUpdateFromLocalSource(out, cfg, an, payloadPath, params); err != nil {
+		return err
 	}
-
-	return locale.NewError("err_install_source_path_not_provided", "Installer was called without an installation payload. Please make sure you're using the install.sh or install.ps1 scripts.")
+	storeInstallSource(params.sourceInstaller)
+	return postInstallEvents(out, cfg, an, params)
 }
 
 // installOrUpdateFromLocalSource is invoked when we're performing an installation where the payload is already provided
-func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
+func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, payloadPath string, params *Params) error {
 	logging.Debug("Install from local source")
 	an.Event(AnalyticsFunnelCat, "local-source")
-	if !isUpdate {
+	if !params.isUpdate {
 		// install.sh or install.ps1 downloaded this installer and is running it.
 		out.Print(output.Title("Installing State Tool Package Manager"))
 		out.Print(`The State Tool lets you install and manage your language runtimes.` + "\n\n" +
@@ -307,13 +300,13 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 		return err
 	}
 
-	installer, err := NewInstaller(cfg, out, params)
+	installer, err := NewInstaller(cfg, out, payloadPath, params)
 	if err != nil {
 		out.Print(fmt.Sprintf("[ERROR]Could not create installer: %s[/RESET]", errs.JoinMessage(err)))
 		return err
 	}
 
-	if isUpdate {
+	if params.isUpdate {
 		out.Fprint(os.Stdout, "• Installing Update... ")
 	} else {
 		out.Fprint(os.Stdout, fmt.Sprintf("• Installing State Tool to [NOTICE]%s[/RESET]... ", installer.InstallPath()))
@@ -328,7 +321,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	an.Event(AnalyticsFunnelCat, "post-installer")
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	if !isUpdate {
+	if !params.isUpdate {
 		out.Print("")
 		out.Print(output.Title("State Tool Package Manager Installation Complete"))
 		out.Print("State Tool Package Manager has been successfully installed.")
@@ -337,7 +330,7 @@ func installOrUpdateFromLocalSource(out output.Outputer, cfg *config.Instance, a
 	return nil
 }
 
-func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params, isUpdate bool) error {
+func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "post-install-events")
 
 	installPath, err := resolveInstallPath(params.path)
@@ -385,8 +378,9 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !isUpdate:
+	case !params.isUpdate:
 		ss := subshell.New(cfg)
+		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -402,6 +396,13 @@ func envSlice(binPath string) []string {
 	return []string{
 		"PATH=" + binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
 		constants.DisableErrorTipsEnvVarName + "=true",
+	}
+}
+
+func envMap(binPath string) map[string]string {
+	return map[string]string{
+		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
+		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
 
@@ -441,4 +442,30 @@ func assertCompatibility() error {
 	}
 
 	return nil
+}
+
+func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
+	// Detect whether this is a fresh install or an update
+	var isUpdate bool
+	switch {
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
+		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+	case params.force:
+		// When ran with `--force` we always use the install UX
+		logging.Debug("Not using update flow as --force was passed")
+	case payloadPath == "" && fileutils.FileExists(packagedStateExe):
+		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
+		logging.Debug("Using update flow as installer is alongside payload")
+		isUpdate = true
+	case stateToolInstalled:
+		// This should trigger AFTER the check above where sourcePath is defined
+		logging.Debug("Using update flow as state tool is already installed")
+		isUpdate = true
+	}
+
+	return isUpdate
+}
+
+func noArgs() bool {
+	return len(os.Args[1:]) == 0
 }

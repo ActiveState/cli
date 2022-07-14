@@ -5,14 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type Trigger string
@@ -33,6 +32,7 @@ const (
 	TriggerPull      Trigger = "pull"
 	TriggerReset     Trigger = "reset"
 	TriggerRevert    Trigger = "revert"
+	TriggerOffline   Trigger = "offline"
 	triggerUnknown   Trigger = "unknown"
 )
 
@@ -87,10 +87,6 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	return p.Project.CommitUUID()
 }
 
-func (p *ProjectTarget) OnlyUseCache() bool {
-	return false
-}
-
 func (p *ProjectTarget) Trigger() Trigger {
 	if p.trigger == "" {
 		return triggerUnknown
@@ -100,6 +96,25 @@ func (p *ProjectTarget) Trigger() Trigger {
 
 func (p *ProjectTarget) Headless() bool {
 	return p.Project.IsHeadless()
+}
+
+func (p *ProjectTarget) ReadOnly() bool {
+	return false
+}
+
+func (p *ProjectTarget) InstallFromDir() *string {
+	return nil
+}
+
+func ProjectDirToTargetDir(projectDir, cacheDir string) string {
+	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
+	if err != nil {
+		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
+		resolvedDir = projectDir
+	}
+	logging.Debug("In newStore: resolved project dir is: %s", resolvedDir)
+
+	return filepath.Join(cacheDir, hash.ShortHash(resolvedDir))
 }
 
 type CustomTarget struct {
@@ -137,10 +152,6 @@ func (c *CustomTarget) Dir() string {
 	return c.dir
 }
 
-func (c *CustomTarget) OnlyUseCache() bool {
-	return c.commitUUID == ""
-}
-
 func (c *CustomTarget) Trigger() Trigger {
 	if c.trigger == "" {
 		return triggerUnknown
@@ -152,13 +163,60 @@ func (c *CustomTarget) Headless() bool {
 	return c.headless
 }
 
-func ProjectDirToTargetDir(projectDir, cacheDir string) string {
-	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
-	if err != nil {
-		multilog.Error("Could not resolve unique path for projectDir: %s, error: %s", projectDir, err.Error())
-		resolvedDir = projectDir
-	}
-	logging.Debug("In newStore: resolved project dir is: %s", resolvedDir)
+func (c *CustomTarget) ReadOnly() bool {
+	return c.commitUUID == ""
+}
 
-	return filepath.Join(cacheDir, hash.ShortHash(resolvedDir))
+func (c *CustomTarget) InstallFromDir() *string {
+	return nil
+}
+
+type OfflineTarget struct {
+	owner        string
+	name         string
+	commitUUID   strfmt.UUID
+	dir          string
+	artifactsDir string
+}
+
+func NewOfflineTarget(owner string, name string, commitUUID strfmt.UUID, dir string, artifactsDir string) *OfflineTarget {
+	cleanDir, err := fileutils.ResolveUniquePath(dir)
+	if err != nil {
+		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
+	} else {
+		dir = cleanDir
+	}
+	return &OfflineTarget{owner, name, commitUUID, dir, artifactsDir}
+}
+
+func (i *OfflineTarget) Owner() string {
+	return i.owner
+}
+
+func (i *OfflineTarget) Name() string {
+	return i.name
+}
+
+func (i *OfflineTarget) CommitUUID() strfmt.UUID {
+	return i.commitUUID
+}
+
+func (i *OfflineTarget) Dir() string {
+	return i.dir
+}
+
+func (i *OfflineTarget) Trigger() Trigger {
+	return TriggerOffline
+}
+
+func (i *OfflineTarget) Headless() bool {
+	return false
+}
+
+func (i *OfflineTarget) ReadOnly() bool {
+	return false
+}
+
+func (i *OfflineTarget) InstallFromDir() *string {
+	return &i.artifactsDir
 }
