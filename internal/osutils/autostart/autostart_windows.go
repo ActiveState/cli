@@ -15,6 +15,8 @@ var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", 
 
 type options struct{}
 
+var data = map[AppName]options{}
+
 func (a *App) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {

@@ -13,6 +13,15 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
+var data = map[AppName]options{
+	Tray: {
+		launchFileName: "com.activestate.platform.state-tray.plist",
+	},
+	Service: {
+		launchFileName: "com.activestate.platform.state-svc.plist",
+	},
+}
+
 func (a *App) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
