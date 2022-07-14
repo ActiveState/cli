@@ -41,7 +41,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("Cannot authenticate")
+	cp.ExpectLongString("You are not authenticated")
 	cp.ExpectExitCode(1)
 }
 
@@ -56,7 +56,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("Cannot authenticate")
+	cp.ExpectLongString("You are not authenticated")
 	cp.ExpectExitCode(1)
 }
 

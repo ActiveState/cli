@@ -51,7 +51,7 @@ func (i *invite) Run(params *Params) error {
 	org := params.Org
 	if org.String() == "" {
 		if err := (&org).Set(i.project.Owner()); err != nil {
-			return err // do not wrap, as it overwrites the more helpful message displayed to the user (e.g. "You are not authenticated")
+			return locale.WrapInputError(err, "err_invite_org_current", "Could not use the owner of your current project.")
 		}
 	}
 
