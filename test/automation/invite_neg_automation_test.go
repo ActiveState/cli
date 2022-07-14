@@ -120,7 +120,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
-	cp.ExpectLongString("Invalid role: , should be one of: owner, member")
+	cp.ExpectLongString("You must specify a role, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 }
@@ -152,7 +152,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
-	cp.ExpectLongString("Invalid role: , should be one of: owner, member")
+	cp.ExpectLongString("You must specify a role, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 }
 
