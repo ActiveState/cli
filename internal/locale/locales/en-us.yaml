@@ -1931,5 +1931,3 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
-err_invite_org_current:
-  other: Could not use the owner of your current project.
