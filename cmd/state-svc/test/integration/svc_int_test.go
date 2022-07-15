@@ -42,10 +42,6 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
 
-	// Verify it created a socket file.
-	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	suite.True(fileutils.TargetExists(sockFile), "socket file '"+sockFile+"' does not exist")
-
 	// Verify the server is running on its reported port.
 	cp.ExpectRe("Port:\\s+:\\d+\\s")
 	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
@@ -67,8 +63,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
 
-	// Verify it deleted its socket file and the port is free.
-	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
+	// Verify the port is free.
 	server, err := net.Listen("tcp", "localhost:"+port)
 	suite.NoError(err)
 	server.Close()
