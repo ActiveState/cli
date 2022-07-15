@@ -27,7 +27,9 @@ import (
 )
 
 type Params struct {
-	Namespace *project.Namespaced
+	Namespace     *project.Namespaced
+	PreferredPath string
+	Branch        string
 }
 
 type primeable interface {
@@ -72,13 +74,18 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
 	}
 
-	projectDir := filepath.Join(projectsDir, params.Namespace.Project)
+	var projectDir string
+	if params.PreferredPath == "" {
+		projectDir = filepath.Join(projectsDir, params.Namespace.Project)
+	} else {
+		projectDir = params.PreferredPath
+	}
 
 	var proj *project.Project
 
 	if params.Namespace.Owner != "" {
 		logging.Debug("Checking out %s to %s", params.Namespace.String(), projectDir)
-		projectPath, err := u.checkout.Run(params.Namespace, "", projectDir)
+		projectPath, err := u.checkout.Run(params.Namespace, params.Branch, projectDir)
 		if err != nil {
 			return locale.WrapError(err, "err_use_checkout_project", params.Namespace.String())
 		}
@@ -89,11 +96,16 @@ func (u *Use) Run(params *Params) error {
 		}
 	} else {
 		logging.Debug("Using an already checked out project: %s", projectDir)
+
 		proj, err = project.FromPath(projectDir)
 		if err != nil {
 			wrapped := locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
 			errs.AddTips(wrapped, locale.Tl("use_checkout_first", "", params.Namespace.Project))
 			return wrapped
+		}
+
+		if params.Branch != "" && proj.BranchName() != params.Branch {
+			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 		}
 	}
 

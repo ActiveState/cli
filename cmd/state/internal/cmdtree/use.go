@@ -18,7 +18,19 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		"",
 		locale.Tl("use_description", "Use the given project runtime as the default for your system"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Shorthand:   "",
+				Description: locale.T("flag_state_use_path_description"),
+				Value:       &params.PreferredPath,
+			},
+			{
+				Name:        "branch",
+				Description: locale.Tl("flag_state_use_branch_description", "Defines the branch to be used"),
+				Value:       &params.Branch,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_use_namespace"),

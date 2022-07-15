@@ -1867,6 +1867,8 @@ err_update_corrupt_install:
 
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
+flag_state_use_path_description:
+  other: Where to install the project. The default location is in your ~/Projects directory
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
@@ -1880,7 +1882,7 @@ err_use_project_frompath:
 use_checkout_first:
   other: "Please check it out first with [ACTIONABLE]state use org/{{.V0}}[/RESET]"
 err_use_project_not_checked_out:
-  other: "The project [ACTIONABLE]{{.V0}}[/ACTIONABLE] does not exist at [ACTIONABLE]{{.V1}}[/RESET]."
+  other: "The project [ACTIONABLE]{{.V0}}[/RESET] does not exist at [ACTIONABLE]{{.V1}}[/RESET]."
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:

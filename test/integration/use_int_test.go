@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -26,9 +27,11 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Projects will be placed here.
 	projectsDir := filepath.Join(ts.Dirs.Base, "projects")
 	suite.Assert().False(fileutils.DirExists(projectsDir), "projects dir should not exist yet")
 
+	// Checkout to projects dir and verify checkout.
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv(
@@ -41,6 +44,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.Require().True(fileutils.DirExists(python3Dir), "state use should have created "+python3Dir)
 	suite.Require().True(fileutils.FileExists(filepath.Join(python3Dir, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
+	// Verify runtime was installed correctly and works.
 	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
 	if runtime.GOOS == "windows" {
 		pythonExe = pythonExe + ".bat"
@@ -53,6 +57,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.Expect("Python 3.6.6")
 	cp.ExpectExitCode(0)
 
+	// Checkout another project to the same projects dir and verify.
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv(
@@ -64,6 +69,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.Require().True(fileutils.DirExists(python39Dir), "state use should have created "+python39Dir)
 	suite.Require().True(fileutils.FileExists(filepath.Join(python39Dir, constants.ConfigFileName)), "project was not checked out properly")
 
+	// Verify that there are two separately checked out projects. (One didn't overwrite the other.)
 	python3ASY := filepath.Join(projectsDir, "Python3", constants.ConfigFileName)
 	python3ASYModTime, err := fileutils.ModTime(python3ASY)
 	suite.Assert().NoError(err)
@@ -72,6 +78,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.Assert().NoError(err)
 	suite.Assert().True(python39ASYModTime.After(python3ASYModTime), "Python-3.9 accidentally overwrote Python3. Oops.")
 
+	// Verify the new runtime was installed correctly and works.
 	cp = ts.SpawnCmdWithOpts(
 		pythonExe,
 		e2e.WithArgs("--version"),
@@ -93,6 +100,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	suite.Require().NoError(err)
 	suite.Assert().True(python3ModTime.Unix() <= timeNow.Unix()+1, "ActiveState-CLI/Python3 was checked out again instead of reused")
 
+	// Verify the first runtime is set up correctly and usable.
 	cp = ts.SpawnCmdWithOpts(
 		pythonExe,
 		e2e.WithArgs("--version"),
@@ -100,6 +108,48 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	)
 	cp.Expect("Python 3.6.6")
 	cp.ExpectExitCode(0)
+
+	// Test failure switching to project name that was not checked out.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "NotCheckedOut"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"ACTIVESTATE_CLI_PROJECTSDIR="+projectsDir),
+	)
+	cp.Expect("The project NotCheckedOut does not exist")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *UseIntegrationTestSuite) TestUseWithFlags() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	python3Dir := filepath.Join(ts.Dirs.Work, "Python3")
+
+	// Test --path for installing the project to.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3", "--path", python3Dir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	suite.Require().True(fileutils.DirExists(python3Dir), "state use should have created "+python3Dir)
+	suite.Require().True(fileutils.FileExists(filepath.Join(python3Dir, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
+	projectsDir, err := storage.ProjectsDir()
+	suite.Require().NoError(err)
+	notPython3Dir := filepath.Join(projectsDir, "Python3")
+	suite.Assert().False(fileutils.DirExists(notPython3Dir), "state use should not have created "+notPython3Dir)
+
+	// Test --branch.
+	branchPath := filepath.Join(ts.Dirs.Base, "branch")
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3", "--path", branchPath, "--branch", "doesNotExist"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectLongString("This project has no branch with label matching doesNotExist")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *UseIntegrationTestSuite) TestReset() {
@@ -110,7 +160,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"ACTIVESTATE_CLI_PROJECTSDIR="+ts.Dirs.Work),
 	)
 	cp.ExpectExitCode(0)
 
