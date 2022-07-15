@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
@@ -175,6 +176,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
@@ -184,7 +186,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
-		if err = rt.Update(r.auth, eh); err != nil {
+		if err = rt.Update(r.auth, eh, proj.Source().Path(), sockPath); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}
@@ -208,7 +210,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(rt)
 
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj)
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, sockPath, rt, proj)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}

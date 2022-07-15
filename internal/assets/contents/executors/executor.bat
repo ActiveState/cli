@@ -12,4 +12,4 @@ set {{$K}}={{$V}}
 {{- end}}
 {{- end}}
 
-"{{.stateExec}}" "{{.stateSock}}" "{{.target}}" %*
+"{{.stateExec}}" "{{.stateSock}}" "{{.target}}" "{{.projectDir}}" %*

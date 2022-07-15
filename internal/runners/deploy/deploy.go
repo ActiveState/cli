@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
@@ -166,7 +167,8 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")
 	}
-	if err := rti.Update(d.auth, eh); err != nil {
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	if err := rti.Update(d.auth, eh, sockPath, rtTarget.Dir()); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 

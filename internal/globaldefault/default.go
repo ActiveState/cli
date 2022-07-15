@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/project"
@@ -60,7 +59,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
+func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, sockPath string, runtime *runtime.Runtime, proj *project.Project) error {
 	logging.Debug("Setting up globaldefault")
 	if err := Prepare(cfg, subshell); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
@@ -76,11 +75,9 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}
 
-	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-
 	projectDir := filepath.Dir(proj.Source().Path())
 	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(sockPath, env, exes); err != nil {
+	if err := fw.Update(proj.Path(), sockPath, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

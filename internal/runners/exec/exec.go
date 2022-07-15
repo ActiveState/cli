@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -123,7 +124,8 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+		if err := rt.Update(s.auth, eh, projectDir, sockPath); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

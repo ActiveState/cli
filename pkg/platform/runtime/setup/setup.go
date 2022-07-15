@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
@@ -163,7 +162,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) Update() error {
+func (s *Setup) Update(projPath, sockPath string) error {
 	// Update all the runtime artifacts
 	artifacts, err := s.updateArtifacts()
 	if err != nil {
@@ -171,7 +170,7 @@ func (s *Setup) Update() error {
 	}
 
 	// Update executors
-	if err := s.updateExecutors(artifacts); err != nil {
+	if err := s.updateExecutors(projPath, sockPath, artifacts); err != nil {
 		return errs.Wrap(err, "Failed to update executors")
 	}
 
@@ -246,7 +245,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	return artifacts, nil
 }
 
-func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
+func (s *Setup) updateExecutors(projPath, sockPath string, artifacts []artifact.ArtifactID) error {
 	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
@@ -267,10 +266,8 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
 	}
 
-	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-
 	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(sockPath, env, exePaths); err != nil {
+	if err := exec.Update(projPath, sockPath, env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 

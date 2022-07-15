@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -77,7 +78,8 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("error_state_run_unknown_name", "", name)
 	}
 
-	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel)
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel, sockPath)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

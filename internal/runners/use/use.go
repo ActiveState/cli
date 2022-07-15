@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
@@ -76,6 +77,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_activate_projectfrompath")
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
@@ -87,7 +89,7 @@ func (u *Use) Run(params *Params) error {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 
-		if err = rti.Update(u.auth, eh); err != nil {
+		if err = rti.Update(u.auth, eh, proj.Source().Path(), sockPath); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}
@@ -95,7 +97,7 @@ func (u *Use) Run(params *Params) error {
 		}
 	}
 
-	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, sockPath, rti, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
