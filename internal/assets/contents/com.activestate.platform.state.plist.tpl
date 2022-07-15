@@ -9,7 +9,11 @@
             <!-- Wrap in `sh -c` so that $HOME is expanded -->
             <string>sh</string>
             <string>-c</string>
-            <string>$HOME/.local/ActiveState/StateTool/beta/bin/state-svc start</string>
+            {{- if .Args }}
+            <string>{{.Exec}} {{.Args}}</string>
+            {{- else}}
+            <string>{{.Exec}}</string>
+            {{- end}}
         </array>
         <key>ProcessType</key>
         <string>Interactive</string>

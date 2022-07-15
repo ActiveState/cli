@@ -61,6 +61,7 @@ func (a *App) enable() error {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
+	// TODO: Ensure args are being used
 	scutOpts := shortcut.SaveOpts{
 		Name:        a.Name,
 		GenericName: a.options.genericName,

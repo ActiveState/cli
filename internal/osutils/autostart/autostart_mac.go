@@ -6,12 +6,16 @@ package autostart
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/mitchellh/go-homedir"
 )
+
+const launchFileSource = "com.activestate.platform.state.plist.tpl"
 
 var data = map[AppName]options{
 	Tray: {
@@ -37,11 +41,19 @@ func (a *App) enable() error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	launchFile, err := assets.ReadFileBytes(a.options.launchFileName)
+	asset, err := assets.ReadFileBytes(launchFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
-	err = fileutils.WriteFile(path, launchFile)
+
+	content, err := strutils.ParseTemplate(
+		string(asset),
+		map[string]interface{}{"Exec": a.Exec, "Args": strings.Join(a.Args, " ")})
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s", a.options.launchFileName)
+	}
+
+	err = fileutils.WriteFile(path, []byte(content))
 	if err != nil {
 		return errs.Wrap(err, "Could not write launch file")
 	}
