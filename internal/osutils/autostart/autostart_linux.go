@@ -1,7 +1,6 @@
 package autostart
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -71,7 +70,6 @@ func (a *App) enable() error {
 		IconPath:    iconsPath,
 	}
 	if _, err := shortcut.Save(a.Exec, path, a.Args, scutOpts); err != nil {
-		fmt.Println("err:", err)
 		return errs.Wrap(err, "Could not save autostart shortcut")
 	}
 
