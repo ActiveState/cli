@@ -1,6 +1,7 @@
 package autostart
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -61,7 +62,6 @@ func (a *App) enable() error {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
-	// TODO: Ensure args are being used
 	scutOpts := shortcut.SaveOpts{
 		Name:        a.Name,
 		GenericName: a.options.genericName,
@@ -70,7 +70,8 @@ func (a *App) enable() error {
 		IconData:    iconData,
 		IconPath:    iconsPath,
 	}
-	if _, err := shortcut.Save(a.Exec, path, scutOpts); err != nil {
+	if _, err := shortcut.Save(a.Exec, path, a.Args, scutOpts); err != nil {
+		fmt.Println("err:", err)
 		return errs.Wrap(err, "Could not save autostart shortcut")
 	}
 

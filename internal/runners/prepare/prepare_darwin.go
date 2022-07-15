@@ -10,7 +10,7 @@ import (
 func (r *Prepare) prepareOS() error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_service_executable",
 			"Could not get service executable: {{.V0}}", err.Error(),
 		), err)
@@ -19,7 +19,7 @@ func (r *Prepare) prepareOS() error {
 	svcShortcut := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
 	err = svcShortcut.Enable()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_autostart",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
 		), err)

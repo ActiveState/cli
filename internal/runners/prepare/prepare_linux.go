@@ -15,7 +15,7 @@ import (
 func (r *Prepare) prepareOS() error {
 	trayExec, err := installation.TrayExec()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_tray_exec",
 			"Could not get tray executable: {{.V0}}", err.Error(),
 		), err)
@@ -24,7 +24,7 @@ func (r *Prepare) prepareOS() error {
 	trayShortcut := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
 	err = trayShortcut.Enable()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_autostart",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
 		), err)
@@ -32,7 +32,7 @@ func (r *Prepare) prepareOS() error {
 
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_service_executable",
 			"Could not get service executable: {{.V0}}", err.Error(),
 		), err)
@@ -41,7 +41,7 @@ func (r *Prepare) prepareOS() error {
 	svcShortuct := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
 	err = svcShortuct.Enable()
 	if err != nil {
-		r.reportError(locale.Tr(
+		r.reportError(locale.Tl(
 			"err_prepare_autostart",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
 		), err)
