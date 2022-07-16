@@ -63,7 +63,7 @@ func TestOfflineInstaller(t *testing.T) {
 	rt, err := New(offlineTarget, analytics, nil)
 	require.Error(t, err)
 	assert.True(t, IsNeedsUpdateError(err), "runtime should require an update")
-	err = rt.Update(nil, eventHandler)
+	err = rt.Update(nil, eventHandler, "", "")
 	require.NoError(t, err)
 
 	assert.False(t, mockProgress.BuildStartedCalled)
