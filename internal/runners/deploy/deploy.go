@@ -167,6 +167,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")
 	}
+	// TODO: check if rtTarget.Dir() is correct here
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	if err := rti.Update(d.auth, eh, sockPath, rtTarget.Dir()); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")

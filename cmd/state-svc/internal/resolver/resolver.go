@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -178,12 +179,28 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 
 // ReportRuntimeUsage is an alternate version of RuntimeUsage which meets the
 // needs of the ipc package.
-func (r *Resolver) ReportRuntimeUsage(ctx context.Context, pid, exec string) {
+func (r *Resolver) ReportRuntimeUsage(ctx context.Context, pid, exec, projDir string) {
+	var (
+		headless  string
+		commitID  string
+		nameSpace string
+	)
+
+	proj, err := project.FromPath(projDir)
+	if err != nil {
+		multilog.Critical("Could not convert pid string to int in proxied runtime-usage report: %s", errs.JoinMessage(err))
+	} else {
+		headless = fmt.Sprintf("%t", proj.IsHeadless())
+		commitID = proj.CommitID()
+		nameSpace = proj.Namespace().String()
+	}
+
+	logging.Debug("Packing state-exec data for process %s running project %s from %s", pid, projDir, exec)
 	dims := &dimensions.Values{
 		Trigger:          p.StrP(target.TriggerExec.String()),
-		Headless:         p.StrP("true"),
-		CommitID:         new(string),
-		ProjectNameSpace: p.StrP(project.NewNamespace("", "", "").String()),
+		Headless:         &headless,
+		CommitID:         &commitID,
+		ProjectNameSpace: &nameSpace,
 		InstanceID:       p.StrP(instanceid.ID()),
 	}
 

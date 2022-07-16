@@ -20,6 +20,8 @@ const Error = error{
     ArgMissingOne,
     ArgInvalidTwo,
     ArgMissingTwo,
+    ArgInvalidThree,
+    ArgMissingThree,
     ArgCollector,
     ArgCollectRunt,
     ArgCollectUsr,
@@ -32,13 +34,14 @@ const Error = error{
 pub fn main() !void {
     const stderr = io.getStdErr().writer();
 
-    run(stderr) catch |err| {
+    const exitCode = run(stderr) catch |err| {
         try stderr.print("{s}: ", .{execName});
 
         switch (err) {
             Error.ArgIterator => try stderr.print("Cannot process args.\n", .{}),
             Error.ArgInvalidOne, Error.ArgMissingOne => try stderr.print("First arg should be a socket file.\n", .{}),
             Error.ArgInvalidTwo, Error.ArgMissingTwo => try stderr.print("Second arg should be a language runtime.\n", .{}),
+            Error.ArgInvalidThree, Error.ArgMissingThree => try stderr.print("Third arg should be a project directory.\n", .{}),
             Error.ArgCollector => try stderr.print("Cannot setup arg collector.\n", .{}),
             Error.ArgCollectRunt => try stderr.print("Cannot collect runtime arg.\n", .{}),
             Error.ArgCollectUsr => try stderr.print("Cannot collect user args.\n", .{}),
@@ -52,18 +55,19 @@ pub fn main() !void {
 
         process.exit(1);
     };
+    os.exit(exitCode);
 }
 
-fn sendMsgToServer(stderr: fs.File.Writer, a: mem.Allocator, path: []const u8, pid: i32, exec: []const u8) !void {
-    const clientMsgFmt = "heart<{d}<{s}";
+fn sendMsgToServer(stderr: fs.File.Writer, a: mem.Allocator, sock: []const u8, pid: i32, exec: []const u8, projdir: []const u8) !void {
+    const clientMsgFmt = "heart<{d}<{s}<{s}";
 
-    const conn = net.connectUnixSocket(path) catch |err| {
+    const conn = net.connectUnixSocket(sock) catch |err| {
         try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
         return;
     };
     defer conn.close();
 
-    var clientMsg = try fmt.allocPrint(a, clientMsgFmt, .{ pid, exec });
+    var clientMsg = try fmt.allocPrint(a, clientMsgFmt, .{ pid, exec, projdir });
     _ = conn.write(clientMsg) catch |err| {
         try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
         return;
@@ -76,7 +80,7 @@ fn sendMsgToServer(stderr: fs.File.Writer, a: mem.Allocator, path: []const u8, p
     };
 }
 
-fn run(stderr: fs.File.Writer) Error!void {
+fn run(stderr: fs.File.Writer) Error!u8 {
     var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -85,14 +89,15 @@ fn run(stderr: fs.File.Writer) Error!void {
     defer argIt.deinit();
 
     _ = argIt.skip();
-    const path = (argIt.next(a) orelse return Error.ArgMissingOne) catch return Error.ArgInvalidOne;
+    const sock = (argIt.next(a) orelse return Error.ArgMissingOne) catch return Error.ArgInvalidOne;
     const runt = (argIt.next(a) orelse return Error.ArgMissingTwo) catch return Error.ArgInvalidTwo;
+    const projdir = (argIt.next(a) orelse return Error.ArgMissingThree) catch return Error.ArgInvalidThree;
 
     var pid: i32 = @truncate(i32, @bitCast(i64, Thread.getCurrentId()));
 
     const exec = fs.selfExePathAlloc(a) catch return Error.InspectSelfPath;
 
-    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ stderr, a, path, pid, exec }) catch {
+    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ stderr, a, sock, pid, exec, projdir }) catch {
         return Error.ThreadSpawn;
     };
     defer clientThread.join();
@@ -103,10 +108,10 @@ fn run(stderr: fs.File.Writer) Error!void {
     var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
     cmdArgs.append(runt) catch return Error.ArgCollectRunt;
-    cmdArgs.appendSlice(usrArgs[3..]) catch return Error.ArgCollectUsr;
+    cmdArgs.appendSlice(usrArgs[4..]) catch return Error.ArgCollectUsr;
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
     defer childProc.deinit();
     var term = childProc.spawnAndWait() catch return Error.ChildProcSpawn;
-    os.exit(term.Exited);
+    return term.Exited;
 }

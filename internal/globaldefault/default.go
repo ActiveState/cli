@@ -77,7 +77,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, s
 
 	projectDir := filepath.Dir(proj.Source().Path())
 	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(proj.Path(), sockPath, env, exes); err != nil {
+	if err := fw.Update(projectDir, sockPath, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

@@ -55,7 +55,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 }
 
 type RuntimeUsageReporter interface {
-	ReportRuntimeUsage(ctx context.Context, pid, exec string)
+	ReportRuntimeUsage(ctx context.Context, pid, exec, projDir string)
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
@@ -65,17 +65,20 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		}
 
 		data := input[len(KeyHeartbeat):]
-		var pid, exec string
+		var pid, exec, projDir string
 
-		ss := strings.SplitN(data, "<", 2)
+		ss := strings.SplitN(data, "<", 3)
 		if len(ss) > 0 {
 			pid = ss[0]
 		}
 		if len(ss) > 1 {
 			exec = ss[1]
 		}
+		if len(ss) > 2 {
+			projDir = ss[2]
+		}
 
-		reporter.ReportRuntimeUsage(context.Background(), pid, exec)
+		reporter.ReportRuntimeUsage(context.Background(), pid, exec, projDir)
 
 		return data, true
 	}

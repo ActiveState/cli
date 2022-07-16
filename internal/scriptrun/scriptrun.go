@@ -69,6 +69,8 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() error {
+	projDir := filepath.Dir(s.project.Source().Path())
+
 	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
@@ -78,13 +80,13 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
-		if err := rt.Update(s.auth, eh, s.project.Source().Path(), s.sockPath); err != nil {
+		if err := rt.Update(s.auth, eh, projDir, s.sockPath); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
+	env, err := venv.GetEnv(true, true, projDir)
 	if err != nil {
 		return err
 	}
