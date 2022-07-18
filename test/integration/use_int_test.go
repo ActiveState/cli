@@ -142,10 +142,38 @@ func (suite *UseIntegrationTestSuite) TestUseWithFlags() {
 	notPython3Dir := filepath.Join(projectsDir, "Python3")
 	suite.Assert().False(fileutils.DirExists(notPython3Dir), "state use should not have created "+notPython3Dir)
 
-	// Test --branch.
+	// Using again without --path should not re-checkout.
+	timeNow := time.Now()
+	projectsDir = filepath.Join(ts.Dirs.Base, "projects")
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"ACTIVESTATE_CLI_PROJECTSDIR="+projectsDir),
+	)
+	cp.ExpectExitCode(0)
+	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
+	if runtime.GOOS == "windows" {
+		pythonExe = pythonExe + ".bat"
+	}
+	modTime, err := fileutils.ModTime(pythonExe)
+	suite.Require().NoError(err)
+	suite.Assert().True(modTime.Unix() <= timeNow.Unix()+1, "ActiveState-CLI/Python3 was checked out again instead of reused")
+	notPython3Dir = filepath.Join(projectsDir, "Python3")
+	suite.Assert().False(fileutils.DirExists(notPython3Dir), "state use should not have created "+notPython3Dir)
+
+	// Test --branch mismatch in checked-out project.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3", "--branch", "doesNotExist"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Cannot activate branch doesNotExist. Branch main is already checked out")
+	cp.ExpectExitCode(1)
+
+	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/Python3", "--path", branchPath, "--branch", "doesNotExist"),
+		e2e.WithArgs("use", "ActiveState-CLI/Python-3.9", "--path", branchPath, "--branch", "doesNotExist"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("This project has no branch with label matching doesNotExist")

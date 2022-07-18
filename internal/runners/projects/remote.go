@@ -44,7 +44,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 		return nil, errs.Wrap(err, "Unknown failure")
 	}
 	var projects projectWithOrgs = []projectWithOrg{}
-	localConfigProjects := r.config.GetStringMapStringSlice(projectfile.LocalProjectsConfigKey)
+	localConfigProjects := projectfile.GetProjectMapping(r.config)
 	for _, org := range orgs.Payload {
 		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)
 		if err != nil {
