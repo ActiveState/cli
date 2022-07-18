@@ -21,11 +21,15 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	trayShortcut := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
+	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
+	if err != nil {
+		r.reportError(locale.T("err_autostart_app"), err)
+	}
+
 	err = trayShortcut.Enable()
 	if err != nil {
 		r.reportError(locale.Tl(
-			"err_prepare_autostart",
+			"err_prepare_autostart_enable",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
 		), err)
 	}
@@ -38,7 +42,11 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcShortuct := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
+	svcShortuct, err := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
+	if err != nil {
+		r.reportError(locale.T("err_autostart_app"), err)
+	}
+
 	err = svcShortuct.Enable()
 	if err != nil {
 		r.reportError(locale.Tl(
@@ -66,11 +74,16 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, cfg).Path()
+	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, cfg)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_autostart_app")
+	}
+
+	path, err := trayShortcut.Path()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if trayShortcut != "" {
-		files = append(files, trayShortcut)
+	} else if path != "" {
+		files = append(files, path)
 	}
 
 	svcExec, err := installation.ServiceExec()
@@ -78,11 +91,16 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortuct, err := autostart.New(autostart.Service, svcExec, []string{"start"}, cfg).Path()
+	svcShortuct, err := autostart.New(autostart.Service, svcExec, []string{"start"}, cfg)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_autostart_app")
+	}
+
+	path, err = svcShortuct.Path()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if svcShortuct != "" {
-		files = append(files, svcShortuct)
+	} else if path != "" {
+		files = append(files, path)
 	}
 
 	dir, err := prependHomeDir(constants.ApplicationDir)
