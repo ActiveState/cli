@@ -13,6 +13,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
+type WindowStyle int
+
+// Shortcut WindowStyle values
+const (
+	Normal    WindowStyle = 1
+	Maximized             = 3
+	Minimized             = 4
+)
+
 type Shortcut struct {
 	dir      string
 	name     string
@@ -96,8 +105,8 @@ func (s *Shortcut) setIcon(path string) error {
 	return nil
 }
 
-func (s *Shortcut) SetMinimized() error {
-	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", 7)
+func (s *Shortcut) SetWindowStyle(style WindowStyle) error {
+	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", style)
 	if err != nil {
 		return errs.Wrap(err, "Could not set shortcut to run minimized")
 	}
