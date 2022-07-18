@@ -71,7 +71,7 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectDir := u.getLocalProjectPath(params.Namespace)
+	projectDir := GetLocalProjectPath(params.Namespace, u.config)
 	if projectDir == "" {
 		if params.Namespace.Owner == "" {
 			err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
@@ -146,8 +146,8 @@ func (u *Use) Run(params *Params) error {
 	return nil
 }
 
-func (u *Use) getLocalProjectPath(ns *project.Namespaced) string {
-	for namespace, paths := range projectfile.GetProjectMapping(u.config) {
+func GetLocalProjectPath(ns *project.Namespaced, cfg *config.Instance) string {
+	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
 		if len(paths) == 0 {
 			continue
 		}

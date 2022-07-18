@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -12,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/activate"
+	"github.com/ActiveState/cli/internal/runners/use"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -58,18 +57,16 @@ func NewShell(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	projectsDir, err := storage.ProjectsDir()
-	if err != nil {
-		return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
+	projectDir := use.GetLocalProjectPath(params.Namespace, u.config)
+	if projectDir == "" {
+		err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+		errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
+		return err
 	}
-
-	projectDir := filepath.Join(projectsDir, params.Namespace.Project)
 
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		wrapped := locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
-		errs.AddTips(wrapped, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-		return wrapped
+		return locale.WrapError(err, "err_use_project_frompath")
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
