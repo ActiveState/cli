@@ -1894,6 +1894,8 @@ err_service_exec:
   other: Could not get service exec
 err_tray_exec:
   other: Could not get state tray exec
+err_svc_exec:
+  other: Could not get state service exec
 err_update_exec:
   other: Could not get update dialog exec
 err_state_exec_dir:
