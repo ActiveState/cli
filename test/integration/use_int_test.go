@@ -137,7 +137,7 @@ func (suite *UseIntegrationTestSuite) TestUseWithFlags() {
 
 	suite.Require().True(fileutils.DirExists(python3Dir), "state use should have created "+python3Dir)
 	suite.Require().True(fileutils.FileExists(filepath.Join(python3Dir, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
-	projectsDir, err := storage.ProjectsDir()
+	projectsDir, err := storage.ProjectsDir(nil)
 	suite.Require().NoError(err)
 	notPython3Dir := filepath.Join(projectsDir, "Python3")
 	suite.Assert().False(fileutils.DirExists(notPython3Dir), "state use should not have created "+notPython3Dir)

@@ -444,3 +444,7 @@ const AutoUpdateConfigKey = "autoupdate"
 
 // ProjectsDirName is the default name in the user's home directory where `state use` checks out projects to.
 const ProjectsDirName = "Projects"
+
+// ProjectsDirConfigKey is the config key for where `state use` checks out projects to.
+// If this is unset, the default directory is ~/<ProjectsDirName> (see above).
+const ProjectsDirConfigKey = "projects.directory"
