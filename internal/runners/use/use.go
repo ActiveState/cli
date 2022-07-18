@@ -155,7 +155,7 @@ func (u *Use) getLocalProjectPath(ns *project.Namespaced) string {
 		err := namespaced.Set(namespace)
 		if err != nil {
 			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
-			return ""
+			continue
 		}
 		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
 			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
