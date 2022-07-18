@@ -17,7 +17,7 @@ type options struct{}
 
 var data = map[AppName]options{}
 
-func (a *App) enable() error {
+func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
@@ -50,7 +50,7 @@ func (a *App) enable() error {
 	return nil
 }
 
-func (a *App) disable() error {
+func (a *app) disable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -62,15 +62,15 @@ func (a *App) disable() error {
 	return os.Remove(a.shortcutFilename())
 }
 
-func (a *App) IsEnabled() (bool, error) {
+func (a *app) IsEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
-func (a *App) Path() (string, error) {
+func (a *app) Path() (string, error) {
 	return a.shortcutFilename(), nil
 }
 
-func (a *App) shortcutFilename() string {
+func (a *app) shortcutFilename() string {
 	name := formattedName(a.Name)
 	return filepath.Join(startupPath, name+".lnk")
 }

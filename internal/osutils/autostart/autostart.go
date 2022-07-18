@@ -18,7 +18,7 @@ const (
 	Service         = constants.SvcAppName
 )
 
-type App struct {
+type app struct {
 	Name    string
 	Exec    string
 	Args    []string
@@ -31,8 +31,8 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name AppName, exec string, args []string, cfg Configurable) *App {
-	return &App{
+func New(name AppName, exec string, args []string, cfg Configurable) *app {
+	return &app{
 		Name:    name.String(),
 		Exec:    exec,
 		Args:    args,
@@ -41,7 +41,7 @@ func New(name AppName, exec string, args []string, cfg Configurable) *App {
 	}
 }
 
-func (a *App) Enable() error {
+func (a *app) Enable() error {
 	if a.Name == Tray.String() {
 		if err := a.cfg.Set(ConfigKeyDisabled, false); err != nil {
 			return errs.Wrap(err, "ConfigKeyDisabled=false failed")
@@ -50,7 +50,7 @@ func (a *App) Enable() error {
 	return a.enable()
 }
 
-func (a *App) EnableFirstTime() error {
+func (a *app) EnableFirstTime() error {
 	if a.Name == Tray.String() {
 		if a.cfg.IsSet(ConfigKeyDisabled) {
 			return nil
@@ -62,7 +62,7 @@ func (a *App) EnableFirstTime() error {
 	return a.enable()
 }
 
-func (a *App) Disable() error {
+func (a *app) Disable() error {
 	if a.Name == Tray.String() {
 		if err := a.cfg.Set(ConfigKeyDisabled, true); err != nil {
 			return errs.Wrap(err, "ConfigKeyDisabled=true failed")

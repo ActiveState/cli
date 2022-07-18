@@ -26,7 +26,7 @@ var data = map[AppName]options{
 	},
 }
 
-func (a *App) enable() error {
+func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -60,7 +60,7 @@ func (a *App) enable() error {
 	return nil
 }
 
-func (a *App) disable() error {
+func (a *app) disable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -76,7 +76,7 @@ func (a *App) disable() error {
 	return os.Remove(path)
 }
 
-func (a *App) IsEnabled() (bool, error) {
+func (a *app) IsEnabled() (bool, error) {
 	path, err := a.Path()
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
@@ -84,7 +84,7 @@ func (a *App) IsEnabled() (bool, error) {
 	return fileutils.FileExists(path), nil
 }
 
-func (a *App) Path() (string, error) {
+func (a *app) Path() (string, error) {
 	dir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
