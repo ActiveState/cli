@@ -1933,3 +1933,5 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
+err_autostart_app:
+  other: Could not create new autostart app

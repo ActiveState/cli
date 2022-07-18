@@ -3,6 +3,7 @@ package autostart
 import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 const ConfigKeyDisabled = "SystrayAutoStartDisabled"
@@ -31,14 +32,19 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name AppName, exec string, args []string, cfg Configurable) *app {
+func New(name AppName, exec string, args []string, cfg Configurable) (*app, error) {
+	data, ok := data[name]
+	if !ok {
+		return nil, locale.NewError("err_autostart_unrecognized", "Unrecognized autostart app type")
+	}
+
 	return &app{
 		Name:    name.String(),
 		Exec:    exec,
 		Args:    args,
 		cfg:     cfg,
-		options: data[name],
-	}
+		options: data,
+	}, nil
 }
 
 func (a *app) Enable() error {
