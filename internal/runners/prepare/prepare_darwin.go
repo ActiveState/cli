@@ -17,11 +17,14 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	svcShortcut, err := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
+	if err != nil {
+		r.reportError(locale.T("err_autostart_app"), err)
+	}
 
 	err = svcShortcut.Enable()
 	if err != nil {
 		r.reportError(locale.Tl(
-			"err_prepare_autostart",
+			"err_prepare_autostart_enable",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
 		), err)
 	}
