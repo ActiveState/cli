@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -141,4 +142,22 @@ func InstallSource() (string, error) {
 	}
 
 	return strings.TrimSpace(string(installFileData)), nil
+}
+
+// ProjectsDir returns the directory used by `state use` to checkout projects to.
+// Note: the returned directory may not yet exist!
+// By default, it is ~/Projects.
+func ProjectsDir() (string, error) {
+	dir, envSet := os.LookupEnv(constants.ProjectsEnvVarName)
+	if envSet {
+		return dir, nil
+	}
+
+	// Note: cannot use fileutils.HomeDir() due to import cycle
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(usr.HomeDir, constants.ProjectsDirName), nil
 }

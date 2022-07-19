@@ -2,7 +2,9 @@ package use
 
 import (
 	"fmt"
+	"path/filepath"
 	rt "runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -23,10 +25,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
-	Namespace *project.Namespaced
+	Namespace     *project.Namespaced
+	PreferredPath string
+	Branch        string
 }
 
 type primeable interface {
@@ -66,14 +71,42 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectPath, err := u.checkout.Run(params.Namespace, "", "")
-	if err != nil {
-		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
+	projectDir := u.getLocalProjectPath(params.Namespace)
+	if projectDir == "" {
+		if params.Namespace.Owner == "" {
+			err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
+			return err
+		}
+
+		if params.PreferredPath == "" {
+			projectsDir, err := storage.ProjectsDir()
+			if err != nil {
+				return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
+			}
+			projectDir = filepath.Join(projectsDir, params.Namespace.Project)
+		} else {
+			projectDir = params.PreferredPath
+		}
+
+		logging.Debug("Checking out %s to %s", params.Namespace.String(), projectDir)
+
+		var err error
+		projectDir, err = u.checkout.Run(params.Namespace, params.Branch, projectDir)
+		if err != nil {
+			return locale.WrapError(err, "err_use_checkout_project", params.Namespace.String())
+		}
+	} else {
+		logging.Debug("Using an already checked out project: %s", projectDir)
 	}
 
-	proj, err := project.FromPath(projectPath)
+	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		return locale.WrapError(err, "err_activate_projectfrompath")
+		return locale.WrapError(err, "err_use_project_frompath")
+	}
+
+	if params.Branch != "" && proj.BranchName() != params.Branch {
+		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
@@ -111,4 +144,23 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	return nil
+}
+
+func (u *Use) getLocalProjectPath(ns *project.Namespaced) string {
+	for namespace, paths := range projectfile.GetProjectMapping(u.config) {
+		if len(paths) == 0 {
+			continue
+		}
+		var namespaced project.Namespaced
+		err := namespaced.Set(namespace)
+		if err != nil {
+			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
+			continue
+		}
+		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
+			return paths[0] // just pick the first one
+		}
+	}
+	return ""
 }
