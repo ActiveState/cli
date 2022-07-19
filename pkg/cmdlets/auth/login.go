@@ -177,7 +177,7 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	_, err := mono.Get().Users.UniqueUsername(params)
 	if err != nil {
 		// This error is not useful to the user so we do not return it and log instead
-		multilog.Error("Error when checking for unique username: %v", err)
+		logging.Debug("Error when checking for unique username: %v", err)
 		return false
 	}
 
