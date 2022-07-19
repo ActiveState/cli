@@ -213,6 +213,8 @@ signup_description:
   other: Signup a new account
 err_auth_signup_user_exists:
   other: "An account with the given information already exists, error received: {{.V0}}"
+err_auth_signup_bad_request:
+  other: "Invalid signup request. The error received was: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:

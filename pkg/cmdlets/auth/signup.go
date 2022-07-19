@@ -197,8 +197,9 @@ func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth
 		switch err.(type) {
 		// Authentication failed due to email already existing (username check already happened at this point)
 		case *users.AddUserConflict:
-			multilog.Error("Encountered add user conflict: %v", err)
 			return locale.WrapInputError(err, "err_auth_signup_user_exists", "", api.ErrorMessageFromPayload(err))
+		case *users.AddUserBadRequest:
+			return locale.WrapInputError(err, "err_auth_signup_bad_request", "", api.ErrorMessageFromPayload(err))
 		default:
 			multilog.Error("Encountered unknown error adding user: %v", err)
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", api.ErrorMessageFromPayload(err))
