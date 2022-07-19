@@ -94,6 +94,9 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.ExpectLongString("Merging history")
 	cp.ExpectExitCode(0)
 
+	if runtime.GOOS == "windows" {
+		wd = filepath.ToSlash(wd)
+	}
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, ts.ExecutablePath()))
 	cp.ExpectLongString("Merged")
 	cp.ExpectExitCode(0)
