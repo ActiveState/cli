@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
@@ -145,6 +144,12 @@ func setStateProtocol() error {
 
 func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
+
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_tray_exec")
+	}
+
 	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
 	files = append(files, filepath.Dir(sc.Path()))
 
