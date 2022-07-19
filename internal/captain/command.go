@@ -167,6 +167,21 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		return err
 	})
 
+	// When there are errors processing flags, the command's runner is not called.
+	// In addition to performing the unstable feature check and printing of the unstable banner in
+	// the command's runner, we need to do it here too if there's an error processing flags.
+	// If the command is not unstable, simply return the flag error.
+	cmd.cobra.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		if cmd.shouldWarnUnstable() {
+			if !condition.OptInUnstable(cmd.cfg) {
+				cmd.out.Notice(locale.Tr("unstable_command_warning", cmd.Name()))
+				return nil
+			}
+			cmd.outputTitleIfAny()
+		}
+		return err
+	})
+
 	cobraMapping[cmd.cobra] = cmd
 	return cmd
 }
@@ -574,8 +589,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		}
 	}
 
-	warnUnstableCommand := c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
-	if warnUnstableCommand && !condition.OptInUnstable(c.cfg) {
+	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
 		c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
 		return nil
 	}
@@ -605,17 +619,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	}
 
-	if c.out != nil && c.title != "" {
-		suffix := ""
-		if c.unstable {
-			suffix = locale.T("beta_suffix")
-		}
-		c.out.Notice(output.Title(c.title + suffix))
-	}
-
-	if warnUnstableCommand {
-		c.out.Notice(locale.T("unstable_feature_banner"))
-	}
+	c.outputTitleIfAny()
 
 	intercept := c.interceptFunc()
 	execute := intercept(c.execute)
@@ -669,6 +673,24 @@ func (c *Command) runFlags(persistOnly bool) {
 		flag.OnUse()
 	})
 
+}
+
+func (c *Command) shouldWarnUnstable() bool {
+	return c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
+}
+
+func (c *Command) outputTitleIfAny() {
+	if c.out != nil && c.title != "" {
+		suffix := ""
+		if c.unstable {
+			suffix = locale.T("beta_suffix")
+		}
+		c.out.Notice(output.Title(c.title + suffix))
+	}
+
+	if c.shouldWarnUnstable() {
+		c.out.Notice(locale.T("unstable_feature_banner"))
+	}
 }
 
 func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
