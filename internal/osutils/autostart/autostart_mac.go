@@ -4,6 +4,7 @@
 package autostart
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +16,10 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-const launchFileSource = "com.activestate.platform.state.plist.tpl"
+const (
+	launchFileSource     = "com.activestate.platform.state.plist.tpl"
+	launchFileFormatName = "com.activestate.platform.%s.plist"
+)
 
 func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
@@ -41,11 +45,10 @@ func (a *app) enable() error {
 		string(asset),
 		map[string]interface{}{"Exec": a.Exec, "Args": strings.Join(a.Args, " ")})
 	if err != nil {
-		return errs.Wrap(err, "Could not parse %s", a.options.LaunchFileName)
+		return errs.Wrap(err, "Could not parse %s", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	}
 
-	err = fileutils.WriteFile(path, []byte(content))
-	if err != nil {
+	if err = fileutils.WriteFile(path, []byte(content)); err != nil {
 		return errs.Wrap(err, "Could not write launch file")
 	}
 	return nil
@@ -80,5 +83,7 @@ func (a *app) Path() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(dir, "Library/LaunchAgents", a.options.LaunchFileName), nil
+	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
+	fmt.Println("Path:", path)
+	return path, nil
 }
