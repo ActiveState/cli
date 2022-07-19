@@ -17,15 +17,6 @@ import (
 
 const launchFileSource = "com.activestate.platform.state.plist.tpl"
 
-var data = map[AppName]options{
-	Tray: {
-		launchFileName: "com.activestate.platform.state-tray.plist",
-	},
-	Service: {
-		launchFileName: "com.activestate.platform.state-svc.plist",
-	},
-}
-
 func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
@@ -50,7 +41,7 @@ func (a *app) enable() error {
 		string(asset),
 		map[string]interface{}{"Exec": a.Exec, "Args": strings.Join(a.Args, " ")})
 	if err != nil {
-		return errs.Wrap(err, "Could not parse %s", a.options.launchFileName)
+		return errs.Wrap(err, "Could not parse %s", a.options.LaunchFileName)
 	}
 
 	err = fileutils.WriteFile(path, []byte(content))
@@ -89,5 +80,5 @@ func (a *app) Path() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(dir, "Library/LaunchAgents", a.options.launchFileName), nil
+	return filepath.Join(dir, "Library/LaunchAgents", a.options.LaunchFileName), nil
 }
