@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/scripts/internal/github-helpers"
-	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/codemodus/relay"
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/net/context"
@@ -42,7 +41,7 @@ func main() {
 		}
 	}
 
-	ghClient := github_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
 
 	prID, err := strconv.Atoi(os.Args[1])
 	r.Check(err)
@@ -57,7 +56,7 @@ func main() {
 
 func verifyRC(ghClient *github.Client, pr *github.PullRequest) {
 	version := strings.Split(pr.GetTitle(), " ")[0]
-	jiraClient := jira_helpers.InitClient()
+	jiraClient := workflow_helpers.InitJiraClient()
 
 	issues, _, err := jiraClient.Issue.Search(fmt.Sprintf(
 		// Why `statusCategory="In Progress" AND status!="In Progress"`?
@@ -76,7 +75,7 @@ func verifyRC(ghClient *github.Client, pr *github.PullRequest) {
 		jiraIDs[strings.ToLower(issue.Key)] = false
 	}
 
-	commits, err := github_helpers.FetchCommitsByShaRange(ghClient, pr.GetHead().GetSHA(), pr.GetBase().GetSHA())
+	commits, err := workflow_helpers.FetchCommitsByShaRange(ghClient, pr.GetHead().GetSHA(), pr.GetBase().GetSHA())
 	r.Check(err)
 
 	for _, commit := range commits {

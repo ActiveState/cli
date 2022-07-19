@@ -17,8 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/scripts/internal/github-helpers"
-	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/codemodus/relay"
 	"github.com/google/go-github/v45/github"
@@ -61,8 +60,8 @@ func main() {
 	shaOfMergedPR := os.Args[1]
 
 	// Initialize Clients
-	ghClient := github_helpers.InitClient()
-	jiraClient := jira_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
+	jiraClient := workflow_helpers.InitJiraClient()
 
 	repo, err := git.PlainOpen(path)
 	r.Check(err)
@@ -173,7 +172,7 @@ func getMergedPR(gh *github.Client, sha string) *github.PullRequest {
 }
 
 func getJiraIssueFromPR(jiraClient *jira.Client, pr *github.PullRequest) *jira.Issue {
-	jiraIssueID := github_helpers.ExtractJiraIssueID(pr)
+	jiraIssueID := workflow_helpers.ExtractJiraIssueID(pr)
 	if jiraIssueID == nil {
 		fmt.Printf("PR does not have Jira issue ID associated with it: %s\n", pr.Links.GetHTML().GetHRef())
 		return nil

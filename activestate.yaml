@@ -406,6 +406,13 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/verify-rc/main.go $1
+  - name: ghapi
+    language: bash
+    value: |
+      curl \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: token ${secrets.user.GITHUB_TOKEN}" \
+        https://api.github.com/repos/ActiveState/cli/${1}
 events:
   - name: activate
     if: ne .Shell "cmd"

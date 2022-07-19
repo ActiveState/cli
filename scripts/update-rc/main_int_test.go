@@ -3,8 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/scripts/internal/github-helpers"
-	"github.com/ActiveState/cli/scripts/internal/jira-helpers"
+	"github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
 )
@@ -17,7 +16,7 @@ func (suite *MainTestSuite) TestGetMergePR() {
 	var commitWithMerge = "c4d8519113ac3eb0ac565179787619bae96b7498"
 	var commitWithoutMerge = "d18992f370ada0fd179fb4cdced811e77c7b1136"
 
-	ghClient := github_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
 
 	suite.Require().NotNil(getMergedPR(ghClient, commitWithMerge))
 	suite.Require().Nil(getMergedPR(ghClient, commitWithoutMerge))
@@ -27,8 +26,8 @@ func (suite *MainTestSuite) TestGetJiraIssueFromPR() {
 	var prWithJiraIssue = 1872
 	var prWithoutJiraIssue = 1717
 
-	jiraClient := jira_helpers.InitClient()
-	ghClient := github_helpers.InitClient()
+	jiraClient := workflow_helpers.InitJiraClient()
+	ghClient := workflow_helpers.InitGHClient()
 
 	{
 		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithJiraIssue)
@@ -48,7 +47,7 @@ func (suite *MainTestSuite) TestGetTargetFixVersion() {
 	var jiraIssueWithArchivedFixVersion = "DX-497"
 	var jiraIssueWithoutFixVersion = "DX-968"
 
-	jiraClient := jira_helpers.InitClient()
+	jiraClient := workflow_helpers.InitJiraClient()
 
 	{
 		issue, _, err := jiraClient.Issue.Get(jiraIssueWithFixVersion, nil)
@@ -73,7 +72,7 @@ func (suite *MainTestSuite) TestTargetPR() {
 	var prefixForOpenVersionPR = "1.2.3-RC"
 	var prefixForClosedVersionPR = "v0.32.0-RC"
 
-	ghClient := github_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
 
 	{
 		pr := getTargetPR(ghClient, prefixForOpenVersionPR)
@@ -91,7 +90,7 @@ func (suite *MainTestSuite) TestTargetPRMissingMergedPR() {
 	var prWithFailedMergeAssertion = 1867
 	var prMergeAssertion = 1824
 
-	ghClient := github_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
 
 	{
 		pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prWithMergeAssertion)

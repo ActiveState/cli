@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/scripts/internal/github-helpers"
+	"github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/codemodus/relay"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
@@ -17,7 +17,7 @@ type MainTestSuite struct {
 func (suite *MainTestSuite) TestVerifyRC() {
 	var rcPRWithMissingCommits = 1885
 
-	ghClient := github_helpers.InitClient()
+	ghClient := workflow_helpers.InitGHClient()
 	pr, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", rcPRWithMissingCommits)
 	suite.Require().NoError(err)
 
