@@ -121,13 +121,13 @@ func (suite *RevertAutomationTestSuite) TestRevert_PublicProject() {
 	// Testing if user choose NO to the reset
 	cp := ts.Spawn("revert", "66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.SendLine("n")
-	//cp.Expect("Revert aborted by the user") // Not implemented and currently just close the session.
-	cp.ExpectExitCode(0)
+	cp.Expect("Revert aborted by user")
+	cp.ExpectExitCode(1)
 
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.SendLine("y")
-	cp.ExpectLongString("Sucessfully reverted to commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
+	cp.ExpectLongString("Successfully reverted to commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.ExpectExitCode(0)
 }
 
@@ -147,13 +147,13 @@ func (suite *RevertAutomationTestSuite) TestRevert_PrivateProject() {
 	// Testing if user choose NO to the reset
 	cp := ts.Spawn("revert", "d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.SendLine("n")
-	//cp.Expect("Reset aborted by user") // Not implemented and currently just close the session.
-	cp.ExpectExitCode(0)
+	cp.Expect("Revert aborted by user")
+	cp.ExpectExitCode(1)
 
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.SendLine("y")
-	cp.ExpectLongString("Sucessfully reverted to commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
+	cp.ExpectLongString("Successfully reverted to commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.ExpectExitCode(0)
 }
 
