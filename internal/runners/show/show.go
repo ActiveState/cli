@@ -350,8 +350,10 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
-		if behind != 0 {
-			return fmt.Sprintf("%s (%d behind latest)", localProject.CommitID(), behind), nil
+		if behind > 0 {
+			return fmt.Sprintf("%s (%d %s)", localProject.CommitID(), behind, locale.Tl("show_commits_behind_latest", "behind latest")), nil
+		} else if behind < 0 {
+			return fmt.Sprintf("%s (%d %s)", localProject.CommitID(), -behind, locale.Tl("show_commits_ahead_of_latest", "ahead of latest")), nil
 		}
 		return localProject.CommitID(), nil
 	}

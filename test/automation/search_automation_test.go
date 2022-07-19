@@ -1,15 +1,12 @@
 package automation
 
 import (
-	"fmt"
-	"path/filepath"
-	"testing"
-	"time"
-
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
+	"path/filepath"
+	"testing"
 )
 
 type SearchAutomationTestSuite struct {
@@ -29,7 +26,6 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
 	cp = ts.Spawn("search", "--language", "python")
 	cp.ExpectLongString("The following argument is required:")
 	cp.ExpectExitCode(1)
-
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
@@ -39,9 +35,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "--language")
-	cp.ExpectLongString("flag needs an argument: --language")
+	cp.ExpectLongString("Flag needs an argument: --language")
 	cp.ExpectExitCode(1)
-
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
@@ -51,9 +46,8 @@ func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "flask")
-	cp.ExpectLongString("Language must be provided by flag or by running this command within a project.")
+	cp.ExpectLongString("Language must be provided by flag")
 	cp.ExpectExitCode(1)
-
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
@@ -69,7 +63,6 @@ func (suite *SearchAutomationTestSuite) TestSearch_Flask() {
 	cp.Expect("flaskcap")
 	cp.Expect("Flask-CDN")
 	cp.ExpectExitCode(0)
-
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
@@ -100,14 +93,11 @@ func (suite *SearchAutomationTestSuite) TestSearch_LanguageFlag() {
 	cp.Expect("radar-api")
 	cp.Expect("radar-app")
 	cp.ExpectExitCode(0)
-	cp.Wait(5 * time.Second)
-	fmt.Println(cp.Snapshot())
-
 }
 
 func (suite *SearchAutomationTestSuite) TestSearch_ExactTermFlag() {
 	suite.OnlyRunForTags(tagsuite.Automation)
-	
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -133,7 +123,6 @@ func (suite *SearchAutomationTestSuite) TestSearch_ExactTermFlag() {
 	cp.Expect("Latest Version")
 	cp.Expect("ao")
 	cp.ExpectExitCode(0)
-
 }
 
 func TestSearchAutomationTestSuite(t *testing.T) {
