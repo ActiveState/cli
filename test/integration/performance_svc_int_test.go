@@ -44,7 +44,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	var svcPort string
-	
+
 	suite.Run("StartServer", func() {
 		svcExec, err := installation.ServiceExecFromDir(ts.Dirs.Bin)
 		suite.Require().NoError(err, errs.JoinMessage(err))
@@ -84,7 +84,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		}
 	})
 
-	suite.Run("Query Update", func() {
+	/*suite.Run("Query Update", func() {
 		t := time.Now()
 		_, err := svcmodel.CheckUpdate(context.Background())
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
@@ -93,7 +93,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
 			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
 		}
-	})
+	})*/
 
 	suite.Run("StopServer", func() {
 		t := time.Now()
