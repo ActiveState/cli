@@ -72,10 +72,6 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
-	// https://activestatef.atlassian.net/browse/DX-542
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Working directory is not working correctly on Windows")
-	}
 	suite.OnlyRunForTags(tagsuite.Push)
 	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
