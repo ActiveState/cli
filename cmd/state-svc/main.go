@@ -101,7 +101,7 @@ func run(cfg *config.Instance) error {
 	}
 
 	if mousetrap.StartedByExplorer() {
-		// Allow starting the installer via a double click
+		// Allow starting the svc via a double click
 		captain.DisableMousetrap()
 		return runStart(out)
 	}
