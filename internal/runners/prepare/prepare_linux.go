@@ -3,6 +3,9 @@ package prepare
 import (
 	"path/filepath"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
@@ -21,7 +24,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, r.cfg)
+	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, r.cfg)
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
@@ -42,7 +45,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcShortcut, err := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
+	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
@@ -74,7 +77,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	trayShortcut, err := autostart.New(autostart.Tray, trayExec, nil, cfg)
+	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
@@ -91,7 +94,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortuct, err := autostart.New(autostart.Service, svcExec, []string{"start"}, cfg)
+	svcShortuct, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}

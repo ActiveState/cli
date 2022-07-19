@@ -16,25 +16,6 @@ const (
 	autostartDir = ".config/autostart"
 )
 
-var data = map[AppName]options{
-	Tray: {
-		launchFileName: constants.TrayAppName,
-		iconFileName:   constants.TrayIconFileName,
-		iconFileSource: constants.IconFileSource,
-		genericName:    constants.TrayGenericName,
-		comment:        constants.TrayComment,
-		keywords:       constants.TrayKeywords,
-	},
-	Service: {
-		launchFileName: constants.SvcAppName,
-		iconFileName:   constants.ServiceIconFileName,
-		iconFileSource: constants.IconFileSource,
-		genericName:    constants.ServiceGenericName,
-		comment:        constants.ServiceComment,
-		keywords:       constants.ServiceKeywords,
-	},
-}
-
 func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
@@ -48,24 +29,24 @@ func (a *app) enable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, a.options.launchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
 		return errs.Wrap(err, "")
 	}
-	iconsPath := filepath.Join(iconsDir, a.options.iconFileName)
+	iconsPath := filepath.Join(iconsDir, a.options.IconFileName)
 
-	iconData, err := assets.ReadFileBytes(a.options.iconFileSource)
+	iconData, err := assets.ReadFileBytes(a.options.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
 	scutOpts := shortcut.SaveOpts{
 		Name:        a.Name,
-		GenericName: a.options.genericName,
-		Comment:     a.options.comment,
-		Keywords:    a.options.keywords,
+		GenericName: a.options.GenericName,
+		Comment:     a.options.Comment,
+		Keywords:    a.options.Keywords,
 		IconData:    iconData,
 		IconPath:    iconsPath,
 	}
@@ -81,7 +62,7 @@ func (a *app) Path() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, a.options.launchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	return path, nil
 }
@@ -108,7 +89,7 @@ func (a *app) IsEnabled() (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, a.options.launchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	return fileutils.FileExists(path), nil
 }

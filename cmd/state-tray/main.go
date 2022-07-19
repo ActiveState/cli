@@ -9,6 +9,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
+
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/config"
@@ -158,7 +160,7 @@ func run(cfg *config.Instance) (rerr error) {
 		return locale.WrapError(err, "err_tray_exec")
 	}
 
-	as, err := autostart.New(constants.TrayAppName, trayExec, nil, cfg)
+	as, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_autostart_app")
 	}

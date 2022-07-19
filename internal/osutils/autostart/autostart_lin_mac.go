@@ -1,12 +1,15 @@
+//go:build !windows
 // +build !windows
 
 package autostart
 
-type options struct {
-	launchFileName string
-	iconFileName   string
-	iconFileSource string
-	genericName    string
-	comment        string
-	keywords       string
+type Options struct {
+	LaunchFileName string
+	IconFileName   string
+	IconFileSource string
+	GenericName    string
+	Comment        string
+	Keywords       string
+	ConfigKey      string
+	SetConfig      bool
 }
