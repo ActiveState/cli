@@ -69,43 +69,8 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-// InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err := trayShortcut.Path()
-	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_svc_exec")
-	}
-
-	svcShortuct, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err = svcShortuct.Path()
-	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
 	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
 		multilog.Error("Failed to set application dir: %v", err)

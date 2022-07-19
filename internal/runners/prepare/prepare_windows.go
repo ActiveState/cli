@@ -143,43 +143,8 @@ func setStateProtocol() error {
 	return nil
 }
 
-// InstalledPreparedFiles returns the files installed by the state _prepare command
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	as, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err := as.Path()
-	if err != nil {
-		multilog.Error("Failed to determine tray autostart path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_svc_exec")
-	}
-
-	as, err = autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err = as.Path()
-	if err != nil {
-		multilog.Error("Failed to determine service autostart path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
 	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
 	files = append(files, filepath.Dir(sc.Path()))
 
