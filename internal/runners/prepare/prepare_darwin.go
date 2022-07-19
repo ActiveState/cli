@@ -2,11 +2,9 @@ package prepare
 
 import (
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
 
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
