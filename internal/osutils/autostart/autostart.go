@@ -18,6 +18,17 @@ type app struct {
 	options Options
 }
 
+type Options struct {
+	LaunchFileName string
+	IconFileName   string
+	IconFileSource string
+	GenericName    string
+	Comment        string
+	Keywords       string
+	ConfigKey      string
+	SetConfig      bool
+}
+
 type Configurable interface {
 	Set(string, interface{}) error
 	IsSet(string) bool

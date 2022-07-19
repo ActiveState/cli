@@ -8,3 +8,8 @@ import (
 const (
 	App autostart.AppName = constants.TrayAppName
 )
+
+var Options = autostart.Options{
+	ConfigKey: "systray.autostarted.disabled",
+	SetConfig: true,
+}

@@ -6,6 +6,9 @@ import (
 	"os/user"
 	"path/filepath"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
+
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -35,7 +38,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		as, err := autostart.New(autostart.Service, svcExec, []string{"start"}, r.cfg)
+		as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
 		if err != nil {
 			return locale.WrapError(err, "err_autostart_app")
 		}
@@ -148,7 +151,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_tray_exec")
 	}
 
-	as, err := autostart.New(autostart.Tray, trayExec, nil, cfg)
+	as, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
@@ -165,7 +168,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	as, err = autostart.New("service", svcExec, []string{"start"}, cfg)
+	as, err = autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}

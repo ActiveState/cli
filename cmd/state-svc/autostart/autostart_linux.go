@@ -1,15 +1,10 @@
 package autostart
 
-import (
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
-)
-
-var Options = autostart.Options{
-	LaunchFileName: constants.SvcAppName,
-	IconFileName:   constants.ServiceIconFileName,
-	IconFileSource: constants.IconFileSource,
-	GenericName:    constants.ServiceGenericName,
-	Comment:        constants.ServiceComment,
-	Keywords:       constants.ServiceKeywords,
+func init() {
+	Options.LaunchFileName = constants.SvcAppName
+	Options.IconFileName = constants.ServiceIconFileName
+	Options.IconFileSource = constants.IconFileSource
+	Options.GenericName = constants.ServiceGenericName
+	Options.Comment = constants.ServiceComment
+	Options.Keywords = constants.ServiceKeywords
 }

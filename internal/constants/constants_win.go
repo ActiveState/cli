@@ -2,14 +2,19 @@
 
 package constants
 
-// ActivePython2Executable represents the ActivePython executable.
-const ActivePython2Executable = "python2.exe"
+const (
+	// ActivePython2Executable represents the ActivePython executable.
+	ActivePython2Executable = "python2.exe"
 
-// ActivePython3Executable represents the ActivePython executable.
-const ActivePython3Executable = "python3.exe"
+	// ActivePython3Executable represents the ActivePython executable.
+	ActivePython3Executable = "python3.exe"
 
-// ActivePerlExecutable represents the ActivePerl executable.
-const ActivePerlExecutable = "perl.exe"
+	// ActivePerlExecutable represents the ActivePerl executable.
+	ActivePerlExecutable = "perl.exe"
 
-// RubyExecutable represents the ActivePython executable.
-const RubyExecutable = "ruby.exe"
+	// RubyExecutable represents the ActivePython executable.
+	RubyExecutable = "ruby.exe"
+
+	// IconFileSource is the source of the icon asset we use.
+	IconFileSource = "icon.ico"
+)

@@ -8,3 +8,5 @@ import (
 const (
 	App autostart.AppName = constants.SvcAppName
 )
+
+var Options = autostart.Options{}

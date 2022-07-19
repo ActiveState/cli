@@ -13,10 +13,6 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
-type options struct{}
-
-var data = map[AppName]options{}
-
 func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
@@ -32,7 +28,7 @@ func (a *app) enable() error {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
 
-	icon, err := assets.ReadFileBytes("icon.ico")
+	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
