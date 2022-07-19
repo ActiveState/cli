@@ -19,7 +19,7 @@ type WindowStyle int
 const (
 	Normal    WindowStyle = 1
 	Maximized             = 3
-	Minimized             = 4
+	Minimized             = 7
 )
 
 type Shortcut struct {
@@ -106,7 +106,7 @@ func (s *Shortcut) setIcon(path string) error {
 }
 
 func (s *Shortcut) SetWindowStyle(style WindowStyle) error {
-	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", style)
+	_, err := oleutil.PutProperty(s.dispatch, "WindowStyle", int(style))
 	if err != nil {
 		return errs.Wrap(err, "Could not set shortcut to run minimized")
 	}
