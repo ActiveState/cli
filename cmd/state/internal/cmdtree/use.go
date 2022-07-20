@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/use"
@@ -13,6 +14,11 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		Namespace: &project.Namespaced{AllowOmitOwner: true},
 	}
 
+	projectsDir, err := storage.ProjectsDir(prime.Config())
+	if err != nil {
+		projectsDir = "Projects"
+	}
+
 	cmd := captain.NewCommand(
 		"use",
 		"",
@@ -22,7 +28,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        "path",
 				Shorthand:   "",
-				Description: locale.T("flag_state_use_path_description"),
+				Description: locale.Tl("flag_state_use_path_description", "", projectsDir),
 				Value:       &params.PreferredPath,
 			},
 			{

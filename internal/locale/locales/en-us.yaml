@@ -1872,7 +1872,7 @@ err_update_corrupt_install:
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
 flag_state_use_path_description:
-  other: Where to install the project. The default location is in your ~/Projects directory
+  other: Where to install the project. The default location is in the {{.V0}} directory, and it can be configured by running [ACTIONABLE]state config set projects.directory <path>[/RESET]
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:

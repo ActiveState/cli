@@ -8,11 +8,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -66,6 +68,10 @@ func NewUse(prime primeable) *Use {
 	}
 }
 
+func init() {
+	configMediator.RegisterOption(constants.ProjectsDirConfigKey, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
+
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
@@ -80,7 +86,7 @@ func (u *Use) Run(params *Params) error {
 		}
 
 		if params.PreferredPath == "" {
-			projectsDir, err := storage.ProjectsDir()
+			projectsDir, err := storage.ProjectsDir(u.config)
 			if err != nil {
 				return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
 			}
