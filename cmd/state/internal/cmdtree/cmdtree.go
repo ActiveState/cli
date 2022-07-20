@@ -284,6 +284,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 	cmdCall := cmdcall.New(prime)
 
+	cmd.SetHasVariableArguments()
 	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
