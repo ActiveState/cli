@@ -138,9 +138,11 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET]",
+	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET] %s [ACTIONABLE]%s[/RESET]",
 		locale.Tl("use_notice_switched_to", "Switched to"),
-		params.Namespace.Project),
+		params.Namespace.Project,
+		locale.Tl("use_notice_located_at", "located at"),
+		projectDir),
 	)
 
 	if rt.GOOS == "windows" {
