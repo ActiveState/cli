@@ -120,7 +120,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
 
 	updateCmd := newUpdateCommand(prime)
-	updateCmd.AddChildren(newUpdateLockCommand(prime))
+	updateCmd.AddChildren(
+		newUpdateLockCommand(prime),
+		newUpdateUnlockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(

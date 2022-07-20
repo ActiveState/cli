@@ -7,8 +7,9 @@ import (
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/constants"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -39,6 +40,12 @@ func ActivateAndWait(
 	ve, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
+	}
+
+	if _, exists := os.LookupEnv(constants.DisableErrorTipsEnvVarName); exists {
+		// If this exists, it came from the installer. It should not exist in an activated environment
+		// otherwise.
+		ve[constants.DisableErrorTipsEnvVarName] = "false"
 	}
 
 	// If we're not using plain output then we should just dump the environment information
@@ -78,7 +85,7 @@ func ActivateAndWait(
 	}
 	defer fe.Close()
 
-	an.Event(constants.CatActivationFlow, "before-subshell")
+	an.Event(anaConst.CatActivationFlow, "before-subshell")
 
 	err = <-ss.Errors()
 	if err != nil {

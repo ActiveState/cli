@@ -71,6 +71,8 @@ updating_to_version:
   other: Updating from [NOTICE]{{.fromVersion}}[/RESET] to [NOTICE]{{.toVersion}}[/RESET]
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
+confirm_update_unlocked_version_prompt:
+  other: "Are you sure you want to unlock the State Tool version from your project?"
 version_info:
   other: |
     ActiveState CLI by ActiveState Software Inc.
@@ -213,6 +215,8 @@ signup_description:
   other: Signup a new account
 err_auth_signup_user_exists:
   other: "An account with the given information already exists, error received: {{.V0}}"
+err_auth_signup_bad_request:
+  other: "Invalid signup request. The error received was: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:

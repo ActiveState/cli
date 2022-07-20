@@ -113,6 +113,48 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
+	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.setupTest(ts)
+
+	target := filepath.Join(ts.Dirs.Work, "installation")
+
+	cp := ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(target, "--activate", "ActiveState/DoesNotExist"),
+		e2e.AppendEnv(constants.DisableUpdates+"=true"),
+	)
+
+	cp.ExpectExitCode(1)
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should not be displayed when invoking installer")
+}
+
+func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
+	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.setupTest(ts)
+
+	target := filepath.Join(ts.Dirs.Work, "installation")
+
+	cp := ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(target, "--activate", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv(constants.DisableUpdates+"=true"),
+	)
+
+	cp.WaitForInput()
+	cp.SendLine("state command-does-not-exist")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.Wait()
+	suite.Assert().Contains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
+}
+
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc

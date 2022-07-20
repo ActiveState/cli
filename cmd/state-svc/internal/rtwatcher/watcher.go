@@ -103,7 +103,7 @@ func (w *Watcher) RecordUsage(e entry) {
 func (w *Watcher) Close() error {
 	logging.Debug("Closing runtime watcher")
 
-	w.stop <- struct{}{}
+	close(w.stop)
 
 	if len(w.watching) > 0 {
 		watchingJson, err := json.Marshal(w.watching)

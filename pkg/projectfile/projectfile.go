@@ -1130,10 +1130,27 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 	return ioutil.WriteFile(projectFilePath, updated, 0644)
 }
 
+func RemoveLockInfo(projectFilePath string) error {
+	data, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
+	}
+
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
+	clean := lockRegex.ReplaceAll(data, []byte(""))
+
+	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	if err != nil {
+		return locale.WrapError(err, "err_write_unlocked_projectfile", "Could not remove lock from projectfile")
+	}
+
+	return nil
+}
+
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
+		return nil, locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
 
 	branchRegex := regexp.MustCompile(`(?m:^branch:\s*\w+\n)`)
