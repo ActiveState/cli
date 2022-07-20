@@ -9,8 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/activate"
-	"github.com/ActiveState/cli/internal/runners/use"
+	"github.com/ActiveState/cli/internal/runbits/activate"
+	"github.com/ActiveState/cli/internal/runbits/use"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -43,7 +43,7 @@ type Shell struct {
 	analytics analytics.Dispatcher
 }
 
-func NewShell(prime primeable) *Shell {
+func New(prime primeable) *Shell {
 	return &Shell{
 		prime.Auth(),
 		prime.Output(),

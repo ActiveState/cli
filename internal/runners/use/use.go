@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	rt "runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	runbitsUse "github.com/ActiveState/cli/internal/runbits/use"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -71,7 +70,7 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectDir := GetLocalProjectPath(params.Namespace, u.config)
+	projectDir := runbitsUse.GetLocalProjectPath(params.Namespace, u.config)
 	if projectDir == "" {
 		if params.Namespace.Owner == "" {
 			err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
@@ -144,23 +143,4 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	return nil
-}
-
-func GetLocalProjectPath(ns *project.Namespaced, cfg *config.Instance) string {
-	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
-		if len(paths) == 0 {
-			continue
-		}
-		var namespaced project.Namespaced
-		err := namespaced.Set(namespace)
-		if err != nil {
-			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
-			continue
-		}
-		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
-			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
-			return paths[0] // just pick the first one
-		}
-	}
-	return ""
 }

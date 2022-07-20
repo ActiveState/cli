@@ -11,7 +11,7 @@ import (
 const shellCmdName = "shell"
 
 func newShellCommand(prime *primer.Values) *captain.Command {
-	runner := shell.NewShell(prime)
+	runner := shell.New(prime)
 
 	params := &shell.Params{
 		Namespace: &project.Namespaced{AllowOmitOwner: true},
