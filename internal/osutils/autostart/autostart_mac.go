@@ -84,6 +84,5 @@ func (a *app) Path() (string, error) {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
-	fmt.Println("Path:", path)
 	return path, nil
 }
