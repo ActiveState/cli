@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -115,7 +116,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
-	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
+	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
+	rti, err := runtime.New(projectTarget, u.analytics, u.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -142,7 +144,7 @@ func (u *Use) Run(params *Params) error {
 		locale.Tl("use_notice_switched_to", "Switched to"),
 		params.Namespace.Project,
 		locale.Tl("use_notice_located_at", "located at"),
-		projectDir),
+		setup.ExecDir(projectTarget.Dir())),
 	)
 
 	if rt.GOOS == "windows" {
