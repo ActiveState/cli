@@ -358,6 +358,36 @@ func FromExactPath(path string) (*Project, error) {
 	return project, nil
 }
 
+// LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
+type LocalProjectDoesNotExist struct{ error }
+
+// IsLocalProjectDoesNotExist checks if the error is a LocalProjectDoesNotExist.
+func IsLocalProjectDoesNotExist(err error) bool {
+	return errs.Matches(err, &LocalProjectDoesNotExist{})
+}
+
+// FromNamespaceLocal returns a local project (if any) that matches the given namespace.
+// This is primarily used by `state use` in order to fetch a project to switch to if it already
+// exists locally. The namespace may omit the owner.
+func FromNamespaceLocal(ns *Namespaced, cfg projectfile.ConfigGetter) (*Project, error) {
+	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
+		if len(paths) == 0 {
+			continue
+		}
+		var namespaced Namespaced
+		err := namespaced.Set(namespace)
+		if err != nil {
+			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
+			continue
+		}
+		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
+			return FromPath(paths[0]) // just pick the first one
+		}
+	}
+	return nil, &LocalProjectDoesNotExist{errs.New("No local project found")}
+}
+
 // Platform covers the platform structure
 type Platform struct {
 	platform *projectfile.Platform

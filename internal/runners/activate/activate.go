@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	runbitsActivate "github.com/ActiveState/cli/internal/runbits/activate"
+	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -226,7 +226,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := runbitsActivate.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics); err != nil {
+	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 

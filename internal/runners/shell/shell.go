@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"path/filepath"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -9,8 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/activate"
-	"github.com/ActiveState/cli/internal/runbits/use"
+	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -57,16 +58,18 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	projectDir := use.GetLocalProjectPath(params.Namespace, u.config)
-	if projectDir == "" {
-		err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
-		errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-		return err
-	}
-
-	proj, err := project.FromPath(projectDir)
+	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
 	if err != nil {
-		return locale.WrapError(err, "err_use_project_frompath")
+		if project.IsLocalProjectDoesNotExist(err) {
+			projectsDir, err2 := storage.ProjectsDir()
+			if err2 != nil {
+				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
+			}
+			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
+			projectDir := filepath.Join(projectsDir, params.Namespace.Project)
+			return locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+		}
+		return locale.WrapError(err, "err_use_project_frompath") // error reading from project file
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
@@ -78,7 +81,7 @@ func (u *Shell) Run(params *Params) error {
 
 	venv := virtualenvironment.New(rti)
 
-	err = activate.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics)
+	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics)
 	if err != nil {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")
 	}

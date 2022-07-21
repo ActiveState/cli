@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	runbitsUse "github.com/ActiveState/cli/internal/runbits/use"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
@@ -70,13 +69,21 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectDir := runbitsUse.GetLocalProjectPath(params.Namespace, u.config)
-	if projectDir == "" {
-		if params.Namespace.Owner == "" {
-			err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
+	if err != nil {
+		if !project.IsLocalProjectDoesNotExist(err) {
+			return locale.WrapError(err, "err_use_project_frompath") // error reading from project file
+		} else if params.Namespace.Owner == "" {
+			projectsDir, err2 := storage.ProjectsDir()
+			if err2 != nil {
+				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
+			}
 			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-			return err
+			projectDir := filepath.Join(projectsDir, params.Namespace.Project)
+			return locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
 		}
+
+		var projectDir string
 
 		if params.PreferredPath == "" {
 			projectsDir, err := storage.ProjectsDir()
@@ -90,18 +97,17 @@ func (u *Use) Run(params *Params) error {
 
 		logging.Debug("Checking out %s to %s", params.Namespace.String(), projectDir)
 
-		var err error
 		projectDir, err = u.checkout.Run(params.Namespace, params.Branch, projectDir)
 		if err != nil {
-			return locale.WrapError(err, "err_use_checkout_project", params.Namespace.String())
+			return locale.WrapError(err, "err_use_checkout_project", "", params.Namespace.String())
+		}
+
+		proj, err = project.FromPath(projectDir)
+		if err != nil {
+			return locale.WrapError(err, "err_use_project_frompath")
 		}
 	} else {
-		logging.Debug("Using an already checked out project: %s", projectDir)
-	}
-
-	proj, err := project.FromPath(projectDir)
-	if err != nil {
-		return locale.WrapError(err, "err_use_project_frompath")
+		logging.Debug("Using an already checked out project: %s", proj.Path())
 	}
 
 	if params.Branch != "" && proj.BranchName() != params.Branch {

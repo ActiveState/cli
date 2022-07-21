@@ -1,4 +1,4 @@
-package activate
+package activation
 
 import (
 	"fmt"
