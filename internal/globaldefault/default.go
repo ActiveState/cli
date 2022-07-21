@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -75,12 +76,14 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, s
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}
 
-	projectDir := filepath.Dir(proj.Source().Path())
-	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(projectDir, sockPath, env, exes); err != nil {
+	// func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
+	fw := executor.NewWithBinPath(target, BinDir())
+	if err := fw.Update(sockPath, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
+	projectDir := filepath.Dir(proj.Source().Path())
 	if err := cfg.Set(constants.GlobalDefaultPrefname, projectDir); err != nil {
 		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
 	}
@@ -97,8 +100,14 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 		return false, nil // nothing to reset
 	}
 
-	fw := executor.NewWithBinPath(projectDir, BinDir())
-	err := fw.Cleanup()
+	proj, err := project.FromPath(projectDir)
+	if err != nil {
+		return false, locale.WrapError(err, "err_globaldefault_get_proj", "Could not get default project.")
+	}
+
+	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
+	fw := executor.NewWithBinPath(target, BinDir())
+	err = fw.Cleanup()
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
 	}

@@ -125,7 +125,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 		sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-		if err := rt.Update(s.auth, eh, projectDir, sockPath); err != nil {
+		if err := rt.Update(s.auth, eh, sockPath); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

@@ -2,7 +2,6 @@ package use
 
 import (
 	"fmt"
-	"path/filepath"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -78,7 +77,6 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_activate_projectfrompath")
 	}
 
-	projDir := filepath.Dir(proj.Source().Path())
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
 	if err != nil {
@@ -91,7 +89,7 @@ func (u *Use) Run(params *Params) error {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 
-		if err = rti.Update(u.auth, eh, projDir, sockPath); err != nil {
+		if err = rti.Update(u.auth, eh, sockPath); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}

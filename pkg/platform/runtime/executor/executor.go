@@ -11,6 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,28 +34,36 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 // Update this if you want to blow away older targets (ie. you made changes to the template)
 const executorTarget = "Target: "
 
+type Targeter interface {
+	CommitUUID() strfmt.UUID
+	Name() string
+	Owner() string
+	Dir() string
+	Headless() bool
+}
+
 type Executor struct {
-	targetPath   string // The path of a project or a runtime
+	targeter     Targeter
 	executorPath string // The location to store the executors
 }
 
-func New(targetPath string) (*Executor, error) {
+func New(targeter Targeter) (*Executor, error) {
 	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(targetPath, binPath), nil
+	return NewWithBinPath(targeter, binPath), nil
 }
 
-func NewWithBinPath(targetPath, executorPath string) *Executor {
-	return &Executor{targetPath, executorPath}
+func NewWithBinPath(targeter Targeter, executorPath string) *Executor {
+	return &Executor{targeter, executorPath}
 }
 
 func (f *Executor) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(projectDir, sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
+func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -72,7 +82,7 @@ func (f *Executor) Update(projectDir, sockPath string, env map[string]string, ex
 	}
 
 	for _, exe := range exes {
-		if err := f.createExecutor(projectDir, sockPath, env, exe); err != nil {
+		if err := f.createExecutor(sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -112,7 +122,7 @@ func (f *Executor) Cleanup() error {
 	return nil
 }
 
-func (f *Executor) createExecutor(projectDir, sockPath string, env map[string]string, exe string) error {
+func (f *Executor) createExecutor(sockPath string, env map[string]string, exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
@@ -151,10 +161,12 @@ func (f *Executor) createExecutor(projectDir, sockPath string, env map[string]st
 	tplParams := map[string]interface{}{
 		"stateExec":  executorExec,
 		"stateSock":  sockPath,
-		"projectDir": projectDir,
-		"target":     exe,
+		"targetFile": exe,
 		"denote":     []string{executorDenoter, denoteTarget},
 		"Env":        env,
+		"commitID":   f.targeter.CommitUUID().String(),
+		"nameSpace":  project.NewNamespace(f.targeter.Owner(), f.targeter.Name(), f.targeter.CommitUUID().String()).String(),
+		"headless":   fmt.Sprintf("%t", f.targeter.Headless()),
 	}
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {

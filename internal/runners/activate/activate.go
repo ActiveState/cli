@@ -176,7 +176,6 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	projDir := filepath.Dir(proj.Source().Path())
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {
@@ -187,7 +186,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
-		if err = rt.Update(r.auth, eh, projDir, sockPath); err != nil {
+		if err = rt.Update(r.auth, eh, sockPath); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}

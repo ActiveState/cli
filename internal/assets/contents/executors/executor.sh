@@ -12,4 +12,4 @@ export {{$K}}="{{$V}}"
 {{- end}}
 {{- end}}
 
-"{{.stateExec}}" "{{.stateSock}}" "{{.target}}" "{{.projectDir}}" "$@"
+"{{.stateExec}}" "{{.stateSock}}" "{{.targetFile}}" "{{.nameSpace}}" "{{.commitID}}" "{{.headless}}" "$@"

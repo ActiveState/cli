@@ -1,8 +1,6 @@
 package runbits
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -47,9 +45,8 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		}
 
-		projDir := filepath.Dir(proj.Source().Path())
 		sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-		err := rt.Update(auth, rtMessages, projDir, sockPath)
+		err := rt.Update(auth, rtMessages, sockPath)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
