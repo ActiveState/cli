@@ -80,7 +80,7 @@ func (u *Use) Run(params *Params) error {
 		if !project.IsLocalProjectDoesNotExist(err) {
 			return locale.WrapError(err, "err_use_project_frompath") // error reading from project file
 		} else if params.Namespace.Owner == "" {
-			projectsDir, err2 := storage.ProjectsDir()
+			projectsDir, err2 := storage.ProjectsDir(u.config)
 			if err2 != nil {
 				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
 			}

@@ -61,7 +61,7 @@ func (u *Shell) Run(params *Params) error {
 	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
 	if err != nil {
 		if project.IsLocalProjectDoesNotExist(err) {
-			projectsDir, err2 := storage.ProjectsDir()
+			projectsDir, err2 := storage.ProjectsDir(u.config)
 			if err2 != nil {
 				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
 			}
