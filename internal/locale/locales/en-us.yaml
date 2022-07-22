@@ -1908,6 +1908,8 @@ err_service_exec:
   other: Could not get service exec
 err_tray_exec:
   other: Could not get state tray exec
+err_svc_exec:
+  other: Could not get state service exec
 err_update_exec:
   other: Could not get update dialog exec
 err_state_exec_dir:
@@ -1945,3 +1947,5 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
+err_autostart_app:
+  other: Could not create new autostart app
