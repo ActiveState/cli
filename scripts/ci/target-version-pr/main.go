@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -9,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/scripts/internal/versionpr"
+	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -19,7 +18,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		print("Error: %s\n", errs.JoinMessage(err))
+		wc.Print("Error: %s\n", errs.JoinMessage(err))
 	}
 }
 
@@ -51,7 +50,7 @@ func (m Meta) GetVersionPRName() string {
 }
 
 func run() error {
-	finish := printStart("Initializing clients")
+	finish := wc.PrintStart("Initializing clients")
 	// Initialize Clients
 	ghClient := wh.InitGHClient()
 	jiraClient, err := wh.InitJiraClient()
@@ -69,7 +68,7 @@ func run() error {
 		return errs.Wrap(err, "pr number should be numeric")
 	}
 
-	finish = printStart("Fetching meta for PR %d", prNumber)
+	finish = wc.PrintStart("Fetching meta for PR %d", prNumber)
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
@@ -79,8 +78,8 @@ func run() error {
 
 	// Create version PR if it doesn't exist yet
 	if meta.VersionPR == nil {
-		finish = printStart("Creating version PR for fixVersion %s", meta.ActiveVersion)
-		err := versionpr.Create(ghClient, jiraClient, meta, printStart, print)
+		finish = wc.PrintStart("Creating version PR for fixVersion %s", meta.ActiveVersion)
+		err := wc.CreateVersionPR(ghClient, jiraClient, meta)
 		if err != nil {
 			return errs.Wrap(err, "failed to create version PR")
 		}
@@ -88,51 +87,51 @@ func run() error {
 	}
 
 	// Set the target branch for our PR
-	finish = printStart("Setting target branch to %s", meta.VersionBranchName)
+	finish = wc.PrintStart("Setting target branch to %s", meta.VersionBranchName)
 	if os.Getenv("DRYRUN") != "true" {
 		if err := wh.UpdatePRTargetBranch(ghClient, meta.ActivePR.GetNumber(), meta.VersionBranchName); err != nil {
 			return errs.Wrap(err, "failed to update PR target branch")
 		}
 	} else {
-		print("DRYRUN: would update PR target branch to %s", meta.VersionBranchName)
+		wc.Print("DRYRUN: would update PR target branch to %s", meta.VersionBranchName)
 	}
 	finish()
 
-	print("All Done")
+	wc.Print("All Done")
 
 	return nil
 }
 
 func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (Meta, error) {
 	// Grab latest version on release channel to use as cutoff
-	finish := printStart("Fetching latest version on release channel")
+	finish := wc.PrintStart("Fetching latest version on release channel")
 	latestReleaseversionBytes, err := download.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
 	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to parse version blob")
 	}
-	print("Latest version on release channel: %s", latestReleaseversion)
+	wc.Print("Latest version on release channel: %s", latestReleaseversion)
 	finish()
 
 	// Grab PR information about the PR that this automation is being ran on
-	finish = printStart("Fetching Active PR %d", prNumber)
+	finish = wc.PrintStart("Fetching Active PR %d", prNumber)
 	prBeingHandled, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get PR")
 	}
-	print("PR retrieved: %s", prBeingHandled.GetTitle())
+	wc.Print("PR retrieved: %s", prBeingHandled.GetTitle())
 	finish()
 
-	finish = printStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
+	finish = wc.PrintStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
 	jiraIssueID := wh.ExtractJiraIssueID(prBeingHandled)
 	if jiraIssueID == nil {
 		return Meta{}, errs.New("PR does not have Jira issue ID associated with it: %s", prBeingHandled.Links.GetHTML().GetHRef())
 	}
-	print("Extracted Jira Issue ID: %s", *jiraIssueID)
+	wc.Print("Extracted Jira Issue ID: %s", *jiraIssueID)
 	finish()
 
 	// Retrieve Relevant Jira Issue for PR being handled
-	finish = printStart("Fetching Jira issue")
+	finish = wc.PrintStart("Fetching Jira issue")
 	jiraIssue, err := wh.FetchJiraIssue(jiraClient, *jiraIssueID)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get Jira issue")
@@ -140,7 +139,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	finish()
 
 	// Retrieve Relevant Fixversion
-	finish = printStart("Extracting target fixVersion from Jira issue")
+	finish = wc.PrintStart("Extracting target fixVersion from Jira issue")
 	fixVersion, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get fixVersion")
@@ -150,13 +149,13 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	if fixVersion.LTE(latestReleaseversion) || p.PBool(jiraVersion.Archived) || p.PBool(jiraVersion.Released) {
 		return Meta{}, errs.New("Target fixVersion is either archived, released or is less than the latest release version")
 	}
-	print("Extracted fixVersion: %s", fixVersion)
+	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
 
 	versionPRName := wh.VersionedPRTitle(fixVersion)
 
 	// Retrieve Relevant Fixversion Pr
-	finish = printStart("Fetching Version PR")
+	finish = wc.PrintStart("Fetching Version PR")
 	versionPR, err := wh.FetchPRByTitle(ghClient, versionPRName)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get target PR")
@@ -178,23 +177,4 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 
 	return result, nil
-}
-
-var printDepth = 0
-
-func print(msg string, args ...interface{}) {
-	prefix := ""
-	if printDepth > 0 {
-		prefix = "|- "
-	}
-	fmt.Printf(strings.Repeat("  ", printDepth) + prefix + fmt.Sprintf(msg+"\n", args...))
-}
-
-func printStart(description string, args ...interface{}) func() {
-	print(description+"..", args...)
-	printDepth++
-	return func() {
-		printDepth--
-		print("Done\n")
-	}
 }

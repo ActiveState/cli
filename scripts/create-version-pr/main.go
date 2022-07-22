@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/scripts/internal/versionpr"
+	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -15,7 +13,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		print("Error: %s\n", errs.JoinMessage(err))
+		wc.Print("Error: %s\n", errs.JoinMessage(err))
 	}
 }
 
@@ -43,7 +41,7 @@ func (m Meta) GetVersionPRName() string {
 }
 
 func run() error {
-	finish := printStart("Initializing clients")
+	finish := wc.PrintStart("Initializing clients")
 	// Initialize Clients
 	ghClient := wh.InitGHClient()
 	jiraClient, err := wh.InitJiraClient()
@@ -58,7 +56,7 @@ func run() error {
 	}
 	versionName := os.Args[1]
 
-	finish = printStart("Fetching meta for version %s", versionName)
+	finish = wc.PrintStart("Fetching meta for version %s", versionName)
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, versionName)
 	if err != nil {
@@ -66,13 +64,13 @@ func run() error {
 	}
 	finish()
 
-	finish = printStart("Creating version PR for version %s", meta.Version)
-	if err := versionpr.Create(ghClient, jiraClient, meta, printStart, print); err != nil {
+	finish = wc.PrintStart("Creating version PR for version %s", meta.Version)
+	if err := wc.CreateVersionPR(ghClient, jiraClient, meta); err != nil {
 		return errs.Wrap(err, "failed to create version PR")
 	}
 	finish()
 
-	print("All Done")
+	wc.Print("All Done")
 
 	return nil
 }
@@ -83,7 +81,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, versionName str
 		return Meta{}, errs.Wrap(err, "failed to parse version")
 	}
 
-	finish := printStart("Fetching Jira Project info")
+	finish := wc.PrintStart("Fetching Jira Project info")
 	project, _, err := jiraClient.Project.Get("DX")
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to fetch Jira project")
@@ -93,7 +91,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, versionName str
 	versionPRName := wh.VersionedPRTitle(version)
 
 	// Retrieve Relevant Fixversion Pr
-	finish = printStart("Checking if Version PR with title '%s' exists", versionPRName)
+	finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
 	versionPR, err := wh.FetchPRByTitle(ghClient, versionPRName)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get target PR")
@@ -103,7 +101,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, versionName str
 	}
 	finish()
 
-	finish = printStart("Fetching Jira version info")
+	finish = wc.PrintStart("Fetching Jira version info")
 	for _, v := range project.Versions {
 		if v.Name == versionName {
 			finish()
@@ -117,23 +115,4 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, versionName str
 	}
 
 	return Meta{}, errs.New("failed to find Jira version matching: %s", versionName)
-}
-
-var printDepth = 0
-
-func print(msg string, args ...interface{}) {
-	prefix := ""
-	if printDepth > 0 {
-		prefix = "|- "
-	}
-	fmt.Printf(strings.Repeat("  ", printDepth) + prefix + fmt.Sprintf(msg+"\n", args...))
-}
-
-func printStart(description string, args ...interface{}) func() {
-	print(description+"..", args...)
-	printDepth++
-	return func() {
-		printDepth--
-		print("Done\n")
-	}
 }

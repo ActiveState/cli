@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -44,12 +45,12 @@ func (m MergeIntends) String() string {
 
 func main() {
 	if err := run(); err != nil {
-		print("Error: %s\n", errs.JoinMessage(err))
+		wc.Print("Error: %s\n", errs.JoinMessage(err))
 	}
 }
 
 func run() error {
-	finish := printStart("Initializing clients")
+	finish := wc.PrintStart("Initializing clients")
 	// Initialize Clients
 	ghClient := wh.InitGHClient()
 	jiraClient, err := wh.InitJiraClient()
@@ -67,7 +68,7 @@ func run() error {
 		return errs.Wrap(err, "pr number should be numeric")
 	}
 
-	finish = printStart("Fetching meta for PR %d", prNumber)
+	finish = wc.PrintStart("Fetching meta for PR %d", prNumber)
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
@@ -76,7 +77,7 @@ func run() error {
 	finish()
 
 	// Find open version PRs
-	finish = printStart("Finding open version PRs that need to adopt this PR")
+	finish = wc.PrintStart("Finding open version PRs that need to adopt this PR")
 	versionPRs, err := wh.FetchVersionPRs(ghClient, wh.AssertGT, meta.ActiveVersion, -1)
 	if err != nil {
 		return errs.Wrap(err, "failed to fetch version PRs")
@@ -106,14 +107,14 @@ func run() error {
 	})
 	targetBranches = append(targetBranches, wh.MasterBranch)
 
-	print("Found %d branches that need to adopt this PR: %s\n", len(intend), strings.Join(targetBranches, ", "))
+	wc.Print("Found %d branches that need to adopt this PR: %s\n", len(intend), strings.Join(targetBranches, ", "))
 
 	// Iterate over the merge intends and merge them
 	for i, v := range intend {
-		finish = printStart("Merging %s into %s", v.SourceBranch, v.TargetBranch)
+		finish = wc.PrintStart("Merging %s into %s", v.SourceBranch, v.TargetBranch)
 
 		if os.Getenv("DRYRUN") == "true" {
-			print("DRY RUN: Skipping merge")
+			wc.Print("DRY RUN: Skipping merge")
 			finish()
 			continue
 		}
@@ -138,12 +139,12 @@ func run() error {
 
 func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (Meta, error) {
 	// Grab PR information about the PR that this automation is being ran on
-	finish := printStart("Fetching Active PR %d", prNumber)
+	finish := wc.PrintStart("Fetching Active PR %d", prNumber)
 	prBeingHandled, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get PR")
 	}
-	print("PR retrieved: %s", prBeingHandled.GetTitle())
+	wc.Print("PR retrieved: %s", prBeingHandled.GetTitle())
 	finish()
 
 	if prBeingHandled.GetState() != "closed" && !prBeingHandled.GetMerged() {
@@ -154,16 +155,16 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is a valid version branch.")
 	}
 
-	finish = printStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
+	finish = wc.PrintStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
 	jiraIssueID := wh.ExtractJiraIssueID(prBeingHandled)
 	if jiraIssueID == nil {
 		return Meta{}, errs.New("PR does not have Jira issue ID associated with it: %s", prBeingHandled.Links.GetHTML().GetHRef())
 	}
-	print("Extracted Jira Issue ID: %s", *jiraIssueID)
+	wc.Print("Extracted Jira Issue ID: %s", *jiraIssueID)
 	finish()
 
 	// Retrieve Relevant Jira Issue for PR being handled
-	finish = printStart("Fetching Jira issue")
+	finish = wc.PrintStart("Fetching Jira issue")
 	jiraIssue, err := wh.FetchJiraIssue(jiraClient, *jiraIssueID)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get Jira issue")
@@ -171,12 +172,12 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	finish()
 
 	// Retrieve Relevant Fixversion
-	finish = printStart("Extracting target fixVersion from Jira issue")
+	finish = wc.PrintStart("Extracting target fixVersion from Jira issue")
 	fixVersion, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get fixVersion")
 	}
-	print("Extracted fixVersion: %s", fixVersion)
+	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
 
 	result := Meta{
@@ -188,25 +189,4 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 
 	return result, nil
-}
-
-var printDepth = 0
-
-func print(msg string, args ...interface{}) {
-	prefix := ""
-	if printDepth > 0 {
-		prefix = "|- "
-	}
-	indent := strings.Repeat("  ", printDepth)
-	msg = strings.Replace(msg, "\n", indent+"\n", -1)
-	fmt.Printf(indent + prefix + fmt.Sprintf(msg+"\n", args...))
-}
-
-func printStart(description string, args ...interface{}) func() {
-	print(description+"..", args...)
-	printDepth++
-	return func() {
-		printDepth--
-		print("Done\n")
-	}
 }
