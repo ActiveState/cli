@@ -68,7 +68,6 @@ func ExtractJiraIssueIDFromCommitMsg(msg string) *string {
 
 // FetchPRs fetches all PRs and iterates over all available pages
 func FetchPRs(ghClient *github.Client, cutoff time.Time, opts *github.PullRequestListOptions) ([]*github.PullRequest, error) {
-	page := 1
 	result := []*github.PullRequest{}
 
 	if opts == nil {
@@ -83,16 +82,13 @@ func FetchPRs(ghClient *github.Client, cutoff time.Time, opts *github.PullReques
 
 	for x := 0; x < 10; x++ { // Hard limit of 1000 most recent PRs
 		opts.ListOptions = github.ListOptions{
-			Page:    page * x,
+			Page:    x,
 			PerPage: 100,
 		}
 		// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
 		prs, _, err := ghClient.PullRequests.List(context.Background(), "ActiveState", "cli", opts)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not find PRs")
-		}
-		if len(prs) < 100 {
-			break
 		}
 		if len(prs) > 0 && prs[0].UpdatedAt.Before(cutoff) {
 			break // The rest of the PRs are too old to care about
@@ -169,16 +165,22 @@ func SearchGithubIssues(client *github.Client, term string) ([]*github.Issue, er
 	return issues, nil
 }
 
-func FetchPRByTitle(ghClient *github.Client, prName string) (*github.PullRequest, error) {
+func FetchPRByTitle(ghClient *github.Client, title string) (*github.PullRequest, error) {
+	// Strip out words containing illegal characters. This'll mean we get more results than we want, but it's still
+	// faster than iterating over ALL prs
+	searchTerm := sanitizeSearchTerm(title)
+	if searchTerm == "" {
+		return nil, errs.New("All title words contain illegal characters, so no search could be performed")
+	}
+
 	var targetIssue *github.Issue
-	searchTerm := strings.Split(prName, "-")[0] // GitHub search doesn't support Dashes. I'm not joking.. This is real..
-	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli is:pr %s", searchTerm), nil)
+	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli in:title is:pr %s", searchTerm), nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to search for issues")
 	}
 
 	for _, issue := range issues.Issues {
-		if issue.GetTitle() == searchTerm {
+		if issue.GetTitle() == title {
 			targetIssue = issue
 			break
 		}
@@ -228,23 +230,48 @@ func LabelPR(ghClient *github.Client, prnumber int, labels []string) error {
 	return nil
 }
 
-func FetchVersionPRLT(ghClient *github.Client, lessThanThisVersion semver.Version) (*github.PullRequest, error) {
-	issues, err := SearchGithubIssues(ghClient, "is:pr in:title review:none "+VersionedPRPrefix)
+type Assertion string
+
+const (
+	AssertLT Assertion = "less than"
+	AssertGT           = "greater than"
+)
+
+func FetchVersionPRs(ghClient *github.Client, assert Assertion, versionToCompare semver.Version, limit int) ([]*github.PullRequest, error) {
+	issues, err := SearchGithubIssues(ghClient, "is:pr in:title "+VersionedPRPrefix)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to search for PRs")
 	}
 
-	issue := issueWithVersionLT(issues, lessThanThisVersion)
-	if issue == nil {
-		return nil, errs.New("Could not find issue with version less than %s", lessThanThisVersion.String())
+	filtered := issuesWithVersionAssert(issues, assert, versionToCompare)
+	result := []*github.PullRequest{}
+	for n, issue := range filtered {
+		if !strings.HasPrefix(issue.GetTitle(), VersionedPRPrefix) {
+			// The search above matches the whole title, and is very forgiving, which we don't want to be
+			continue
+		}
+		pr, err := FetchPR(ghClient, issue.GetNumber())
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to get PR")
+		}
+		result = append(result, pr)
+		if limit != -1 && n+1 == limit {
+			break
+		}
 	}
 
-	pr, err := FetchPR(ghClient, issue.GetNumber())
+	return result, nil
+}
+
+func FetchVersionPR(ghClient *github.Client, assert Assertion, versionToCompare semver.Version) (*github.PullRequest, error) {
+	prs, err := FetchVersionPRs(ghClient, assert, versionToCompare, 1)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to get PR")
+		return nil, err
 	}
-
-	return pr, nil
+	if len(prs) == 0 {
+		return nil, errs.New("Could not find issue with version %s %s", assert, versionToCompare.String())
+	}
+	return prs[0], nil
 }
 
 func BranchHasVersionsGT(client *github.Client, jiraClient *jira.Client, branchName string, version semver.Version) (bool, error) {
@@ -341,12 +368,12 @@ func CreateBranch(ghClient *github.Client, branchName string, SHA string) error 
 	return nil
 }
 
-func CreateFileUpdateCommit(ghClient *github.Client, parentSha string, path string, contents string) (string, error) {
+func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path string, contents string) (string, error) {
 	fileContents, _, _, err := ghClient.Repositories.GetContents(context.Background(), "ActiveState", "cli", path, &github.RepositoryContentGetOptions{
-		Ref: parentSha,
+		Ref: branchName,
 	})
 	if err != nil {
-		return "", errs.Wrap(err, "failed to get file contents for %s at SHA %s", path, parentSha)
+		return "", errs.Wrap(err, "failed to get file contents for %s on branch %s", path, branchName)
 	}
 
 	resp, _, err := ghClient.Repositories.UpdateFile(context.Background(), "ActiveState", "cli", path, &github.RepositoryContentFileOptions{
@@ -354,6 +381,7 @@ func CreateFileUpdateCommit(ghClient *github.Client, parentSha string, path stri
 			Name:  p.StrP("ActiveState CLI Automation"),
 			Email: p.StrP("support@activestate.com"),
 		},
+		Branch:  &branchName,
 		Message: p.StrP(fmt.Sprintf("Update %s", path)),
 		Content: []byte(contents),
 		SHA:     fileContents.SHA,
@@ -363,4 +391,28 @@ func CreateFileUpdateCommit(ghClient *github.Client, parentSha string, path stri
 	}
 
 	return resp.GetSHA(), nil
+}
+
+// sannitizeSearchTerm strips words containing illegal characters from the search term
+// https://docs.github.com/en/search-github/searching-on-github/searching-code#considerations-for-code-search
+func sanitizeSearchTerm(term string) string {
+	illegal := strings.Split(". , : ; / \\ ` ' \" = * ! ? # $ & + ^ | ~ < > ( ) { } [ ] @", " ")
+	var result string
+	skip := false
+	lastSpace := 0
+	for x := 0; x < len(term); x++ {
+		char := string(term[x])
+		if char == " " {
+			lastSpace = len(result)
+			skip = false
+		} else if funk.Contains(illegal, char) {
+			skip = true
+			result = result[0:lastSpace]
+		}
+		if skip {
+			continue
+		}
+		result += char
+	}
+	return strings.TrimSpace(result)
 }

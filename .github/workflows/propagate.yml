@@ -1,16 +1,16 @@
-name: Set-Target-Branch
+name: Propagate-PR
 
 # === Triggers ===
 "on":
   pull_request:
     types:
-      - opened
+      - closed
 
 # === JOBS ===
 jobs:
 
   # === Set target branch ===
-  updaterc:
+  propagate:
     name: Update and Verify RC PRs
     needs:
       - os_specific
@@ -22,6 +22,7 @@ jobs:
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 5
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, "version/")
 
     # === Deploy Steps ===
     steps:
@@ -51,7 +52,7 @@ jobs:
         shell: bash
         run: state run preprocess
 
-      - # === Set Target Branch ===
-        name: Set Target Branch
+      - # === Propagate PR ===
+        name: Propagate PR
         shell: bash
-        run: go run scripts/ci/target-version-branch/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/propagate-pr/main.go ${github.event.pull_request.number}

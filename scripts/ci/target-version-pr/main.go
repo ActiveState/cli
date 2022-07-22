@@ -1,18 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"net/url"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/scripts/internal/versionpr"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -35,6 +32,22 @@ type Meta struct {
 	VersionPRName     string
 	VersionBranchName string
 	VersionPR         *github.PullRequest
+}
+
+func (m Meta) GetVersion() semver.Version {
+	return m.ActiveVersion
+}
+
+func (m Meta) GetJiraVersion() string {
+	return m.ActiveJiraVersion
+}
+
+func (m Meta) GetVersionBranchName() string {
+	return m.VersionBranchName
+}
+
+func (m Meta) GetVersionPRName() string {
+	return m.VersionPRName
 }
 
 func run() error {
@@ -67,7 +80,7 @@ func run() error {
 	// Create version PR if it doesn't exist yet
 	if meta.VersionPR == nil {
 		finish = printStart("Creating version PR for fixVersion %s", meta.ActiveVersion)
-		err := createVersionPR(ghClient, jiraClient, meta)
+		err := versionpr.Create(ghClient, jiraClient, meta, printStart, print)
 		if err != nil {
 			return errs.Wrap(err, "failed to create version PR")
 		}
@@ -107,6 +120,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get PR")
 	}
+	print("PR retrieved: %s", prBeingHandled.GetTitle())
 	finish()
 
 	finish = printStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
@@ -166,91 +180,6 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	return result, nil
 }
 
-func createVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta) error {
-	// Check if master is safe to fork from
-	finish := printStart("Checking if master is safe to fork from")
-	var prevVersionRef *string
-	versionsGT, err := wh.BranchHasVersionsGT(ghClient, jiraClient, wh.MasterBranch, meta.ActiveVersion)
-	if err != nil {
-		return errs.Wrap(err, "failed to check if can fork master")
-	}
-
-	// Calculate SHA for master
-	if !versionsGT {
-		print("Master is safe")
-		finish2 := printStart("Getting master HEAD SHA")
-		branch, _, err := ghClient.Repositories.GetBranch(context.Background(), "ActiveState", "cli", wh.MasterBranch, false)
-		if err != nil {
-			return errs.Wrap(err, "failed to get branch info")
-		}
-		prevVersionRef = branch.GetCommit().SHA
-		print("Master SHA: " + *prevVersionRef)
-		finish2()
-	} else {
-		print("Master is unsafe as it has versions greater than %s", meta.ActiveVersion)
-	}
-	finish()
-
-	// Master is unsafe, detect closest matching PR instead
-	if prevVersionRef == nil {
-		finish = printStart("Finding nearest matching version branch to fork from")
-		prevVersionPR, err := wh.FetchVersionPRLT(ghClient, meta.ActiveVersion)
-		if err != nil {
-			return errs.Wrap(err, "failed to find fork branch")
-		}
-
-		prevVersionRef = prevVersionPR.Head.SHA
-		print("Nearest matching branch: %s, SHA: %s", prevVersionPR.Head.GetRef(), *prevVersionRef)
-		finish()
-	}
-
-	// Create commit with version.txt change
-	finish = printStart("Creating commit with version.txt change")
-	parentSha, err := wh.CreateFileUpdateCommit(ghClient, *prevVersionRef, "version.txt", meta.ActiveVersion.String())
-	if err != nil {
-		return errs.Wrap(err, "failed to create commit")
-	}
-	print("Created commit SHA: %s", parentSha)
-	finish()
-
-	// Create branch
-	finish = printStart("Creating version branch, name: %s, forked from: %s", meta.VersionBranchName, parentSha)
-	dryRun := os.Getenv("DRYRUN") == "true"
-	if !dryRun {
-		if err := wh.CreateBranch(ghClient, meta.VersionBranchName, parentSha); err != nil {
-			return errs.Wrap(err, "failed to create branch")
-		}
-	} else {
-		print("DRYRUN: skip")
-	}
-	finish()
-
-	// Prepare PR Body
-	body := fmt.Sprintf(`[View %s tickets on Jira](%s)`,
-		meta.ActiveVersion,
-		"https://activestatef.atlassian.net/jira/software/c/projects/DX/issues/?jql="+
-			url.QueryEscape(fmt.Sprintf(`project = "DX" AND fixVersion=%s ORDER BY created DESC`, meta.ActiveJiraVersion)),
-	)
-
-	// Create PR
-	finish = printStart("Creating version PR, name: %s", meta.VersionPRName)
-	if !dryRun {
-		versionPR, err := wh.CreatePR(ghClient, meta.VersionPRName, meta.VersionBranchName, wh.StagingBranch, body)
-		if err != nil {
-			return errs.Wrap(err, "failed to create target PR")
-		}
-
-		if err := wh.LabelPR(ghClient, versionPR.GetNumber(), []string{"Test: all"}); err != nil {
-			return errs.Wrap(err, "failed to label PR")
-		}
-	} else {
-		fmt.Printf("DRYRUN: would create PR with body:\n%s\n", body)
-	}
-	finish()
-
-	return nil
-}
-
 var printDepth = 0
 
 func print(msg string, args ...interface{}) {
@@ -268,25 +197,4 @@ func printStart(description string, args ...interface{}) func() {
 		printDepth--
 		print("Done\n")
 	}
-}
-
-func execute(args ...string) error {
-	print("Executing: %#v\n", args)
-	c := exec.Command(args[0], args[1:]...)
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	c.Stdout = &stdout
-	c.Stderr = &stderr
-
-	err := c.Run()
-	if err != nil {
-		return errs.Wrap(err, fmt.Sprintf("stdout: %s\nstderr: %s", stdout.String(), stderr.String()))
-	}
-
-	code := osutils.CmdExitCode(c)
-	if code != 0 {
-		return errs.New("%#v returned code %d", args, code)
-	}
-
-	return nil
 }
