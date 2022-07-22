@@ -2,7 +2,9 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
+	"regexp"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -161,4 +163,43 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			cp.ExpectNotExitCode(0)
 		})
 	}
+}
+
+func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
+	suite.OnlyRunForTags(tagsuite.Update)
+
+	pjfile := projectfile.Project{
+		Project: lockedProjectURL(),
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	defer cfg.Close()
+
+	pjfile.SetPath(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))
+	pjfile.Save(cfg)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("update", "lock", "--force"),
+		e2e.AppendEnv(suite.env(false, false)...),
+	)
+	cp.Expect("locked at")
+
+	data, err := ioutil.ReadFile(pjfile.Path())
+	suite.Require().NoError(err)
+
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
+	suite.Assert().True(lockRegex.Match(data), "lock info was not written to "+pjfile.Path())
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("update", "unlock", "--force"),
+		e2e.AppendEnv(suite.env(false, false)...),
+	)
+	cp.Expect("unlocked")
+
+	data, err = ioutil.ReadFile(pjfile.Path())
+	suite.Require().NoError(err)
+	suite.Assert().False(lockRegex.Match(data), "lock info was not removed from "+pjfile.Path())
 }

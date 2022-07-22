@@ -1,12 +1,14 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
 type ProjectsAutomationTestSuite struct {
@@ -70,7 +72,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("projects", "remote")
-	cp.Expect("Name")
+	cp.Expect("Name", time.Minute)
 	cp.Expect("Organization")
 	cp.Expect("cli-integration-tests")
 	cp.ExpectExitCode(0)

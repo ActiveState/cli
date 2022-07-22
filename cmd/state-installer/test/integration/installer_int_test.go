@@ -143,11 +143,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
+		e2e.WithArgs(target, "--activate", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 	)
 
-	cp.SendLine("state activate ActiveState/DoesNotExist")
+	cp.WaitForInput()
+	cp.SendLine("state command-does-not-exist")
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.Wait()
