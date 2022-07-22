@@ -1,7 +1,6 @@
 package use
 
 import (
-	"fmt"
 	"path/filepath"
 	rt "runtime"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -120,7 +120,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
-	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
+	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
+	rti, err := runtime.New(projectTarget, u.analytics, u.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -143,9 +144,9 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET]",
-		locale.Tl("use_notice_switched_to", "Switched to"),
-		params.Namespace.Project),
+	u.out.Print(locale.Tl("use_notice_switched_to", "[NOTICE]Switched to[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] located at [ACTIONABLE]{{ .V1 }}[/RESET]",
+		params.Namespace.Project,
+		setup.ExecDir(projectTarget.Dir())),
 	)
 
 	if rt.GOOS == "windows" {
