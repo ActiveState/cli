@@ -55,19 +55,21 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 }
 
 type RuntimeUsageReporter interface {
-	ReportRuntimeUsage(ctx context.Context, pid, exec, projDir string)
+	ReportRuntimeUsage(ctx context.Context, pid, exec, namespace, commit, headless string)
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
+		// format : heart<{proc-id}<{exec-path}<{namespace}<{commit-id}<{headless-bool}
+		// example: heart<123</home/user/.local/dir/beta/bin/state-exec<org/prj<1234abcd-1234-abcd-1234-abcd1234abcd<false
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
 		}
 
 		data := input[len(KeyHeartbeat):]
-		var pid, exec, projDir string
+		var pid, exec, namespace, commit, headless string
 
-		ss := strings.SplitN(data, "<", 3)
+		ss := strings.SplitN(data, "<", 5)
 		if len(ss) > 0 {
 			pid = ss[0]
 		}
@@ -75,10 +77,16 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			exec = ss[1]
 		}
 		if len(ss) > 2 {
-			projDir = ss[2]
+			namespace = ss[2]
+		}
+		if len(ss) > 3 {
+			commit = ss[3]
+		}
+		if len(ss) > 4 {
+			headless = ss[4]
 		}
 
-		reporter.ReportRuntimeUsage(context.Background(), pid, exec, projDir)
+		reporter.ReportRuntimeUsage(context.Background(), pid, exec, namespace, commit, headless)
 
 		return data, true
 	}
