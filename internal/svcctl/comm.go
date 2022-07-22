@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 var (
@@ -55,7 +57,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 }
 
 type RuntimeUsageReporter interface {
-	ReportRuntimeUsage(ctx context.Context, pid, exec, namespace, commit, headless string)
+	ReportRuntimeUsage(ctx context.Context, pid, exec, namespace, commit, headless string) error
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
@@ -86,9 +88,12 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			headless = ss[4]
 		}
 
-		reporter.ReportRuntimeUsage(context.Background(), pid, exec, namespace, commit, headless)
+		err := reporter.ReportRuntimeUsage(context.Background(), pid, exec, namespace, commit, headless)
+		if err != nil {
+			multilog.Critical("Failed to report runtime usage: %s", errs.JoinMessage(err))
+		}
 
-		return data, true
+		return "", true
 	}
 }
 
