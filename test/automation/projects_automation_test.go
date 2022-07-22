@@ -1,13 +1,14 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+	"time"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 type ProjectsAutomationTestSuite struct {
@@ -31,7 +32,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
 	defer ts.Close()
 
 	// Test with PUBLIC project
-	url := "https://platform.activestate.com/qamainorg/public?branch=main&commitID=32e543ee-b6ab-4f59-9b28-ad830ec6980e"
+	url := "https://platform.activestate.com/ActiveState-CLI/qa-public?branch=main&commitID=e78d3564-2de5-4d63-aa4f-ddc5e0a43511"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("projects")
@@ -41,7 +42,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
 	cp.ExpectExitCode(0)
 
 	// Test with PRIVATE project
-	url = "https://platform.activestate.com/qamainorg/private?branch=main&commitID=92935f87-cc8f-4da3-82d5-13e3e5249452"
+	url = "https://platform.activestate.com/ActiveState-CLI/qa-private?branch=main&commitID=c276db93-a585-4341-950c-24d8f9638cb0"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp = ts.Spawn("projects")
@@ -68,12 +69,10 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("auth", "--token", e2e.PersistentToken, "-n")
-	cp.Expect("logged in", 40*time.Second)
-	cp.ExpectExitCode(0)
+	ts.LoginAsPersistentUser()
 
-	cp = ts.Spawn("projects", "remote")
-	cp.Expect("Name")
+	cp := ts.Spawn("projects", "remote")
+	cp.Expect("Name", time.Minute)
 	cp.Expect("Organization")
 	cp.Expect("cli-integration-tests")
 	cp.ExpectExitCode(0)

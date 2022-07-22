@@ -265,7 +265,7 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler
