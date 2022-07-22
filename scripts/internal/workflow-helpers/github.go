@@ -3,7 +3,6 @@ package workflow_helpers
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -18,8 +17,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var issueKeyRx = regexp.MustCompile(`(?i)(DX-\d+)`)
-
 func InitGHClient() *github.Client {
 	token := secrethelper.GetSecretIfEmpty(os.Getenv("GITHUB_TOKEN"), "user.GITHUB_TOKEN")
 
@@ -32,38 +29,17 @@ func InitGHClient() *github.Client {
 	return github.NewClient(tc)
 }
 
-// ExtractJiraIssueID tries to extract the jira issue ID from either the PR title or the branch name
-func ExtractJiraIssueID(pr *github.PullRequest) *string {
-	if pr.Title == nil {
-		panic(fmt.Sprintf("PR title is nil: %#v", pr))
-	}
+// ExtractJiraIssueID tries to extract the jira issue ID from either the branch name
+func ExtractJiraIssueID(pr *github.PullRequest) (string, error) {
 	if pr.Head == nil || pr.Head.Ref == nil {
 		panic(fmt.Sprintf("Head or head ref is nil: %#v", pr))
 	}
 
-	// Extract from title
-	matches := issueKeyRx.FindStringSubmatch(*pr.Title)
-	if len(matches) == 2 {
-		return p.StrP(strings.ToUpper(matches[1]))
+	v, err := ParseJiraKey(*pr.Head.Ref)
+	if err != nil {
+		return "", errs.New("Please ensure your branch name is valid")
 	}
-
-	// Extract from branch
-	matches = issueKeyRx.FindStringSubmatch(*pr.Head.Ref)
-	if len(matches) == 2 {
-		return p.StrP(strings.ToUpper(matches[1]))
-	}
-
-	return nil
-}
-
-// ExtractJiraIssueIDFromCommitMsg tries to extract the jira issue ID from a commit message
-func ExtractJiraIssueIDFromCommitMsg(msg string) *string {
-	match := issueKeyRx.FindStringSubmatch(msg)
-	if len(match) != 2 {
-		return nil
-	}
-
-	return &match[1]
+	return v, nil
 }
 
 // FetchPRs fetches all PRs and iterates over all available pages
@@ -299,11 +275,12 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 	}
 	jiraIDs := []string{}
 	for _, commit := range commits {
-		jiraID := ExtractJiraIssueIDFromCommitMsg(commit.Commit.GetMessage())
-		if jiraID == nil {
+		jiraID, err := ParseJiraKey(commit.Commit.GetMessage())
+		if err != nil {
+			// no match
 			continue
 		}
-		jiraIDs = append(jiraIDs, *jiraID)
+		jiraIDs = append(jiraIDs, jiraID)
 	}
 
 	jiraIDs = funk.Uniq(jiraIDs).([]string)

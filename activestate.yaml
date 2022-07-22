@@ -413,13 +413,13 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/ci/propagate-pr/main.go $1
-  - name: verify-rc
+  - name: verify-pr
     language: bash
     value: |
       export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
-      go run $project.path()/scripts/ci/verify-rc/main.go $1
+      go run $project.path()/scripts/ci/verify-pr/main.go $1
   - name: ghapi
     language: bash
     value: |

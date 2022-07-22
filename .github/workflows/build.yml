@@ -15,7 +15,8 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    - cron: 0 0 * * *
+    -
+      cron: 0 0 * * *
 
 # === JOBS ===
 jobs:
@@ -467,11 +468,11 @@ jobs:
         shell: bash
         run: state run preprocess
 
-      - # === Verify RC ===
-        name: Verify RC Branch
+      - # === Verify PR ===
+        name: Verify PR
         shell: bash
         if: github.ref_name != ''
-        run: go run scripts/verify-rc/main.go ${GITHUB_REF_NAME//\/*/}
+        run: go run scripts/verify-pr/main.go ${GITHUB_REF_NAME//\/*/}
 
       - # === Update RC Branch ===
         name: Update RC Branch

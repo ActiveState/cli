@@ -7,14 +7,19 @@ import (
 
 var printDepth = 0
 
-func Print(msg string, args ...interface{}) {
+func sprint(depth int, msg string, args ...interface{}) string {
+	msg = fmt.Sprintf(msg, args...)
 	prefix := ""
-	if printDepth > 0 {
+	if depth > 0 {
 		prefix = "|- "
 	}
-	indent := strings.Repeat("  ", printDepth)
-	msg = strings.Replace(msg, "\n", indent+"\n", -1)
-	fmt.Printf(indent + prefix + fmt.Sprintf(msg+"\n", args...))
+	indent := strings.Repeat("  ", depth)
+	msg = strings.Replace(msg, "\n", "\n   "+indent, -1)
+	return fmt.Sprintf(indent + prefix + msg)
+}
+
+func Print(msg string, args ...interface{}) {
+	fmt.Println(sprint(printDepth, msg, args...))
 }
 
 func PrintStart(description string, args ...interface{}) func() {

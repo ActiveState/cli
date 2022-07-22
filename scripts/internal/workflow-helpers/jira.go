@@ -2,6 +2,7 @@ package workflow_helpers
 
 import (
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -9,6 +10,8 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 )
+
+var jiraIssueRx = regexp.MustCompile(`(?i)(DX-\d+)`)
 
 func InitJiraClient() (*jira.Client, error) {
 	username := secrethelper.GetSecretIfEmpty(os.Getenv("JIRA_USERNAME"), "user.JIRA_USERNAME")
@@ -23,6 +26,14 @@ func InitJiraClient() (*jira.Client, error) {
 		return nil, errs.Wrap(err, "Failed to create JIRA client")
 	}
 	return jiraClient, nil
+}
+
+func ParseJiraKey(v string) (string, error) {
+	matches := jiraIssueRx.FindStringSubmatch(v)
+	if len(matches) < 1 {
+		return "", errs.New("Could not extract jira key from %s, please ensure it matches the regex: %s", v, jiraIssueRx.String())
+	}
+	return matches[1], nil
 }
 
 func JqlUnpaged(client *jira.Client, jql string) ([]jira.Issue, error) {
@@ -76,4 +87,11 @@ func ParseTargetFixVersion(issue *jira.Issue, verifyActive bool) (semver.Version
 
 	v, err := ParseJiraVersion(fixVersion.Name)
 	return v, fixVersion, err
+}
+
+func IsMergedStatus(status string) bool {
+	if strings.HasPrefix(status, "Ready for") || status == "Done" || strings.Contains(status, "Testing") {
+		return true
+	}
+	return false
 }

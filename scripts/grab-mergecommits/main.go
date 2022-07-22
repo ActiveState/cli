@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
-	"github.com/ActiveState/cli/scripts/internal/workflow-helpers"
+	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/thoas/go-funk"
 )
 
@@ -32,8 +32,8 @@ func run() error {
 	}
 	targetVersion := os.Args[1]
 
-	ghClient := workflow_helpers.InitGHClient()
-	jiraClient, err := workflow_helpers.InitJiraClient()
+	ghClient := wh.InitGHClient()
+	jiraClient, err := wh.InitJiraClient()
 	if err != nil {
 		return errs.Wrap(err, "failed to initialize Jira client")
 	}
@@ -53,7 +53,7 @@ func run() error {
 	fmt.Printf("Found %d issues: %v\n", len(issues), funk.Keys(jiraIssueIDs))
 
 	// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
-	prs, err := workflow_helpers.FetchPRs(ghClient, cutoff, nil)
+	prs, err := wh.FetchPRs(ghClient, cutoff, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not find PRs")
 	}
@@ -69,18 +69,18 @@ func run() error {
 
 		commit := pr.GetMergeCommitSHA()[0:7]
 
-		jiraIssueID := workflow_helpers.ExtractJiraIssueID(pr)
-		if jiraIssueID == nil {
+		jiraIssueID, err := wh.ExtractJiraIssueID(pr)
+		if err != nil {
 			missingIDs = append(missingIDs, fmt.Sprintf("%s (branch: %s, commit: %s): %s", *pr.Title, pr.Head.GetRef(), commit, pr.Links.GetHTML().GetHRef()))
 			continue
 		}
 
-		_, ok := jiraIssueIDs[*jiraIssueID]
+		_, ok := jiraIssueIDs[jiraIssueID]
 		if !ok {
 			continue
 		}
 
-		fmt.Printf("Adding %s (branch: %s, commit: %s) as it matches Jira issue %s\n", *pr.Title, pr.Head.GetRef(), commit, *jiraIssueID)
+		fmt.Printf("Adding %s (branch: %s, commit: %s) as it matches Jira issue %s\n", *pr.Title, pr.Head.GetRef(), commit, jiraIssueID)
 		resultCommits = append(resultCommits, commit)
 	}
 

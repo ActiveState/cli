@@ -123,16 +123,16 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	finish()
 
 	finish = wc.PrintStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
-	jiraIssueID := wh.ExtractJiraIssueID(prBeingHandled)
-	if jiraIssueID == nil {
-		return Meta{}, errs.New("PR does not have Jira issue ID associated with it: %s", prBeingHandled.Links.GetHTML().GetHRef())
+	jiraIssueID, err := wh.ExtractJiraIssueID(prBeingHandled)
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "PR does not have Jira issue ID associated with it: %s", prBeingHandled.Links.GetHTML().GetHRef())
 	}
-	wc.Print("Extracted Jira Issue ID: %s", *jiraIssueID)
+	wc.Print("Extracted Jira Issue ID: %s", jiraIssueID)
 	finish()
 
 	// Retrieve Relevant Jira Issue for PR being handled
 	finish = wc.PrintStart("Fetching Jira issue")
-	jiraIssue, err := wh.FetchJiraIssue(jiraClient, *jiraIssueID)
+	jiraIssue, err := wh.FetchJiraIssue(jiraClient, jiraIssueID)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get Jira issue")
 	}

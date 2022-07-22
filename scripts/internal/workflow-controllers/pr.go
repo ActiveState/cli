@@ -50,7 +50,10 @@ func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta
 		finish = PrintStart("Finding nearest matching version PR to fork from")
 		prevVersionPR, err := wh.FetchVersionPR(ghClient, wh.AssertLT, meta.GetVersion())
 		if err != nil {
-			return errs.Wrap(err, "failed to find fork branch")
+			return errs.Wrap(err,
+				"Failed to find fork branch, please manually create the Version PR "+
+					"for '%s' by running the create-version-pr script.",
+				meta.GetVersion())
 		}
 
 		prevVersionRef = prevVersionPR.Head.SHA

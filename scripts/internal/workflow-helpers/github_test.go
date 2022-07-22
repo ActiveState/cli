@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestExtractJiraIssueIDFromCommitMsg(t *testing.T) {
+func TestParseJiraKey(t *testing.T) {
 	testCases := []struct {
 		name     string
 		msg      string
@@ -43,14 +43,14 @@ func TestExtractJiraIssueIDFromCommitMsg(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := ExtractJiraIssueIDFromCommitMsg(tc.msg)
-			if actual == nil {
+			actual, err := ParseJiraKey(tc.msg)
+			if err != nil {
 				if tc.expected != "" {
-					t.Errorf("expected %s, got nil", tc.expected)
+					t.Errorf("expected %s, got error: %v", tc.expected, err)
 				}
 				return
 			}
-			if *actual != tc.expected {
+			if actual != tc.expected {
 				t.Errorf("Expected %s, got %s", tc.expected, actual)
 			}
 		})

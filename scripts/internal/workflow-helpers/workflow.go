@@ -22,16 +22,15 @@ func VersionedPRTitle(version semver.Version) string {
 	return VersionedPRPrefix + version.String()
 }
 
-func VersionFromPRTitle(title string) *semver.Version {
+func VersionFromPRTitle(title string) (semver.Version, error) {
 	if !strings.HasPrefix(title, VersionedPRPrefix) {
-		return nil
+		return semver.Version{}, errs.New("Title: '%s' does not start with '%s'", title, VersionedPRPrefix)
 	}
 	v, err := semver.Parse(strings.TrimPrefix(title, VersionedPRPrefix))
 	if err != nil {
-		log.Printf("Error parsing version from PR title: %s\n", err)
-		return nil
+		return semver.Version{}, errs.Wrap(err, "Failed to parse version from PR title")
 	}
-	return &v
+	return v, nil
 }
 
 const versionBranchPrefix = "version/"
@@ -54,18 +53,19 @@ func issuesWithVersionAssert(issues []*github.Issue, assert Assertion, versionTo
 			// Search doesn't ensure that it's a prefix
 			continue
 		}
-		version := VersionFromPRTitle(issue.GetTitle())
-		if version == nil {
+		version, err := VersionFromPRTitle(issue.GetTitle())
+		if err != nil {
+			// Not a version PR
 			continue
 		}
 		switch assert {
 		case AssertLT:
-			if versionToCompare.LT(*version) || versionToCompare.EQ(*version) {
+			if versionToCompare.LT(version) || versionToCompare.EQ(version) {
 				continue
 			}
 			result = append(result, issue)
 		case AssertGT:
-			if versionToCompare.GT(*version) || versionToCompare.EQ(*version) {
+			if versionToCompare.GT(version) || versionToCompare.EQ(version) {
 				continue
 			}
 			result = append(result, issue)
@@ -76,13 +76,13 @@ func issuesWithVersionAssert(issues []*github.Issue, assert Assertion, versionTo
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		v1 := VersionFromPRTitle(result[i].GetTitle())
-		v2 := VersionFromPRTitle(result[j].GetTitle())
+		v1, _ := VersionFromPRTitle(result[i].GetTitle())
+		v2, _ := VersionFromPRTitle(result[j].GetTitle())
 		switch assert {
 		case AssertLT:
-			return v2.LT(*v1)
+			return v2.LT(v1)
 		case AssertGT:
-			return v2.GT(*v1)
+			return v2.GT(v1)
 		}
 
 		return false
