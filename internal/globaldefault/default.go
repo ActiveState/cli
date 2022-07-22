@@ -76,7 +76,6 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, s
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}
 
-	// func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	fw := executor.NewWithBinPath(target, BinDir())
 	if err := fw.Update(sockPath, env, exes); err != nil {
