@@ -1,7 +1,6 @@
 package use
 
 import (
-	"fmt"
 	"path/filepath"
 	rt "runtime"
 	"strings"
@@ -140,10 +139,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET] %s [ACTIONABLE]%s[/RESET]",
-		locale.Tl("use_notice_switched_to", "Switched to"),
+	u.out.Print(locale.Tl("use_notice_switched_to", "[NOTICE]Switched to[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] located at [ACTIONABLE]{{ .V1 }}[/RESET]",
 		params.Namespace.Project,
-		locale.Tl("use_notice_located_at", "located at"),
 		setup.ExecDir(projectTarget.Dir())),
 	)
 
