@@ -67,9 +67,7 @@ func (u *Shell) Run(params *Params) error {
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerShell), u.analytics, u.svcModel)
 	if err != nil {
-		wrapped := locale.WrapInputError(err, "err_shell_load_runtime", "This project's runtime is not initialized.")
-		errs.AddTips(wrapped, locale.Tl("err_shell_load_runtime_tip", "Please run [ACTIONABLE]state use[/RESET] first."))
-		return wrapped
+		return locale.WrapInputError(err, "err_shell_load_runtime", "This project's runtime is not initialized.")
 	}
 
 	venv := virtualenvironment.New(rti)
