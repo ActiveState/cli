@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -361,8 +362,8 @@ func FromExactPath(path string) (*Project, error) {
 // LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
 type LocalProjectDoesNotExist struct{ error }
 
-// IsLocalProjectDoesNotExist checks if the error is a LocalProjectDoesNotExist.
-func IsLocalProjectDoesNotExist(err error) bool {
+// IsLocalProjectDoesNotExistError checks if the error is a LocalProjectDoesNotExist.
+func IsLocalProjectDoesNotExistError(err error) bool {
 	return errs.Matches(err, &LocalProjectDoesNotExist{})
 }
 
@@ -385,7 +386,15 @@ func FromNamespaceLocal(ns *Namespaced, cfg projectfile.ConfigGetter) (*Project,
 			return FromPath(paths[0]) // just pick the first one
 		}
 	}
-	return nil, &LocalProjectDoesNotExist{errs.New("No local project found")}
+
+	projectsDir, err := storage.ProjectsDir(cfg)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_cannot_determine_projects_dir")
+	}
+	projectDir := filepath.Join(projectsDir, ns.Project)
+	return nil, &LocalProjectDoesNotExist{
+		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project, projectDir),
+	}
 }
 
 // Platform covers the platform structure

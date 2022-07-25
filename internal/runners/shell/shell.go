@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"path/filepath"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -60,16 +58,11 @@ func (u *Shell) Run(params *Params) error {
 
 	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
 	if err != nil {
-		if project.IsLocalProjectDoesNotExist(err) {
-			projectsDir, err2 := storage.ProjectsDir(u.config)
-			if err2 != nil {
-				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
-			}
-			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-			projectDir := filepath.Join(projectsDir, params.Namespace.Project)
-			return locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+		if project.IsLocalProjectDoesNotExistError(err) {
+			// Note: use existing localized error message to workaround DX-740 for integration tests.
+			return locale.WrapInputError(err, "err_shell_project_does_not_exist", err.Error())
 		}
-		return locale.WrapError(err, "err_use_project_frompath") // error reading from project file
+		return locale.WrapError(err, "err_shell", "Unable to run shell")
 	}
 
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)

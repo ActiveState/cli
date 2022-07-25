@@ -77,16 +77,11 @@ func (u *Use) Run(params *Params) error {
 
 	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
 	if err != nil {
-		if !project.IsLocalProjectDoesNotExist(err) {
-			return locale.WrapError(err, "err_use_project_frompath") // error reading from project file
+		if !project.IsLocalProjectDoesNotExistError(err) {
+			return locale.WrapError(err, "err_use", "Unable to use project")
 		} else if params.Namespace.Owner == "" {
-			projectsDir, err2 := storage.ProjectsDir(u.config)
-			if err2 != nil {
-				return locale.WrapError(err2, "err_use_cannot_determine_projects_dir", "") // this error takes precedence
-			}
-			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-			projectDir := filepath.Join(projectsDir, params.Namespace.Project)
-			return locale.WrapInputError(err, "err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
+			// Note: use existing localized error message to workaround DX-740 for integration tests.
+			return locale.WrapInputError(err, "err_use_project_does_not_exist", err.Error())
 		}
 
 		var projectDir string
@@ -94,7 +89,7 @@ func (u *Use) Run(params *Params) error {
 		if params.PreferredPath == "" {
 			projectsDir, err := storage.ProjectsDir(u.config)
 			if err != nil {
-				return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
+				return locale.WrapError(err, "err_cannot_determine_projects_dir")
 			}
 			projectDir = filepath.Join(projectsDir, params.Namespace.Project)
 		} else {
