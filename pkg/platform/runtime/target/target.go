@@ -33,6 +33,7 @@ const (
 	TriggerReset     Trigger = "reset"
 	TriggerRevert    Trigger = "revert"
 	TriggerOffline   Trigger = "offline"
+	TriggerShell     Trigger = "shell"
 	triggerUnknown   Trigger = "unknown"
 )
 
@@ -48,6 +49,7 @@ var usageTriggers = []Trigger{
 	TriggerPull,
 	TriggerReset,
 	TriggerRevert,
+	TriggerShell,
 }
 
 func NewExecTrigger(cmd string) Trigger {
