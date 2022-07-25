@@ -1876,8 +1876,8 @@ flag_state_use_path_description:
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
-  other: The org/project namespace of the project that you wish to use. If the project has already been checked out, you can simply use the project's name instead of the entire namespace.
 err_use_cannot_determine_projects_dir:
+  other: The org/project namespace of the project that you wish to use, or just the project name if previously used
   other: Cannot determine where to check out project to
 err_use_checkout_project:
   other: Could not checkout project {{.V0}}
@@ -1887,6 +1887,8 @@ use_checkout_first:
   other: "Please check out the project first with [ACTIONABLE]state use org/{{.V0}}[/RESET] where 'org' is your organization's name"
 err_use_project_not_checked_out:
   other: "The project [ACTIONABLE]{{.V0}}[/RESET] does not exist at [ACTIONABLE]{{.V1}}[/RESET]."
+arg_state_shell_use_namespace_description:
+  other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:

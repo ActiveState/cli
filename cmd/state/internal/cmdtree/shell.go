@@ -26,7 +26,7 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_activate_namespace"),
-				Description: locale.Tl("arg_state_shell_namespace_description", "The namespace of the project you wish to start a shell/prompt for"),
+				Description: locale.T("arg_state_shell_namespace_description"),
 				Required:    true,
 				Value:       params.Namespace,
 			},
