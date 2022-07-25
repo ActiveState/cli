@@ -92,11 +92,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv("VERBOSE=true"),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv("VERBOSE=true"),
 				)
 			}
 
@@ -220,7 +222,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete")
+	cp.Expect("Installation Complete", time.Minute)
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
