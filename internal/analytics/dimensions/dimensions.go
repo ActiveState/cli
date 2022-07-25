@@ -84,7 +84,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(CalculateFlags()),
 		p.StrP(""),
 		p.StrP(""),
-		p.StrP(instanceid.ID()),
+		p.StrP(instanceid.AppID()),
 		p.StrP(""),
 		p.StrP(osutils.ExecutableName()),
 		p.IntP(0),

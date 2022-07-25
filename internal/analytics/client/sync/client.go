@@ -104,7 +104,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
 		Flags:         p.StrP(dimensions.CalculateFlags()),
-		InstanceID:    p.StrP(instanceid.ID()),
+		InstanceID:    p.StrP(instanceid.AppID()),
 		Command:       p.StrP(osutils.ExecutableName()),
 		Sequence:      p.IntP(0),
 	}

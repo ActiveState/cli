@@ -77,7 +77,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
 		CommitID:         p.StrP(target.CommitUUID().String()),
 		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		InstanceID:       p.StrP(instanceid.AppID()),
 	})
 
 	r, err := newRuntime(target, an, svcm)
@@ -194,7 +194,7 @@ func (r *Runtime) recordUsage() {
 		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
 		CommitID:         p.StrP(r.target.CommitUUID().String()),
 		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		InstanceID:       p.StrP(instanceid.AppID()),
 	}
 	dimsJson, err := dims.Marshal()
 	if err != nil {

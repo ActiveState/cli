@@ -182,7 +182,7 @@ func (r *Resolver) ReportRuntimeUsage(ctx context.Context, pid, exec, namespace,
 		Headless:         &headless,
 		CommitID:         &commit,
 		ProjectNameSpace: &namespace,
-		InstanceID:       p.StrP(instanceid.ID()),
+		InstanceID:       p.StrP(instanceid.Make()),
 	}
 
 	pidNum, err := strconv.Atoi(pid)

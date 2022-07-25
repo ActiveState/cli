@@ -73,7 +73,7 @@ func SetupRollbar(token string) {
 
 	rollbar.SetCustom(map[string]interface{}{
 		"install_source": source,
-		"instance_id":    instanceid.ID(),
+		"instance_id":    instanceid.AppID(),
 	})
 }
 

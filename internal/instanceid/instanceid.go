@@ -6,17 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
+func Make() string {
+	return uuid.New().String()
+}
+
 var (
-	id string
-	mu sync.Mutex
+	appID string
+	mu    sync.Mutex
 )
 
-func ID() string {
+func AppID() string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if id == "" {
-		id = uuid.New().String()
+	if appID == "" {
+		appID = Make()
 	}
-	return id
+	return appID
 }
