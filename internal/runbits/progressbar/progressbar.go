@@ -188,7 +188,7 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 	} else {
 		rp.installBar.SetTotal(0, true)
 		rp.prg.Wait()
-		rp.out.Print(locale.Tl("runtime_verification_notice", "[SUCCESS]✔ All dependencies have been installed and verified.[/RESET]"))
+		rp.out.Notice(locale.Tl("runtime_verification_notice", "[SUCCESS]✔ All dependencies have been installed and verified.[/RESET]"))
 	}
 	return nil
 }
