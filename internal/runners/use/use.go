@@ -79,7 +79,8 @@ func (u *Use) Run(params *Params) error {
 	if err != nil {
 		if !project.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
-		} else if params.Namespace.Owner == "" {
+		}
+		if params.Namespace.Owner == "" {
 			// Note: use existing localized error message to workaround DX-740 for integration tests.
 			return locale.WrapInputError(err, "err_use_project_does_not_exist", err.Error())
 		}
