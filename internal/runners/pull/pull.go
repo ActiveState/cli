@@ -102,17 +102,18 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	if params.SetProject != "" {
-		defaultChoice := params.Force
-		confirmed, err := p.prompt.Confirm(
-			locale.T("confirm"),
-			locale.Tl("confirm_unrelated_pull_set_project",
-				"If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", remoteProject.String()),
-			&defaultChoice)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_confirm", "Failed to get user confirmation to update project")
-		}
-		if !confirmed {
-			return locale.NewInputError("err_pull_aborted", "Pull aborted by user")
+		if !params.Force {
+			confirmed, err := p.prompt.Confirm(
+				locale.T("confirm"),
+				locale.Tl("confirm_unrelated_pull_set_project",
+					"If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", remoteProject.String()),
+				new(bool))
+			if err != nil {
+				return locale.WrapError(err, "err_pull_confirm", "Failed to get user confirmation to update project")
+			}
+			if !confirmed {
+				return locale.NewInputError("err_pull_aborted", "Pull aborted by user")
+			}
 		}
 
 		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
