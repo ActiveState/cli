@@ -71,6 +71,8 @@ func FetchJiraIssue(jiraClient *jira.Client, jiraIssueID string) (*jira.Issue, e
 	return jiraIssue, nil
 }
 
+var ErrVersionIsAny = errs.New("Version is '%s'", VersionAny)
+
 func ParseTargetFixVersion(issue *jira.Issue, verifyActive bool) (semver.Version, *jira.FixVersion, error) {
 	if len(issue.Fields.FixVersions) < 1 {
 		return semver.Version{}, nil, errs.New("Jira issue does not have a fixVersion assigned: %s\n", issue.Key)
@@ -83,6 +85,10 @@ func ParseTargetFixVersion(issue *jira.Issue, verifyActive bool) (semver.Version
 	fixVersion := issue.Fields.FixVersions[0]
 	if verifyActive && (fixVersion.Archived != nil && *fixVersion.Archived) || (fixVersion.Released != nil && *fixVersion.Released) {
 		return semver.Version{}, nil, errs.New("fixVersion '%s' has either been archived or released\n", fixVersion.Name)
+	}
+
+	if fixVersion.Name == VersionAny {
+		return semver.Version{}, fixVersion, ErrVersionIsAny
 	}
 
 	v, err := ParseJiraVersion(fixVersion.Name)

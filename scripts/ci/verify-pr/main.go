@@ -151,10 +151,6 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 }
 
 func verifyPR(ghClient *github.Client, jiraClient *jira.Client, pr *github.PullRequest) error {
-	if err := wh.ValidVersionBranch(pr.GetBase().GetRef()); err != nil {
-		return errs.Wrap(err, "Invalid target branch, ensure your PR is targeting a versioned branch")
-	}
-
 	finish := wc.PrintStart("Parsing Jira issue from PR title")
 	jiraIssueID, err := wh.ExtractJiraIssueID(pr)
 	if err != nil {
@@ -170,11 +166,25 @@ func verifyPR(ghClient *github.Client, jiraClient *jira.Client, pr *github.PullR
 	}
 	finish()
 
+	validateBranch := true
 	finish = wc.PrintStart("Verifying fixVersion")
-	if _, _, err := wh.ParseTargetFixVersion(jiraIssue, true); err != nil {
-		return errs.Wrap(err, "Failed to parse fixVersion")
+	if _, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true); err != nil {
+		if jiraVersion.Name == wh.VersionAny {
+			wc.Print("fixVersion is '%s', so skipping target branch validation", jiraVersion.Name)
+			validateBranch = false
+		} else {
+			return errs.Wrap(err, "Failed to parse fixVersion")
+		}
 	}
 	finish()
+
+	if validateBranch {
+		finish = wc.PrintStart("Validating target branch")
+		if err := wh.ValidVersionBranch(pr.GetBase().GetRef()); err != nil {
+			return errs.Wrap(err, "Invalid target branch, ensure your PR is targeting a versioned branch")
+		}
+		finish()
+	}
 
 	return nil
 }

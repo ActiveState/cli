@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -72,6 +73,11 @@ func run() error {
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
+		if errors.Is(err, wh.ErrVersionIsAny) {
+			wc.Print("Version is '%s', skipping rest of job", wh.VersionAny)
+			finish()
+			return nil
+		}
 		return errs.Wrap(err, "failed to fetch meta")
 	}
 	finish()

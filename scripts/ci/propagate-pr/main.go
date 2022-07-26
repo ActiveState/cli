@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -72,6 +73,11 @@ func run() error {
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
+		if errors.Is(err, wh.ErrVersionIsAny) {
+			wc.Print("Version is '%s', skipping rest of job", wh.VersionAny)
+			finish()
+			return nil
+		}
 		return errs.Wrap(err, "failed to fetch meta")
 	}
 	finish()
@@ -151,10 +157,6 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 		return Meta{}, errs.New("Active PR should be merged before it can be propagated.")
 	}
 
-	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef()); err != nil {
-		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is a valid version branch.")
-	}
-
 	finish = wc.PrintStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
 	jiraIssueID, err := wh.ExtractJiraIssueID(prBeingHandled)
 	if err != nil {
@@ -179,6 +181,10 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
+
+	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef()); err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is a valid version branch.")
+	}
 
 	result := Meta{
 		Repo:              &github.Repository{},

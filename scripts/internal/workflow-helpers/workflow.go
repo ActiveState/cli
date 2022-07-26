@@ -16,6 +16,8 @@ const (
 	ReleaseBranch = "release"
 )
 
+const VersionAny = "Any"
+
 const VersionedPRPrefix = "Version "
 
 func VersionedPRTitle(version semver.Version) string {
