@@ -171,8 +171,8 @@ func DirExists(path string) bool {
 	return mode.IsDir()
 }
 
-// Hash will sha256 hash the given file
-func Hash(path string) (string, error) {
+// Sha256Hash will sha256 hash the given file
+func Sha256Hash(path string) (string, error) {
 	hasher := sha256.New()
 	b, err := ioutil.ReadFile(path)
 	if err != nil {

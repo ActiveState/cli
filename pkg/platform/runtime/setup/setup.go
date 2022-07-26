@@ -589,7 +589,7 @@ func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) 
 		return nil
 	}
 
-	checksum, err := fileutils.Hash(archivePath)
+	checksum, err := fileutils.Sha256Hash(archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Failed to compute checksum for "+a.ArtifactID.String())
 	}
