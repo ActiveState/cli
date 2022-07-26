@@ -16,30 +16,28 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/shirou/gopsutil/process"
 	"github.com/stretchr/testify/suite"
 )
 
 type SvcIntegrationTestSuite struct {
-	tagsuite.Suite
+	*testsuite.Suite
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartStop() {
-	suite.OnlyRunForTags(tagsuite.Service)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
+	suite.OnlyRunForTags(testsuite.TagService)
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp := suite.SpawnCmdWithOpts(suite.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
+	cp = suite.SpawnCmdWithOpts(suite.SvcExe, e2e.WithArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to start up
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = suite.SpawnCmdWithOpts(suite.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
 
 	// Verify the server is running on its reported port.
@@ -58,7 +56,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp = suite.SpawnCmdWithOpts(suite.SvcExe, e2e.WithArgs("stop"))
 	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
@@ -80,7 +78,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 		suite.T().Skip("Windows does not support signal sending.")
 	}
 
-	suite.OnlyRunForTags(tagsuite.Service)
+	suite.OnlyRunForTags(testsuite.TagService)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -115,7 +113,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 }
 
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
-	suite.OnlyRunForTags(tagsuite.Service)
+	suite.OnlyRunForTags(testsuite.TagService)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -163,5 +161,5 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(SvcIntegrationTestSuite))
+	suite.Run(t, &SvcIntegrationTestSuite{testsuite.New()})
 }

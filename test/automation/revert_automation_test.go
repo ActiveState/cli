@@ -1,20 +1,21 @@
 package automation
 
 import (
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type RevertAutomationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_MissingArg() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -27,7 +28,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_MissingArg() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_NotInProjects() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -38,7 +39,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotInProjects() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPublic() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -53,7 +54,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPublic() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPrivate() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -68,7 +69,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPrivate() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPublic() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -87,7 +88,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPublic() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPrivate() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -106,7 +107,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPrivate() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_PublicProject() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -132,7 +133,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_PublicProject() {
 }
 
 func (suite *RevertAutomationTestSuite) TestRevert_PrivateProject() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

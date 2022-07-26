@@ -11,12 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func (suite *UpdateIntegrationTestSuite) TestLocked() {
-	suite.OnlyRunForTags(tagsuite.Update)
+	suite.OnlyRunForTags(testsuite.TagUpdate)
 	suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),
@@ -43,7 +43,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
-	suite.OnlyRunForTags(tagsuite.Update)
+	suite.OnlyRunForTags(testsuite.TagUpdate)
 	targetBranch := "release"
 	if constants.BranchName == "release" {
 		targetBranch = "master"
@@ -128,7 +128,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			suite.T().Skip("Requires https://www.pivotaltracker.com/story/show/177827538 and needs to be adapted.")
 		}
 		suite.Run(tt.Name, func() {
-			suite.OnlyRunForTags(tagsuite.Update)
+			suite.OnlyRunForTags(testsuite.TagUpdate)
 			pjfile := projectfile.Project{
 				Project: lockedProjectURL(),
 				Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
@@ -166,7 +166,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
-	suite.OnlyRunForTags(tagsuite.Update)
+	suite.OnlyRunForTags(testsuite.TagUpdate)
 
 	pjfile := projectfile.Project{
 		Project: lockedProjectURL(),

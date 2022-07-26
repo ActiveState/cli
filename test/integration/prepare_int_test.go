@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -21,11 +21,11 @@ import (
 )
 
 type PrepareIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *PrepareIntegrationTestSuite) TestPrepare() {
-	suite.OnlyRunForTags(tagsuite.Prepare)
+	suite.OnlyRunForTags(testsuite.TagPrepare)
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestPrepare when not running on CI or on MacOS, as it modifies PATH")
 	}
@@ -67,7 +67,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 }
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
-	suite.OnlyRunForTags(tagsuite.Prepare)
+	suite.OnlyRunForTags(testsuite.TagPrepare)
 	ts := e2e.New(suite.T(), true, "ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
 	err := ts.ClearCache()
 	suite.Require().NoError(err)

@@ -7,16 +7,16 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type ProjectsAutomationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_NoActProjects() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -26,7 +26,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_NoActProjects() {
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -53,7 +53,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_NotAuthRemote() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -64,7 +64,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_NotAuthRemote() {
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

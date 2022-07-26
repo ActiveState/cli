@@ -13,15 +13,15 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 type PackageIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -34,7 +34,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -46,7 +46,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_name() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -59,7 +59,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_name() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -70,7 +70,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -80,7 +80,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_name_noData() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -90,7 +90,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -103,7 +103,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -115,7 +115,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -127,7 +127,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -139,7 +139,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPa
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -157,7 +157,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchSimple() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -175,7 +175,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTerm() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -186,7 +186,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -200,7 +200,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -218,7 +218,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchModules() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -229,7 +229,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -240,7 +240,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_info() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -275,7 +275,7 @@ six==1.14.0
 )
 
 func (suite *PackageIntegrationTestSuite) TestPackage_import() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -317,7 +317,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -355,7 +355,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Revert)
+	suite.OnlyRunForTags(testsuite.TagPackage, testsuite.TagRevert)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -428,7 +428,7 @@ scripts:
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -455,7 +455,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
-	suite.OnlyRunForTags(tagsuite.Package)
+	suite.OnlyRunForTags(testsuite.TagPackage)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

@@ -19,13 +19,13 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
 type UpdateIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool
@@ -96,7 +96,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -115,7 +115,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -145,7 +145,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
-	suite.OnlyRunForTags(tagsuite.Update)
+	suite.OnlyRunForTags(testsuite.TagUpdate)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
@@ -180,7 +180,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	tests := []struct {
 		Name    string
@@ -223,7 +223,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 	// Disabled, waiting for - https://www.pivotaltracker.com/story/show/179646813
 	suite.T().Skip("Disabled for now")
-	suite.OnlyRunForTags(tagsuite.Update)
+	suite.OnlyRunForTags(testsuite.TagUpdate)
 
 	tests := []struct {
 		name          string
@@ -254,7 +254,7 @@ func lockedProjectURL() string {
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	// suite.T().Skip("Test will not work until v0.34.0")
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -312,7 +312,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -331,7 +331,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 		// Feel free to drop this once the release channel is no longer on 0.29
 		suite.T().Skip("Updating from release 0.29 to 0.30 is not covered due to how 0.29 did updates (async)")
 	}
-	suite.OnlyRunForTags(tagsuite.Update, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUpdate, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()

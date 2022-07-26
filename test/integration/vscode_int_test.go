@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Push, tagsuite.VSCode)
+	suite.OnlyRunForTags(testsuite.TagInit, testsuite.TagPush, testsuite.TagVSCode)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -42,7 +42,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 }
 
 func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
+	suite.OnlyRunForTags(testsuite.TagShow, testsuite.TagVSCode)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -81,7 +81,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 }
 
 func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Organizations, tagsuite.VSCode)
+	suite.OnlyRunForTags(testsuite.TagOrganizations, testsuite.TagVSCode)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -111,7 +111,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagVSCode, testsuite.TagKomodo)
 	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
 	// https://www.pivotaltracker.com/story/show/178544144
 	user := userJSON{
@@ -140,7 +140,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Package, tagsuite.VSCode)
+	suite.OnlyRunForTags(testsuite.TagPackage, testsuite.TagVSCode)
 
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Not running on windows cause it has issues parsing json output from termtest")
@@ -168,7 +168,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
+	suite.OnlyRunForTags(testsuite.TagActivate, testsuite.TagVSCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

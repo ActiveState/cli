@@ -16,20 +16,20 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 type ActivateIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3() {
-	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagPython, testsuite.TagActivate, testsuite.TagCritical)
 	suite.activatePython("3")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
-	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate, tagsuite.Shell)
+	suite.OnlyRunForTags(testsuite.TagPython, testsuite.TagActivate, testsuite.TagShell)
 	if _, err := exec.LookPath("zsh"); err != nil {
 		suite.T().Skip("This test requires a zsh shell in your PATH")
 	}
@@ -37,12 +37,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePython2() {
-	suite.OnlyRunForTags(tagsuite.Python, tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagPython, testsuite.TagActivate)
 	suite.activatePython("2")
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate, tagsuite.ExitCode)
+	suite.OnlyRunForTags(testsuite.TagCritical, testsuite.TagActivate, testsuite.TagExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -55,7 +55,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagCritical, testsuite.TagActivate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -72,7 +72,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagCritical, testsuite.TagActivate)
 	ts := e2e.NewNoPathUpdate(suite.T(), false)
 	defer ts.Close()
 
@@ -99,7 +99,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 
 // TestActivatePythonByHostOnly Tests whether we are only pulling in the build for the target host
 func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
-	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagCritical, testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -205,7 +205,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -236,7 +236,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 }
 
 func (suite *ExecIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -259,7 +259,7 @@ func (suite *ExecIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Perl)
+	suite.OnlyRunForTags(testsuite.TagActivate, testsuite.TagPerl)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Perl not supported on macOS")
 	}
@@ -302,7 +302,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	err := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")
@@ -335,7 +335,7 @@ version: %s
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 	ts := e2e.New(suite.T(), false)
 	identifyPath := "identifyable-path"
 	targetPath := filepath.Join(ts.Dirs.Work, "foo", "bar", identifyPath)
@@ -375,7 +375,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("interrupting installation does not work on Windows on CI")
 	}
@@ -389,7 +389,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagActivate, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), true)
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
@@ -420,7 +420,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Output)
+	suite.OnlyRunForTags(testsuite.TagActivate, testsuite.TagOutput)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -437,7 +437,7 @@ func TestActivateIntegrationTestSuite(t *testing.T) {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -454,7 +454,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -476,7 +476,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_SameNamespace() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -498,7 +498,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_SameNamesp
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentNamespace() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -520,7 +520,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentN
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -538,7 +538,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateBranchNonExistant() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -554,7 +554,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranchNonExistant() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(testsuite.TagActivate)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

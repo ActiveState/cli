@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type ScriptsIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *ScriptsIntegrationTestSuite) setupConfigFile(ts *e2e.Session) {
@@ -41,7 +41,7 @@ scripts:
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestRunInheritEnv() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	ts := e2e.New(suite.T(), false)
 	suite.setupConfigFile(ts)
 
@@ -51,7 +51,7 @@ func (suite *ScriptsIntegrationTestSuite) TestRunInheritEnv() {
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestRunSubscripts() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	ts := e2e.New(suite.T(), false)
 	suite.setupConfigFile(ts)
 

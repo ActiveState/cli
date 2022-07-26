@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type HistoryIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
-	suite.OnlyRunForTags(tagsuite.History)
+	suite.OnlyRunForTags(testsuite.TagHistory)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

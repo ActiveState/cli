@@ -8,18 +8,18 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
 type BranchIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *BranchIntegrationTestSuite) TestBranch_List() {
-	suite.OnlyRunForTags(tagsuite.Branches)
+	suite.OnlyRunForTags(testsuite.TagBranches)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -38,7 +38,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 }
 
 func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
-	suite.OnlyRunForTags(tagsuite.Branches)
+	suite.OnlyRunForTags(testsuite.TagBranches)
 	suite.T().Skip("Skip test as state branch add functionality is currently disabled")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -63,7 +63,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 }
 
 func (suite *BranchIntegrationTestSuite) TestBranch_Switch() {
-	suite.OnlyRunForTags(tagsuite.Branches)
+	suite.OnlyRunForTags(testsuite.TagBranches)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

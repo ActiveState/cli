@@ -14,16 +14,16 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/termtest"
 )
 
 type UpdateGenIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
-	suite.OnlyRunForTags(tagsuite.CLIDeploy, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagCLIDeploy, testsuite.TagCritical)
 	root := environment.GetRootPathUnsafe()
 
 	ext := ".tar.gz"

@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -24,11 +24,11 @@ import (
 )
 
 type InstallScriptsIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
-	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagInstallScripts, testsuite.TagCritical)
 
 	tests := []struct {
 		Name              string
@@ -147,7 +147,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
-	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	suite.OnlyRunForTags(testsuite.TagInstallScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -172,7 +172,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
-	suite.OnlyRunForTags(tagsuite.InstallScripts)
+	suite.OnlyRunForTags(testsuite.TagInstallScripts)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

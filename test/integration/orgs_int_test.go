@@ -3,12 +3,12 @@ package integration
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type OrganizationsIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {

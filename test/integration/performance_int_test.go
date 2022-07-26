@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 // The max time is based on the average execution times across platforms at the time that this was configured
@@ -21,11 +21,11 @@ var StateVersionMaxTime = 100 * time.Millisecond // DO NOT CHANGE WITHOUT DISCUS
 var StateVersionTotalSamples = 10
 
 type PerformanceIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
-	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.OnlyRunForTags(testsuite.TagPerformance)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

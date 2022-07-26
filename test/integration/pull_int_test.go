@@ -11,15 +11,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 type PullIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *PullIntegrationTestSuite) TestPull() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(testsuite.TagPull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -35,7 +35,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPullSetProject() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(testsuite.TagPull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -54,7 +54,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(testsuite.TagPull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -72,7 +72,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
-	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.OnlyRunForTags(testsuite.TagPull)
 	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 

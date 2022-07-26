@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type InfoIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *InfoIntegrationTestSuite) TestInfo_LatestVersion() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(testsuite.TagInfo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -26,7 +26,7 @@ func (suite *InfoIntegrationTestSuite) TestInfo_LatestVersion() {
 }
 
 func (suite *InfoIntegrationTestSuite) TestInfo_SpecificVersion() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(testsuite.TagInfo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -38,7 +38,7 @@ func (suite *InfoIntegrationTestSuite) TestInfo_SpecificVersion() {
 }
 
 func (suite *InfoIntegrationTestSuite) TestInfo_UnavailableVersion() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(testsuite.TagInfo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

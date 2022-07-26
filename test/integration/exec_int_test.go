@@ -12,11 +12,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 type ExecIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *ExecIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
@@ -26,7 +26,7 @@ func (suite *ExecIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
-	suite.OnlyRunForTags(tagsuite.Exec)
+	suite.OnlyRunForTags(testsuite.TagExec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -55,7 +55,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
-	suite.OnlyRunForTags(tagsuite.Exec)
+	suite.OnlyRunForTags(testsuite.TagExec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -82,7 +82,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Args() {
-	suite.OnlyRunForTags(tagsuite.Exec)
+	suite.OnlyRunForTags(testsuite.TagExec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -131,7 +131,7 @@ echo "Number of arguments: $#"
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Input() {
-	suite.OnlyRunForTags(tagsuite.Exec)
+	suite.OnlyRunForTags(testsuite.TagExec)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

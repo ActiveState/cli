@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 var uid uuid.UUID
@@ -26,11 +26,11 @@ func init() {
 }
 
 type AuthIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -42,15 +42,15 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthToken() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
+	cp := ts.Spawn(testsuite.TagAuth, "--token", e2e.PersistentToken, "-n")
 	cp.Expect("logged in", 40*time.Second)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn(tagsuite.Auth, "--non-interactive")
+	cp = ts.Spawn(testsuite.TagAuth, "--non-interactive")
 	cp.Expect("logged in", 40*time.Second)
 	cp.ExpectExitCode(0)
 
@@ -59,7 +59,7 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 }
 
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth, "--prompt")
+	cp := ts.Spawn(testsuite.TagAuth, "--prompt")
 	cp.Expect("username:")
 	cp.Send(username)
 	cp.Expect("password:")
@@ -68,19 +68,19 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 	cp.ExpectExitCode(0)
 
 	// still logged in?
-	c2 := ts.Spawn(tagsuite.Auth)
+	c2 := ts.Spawn(testsuite.TagAuth)
 	c2.Expect("You are logged in")
 	c2.ExpectExitCode(0)
 }
 
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
-	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
+	cp := ts.Spawn(testsuite.TagAuth, "--username", username, "--password", "bad-password")
 	cp.ExpectLongString("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
-	cp := ts.Spawn(tagsuite.Auth, "--prompt")
+	cp := ts.Spawn(testsuite.TagAuth, "--prompt")
 	cp.Expect("username:")
 	cp.SendCtrlC()
 }
@@ -107,14 +107,14 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 
 	expected := string(data)
 	ts.LoginAsPersistentUser()
-	cp := ts.Spawn(tagsuite.Auth, "--output", method)
+	cp := ts.Spawn(testsuite.TagAuth, "--output", method)
 	cp.Expect("false}")
 	cp.ExpectExitCode(0)
 	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.JSON)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagJSON)
 	suite.authOutput("json")
 }
 

@@ -14,13 +14,13 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type PushIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 	username string
 
 	// some variables re-used between tests
@@ -46,7 +46,7 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 }
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush() {
-	suite.OnlyRunForTags(tagsuite.Push)
+	suite.OnlyRunForTags(testsuite.TagPush)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -87,7 +87,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	}
 
 	// ensure that we are logged out
-	cp = ts.Spawn(tagsuite.Auth, "logout")
+	cp = ts.Spawn(testsuite.TagAuth, "logout")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
@@ -115,7 +115,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 // Test pushing to a new project from a headless commit
 func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
-	suite.OnlyRunForTags(tagsuite.Push)
+	suite.OnlyRunForTags(testsuite.TagPush)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
@@ -163,7 +163,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
-	suite.OnlyRunForTags(tagsuite.Push)
+	suite.OnlyRunForTags(testsuite.TagPush)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -211,7 +211,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
-	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
+	suite.OnlyRunForTags(testsuite.TagPush, testsuite.TagCarlisle, testsuite.TagHeadless)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := "cli-integration-tests"
@@ -231,7 +231,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// ensure that we are logged out
-	cp = ts.Spawn(tagsuite.Auth, "logout")
+	cp = ts.Spawn(testsuite.TagAuth, "logout")
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
@@ -262,7 +262,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
-	suite.OnlyRunForTags(tagsuite.Push)
+	suite.OnlyRunForTags(testsuite.TagPush)
 	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
