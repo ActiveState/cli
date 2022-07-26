@@ -242,9 +242,9 @@ func (ev EnvironmentVariable) Merge(other EnvironmentVariable) (*EnvironmentVari
 
 	switch other.Join {
 	case Prepend:
-		res.Values = append(other.Values, ev.Values...)
+		res.Values = filterValuesUniquely(append(other.Values, ev.Values...), true)
 	case Append:
-		res.Values = append(ev.Values, other.Values...)
+		res.Values = filterValuesUniquely(append(ev.Values, other.Values...), false)
 	case Disallowed:
 		if len(ev.Values) != 1 || len(other.Values) != 1 || (ev.Values[0] != other.Values[0]) {
 			sep := string(ev.Separator)
