@@ -92,13 +92,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv("VERBOSE=true"),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv("VERBOSE=true"),
 				)
 			}
 
