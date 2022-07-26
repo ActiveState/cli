@@ -416,12 +416,15 @@ func (s *Session) DebugMessage(prefix string) string {
 {{.StateLog}}{{.Z}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
+{{.A}}State Installer Log:
+{{.InstallerLog}}{{.Z}}
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
 		"FullSnapshot": snapshot,
 		"StateLog":     s.MostRecentStateLog(),
 		"SvcLog":       s.SvcLog(),
+		"InstallerLog": s.InstallerLog(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
 	})
@@ -467,6 +470,8 @@ Error: {{.Error}}
 {{.StateLog}}{{.Z}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
+{{.A}}State Installer Log:
+{{.InstallerLog}}{{.Z}}
 `, map[string]interface{}{
 			"Expectation":     value,
 			"Error":           err,
@@ -476,6 +481,7 @@ Error: {{.Error}}
 			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
 			"StateLog":        s.MostRecentStateLog(),
 			"SvcLog":          s.SvcLog(),
+			"InstallerLog":    s.InstallerLog(),
 			"A":               sectionStart,
 			"Z":               sectionEnd,
 		})
@@ -522,6 +528,25 @@ func (s *Session) Close() error {
 	}
 
 	return nil
+}
+
+func (s *Session) InstallerLog() string {
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
+	files := fileutils.ListDirSimple(logDir, false)
+	lines := []string{}
+	for _, file := range files {
+		if !strings.HasPrefix(filepath.Base(file), "state-installer") {
+			continue
+		}
+		b := fileutils.ReadFileUnsafe(file)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
+		return string(b) + "\n\nCurrent time: " + time.Now().String()
+	}
+
+	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
 func (s *Session) SvcLog() string {
