@@ -31,7 +31,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	defer ts.Close()
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.ExpectNotExitCode(42) // wait for service to halt, 42 has no meaning
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
