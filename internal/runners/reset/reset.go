@@ -14,10 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-type Params struct {
-	Force bool
-}
-
 type Reset struct {
 	out       output.Outputer
 	auth      *authentication.Auth
@@ -48,7 +44,7 @@ func New(prime primeable) *Reset {
 	}
 }
 
-func (r *Reset) Run(params *Params) error {
+func (r *Reset) Run() error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
@@ -63,8 +59,7 @@ func (r *Reset) Run(params *Params) error {
 
 	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
 
-	defaultChoice := params.Force
-	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
+	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")
 	}
