@@ -31,7 +31,6 @@ type Revert struct {
 
 type Params struct {
 	CommitID string
-	Force    bool
 }
 
 type primeable interface {
@@ -86,8 +85,7 @@ func (r *Revert) Run(params *Params) error {
 	r.out.Print(locale.Tl("revert_info", "You are about to revert to the following commit:"))
 	commit.PrintCommit(r.out, revertToCommit, orgs)
 
-	defaultChoice := params.Force
-	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
+	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), new(bool))
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
 	}

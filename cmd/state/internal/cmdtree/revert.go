@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/revert"
 )
 
-func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newRevertCommand(prime *primer.Values) *captain.Command {
 	runner := revert.New(prime)
 	params := &revert.Params{}
 
@@ -26,7 +26,6 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		},
 	).SetGroup(VCSGroup)
