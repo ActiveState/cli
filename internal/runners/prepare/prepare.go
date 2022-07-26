@@ -75,7 +75,7 @@ func (r *Prepare) resetExecutors() error {
 
 	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
 	if err != nil {
-		if runtime.IsNeedsUpdateError(err) {
+		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
 		}
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
