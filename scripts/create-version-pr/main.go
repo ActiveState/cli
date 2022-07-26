@@ -97,7 +97,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, versionName str
 		return Meta{}, errs.Wrap(err, "failed to get target PR")
 	}
 	if versionPR != nil {
-		return Meta{}, errs.New("Version PR already exists: %s", versionPR.GetLinks().GetHTML())
+		return Meta{}, errs.New("Version PR already exists: %s", versionPR.GetLinks().GetHTML().GetHRef())
 	}
 	finish()
 
