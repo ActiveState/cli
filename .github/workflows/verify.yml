@@ -1,17 +1,18 @@
-name: Propagate-PR
+name: Verify
 
 # === Triggers ===
 "on":
   pull_request:
     types:
-      - closed
+      - edited
+      - synchronize
 
 # === JOBS ===
 jobs:
 
-  # === Set target branch ===
-  propagate:
-    name: Update and Verify RC PRs
+  # === Verify PR ===
+  verifypr:
+    name: Verify PR
     needs:
       - os_specific
     runs-on: ubuntu-20.04
@@ -22,7 +23,6 @@ jobs:
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 5
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, "version/")
 
     steps:
 
@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: state run preprocess
 
-      - # === Propagate PR ===
-        name: Propagate PR
+      - # === Actually Verify PR ===
+        name: Verify PR
         shell: bash
-        run: go run scripts/ci/propagate-pr/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/verify-pr/main.go ${github.event.pull_request.number}

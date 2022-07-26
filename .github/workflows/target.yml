@@ -1,4 +1,4 @@
-name: Set-Target-Branch
+name: Set-Target-PR
 
 # === Triggers ===
 "on":
@@ -9,8 +9,8 @@ name: Set-Target-Branch
 # === JOBS ===
 jobs:
 
-  # === Set target branch ===
-  updaterc:
+  # === Set target pr ===
+  target-version-pr:
     name: Update and Verify RC PRs
     needs:
       - os_specific
@@ -23,7 +23,6 @@ jobs:
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 5
 
-    # === Deploy Steps ===
     steps:
 
       - # === Checkout code ===
@@ -51,7 +50,7 @@ jobs:
         shell: bash
         run: state run preprocess
 
-      - # === Set Target Branch ===
-        name: Set Target Branch
+      - # === Set Target PR ===
+        name: Set Target PR
         shell: bash
-        run: go run scripts/ci/target-version-branch/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/target-version-pr/main.go ${github.event.pull_request.number}
