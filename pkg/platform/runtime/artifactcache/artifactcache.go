@@ -107,8 +107,8 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	defer cache.mutex.Unlock()
 
 	// Replace an existing artifact in the cache.
-	// This would really only happen if a checksum validation fails and the artifact is silently
-	// re-downloaded from the platform.
+	// This would really only happen if a checksum validation fails for the cached artifact (e.g. due
+	// to a bad actor replacing it) and the artifact is silently re-downloaded from the platform.
 	if existingArtifact, found := cache.artifacts[a]; found {
 		path := existingArtifact.ArchivePath
 		logging.Debug("Replacing cached artifact '%s'", path)
