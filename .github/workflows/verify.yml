@@ -52,4 +52,4 @@ jobs:
       - # === Actually Verify PR ===
         name: Verify PR
         shell: bash
-        run: go run scripts/ci/verify-pr/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/verify-pr/main.go ${{ github.event.pull_request.number }}

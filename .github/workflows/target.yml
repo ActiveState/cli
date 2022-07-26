@@ -51,4 +51,4 @@ jobs:
       - # === Set Target PR ===
         name: Set Target PR
         shell: bash
-        run: go run scripts/ci/target-version-pr/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/target-version-pr/main.go ${{ github.event.pull_request.number }}

@@ -54,4 +54,4 @@ jobs:
       - # === Propagate PR ===
         name: Propagate PR
         shell: bash
-        run: go run scripts/ci/propagate-pr/main.go ${github.event.pull_request.number}
+        run: go run scripts/ci/propagate-pr/main.go ${{ github.event.pull_request.number }}
