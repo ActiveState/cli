@@ -2,11 +2,17 @@ package svcctl
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 var (
@@ -57,7 +63,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 }
 
 type RuntimeUsageReporter interface {
-	ReportRuntimeUsage(ctx context.Context, pid, exec, namespace, commit, headless string) error
+	RuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
@@ -88,9 +94,26 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			headless = ss[4]
 		}
 
-		err := reporter.ReportRuntimeUsage(context.Background(), pid, exec, namespace, commit, headless)
+		pidNum, err := strconv.Atoi(pid)
 		if err != nil {
-			multilog.Critical("Failed to report runtime usage: %s", errs.JoinMessage(err))
+			multilog.Critical("Could not convert pid string (%s) to int in heartbeat handler: %s", pid, err)
+		}
+
+		dims := &dimensions.Values{
+			Trigger:          p.StrP(target.TriggerExec.String()),
+			Headless:         &headless,
+			CommitID:         &commit,
+			ProjectNameSpace: &namespace,
+			InstanceID:       p.StrP(instanceid.Make()),
+		}
+		dimsJSON, err := dims.Marshal()
+		if err != nil {
+			multilog.Critical("Could not marshal dimensions in heartbeat handler: %s", err)
+		}
+
+		_, err = reporter.RuntimeUsage(context.Background(), pidNum, exec, dimsJSON)
+		if err != nil {
+			multilog.Critical("Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
 		}
 
 		return "", true

@@ -3,7 +3,6 @@ package resolver
 import (
 	"encoding/json"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
@@ -11,11 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
-	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/poller"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -172,35 +168,6 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
-}
-
-// ReportRuntimeUsage is an alternate version of RuntimeUsage which meets the
-// needs of the ipc package.
-func (r *Resolver) ReportRuntimeUsage(ctx context.Context, pid, exec, namespace, commit, headless string) error {
-	dims := &dimensions.Values{
-		Trigger:          p.StrP(target.TriggerExec.String()),
-		Headless:         &headless,
-		CommitID:         &commit,
-		ProjectNameSpace: &namespace,
-		InstanceID:       p.StrP(instanceid.Make()),
-	}
-
-	pidNum, err := strconv.Atoi(pid)
-	if err != nil {
-		return errs.Wrap(err, "Could not convert pid string to int in proxied runtime-usage report.")
-	}
-
-	dimsJSON, err := dims.Marshal()
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal dimensions in proxied runtime-usage report.")
-	}
-
-	_, err = r.RuntimeUsage(ctx, pidNum, exec, dimsJSON)
-	if err != nil {
-		return errs.Wrap(err, "Could not proxy runtime-usage report.")
-	}
-
-	return nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
