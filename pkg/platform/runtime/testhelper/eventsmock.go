@@ -6,17 +6,18 @@ import (
 )
 
 type MockProgressOutput struct {
-	BuildStartedCalled        bool
-	BuildCompletedCalled      bool
-	BuildTotal                int64
-	BuildCurrent              int
-	InstallationStartedCalled int
-	InstallationTotal         int64
-	InstallationCurrent       int
-	ArtifactStartedCalled     int
-	ArtifactIncrementCalled   int
-	ArtifactCompletedCalled   int
-	ArtifactFailureCalled     int
+	BuildStartedCalled          bool
+	BuildCompletedCalled        bool
+	BuildTotal                  int64
+	BuildCurrent                int
+	InstallationStartedCalled   bool
+	InstallationCompletedCalled bool
+	InstallationTotal           int64
+	InstallationCurrent         int
+	ArtifactStartedCalled       int
+	ArtifactIncrementCalled     int
+	ArtifactCompletedCalled     int
+	ArtifactFailureCalled       int
 }
 
 func (mpo *MockProgressOutput) BuildStarted(total int64) error {
@@ -44,12 +45,16 @@ func (mpo *MockProgressOutput) BuildArtifactProgress(artifactID artifact.Artifac
 }
 
 func (mpo *MockProgressOutput) InstallationStarted(total int64) error {
-	mpo.InstallationStartedCalled++
+	mpo.InstallationStartedCalled = true
 	mpo.InstallationTotal = total
 	return nil
 }
 func (mpo *MockProgressOutput) InstallationStatusUpdate(current, total int64) error {
 	mpo.InstallationCurrent = int(current)
+	return nil
+}
+func (mpo *MockProgressOutput) InstallationCompleted(bool) error {
+	mpo.InstallationCompletedCalled = true
 	return nil
 }
 func (mpo *MockProgressOutput) ArtifactStepStarted(artifact.ArtifactID, string, string, int64, bool) error {

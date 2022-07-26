@@ -17,7 +17,6 @@ type BuildLogFile struct {
 	logFile *os.File
 }
 
-
 // verboseLogging is true if the user provided an environment variable for it
 var verboseLogging = os.Getenv(constants.LogBuildVerboseEnvVarName) == "true"
 
@@ -107,6 +106,15 @@ func (bl *BuildLogFile) InstallationStarted(totalArtifacts int64) error {
 // InstallationStatusUpdate writes an Installation status update with the current and total number of packages to be installed
 func (bl *BuildLogFile) InstallationStatusUpdate(current, total int64) error {
 	return bl.writeMessage("== Installation status: (%d/%d) ==", current, total)
+}
+
+// InstallationCompleted writes a message that the installation has completed
+func (bl *BuildLogFile) InstallationCompleted(withFailures bool) error {
+	outcome := "SUCCESSFULLY"
+	if withFailures {
+		outcome = "with FAILURES"
+	}
+	return bl.writeMessage("== Installation completed %s. ==", outcome)
 }
 
 // ArtifactStepStarted writes a message that artifact update step has begun (download, unpack, install)
