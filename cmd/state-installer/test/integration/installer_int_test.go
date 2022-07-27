@@ -162,6 +162,9 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"
+		if runtime.GOOS == "darwin" {
+			fname = ".bash_profile"
+		}
 		if strings.Contains(os.Getenv("SHELL"), "zsh") {
 			fname = ".zshrc"
 		}
