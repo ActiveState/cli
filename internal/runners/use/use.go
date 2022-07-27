@@ -3,7 +3,6 @@ package use
 import (
 	"path/filepath"
 	rt "runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -27,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -77,18 +75,22 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectDir := u.getLocalProjectPath(params.Namespace)
-	if projectDir == "" {
-		if params.Namespace.Owner == "" {
-			err := locale.NewInputError("err_use_project_not_checked_out", "", params.Namespace.Project, projectDir)
-			errs.AddTips(err, locale.Tl("use_checkout_first", "", params.Namespace.Project))
-			return err
+	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
+	if err != nil {
+		if !project.IsLocalProjectDoesNotExistError(err) {
+			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
+		if params.Namespace.Owner == "" {
+			// Note: use existing localized error message to workaround DX-740 for integration tests.
+			return locale.WrapInputError(err, "err_use_project_does_not_exist", err.Error())
+		}
+
+		var projectDir string
 
 		if params.PreferredPath == "" {
 			projectsDir, err := storage.ProjectsDir(u.config)
 			if err != nil {
-				return locale.WrapError(err, "err_use_cannot_determine_projects_dir", "")
+				return locale.WrapError(err, "err_cannot_determine_projects_dir")
 			}
 			projectDir = filepath.Join(projectsDir, params.Namespace.Project)
 		} else {
@@ -97,18 +99,17 @@ func (u *Use) Run(params *Params) error {
 
 		logging.Debug("Checking out %s to %s", params.Namespace.String(), projectDir)
 
-		var err error
 		projectDir, err = u.checkout.Run(params.Namespace, params.Branch, projectDir)
 		if err != nil {
-			return locale.WrapError(err, "err_use_checkout_project", params.Namespace.String())
+			return locale.WrapError(err, "err_use_checkout_project", "", params.Namespace.String())
+		}
+
+		proj, err = project.FromPath(projectDir)
+		if err != nil {
+			return locale.WrapError(err, "err_use_project_frompath")
 		}
 	} else {
-		logging.Debug("Using an already checked out project: %s", projectDir)
-	}
-
-	proj, err := project.FromPath(projectDir)
-	if err != nil {
-		return locale.WrapError(err, "err_use_project_frompath")
+		logging.Debug("Using an already checked out project: %s", proj.Path())
 	}
 
 	if params.Branch != "" && proj.BranchName() != params.Branch {
@@ -151,23 +152,4 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	return nil
-}
-
-func (u *Use) getLocalProjectPath(ns *project.Namespaced) string {
-	for namespace, paths := range projectfile.GetProjectMapping(u.config) {
-		if len(paths) == 0 {
-			continue
-		}
-		var namespaced project.Namespaced
-		err := namespaced.Set(namespace)
-		if err != nil {
-			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
-			continue
-		}
-		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
-			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
-			return paths[0] // just pick the first one
-		}
-	}
-	return ""
 }

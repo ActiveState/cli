@@ -1,4 +1,4 @@
-package activate
+package activation
 
 import (
 	"fmt"
@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	rt "runtime"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileevents"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,12 +16,20 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/sighandler"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironment.VirtualEnvironment) error {
+func ActivateAndWait(
+	proj *project.Project,
+	venv *virtualenvironment.VirtualEnvironment,
+	out output.Outputer,
+	ss subshell.SubShell,
+	cfg *config.Instance,
+	an analytics.Dispatcher) error {
+
 	logging.Debug("Activating and waiting")
 
 	err := os.Chdir(filepath.Dir(proj.Source().Path()))
@@ -39,11 +49,11 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 
 	// If we're not using plain output then we should just dump the environment information
-	if r.out.Type() != output.PlainFormatName && r.out.Type() != output.SimpleFormatName {
-		if r.out.Type() == output.EditorV0FormatName {
+	if out.Type() != output.PlainFormatName && out.Type() != output.SimpleFormatName {
+		if out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}
-		r.out.Print(ve)
+		out.Print(ve)
 		return nil
 	}
 
@@ -58,12 +68,12 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 		}
 	}()
 
-	r.subshell.SetEnv(ve)
-	if err := r.subshell.Activate(proj, r.config, r.out); err != nil {
+	ss.SetEnv(ve)
+	if err := ss.Activate(proj, cfg, out); err != nil {
 		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}
 
-	a, err := process.NewActivation(r.config, os.Getpid())
+	a, err := process.NewActivation(cfg, os.Getpid())
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_mark_process", "Could not mark process as activated.")
 	}
@@ -75,9 +85,9 @@ func (r *Activate) activateAndWait(proj *project.Project, venv *virtualenvironme
 	}
 	defer fe.Close()
 
-	r.analytics.Event(anaConst.CatActivationFlow, "before-subshell")
+	an.Event(anaConst.CatActivationFlow, "before-subshell")
 
-	err = <-r.subshell.Errors()
+	err = <-ss.Errors()
 	if err != nil {
 		return locale.WrapError(err, "error_in_active_subshell", "Failure encountered in active subshell")
 	}

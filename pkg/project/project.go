@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -356,6 +357,44 @@ func FromExactPath(path string) (*Project, error) {
 	}
 
 	return project, nil
+}
+
+// LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
+type LocalProjectDoesNotExist struct{ error }
+
+// IsLocalProjectDoesNotExistError checks if the error is a LocalProjectDoesNotExist.
+func IsLocalProjectDoesNotExistError(err error) bool {
+	return errs.Matches(err, &LocalProjectDoesNotExist{})
+}
+
+// FromNamespaceLocal returns a local project (if any) that matches the given namespace.
+// This is primarily used by `state use` in order to fetch a project to switch to if it already
+// exists locally. The namespace may omit the owner.
+func FromNamespaceLocal(ns *Namespaced, cfg projectfile.ConfigGetter) (*Project, error) {
+	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
+		if len(paths) == 0 {
+			continue
+		}
+		var namespaced Namespaced
+		err := namespaced.Set(namespace)
+		if err != nil {
+			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
+			continue
+		}
+		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
+			return FromPath(paths[0]) // just pick the first one
+		}
+	}
+
+	projectsDir, err := storage.ProjectsDir(cfg)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_cannot_determine_projects_dir")
+	}
+	projectDir := filepath.Join(projectsDir, ns.Project)
+	return nil, &LocalProjectDoesNotExist{
+		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project, projectDir),
+	}
 }
 
 // Platform covers the platform structure
