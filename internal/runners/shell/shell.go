@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -34,6 +35,7 @@ type primeable interface {
 
 type Shell struct {
 	auth      *authentication.Auth
+	prompt    prompt.Prompter
 	out       output.Outputer
 	svcModel  *model.SvcModel
 	config    *config.Instance
@@ -44,6 +46,7 @@ type Shell struct {
 func New(prime primeable) *Shell {
 	return &Shell{
 		prime.Auth(),
+		prime.Prompt(),
 		prime.Output(),
 		prime.SvcModel(),
 		prime.Config(),
@@ -55,7 +58,7 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
+	proj, err := project.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
 		if project.IsLocalProjectDoesNotExistError(err) {
 			// Note: use existing localized error message to workaround DX-740 for integration tests.
