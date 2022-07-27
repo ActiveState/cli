@@ -32,6 +32,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
 	cp.ExpectExitCode(0)
+	time.Sleep(time.Second * 11)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
