@@ -22,6 +22,9 @@ var rcFileName = ".bashrc"
 
 func init() {
 	escaper = osutils.NewBashEscaper()
+
+	// On macOS all terminal windows run login shells, this means that
+	// .bashrc can be ignored so we instead use .bash_profile
 	if runtime.GOOS == "darwin" {
 		rcFileName = ".bash_profile"
 	}
