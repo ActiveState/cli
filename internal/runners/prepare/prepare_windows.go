@@ -108,8 +108,8 @@ func setStateProtocol() error {
 		if err != nil {
 			return locale.WrapError(err, "err_prepare_username", "Could not get current username")
 		}
-		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolKey)
-		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolCommandKey)
+		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolKey)
+		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolCommandKey)
 	}
 
 	protocolKey, _, err := createFunc(protocolKeyPath)
