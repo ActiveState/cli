@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -19,23 +18,17 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	projectsDir := filepath.Join(ts.Dirs.Base, "projects")
-
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"ACTIVESTATE_CLI_PROJECTSDIR="+projectsDir),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python3")
+	cp.ExpectExitCode(0)
 
 	args := []string{"Python3", "ActiveState-CLI/Python3"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("shell", arg),
-			e2e.AppendEnv(
-				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-				"ACTIVESTATE_CLI_PROJECTSDIR="+projectsDir),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 		cp.Expect("Activated")
 		cp.WaitForInput()
@@ -51,11 +44,9 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("shell", arg),
-			e2e.AppendEnv(
-				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-				"ACTIVESTATE_CLI_PROJECTSDIR="+projectsDir),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
-		cp.Expect("The project Python-3.9 does not exist")
+		cp.Expect("The project Python-3.9 is not checked out")
 		cp.ExpectExitCode(1)
 	}
 }
