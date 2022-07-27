@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/net/context"
@@ -22,7 +22,7 @@ var SvcRequestMaxTime = 50 * time.Millisecond
 var SvcStopMaxTime = 50 * time.Millisecond
 
 type PerformanceSvcIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *PerformanceIntegrationTestSuite) TearDownSuite() {
@@ -32,7 +32,7 @@ func (suite *PerformanceIntegrationTestSuite) TearDownSuite() {
 }
 
 func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
-	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.OnlyRunForTags(testsuite.TagPerformance)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

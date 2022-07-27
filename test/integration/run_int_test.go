@@ -17,12 +17,12 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type RunIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonVersion int) {
@@ -100,7 +100,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.Conso
 // - https://www.pivotaltracker.com/story/show/167523128
 // - https://www.pivotaltracker.com/story/show/169509213
 func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
-	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Activate, tagsuite.Interrupt)
+	suite.OnlyRunForTags(testsuite.TagRun, testsuite.TagActivate, testsuite.TagInterrupt)
 	if runtime.GOOS != "linux" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events, mac CI has Golang build issues")
 	}
@@ -138,7 +138,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 		suite.T().Skip("bash subshells are not supported by our tests on windows")
 	}
 
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -157,7 +157,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 }
 
 func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
-	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagRun, testsuite.TagInterrupt, testsuite.TagCritical)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
@@ -178,7 +178,7 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 }
 
 func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
-	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Interrupt)
+	suite.OnlyRunForTags(testsuite.TagRun, testsuite.TagInterrupt)
 	if runtime.GOOS == "windows" && e2e.RunningOnCI() {
 		suite.T().Skip("Windows CI does not support ctrl-c events")
 	}
@@ -203,7 +203,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Help() {
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts, 3)
@@ -215,7 +215,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Help() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
-	suite.OnlyRunForTags(tagsuite.Run, tagsuite.ExitCode)
+	suite.OnlyRunForTags(testsuite.TagRun, testsuite.TagExitCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts, 3)
@@ -225,7 +225,7 @@ func (suite *RunIntegrationTestSuite) TestRun_ExitCode() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -247,7 +247,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -259,7 +259,7 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -286,7 +286,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 		suite.T().Skip("Testing exec of Perl with variables is not applicable on Windows")
 	}
 
-	suite.OnlyRunForTags(tagsuite.Run)
+	suite.OnlyRunForTags(testsuite.TagRun)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

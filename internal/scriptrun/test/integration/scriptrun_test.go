@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/scriptrun"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +39,7 @@ func init() {
 }
 
 type ScriptRunSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func TestScriptRunSuite(t *testing.T) {
@@ -47,7 +47,7 @@ func TestScriptRunSuite(t *testing.T) {
 }
 
 func (suite *ScriptRunSuite) TestRunStandaloneCommand() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	pjfile := &projectfile.Project{}
@@ -85,7 +85,7 @@ scripts:
 }
 
 func (suite *ScriptRunSuite) TestEnvIsSet() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	if runtime.GOOS == "windows" {
@@ -128,7 +128,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 }
 
 func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	pjfile := &projectfile.Project{}
@@ -169,7 +169,7 @@ scripts:
 }
 
 func (suite *ScriptRunSuite) TestRunMissingScript() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	pjfile := &projectfile.Project{}
@@ -196,7 +196,7 @@ scripts:
 }
 
 func (suite *ScriptRunSuite) TestRunUnknownCommand() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	pjfile := &projectfile.Project{}
@@ -224,7 +224,7 @@ scripts:
 }
 
 func (suite *ScriptRunSuite) TestRunActivatedCommand() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	// Prepare an empty activated environment.
@@ -277,7 +277,7 @@ scripts:
 }
 
 func (suite *ScriptRunSuite) TestPathProvidesLang() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	temp, err := ioutil.TempDir("", filepath.Base(t.Name()))
@@ -383,7 +383,7 @@ func assertExecCommandFails(t *testing.T, tmplCmdName, cmdName string, cmdArgs [
 }
 
 func (suite *ScriptRunSuite) TestArgs() {
-	suite.OnlyRunForTags(tagsuite.Scripts)
+	suite.OnlyRunForTags(testsuite.TagScripts)
 	t := suite.T()
 
 	assertExecCommandFails(t, "junk", "", []string{})

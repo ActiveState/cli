@@ -10,11 +10,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagActivate, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -24,12 +24,12 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_EditorV0() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagKomodo)
 	suite.authOutput("editor.v0")
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagAuth, testsuite.TagKomodo)
 	user := userJSON{
 		Username: "cli-integration-tests",
 		URLName:  "cli-integration-tests",
@@ -52,7 +52,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Export, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagExport, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,7 +64,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_EditorV0() {
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Fork, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagFork, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
@@ -95,7 +95,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagInit, testsuite.TagKomodo)
 	suite.runInitTest(
 		true,
 		sampleYAMLEditor,
@@ -105,7 +105,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 }
 
 func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Organizations, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagOrganizations, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -132,7 +132,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Pull, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagPull, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -155,7 +155,7 @@ func (suite *PullIntegrationTestSuite) TestPull_EditorV0() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagPush, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username := ts.CreateNewUser()
@@ -175,7 +175,7 @@ func (suite *PushIntegrationTestSuite) TestPush_EditorV0() {
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Run, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagRun, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.createProjectFile(ts, 3)
@@ -190,7 +190,7 @@ func (suite *RunIntegrationTestSuite) TestRun_EditorV0() {
 }
 
 func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Scripts, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagScripts, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.setupConfigFile(ts)
@@ -201,7 +201,7 @@ func (suite *ScriptsIntegrationTestSuite) TestScripts_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagSecrets, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -228,7 +228,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecretsOutput_EditorV0() {
 }
 
 func (suite *SecretsIntegrationTestSuite) TestSecretsGet_EditorV0() {
-	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.Komodo)
+	suite.OnlyRunForTags(testsuite.TagSecrets, testsuite.TagKomodo)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

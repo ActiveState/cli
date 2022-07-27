@@ -13,16 +13,16 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type UseIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *UseIntegrationTestSuite) TestUse() {
-	suite.OnlyRunForTags(tagsuite.Use)
+	suite.OnlyRunForTags(testsuite.TagUse)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -121,7 +121,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 }
 
 func (suite *UseIntegrationTestSuite) TestUseWithFlags() {
-	suite.OnlyRunForTags(tagsuite.Use)
+	suite.OnlyRunForTags(testsuite.TagUse)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -181,7 +181,7 @@ func (suite *UseIntegrationTestSuite) TestUseWithFlags() {
 }
 
 func (suite *UseIntegrationTestSuite) TestReset() {
-	suite.OnlyRunForTags(tagsuite.Use)
+	suite.OnlyRunForTags(testsuite.TagUse)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

@@ -8,15 +8,15 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 )
 
 type BundleIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_listingSimple() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -29,7 +29,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_listingSimple() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_project() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -40,7 +40,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_name() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -53,7 +53,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_name() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_project_name() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -64,7 +64,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_name() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_project_name_noData() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -74,7 +74,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_name_noData() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -84,7 +84,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -103,7 +103,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTerm() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -121,7 +121,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTerm() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -132,7 +132,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -143,7 +143,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -154,7 +154,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
@@ -165,7 +165,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(testsuite.TagBundle)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return

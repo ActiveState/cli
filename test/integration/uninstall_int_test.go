@@ -10,16 +10,16 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type UninstallIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
-	suite.OnlyRunForTags(tagsuite.Uninstall, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagUninstall, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 

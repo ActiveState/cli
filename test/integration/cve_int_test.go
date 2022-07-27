@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type CveIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *CveIntegrationTestSuite) TestCveSummary() {
-	suite.OnlyRunForTags(tagsuite.Cve)
+	suite.OnlyRunForTags(testsuite.TagCve)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -34,7 +34,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 }
 
 func (suite *CveIntegrationTestSuite) TestCveReport() {
-	suite.OnlyRunForTags(tagsuite.Cve)
+	suite.OnlyRunForTags(testsuite.TagCve)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -65,7 +65,7 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 	// If you need to run this test comment the next line and provide a commit that has no CVE's
 	suite.T().Skip("Skipping test because due to the nature of CVE's it's impossible to nail down a commit without CVE's.")
-	suite.OnlyRunForTags(tagsuite.Cve)
+	suite.OnlyRunForTags(testsuite.TagCve)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -84,7 +84,7 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 }
 
 func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
-	suite.OnlyRunForTags(tagsuite.Cve)
+	suite.OnlyRunForTags(testsuite.TagCve)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

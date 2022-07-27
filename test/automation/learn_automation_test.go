@@ -1,18 +1,19 @@
 package automation
 
 import (
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type LearnAutomationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *LearnAutomationTestSuite) TestLearn_UrlProvided() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

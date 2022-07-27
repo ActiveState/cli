@@ -15,14 +15,14 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
 
 type AnalyticsIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 	eventsfile string
 }
 
@@ -31,7 +31,7 @@ type AnalyticsIntegrationTestSuite struct {
 // state-svc. For that reason we tend to assert "greater than" rather than equals, because checking for equals introduces
 // race conditions into the testing suite (not the state tool itself).
 func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
-	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagAnalytics, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -230,7 +230,7 @@ func (suite *AnalyticsIntegrationTestSuite) parseEvents(s *e2e.Session) []report
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestShim() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
+	suite.OnlyRunForTags(testsuite.TagAnalytics)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -278,7 +278,7 @@ scripts:
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestSend() {
-	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagAnalytics, testsuite.TagCritical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -312,7 +312,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 }
 
 func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
-	suite.OnlyRunForTags(tagsuite.Analytics)
+	suite.OnlyRunForTags(testsuite.TagAnalytics)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()

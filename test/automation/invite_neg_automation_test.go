@@ -1,20 +1,21 @@
 package automation
 
 import (
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type InviteNegativeAutomationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotInProject() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -31,7 +32,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotInProject() {
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -46,7 +47,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -61,7 +62,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_MissingArg() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -94,7 +95,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_MissingArg() {
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_Public() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -125,7 +126,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_Private() {
-	suite.OnlyRunForTags(tagsuite.Automation)
+	suite.OnlyRunForTags(testsuite.TagAutomation)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

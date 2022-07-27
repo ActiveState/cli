@@ -5,16 +5,16 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/stretchr/testify/suite"
 )
 
 type ConfigIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 }
 
 func (suite *ConfigIntegrationTestSuite) TestConfig() {
-	suite.OnlyRunForTags(tagsuite.Config)
+	suite.OnlyRunForTags(testsuite.TagConfig)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

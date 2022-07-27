@@ -15,18 +15,18 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/testhelpers/testsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/suite"
 )
 
 type InstallerIntegrationTestSuite struct {
-	tagsuite.Suite
+	testsuite.Suite
 	installerExe string
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
-	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagInstaller, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -93,7 +93,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	if runtime.GOOS != "windows" {
 		suite.T().Skip("Only Windows has incompatibility logic")
 	}
-	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Compatibility, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagInstaller, testsuite.TagCompatibility, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -114,7 +114,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
-	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagInstaller, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -133,7 +133,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
-	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	suite.OnlyRunForTags(testsuite.TagInstaller, testsuite.TagCritical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
