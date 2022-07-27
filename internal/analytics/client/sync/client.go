@@ -104,7 +104,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
 		Flags:         p.StrP(dimensions.CalculateFlags()),
-		InstanceID:    p.StrP(instanceid.AppID()),
+		InstanceID:    p.StrP(instanceid.ID()),
 		Command:       p.StrP(osutils.ExecutableName()),
 		Sequence:      p.IntP(0),
 	}
@@ -192,7 +192,6 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
 	}
-
 
 	a.eventWaitGroup.Add(1)
 	// We do not wait for the events to be processed, just scheduling them

@@ -11,16 +11,16 @@ func Make() string {
 }
 
 var (
-	appID string
-	mu    sync.Mutex
+	id string
+	mu sync.Mutex
 )
 
-func AppID() string {
+func ID() string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if appID == "" {
-		appID = Make()
+	if id == "" {
+		id = Make()
 	}
-	return appID
+	return id
 }
