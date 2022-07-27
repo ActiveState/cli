@@ -22,6 +22,9 @@ var rcFileName = ".bashrc"
 
 func init() {
 	escaper = osutils.NewBashEscaper()
+	if runtime.GOOS == "darwin" {
+		rcFileName = ".bash_profile"
+	}
 }
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
