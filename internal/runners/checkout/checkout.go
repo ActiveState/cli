@@ -86,10 +86,6 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	if params.Branch != "" && proj.BranchName() != params.Branch {
-		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
-	}
-
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
 	rti, err := runtime.New(projectTarget, u.analytics, u.svcModel)
 	if err != nil {
