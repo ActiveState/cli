@@ -15,7 +15,9 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
@@ -46,6 +48,7 @@ type primeable interface {
 
 type Use struct {
 	auth      *authentication.Auth
+	prompt    prompt.Prompter
 	out       output.Outputer
 	checkout  *checkout.Checkout
 	svcModel  *model.SvcModel
@@ -57,6 +60,7 @@ type Use struct {
 func NewUse(prime primeable) *Use {
 	return &Use{
 		prime.Auth(),
+		prime.Prompt(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
 		prime.SvcModel(),
@@ -75,9 +79,9 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	proj, err := project.FromNamespaceLocal(params.Namespace, u.config)
+	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if !project.IsLocalProjectDoesNotExistError(err) {
+		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
 		if params.Namespace.Owner == "" {
