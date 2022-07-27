@@ -30,14 +30,14 @@ func (suite *EnvironmentTestSuite) TestMergeVariables() {
 	ev2 := envdef.EnvironmentVariable{}
 	err = json.Unmarshal([]byte(`{
 		"env_name": "V",
-		"values": ["c", "d"]
+		"values": ["b", "c"]
 		}`), &ev2)
 	require.NoError(suite.T(), err)
 
 	expected := &envdef.EnvironmentVariable{}
 	err = json.Unmarshal([]byte(`{
 		"env_name": "V",
-		"values": ["c", "d", "a", "b"],
+		"values": ["b", "c", "a"],
 		"join": "prepend"
 		}`), expected)
 	require.NoError(suite.T(), err)
