@@ -30,9 +30,6 @@ const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 // CacheEnvVarName is the env var used to override the cache dir that the State Tool uses
 const CacheEnvVarName = "ACTIVESTATE_CLI_CACHEDIR"
 
-// ProjectsEnvVarName is the env var used to override the projects dir that `state use` checks out projects to
-const ProjectsEnvVarName = "ACTIVESTATE_CLI_PROJECTSDIR"
-
 // LogEnvVarName is the env var used to override the log file path
 const LogEnvVarName = "ACTIVESTATE_CLI_LOGFILE"
 
@@ -441,10 +438,3 @@ const PipShim = "pip"
 
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
-
-// ProjectsDirName is the default name in the user's home directory where `state use` checks out projects to.
-const ProjectsDirName = "Projects"
-
-// ProjectsDirConfigKey is the config key for where `state use` checks out projects to.
-// If this is unset, the default directory is ~/<ProjectsDirName> (see above).
-const ProjectsDirConfigKey = "projects.directory"
