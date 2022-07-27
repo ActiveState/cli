@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -63,7 +64,7 @@ func (f *Executor) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
+func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -81,6 +82,7 @@ func (f *Executor) Update(sockPath string, env map[string]string, exes envdef.Ex
 		return errs.Wrap(err, "Could not clean up old executors")
 	}
 
+	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	for _, exe := range exes {
 		if err := f.createExecutor(sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)

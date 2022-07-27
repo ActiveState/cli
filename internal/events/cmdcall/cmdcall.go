@@ -34,14 +34,14 @@ type CmdCall struct {
 }
 
 // New returns a prepared pointer to an instance of CmdCall.
-func New(p primeable, sockPath, cmdList string) *CmdCall {
+func New(p primeable, cmdList string) *CmdCall {
 	return &CmdCall{
 		out:       p.Output(),
 		proj:      p.Project(),
 		subshell:  p.Subshell(),
 		cmdList:   cmdList,
 		p:         p,
-		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config(), p.Analytics(), p.SvcModel(), sockPath),
+		scriptrun: scriptrun.New(p.Auth(), p.Output(), p.Subshell(), p.Project(), p.Config(), p.Analytics(), p.SvcModel()),
 	}
 }
 

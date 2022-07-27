@@ -60,7 +60,7 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, sockPath string, runtime *runtime.Runtime, proj *project.Project) error {
+func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
 	logging.Debug("Setting up globaldefault")
 	if err := Prepare(cfg, subshell); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
@@ -78,7 +78,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, s
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	fw := executor.NewWithBinPath(target, BinDir())
-	if err := fw.Update(sockPath, env, exes); err != nil {
+	if err := fw.Update(env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

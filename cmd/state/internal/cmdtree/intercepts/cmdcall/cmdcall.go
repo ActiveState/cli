@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events/cmdcall"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -25,8 +24,7 @@ func New(p *primer.Values) *CmdCall {
 // and then handles the after command logic.
 func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-		cc := cmdcall.New(c.primer, sockPath, cmd.UseFull())
+		cc := cmdcall.New(c.primer, cmd.UseFull())
 
 		if err := cc.Run(project.BeforeCmd); err != nil {
 			return errs.Wrap(err, "before-command event run failure")

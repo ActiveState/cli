@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -45,8 +44,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		}
 
-		sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-		err := rt.Update(auth, rtMessages, sockPath)
+		err := rt.Update(auth, rtMessages)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

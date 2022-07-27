@@ -162,7 +162,7 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) Update(sockPath string) error {
+func (s *Setup) Update() error {
 	// Update all the runtime artifacts
 	artifacts, err := s.updateArtifacts()
 	if err != nil {
@@ -170,7 +170,7 @@ func (s *Setup) Update(sockPath string) error {
 	}
 
 	// Update executors
-	if err := s.updateExecutors(sockPath, artifacts); err != nil {
+	if err := s.updateExecutors(artifacts); err != nil {
 		return errs.Wrap(err, "Failed to update executors")
 	}
 
@@ -245,7 +245,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	return artifacts, nil
 }
 
-func (s *Setup) updateExecutors(sockPath string, artifacts []artifact.ArtifactID) error {
+func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	execPath := ExecDir(s.target.Dir())
 	if err := fileutils.MkdirUnlessExists(execPath); err != nil {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
@@ -267,7 +267,7 @@ func (s *Setup) updateExecutors(sockPath string, artifacts []artifact.ArtifactID
 	}
 
 	exec := executor.NewWithBinPath(s.target, execPath)
-	if err := exec.Update(sockPath, env, exePaths); err != nil {
+	if err := exec.Update(env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 

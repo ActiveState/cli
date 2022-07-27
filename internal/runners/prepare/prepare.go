@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -75,8 +74,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
 
-	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, sockPath, run, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the default executors.")
 	}
 

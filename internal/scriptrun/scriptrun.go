@@ -35,14 +35,13 @@ type ScriptRun struct {
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	sockPath  string
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel, sockPath string) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
@@ -51,7 +50,6 @@ func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		cfg,
 		analytics,
 		svcModel,
-		sockPath,
 
 		false,
 
@@ -78,7 +76,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
-		if err := rt.Update(s.auth, eh, s.sockPath); err != nil {
+		if err := rt.Update(s.auth, eh); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
