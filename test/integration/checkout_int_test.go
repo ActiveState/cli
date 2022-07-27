@@ -62,9 +62,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
-	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Work) // Windows CI has issues with wrapping long paths
-	}
+	cp.ExpectLongString(ts.Dirs.Work)
 	suite.Assert().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out to the current working directory")
 
 	// Test --path for checkout out to a generic path.
