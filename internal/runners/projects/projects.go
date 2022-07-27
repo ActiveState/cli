@@ -99,6 +99,9 @@ func (r *Projects) Run(params *Params) error {
 		})
 	}
 	sort.SliceStable(projects, func(i, j int) bool {
+		if projects[i].Organization == projects[j].Organization {
+			return projects[i].Name < projects[j].Name
+		}
 		return projects[i].Organization < projects[j].Organization
 	})
 
