@@ -93,7 +93,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	logging.Debug("Writing to %s: %s", fpath, completionScript)
 	err := fileutils.WriteFile(fpath, []byte(completionScript))
 	if err != nil {
-		return errs.Wrap(err, "Could not write completions script")
+		logging.Debug("Could not write completions script '%s', likely due to non-admin privileges", fpath)
 	}
 
 	return nil
