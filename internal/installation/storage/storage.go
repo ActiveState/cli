@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -147,4 +148,26 @@ func InstallSource() (string, error) {
 type configReader interface {
 	IsSet(string) bool
 	GetString(string) string
+}
+
+// ProjectsDir returns the directory used by `state use` to checkout projects to.
+// Note: the returned directory may not yet exist!
+// By default, it is ~/Projects.
+func ProjectsDir(cfg configReader) (string, error) {
+	dir, envSet := os.LookupEnv(constants.ProjectsEnvVarName)
+	if envSet {
+		return dir, nil
+	}
+
+	if cfg != nil && cfg.IsSet(constants.ProjectsDirConfigKey) {
+		return cfg.GetString(constants.ProjectsDirConfigKey), nil
+	}
+
+	// Note: cannot use fileutils.HomeDir() due to import cycle
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(usr.HomeDir, constants.ProjectsDirName), nil
 }

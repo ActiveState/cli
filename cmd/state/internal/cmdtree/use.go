@@ -2,6 +2,7 @@ package cmdtree
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/use"
@@ -13,12 +14,29 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		Namespace: &project.Namespaced{AllowOmitOwner: true},
 	}
 
+	projectsDir, err := storage.ProjectsDir(prime.Config())
+	if err != nil {
+		projectsDir = "Projects"
+	}
+
 	cmd := captain.NewCommand(
 		"use",
 		"",
 		locale.Tl("use_description", "Use the given project runtime as the default for your system"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "path",
+				Shorthand:   "",
+				Description: locale.Tl("flag_state_use_path_description", "", projectsDir),
+				Value:       &params.PreferredPath,
+			},
+			{
+				Name:        "branch",
+				Description: locale.Tl("flag_state_use_branch_description", "Defines the branch to be used"),
+				Value:       &params.Branch,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_use_namespace"),
