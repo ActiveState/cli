@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -58,9 +59,9 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	proj, err := project.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
+	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if project.IsLocalProjectDoesNotExistError(err) {
+		if runbitsProject.IsLocalProjectDoesNotExistError(err) {
 			// Note: use existing localized error message to workaround DX-740 for integration tests.
 			return locale.WrapInputError(err, "err_shell_project_does_not_exist", err.Error())
 		}
