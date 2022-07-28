@@ -23,7 +23,7 @@ func TestExecutor(t *testing.T) {
 	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Update("dummy/sock", env, exes)
+		err = fw.Update(env, exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
