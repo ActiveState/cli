@@ -1875,8 +1875,8 @@ arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
   other: The org/project namespace of the project that you wish to use, or just the project name if previously used
-warn_use_commit_id_mismatch:
-  other: "[ERROR]Warning:[/RESET] Ignoring the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID for use."
+err_use_commit_id_mismatch:
+  other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:

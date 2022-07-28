@@ -80,7 +80,7 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
-		u.out.Notice(locale.T("warn_use_commit_id_mismatch"))
+		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
