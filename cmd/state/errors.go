@@ -48,7 +48,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 				"[/RESET]", // This achieves two goals: Adding an empty line and not printing the input error in red
 				locale.ErrorMessage(errv),
 			}
-			// break // We only want the actual input error in this case
+			break // We only want the actual input error in this case
 		}
 		// If this is an input error then we just want to show the error itself without alarming the user too much
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
@@ -95,7 +95,6 @@ func unwrapError(err error) (int, error) {
 	}
 
 	_, hasMarshaller := err.(output.Marshaller)
-	fmt.Println("Has marshaller:", hasMarshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.UnwrapExitCode(err)
@@ -114,10 +113,7 @@ func unwrapError(err error) (int, error) {
 
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
 	if errors.As(err, &llerr) {
-		fmt.Println("Localized error")
 		key, base := llerr.Localization()
-		fmt.Println("Key:", key)
-		fmt.Println("Base:", base)
 		if key != "" && base != "" {
 			err = locale.WrapError(err, key, base)
 		}
