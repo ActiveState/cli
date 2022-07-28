@@ -79,6 +79,10 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_project_does_not_exist", err.Error())
 	}
 
+	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+		u.out.Notice(locale.T("warn_use_commit_id_mismatch"))
+	}
+
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
 	rti, err := runtime.New(projectTarget, u.analytics, u.svcModel)
 	if err != nil {
