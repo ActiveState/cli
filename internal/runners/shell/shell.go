@@ -62,8 +62,7 @@ func (u *Shell) Run(params *Params) error {
 	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
 		if runbitsProject.IsLocalProjectDoesNotExistError(err) {
-			// Note: use existing localized error message to workaround DX-740 for integration tests.
-			return locale.WrapInputError(err, "err_shell_project_does_not_exist", err.Error())
+			return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
 		}
 		return locale.WrapError(err, "err_shell", "Unable to run shell")
 	}
