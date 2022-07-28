@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -299,14 +301,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	if runtime.GOOS != "windows" {
-		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		// Test config file
+		cfg, err := config.New()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
-		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), targetID, "bashrc should contain our target dir")
+		subshell := subshell.New(cfg)
+		rcFile, err := subshell.RcFile()
+		suite.Require().NoError(err)
+
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
+		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
+		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "config file should contain our RC Append Stop line")
+		suite.Contains(string(bashContents), targetID, "config file should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
