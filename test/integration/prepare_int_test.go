@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
@@ -54,12 +55,14 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		homeDir, err := os.UserHomeDir()
 		suite.Require().NoError(err)
 
-		configFile := ".bashrc"
-		if runtime.GOOS == "darwin" {
-			configFile = ".bash_profile"
-		}
+		cfg, err := config.New()
+		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, configFile))
+		subshell := subshell.New(cfg)
+		rcFile, err := subshell.RcFile()
+		suite.Require().NoError(err)
+
+		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, rcFile))
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "bashrc should contain our RC Append Stop line")
 		suite.Contains(string(bashContents), target, "bashrc should contain our target dir")

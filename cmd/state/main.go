@@ -119,6 +119,14 @@ func main() {
 }
 
 func run(args []string, isInteractive bool, cfg *config.Instance, out output.Outputer) (rerr error) {
+	return errs.Wrap(
+		locale.WrapError(
+			errs.Wrap(
+				locale.WrapInputError(
+					errs.New("error 1"), "", "input error"),
+				"error 2"),
+			"", "local error"),
+		"error 3")
 	defer profile.Measure("main:run", time.Now())
 
 	// Set up profiling
