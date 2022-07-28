@@ -1877,9 +1877,9 @@ arg_state_use_namespace_description:
   other: The org/project namespace of the project that you wish to use, or just the project name if previously used
 err_cannot_determine_projects_dir:
   other: Cannot determine where to check out project to
-err_use_checkout_project:
+err_checkout_project:
   other: Could not checkout project {{.V0}}
-err_use_project_frompath:
+err_project_frompath:
   other: Could not create project files
 err_local_project_not_checked_out:
   other: "The project [ACTIONABLE]{{.V0}}[/RESET] is not checked out. Please check it out using [ACTIONABLE]`state checkout`[/RESET]"
