@@ -257,8 +257,8 @@ jobs:
             TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
             echo "Target branch: $TARGET_BRANCH"
 
-            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
-              echo "Not running because no test labels were set nor beta or release were targeted."
+            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "master" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
+              echo "Not running because no test labels were set nor master, beta or release were targeted."
               exit 0
             fi
           else
