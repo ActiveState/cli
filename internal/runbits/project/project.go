@@ -1,12 +1,10 @@
 package project
 
 import (
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -82,12 +80,7 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 		return project.FromPath(path)
 	}
 
-	projectsDir, err := storage.ProjectsDir(cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_cannot_determine_projects_dir")
-	}
-	projectDir := filepath.Join(projectsDir, ns.Project)
 	return nil, &LocalProjectDoesNotExist{
-		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project, projectDir),
+		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project),
 	}
 }

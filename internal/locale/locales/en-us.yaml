@@ -1871,8 +1871,6 @@ err_update_corrupt_install:
 
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
-flag_state_use_path_description:
-  other: Where to install the project. The default location is in the {{.V0}} directory, and it can be configured by running [ACTIONABLE]state config set projects.directory <path>[/RESET]
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
@@ -1884,7 +1882,7 @@ err_checkout_project:
 err_project_frompath:
   other: Could not create project files
 err_local_project_not_checked_out:
-  other: "The project [ACTIONABLE]{{.V0}}[/RESET] does not exist at [ACTIONABLE]{{.V1}}[/RESET]."
+  other: "The project [ACTIONABLE]{{.V0}}[/RESET] is not checked out. Please check it out using [ACTIONABLE]`state checkout`[/RESET]"
 arg_state_shell_use_namespace_description:
   other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
