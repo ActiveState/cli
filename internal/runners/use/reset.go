@@ -8,15 +8,12 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
 )
 
-type confirmAble interface {
-	Confirm(title, message string, defaultChoice *bool) (bool, error)
-}
-
 type Reset struct {
-	confirm  confirmAble
+	prompt   prompt.Prompter
 	out      output.Outputer
 	config   *config.Instance
 	subshell subshell.SubShell
@@ -38,15 +35,14 @@ func NewReset(prime primeable) *Reset {
 func (u *Reset) Run(params *ResetParams) error {
 	logging.Debug("Resetting default project runtime")
 
-	if !params.Force {
-		ok, err := u.confirm.Confirm(locale.T("confirm"),
-			locale.Tl("clean_config_confirm", "You are about to reset your default project runtime. Continue?"), new(bool))
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return nil
-		}
+	defaultChoice := params.Force
+	ok, err := u.prompt.Confirm(locale.T("confirm"),
+		locale.Tl("use_reset_confirm", "You are about to reset your default project runtime. Continue?"), &defaultChoice)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return locale.NewInputError("err_resert_aborted", "Reset aborted by user")
 	}
 
 	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)
