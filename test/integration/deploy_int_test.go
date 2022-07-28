@@ -303,7 +303,12 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		homeDir, err := os.UserHomeDir()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
+		configFile := ".bashrc"
+		if runtime.GOOS == "darwin" {
+			configFile = ".bash_profile"
+		}
+
+		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, configFile))
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
 		suite.Contains(string(bashContents), targetID, "bashrc should contain our target dir")

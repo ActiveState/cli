@@ -54,7 +54,12 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		homeDir, err := os.UserHomeDir()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
+		configFile := ".bashrc"
+		if runtime.GOOS == "darwin" {
+			configFile = ".bash_profile"
+		}
+
+		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, configFile))
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "bashrc should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "bashrc should contain our RC Append Stop line")
 		suite.Contains(string(bashContents), target, "bashrc should contain our target dir")
