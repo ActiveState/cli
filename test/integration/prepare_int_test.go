@@ -51,10 +51,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 	if runtime.GOOS != "windows" {
-		// Test bashrc
-		homeDir, err := os.UserHomeDir()
-		suite.Require().NoError(err)
-
+		// Test config file
 		cfg, err := config.New()
 		suite.Require().NoError(err)
 
@@ -62,10 +59,10 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, rcFile))
-		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "bashrc should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), target, "bashrc should contain our target dir")
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
+		suite.Contains(string(bashContents), constants.RCAppendDefaultStartLine, "config file should contain our RC Append Start line")
+		suite.Contains(string(bashContents), constants.RCAppendDefaultStopLine, "config file should contain our RC Append Stop line")
+		suite.Contains(string(bashContents), target, "config file should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()

@@ -301,10 +301,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	if runtime.GOOS != "windows" {
-		// Test bashrc
-		homeDir, err := os.UserHomeDir()
-		suite.Require().NoError(err)
-
+		// Test config file
 		cfg, err := config.New()
 		suite.Require().NoError(err)
 
@@ -312,10 +309,10 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, rcFile))
-		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), targetID, "bashrc should contain our target dir")
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
+		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
+		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "config file should contain our RC Append Stop line")
+		suite.Contains(string(bashContents), targetID, "config file should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
