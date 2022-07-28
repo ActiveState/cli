@@ -81,6 +81,6 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 	}
 
 	return nil, &LocalProjectDoesNotExist{
-		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project, projectDir),
+		locale.NewInputError("err_local_project_not_checked_out", "", ns.Project),
 	}
 }
