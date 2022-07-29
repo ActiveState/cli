@@ -72,6 +72,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
 
 	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	asy := filepath.Join(python3Dir, constants.ConfigFileName)
