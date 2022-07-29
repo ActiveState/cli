@@ -42,7 +42,7 @@ func (u *Reset) Run(params *ResetParams) error {
 		return err
 	}
 	if !ok {
-		return locale.NewInputError("err_resert_aborted", "Reset aborted by user")
+		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
 	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)
