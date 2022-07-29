@@ -140,7 +140,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	checkoutCmd := newCheckoutCommand(prime)
 
 	useCmd := newUseCommand(prime)
-	useCmd.AddChildren(newUseResetCommand(prime))
+	useCmd.AddChildren(newUseResetCommand(prime, globals))
 
 	shellCmd := newShellCommand(prime)
 
