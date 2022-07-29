@@ -132,14 +132,18 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("Continue?")
-	cp.SendLine("y")
+	cp.SendLine("n")
+	cp.Expect("Reset aborted by user")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
 	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-f"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-n"))
 	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
 
