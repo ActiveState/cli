@@ -26,18 +26,22 @@ type SvcIntegrationTestSuite struct {
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartStop() {
+	// https://activestatef.atlassian.net/browse/DX-1078
+	suite.T().SkipNow()
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // wait for service to start up
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
