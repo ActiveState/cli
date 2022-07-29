@@ -1372,8 +1372,19 @@ func CleanProjectMapping(cfg ConfigGetter) {
 			for namespace, paths := range projects {
 				var removals []int
 				for i, path := range paths {
-					if !fileutils.DirExists(path) {
+					configFile := filepath.Join(path, constants.ConfigFileName)
+					if !fileutils.DirExists(path) || !fileutils.FileExists(configFile) {
 						removals = append(removals, i)
+						continue
+					}
+					// Only remove the project if the activestate.yaml is parseable and there is a namespace
+					// mismatch.
+					// (We do not want to punish anyone for a syntax error when manually editing the file.)
+					if proj, err := parse(configFile); err == nil && proj.Init() == nil {
+						projNamespace := fmt.Sprintf("%s/%s", proj.Owner(), proj.Name())
+						if namespace != projNamespace {
+							removals = append(removals, i)
+						}
 					}
 				}
 
