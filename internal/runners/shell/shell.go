@@ -68,6 +68,10 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell", "Unable to run shell")
 	}
 
+	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+		return locale.NewInputError("err_shell_commit_id_mismatch")
+	}
+
 	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerShell), u.analytics, u.svcModel)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_load_runtime", "This project's runtime is not initialized.")
