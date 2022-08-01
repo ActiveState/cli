@@ -72,8 +72,6 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, tar
 		dirPart := filepath.Join(parentDirName, workDirName, "target")
 		cp.Expect(dirPart) // expect bin dir
 	}
-	cp.Expect("Deployment Information", 60*time.Second)
-	cp.Expect(targetID) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
 	} else {
@@ -309,7 +307,12 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
-		suite.Contains(string(out), targetID.String(), "Windows user PATH should contain our target dir")
+		// Windows short names may be used (e.g. C:\Users\RUNNER~1\AppData\Local\Temp\...),
+		// so just check for a relevant portion of the work directory that would not be shortened.
+		workDirName := filepath.Base(ts.Dirs.Work)
+		parentDirName := filepath.Base(filepath.Dir(ts.Dirs.Work))
+		dirPart := filepath.Join(parentDirName, workDirName, "target")
+		suite.Contains(string(out), dirPart, "Windows user PATH should contain our target dir")
 	}
 }
 
@@ -402,7 +405,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Deployment Information")
-	cp.Expect(targetID.String()) // expect bin dir
 	if runtime.GOOS == "windows" {
 		// Windows short names may be used (e.g. C:\Users\RUNNER~1\AppData\Local\Temp\...),
 		// so just check for a relevant portion of the work directory that would not be shortened.
