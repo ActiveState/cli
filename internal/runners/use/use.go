@@ -5,23 +5,20 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
 	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -82,24 +79,9 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate)
-	rti, err := runtime.New(projectTarget, u.analytics, u.svcModel)
+	rti, projectTarget, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
-
-		eh, err := runbits.ActivateRuntimeEventHandler(u.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-
-		if err = rti.Update(u.auth, eh); err != nil {
-			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
-			}
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
+		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
 
 	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
