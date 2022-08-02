@@ -34,6 +34,8 @@ type ClientService interface {
 
 	AddOrganizationAutoInvite(params *AddOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationAutoInviteOK, error)
 
+	BulkInviteOrganization(params *BulkInviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BulkInviteOrganizationOK, error)
+
 	DeleteInvite(params *DeleteInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInviteOK, error)
 
 	DeleteOrganization(params *DeleteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationOK, error)
@@ -158,6 +160,59 @@ func (a *Client) AddOrganizationAutoInvite(params *AddOrganizationAutoInvitePara
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for addOrganizationAutoInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  BulkInviteOrganization bulks organization invitations
+
+  Invite many users to an organization at once. Note that while the content type
+must be sent as `text/plain`, the body is actually two column CSV data. First
+column is the role to assign them. It should be one of `admin`, `editor`, or
+`reader`. Second is email address.
+
+Example:
+  ```
+  editor, person1@email.com
+  editor, person2@email.com
+  ```
+
+  Note that quoted strings are not supported.
+
+*/
+func (a *Client) BulkInviteOrganization(params *BulkInviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BulkInviteOrganizationOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewBulkInviteOrganizationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "bulkInviteOrganization",
+		Method:             "POST",
+		PathPattern:        "/organizations/{organizationName}/invitations/bulk",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"text/plain"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &BulkInviteOrganizationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*BulkInviteOrganizationOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for bulkInviteOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
