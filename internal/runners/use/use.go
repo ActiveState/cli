@@ -75,8 +75,7 @@ func (u *Use) Run(params *Params) error {
 		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
-		// Note: use existing localized error message to workaround DX-740 for integration tests.
-		return locale.WrapInputError(err, "err_use_project_does_not_exist", err.Error())
+		return locale.WrapInputError(err, "err_use_project_does_not_exist", "Local project does not exist.")
 	}
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {

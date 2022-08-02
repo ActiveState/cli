@@ -13,7 +13,7 @@ import (
 )
 
 // LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
-type LocalProjectDoesNotExist struct{ error }
+type LocalProjectDoesNotExist struct{ *locale.LocalizedError }
 
 // IsLocalProjectDoesNotExistError checks if the error is a LocalProjectDoesNotExist.
 func IsLocalProjectDoesNotExistError(err error) bool {
