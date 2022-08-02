@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"os"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -58,12 +60,25 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
-	if err != nil {
-		if runbitsProject.IsLocalProjectDoesNotExistError(err) {
-			return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
+	var proj *project.Project
+	var err error
+	if params.Namespace.Owner != "" || params.Namespace.Project != "" {
+		proj, err = runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
+		if err != nil {
+			if runbitsProject.IsLocalProjectDoesNotExistError(err) {
+				return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
+			}
+			return locale.WrapError(err, "err_shell", "Unable to run shell")
 		}
-		return locale.WrapError(err, "err_shell", "Unable to run shell")
+	} else {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return locale.WrapInputError(err, "err_shell_getwd_fail", "Cannot determine the current working directory.")
+		}
+		proj, err = project.FromPath(cwd)
+		if err != nil {
+			return locale.WrapInputError(err, "err_shell_cannot_determine_project", "Cannot determine the project to start a shell/prompt in.")
+		}
 	}
 
 	rti, _, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
