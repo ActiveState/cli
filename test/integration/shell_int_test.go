@@ -51,6 +51,31 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	}
 }
 
+func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--default", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }
