@@ -106,6 +106,20 @@ func (cache *ArtifactCache) Store(a artifact.ArtifactID, archivePath string) err
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
+	// Replace an existing artifact in the cache.
+	// This would really only happen if a checksum validation fails for the cached artifact (e.g. due
+	// to a bad actor replacing it) and the artifact is silently re-downloaded from the platform.
+	if existingArtifact, found := cache.artifacts[a]; found {
+		path := existingArtifact.ArchivePath
+		logging.Debug("Replacing cached artifact '%s'", path)
+		err := os.Remove(path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to overwrite existing artifact '%s'", path)
+		}
+		delete(cache.artifacts, existingArtifact.Id)
+		cache.currentSize -= existingArtifact.Size
+	}
+
 	stat, err := os.Stat(archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Unable to stat artifact '%s'. Does it exist?", archivePath)
