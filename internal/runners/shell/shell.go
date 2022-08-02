@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -19,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -71,13 +70,13 @@ func (u *Shell) Run(params *Params) error {
 			return locale.WrapError(err, "err_shell", "Unable to run shell")
 		}
 	} else {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return locale.WrapInputError(err, "err_shell_getwd_fail", "Cannot determine the current working directory.")
-		}
-		proj, err = project.FromPath(cwd)
+		projectFile, err := projectfile.GetProjectFilePath()
 		if err != nil {
 			return locale.WrapInputError(err, "err_shell_cannot_determine_project", "Cannot determine the project to start a shell/prompt in.")
+		}
+		proj, err = project.FromPath(projectFile)
+		if err != nil {
+			return locale.WrapInputError(err, "err_shell_cannot_load_project", "Cannot load project to start a shell/prompt in.")
 		}
 	}
 
