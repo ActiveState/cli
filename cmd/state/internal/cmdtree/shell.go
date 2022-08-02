@@ -27,7 +27,6 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_state_activate_namespace"),
 				Description: locale.T("arg_state_shell_namespace_description"),
-				Required:    true,
 				Value:       params.Namespace,
 			},
 		},
