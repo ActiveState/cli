@@ -1877,13 +1877,15 @@ arg_state_use_namespace_description:
   other: The org/project namespace of the project that you wish to use, or just the project name if previously used
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
+err_shell_commit_id_mismatch:
+  other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
 err_local_project_not_checked_out:
   other: "The project [ACTIONABLE]{{.V0}}[/RESET] is not checked out. Please check it out using [ACTIONABLE]`state checkout`[/RESET]"
-arg_state_shell_use_namespace_description:
+arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}

@@ -66,6 +66,10 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell", "Unable to run shell")
 	}
 
+	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+		return locale.NewInputError("err_shell_commit_id_mismatch")
+	}
+
 	rti, _, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
