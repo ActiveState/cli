@@ -30,6 +30,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python3")
+	cp.ExpectExitCode(0)
 
 	// Use.
 	cp = ts.SpawnWithOpts(
@@ -37,6 +38,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to Python3")
+	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
 	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
@@ -57,6 +59,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python-3.9")
+	cp.ExpectExitCode(0)
 
 	// Use it.
 	cp = ts.SpawnWithOpts(
@@ -64,6 +67,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to Python-3.9")
+	cp.ExpectExitCode(0)
 
 	// Verify the new runtime works.
 	cp = ts.SpawnCmdWithOpts(
@@ -80,6 +84,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to Python3")
+	cp.ExpectExitCode(0)
 
 	// Verify the first runtime is set up correctly and usable.
 	cp = ts.SpawnCmdWithOpts(
@@ -111,6 +116,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	)
 	cp.Expect("Checked out Python3")
 	cp.ExpectExitCode(0)
+
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
