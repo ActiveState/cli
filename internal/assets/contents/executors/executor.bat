@@ -4,4 +4,12 @@
 REM {{.}}
 {{end}}
 
-"{{.state}}" exec --path "{{.targetPath}}" -- {{.exe}} %*
+{{- range $K, $V := .Env}}
+{{- if eq $K "PATH"}}
+set {{$K}}={{$V}};%PATH%
+{{- else}}
+set {{$K}}={{$V}}
+{{- end}}
+{{- end}}
+
+"{{.stateExec}}" "{{.stateSock}}" "{{.targetFile}}" "{{.nameSpace}}" "{{.commitID}}" "{{.headless}}" %*

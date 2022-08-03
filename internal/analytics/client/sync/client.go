@@ -193,7 +193,6 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
 	}
 
-
 	a.eventWaitGroup.Add(1)
 	// We do not wait for the events to be processed, just scheduling them
 	go func() {

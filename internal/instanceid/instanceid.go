@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+func Make() string {
+	return uuid.New().String()
+}
+
 var (
 	id string
 	mu sync.Mutex
@@ -16,7 +20,7 @@ func ID() string {
 	defer mu.Unlock()
 
 	if id == "" {
-		id = uuid.New().String()
+		id = Make()
 	}
 	return id
 }

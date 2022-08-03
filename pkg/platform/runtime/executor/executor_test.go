@@ -10,17 +10,20 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 func TestExecutor(t *testing.T) {
-	fw, err := New("/project/path")
+	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
+	fw, err := New(target)
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
+	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Update(exes)
+		err = fw.Update(env, exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
