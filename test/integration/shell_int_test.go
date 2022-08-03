@@ -22,6 +22,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.Expect("Checked out Python3")
 	cp.ExpectExitCode(0)
 
 	args := []string{"Python3", "ActiveState-CLI/Python3"}
