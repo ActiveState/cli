@@ -82,7 +82,7 @@ scripts:
       fi
 
       echo "# Generate update from temp dir"
-      go run scripts/update-generator/main.go -o ./build/update $TEMPDIR
+      go run scripts/ci/update-generator/main.go -o ./build/update $TEMPDIR
 
       echo "# Remove temp dir"
       rm -rf $TEMPDIR
@@ -120,7 +120,7 @@ scripts:
         cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
       fi
 
-      go run scripts/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
 
       echo "compile ${TEST_CHANNEL} update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
@@ -133,4 +133,4 @@ scripts:
         cp -r installers/${constants.SYSTRAY_APP} build/test/state-install/system
       fi
 
-      go run scripts/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install

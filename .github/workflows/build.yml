@@ -15,7 +15,8 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    - cron: 0 0 * * *
+    -
+      cron: 0 0 * * *
 
 # === JOBS ===
 jobs:
@@ -131,6 +132,9 @@ jobs:
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
           MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
       - # === Unit Tests (Raw) ===
         name: Unit Tests (Raw Results)
@@ -268,8 +272,8 @@ jobs:
             TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
             echo "Target branch: $TARGET_BRANCH"
 
-            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
-              echo "Not running because no test labels were set nor beta or release were targeted."
+            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "master" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
+              echo "Not running because no test labels were set nor master, beta or release were targeted."
               exit 0
             fi
           else

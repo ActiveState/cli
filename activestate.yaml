@@ -265,7 +265,7 @@ scripts:
 
       echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
-      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
+      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -318,9 +318,9 @@ scripts:
       $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
 
-      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
-      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
+      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
   -
     name: update-workflow-assets
     language: bash
@@ -422,6 +422,41 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/grab-mergecommits/main.go $1
+  - name: target-version-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/target-version-pr/main.go $1
+  - name: create-version-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/create-version-pr/main.go $1
+  - name: propagate-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/propagate-pr/main.go $1
+  - name: verify-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/verify-pr/main.go $1
+  - name: ghapi
+    language: bash
+    value: |
+      curl \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: token ${secrets.user.GITHUB_TOKEN}" \
+        https://api.github.com/repos/ActiveState/cli/${1}
   - name: benchmark-exec
     if: eq .OS.Name "Linux"
     language: bash

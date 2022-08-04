@@ -1,0 +1,55 @@
+name: Verify
+
+# === Triggers ===
+"on":
+  pull_request:
+    types:
+      - edited
+      - synchronize
+
+# === JOBS ===
+jobs:
+
+  # === Verify PR ===
+  verifypr:
+    name: Verify PR
+    runs-on: ubuntu-20.04
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      SHELL: bash
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    timeout-minutes: 5
+
+    steps:
+
+      - # === Checkout code ===
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+          ls -ahl $bin
+          printenv
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess
+
+      - # === Actually Verify PR ===
+        name: Verify PR
+        shell: bash
+        run: go run scripts/ci/verify-pr/main.go ${{ github.event.pull_request.number }}

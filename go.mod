@@ -14,6 +14,7 @@ require (
 	github.com/andygrunwald/go-jira v1.15.1
 	github.com/aws/aws-sdk-go v1.34.28
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/codemodus/relay v0.0.0-20200814173335-acf94137159e
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3

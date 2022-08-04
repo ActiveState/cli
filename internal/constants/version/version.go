@@ -25,7 +25,7 @@ func Detect() (semver.Version, error) {
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Could not read from file %s: %w", versionFile, err)
 	}
-	v, err := semver.Parse(strings.TrimSpace(string(data)))
+	v, err := semver.Parse(strings.TrimSpace(strings.Split(string(data), "-")[0]))
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Failed to parse version from file %s: %w", versionFile, err)
 	}

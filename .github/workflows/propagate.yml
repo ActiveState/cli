@@ -1,0 +1,57 @@
+name: Propagate-PR
+
+# === Triggers ===
+"on":
+  pull_request:
+    types:
+      - closed
+
+# === JOBS ===
+jobs:
+
+  # === Set target branch ===
+  propagate:
+    name: Update and Verify RC PRs
+    needs:
+      - os_specific
+    runs-on: ubuntu-20.04
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      SHELL: bash
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    timeout-minutes: 5
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, "version/")
+
+    steps:
+
+      - # === Checkout code ===
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+          ls -ahl $bin
+          printenv
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess
+
+      - # === Propagate PR ===
+        name: Propagate PR
+        shell: bash
+        run: go run scripts/ci/propagate-pr/main.go ${{ github.event.pull_request.number }}
