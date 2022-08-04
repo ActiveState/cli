@@ -29,7 +29,7 @@ func InitGHClient() *github.Client {
 	return github.NewClient(tc)
 }
 
-// ExtractJiraIssueID tries to extract the jira issue ID from either the branch name
+// ExtractJiraIssueID tries to extract the jira issue ID from the branch name
 func ExtractJiraIssueID(pr *github.PullRequest) (string, error) {
 	if pr.Head == nil || pr.Head.Ref == nil {
 		panic(fmt.Sprintf("Head or head ref is nil: %#v", pr))
