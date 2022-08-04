@@ -261,8 +261,13 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
-	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(exePaths); err != nil {
+	env, err := s.store.Environ(false)
+	if err != nil {
+		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
+	}
+
+	exec := executor.NewWithBinPath(s.target, execPath)
+	if err := exec.Update(env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
@@ -579,10 +584,37 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 	return nil
 }
 
+// verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
+// platform, and returns an error if the verification fails.
+func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
+	if a.Checksum != "" {
+		logging.Debug("Validating checksum for %s", archivePath)
+	} else {
+		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.")
+		return nil
+	}
+
+	checksum, err := fileutils.Sha256Hash(archivePath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to compute checksum for "+a.ArtifactID.String())
+	}
+
+	if checksum != a.Checksum {
+		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", a.Checksum, checksum)
+		// Note: the artifact name will be reported higher up the chain
+		return locale.WrapError(err, "artifact_checksum_failed", "Checksum validation failed")
+	}
+
+	return nil
+}
+
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
-		return cachedPath, nil
+		if err := s.verifyArtifact(cachedPath, a); err == nil {
+			return cachedPath, nil
+		}
+		// otherwise re-download it; do not return an error
 	}
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
@@ -600,7 +632,12 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) 
 
 	s.events.ArtifactStepCompleted(events.Download, a.ArtifactID)
 
-	err := s.artifactCache.Store(a.ArtifactID, archivePath)
+	err := s.verifyArtifact(archivePath, a)
+	if err != nil {
+		return "", errs.Wrap(err, "Artifact checksum validation failed")
+	}
+
+	err = s.artifactCache.Store(a.ArtifactID, archivePath)
 	if err != nil {
 		multilog.Error("Could not store artifact in cache: %v", err)
 	}

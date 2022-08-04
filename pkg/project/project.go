@@ -9,8 +9,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
@@ -22,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -265,7 +264,7 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler

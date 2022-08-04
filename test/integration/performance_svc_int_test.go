@@ -44,7 +44,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	ipcClient := svcctl.NewDefaultIPCClient()
 	var svcPort string
-	
+
 	suite.Run("StartServer", func() {
 		svcExec, err := installation.ServiceExecFromDir(ts.Dirs.Bin)
 		suite.Require().NoError(err, errs.JoinMessage(err))

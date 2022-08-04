@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"path/filepath"
 	"testing"
-	"time"
 )
 
 type ResetAutomationTestSuite struct {
@@ -32,14 +31,14 @@ func (suite *ResetAutomationTestSuite) TestReset_PublicProject() {
 	defer ts.Close()
 
 	// Test with PUBLIC project
-	url := "https://platform.activestate.com/qamainorg/public?branch=main&commitID=32e543ee-b6ab-4f59-9b28-ad830ec6980e"
+	url := "https://platform.activestate.com/ActiveState-CLI/qa-public?branch=main&commitID=e78d3564-2de5-4d63-aa4f-ddc5e0a43511"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	// Testing if user choose NO to the reset
 	cp := ts.Spawn("reset")
 	cp.SendLine("n")
 	cp.Expect("Reset aborted by user")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(1)
 
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("reset")
@@ -61,7 +60,7 @@ func (suite *ResetAutomationTestSuite) TestReset_NoAuthPrivateProject() {
 	defer ts.Close()
 
 	// Test with PRIVATE project
-	url := "https://platform.activestate.com/ActiveState-CLI/qa-private?branch=main&commitID=d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2"
+	url := "https://platform.activestate.com/ActiveState-CLI/qa-private?branch=main&commitID=c276db93-a585-4341-950c-24d8f9638cb0"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("reset")
@@ -76,19 +75,17 @@ func (suite *ResetAutomationTestSuite) TestReset_PrivateProject() {
 	defer ts.Close()
 
 	// Authentication
-	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
-	cp.Expect("logged in", 40*time.Second)
-	cp.ExpectExitCode(0)
+	ts.LoginAsPersistentUser()
 
 	// Test with PRIVATE project
 	url := "https://platform.activestate.com/ActiveState-CLI/qa-private?branch=main&commitID=d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2"
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	// Testing if user choose NO to the reset
-	cp = ts.Spawn("reset")
+	cp := ts.Spawn("reset")
 	cp.SendLine("n")
 	cp.Expect("Reset aborted by user")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(1)
 
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("reset")

@@ -1130,10 +1130,27 @@ func AddLockInfo(projectFilePath, branch, version string) error {
 	return ioutil.WriteFile(projectFilePath, updated, 0644)
 }
 
+func RemoveLockInfo(projectFilePath string) error {
+	data, err := ioutil.ReadFile(projectFilePath)
+	if err != nil {
+		return locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
+	}
+
+	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
+	clean := lockRegex.ReplaceAll(data, []byte(""))
+
+	err = ioutil.WriteFile(projectFilePath, clean, 0644)
+	if err != nil {
+		return locale.WrapError(err, "err_write_unlocked_projectfile", "Could not remove lock from projectfile")
+	}
+
+	return nil
+}
+
 func cleanVersionInfo(projectFilePath string) ([]byte, error) {
 	data, err := ioutil.ReadFile(projectFilePath)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_read_projectfile", "Failed to read the activestate.yaml at: %s", projectFilePath)
+		return nil, locale.WrapError(err, "err_read_projectfile", "", projectFilePath)
 	}
 
 	branchRegex := regexp.MustCompile(`(?m:^branch:\s*\w+\n)`)
@@ -1173,6 +1190,8 @@ type ConfigGetter interface {
 	GetStringMapStringSlice(key string) map[string][]string
 	AllKeys() []string
 	GetStringSlice(string) []string
+	IsSet(string) bool
+	GetString(string) string
 	Set(string, interface{}) error
 	GetThenSet(string, func(interface{}) (interface{}, error)) error
 	Close() error
@@ -1353,8 +1372,19 @@ func CleanProjectMapping(cfg ConfigGetter) {
 			for namespace, paths := range projects {
 				var removals []int
 				for i, path := range paths {
-					if !fileutils.DirExists(path) {
+					configFile := filepath.Join(path, constants.ConfigFileName)
+					if !fileutils.DirExists(path) || !fileutils.FileExists(configFile) {
 						removals = append(removals, i)
+						continue
+					}
+					// Only remove the project if the activestate.yaml is parseable and there is a namespace
+					// mismatch.
+					// (We do not want to punish anyone for a syntax error when manually editing the file.)
+					if proj, err := parse(configFile); err == nil && proj.Init() == nil {
+						projNamespace := fmt.Sprintf("%s/%s", proj.Owner(), proj.Name())
+						if namespace != projNamespace {
+							removals = append(removals, i)
+						}
 					}
 				}
 

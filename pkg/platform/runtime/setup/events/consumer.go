@@ -28,6 +28,7 @@ type ProgressDigester interface {
 
 	InstallationStarted(totalArtifacts int64) error
 	InstallationStatusUpdate(current, total int64) error
+	InstallationCompleted(withFailures bool) error
 
 	BuildArtifactStarted(artifactID artifact.ArtifactID, artifactName string) error
 	BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName, logURI string, cachedBuild bool) error
@@ -46,19 +47,20 @@ type ProgressDigester interface {
 // RuntimeEventConsumer is a struct that handles incoming SetupUpdate events in a single go-routine such that they can be forwarded to a progress or summary digester.
 // State-ful operations should be handled in this struct rather than in the digesters in order to keep the calls to the digesters as simple as possible.
 type RuntimeEventConsumer struct {
-	progress            ProgressDigester
-	summary             ChangeSummaryDigester
-	artifactNames       func(artifactID artifact.ArtifactID) string
-	alreadyBuilt        int
-	isBuilding          bool      // are we currently building packages
-	buildsTotal         int64     // total number of artifacts that need to be built
-	installTotal        int64     // total number of artifacts that need to be installed
-	lastBuildEventRcvd  time.Time // timestamp when the last build event was received
-	numBuildCompleted   int64     // number of completed builds
-	numBuildFailures    int64     // number of failed builds
-	numInstallFailures  int64
-	numInstallCompleted int64
-	installationStarted bool
+	progress              ProgressDigester
+	summary               ChangeSummaryDigester
+	artifactNames         func(artifactID artifact.ArtifactID) string
+	alreadyBuilt          int
+	isBuilding            bool      // are we currently building packages
+	buildsTotal           int64     // total number of artifacts that need to be built
+	installTotal          int64     // total number of artifacts that need to be installed
+	lastBuildEventRcvd    time.Time // timestamp when the last build event was received
+	numBuildCompleted     int64     // number of completed builds
+	numBuildFailures      int64     // number of failed builds
+	numInstallFailures    int64
+	numInstallCompleted   int64
+	installationStarted   bool
+	installationCompleted bool
 }
 
 func NewRuntimeEventConsumer(progress ProgressDigester, summary ChangeSummaryDigester) *RuntimeEventConsumer {
@@ -169,6 +171,12 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 			err := eh.progress.InstallationStatusUpdate(eh.numInstallCompleted, eh.installTotal)
 			if err != nil {
 				return err
+			}
+			if eh.numInstallCompleted == eh.installTotal {
+				err := eh.progress.InstallationCompleted(eh.numInstallFailures > 0)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return eh.progress.ArtifactStepCompleted(t.ArtifactID(), artifactName, stepTitle(t.Step()))

@@ -71,6 +71,8 @@ updating_to_version:
   other: Updating from [NOTICE]{{.fromVersion}}[/RESET] to [NOTICE]{{.toVersion}}[/RESET]
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
+confirm_update_unlocked_version_prompt:
+  other: "Are you sure you want to unlock the State Tool version from your project?"
 version_info:
   other: |
     ActiveState CLI by ActiveState Software Inc.
@@ -213,6 +215,8 @@ signup_description:
   other: Signup a new account
 err_auth_signup_user_exists:
   other: "An account with the given information already exists, error received: {{.V0}}"
+err_auth_signup_bad_request:
+  other: "Invalid signup request. The error received was: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:
@@ -856,6 +860,8 @@ err_activate_create_project:
   other: Could not create new project
 err_invalid_namespace:
   other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
+err_invalid_project_name:
+  other: "Invalid project name: [NOTICE]{{.V0}}[/RESET]. Names should be alphanumeric, may contain dashes and periods, and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
 err_must_create_project:
@@ -1868,11 +1874,19 @@ err_update_corrupt_install:
 arg_state_use_namespace:
   other: org/project
 arg_state_use_namespace_description:
-  other: The namespace of the project that you wish to use
+  other: The org/project namespace of the project that you wish to use, or just the project name if previously used
+err_use_commit_id_mismatch:
+  other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
+err_shell_commit_id_mismatch:
+  other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
+err_local_project_not_checked_out:
+  other: "The project [ACTIONABLE]{{.V0}}[/RESET] is not checked out. Please check it out using [ACTIONABLE]`state checkout`[/RESET]"
+arg_state_shell_namespace_description:
+  other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:
@@ -1894,6 +1908,8 @@ err_service_exec:
   other: Could not get service exec
 err_tray_exec:
   other: Could not get state tray exec
+err_svc_exec:
+  other: Could not get state service exec
 err_update_exec:
   other: Could not get update dialog exec
 err_state_exec_dir:
@@ -1931,3 +1947,5 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
+err_autostart_app:
+  other: Could not create new autostart app

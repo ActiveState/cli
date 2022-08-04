@@ -9,7 +9,11 @@
             <!-- Wrap in `sh -c` so that $HOME is expanded -->
             <string>sh</string>
             <string>-c</string>
-            <string>"$HOME/Applications/ActiveState Desktop.app/Contents/MacOS/state-tray"</string>
+            {{- if .Args }}
+            <string>{{.Exec}} {{.Args}}</string>
+            {{- else}}
+            <string>{{.Exec}}</string>
+            {{- end}}
         </array>
         <key>ProcessType</key>
         <string>Interactive</string>

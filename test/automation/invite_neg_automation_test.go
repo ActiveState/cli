@@ -1,12 +1,13 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
 type InviteNegativeAutomationTestSuite struct {
@@ -41,7 +42,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("You are not authenticated")
+	cp.ExpectLongString("Cannot authenticate")
 	cp.ExpectExitCode(1)
 }
 
@@ -56,7 +57,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("You are not authenticated")
+	cp.ExpectLongString("Cannot authenticate")
 	cp.ExpectExitCode(1)
 }
 

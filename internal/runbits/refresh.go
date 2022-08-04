@@ -43,6 +43,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 			out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
 			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
 		}
+
 		err := rt.Update(auth, rtMessages)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")

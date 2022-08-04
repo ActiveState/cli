@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"path/filepath"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -27,6 +29,22 @@ func (r *Prepare) prepareOS() error {
 
 	if err := r.prepareStartShortcut(); err != nil {
 		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
+	}
+
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		r.reportError(locale.Tl("err_prepare_svc_exec", "Could not get service exec, error recieved: {{.V0}}", err.Error()), err)
+	}
+
+	if svcExec != "" {
+		as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+		if err != nil {
+			return locale.WrapError(err, "err_autostart_app")
+		}
+
+		if err := as.Enable(); err != nil {
+			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
+		}
 	}
 
 	return nil
@@ -90,8 +108,8 @@ func setStateProtocol() error {
 		if err != nil {
 			return locale.WrapError(err, "err_prepare_username", "Could not get current username")
 		}
-		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolKey)
-		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolCommandKey)
+		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolKey)
+		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolCommandKey)
 	}
 
 	protocolKey, _, err := createFunc(protocolKeyPath)
@@ -124,21 +142,12 @@ func setStateProtocol() error {
 	return nil
 }
 
-// InstalledPreparedFiles returns the files installed by the state _prepare command
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
+
 	trayExec, err := installation.TrayExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	name, exec := constants.TrayAppName, trayExec
-
-	as, err := autostart.New(name, exec, cfg).Path()
-	if err != nil {
-		multilog.Error("Failed to determine autostart path for removal: %v", err)
-	} else if as != "" {
-		files = append(files, as)
 	}
 
 	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)

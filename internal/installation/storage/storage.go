@@ -142,3 +142,9 @@ func InstallSource() (string, error) {
 
 	return strings.TrimSpace(string(installFileData)), nil
 }
+
+// Avoid circular import of "internal/config"
+type configReader interface {
+	IsSet(string) bool
+	GetString(string) string
+}

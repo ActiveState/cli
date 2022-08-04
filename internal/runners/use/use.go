@@ -1,26 +1,25 @@
 package use
 
 import (
-	"fmt"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/prompt"
+	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -41,6 +40,7 @@ type primeable interface {
 
 type Use struct {
 	auth      *authentication.Auth
+	prompt    prompt.Prompter
 	out       output.Outputer
 	checkout  *checkout.Checkout
 	svcModel  *model.SvcModel
@@ -52,6 +52,7 @@ type Use struct {
 func NewUse(prime primeable) *Use {
 	return &Use{
 		prime.Auth(),
+		prime.Prompt(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
 		prime.SvcModel(),
@@ -66,42 +67,30 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	projectPath, err := u.checkout.Run(params.Namespace, "", "")
+	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_project", params.Namespace.String())
+		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
+			return locale.WrapError(err, "err_use", "Unable to use project")
+		}
+		return locale.WrapInputError(err, "err_use_project_does_not_exist", "Local project does not exist.")
 	}
 
-	proj, err := project.FromPath(projectPath)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_projectfrompath")
+	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), u.analytics, u.svcModel)
+	rti, projectTarget, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
-
-		eh, err := runbits.ActivateRuntimeEventHandler(u.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-
-		if err = rti.Update(u.auth, eh); err != nil {
-			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
-			}
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
+		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
 
 	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(fmt.Sprintf("[NOTICE]%s[/RESET] [ACTIONABLE]%s[/RESET]",
-		locale.Tl("use_notice_switched_to", "Switched to"),
-		params.Namespace.Project),
+	u.out.Print(locale.Tl("use_notice_switched_to", "[NOTICE]Switched to[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] located at [ACTIONABLE]{{ .V1 }}[/RESET]",
+		params.Namespace.Project,
+		setup.ExecDir(projectTarget.Dir())),
 	)
 
 	if rt.GOOS == "windows" {

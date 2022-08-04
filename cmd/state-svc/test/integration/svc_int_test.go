@@ -26,25 +26,25 @@ type SvcIntegrationTestSuite struct {
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartStop() {
+	// https://activestatef.atlassian.net/browse/DX-1078
+	suite.T().SkipNow()
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // wait for service to start up
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
-
-	// Verify it created a socket file.
-	sockFile := svcctl.NewIPCSockPathFromGlobals().String()
-	suite.True(fileutils.TargetExists(sockFile), "socket file '"+sockFile+"' does not exist")
 
 	// Verify the server is running on its reported port.
 	cp.ExpectRe("Port:\\s+:\\d+\\s")
@@ -67,8 +67,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
 
-	// Verify it deleted its socket file and the port is free.
-	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
+	// Verify the port is free.
 	server, err := net.Listen("tcp", "localhost:"+port)
 	suite.NoError(err)
 	server.Close()
@@ -124,13 +123,18 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes
+	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	time.Sleep(2 * time.Second) // allow for some time to stop the existing available process
+
+	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes (using different sock file)
 	for i := 1; i <= 10; i++ {
 		go ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
 		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
-	for attempts := 10; attempts > 0; attempts-- {
+
+	for attempts := 100; attempts > 0; attempts-- {
+		suite.T().Log("iters left:", attempts, "procs:", suite.GetNumStateSvcProcesses())
 		if suite.GetNumStateSvcProcesses() == oldCount+1 {
 			break
 		}

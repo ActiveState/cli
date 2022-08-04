@@ -3,63 +3,59 @@ package prepare
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/assets"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/mitchellh/go-homedir"
 )
 
 func (r *Prepare) prepareOS() error {
 	trayExec, err := installation.TrayExec()
 	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
-	}
-
-	name, exec := constants.TrayAppName, trayExec
-
-	if err := r.setupDesktopApplicationFile(name, exec); err != nil {
-		r.reportError(locale.Tr(
-			"err_prepare_shortcut_linux",
-			"Could not create desktop application file: {{.V0}}.", err.Error(),
+		r.reportError(locale.Tl(
+			"err_prepare_tray_exec",
+			"Could not get tray executable: {{.V0}}", err.Error(),
 		), err)
 	}
 
-	return nil
-}
-
-func (r *Prepare) setupDesktopApplicationFile(name, exec string) error {
-	dir, err := prependHomeDir(constants.ApplicationDir)
+	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, r.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Could not find application directory")
+		r.reportError(locale.T("err_autostart_app"), err)
 	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
 
-	iconsDir, err := prependHomeDir(constants.IconsDir)
+	err = trayShortcut.Enable()
 	if err != nil {
-		return errs.Wrap(err, "Could not find icons directory")
+		r.reportError(locale.Tl(
+			"err_prepare_autostart_enable",
+			"Could not enable autostart: {{.V0}}.", err.Error(),
+		), err)
 	}
-	iconsPath := filepath.Join(iconsDir, constants.TrayIconFileName)
 
-	iconData, err := assets.ReadFileBytes(constants.TrayIconFileSource)
+	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		return errs.Wrap(err, "Could not read asset")
+		r.reportError(locale.Tl(
+			"err_prepare_service_executable",
+			"Could not get service executable: {{.V0}}", err.Error(),
+		), err)
 	}
 
-	scutOpts := shortcut.SaveOpts{
-		Name:        name,
-		GenericName: constants.TrayGenericName,
-		Comment:     constants.TrayComment,
-		Keywords:    constants.TrayKeywords,
-		IconData:    iconData,
-		IconPath:    iconsPath,
+	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+	if err != nil {
+		r.reportError(locale.T("err_autostart_app"), err)
 	}
-	if _, err := shortcut.Save(exec, path, scutOpts); err != nil {
-		return errs.Wrap(err, "Could not save shortcut")
+
+	err = svcShortcut.Enable()
+	if err != nil {
+		r.reportError(locale.Tl(
+			"err_prepare_autostart",
+			"Could not enable autostart: {{.V0}}.", err.Error(),
+		), err)
 	}
 
 	return nil
@@ -73,23 +69,8 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-// InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	name, exec := constants.TrayAppName, trayExec
-
-	shortcut, err := autostart.New(name, exec, cfg).Path()
-	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if shortcut != "" {
-		files = append(files, shortcut)
-	}
-
 	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
 		multilog.Error("Failed to set application dir: %v", err)

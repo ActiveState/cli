@@ -55,7 +55,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 		expectedBuildCompleted          bool
 		expectedBuildTotal              int64
 		expectedBuildCurrent            int
-		expectedInstallationStarted     int
+		expectedInstallationStarted     bool
+		expectedInstallationCompleted   bool
 		expectedInstallationTotal       int64
 		expectedInstallationCurrent     int
 		expectedArtifactStartedCalled   int
@@ -70,7 +71,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          false,
 			expectedBuildTotal:              int64(0),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     1,
+			expectedInstallationStarted:     true,
+			expectedInstallationCompleted:   true,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     2,
 			expectedArtifactStartedCalled:   4,
@@ -85,7 +87,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          false,
 			expectedBuildTotal:              int64(0),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     1,
+			expectedInstallationStarted:     true,
+			expectedInstallationCompleted:   false,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     0,
 			expectedArtifactStartedCalled:   4,
@@ -100,7 +103,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          true,
 			expectedBuildTotal:              int64(2),
 			expectedBuildCurrent:            2,
-			expectedInstallationStarted:     1,
+			expectedInstallationStarted:     true,
+			expectedInstallationCompleted:   true,
 			expectedInstallationTotal:       int64(2),
 			expectedInstallationCurrent:     2,
 			expectedArtifactStartedCalled:   4,
@@ -115,7 +119,8 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			expectedBuildCompleted:          true,
 			expectedBuildTotal:              int64(2),
 			expectedBuildCurrent:            0,
-			expectedInstallationStarted:     0,
+			expectedInstallationStarted:     false,
+			expectedInstallationCompleted:   false,
 			expectedInstallationTotal:       int64(0),
 			expectedInstallationCurrent:     0,
 			expectedArtifactStartedCalled:   0,
@@ -146,6 +151,7 @@ func TestRuntimeEventConsumer(t *testing.T) {
 			assert.Equal(t, tc.expectedBuildTotal, mock.BuildTotal)
 			assert.Equal(t, tc.expectedBuildCurrent, mock.BuildCurrent)
 			assert.Equal(t, tc.expectedInstallationStarted, mock.InstallationStartedCalled)
+			assert.Equal(t, tc.expectedInstallationCompleted, mock.InstallationCompletedCalled)
 			assert.Equal(t, tc.expectedInstallationTotal, mock.InstallationTotal)
 			assert.Equal(t, tc.expectedInstallationCurrent, mock.InstallationCurrent)
 			assert.Equal(t, tc.expectedArtifactStartedCalled, mock.ArtifactStartedCalled)

@@ -15,6 +15,9 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: state
+  - name: SVC_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: $constants.CLI_BUILDFLAGS
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
@@ -119,7 +122,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
       fi
@@ -137,6 +140,33 @@ scripts:
       if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
+  - name: build-exec
+    if: eq .OS.Name "Linux"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      zig build-exe --strip -static -O ReleaseFast "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+
+  - name: build-exec
+    if: eq .OS.Name "MacOS"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      zig build-exe --strip -O ReleaseFast "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+
+  - name: build-exec
+    if: eq .OS.Name "Windows"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      appName="state-exec"
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${appName}/${appName}.zig"
+      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -427,6 +457,19 @@ scripts:
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: token ${secrets.user.GITHUB_TOKEN}" \
         https://api.github.com/repos/ActiveState/cli/${1}
+  - name: benchmark-exec
+    if: eq .OS.Name "Linux"
+    language: bash
+    description: "Benchmarks executable leveraging highly sensitive/accurate tooling"
+    value: |
+      # example usage:
+      # state run benchmark-exec -- state-exec /tmp/state-ipc/my.sock /home/me/.cache/abcd1234/bin/python3 -c "print('123');"
+      if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "-1" ]]; then
+          sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
+      fi
+
+      perf stat -a -r 100 -B ${@} > /dev/null
+
 events:
   - name: activate
     if: ne .Shell "cmd"

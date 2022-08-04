@@ -14,11 +14,15 @@ import (
 // NamespaceRegex matches the org and project name in a namespace, eg. org/project
 const NamespaceRegex = `^([\w-_]+)\/([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
 
+// ProjectRegex matches the project name for a namespace with omitted org.
+const ProjectRegex = `^([\w-_\.]+)(?:#([-a-fA-F0-9]*))?$`
+
 // Namespaced represents a project namespace of the form <org/project>
 type Namespaced struct {
-	Owner    string
-	Project  string
-	CommitID *strfmt.UUID
+	Owner          string
+	Project        string
+	CommitID       *strfmt.UUID
+	AllowOmitOwner bool
 }
 
 type ConfigAble interface {
@@ -27,9 +31,8 @@ type ConfigAble interface {
 
 func NewNamespace(owner, project, commitID string) *Namespaced {
 	ns := &Namespaced{
-		owner,
-		project,
-		nil,
+		Owner:   owner,
+		Project: project,
 	}
 	if commitID != "" {
 		commitUUID := strfmt.UUID(commitID)
@@ -46,7 +49,13 @@ func (ns *Namespaced) Set(v string) error {
 
 	parsedNs, err := ParseNamespace(v)
 	if err != nil {
-		return err
+		if !ns.AllowOmitOwner {
+			return err
+		}
+		parsedNs, err = ParseProjectNoOwner(v)
+		if err != nil {
+			return err
+		}
 	}
 
 	*ns = *parsedNs
@@ -99,6 +108,26 @@ func ParseNamespace(raw string) (*Namespaced, error) {
 
 	if len(groups) > 3 && len(groups[3]) > 0 {
 		uuid := strfmt.UUID(groups[3])
+		names.CommitID = &uuid
+	}
+
+	return &names, nil
+}
+
+func ParseProjectNoOwner(raw string) (*Namespaced, error) {
+	rx := regexp.MustCompile(ProjectRegex)
+	groups := rx.FindStringSubmatch(raw)
+	if len(groups) < 2 {
+		return nil, locale.NewInputError("err_invalid_project_name", "", raw)
+	}
+
+	names := Namespaced{
+		Project:        groups[1],
+		AllowOmitOwner: true,
+	}
+
+	if len(groups) > 2 && len(groups[2]) > 0 {
+		uuid := strfmt.UUID(groups[2])
 		names.CommitID = &uuid
 	}
 

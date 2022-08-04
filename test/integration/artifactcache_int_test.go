@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCache(t *testing.T) {
+func TestArtifactCache(t *testing.T) {
 	// Note: the length in bytes of each artifact is its index.
 	testArtifacts := []strfmt.UUID{
 		"000000000-0000-0000-0000-000000000000",
@@ -50,6 +50,11 @@ func TestCache(t *testing.T) {
 
 	// Test cache.Store().
 	testArtifactFile := osutil.GetTestFile(string(testArtifacts[1]))
+	err = cache.Store(testArtifacts[1], testArtifactFile)
+	require.NoError(t, err)
+	assert.Equal(t, len(cache.Artifacts()), 1)
+	assert.Equal(t, cache.CurrentSize(), int64(1))
+	// Verify artifacts can be overwritten.
 	err = cache.Store(testArtifacts[1], testArtifactFile)
 	require.NoError(t, err)
 	assert.Equal(t, len(cache.Artifacts()), 1)

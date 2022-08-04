@@ -16,7 +16,7 @@ const (
 	autostartDir = ".config/autostart"
 )
 
-func (a *App) enable() error {
+func (a *app) enable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -29,45 +29,45 @@ func (a *App) enable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
 		return errs.Wrap(err, "")
 	}
-	iconsPath := filepath.Join(iconsDir, constants.TrayIconFileName)
+	iconsPath := filepath.Join(iconsDir, a.options.IconFileName)
 
-	iconData, err := assets.ReadFileBytes(constants.TrayIconFileSource)
+	iconData, err := assets.ReadFileBytes(a.options.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
 	scutOpts := shortcut.SaveOpts{
 		Name:        a.Name,
-		GenericName: constants.TrayGenericName,
-		Comment:     constants.TrayComment,
-		Keywords:    constants.TrayKeywords,
+		GenericName: a.options.GenericName,
+		Comment:     a.options.Comment,
+		Keywords:    a.options.Keywords,
 		IconData:    iconData,
 		IconPath:    iconsPath,
 	}
-	if _, err := shortcut.Save(a.Exec, path, scutOpts); err != nil {
+	if _, err := shortcut.Save(a.Exec, path, a.Args, scutOpts); err != nil {
 		return errs.Wrap(err, "Could not save autostart shortcut")
 	}
 
 	return nil
 }
 
-func (a *App) Path() (string, error) {
+func (a *app) Path() (string, error) {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	return path, nil
 }
 
-func (a *App) disable() error {
+func (a *app) disable() error {
 	enabled, err := a.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -84,12 +84,12 @@ func (a *App) disable() error {
 	return os.Remove(path)
 }
 
-func (a *App) IsEnabled() (bool, error) {
+func (a *app) IsEnabled() (bool, error) {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, constants.TrayLaunchFileName)
+	path := filepath.Join(dir, a.options.LaunchFileName)
 
 	return fileutils.FileExists(path), nil
 }

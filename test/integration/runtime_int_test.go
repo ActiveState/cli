@@ -71,14 +71,15 @@ func TestOfflineInstaller(t *testing.T) {
 	assert.False(t, mockProgress.BuildCompletedCalled)
 	assert.Equal(t, int64(0), mockProgress.BuildTotal)
 	assert.Equal(t, 0, mockProgress.BuildCurrent)
-	assert.Equal(t, 1, mockProgress.InstallationStartedCalled)
+	assert.Equal(t, true, mockProgress.InstallationStartedCalled)
+	assert.Equal(t, true, mockProgress.InstallationCompletedCalled)
 	assert.Equal(t, int64(len(testArtifacts)), mockProgress.InstallationTotal)
 	assert.Equal(t, len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactStartedCalled)
 	assert.Equal(t, 2*len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactIncrementCalled) // start and stop each have one count
 	assert.Equal(t, len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactCompletedCalled)
 	assert.Equal(t, 0, mockProgress.ArtifactFailureCalled)
 
-	for filename, _ := range testArtifacts {
+	for filename := range testArtifacts {
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		assert.True(t, fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}

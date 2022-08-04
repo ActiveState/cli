@@ -120,7 +120,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
 
 	updateCmd := newUpdateCommand(prime)
-	updateCmd.AddChildren(newUpdateLockCommand(prime))
+	updateCmd.AddChildren(
+		newUpdateLockCommand(prime),
+		newUpdateUnlockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
@@ -135,8 +137,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	configCmd := newConfigCommand(prime)
 	configCmd.AddChildren(newConfigGetCommand(prime), newConfigSetCommand(prime))
 
+	checkoutCmd := newCheckoutCommand(prime)
+
 	useCmd := newUseCommand(prime)
-	useCmd.AddChildren(newUseResetCommand(prime))
+	useCmd.AddChildren(newUseResetCommand(prime, globals))
+
+	shellCmd := newShellCommand(prime)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
@@ -173,13 +179,15 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		prepareCmd,
 		newProtocolCommand(prime),
 		newExecCommand(prime, args...),
-		newRevertCommand(prime),
-		newResetCommand(prime),
+		newRevertCommand(prime, globals),
+		newResetCommand(prime, globals),
 		secretsCmd,
 		branchCmd,
 		newLearnCommand(prime),
 		configCmd,
+		checkoutCmd,
 		useCmd,
+		shellCmd,
 	)
 
 	return &CmdTree{
@@ -282,6 +290,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 	cmdCall := cmdcall.New(prime)
 
+	cmd.SetHasVariableArguments()
 	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd

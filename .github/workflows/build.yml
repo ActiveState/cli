@@ -53,6 +53,12 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install Zig ===
+        name: Install Zig
+        uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -115,6 +121,10 @@ jobs:
             {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Executor",
+                "Args": ["state", "run", "build-exec"]
             }
           ]
           EOF
@@ -169,6 +179,11 @@ jobs:
         shell: bash
         if: runner.os == 'macOS'
         run: parallelize results Build-Systray-App
+
+      - # === "Build: Executor" ===
+        name: "Build: Executor"
+        shell: bash
+        run: parallelize results Build-Executor
 
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)

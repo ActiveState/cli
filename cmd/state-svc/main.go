@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/inconshreveable/mousetrap"
 )
 
 const (
@@ -97,6 +98,12 @@ func run(cfg *config.Instance) error {
 	})
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize outputer")
+	}
+
+	if mousetrap.StartedByExplorer() {
+		// Allow starting the svc via a double click
+		captain.DisableMousetrap()
+		return runStart(out)
 	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
@@ -191,6 +198,15 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	}()
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
+
+	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
+		fmt.Fprintln(os.Stderr, err)
+
+		cancel()
+		if err := p.Stop(); err != nil {
+			multilog.Critical("Service stop failed: %v", errs.JoinMessage(err))
+		}
+	})
 
 	if err := p.Wait(); err != nil {
 		return errs.Wrap(err, "Failure while waiting for server stop")

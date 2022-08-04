@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
 	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
@@ -50,8 +51,9 @@ func (s *service) Start() error {
 
 	spath := svcctl.NewIPCSockPathFromGlobals()
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
-		svcctl.HTTPAddrHandler(":" + strconv.Itoa(s.server.Port())),
+		svcctl.HTTPAddrHandler(portText(s.server)),
 		svcctl.LogFileHandler(logging.FileName()),
+		svcctl.HeartbeatHandler(s.server.Resolver()),
 	}
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
@@ -81,4 +83,31 @@ func (s *service) Wait() error {
 		return errs.Wrap(err, "IPC server operating failure")
 	}
 	return nil
+}
+
+func (s *service) RunIfNotAuthority(checkWait time.Duration, ipComm svcctl.IPCommunicator, fn func(err error)) {
+	addr := portText(s.server)
+
+	go func() {
+		select {
+		case <-s.ctx.Done():
+			return
+		case <-time.After(checkWait):
+			checkedAddr, err := svcctl.LocateHTTP(ipComm)
+			if err == nil && (addr == "" || checkedAddr != addr) {
+				err = errs.New("Checked addr %q does not match current addr %q", checkedAddr, addr)
+			}
+			if err != nil {
+				fn(err)
+			}
+		}
+	}()
+}
+
+func portText(srv *server.Server) string {
+	if srv == nil || srv.Port() <= 0 {
+		return ""
+	}
+
+	return ":" + strconv.Itoa(srv.Port())
 }

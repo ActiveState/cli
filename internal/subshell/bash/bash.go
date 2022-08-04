@@ -22,6 +22,12 @@ var rcFileName = ".bashrc"
 
 func init() {
 	escaper = osutils.NewBashEscaper()
+
+	// On macOS all terminal windows run login shells, this means that
+	// .bashrc can be ignored so we instead use .bash_profile
+	if runtime.GOOS == "darwin" {
+		rcFileName = ".bash_profile"
+	}
 }
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -93,7 +99,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	logging.Debug("Writing to %s: %s", fpath, completionScript)
 	err := fileutils.WriteFile(fpath, []byte(completionScript))
 	if err != nil {
-		return errs.Wrap(err, "Could not write completions script")
+		logging.Debug("Could not write completions script '%s', likely due to non-admin privileges", fpath)
 	}
 
 	return nil
