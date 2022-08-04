@@ -57,7 +57,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.Require().NoError(err)
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	as, err := autostart.New(svcAutostart.App, svcExec, nil, svcAutostart.Options, cfg)
 	suite.Require().NoError(err)
 	enabled, err := as.IsEnabled()
 	suite.Require().NoError(err)

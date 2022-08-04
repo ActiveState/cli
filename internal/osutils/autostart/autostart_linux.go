@@ -1,10 +1,9 @@
 package autostart
 
 import (
-	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
@@ -39,7 +38,7 @@ func (a *app) enable() error {
 }
 
 func (a *app) onDesktop() bool {
-	return os.Getenv("WAYLAND_DISPLAY") || os.Getenv("DISPLAY")
+	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("DISPLAY") != ""
 }
 
 func (a *app) enableOnDesktop() error {
@@ -82,12 +81,12 @@ func (a *app) enableOnServer() error {
 	}
 
 	esc := osutils.NewBashEscaper()
-	exec = esc.Quote(a.Exec)
+	exec := esc.Quote(a.Exec)
 	for _, arg := range a.Args {
 		exec += " " + esc.Quote(arg)
 	}
 
-	return sscommon.WriteRcData(exec, profile, sscommon.InstallID, true)
+	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
 }
 
 // Path returns the path to the installed autostart shortcut file.
@@ -155,14 +154,14 @@ func (a *app) IsEnabled() (bool, error) {
 	// Or check for ~/.profile modification.
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
-		return errs.Wrap(err, "Could not find ~/.profile")
+		return false, errs.Wrap(err, "Could not find ~/.profile")
 	}
 	if fileutils.FileExists(profile) {
 		data, err := fileutils.ReadFile(profile)
 		if err != nil {
 			return false, errs.Wrap(err, "Could not read ~/.profile")
 		}
-		return bytes.Contains(data, []byte{a.Exec}), nil
+		return strings.Contains(string(data), a.Exec), nil
 	}
 
 	return false, nil
