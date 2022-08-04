@@ -62,7 +62,7 @@ func run() error {
 
 	// Grab input
 	if len(os.Args) != 2 {
-		return errs.New("Usage: target-version-branch <pr-number>")
+		return errs.New("Usage: propagate-pr <pr-number>")
 	}
 	prNumber, err := strconv.Atoi(os.Args[1])
 	if err != nil {
