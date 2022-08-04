@@ -103,7 +103,7 @@ func run(cfg *config.Instance) error {
 	if mousetrap.StartedByExplorer() {
 		// Allow starting the svc via a double click
 		captain.DisableMousetrap()
-		return runStart(out, "svc-start mouse")
+		return runStart(out, "svc-start:mouse")
 	}
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
@@ -126,7 +126,7 @@ func run(cfg *config.Instance) error {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart(out, "svc-start cli")
+				return runStart(out, "svc-start:cli")
 			},
 		),
 		captain.NewCommand(
