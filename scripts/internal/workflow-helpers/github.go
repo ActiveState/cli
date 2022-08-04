@@ -199,7 +199,7 @@ func CreatePR(ghClient *github.Client, prName, branchName, baseBranch, body stri
 
 func LabelPR(ghClient *github.Client, prnumber int, labels []string) error {
 	if _, _, err := ghClient.Issues.AddLabelsToIssue(
-		context.Background(), "ActiveState", "cli", prnumber, []string{"Test: all"},
+		context.Background(), "ActiveState", "cli", prnumber, labels,
 	); err != nil {
 		return errs.Wrap(err, "failed to add label")
 	}
@@ -333,14 +333,14 @@ func SetPRBody(client *github.Client, prnumber int, body string) error {
 }
 
 func CreateBranch(ghClient *github.Client, branchName string, SHA string) error {
-	_, _, err2 := ghClient.Git.CreateRef(context.Background(), "ActiveState", "cli", &github.Reference{
+	_, _, err := ghClient.Git.CreateRef(context.Background(), "ActiveState", "cli", &github.Reference{
 		Ref: github.String(fmt.Sprintf("refs/heads/%s", branchName)),
 		Object: &github.GitObject{
-			SHA: p.StrP(SHA), // This probably won't work - might need the actual SHA of the bran
+			SHA: p.StrP(SHA),
 		},
 	})
-	if err2 != nil {
-		return errs.Wrap(err2, "failed to create ref")
+	if err != nil {
+		return errs.Wrap(err, "failed to create ref")
 	}
 	return nil
 }
