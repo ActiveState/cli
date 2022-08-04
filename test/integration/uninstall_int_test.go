@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/mitchellh/go-homedir"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -65,6 +66,14 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 
 	if fileutils.FileExists(ts.TrayExe) {
 		suite.Fail("State tray executable should not exist after uninstall")
+	}
+
+	if runtime.GOOS == "linux" {
+		// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was reverted.
+		homeDir, err := homedir.Dir()
+		suite.Require().NoError(err)
+		profile := filepath.Join(homeDir, ".profile")
+		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), ts.SvcExe, "autostart should not be configured for Linux server environment anymore")
 	}
 
 	if runtime.GOOS == "darwin" {

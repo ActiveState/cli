@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
@@ -53,11 +52,9 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 
 	// Verify autostart was enabled.
-	svcExec, err := installation.ServiceExec()
-	suite.Require().NoError(err)
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	as, err := autostart.New(svcAutostart.App, svcExec, nil, svcAutostart.Options, cfg)
+	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
 	suite.Require().NoError(err)
 	enabled, err := as.IsEnabled()
 	suite.Require().NoError(err)
@@ -71,6 +68,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Contains(string(fileutils.ReadFileUnsafe(profile)), as.Exec, "autostart should be configured for Linux server environment")
 	}
 
+	// Verify autostart can be disabled.
 	err = as.Disable()
 	suite.Require().NoError(err)
 	enabled, err = as.IsEnabled()
