@@ -36,3 +36,7 @@ func (r *Prepare) prepareOS() error {
 func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	return nil, nil
 }
+
+func cleanOS(cfg autostart.Configurable) error {
+	return nil
+}

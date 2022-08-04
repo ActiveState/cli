@@ -155,3 +155,7 @@ func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 
 	return files, nil
 }
+
+func cleanOS(cfg autostart.Configurable) error {
+	return nil
+}

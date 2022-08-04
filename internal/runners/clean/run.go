@@ -21,6 +21,11 @@ func removeCache(cachePath string) error {
 }
 
 func undoPrepare(cfg configurable) error {
+	err := prepare.CleanOS(cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_prepare_clean", "Could not perform OS-specific cleanup")
+	}
+
 	toRemove, err := prepare.InstalledPreparedFiles(cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_prepared_files", "Could not determine files to remove")

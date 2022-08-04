@@ -7,10 +7,13 @@ import (
 	"runtime"
 	"testing"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -18,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/mitchellh/go-homedir"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,6 +51,39 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		return
 	}
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
+
+	// Verify autostart was enabled.
+	svcExec, err := installation.ServiceExec()
+	suite.Require().NoError(err)
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	suite.Require().NoError(err)
+	enabled, err := as.IsEnabled()
+	suite.Require().NoError(err)
+	suite.Assert().True(enabled, "autostart is not enabled")
+
+	// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was amended.
+	if runtime.GOOS == "linux" {
+		homeDir, err := homedir.Dir()
+		suite.Require().NoError(err)
+		profile := filepath.Join(homeDir, ".profile")
+		suite.Contains(string(fileutils.ReadFileUnsafe(profile)), as.Exec, "autostart should be configured for Linux server environment")
+	}
+
+	err = as.Disable()
+	suite.Require().NoError(err)
+	enabled, err = as.IsEnabled()
+	suite.Require().NoError(err)
+	suite.Assert().False(enabled, "autostart is still enabled")
+
+	// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was reverted.
+	if runtime.GOOS == "linux" {
+		homeDir, err := homedir.Dir()
+		suite.Require().NoError(err)
+		profile := filepath.Join(homeDir, ".profile")
+		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), as.Exec, "autostart should not be configured for Linux server environment anymore")
+	}
 }
 
 func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
