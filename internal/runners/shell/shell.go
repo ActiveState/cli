@@ -82,5 +82,11 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")
 	}
 
+	if proj.IsHeadless() {
+		u.out.Notice(locale.T("info_deactivated_by_commit"))
+	} else {
+		u.out.Notice(locale.T("info_deactivated", proj))
+	}
+
 	return nil
 }
