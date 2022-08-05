@@ -22,7 +22,7 @@ type Meta interface {
 
 func DetectBaseRef(ghClient *github.Client, jiraClient *jira.Client, meta Meta) (string, error) {
 	// Check if master is safe to fork from
-	finish := PrintStart("Checking if master is safe to fork from")
+	finish := PrintStart("Checking if master is safe to fork from for version %s", meta.GetVersion())
 	var ref *string
 	versionsGT, err := wh.BranchHasVersionsGT(ghClient, jiraClient, wh.MasterBranch, meta.GetVersion())
 	if err != nil {
