@@ -102,7 +102,7 @@ func run() error {
 	finish()
 
 	ref := ""
-	if meta.VersionPR == nil {
+	if meta.VersionPR != nil {
 		ref = meta.VersionPR.Head.GetSHA()
 	} else {
 		finish := wc.PrintStart("Detecting base ref to fork from")
