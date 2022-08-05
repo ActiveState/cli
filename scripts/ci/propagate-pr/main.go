@@ -141,7 +141,6 @@ func run() error {
 				v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
 		}
 
-		// Force push because we don't want to
 		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
 		if err != nil {
 			return errs.Wrap(err,
