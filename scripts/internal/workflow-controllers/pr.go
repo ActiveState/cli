@@ -20,13 +20,13 @@ type Meta interface {
 	GetVersionPRName() string
 }
 
-func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta) error {
+func DetectBaseRef(ghClient *github.Client, jiraClient *jira.Client, meta Meta) (string, error) {
 	// Check if master is safe to fork from
 	finish := PrintStart("Checking if master is safe to fork from")
-	var prevVersionRef *string
+	var ref *string
 	versionsGT, err := wh.BranchHasVersionsGT(ghClient, jiraClient, wh.MasterBranch, meta.GetVersion())
 	if err != nil {
-		return errs.Wrap(err, "failed to check if can fork master")
+		return "", errs.Wrap(err, "failed to check if can fork master")
 	}
 
 	// Calculate SHA for master
@@ -35,10 +35,10 @@ func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta
 		finish2 := PrintStart("Getting master HEAD SHA")
 		branch, _, err := ghClient.Repositories.GetBranch(context.Background(), "ActiveState", "cli", wh.MasterBranch, false)
 		if err != nil {
-			return errs.Wrap(err, "failed to get branch info")
+			return "", errs.Wrap(err, "failed to get branch info")
 		}
-		prevVersionRef = branch.GetCommit().SHA
-		Print("Master SHA: " + *prevVersionRef)
+		ref = branch.GetCommit().SHA
+		Print("Master SHA: " + *ref)
 		finish2()
 	} else {
 		Print("Master is unsafe as it has versions greater than %s", meta.GetVersion())
@@ -46,27 +46,38 @@ func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta
 	finish()
 
 	// Master is unsafe, detect closest matching PR instead
-	if prevVersionRef == nil {
+	if ref == nil {
 		finish = PrintStart("Finding nearest matching version PR to fork from")
 		prevVersionPR, err := wh.FetchVersionPR(ghClient, wh.AssertLT, meta.GetVersion())
 		if err != nil {
-			return errs.Wrap(err,
+			return "", errs.Wrap(err,
 				"Failed to find fork branch, please manually create the Version PR "+
 					"for '%s' by running the create-version-pr script.",
 				meta.GetVersion())
 		}
 
-		prevVersionRef = prevVersionPR.Head.SHA
+		ref = prevVersionPR.Head.SHA
 		Print("Nearest matching PR: %s (%d), branch: %s, SHA: %s",
-			prevVersionPR.GetTitle(), prevVersionPR.GetNumber(), prevVersionPR.Head.GetRef(), *prevVersionRef)
+			prevVersionPR.GetTitle(), prevVersionPR.GetNumber(), prevVersionPR.Head.GetRef(), *ref)
 		finish()
 	}
 
+	return *ref, nil
+}
+
+func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta) error {
+	finish := PrintStart("Detecting base ref to fork from")
+	prevVersionRef, err := DetectBaseRef(ghClient, jiraClient, meta)
+	if err != nil {
+		return errs.Wrap(err, "failed to detect base ref")
+	}
+	finish()
+
 	// Create branch
-	finish = PrintStart("Creating version branch, name: %s, forked from: %s", meta.GetVersionBranchName(), *prevVersionRef)
+	finish = PrintStart("Creating version branch, name: %s, forked from: %s", meta.GetVersionBranchName(), prevVersionRef)
 	dryRun := os.Getenv("DRYRUN") == "true"
 	if !dryRun {
-		if err := wh.CreateBranch(ghClient, meta.GetVersionBranchName(), *prevVersionRef); err != nil {
+		if err := wh.CreateBranch(ghClient, meta.GetVersionBranchName(), prevVersionRef); err != nil {
 			return errs.Wrap(err, "failed to create branch")
 		}
 	} else {
