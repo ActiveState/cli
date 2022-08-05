@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/google/go-github/v45/github"
 	"github.com/stretchr/testify/require"
 )
@@ -286,6 +287,7 @@ func TestActiveVersionsOnBranch(t *testing.T) {
 	require.NoError(t, err)
 
 	versions, err := ActiveVersionsOnBranch(InitGHClient(), jiraClient, MasterBranch, time.Now().AddDate(0, -6, 0))
+	require.NoError(t, err, errs.JoinMessage(err))
 	if len(versions) < 2 {
 		// Realistically we should have at least 2 versions in development in the past 6 months
 		t.Errorf("ActiveVersionsOnBranch() returned %d versions, want at least 2", len(versions))
