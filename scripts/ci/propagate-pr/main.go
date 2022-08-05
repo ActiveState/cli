@@ -47,6 +47,7 @@ func (m MergeIntends) String() string {
 func main() {
 	if err := run(); err != nil {
 		wc.Print("Error: %s\n", errs.JoinMessage(err))
+		os.Exit(1)
 	}
 }
 
