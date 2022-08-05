@@ -22,7 +22,7 @@ jobs:
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 5
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, "version/")
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'version/')
 
     steps:
 
