@@ -115,6 +115,10 @@ func run() error {
 	if err != nil {
 		return errs.Wrap(err, "failed to create branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
+	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", branchName}, nil)
+	if err != nil {
+		return errs.Wrap(err, "failed to checkout branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
 	finish()
 
 	wc.Print("All Done")
