@@ -46,6 +46,7 @@ jobs:
           # We specify our custom user because we need privileges to push to protected branches
           git config user.name "AS-builds"
           git config user.email "nathanr+asbuilds@activestate.com"
+          git fetch origin # Ensure access to branches
 
       - # === Preprocess ===
         name: Preprocess
