@@ -11,7 +11,7 @@ jobs:
 
   # === Set target pr ===
   target-version-pr:
-    name: Update and Verify RC PRs
+    name: Set target version PR
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
