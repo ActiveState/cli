@@ -91,9 +91,14 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 // users.
 func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, error) {
 	params := clientOrgs.NewInviteOrganizationParams()
+	role := mono_models.RoleReader
+	if asOwner {
+		role = mono_models.RoleAdmin
+	}
 	body := clientOrgs.InviteOrganizationBody{
 		AddedOnly: true,
 		AsOwner:   &asOwner,
+		Role:      &role,
 	}
 	params.SetOrganizationName(orgName)
 	params.SetAttributes(body)
