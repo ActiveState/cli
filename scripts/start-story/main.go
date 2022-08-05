@@ -109,11 +109,11 @@ func run() error {
 	finish = wc.PrintStart("Creating branch")
 	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
 	if err != nil {
-		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\n\nstderr:\n%s", stderr)
+		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
 	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"branch", branchName}, nil)
 	if err != nil {
-		return errs.Wrap(err, "failed to create branch, stdout:\n%s\n\nstderr:\n%s", stderr)
+		return errs.Wrap(err, "failed to create branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
 	finish()
 
