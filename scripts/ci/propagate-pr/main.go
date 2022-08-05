@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/exeutils"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -126,18 +127,29 @@ func run() error {
 			continue
 		}
 
-		// Perform the actual merge
-		_, _, err := ghClient.Repositories.Merge(context.Background(), "ActiveState", "cli", &github.RepositoryMergeRequest{
-			Base: &v.TargetBranch,
-			Head: &v.SourceBranch,
-			CommitMessage: p.StrP(fmt.Sprintf(
-				"Merge branch %s into %s to adopt PR %d for story %s",
-				v.SourceBranch, v.TargetBranch, meta.ActivePR.GetNumber(), meta.ActiveStory.Key,
-			)),
-		})
+		root := environment.GetRootPathUnsafe()
+		stdout, stderr, err := exeutils.ExecSimpleFromDir(root, "git", []string{"checkout", v.TargetBranch}, nil)
 		if err != nil {
-			return errs.Wrap(err, "Failed to merge PR, please manually merge the following branches: %s", intend[i:].String())
+			return errs.Wrap(err, "failed to checkout %s, stdout:\n%s\nstderr:\n%s", v.TargetBranch, stdout, stderr)
 		}
+
+		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"merge", v.SourceBranch}, nil)
+		if err != nil {
+			return errs.Wrap(err,
+				"failed to merge %s into %s. please manually merge the following branches: %s"+
+					"\nstdout:\n%s\nstderr:\n%s",
+				v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
+		}
+
+		// Force push because we don't want to
+		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
+		if err != nil {
+			return errs.Wrap(err,
+				"failed to merge %s into %s. please manually merge the following branches: %s"+
+					"\nstdout:\n%s\nstderr:\n%s",
+				v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
+		}
+
 		finish()
 	}
 

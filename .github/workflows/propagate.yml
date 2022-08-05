@@ -27,6 +27,8 @@ jobs:
       - # === Checkout code ===
         name: Checkout code
         uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
 
       - # === Install Go ===
         name: Install Go
@@ -41,8 +43,9 @@ jobs:
           bin=$(pwd)/.github/deps/${{ runner.os }}/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
-          ls -ahl $bin
-          printenv
+          # We specify our custom user because we need privileges to push to protected branches
+          git config user.name "AS-builds"
+          git config user.email "nathanr+asbuilds@activestate.com"
 
       - # === Preprocess ===
         name: Preprocess
