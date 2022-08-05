@@ -97,7 +97,6 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 	}
 	body := clientOrgs.InviteOrganizationBody{
 		AddedOnly: true,
-		AsOwner:   &asOwner,
 		Role:      &role,
 	}
 	params.SetOrganizationName(orgName)
