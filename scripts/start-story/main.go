@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -61,16 +62,14 @@ func run() error {
 	finish()
 
 	finish = wc.PrintStart("Checking if local repo is clean")
-	worktree, err := repo.Worktree()
+	// We can't use go-git here as it does not respect autcrlf
+	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"status", "-s"}, nil)
 	if err != nil {
-		return errs.Wrap(err, "failed to get worktree")
+		return errs.Wrap(err, "failed to check local repo status, stderr: %s", stderr)
 	}
-	status, err := worktree.Status()
-	if err != nil {
-		return errs.Wrap(err, "failed to get status")
-	}
-	if !status.IsClean() {
-		return errs.New("Local repo is not clean, please make sure you have no pending changes. Status received:\n %s", status.String())
+	stdout = strings.TrimSpace(stdout)
+	if stdout != "" {
+		return errs.New("Local repo is not clean, please make sure you have no pending changes. Status received:\n %s", stdout)
 	}
 	finish()
 
@@ -115,6 +114,10 @@ func run() error {
 	}
 
 	finish = wc.PrintStart("Creating branch")
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return errs.Wrap(err, "failed to get worktree")
+	}
 	if err := worktree.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(ref)}); err != nil {
 		return errs.Wrap(err, "failed to checkout base ref")
 	}
