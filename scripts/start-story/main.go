@@ -12,9 +12,6 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 func main() {
@@ -54,10 +51,6 @@ func run() error {
 	jiraClient, err := wh.InitJiraClient()
 	if err != nil {
 		return errs.Wrap(err, "failed to initialize Jira client")
-	}
-	repo, err := git.PlainOpen(environment.GetRootPathUnsafe())
-	if err != nil {
-		return errs.Wrap(err, "failed to open local repo")
 	}
 	finish()
 
@@ -114,17 +107,14 @@ func run() error {
 	}
 
 	finish = wc.PrintStart("Creating branch")
-	worktree, err := repo.Worktree()
+	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
 	if err != nil {
-		return errs.Wrap(err, "failed to get worktree")
+		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\n\nstderr:\n%s", stderr)
 	}
-	if err := worktree.Checkout(&git.CheckoutOptions{Hash: plumbing.NewHash(ref)}); err != nil {
-		return errs.Wrap(err, "failed to checkout base ref")
+	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"branch", branchName}, nil)
+	if err != nil {
+		return errs.Wrap(err, "failed to create branch, stdout:\n%s\n\nstderr:\n%s", stderr)
 	}
-	if err := repo.CreateBranch(&config.Branch{Name: branchName}); err != nil {
-		return errs.Wrap(err, "failed to create branch")
-	}
-
 	finish()
 
 	wc.Print("All Done")
