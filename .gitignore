@@ -14,3 +14,5 @@ obj/
 bin/
 installers/msi-language/Product.wxs
 node_modules
+zig-cache
+
