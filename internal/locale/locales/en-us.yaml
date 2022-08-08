@@ -1879,6 +1879,8 @@ err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
+err_shell_cannot_load_project:
+  other: Cannot load project to start a shell/prompt in.
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:

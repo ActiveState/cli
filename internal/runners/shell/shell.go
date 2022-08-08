@@ -61,13 +61,13 @@ func (u *Shell) Run(params *Params) error {
 
 	var proj *project.Project
 	var err error
-	if params.Namespace.Owner != "" || params.Namespace.Project != "" {
+	if params.Namespace.Project != "" {
 		proj, err = runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 		if err != nil {
 			if runbitsProject.IsLocalProjectDoesNotExistError(err) {
 				return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
 			}
-			return locale.WrapError(err, "err_shell", "Unable to run shell")
+			return locale.WrapError(err, "err_shell_cannot_load_project")
 		}
 	} else {
 		projectFile, err := projectfile.GetProjectFilePath()
@@ -76,7 +76,7 @@ func (u *Shell) Run(params *Params) error {
 		}
 		proj, err = project.FromPath(projectFile)
 		if err != nil {
-			return locale.WrapInputError(err, "err_shell_cannot_load_project", "Cannot load project to start a shell/prompt in.")
+			return locale.WrapInputError(err, "err_shell_cannot_load_project")
 		}
 	}
 

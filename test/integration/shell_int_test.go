@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -70,6 +71,32 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ShellIntegrationTestSuite) TestCwdShell() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell"),
+		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
