@@ -157,7 +157,7 @@ func run(cfg *config.Instance) error {
 			[]*captain.Argument{
 				{
 					Name:        "Arg text",
-					Description: "Argument text of caller",
+					Description: "Argument text of calling process to be reported if this application is started too often",
 					Value:       &foregroundArgText,
 				},
 			},
