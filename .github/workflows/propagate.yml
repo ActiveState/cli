@@ -11,9 +11,7 @@ jobs:
 
   # === Set target branch ===
   propagate:
-    name: Update and Verify RC PRs
-    needs:
-      - os_specific
+    name: Propagate to affected version branches
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -22,13 +20,16 @@ jobs:
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
     timeout-minutes: 5
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, "version/")
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'version/')
 
     steps:
 
       - # === Checkout code ===
         name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_AUTOMATION_TOKEN }}
 
       - # === Install Go ===
         name: Install Go
@@ -43,8 +44,9 @@ jobs:
           bin=$(pwd)/.github/deps/${{ runner.os }}/bin
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
-          ls -ahl $bin
-          printenv
+          # We specify our custom user because we need privileges to push to protected branches
+          git config user.name "AS-builds"
+          git config user.email "nathanr+asbuilds@activestate.com"
 
       - # === Preprocess ===
         name: Preprocess

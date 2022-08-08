@@ -28,6 +28,7 @@ var cutoff = time.Now().Add(-(3 * 31 * 24 * time.Hour))
 func main() {
 	if err := run(); err != nil {
 		wc.Print("Error: %s\n", errs.JoinMessage(err))
+		os.Exit(1)
 	}
 }
 
