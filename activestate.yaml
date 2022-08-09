@@ -38,6 +38,9 @@ constants:
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: state-svc
+  - name: BUILD_EXEC_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-exec
   - name: BUILD_INSTALLER_TARGET
     if: ne .OS.Name "Windows"
     value: state-installer
@@ -145,27 +148,25 @@ scripts:
     description: Builds the State Executor application
     language: bash
     value: |
-      appName="state-exec"
-      zig build-exe --strip -static -O ReleaseFast "./cmd/${appName}/${appName}.zig"
-      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+      zig build-exe --strip -static -O ReleaseFast "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "${BUILD_TARGET_PREFIX_DIR}"
 
   - name: build-exec
     if: eq .OS.Name "MacOS"
     description: Builds the State Executor application
     language: bash
     value: |
-      appName="state-exec"
-      zig build-exe --strip -O ReleaseFast "./cmd/${appName}/${appName}.zig"
-      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+      zig build-exe --strip -O ReleaseFast "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "${BUILD_TARGET_PREFIX_DIR}"
 
   - name: build-exec
     if: eq .OS.Name "Windows"
     description: Builds the State Executor application
     language: bash
     value: |
-      appName="state-exec"
-      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${appName}/${appName}.zig"
-      mv "${appName}" "${BUILD_TARGET_PREFIX_DIR}"
+      BUILD_EXEC_NAME="${BUILD_EXEC_TARGET%.*}" # trim extension
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${BUILD_EXEC_NAME}/${BUILD_EXEC_NAME}.zig"
+      mv "${BUILD_EXEC_NAME}" "${BUILD_TARGET_PREFIX_DIR}/${BUILD_EXEC_TARGET}"
 
   - name: build-all
     description: Builds all our tools
@@ -179,6 +180,8 @@ scripts:
       $scripts.build-installer.path._posix()
       echo "Building State Service"
       $scripts.build-svc.path._posix()
+      echo "Building State Executor"
+      $scripts.build-exec.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
   - name: build-installer
