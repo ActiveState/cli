@@ -37,7 +37,6 @@ type Params struct {
 	Path      string
 	Force     bool
 	UserScope bool
-	Uninstall bool
 }
 
 // RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
