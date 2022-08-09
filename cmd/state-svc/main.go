@@ -182,12 +182,12 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 	p := NewService(ctx, cfg, an, auth)
 
-	if argText == "" {
-		argText = "[unknown]"
+	if argText != "" {
+		argText = fmt.Sprintf(" (invoked by %q)", argText)
 	}
 
 	if err := p.Start(); err != nil {
-		return errs.Wrap(err, fmt.Sprintf("Could not start service (invoked by %q)", argText))
+		return errs.Wrap(err, "Could not start service"+argText)
 	}
 
 	// Handle sigterm
