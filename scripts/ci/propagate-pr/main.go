@@ -133,7 +133,11 @@ func run() error {
 			return errs.Wrap(err, "failed to checkout %s, stdout:\n%s\nstderr:\n%s", v.TargetBranch, stdout, stderr)
 		}
 
-		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"merge", v.SourceBranch}, nil)
+		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{
+			"merge", v.SourceBranch,
+			"--no-edit", "-m",
+			fmt.Sprintf("Merge branch %s to adopt changes from PR #%d", v.SourceBranch, prNumber),
+		}, nil)
 		if err != nil {
 			return errs.Wrap(err,
 				"failed to merge %s into %s. please manually merge the following branches: %s"+
