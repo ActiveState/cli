@@ -58,12 +58,21 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
-	if err != nil {
-		if runbitsProject.IsLocalProjectDoesNotExistError(err) {
-			return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
+	var proj *project.Project
+	var err error
+	if params.Namespace.Project != "" {
+		proj, err = runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
+		if err != nil {
+			if runbitsProject.IsLocalProjectDoesNotExistError(err) {
+				return locale.WrapInputError(err, "err_shell_project_does_not_exist", "Local project does not exist.")
+			}
+			return locale.WrapError(err, "err_shell_cannot_load_project")
 		}
-		return locale.WrapError(err, "err_shell", "Unable to run shell")
+	} else {
+		proj, err = project.GetOnce()
+		if err != nil {
+			return locale.WrapInputError(err, "err_shell_cannot_load_project")
+		}
 	}
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
