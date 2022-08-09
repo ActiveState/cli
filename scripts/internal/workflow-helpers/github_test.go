@@ -47,7 +47,7 @@ func TestParseJiraKey(t *testing.T) {
 			actual, err := ParseJiraKey(tc.msg)
 			if err != nil {
 				if tc.expected != "" {
-					t.Errorf("expected %s, got error: %v", tc.expected, err)
+					t.Errorf("expected %s, got error: %s", tc.expected, errs.JoinMessage(err))
 				}
 				return
 			}
@@ -92,7 +92,7 @@ func TestFetchPRs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := FetchPRs(tt.args.ghClient, tt.args.cutoff, tt.args.opts)
 			if err != nil {
-				t.Errorf("FetchPRs() error = %v", err)
+				t.Errorf("FetchPRs() error = %s", errs.JoinMessage(err))
 				return
 			}
 			hasResults := len(got) > 0
@@ -143,7 +143,7 @@ func TestFetchCommitsByRef(t *testing.T) {
 				return tt.args.stop(commit, count)
 			})
 			if err != nil {
-				t.Errorf("FetchCommitsByRef() error = %v", err)
+				t.Errorf("FetchCommitsByRef() error = %s", errs.JoinMessage(err))
 				return
 			}
 			if len(got) != tt.wantN {
@@ -208,7 +208,7 @@ func TestSearchGithubIssues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := SearchGithubIssues(tt.args.client, tt.args.term)
 			if err != nil {
-				t.Errorf("SearchGithubIssues() error = %v", err)
+				t.Errorf("SearchGithubIssues() error = %s", errs.JoinMessage(err))
 				return
 			}
 			for _, title := range tt.want {
@@ -266,7 +266,7 @@ func TestFetchPRByTitle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := FetchPRByTitle(tt.args.ghClient, tt.args.prName)
 			if err != nil {
-				t.Errorf("FetchPRByTitle() error = %v", err)
+				t.Errorf("FetchPRByTitle() error = %s", errs.JoinMessage(err))
 				return
 			}
 			if got == nil {
