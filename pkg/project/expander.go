@@ -162,9 +162,18 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *Ex
 		if err != nil {
 			return "", err
 		}
-		if posixPath := meta == "path._posix" || (runtime.GOOS == "windows" && ctx.Script != nil && ctx.Script.LanguageSafe()[0] == language.Sh); posixPath {
+
+		if meta == "path._posix" {
 			return osutils.BashifyPath(path)
 		}
+
+		if runtime.GOOS == "windows" && ctx.Script != nil {
+			lang := ctx.Script.LanguageSafe()[0]
+			if lang == language.Bash || lang == language.Sh {
+				return osutils.BashifyPath(path)
+			}
+		}
+
 		return path, nil
 	}
 
