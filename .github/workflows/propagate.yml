@@ -61,7 +61,7 @@ jobs:
         continue-on-error: true
 
       - # === Notify Slack of Failures ===
-        name: Notify Slack of Nightly Integration Test Failures
+        name: Notify Slack of Failures
         if: steps.propagate_pr.outcome == 'failure'
         uses: slackapi/slack-github-action@v1.18.0
         with:
