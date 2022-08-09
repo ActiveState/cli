@@ -72,7 +72,7 @@ func (u *Use) Run(params *Params) error {
 		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
-		return locale.WrapInputError(err, "err_use_project_does_not_exist", "Local project does not exist.")
+		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
