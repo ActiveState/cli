@@ -55,5 +55,35 @@ jobs:
 
       - # === Propagate PR ===
         name: Propagate PR
+        id: propagate_pr
         shell: bash
         run: go run scripts/ci/propagate-pr/main.go ${{ github.event.pull_request.number }}
+        continue-on-error: true
+
+      - # === Notify Slack of Failures ===
+        name: Notify Slack of Nightly Integration Test Failures
+        if: steps.propagate_pr.outcome == 'failure'
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Propagate-PR failed for ${{ github.event.pull_request.html_url }}\nFailure should be addressed by ${{ github.event.pull_request.user.login }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Propagate-PR failed for *<${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>*\nFailure should be addressed by *${{ github.event.pull_request.user.login }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - # === Fail If Propagate PR failed ===
+        name: Fail If Propagate PR failed
+        if: steps.propagate_pr.outcome == 'failure'
+        shell: bash
+        run: exit 1
