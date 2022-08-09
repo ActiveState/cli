@@ -70,6 +70,7 @@ scripts:
       BINDIR=$TEMPDIR/bin
       mkdir -p $TEMPDIR/bin
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
+      cp -a $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
 
@@ -107,10 +108,12 @@ scripts:
 
       TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
       TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
+      TEST_STATE_EXEC=./build/test/state-install/bin/$constants.BUILD_EXEC_TARGET
       TEST_STATE_TRAY=./build/test/state-install/bin/$constants.BUILD_SYSTRAY_TARGET
       TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
       go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
+      cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
 
@@ -125,6 +128,7 @@ scripts:
       echo "compile ${TEST_CHANNEL} update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
+      cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $TEST_STATE_TOOL $TEST_STATE_TRAY
 
       if [ ! -z $constants.SYSTRAY_APP ]; then
