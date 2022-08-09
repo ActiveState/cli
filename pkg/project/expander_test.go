@@ -55,6 +55,9 @@ scripts:
     value: $scripts.pythonScript.path()
   - name: scriptRecursive
     value: $scripts.scriptRecursive.path()
+  - name: bashScriptPath
+    language: bash
+    value: ${scripts.pythonScript.path()}
 `)
 
 	err := yaml.Unmarshal([]byte(contents), pjFile)
@@ -153,7 +156,7 @@ func TestExpandProjectConstant(t *testing.T) {
 func TestExpandProjectSecret(t *testing.T) {
 	pj := loadProject(t)
 
-	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, pj *project.Project) (string, error) {
+	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, ctx *project.ExpanderContext) (string, error) {
 		if category == project.ProjectCategory {
 			return "proj-value", nil
 		}
@@ -268,4 +271,13 @@ func TestExpandScriptPathRecursive(t *testing.T) {
 	contents, err := fileutils.ReadFile(expanded)
 	require.NoError(t, err)
 	assert.NotContains(t, contents, "$scripts.scriptRecursive.path()")
+}
+
+func TestExpandBashScriptPath(t *testing.T) {
+	prj := loadProject(t)
+	script := prj.ScriptByName("bashScriptPath")
+	require.NotNil(t, script, "bashScriptPath script does not exist")
+	value, err := script.Value()
+	require.NoError(t, err)
+	assert.Contains(t, value, "/pythonScript") // assert bash backslashes, even on Windows
 }

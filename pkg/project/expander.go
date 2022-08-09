@@ -3,9 +3,11 @@ package project
 import (
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -18,20 +20,33 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 )
 
+type ExpanderContext struct {
+	Project *Project
+	Script  *Script
+}
+
+func NewExpanderContext(p *Project) *ExpanderContext {
+	return &ExpanderContext{Project: p}
+}
+
 // Expand will detect the active project and invoke ExpandFromProject with the given string
 func Expand(s string) (string, error) {
 	return ExpandFromProject(s, Get())
+}
+
+func ExpandFromScript(s string, script *Script) (string, error) {
+	return limitExpandFromContext(0, s, &ExpanderContext{Project: Get(), Script: script})
 }
 
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
 func ExpandFromProject(s string, p *Project) (string, error) {
-	return limitExpandFromProject(0, s, p)
+	return limitExpandFromContext(0, s, NewExpanderContext(p))
 }
 
-// limitExpandFromProject limits the depth of an expansion to avoid infinite expansion of a value.
-func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
+// limitExpandFromContext limits the depth of an expansion to avoid infinite expansion of a value.
+func limitExpandFromContext(depth int, s string, ctx *ExpanderContext) (string, error) {
 	if depth > constants.ExpanderMaxDepth {
 		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
@@ -66,7 +81,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
 			var err2 error
-			if value, err2 = expanderFn(variable, name, meta, isFunction, p); err2 != nil {
+			if value, err2 = expanderFn(variable, name, meta, isFunction, ctx); err2 != nil {
 				err = errs.Wrap(err2, "Could not expand %s.%s", category, name)
 				return ""
 			}
@@ -75,7 +90,7 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 		}
 
 		if value != "" && value != variable {
-			value, err = limitExpandFromProject(depth+1, value, p)
+			value, err = limitExpandFromContext(depth+1, value, ctx)
 		}
 		return value
 	})
@@ -86,11 +101,11 @@ func limitExpandFromProject(depth int, s string, p *Project) (string, error) {
 // ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(variable, name, meta string, isFunction bool, project *Project) (string, error)
+type ExpanderFunc func(variable, name, meta string, isFunction bool, ctx *ExpanderContext) (string, error)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
-	projectFile := project.Source()
+func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+	projectFile := ctx.Project.Source()
 	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
 			continue
@@ -117,8 +132,8 @@ func PlatformExpander(_ string, name string, meta string, isFunction bool, proje
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
-	projectFile := project.Source()
+func EventExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+	projectFile := ctx.Project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
 	if err != nil {
 		return "", err
@@ -132,8 +147,8 @@ func EventExpander(_ string, name string, meta string, isFunction bool, project 
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
-	script := project.ScriptByName(name)
+func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+	script := ctx.Project.ScriptByName(name)
 	if script == nil {
 		return "", nil
 	}
@@ -142,15 +157,15 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, project
 		return script.Raw(), nil
 	}
 
-	switch meta {
-	case "path":
-		return expandPath(name, script)
-	case "path._posix":
+	if meta == "path" || meta == "path._posix" {
 		path, err := expandPath(name, script)
 		if err != nil {
 			return "", err
 		}
-		return osutils.BashifyPath(path)
+		if posixPath := meta == "path._posix" || (runtime.GOOS == "windows" && ctx.Script != nil && ctx.Script.LanguageSafe()[0] == language.Sh); posixPath {
+			return osutils.BashifyPath(path)
+		}
+		return path, nil
 	}
 
 	return script.Raw(), nil
@@ -209,7 +224,7 @@ func NewMixin(auth *authentication.Auth) *Mixin {
 }
 
 // Expander expands mixin variables
-func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Project) (string, error) {
+func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *ExpanderContext) (string, error) {
 	if name == "user" {
 		return userExpander(m.auth, meta), nil
 	}
@@ -217,8 +232,8 @@ func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Project)
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(_ string, name string, meta string, isFunction bool, project *Project) (string, error) {
-	projectFile := project.Source()
+func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+	projectFile := ctx.Project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
 	if err != nil {
 		return "", err
@@ -232,11 +247,12 @@ func ConstantExpander(_ string, name string, meta string, isFunction bool, proje
 }
 
 // ProjectExpander expands constants defined in the project-file.
-func ProjectExpander(_ string, name string, _ string, isFunction bool, project *Project) (string, error) {
+func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *ExpanderContext) (string, error) {
 	if !isFunction {
 		return "", nil
 	}
 
+	project := ctx.Project
 	switch name {
 	case "url":
 		return project.URL(), nil
@@ -261,8 +277,8 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, project *
 	return "", nil
 }
 
-func TopLevelExpander(variable string, name string, _ string, _ bool, project *Project) (string, error) {
-	projectFile := project.Source()
+func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *ExpanderContext) (string, error) {
+	projectFile := ctx.Project.Source()
 	switch name {
 	case "project":
 		return projectFile.Project, nil
