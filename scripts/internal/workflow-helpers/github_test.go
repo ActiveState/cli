@@ -47,7 +47,7 @@ func TestParseJiraKey(t *testing.T) {
 			actual, err := ParseJiraKey(tc.msg)
 			if err != nil {
 				if tc.expected != "" {
-					t.Errorf("expected %s, got error: %v", tc.expected, errs.JoinMessage(err))
+					t.Errorf("expected %s, got error: %s", tc.expected, errs.JoinMessage(err))
 				}
 				return
 			}
