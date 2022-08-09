@@ -458,7 +458,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 
 	// Uninstall deployed runtime.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "uninstall", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Uninstall Deployed Runtime")
@@ -469,7 +469,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 
 	// Trying to uninstall again should fail
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "uninstall", "ActiveState-CLI/Python3", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("no deployed runtime")
@@ -478,7 +478,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 
 	// Trying to uninstall in a non-deployment directory should fail.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "uninstall", "ActiveState-CLI/Python3"),
+		e2e.WithArgs("deploy", "uninstall"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("no deployed runtime")
@@ -487,7 +487,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 
 	// Trying to uninstall in a non-deployment directory should not delete that directory.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("deploy", "uninstall", "ActiveState-CLI/Python3", "--path", ts.Dirs.Work),
+		e2e.WithArgs("deploy", "uninstall", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("no deployed runtime")
