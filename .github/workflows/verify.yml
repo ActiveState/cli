@@ -5,7 +5,10 @@ name: Verify
   pull_request:
     types:
       - edited
+      - labeled
+      - opened
       - synchronize
+      - reopened
 
 # === JOBS ===
 jobs:
