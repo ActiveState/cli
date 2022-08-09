@@ -4,6 +4,7 @@ name: Verify
 "on":
   pull_request:
     types:
+      - edited
       - labeled
       - opened
       - synchronize
