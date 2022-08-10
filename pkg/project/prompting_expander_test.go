@@ -96,7 +96,7 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, err := expanderFn("", project.ProjectCategory, secretName, false, suite.project)
+	expandedValue, err := expanderFn("", project.ProjectCategory, secretName, false, project.NewExpansion(suite.project))
 
 	suite.Require().NotNil(err)
 	suite.Zero(expandedValue)
@@ -114,13 +114,13 @@ func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveSuccess(secretNam
 
 	suite.promptMock.OnMethod("InputSecret").Once().Return(expectedValue, nil)
 	expanderFn := suite.prepareWorkingExpander()
-	expandedValue, err := expanderFn("", category, secretName, false, suite.project)
+	expandedValue, err := expanderFn("", category, secretName, false, project.NewExpansion(suite.project))
 
 	suite.Require().NoError(bodyErr)
 	suite.Require().Nil(err)
 	suite.Equal(expectedValue, expandedValue)
 
-	_, err = expanderFn("", category, secretName, false, suite.project)
+	_, err = expanderFn("", category, secretName, false, project.NewExpansion(suite.project))
 	suite.Require().Nil(err, "Should not prompt again because it should have stored/cached the secret")
 
 	suite.Require().Len(userChanges, 1)
