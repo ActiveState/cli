@@ -126,6 +126,10 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
 	cp.ExpectExitCode(0)
 
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp.Expect("Checking")
+	cp.ExpectExitCode(0)
+
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
