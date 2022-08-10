@@ -244,7 +244,7 @@ type SecretFunc func(name string, project *Project) (string, error)
 var ErrSecretNotFound = errors.New("secret not found")
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(_ string, category string, name string, isFunction bool, project *Project) (string, error) {
+func (e *SecretExpander) Expand(_ string, category string, name string, isFunction bool, ctx *Expansion) (string, error) {
 	if !condition.OptInUnstable(e.cfg) {
 		return "", locale.NewError("secrets_unstable_warning")
 	}
@@ -252,10 +252,10 @@ func (e *SecretExpander) Expand(_ string, category string, name string, isFuncti
 	isUser := category == UserCategory
 
 	if e.project == nil {
-		e.project = project
+		e.project = ctx.Project
 	}
 	if e.projectFile == nil {
-		e.projectFile = project.Source()
+		e.projectFile = ctx.Project.Source()
 	}
 
 	keypair, err := e.KeyPair()
@@ -287,7 +287,7 @@ func (e *SecretExpander) Expand(_ string, category string, name string, isFuncti
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string, isFunction bool, project *Project) (string, error) {
+func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string, isFunction bool, ctx *Expansion) (string, error) {
 	if !condition.OptInUnstable(e.cfg) {
 		return "", locale.NewError("secrets_unstable_warning")
 	}
@@ -299,10 +299,10 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 	}
 
 	if e.project == nil {
-		e.project = project
+		e.project = ctx.Project
 	}
 	if e.projectFile == nil {
-		e.projectFile = project.Source()
+		e.projectFile = ctx.Project.Source()
 	}
 
 	keypair, err := e.KeyPair()
@@ -333,7 +333,7 @@ func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string
 		description = def.Description
 	}
 
-	project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
+	ctx.Project.Outputer.Notice(locale.Tr("secret_value_prompt_summary", name, description, scope, locale.T("secret_prompt_"+scope)))
 	if value, err = e.prompt.InputSecret(locale.Tl("secret_expand", "Secret Expansion"), locale.Tr("secret_value_prompt", name)); err != nil {
 		return "", locale.NewInputError("secrets_err_value_prompt", "The provided secret value is invalid.")
 	}

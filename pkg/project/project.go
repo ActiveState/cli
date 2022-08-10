@@ -558,7 +558,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 		category = UserCategory
 	}
 
-	value, err := secretsExpander.Expand("", category, s.secret.Name, false, s.project)
+	value, err := secretsExpander.Expand("", category, s.secret.Name, false, NewExpansion(s.project))
 	if err != nil {
 		if errors.Is(err, ErrSecretNotFound) {
 			return nil, nil
@@ -667,7 +667,7 @@ func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all secrets evaluated
 func (script *Script) Value() (string, error) {
-	return Expand(script.script.Value)
+	return ExpandFromScript(script.script.Value, script)
 }
 
 // Raw returns the script value with no secrets or constants expanded
