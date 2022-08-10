@@ -65,7 +65,8 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		homeDir, err := homedir.Dir()
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
-		suite.Contains(string(fileutils.ReadFileUnsafe(profile)), as.Exec, "autostart should be configured for Linux server environment")
+		profileContents := fileutils.ReadFileUnsafe(profile)
+		suite.Contains(string(profileContents), as.Exec, "autostart should be configured for Linux server environment")
 	}
 
 	// Verify autostart can be disabled.
@@ -80,7 +81,8 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		homeDir, err := homedir.Dir()
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
-		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), as.Exec, "autostart should not be configured for Linux server environment anymore")
+		profileContents := fileutils.ReadFileUnsafe(profile)
+		suite.NotContains(string(profileContents), as.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
 }
 
