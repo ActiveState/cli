@@ -1480,7 +1480,8 @@ flag_state_deploy_user_path_description:
 deploy_uninstall_success:
   other: |
     Successfully removed deployment.
-    [ACTIONABLE]Please restart your terminal or start a new terminal session in order to clear any residual Runtime Environment variables and settings.[/RESET]
+
+    Please restart your terminal or start a new terminal session in order to clear any residual Runtime Environment variables and settings.
 envdef_file_not_found:
   other: |
     Your installation seems to be corrupted.
