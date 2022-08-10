@@ -49,7 +49,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 			e2e.WithArgs("shell", arg),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
-		cp.Expect("The project Python-3.9 is not checked out")
+		cp.Expect("Cannot find the Python-3.9 project")
 		cp.ExpectExitCode(1)
 	}
 }
