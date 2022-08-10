@@ -100,7 +100,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("use", "NotCheckedOut"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("The project NotCheckedOut is not checked out")
+	cp.Expect("Cannot find the NotCheckedOut project.")
 	cp.ExpectExitCode(1)
 }
 
