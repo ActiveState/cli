@@ -61,7 +61,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--default", "--path", ts.Dirs.Work),
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--default", "--path", filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
