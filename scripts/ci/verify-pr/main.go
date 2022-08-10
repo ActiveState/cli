@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -170,7 +171,7 @@ func verifyPR(ghClient *github.Client, jiraClient *jira.Client, pr *github.PullR
 	validateBranch := true
 	finish = wc.PrintStart("Verifying fixVersion")
 	if _, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true); err != nil {
-		if jiraVersion.Name == wh.VersionAny {
+		if errors.Is(err, wh.ErrVersionIsAny) {
 			wc.Print("fixVersion is '%s', so skipping target branch validation", jiraVersion.Name)
 			validateBranch = false
 		} else {
