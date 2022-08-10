@@ -82,7 +82,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := fileutils.ReadFileUnsafe(profile)
-		suite.NotContains(string(profileContents), as.Exec, "autostart should not be configured for Linux server environment anymore")
+		suite.NotContains(profileContents, as.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
 }
 
