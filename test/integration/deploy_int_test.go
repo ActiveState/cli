@@ -216,6 +216,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -432,6 +436,63 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cpx.ExpectExitCode(0)
+}
+
+func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
+	suite.OnlyRunForTags(tagsuite.Deploy)
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeployUninstall when not running on CI, as it modifies bashrc/registry")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	targetDir := filepath.Join(ts.Dirs.Work, "target")
+	if fileutils.TargetExists(targetDir) {
+		isEmpty, err := fileutils.IsEmptyDir(targetDir)
+		suite.Require().NoError(err)
+		suite.True(isEmpty, "Target dir should be empty before we start")
+	}
+
+	suite.InstallAndAssert(ts, targetDir)
+
+	// Uninstall deployed runtime.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Uninstall Deployed Runtime")
+	cp.Expect("Successful")
+	cp.ExpectExitCode(0)
+	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.Work, "target")), "Deploy dir was not deleted")
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall again should fail
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall in a non-deployment directory should fail.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall in a non-deployment directory should not delete that directory.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {
