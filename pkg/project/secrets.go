@@ -244,7 +244,7 @@ type SecretFunc func(name string, project *Project) (string, error)
 var ErrSecretNotFound = errors.New("secret not found")
 
 // Expand will expand a variable to a secret value, if no secret exists it will return an empty string
-func (e *SecretExpander) Expand(_ string, category string, name string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func (e *SecretExpander) Expand(_ string, category string, name string, isFunction bool, ctx *Expansion) (string, error) {
 	if !condition.OptInUnstable(e.cfg) {
 		return "", locale.NewError("secrets_unstable_warning")
 	}
@@ -287,7 +287,7 @@ func (e *SecretExpander) Expand(_ string, category string, name string, isFuncti
 }
 
 // ExpandWithPrompt will expand a variable to a secret value, if no secret exists the user will be prompted
-func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func (e *SecretExpander) ExpandWithPrompt(_ string, category string, name string, isFunction bool, ctx *Expansion) (string, error) {
 	if !condition.OptInUnstable(e.cfg) {
 		return "", locale.NewError("secrets_unstable_warning")
 	}

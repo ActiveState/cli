@@ -20,33 +20,17 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 )
 
-type ExpanderContext struct {
+type Expansion struct {
 	Project *Project
 	Script  *Script
 }
 
-func NewExpanderContext(p *Project) *ExpanderContext {
-	return &ExpanderContext{Project: p}
+func NewExpansion(p *Project) *Expansion {
+	return &Expansion{Project: p}
 }
 
-// Expand will detect the active project and invoke ExpandFromProject with the given string
-func Expand(s string) (string, error) {
-	return ExpandFromProject(s, Get())
-}
-
-func ExpandFromScript(s string, script *Script) (string, error) {
-	return limitExpandFromContext(0, s, &ExpanderContext{Project: Get(), Script: script})
-}
-
-// ExpandFromProject searches for $category.name-style variables in the given
-// string and substitutes them with their contents, derived from the given
-// project, and subject to the given constraints (if any).
-func ExpandFromProject(s string, p *Project) (string, error) {
-	return limitExpandFromContext(0, s, NewExpanderContext(p))
-}
-
-// limitExpandFromContext limits the depth of an expansion to avoid infinite expansion of a value.
-func limitExpandFromContext(depth int, s string, ctx *ExpanderContext) (string, error) {
+// ApplyWithMaxDepth limits the depth of an expansion to avoid infinite expansion of a value.
+func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 	if depth > constants.ExpanderMaxDepth {
 		return "", locale.NewInputError("err_expand_recursion", "Infinite recursion trying to expand variable '{{.V0}}'", s)
 	}
@@ -90,7 +74,7 @@ func limitExpandFromContext(depth int, s string, ctx *ExpanderContext) (string, 
 		}
 
 		if value != "" && value != variable {
-			value, err = limitExpandFromContext(depth+1, value, ctx)
+			value, err = ctx.ApplyWithMaxDepth(value, depth+1)
 		}
 		return value
 	})
@@ -98,13 +82,30 @@ func limitExpandFromContext(depth int, s string, ctx *ExpanderContext) (string, 
 	return expanded, err
 }
 
+// Expand will detect the active project and invoke ExpandFromProject with the given string
+func Expand(s string) (string, error) {
+	return ExpandFromProject(s, Get())
+}
+
+// ExpandFromProject searches for $category.name-style variables in the given
+// string and substitutes them with their contents, derived from the given
+// project, and subject to the given constraints (if any).
+func ExpandFromProject(s string, p *Project) (string, error) {
+	return NewExpansion(p).ApplyWithMaxDepth(s, 0)
+}
+
+func ExpandFromScript(s string, script *Script) (string, error) {
+	expansion := &Expansion{Project: Get(), Script: script}
+	return expansion.ApplyWithMaxDepth(s, 0)
+}
+
 // ExpanderFunc defines an Expander function which can expand the name for a category. An Expander expects the name
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
-type ExpanderFunc func(variable, name, meta string, isFunction bool, ctx *ExpanderContext) (string, error)
+type ExpanderFunc func(variable, name, meta string, isFunction bool, ctx *Expansion) (string, error)
 
 // PlatformExpander expends metadata about the current platform.
-func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	for _, platform := range projectFile.Platforms {
 		if !constraints.PlatformMatches(platform) {
@@ -132,7 +133,7 @@ func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *
 }
 
 // EventExpander expands events defined in the project-file.
-func EventExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Events.AsConstrainedEntities())
 	if err != nil {
@@ -147,7 +148,7 @@ func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Exp
 }
 
 // ScriptExpander expands scripts defined in the project-file.
-func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	script := ctx.Project.ScriptByName(name)
 	if script == nil {
 		return "", nil
@@ -233,7 +234,7 @@ func NewMixin(auth *authentication.Auth) *Mixin {
 }
 
 // Expander expands mixin variables
-func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *ExpanderContext) (string, error) {
+func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Expansion) (string, error) {
 	if name == "user" {
 		return userExpander(m.auth, meta), nil
 	}
@@ -241,7 +242,7 @@ func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Expander
 }
 
 // ConstantExpander expands constants defined in the project-file.
-func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	constrained, err := constraints.FilterUnconstrained(pConditional, projectFile.Constants.AsConstrainedEntities())
 	if err != nil {
@@ -256,7 +257,7 @@ func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *
 }
 
 // ProjectExpander expands constants defined in the project-file.
-func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *ExpanderContext) (string, error) {
+func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expansion) (string, error) {
 	if !isFunction {
 		return "", nil
 	}
@@ -286,7 +287,7 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	return "", nil
 }
 
-func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *ExpanderContext) (string, error) {
+func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	switch name {
 	case "project":
