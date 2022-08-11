@@ -2,6 +2,7 @@ package workflow_helpers
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -14,19 +15,14 @@ import (
 	"github.com/google/go-github/v45/github"
 	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 )
 
 func InitGHClient() *github.Client {
 	token := secrethelper.GetSecretIfEmpty(os.Getenv("GITHUB_TOKEN"), "user.GITHUB_TOKEN")
 
-	// Init github client
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	return github.NewClient(tc)
+	return github.NewClient(&http.Client{
+		Transport: NewRateLimitTransport(http.DefaultTransport, token),
+	})
 }
 
 // ExtractJiraIssueID tries to extract the jira issue ID from the branch name
