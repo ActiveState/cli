@@ -156,7 +156,7 @@ scripts:
     description: Builds the State Executor application
     language: bash
     value: |
-      zig build-exe --strip -O ReleaseFast "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      zig build-exe --strip -O ReleaseFast -target "x86_64-macos" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
       mv "$BUILD_EXEC_TARGET" "${BUILD_TARGET_PREFIX_DIR}"
 
   - name: build-exec
