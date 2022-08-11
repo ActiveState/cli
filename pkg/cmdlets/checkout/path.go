@@ -66,7 +66,7 @@ func validatePath(namespace *project.Namespaced, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
-		return locale.NewError("err_directory_in_use", "", path)
+		return locale.NewInputError("err_directory_in_use", "", path)
 	}
 
 	pj, err := project.Parse(configFile)
@@ -85,7 +85,7 @@ func validatePath(namespace *project.Namespaced, path string) error {
 	if !pj.IsHeadless() && pj.Owner() != namespace.Owner {
 		// The project names are the same, but the owners are not, so rather than reporting a namespace
 		// mismatch, we report directory is in use. This should be more clear to the user what's wrong.
-		return locale.NewError("err_directory_in_use", "", path)
+		return locale.NewInputError("err_directory_in_use", "", path)
 	}
 
 	return nil
