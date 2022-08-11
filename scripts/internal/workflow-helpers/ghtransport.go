@@ -50,7 +50,6 @@ const (
 type rateLimitTransport struct {
 	transport        http.RoundTripper
 	delayNextRequest bool
-	responseBody     []byte
 	accessToken      string
 
 	m sync.Mutex
