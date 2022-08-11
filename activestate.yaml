@@ -104,6 +104,10 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
+
+      if [[ ! -z "${CI}" ]]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
+      fi
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -122,6 +126,9 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
+      if [[ ! -z "${CI}" ]]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
+      fi
   - name: build-tray
     description: Builds the State Tool system tray application
     language: bash
@@ -133,6 +140,9 @@ scripts:
       export CGO_ENABLED=1
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
+      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
+      fi
   - name: build-exec
     if: eq .OS.Name "Linux"
     description: Builds the State Executor application
@@ -182,6 +192,10 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
+
+      if [[ ! -z "${CI}" ]]; then
+        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
+      fi
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
@@ -316,7 +330,7 @@ scripts:
     description: Generates our github workflows
     value: |
       [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
-
+      
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
@@ -325,7 +339,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
       popd
       rm -Rf $tmpDir
-
+      
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
@@ -334,7 +348,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
       popd
       rm -Rf $tmpDir
-
+      
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
