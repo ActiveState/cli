@@ -62,7 +62,7 @@ func (a *app) IsEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
-func (a *app) Path() (string, error) {
+func (a *app) InstallPath() (string, error) {
 	return a.shortcutFilename(), nil
 }
 

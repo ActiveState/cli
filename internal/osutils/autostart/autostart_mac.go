@@ -31,7 +31,7 @@ func (a *app) enable() error {
 		return nil
 	}
 
-	path, err := a.Path()
+	path, err := a.InstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -63,7 +63,7 @@ func (a *app) disable() error {
 	if !enabled {
 		return nil
 	}
-	path, err := a.Path()
+	path, err := a.InstallPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -71,14 +71,14 @@ func (a *app) disable() error {
 }
 
 func (a *app) IsEnabled() (bool, error) {
-	path, err := a.Path()
+	path, err := a.InstallPath()
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
 	return fileutils.FileExists(path), nil
 }
 
-func (a *app) Path() (string, error) {
+func (a *app) InstallPath() (string, error) {
 	dir, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
