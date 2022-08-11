@@ -119,15 +119,17 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
+	// https://activestatef.atlassian.net/browse/DX-1136
 	suite.OnlyRunForTags(tagsuite.Service)
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Windows doesn't seem to read from svc at the moment")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
 	cp.ExpectExitCode(0)
-	if runtime.GOOS == "windows" {
-		time.Sleep(time.Second * 20)
-	}
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
 	cp.Expect("Checking")
