@@ -66,7 +66,7 @@ func validatePath(namespace *project.Namespaced, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
-		return locale.NewError("err_directory_in_use")
+		return locale.NewError("err_directory_in_use", "", path)
 	}
 
 	pj, err := project.Parse(configFile)
@@ -74,12 +74,18 @@ func validatePath(namespace *project.Namespaced, path string) error {
 		return locale.WrapError(err, "err_parse_project", "", configFile)
 	}
 
-	if !pj.IsHeadless() && (pj.Owner() != namespace.Owner || pj.Name() != namespace.Project) {
+	if !pj.IsHeadless() && pj.Name() != namespace.Project {
 		// Note: projectfile does not have a Namespace() method (it's just a collection of parsed YAML
 		// fields). It also uses fmt.Sprintf to write namespaces to configs, etc.
 		expectedNS := fmt.Sprintf("%s/%s", namespace.Owner, namespace.Project)
 		actualNS := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
 		return locale.NewInputError("err_target_path_namespace_match", "", expectedNS, actualNS)
+	}
+
+	if !pj.IsHeadless() && pj.Owner() != namespace.Owner {
+		// The project names are the same, but the owners are not, so rather than reporting a namespace
+		// mismatch, we report directory is in use. This should be more clear to the user what's wrong.
+		return locale.NewError("err_directory_in_use", "", path)
 	}
 
 	return nil
