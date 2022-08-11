@@ -58,10 +58,11 @@ func (s *service) Start() error {
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()
 	if err != nil {
+		msg := "Failed to start server"
 		if errors.Is(err, ipc.ErrInUse) {
-			return errors.New("An existing server instance appears to be in use")
+			msg += "; An existing server instance appears to be in use"
 		}
-		return errs.Wrap(err, "Failed to start server")
+		return errs.Wrap(err, msg)
 	}
 
 	return nil
