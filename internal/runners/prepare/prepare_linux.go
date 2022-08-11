@@ -87,3 +87,15 @@ func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 
 	return files, nil
 }
+
+func cleanOS(cfg autostart.Configurable) error {
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return locale.WrapError(err, "Could not get state-svc location")
+	}
+	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, nil, svcAutostart.Options, cfg)
+	if err != nil {
+		return locale.WrapError(err, "Could not get svc autostart shortcut")
+	}
+	return svcShortcut.Disable() // cleans ~/.profile if necessary
+}

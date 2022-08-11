@@ -166,7 +166,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err := trayShortcut.Path()
+	path, err := trayShortcut.InstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
@@ -178,12 +178,12 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortuct, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err = svcShortuct.Path()
+	path, err = svcShortcut.InstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
@@ -198,4 +198,9 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	files = append(files, osSpecificFiles...)
 
 	return files, nil
+}
+
+// CleanOS performs any OS-specific cleanup that is needed other than deleting installed files.
+func CleanOS(cfg autostart.Configurable) error {
+	return cleanOS(cfg)
 }
