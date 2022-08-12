@@ -186,6 +186,28 @@ func Test_issueWithVersionAssert(t *testing.T) {
 			},
 			want: []int{3, 2}, // Should be ordered by closest matching
 		},
+		{
+			name: "Multiple versions sorted DESC",
+			args: args{
+				issues: funk.Shuffle([]*github.Issue{
+					{
+						Title:  github.String(VersionedPRPrefix + "0.34.0-RC2"),
+						Number: github.Int(1),
+					},
+					{
+						Title:  github.String(VersionedPRPrefix + "0.34.0-RC3"),
+						Number: github.Int(2),
+					},
+					{
+						Title:  github.String(VersionedPRPrefix + "0.34.0-RC1"),
+						Number: github.Int(3),
+					},
+				}).([]*github.Issue),
+				assertion:        AssertLT,
+				versionToCompare: semver.MustParse("0.34.1-RC1"),
+			},
+			want: []int{2, 1, 3}, // Should be ordered by closest matching
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
