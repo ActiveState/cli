@@ -10,16 +10,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-* The `state use` command has been marked unstable
+* The `state use` command has been marked unstable.
 
 ### Fixed
 
 * Fixed issue where activating a second project with an identical name to the
-  first would instead activate the first project
+  first would instead activate the first project.
 * Fixed issue where error output was sometimes missing important details about
   what went wrong.
-* Fixed issue where build errors were incorrectly reported
-* Fixed issue where service could not run due to filepath size limits on macOS
+* Fixed issue where build errors were incorrectly reported.
+* Fixed issue where service could not run due to filepath size limits on macOS.
 
 ### 0.34.0
 
