@@ -2,7 +2,7 @@ package uninstall
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
