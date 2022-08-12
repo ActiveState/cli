@@ -6,17 +6,77 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.34.0
+
+### Added
+
+* We've started flagging commands as stable and unstable, and by default will
+  only support execution of stable commands. To run unstable commands you must
+  first opt-in to them using `state config set optin.unstable true`.
+* We've added a new `state use <orgname/project>` command, which will allow you 
+  configure the given project as the default runtime on your system.
+* Automatic updates can now be disabled with `state config set autoupdate false`.
+* On Windows we now add an Uninstall shortcut to the start menu.
+* Analytics can now also be disabled with an environment variable:
+   `ACTIVESTATE_CLI_DISABLE_ANALYTICS=true`.
+
+### Changed
+
+* The state-svc (our background daemon) has seen significant improvements to its
+  start / stop behavior. Primarily intended to improve the reliability of our
+  update process.
+  * As a result our minimum Windows version required to run the state tool is 
+    now *Windows 10 Build 17134 (Codename Redstone 4)*.
+* The State tool will now error out when it can't communicate with the state-svc. 
+  Preventing the user from running into much more vague errors as a result of the 
+  missing daemon.
+* `state config` can now only act on valid config keys.
+* A number of error messages have been improved to give a better idea of how the 
+  user can remedy the error.
+* Our installer has been optimized to use a smaller file size and reduce the 
+  number of processes as part of the installation.
+
+### Fixed
+
+* Fixed issue where variables in command line  arguments were not properly 
+  interpolated. Causing the command to receive an empty value rather than
+  the variable name.
+* Fixed issue where `state clean uninstall` would fail to clean up the
+  environment.
+* Fixed issue where `state activate --branch` would sometimes error out.
+* Various issues leading to corrupt, miss-placed, or error-prone installation
+  directories.
+* Fixed issue where the State Tool installation directory was added to PATH
+  multiple times.
+* Fixed issue where calling `state clean cache` with `--non-interactive`
+  did not clean the cache.
+* Fixed issue where `state history` would fail if history had an author that is
+  no longer a member of the organization.
+* Fixed issue where automated tools and integrations (including Komodo IDE) 
+  could not get the list of organizations for the authenticated user due to a 
+  backwards incompatible change.
+* Fixed cases of missing localization.
+
+### Removed
+
+* The `--replace` flag has been dropped from `state activate`, its use-case has 
+  been addressed by `state pull --set-project`.
+
 ## 0.33.0
 
 ### Added
 
 * Authentication now uses your browser for a more secure and transparent
   authentication process.
+
   * The old behavior is still available as well, and use-cases where you provide
     the api key or credentials in the command are unaffected.
+
 * Added a new `state config` command, which can be used to change behavior of
   the State Tool itself.
+
   * Currently can be used to disable analytics and error reporting, eg.
+
   ```bash
   state config set report.analytics false # Turns off analytics
   state config set report.errors false # Turns off error reporting
@@ -134,14 +194,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Several performance enhancements have been made. Note that some of these will
   require at least one more release before they can realise their potential.
 * Running `state update` will now immediately perform the update, rather than
-deferring it to a background process.
+  deferring it to a background process.
 * State Tool should now attempt to use the latest version available for a given
-language, when initializing a project.
+  language, when initializing a project.
 
 ### Fixed
 
 * Fixed issue where on macOS the `state` executable would sometimes not be added
-to your PATH.
+  to your PATH.
 * Resolved issue where `state exec` or certain invocations of the language
   runtime could lead to recursion errors.
 * Fixed issues where sometimes State Tool would say it have a new version

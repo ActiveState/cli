@@ -145,7 +145,8 @@ func IsBinary(fileBytes []byte) bool {
 func TargetExists(path string) bool {
 	_, err1 := os.Stat(path)
 	_, err2 := os.Readlink(path) // os.Stat returns false on Symlinks that don't point to a valid file
-	return err1 == nil || err2 == nil
+	_, err3 := os.Lstat(path)    // for links where os.Stat and os.Readlink fail (e.g. Windows socket files)
+	return err1 == nil || err2 == nil || err3 == nil
 }
 
 // FileExists checks if the given file (not folder) exists

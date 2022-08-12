@@ -28,24 +28,20 @@ func (e entry) IsRunning() (bool, error) {
 		return false, errs.Wrap(err, "Could not find process: %d", e.PID)
 	}
 
-	args, err := proc.CmdlineSlice()
+	exe, err := proc.Exe()
 	if err != nil {
-		return false, errs.Wrap(err, "Could not check args of process: %d", e.PID)
+		return false, errs.Wrap(err, "Could not get executable of process: %d", e.PID)
 	}
 
-	if len(args) == 0 {
-		return false, errs.New("Process args are empty: %d", e.PID)
-	}
-
-	match, err := fileutils.PathsMatch(args[0], e.Exec)
+	match, err := fileutils.PathsMatch(exe, e.Exec)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not compare paths: %s, %s", args[0], e.Exec)
+		return false, errs.Wrap(err, "Could not compare paths: %s, %s", exe, e.Exec)
 	}
 	if match {
 		logging.Debug("Process %d matched", e.PID)
 		return true, nil
 	}
 
-	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, args[0], e.Exec)
+	logging.Debug("Process %d not matched, expected %s to match %s", e.PID, exe, e.Exec)
 	return false, nil
 }

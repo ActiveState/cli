@@ -82,7 +82,7 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	code := relaunch(args)
 	if code != 0 {
-		return true, errs.WrapExitCode(nil, code)
+		return true, errs.Silence(errs.WrapExitCode(nil, code))
 	}
 
 	return true, nil

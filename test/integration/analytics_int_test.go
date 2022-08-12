@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"runtime"
 	"regexp"
 	"sort"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -97,14 +99,24 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
 	sleepTime = sleepTime + (sleepTime / 2)
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(
-			constants.DisableRuntime+"=false",
-			fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
-		),
-	)
+	env := []string{
+		constants.DisableRuntime + "=false",
+		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
+	}
+
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS == "windows" {
+		cp = ts.SpawnCmdWithOpts("cmd.exe",
+			e2e.WithArgs("/k", "state", "activate"),
+			e2e.WithWorkDirectory(ts.Dirs.Work),
+			e2e.AppendEnv(env...),
+		)
+	} else {
+		cp = ts.SpawnWithOpts(e2e.WithArgs("activate"),
+			e2e.WithWorkDirectory(ts.Dirs.Work),
+			e2e.AppendEnv(env...),
+		)
+	}
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
@@ -145,7 +157,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
 
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 

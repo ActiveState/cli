@@ -126,7 +126,6 @@ const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 // DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
 const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 
-
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 

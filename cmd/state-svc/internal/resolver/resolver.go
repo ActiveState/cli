@@ -92,7 +92,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	defer logging.Debug("AvailableUpdate done")
 
 	update, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
-	if !ok {
+	if !ok || update == nil {
 		logging.Debug("No update info in cache")
 		return nil, nil
 	}
