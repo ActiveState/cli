@@ -121,7 +121,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	// https://activestatef.atlassian.net/browse/DX-1136
 	suite.OnlyRunForTags(tagsuite.Service)
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS == "windows" {
 		suite.T().Skip("Windows doesn't seem to read from svc at the moment")
 	}
 
