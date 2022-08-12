@@ -2,6 +2,7 @@ package uninstall
 
 import (
 	"os"
+	"path"
 	"runtime"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -61,6 +62,15 @@ func (u *Uninstall) Run(params *Params) error {
 				"Cannot determine current working directory. Please supply `--path` argument")
 		}
 		path = cwd
+		if runtime.GOOS == "windows" {
+			err = os.Chdir(filepath.Dir(path)) // cannot os.RemoveAll() in current working directory, so leave it
+			if err != nil {
+				return locale.WrapInputError(
+					err,
+					"err_deploy_uninstall_cannot_chdir",
+					"Cannot switch away from current working directory. Please supply `--path` argument")
+			}
+		}
 	}
 
 	logging.Debug("Attempting to uninstall deployment at %s", path)
