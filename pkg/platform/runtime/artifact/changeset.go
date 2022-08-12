@@ -1,6 +1,7 @@
 package artifact
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 
@@ -74,4 +75,8 @@ func NewArtifactChangesetByIDMap(old, new ArtifactRecipeMap, requestedOnly bool)
 // DetectArtifactChanges computes the artifact changes between an old recipe (which can be empty) and a new recipe
 func NewArtifactChangesetByRecipe(oldRecipe, newRecipe *inventory_models.Recipe, requestedOnly bool) ArtifactChangeset {
 	return NewArtifactChangeset(NewNamedMapFromRecipe(oldRecipe), NewNamedMapFromRecipe(newRecipe), requestedOnly)
+}
+
+func NewArtifactChangesetByBuildPlan(oldRecipe *inventory_models.Recipe, newBuildPlan model.BuildPlan, requestedOnly bool) ArtifactChangeset {
+	return NewArtifactChangeset(NewNamedMapFromRecipe(oldRecipe), NewNamedMapFromBuildPlan(newBuildPlan), requestedOnly)
 }

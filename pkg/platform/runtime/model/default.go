@@ -12,6 +12,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+
+	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 )
 
 // var _ runtime.ClientProvider = &Default{}
@@ -42,15 +44,16 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
+	BuildPlan           *gqlmodel.BuildPlan
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.BuildStatusResponse.Artifacts))
-	for _, a := range b.BuildStatusResponse.Artifacts {
-		res = append(res, *a.ArtifactID)
+	res := make([]artifact.ArtifactID, 0, len(b.BuildPlan.Artifacts))
+	for _, a := range b.BuildPlan.Artifacts {
+		res = append(res, strfmt.UUID(a.TargetID))
 	}
 	return res
 }

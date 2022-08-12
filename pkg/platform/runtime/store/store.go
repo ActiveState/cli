@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -63,6 +64,10 @@ func (s *Store) buildEngineFile() string {
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
+}
+
+func (s *Store) buildPlanFile() string {
+	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
 }
 
 func (s *Store) HasMarker() bool {
@@ -172,6 +177,18 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	data, err := json.Marshal(recipe)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal recipe.")
+	}
+	err = fileutils.WriteFile(s.recipeFile(), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not write recipe file.")
+	}
+	return nil
+}
+
+func (s *Store) StoreBuildPlan(buildPlan gqlModel.BuildPlan) error {
+	data, err := json.Marshal(buildPlan)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildPlan.")
 	}
 	err = fileutils.WriteFile(s.recipeFile(), data)
 	if err != nil {

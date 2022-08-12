@@ -176,7 +176,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
-	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
+	commitID := proj.CommitUUID()
+	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), &commitID, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

@@ -3,7 +3,11 @@ package artifact
 import (
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
@@ -17,6 +21,8 @@ type ArtifactRecipe struct {
 	Namespace        string
 	Version          *string
 	RequestedByOrder bool
+
+	generatedBy string
 
 	Dependencies []ArtifactID
 }
@@ -91,6 +97,80 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	return res
 }
 
+func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
+	res := make(map[ArtifactID]ArtifactRecipe)
+	var targetIDs []string
+	for _, terminal := range buildPlan.Terminals {
+		targetIDs = append(targetIDs, terminal.TargetIDs...)
+	}
+
+	for _, tID := range targetIDs {
+		buildRuntimeDependencies(tID, buildPlan.Artifacts, res)
+	}
+
+	updatedRes := make(map[ArtifactID]ArtifactRecipe)
+	for k, v := range res {
+		var err error
+		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, buildPlan.Steps, buildPlan.Sources)
+		if err != nil {
+			logging.Error("updateWithSourceInfo failed: %s", errs.JoinMessage(err))
+			return nil
+		}
+	}
+
+	// logging.Debug("len res: %d", len(updatedRes))
+
+	return updatedRes
+}
+
+func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactRecipe) {
+	for _, artifact := range artifacts {
+		if artifact.TargetID == baseID {
+			entry := ArtifactRecipe{
+				ArtifactID:       strfmt.UUID(artifact.TargetID),
+				RequestedByOrder: true,
+				generatedBy:      artifact.GeneratedBy,
+			}
+
+			var deps []strfmt.UUID
+			for _, dep := range artifact.RuntimeDependencies {
+				deps = append(deps, strfmt.UUID(dep))
+				buildRuntimeDependencies(dep, artifacts, mapping)
+			}
+			entry.Dependencies = deps
+			mapping[strfmt.UUID(artifact.TargetID)] = entry
+		}
+	}
+}
+
+func updateWithSourceInfo(generatedByID string, original ArtifactRecipe, steps []model.Step, sources []model.Source) (ArtifactRecipe, error) {
+	for _, step := range steps {
+		if step.TargetID != generatedByID {
+			continue
+		}
+
+		for _, input := range step.Inputs {
+			if input.Tag == "src" {
+				// Should only be one source per step
+				for _, id := range input.TargetIDs {
+					for _, src := range sources {
+						if src.TargetID == id {
+							return ArtifactRecipe{
+								ArtifactID:       original.ArtifactID,
+								RequestedByOrder: original.RequestedByOrder,
+								Name:             src.Name,
+								Namespace:        src.Namespace,
+								Version:          &src.Version,
+							}, nil
+						}
+					}
+				}
+			}
+		}
+	}
+	return ArtifactRecipe{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
+}
+
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
 func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactRecipeMap) []ArtifactID {
 	allDeps := make(map[ArtifactID]struct{})
@@ -135,4 +215,8 @@ func NewNamedMapFromIDMap(am ArtifactRecipeMap) ArtifactNamedRecipeMap {
 		res[a.Name] = a
 	}
 	return res
+}
+
+func NewNamedMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactNamedRecipeMap {
+	return NewNamedMapFromIDMap(NewMapFromBuildPlan(buildPlan))
 }

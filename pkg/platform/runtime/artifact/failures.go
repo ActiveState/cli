@@ -1,6 +1,12 @@
 package artifact
 
-import "github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+import (
+	"strings"
+
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/go-openapi/strfmt"
+)
 
 // FailedArtifact collects information we want to have on failed artifacts
 type FailedArtifact struct {
@@ -15,6 +21,17 @@ func NewFailedArtifactsFromBuild(buildStatus *headchef_models.V1BuildStatusRespo
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && a.ArtifactID != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateFailed {
 			failed = append(failed, FailedArtifact{ArtifactID: *a.ArtifactID, UnsignedLogURI: a.LogURI.String(), ErrorMsg: a.Error})
+		}
+	}
+
+	return failed
+}
+
+func NewFailedArtifactsFromBuildPlan(buildPlan model.BuildPlan) []FailedArtifact {
+	var failed []FailedArtifact
+	for _, a := range buildPlan.Artifacts {
+		if a.Status == string(model.Failed) || len(a.Errors) > 0 {
+			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}
 	}
 
