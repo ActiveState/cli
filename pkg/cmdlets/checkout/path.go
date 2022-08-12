@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,7 +33,7 @@ func ensureProjectPath(cfg *config.Instance, namespace *project.Namespaced, pref
 	}
 
 	// Validate that target path doesn't contain a config for a different namespace
-	if err := validatePath(namespace.Project, targetPath); err != nil {
+	if err := validatePath(namespace, targetPath); err != nil {
 		return "", errs.Wrap(err, "Could not validate target path: %s", targetPath)
 	}
 
@@ -53,7 +54,7 @@ func getProjectPath(config *config.Instance, namespace *project.Namespaced) (str
 	return filepath.Join(targetPath, namespace.Project), nil
 }
 
-func validatePath(name string, path string) error {
+func validatePath(namespace *project.Namespaced, path string) error {
 	empty, err := fileutils.IsEmptyDir(path)
 	if err != nil {
 		return locale.WrapError(err, "err_namespace_empty_dir", "Could not verify if directory is empty")
@@ -65,7 +66,7 @@ func validatePath(name string, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
-		return locale.NewError("err_directory_in_use")
+		return locale.NewInputError("err_directory_in_use", "", path)
 	}
 
 	pj, err := project.Parse(configFile)
@@ -73,8 +74,18 @@ func validatePath(name string, path string) error {
 		return locale.WrapError(err, "err_parse_project", "", configFile)
 	}
 
-	if !pj.IsHeadless() && pj.Name() != name {
-		return locale.NewInputError("err_target_path_namespace_match", "", name, pj.Name())
+	if !pj.IsHeadless() && pj.Name() != namespace.Project {
+		// Note: projectfile does not have a Namespace() method (it's just a collection of parsed YAML
+		// fields). It also uses fmt.Sprintf to write namespaces to configs, etc.
+		expectedNS := fmt.Sprintf("%s/%s", namespace.Owner, namespace.Project)
+		actualNS := fmt.Sprintf("%s/%s", pj.Owner(), pj.Name())
+		return locale.NewInputError("err_target_path_namespace_match", "", expectedNS, actualNS)
+	}
+
+	if !pj.IsHeadless() && pj.Owner() != namespace.Owner {
+		// The project names are the same, but the owners are not, so rather than reporting a namespace
+		// mismatch, we report directory is in use. This should be more clear to the user what's wrong.
+		return locale.NewInputError("err_directory_in_use", "", path)
 	}
 
 	return nil
