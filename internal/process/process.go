@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Configurable interface {
