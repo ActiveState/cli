@@ -51,6 +51,7 @@ func TestService(t *testing.T) {
 				}
 				c := exec.CommandContext(ctx, filepath.Clean("../cmd/svc/build/svc"+ext))
 				c.Stdout = logFunc(t.Log)
+				c.Stderr = logFunc(t.Log)
 
 				go func(cmd *exec.Cmd) {
 					defer wg.Done()

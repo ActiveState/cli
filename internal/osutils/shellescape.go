@@ -16,7 +16,7 @@ type ShellEscape struct {
 func NewBashEscaper() *ShellEscape {
 	return &ShellEscape{
 		regexp.MustCompile(`^[\w]+$`),
-		regexp.MustCompile(`(\\|")`),
+		regexp.MustCompile(`(\\|"|\$)`),
 		`\$1`,
 	}
 }

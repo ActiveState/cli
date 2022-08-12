@@ -93,7 +93,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	// Detect target path
-	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.PreferredPath)
+	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 	}

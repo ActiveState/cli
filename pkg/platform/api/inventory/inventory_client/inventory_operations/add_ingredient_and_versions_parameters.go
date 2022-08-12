@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
@@ -61,6 +62,12 @@ func NewAddIngredientAndVersionsParamsWithHTTPClient(client *http.Client) *AddIn
 */
 type AddIngredientAndVersionsParams struct {
 
+	/* DisableSmartImport.
+
+	   Disables the smart-import feature for this import
+	*/
+	DisableSmartImport *bool
+
 	// IngredientAndVersions.
 	IngredientAndVersions *inventory_models.IngredientAllInOneCreate
 
@@ -81,7 +88,18 @@ func (o *AddIngredientAndVersionsParams) WithDefaults() *AddIngredientAndVersion
 //
 // All values with no default are reset to their zero value.
 func (o *AddIngredientAndVersionsParams) SetDefaults() {
-	// no default values defined for this parameter
+	var (
+		disableSmartImportDefault = bool(false)
+	)
+
+	val := AddIngredientAndVersionsParams{
+		DisableSmartImport: &disableSmartImportDefault,
+	}
+
+	val.timeout = o.timeout
+	val.Context = o.Context
+	val.HTTPClient = o.HTTPClient
+	*o = val
 }
 
 // WithTimeout adds the timeout to the add ingredient and versions params
@@ -117,6 +135,17 @@ func (o *AddIngredientAndVersionsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDisableSmartImport adds the disableSmartImport to the add ingredient and versions params
+func (o *AddIngredientAndVersionsParams) WithDisableSmartImport(disableSmartImport *bool) *AddIngredientAndVersionsParams {
+	o.SetDisableSmartImport(disableSmartImport)
+	return o
+}
+
+// SetDisableSmartImport adds the disableSmartImport to the add ingredient and versions params
+func (o *AddIngredientAndVersionsParams) SetDisableSmartImport(disableSmartImport *bool) {
+	o.DisableSmartImport = disableSmartImport
+}
+
 // WithIngredientAndVersions adds the ingredientAndVersions to the add ingredient and versions params
 func (o *AddIngredientAndVersionsParams) WithIngredientAndVersions(ingredientAndVersions *inventory_models.IngredientAllInOneCreate) *AddIngredientAndVersionsParams {
 	o.SetIngredientAndVersions(ingredientAndVersions)
@@ -135,6 +164,23 @@ func (o *AddIngredientAndVersionsParams) WriteToRequest(r runtime.ClientRequest,
 		return err
 	}
 	var res []error
+
+	if o.DisableSmartImport != nil {
+
+		// query param disable_smart_import
+		var qrDisableSmartImport bool
+
+		if o.DisableSmartImport != nil {
+			qrDisableSmartImport = *o.DisableSmartImport
+		}
+		qDisableSmartImport := swag.FormatBool(qrDisableSmartImport)
+		if qDisableSmartImport != "" {
+
+			if err := r.SetQueryParam("disable_smart_import", qDisableSmartImport); err != nil {
+				return err
+			}
+		}
+	}
 	if o.IngredientAndVersions != nil {
 		if err := r.SetBodyParam(o.IngredientAndVersions); err != nil {
 			return err

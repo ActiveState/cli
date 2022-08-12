@@ -114,7 +114,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.Expect("Activated")
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
-	cp.Expect("Python 3.8.8")
+	cp.Expect("ActiveState")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

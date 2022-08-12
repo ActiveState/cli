@@ -19,14 +19,14 @@ import (
 type TierPricing struct {
 	Tier
 
-	// price per runtime
-	PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+	// included runtime count
+	IncludedRuntimeCount int64 `json:"includedRuntimeCount,omitempty"`
 
-	// price per user
-	PricePerUser int64 `json:"pricePerUser,omitempty"`
+	// price per runtime
+	PricePerRuntime float64 `json:"pricePerRuntime,omitempty"`
 
 	// tier price
-	TierPrice int64 `json:"tierPrice,omitempty"`
+	TierPrice float64 `json:"tierPrice,omitempty"`
 }
 
 // UnmarshalJSON unmarshals this object from a JSON structure
@@ -40,19 +40,19 @@ func (m *TierPricing) UnmarshalJSON(raw []byte) error {
 
 	// AO1
 	var dataAO1 struct {
-		PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+		IncludedRuntimeCount int64 `json:"includedRuntimeCount,omitempty"`
 
-		PricePerUser int64 `json:"pricePerUser,omitempty"`
+		PricePerRuntime float64 `json:"pricePerRuntime,omitempty"`
 
-		TierPrice int64 `json:"tierPrice,omitempty"`
+		TierPrice float64 `json:"tierPrice,omitempty"`
 	}
 	if err := swag.ReadJSON(raw, &dataAO1); err != nil {
 		return err
 	}
 
-	m.PricePerRuntime = dataAO1.PricePerRuntime
+	m.IncludedRuntimeCount = dataAO1.IncludedRuntimeCount
 
-	m.PricePerUser = dataAO1.PricePerUser
+	m.PricePerRuntime = dataAO1.PricePerRuntime
 
 	m.TierPrice = dataAO1.TierPrice
 
@@ -69,16 +69,16 @@ func (m TierPricing) MarshalJSON() ([]byte, error) {
 	}
 	_parts = append(_parts, aO0)
 	var dataAO1 struct {
-		PricePerRuntime float32 `json:"pricePerRuntime,omitempty"`
+		IncludedRuntimeCount int64 `json:"includedRuntimeCount,omitempty"`
 
-		PricePerUser int64 `json:"pricePerUser,omitempty"`
+		PricePerRuntime float64 `json:"pricePerRuntime,omitempty"`
 
-		TierPrice int64 `json:"tierPrice,omitempty"`
+		TierPrice float64 `json:"tierPrice,omitempty"`
 	}
 
-	dataAO1.PricePerRuntime = m.PricePerRuntime
+	dataAO1.IncludedRuntimeCount = m.IncludedRuntimeCount
 
-	dataAO1.PricePerUser = m.PricePerUser
+	dataAO1.PricePerRuntime = m.PricePerRuntime
 
 	dataAO1.TierPrice = m.TierPrice
 

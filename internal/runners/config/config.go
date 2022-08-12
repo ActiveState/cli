@@ -14,6 +14,7 @@ type Config struct {
 type primeable interface {
 	primer.Outputer
 	primer.Configurer
+	primer.SvcModeler
 }
 
 func NewConfig(prime primeable) (*Config, error) {

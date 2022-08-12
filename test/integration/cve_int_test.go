@@ -27,12 +27,9 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp.Expect("Vulnerabilities")
-	cp.Expect("6")
 	cp.Expect("CRITICAL")
-	cp.Expect("13 Affected Packages")
+	cp.Expect("Affected Packages")
 	cp.Expect("tensorflow")
-	cp.Expect("1.12.0")
-	cp.Expect("18")
 	cp.ExpectExitCode(0)
 }
 
@@ -49,11 +46,9 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp.Expect("Vulnerabilities")
-	cp.Expect("6")
 	cp.Expect("CRITICAL")
-	cp.Expect("13 Affected Packages")
+	cp.Expect("Affected Packages")
 	cp.Expect("tensorflow")
-	cp.Expect("1.12.0")
 	cp.Expect("CRITICAL")
 	cp.Expect("CVE-2019-16778")
 	cp.ExpectExitCode(0)
@@ -64,11 +59,12 @@ func (suite *CveIntegrationTestSuite) TestCveReport() {
 	cp.Expect("3b222e23-64b9-4ca1-93ee-7b8a75b18c30")
 
 	cp.Expect("Vulnerabilities")
-	cp.Expect("6")
 	cp.ExpectExitCode(0)
 }
 
 func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
+	// If you need to run this test comment the next line and provide a commit that has no CVE's
+	suite.T().Skip("Skipping test because due to the nature of CVE's it's impossible to nail down a commit without CVE's.")
 	suite.OnlyRunForTags(tagsuite.Cve)
 
 	ts := e2e.New(suite.T(), false)

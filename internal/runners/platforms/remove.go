@@ -26,13 +26,13 @@ func NewRemove(prime primeable) *Remove {
 func (r *Remove) Run(ps RemoveRunParams) error {
 	logging.Debug("Execute platforms remove")
 
+	if r.Project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	params, err := prepareParams(ps.Params)
 	if err != nil {
 		return nil
-	}
-
-	if err == nil {
-		return locale.NewInputError("err_no_project")
 	}
 
 	return model.CommitPlatform(

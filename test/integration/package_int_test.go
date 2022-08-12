@@ -166,7 +166,6 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 	expectations := []string{
 		"Name",
 		"requests",
-		"2.26.0",
 		"older versions",
 	}
 	for _, expectation := range expectations {
@@ -249,13 +248,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp := ts.Spawn("info", "pexpect")
 	cp.Expect("Details for version")
 	cp.Expect("Authors")
-	cp.Expect(" - ")
-	cp.Expect(" - ")
 	cp.Expect("Version")
 	cp.Expect("Available")
-	cp.Expect("4.8.0")
-	cp.Expect("4.7.0")
-	cp.Expect("4.6.0")
 	cp.Expect("What's next?")
 	cp.Expect("run `state install")
 	cp.ExpectExitCode(0)

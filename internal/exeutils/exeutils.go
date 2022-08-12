@@ -92,17 +92,18 @@ func UniqueExes(exePaths []string, pathext string) ([]string, error) {
 	return result, nil
 }
 
-func ExecSimple(bin string, args ...string) (string, string, error) {
-	return ExecSimpleFromDir("", bin, args...)
+func ExecSimple(bin string, args []string, env []string) (string, string, error) {
+	return ExecSimpleFromDir("", bin, args, env)
 }
 
-func ExecSimpleFromDir(dir, bin string, args ...string) (string, string, error) {
-	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %v", dir, bin, args)
+func ExecSimpleFromDir(dir, bin string, args []string, env []string) (string, string, error) {
+	logging.Debug("ExecSimpleFromDir: dir: %s, bin: %s, args: %#v, env: %#v", dir, bin, args, env)
 	c := exec.Command(bin, args...)
 	if dir != "" {
 		c.Dir = dir
 	}
 	c.Env = os.Environ()
+	c.Env = append(c.Env, env...)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	c.Stdout = &stdout

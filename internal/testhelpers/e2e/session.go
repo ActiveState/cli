@@ -2,17 +2,32 @@ package e2e
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
+	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
@@ -21,15 +36,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -76,21 +82,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_USERNAME")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_PASSWORD")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "build/state", "secrets", "get", "project.INTEGRATION_TEST_TOKEN")
+		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -109,12 +115,17 @@ func (s *Session) ExecutablePath() string {
 }
 
 func (s *Session) CopyExeToDir(from, to string) string {
+	var err error
+	to, err = filepath.Abs(filepath.Join(to, filepath.Base(from)))
+	if err != nil {
+		s.t.Fatal(err)
+	}
 	if fileutils.TargetExists(to) {
 		return to
 	}
 
-	err := fileutils.CopyFile(from, to)
-	require.NoError(s.t, err)
+	err = fileutils.CopyFile(from, to)
+	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(from)
@@ -129,26 +140,7 @@ func (s *Session) CopyExeToDir(from, to string) string {
 }
 
 func (s *Session) copyExeToBinDir(executable string) string {
-	return s.CopyExeToDir(executable, filepath.Join(s.Dirs.Bin, filepath.Base(executable)))
-}
-
-// UseDistinctStateExesLegacy optionally copies non-legacy exes (ie. doesn't fail on them)
-func (s *Session) UseDistinctStateExesLegacy() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	if fileutils.FileExists(s.SvcExe) {
-		s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	}
-	if fileutils.FileExists(s.TrayExe) {
-		s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	}
-}
-
-// UniqueExe ensures the executable is unique to this instance
-func (s *Session) UseDistinctStateExes() {
-	s.Exe = s.copyExeToBinDir(s.Exe)
-	s.SvcExe = s.copyExeToBinDir(s.SvcExe)
-	s.TrayExe = s.copyExeToBinDir(s.TrayExe)
-	s.InstallerExe = s.CopyExeToDir(s.InstallerExe, filepath.Join(s.Dirs.InstallerBin, filepath.Base(s.InstallerExe)))
+	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
 // sourceExecutablePath returns the path to the state tool that we want to test
@@ -192,6 +184,8 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.DisableRuntime + "=true",
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
+		constants.DisableUpdates + "=true",
+		constants.OptinUnstableEnvVarName + "=true",
 	}...)
 
 	if updatePath {
@@ -206,9 +200,20 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	// add session environment variables
 	env = append(env, extraEnv...)
-	exe, svcExe, trayExe, installExe := executablePaths(t)
 
-	return &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t, Exe: exe, SvcExe: svcExe, TrayExe: trayExe, InstallerExe: installExe}
+	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+
+	// Mock installation directory
+	exe, svcExe, trayExe, installExe := executablePaths(t)
+	session.Exe = session.copyExeToBinDir(exe)
+	session.SvcExe = session.copyExeToBinDir(svcExe)
+	session.TrayExe = session.copyExeToBinDir(trayExe)
+	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
+
+	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
+	require.NoError(session.t, err)
+
+	return session
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -363,7 +368,8 @@ func (s *Session) CreateNewUser() string {
 
 	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
 
-	p.Expect("Terms of Service")
+	p.Expect("I accept")
+	time.Sleep(time.Millisecond * 100)
 	p.Send("y")
 	p.Expect("username:")
 	p.Send(username)
@@ -391,8 +397,100 @@ func observeSendFn(s *Session) func(string, int, error) {
 	}
 }
 
+func (s *Session) DebugMessage(prefix string) string {
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
+
+	if prefix != "" {
+		prefix = prefix + "\n"
+	}
+
+	snapshot := ""
+	if s.cp != nil {
+		snapshot = s.cp.Snapshot()
+	}
+
+	v, err := strutils.ParseTemplate(`
+{{.Prefix}}{{.A}}Stack: 
+{{.Stacktrace}}{{.Z}}
+{{.A}}Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
+{{.A}}State Tool Log:
+{{.StateLog}}{{.Z}}
+{{.A}}State Svc Log:
+{{.SvcLog}}{{.Z}}
+`, map[string]interface{}{
+		"Prefix":       prefix,
+		"Stacktrace":   stacktrace.Get().String(),
+		"FullSnapshot": snapshot,
+		"StateLog":     s.MostRecentStateLog(),
+		"SvcLog":       s.SvcLog(),
+		"A":            sectionStart,
+		"Z":            sectionEnd,
+	})
+	if err != nil {
+		s.t.Fatalf("Parsing template failed: %s", err)
+	}
+
+	return v
+}
+
 func observeExpectFn(s *Session) expect.ExpectObserver {
-	return termtest.TestExpectObserveFn(s.t)
+	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
+		if err == nil {
+			return
+		}
+
+		var value string
+		var sep string
+		for _, matcher := range matchers {
+			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
+			sep = ", "
+		}
+
+		var sectionStart, sectionEnd string
+		sectionStart = "\n=== "
+		if os.Getenv("GITHUB_ACTIONS") == "true" {
+			sectionStart = "##[group]"
+			sectionEnd = "##[endgroup]"
+		}
+
+		v, err := strutils.ParseTemplate(`
+Could not meet expectation: '{{.Expectation}}'
+Error: {{.Error}}
+{{.A}}Stack:
+{{.Stacktrace}}{{.Z}}
+{{.A}}Partial Terminal snapshot:
+{{.PartialSnapshot}}{{.Z}}
+{{.A}}Full Terminal snapshot:
+{{.FullSnapshot}}{{.Z}}
+{{.A}}Parsed output:
+{{.ParsedOutput}}{{.Z}}
+{{.A}}State Tool Log:
+{{.StateLog}}{{.Z}}
+{{.A}}State Svc Log:
+{{.SvcLog}}{{.Z}}
+`, map[string]interface{}{
+			"Expectation":     value,
+			"Error":           err,
+			"Stacktrace":      stacktrace.Get().String(),
+			"PartialSnapshot": ms.TermState.String(),
+			"FullSnapshot":    s.cp.Snapshot(),
+			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
+			"StateLog":        s.MostRecentStateLog(),
+			"SvcLog":          s.SvcLog(),
+			"A":               sectionStart,
+			"Z":               sectionEnd,
+		})
+		if err != nil {
+			s.t.Fatalf("Parsing template failed: %s", err)
+		}
+		s.t.Fatal(v)
+	}
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
@@ -405,7 +503,7 @@ func (s *Session) Close() error {
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-	err = installation.StopTrayApp(cfg)
+	err = installmgr.StopTrayApp(cfg)
 	require.NoError(s.t, err, "Could not stop tray app")
 
 	if !s.retainDirs {
@@ -421,14 +519,80 @@ func (s *Session) Close() error {
 		return nil
 	}
 
+	a := auth.New(cfg)
+
 	for _, user := range s.users {
-		err := cleanUser(s.t, user)
+		err := cleanUser(s.t, user, a)
 		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, err)
+			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
 	return nil
+}
+
+func (s *Session) SvcLog() string {
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
+	files := fileutils.ListDirSimple(logDir, false)
+	lines := []string{}
+	for _, file := range files {
+		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
+			continue
+		}
+		b := fileutils.ReadFileUnsafe(file)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
+		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
+			continue
+		}
+
+		return string(b) + "\n\nCurrent time: " + time.Now().String()
+	}
+
+	return fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
+}
+
+func (s *Session) MostRecentStateLog() string {
+	rx := regexp.MustCompile(`state-\d`)
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
+	var result string
+	var newest time.Time
+	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !rx.MatchString(f.Name()) {
+			return nil
+		}
+
+		info, err := f.Info()
+		if err != nil {
+			panic("Could not get file info")
+		}
+
+		ts := info.ModTime()
+		if ts.After(newest) {
+			result = path
+			newest = ts
+		}
+
+		return nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("Could not walk log dir: %v", err))
+	}
+
+	if result == "" {
+		return fmt.Sprintf("Could not find state log, checked under %s", logDir)
+	}
+
+	b := fileutils.ReadFileUnsafe(result)
+	return string(b) + "\n\nCurrent time: " + time.Now().String()
 }
 
 func RunningOnCI() bool {

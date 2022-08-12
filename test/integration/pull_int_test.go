@@ -67,7 +67,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("could not detect common parent")
+	cp.Expect("Could not detect common parent")
 	cp.ExpectExitCode(1)
 }
 

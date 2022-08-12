@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/machinebox/graphql"
@@ -28,6 +29,11 @@ func NewSvcModel(port string) *SvcModel {
 	return &SvcModel{
 		client: gqlclient.NewWithOpts(localURL, 0, graphql.WithHTTPClient(&http.Client{})),
 	}
+}
+
+// EnableDebugLog turns on debug logging
+func (m *SvcModel) EnableDebugLog() {
+	m.client.EnableDebugLog()
 }
 
 func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
@@ -61,7 +67,7 @@ func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, err
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
 
-	// Todo: https://www.pivotaltracker.com/story/show/178205825
+	// TODO: https://activestatef.atlassian.net/browse/DX-866
 	if u.AvailableUpdate.Version == "" {
 		return nil, nil
 	}
@@ -92,6 +98,37 @@ func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string,
 	u := graph.RuntimeUsageResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return errs.Wrap(err, "Error sending runtime usage event via state-svc")
+	}
+
+	return nil
+}
+
+func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	logging.Debug("Checking for deprecation")
+	defer profile.Measure("svc:CheckDeprecation", time.Now())
+
+	r := request.NewDeprecationRequest()
+	uu := graph.DeprecationResponse{}
+	if err := m.request(ctx, r, &uu); err != nil {
+		return nil, errs.Wrap(err, "Error sending deprecation request")
+	}
+
+	u := uu.CheckDeprecation
+	// TODO: https://activestatef.atlassian.net/browse/DX-866
+	if u.Date == "" {
+		return nil, nil
+	}
+
+	return &u, nil
+}
+
+func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
+	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+
+	r := request.NewConfigChanged(key)
+	u := graph.ConfigChangedResponse{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return errs.Wrap(err, "Error sending configchanged event via state-svc")
 	}
 
 	return nil

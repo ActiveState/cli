@@ -64,5 +64,6 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactRecipeMap, req
 		}
 		cs.out.Notice(fmt.Sprintf("  [DISABLED]%s[/RESET] %s%s", prefix, depMapping.Name, depCount))
 	}
+	cs.out.Notice("")
 	return nil
 }

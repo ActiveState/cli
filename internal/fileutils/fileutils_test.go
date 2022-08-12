@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -625,4 +626,21 @@ func testCaseSensitivePath(t *testing.T, dirName, variant string) {
 	if found != dir {
 		t.Fatalf("Found should match dir \nwant: %s \ngot: %s", dir, found)
 	}
+}
+
+func TestPathsMatch(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("PathsMatch is only tested on macOS")
+	}
+	p1 := "/tmp"
+	p2 := "/private/tmp"
+	v, err := PathsMatch(p1, p2)
+	require.NoError(t, err, errs.JoinMessage(err))
+
+	v1, err := ResolvePath(p1)
+	require.NoError(t, err, errs.JoinMessage(err))
+	v2, err := ResolvePath(p2)
+	require.NoError(t, err, errs.JoinMessage(err))
+
+	require.True(t, v, "PathsMatch should return true, path1: %s, path2: %s", v1, v2)
 }

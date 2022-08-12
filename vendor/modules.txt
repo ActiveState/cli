@@ -120,9 +120,6 @@ github.com/creack/pty
 github.com/dave/jennifer/jen
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/denisbrodbeck/machineid v0.8.0
-## explicit
-github.com/denisbrodbeck/machineid
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
 # github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76

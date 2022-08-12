@@ -13,10 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -64,6 +64,8 @@ func LegacyGet() *Auth {
 			multilog.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
+		defer cfg.Close()
+		
 		persist = New(cfg)
 		if err := persist.Sync(); err != nil {
 			logging.Warning("Could not sync authenticated state: %s", err.Error())
@@ -107,6 +109,8 @@ func New(cfg Configurable) *Auth {
 // Sync will ensure that the authenticated state is in sync with what is in the config database.
 // This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
 func (s *Auth) Sync() error {
+	defer profile.Measure("auth:Sync", time.Now())
+
 	if s.AvailableAPIToken() != "" {
 		logging.Debug("Authenticating with stored API token")
 		if err := s.Authenticate(); err != nil {
@@ -361,7 +365,7 @@ func (s *Auth) CreateToken() error {
 		}
 	}
 
-	key := constants.APITokenName + ":" + machineid.UniqID()
+	key := constants.APITokenName + ":" + uniqid.Text()
 	token, err := s.NewAPIKey(key)
 	if err != nil {
 		return err
@@ -388,7 +392,7 @@ func (s *Auth) SaveToken(token string) error {
 // NewAPIKey returns a new api key from the backend or the relevant failure.
 func (s *Auth) NewAPIKey(name string) (string, error) {
 	params := authentication.NewAddTokenParams()
-	params.SetTokenOptions(&mono_models.TokenEditable{Name: name})
+	params.SetTokenOptions(&mono_models.TokenEditable{Name: name, DeviceID: uniqid.Text()})
 
 	client, err := s.ClientSafe()
 	if err != nil {

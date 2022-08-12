@@ -79,7 +79,7 @@ func AuthenticateWithToken(token string, auth *authentication.Auth) error {
 	}
 
 	if err := auth.SaveToken(token); err != nil {
-		return locale.WrapError(err, "err_auth_token")
+		return locale.WrapError(err, "err_auth_token", "Failed to save token during token authentication.")
 	}
 
 	return nil
@@ -165,7 +165,7 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *aut
 	}
 
 	if err := auth.CreateToken(); err != nil {
-		return locale.WrapError(err, "err_auth_token")
+		return locale.WrapError(err, "err_auth_token", "Failed to create token while authenticating with credentials.")
 	}
 
 	return nil
@@ -263,7 +263,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	}
 
 	if err := auth.CreateToken(); err != nil {
-		return locale.WrapError(err, "err_auth_token")
+		return locale.WrapError(err, "err_auth_token", "Failed to create token after authenticating with browser.")
 	}
 
 	out.Notice(locale.T("auth_device_success"))

@@ -56,9 +56,9 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_package_search_no_packages", `No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].`, params.Name),
+			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Name),
 			locale.Tl("search_try_term", "Try a different search term"),
-			locale.Tl("search_request", "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"),
+			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
 	results := formatSearchResults(packages)

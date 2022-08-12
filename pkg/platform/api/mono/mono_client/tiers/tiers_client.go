@@ -120,7 +120,7 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  GetTiersPricing gets information about all available tiers including their price in cents per user per year
+  GetTiersPricing gets information about all available tiers including their price in dollars per active runtime per year
 */
 func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error) {
 	// TODO: Validate the params before sending

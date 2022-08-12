@@ -24,7 +24,7 @@ type SolverRemediation struct {
 
 	// An explanation of this remediation
 	// Required: true
-	Message *string `json:"message"`
+	Command *string `json:"command"`
 
 	// parameters
 	Parameters *SolverRemediationParameters `json:"parameters,omitempty"`
@@ -39,7 +39,7 @@ type SolverRemediation struct {
 func (m *SolverRemediation) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateMessage(formats); err != nil {
+	if err := m.validateCommand(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -57,9 +57,9 @@ func (m *SolverRemediation) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *SolverRemediation) validateMessage(formats strfmt.Registry) error {
+func (m *SolverRemediation) validateCommand(formats strfmt.Registry) error {
 
-	if err := validate.Required("message", "body", m.Message); err != nil {
+	if err := validate.Required("command", "body", m.Command); err != nil {
 		return err
 	}
 

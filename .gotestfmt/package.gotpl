@@ -23,7 +23,7 @@ we are creating a stylized header for each package.
                 {{- else -}}
                     {{ "\033" }}[0;31m❌
                 {{- end -}}
-                {{ " " }}{{- .Name -}}
+                {{ " " }}{{- .Name -}}{{ " " }}[{{ .Result -}}]
                 {{- "\033" -}}[0;37m ({{ .Duration -}}
                 {{- with .Coverage -}}
                     , coverage: {{ . }}%

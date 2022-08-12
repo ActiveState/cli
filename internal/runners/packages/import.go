@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -167,7 +168,9 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
 	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
 	if err != nil {
-		return "", locale.WrapError(err, "err_packages_removed")
+		return "", errs.AddTips(locale.WrapError(err, "err_packages_removed"),
+			locale.T("commit_failed_push_tip"),
+			locale.T("commit_failed_pull_tip"))
 	}
 
 	if err := project.SetCommit(commitID.String()); err != nil {

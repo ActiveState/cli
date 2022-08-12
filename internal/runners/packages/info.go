@@ -54,8 +54,8 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	if len(packages) == 0 {
 		return errs.AddTips(
 			locale.NewInputError("err_package_info_no_packages", "", params.Package.String()),
-			locale.T("info_try_search"),
-			locale.T("info_request"),
+			locale.T("package_try_search"),
+			locale.T("package_info_request"),
 		)
 	}
 

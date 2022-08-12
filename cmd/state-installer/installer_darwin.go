@@ -46,8 +46,9 @@ func (i *Installer) installLauncher() error {
 	}
 
 	fromTray := appinfo.TrayApp(i.path)
-	toTray := appinfo.TrayApp(filepath.Join(launcherPath, constants.MacOSApplicationName, "Contents", "MacOS"))
-	err = createNewSymlink(fromTray.Exec(), toTray.Exec())
+	exeName := filepath.Base(fromTray.Exec())
+	toTray := filepath.Join(launcherPath, constants.MacOSApplicationName, "Contents", "MacOS", exeName)
+	err = createNewSymlink(fromTray.Exec(), toTray)
 	if err != nil {
 		return errs.Wrap(err, "Could not create state-tray symlink")
 	}

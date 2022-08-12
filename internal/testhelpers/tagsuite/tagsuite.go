@@ -62,6 +62,9 @@ const (
 	Use            = "use"
 	VSCode         = "vscode"
 	Performance    = "performance"
+	Service        = "service"
+	Deprecation    = "deprecation"
+	Compatibility  = "compatibility"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests

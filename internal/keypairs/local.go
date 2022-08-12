@@ -20,6 +20,7 @@ type Configurable interface {
 	Close() error
 	Set(s string, i interface{}) error
 	GetString(s string) string
+	GetBool(s string) bool
 }
 
 // Load will attempt to load a Keypair using private and public-key files from

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,16 +30,6 @@ func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
 	b, err := json.Marshal(up)
 	require.NoError(t, err)
 	return &httpGetMock{MockedResponse: b}
-}
-
-type configMock struct{}
-
-func (cm *configMock) GetString(string) string {
-	return ""
-}
-
-func (cm *configMock) Set(string, interface{}) error {
-	return nil
 }
 
 func TestCheckerCheckFor(t *testing.T) {
@@ -86,7 +77,7 @@ func TestCheckerCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
-			check := NewChecker(&configMock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
+			check := NewChecker(&configMock.Mock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {

@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/shirou/gopsutil/process"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -15,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/lockfile"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/shirou/gopsutil/process"
 )
 
 type Configurable interface {

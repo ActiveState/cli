@@ -37,6 +37,9 @@ type User struct {
 	// can unlink account
 	CanUnlinkAccount bool `json:"canUnlinkAccount,omitempty"`
 
+	// Certain sets of users, defined by their common domain, are thought to be abusing the free tier. If this field is present then this user is associated with the out of compliance organization. The value will be the company name.
+	CompanyOutOfCompliance *string `json:"companyOutOfCompliance,omitempty"`
+
 	// datetime format
 	DatetimeFormat string `json:"datetimeFormat,omitempty"`
 

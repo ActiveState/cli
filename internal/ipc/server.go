@@ -32,26 +32,28 @@ type Server struct {
 	reqHandlers []RequestHandler
 	ctx         context.Context
 	cancel      context.CancelFunc
-	wg          *sync.WaitGroup
+	errsc       chan error
+	donec       chan struct{}
 }
 
 // NewServer constructs a reference to a Server instance which can be populated
 // with called-defined handlers, and is preconfigured with ping and stop
 // handlers as a low-level flexibility.
-func NewServer(spath *SockPath, reqHandlers ...RequestHandler) *Server {
-	ctx, cancel := context.WithCancel(context.Background())
+func NewServer(topCtx context.Context, spath *SockPath, reqHandlers ...RequestHandler) *Server {
+	ctx, cancel := context.WithCancel(topCtx)
 
 	ipc := Server{
 		spath:       spath,
 		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
 		ctx:         ctx,
 		cancel:      cancel,
-		wg:          &sync.WaitGroup{},
+		errsc:       make(chan error),
+		donec:       make(chan struct{}),
 	}
 
 	ipc.reqHandlers = append(ipc.reqHandlers, pingHandler())
 	ipc.reqHandlers = append(ipc.reqHandlers, reqHandlers...)
-	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(&ipc))
+	ipc.reqHandlers = append(ipc.reqHandlers, stopHandler(ipc.Shutdown))
 
 	return &ipc
 }
@@ -84,94 +86,93 @@ func (ipc *Server) Start() error {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
-	defer listener.Close()
 
-	// Produce (accept) and consume (route to handler) connections.
-	conns := make(chan net.Conn)
-
-	ipc.wg.Add(1)
 	go func() {
-		defer ipc.wg.Done()
-		defer close(conns)
-
-		// Continually route incomming connections to the appropriate handler.
-		for {
-			if err := routeToHandler(ipc.ctx, ipc.wg, conns, ipc.reqHandlers); err != nil {
-				if errors.Is(err, context.Canceled) || errors.Is(err, ErrConnsClosed) {
-					return
-				}
-				logging.Error("unexpected routeToHandler error: %v", err)
-			}
-		}
-	}()
-
-	// Continually accept connections and feed them into the relevant channel.
-	for {
-		if err := accept(ipc.ctx, conns, listener); err != nil {
-			if errors.Is(err, context.Canceled) {
-				return nil
-			}
-			return errs.Wrap(err, "Unexpected accept error")
-		}
-	}
-}
-
-func (ipc *Server) Close() error {
-	select {
-	case <-ipc.ctx.Done():
-	default:
-		ipc.cancel()
-		ipc.wg.Wait()
-	}
-	return nil
-}
-
-func accept(ctx context.Context, conns chan net.Conn, l net.Listener) error {
-	conn, err := l.Accept()
-	if err != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			return errs.Wrap(err, "Critical error accepting connections")
-		}
-	}
-
-	conns <- conn
-	return nil
-}
-
-func routeToHandler(ctx context.Context, wg *sync.WaitGroup, conns chan net.Conn, reqHandlers []RequestHandler) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-
-	case conn, ok := <-conns:
-		if !ok {
-			return ErrConnsClosed
-		}
+		var wg sync.WaitGroup
+		defer close(ipc.errsc)
 
 		wg.Add(1)
-
 		go func() {
 			defer wg.Done()
-			defer conn.Close()
 
-			if err := handleMatching(conn, reqHandlers); err != nil {
-				logging.Error("unexpected ipc request handling error: %v", err)
-				return
+			logging.Debug("waiting for done channel closure")
+			<-ipc.donec
+			logging.Debug("closing listener")
+			listener.Close()
+		}()
+
+		go func() {
+			// Continually accept connections and route them to the correct handler.
+			for {
+				// At this time, the context.Context that is
+				// passed into the flisten construction func
+				// does not halt the listener. Close() must be
+				// called to halt and "doneness" managed.
+				err := accept(&wg, listener, ipc.reqHandlers)
+				select {
+				case <-ipc.donec:
+					return
+				default:
+				}
+				if err != nil {
+					ipc.errsc <- errs.Wrap(err, "Unexpected accept error")
+					return
+				}
 			}
 		}()
 
-		return nil
+		wg.Wait()
+	}()
+
+	return nil
+}
+
+func (ipc *Server) Shutdown() {
+	select {
+	case <-ipc.donec:
+	default:
+		close(ipc.donec)
+		ipc.cancel()
 	}
+}
+
+func (ipc *Server) Wait() error {
+	var retErr error
+	for err := range ipc.errsc {
+		if err != nil && retErr == nil {
+			retErr = err
+		}
+	}
+	return retErr
+}
+
+func accept(wg *sync.WaitGroup, l net.Listener, reqHandlers []RequestHandler) error {
+	conn, err := l.Accept()
+	if err != nil {
+		logging.Debug(err.Error())
+		return err
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer conn.Close()
+
+		if err := handleMatching(conn, reqHandlers); err != nil {
+			logging.Debug(err.Error())
+			logging.Error("Unexpected IPC request handling error: %v", err)
+			return
+		}
+	}()
+
+	return nil
 }
 
 func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 	buf := make([]byte, msgWidth)
 	n, err := conn.Read(buf)
 	if err != nil {
-		return errs.Wrap(err, "Failed to read from connection")
+		return errs.Wrap(err, "Failed to read from client connection")
 	}
 
 	key := string(buf[:n])
@@ -185,7 +186,7 @@ func handleMatching(conn net.Conn, reqHandlers []RequestHandler) error {
 	}
 
 	if _, err := conn.Write([]byte(output)); err != nil {
-		return errs.Wrap(err, "Failed to write to connection")
+		return errs.Wrap(err, "Failed to write to client connection")
 	}
 
 	return nil

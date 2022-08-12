@@ -127,8 +127,8 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "xxxUtilitiesxxx", "--exact-term")
-	cp.ExpectLongString("Currently no bundle of the provided name is available on the ActiveState Platform")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("No bundles in our catalog match")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
@@ -149,8 +149,8 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=python")
-	cp.ExpectLongString("Currently no bundle of the provided name is available on the ActiveState Platform")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("No bundles in our catalog match")
+	cp.ExpectExitCode(1)
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
@@ -178,14 +178,14 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("bundles", "install", "non-existing")
-		cp.Expect("Could not match non-existing")
-		cp.ExpectLongString("to see more results run `state bundles search non-existing`")
+		cp.Expect("No results found for search term")
+		cp.ExpectLongString(`Run "state search non-existing" to find alternatives`)
 		cp.Wait()
 	})
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectRe("(?:Bundle added|being built)", 45*time.Second)
+		cp.ExpectRe("successfully installed", 45*time.Second)
 		cp.Wait()
 	})
 
@@ -199,7 +199,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("(?:Bundle removed|being built)", 30*time.Second)
+		cp.ExpectRe("Bundle uninstalled", 30*time.Second)
 		cp.Wait()
 	})
 }

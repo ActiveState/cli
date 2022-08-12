@@ -124,7 +124,6 @@ func SetOutput(w io.Writer) {
 type LoggingHandler interface {
 	SetFormatter(Formatter)
 	SetVerbose(bool)
-	SetConfig(cfg config)
 	Output() io.Writer
 	Emit(ctx *MessageContext, message string, args ...interface{}) error
 	Printf(msg string, args ...interface{})
@@ -141,8 +140,6 @@ func (l *strandardHandler) SetFormatter(f Formatter) {
 
 func (l *strandardHandler) SetVerbose(v bool) {
 }
-
-func (l *strandardHandler) SetConfig(cfg config) {}
 
 func (l *strandardHandler) Output() io.Writer {
 	return nil

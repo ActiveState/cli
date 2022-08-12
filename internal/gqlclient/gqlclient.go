@@ -6,12 +6,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"
 
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 )
 
 type Request interface {
@@ -44,12 +46,19 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 		graphqlClient: graphql.NewClient(url, opts...),
 		timeout:       timeout,
 	}
-	// client.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) == "true" {
+		client.EnableDebugLog()
+	}
 	return client
 }
 
 func New(url string, timeout time.Duration) *Client {
 	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
+}
+
+// EnableDebugLog turns on debug logging
+func (c *Client) EnableDebugLog() {
+	c.graphqlClient.Log = func(s string) { logging.Debug("graphqlClient log message: %s", s) }
 }
 
 func (c *Client) SetTokenProvider(tokenProvider BearerTokenProvider) {
@@ -92,7 +101,7 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 		}
 	}
 
-	graphRequest.Header.Set("X-Requestor", machineid.UniqID())
+	graphRequest.Header.Set("X-Requestor", uniqid.Text())
 
 	return c.graphqlClient.Run(ctx, graphRequest, &response)
 }

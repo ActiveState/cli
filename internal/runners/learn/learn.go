@@ -3,6 +3,7 @@ package learn
 import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/skratchdot/open-golang/open"
@@ -25,7 +26,8 @@ func (l *Learn) Run() error {
 
 	err := open.Run(constants.CheatSheetURL)
 	if err != nil {
-		return locale.WrapError(err, "err_learn_open", constants.CheatSheetURL)
+		logging.Warning("Could not open browser: %v", err)
+		l.out.Notice(locale.Tr("err_browser_open", constants.CheatSheetURL))
 	}
 
 	return nil

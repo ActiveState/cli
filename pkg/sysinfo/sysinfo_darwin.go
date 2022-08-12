@@ -2,11 +2,18 @@ package sysinfo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -16,7 +23,7 @@ func OS() OsInfo {
 }
 
 var (
-	versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
+	plistVersionRegex = regexp.MustCompile("(?s)ProductVersion.*?([\\d\\.]+)")
 )
 
 // OSVersion returns the system's OS version.
@@ -25,38 +32,28 @@ func OSVersion() (*OSVersionInfo, error) {
 		return cached.(*OSVersionInfo), nil
 	}
 
+	if v := os.Getenv(VersionOverrideEnvVar); v != "" {
+		vInfo, err := parseVersionInfo(v)
+		if err != nil {
+			return nil, fmt.Errorf("Could not parse version info: %w", err)
+		}
+		return &OSVersionInfo{vInfo, "spoofed"}, nil
+	}
+
 	// Fetch OS version.
 	version, err := getDarwinProductVersion()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to determine OS version: %v", err)
 	}
 
-	// Parse OS version parts.
-	parts := versionRegex.FindStringSubmatch(version)
-	if len(parts) == 0 {
-		return nil, fmt.Errorf("Unable to parse version string '%s'", version)
-	}
-
-	major, err := strconv.Atoi(parts[1])
+	vInfo, err := parseVersionInfo(version)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[1], version)
+		return nil, fmt.Errorf("Unable to parse OS version: %w", err)
 	}
 
-	minor, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[2], version)
-	}
-
-	var micro int = 0
-	if parts[3] != "" {
-		micro, err = strconv.Atoi(parts[3])
-		if err != nil {
-			return nil, fmt.Errorf("Unable to parse part '%s' of version string '%s'", parts[3], version)
-		}
-	}
 	// Fetch OS name.
 	name, err := exec.Command("sw_vers", "-productName").Output()
-	info := &OSVersionInfo{version, major, minor, micro, string(name)}
+	info := &OSVersionInfo{vInfo, string(name)}
 	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
 	return info, nil
 }
@@ -114,21 +111,35 @@ func Compilers() ([]*CompilerInfo, error) {
 }
 
 func getDarwinProductVersion() (string, error) {
+	v, err := getDarwinProductVersionFromFS()
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		logging.Warning("Unable to fetch OS version from filesystem: %v", errs.JoinMessage(err))
+	} else if err == nil {
+		return v, nil
+	}
+
 	version, err := exec.Command("sw_vers", "-productVersion").Output()
-	if err == nil {
-		return string(bytes.TrimSpace(version)), nil
-	}
-	swversErr := err
-
-	plistBuddyArgs := []string{
-		"-c",
-		"Print:ProductVersion",
-		"/System/Library/CoreServices/SystemVersion.plist",
-	}
-	version, err = exec.Command("/usr/libexec/PlistBuddy", plistBuddyArgs...).Output()
 	if err != nil {
-		fmt.Sprintf("PlistBuddy error: %v. swver error: %v", err, swversErr)
+		return "", locale.WrapError(err, "Could not detect your OS version, error received: %s", err.Error())
+	}
+	return string(bytes.TrimSpace(version)), nil
+}
+
+func getDarwinProductVersionFromFS() (string, error) {
+	fpath := "/System/Library/CoreServices/SystemVersion.plist"
+	if !fileutils.TargetExists(fpath) {
+		return "", fs.ErrNotExist
 	}
 
-	return string(bytes.TrimSpace(version)), nil
+	b, err := fileutils.ReadFile(fpath)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not read %s", fpath)
+	}
+
+	match := plistVersionRegex.FindSubmatch(b)
+	if len(match) != 2 {
+		return "", errs.Wrap(err, "SystemVersion.plist does not contain a valid ProductVersion, match result: %v, xml:\n%s", match, string(b))
+	}
+
+	return string(match[1]), nil
 }

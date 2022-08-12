@@ -123,6 +123,22 @@ const ShimEnvVarName = "ACTIVESTATE_SHIM"
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const AnalyticsLogEnvVarName = "ACTIVESTATE_ANALYTICS_LOG"
 
+// DisableAnalyticsEnvVarName is used to instruct State Tool to not send data to Google Analytics.
+const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
+
+// OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
+const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
+
+// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
+const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+
+// DisableErrorTipsEnvVarName disables the display of tips in error messages.
+// This should only be used by the installer so-as not to pollute error message output.
+const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
+
+// DebugServiceRequestsEnvVarName is used to instruct State Tool to turn on debug logging of service requests
+const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -261,17 +277,17 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "cc836c27caf344f7befab5b707ed7d4e"
+const StateToolRollbarToken = "73cd77e321db4e929ca7c24b2e72a172"
 
 // StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
-const StateTrayRollbarToken = "d786a99eabf24617b82c44dfab19d907"
+const StateTrayRollbarToken = "84e7a358f8bd4bf99382a208459544bb"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "8591fd01f23a41acb14d478c85638d92"
+const StateServiceRollbarToken = "110c508fb11547f5b3379167ae35a1f0"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "276678f6090d4f17a4b2d4d35be00ca9"
+const StateInstallerRollbarToken = "11b13f236eb04703b199a48bb6227e66"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
@@ -349,20 +365,14 @@ const GlobalDefaultPrefname = "projects.active.path"
 // DefaultBranchName is the default branch name used on platform projects
 const DefaultBranchName = "main"
 
-// SvcConfigPort is the config key used for storing the svc port
-const SvcConfigPort = "svc-port"
-
-// SvcConfigPid is the config key used for storing the svc pid
-const SvcConfigPid = "svc-pid"
-
-// UnstableConfig is the config key used to determine if a command is unstable
+// UnstableConfig is the config key used to determine whether the user has opted in to unstable commands
 const UnstableConfig = "optin.unstable"
 
 // ReportErrorsConfig is the config key used to determine if we will send rollbar reports
 const ReportErrorsConfig = "report.errors"
 
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
-const ReportAnalayticsConfig = "report.analytics"
+const ReportAnalyticsConfig = "report.analytics"
 
 // TrayAppName is the name we give our systray application
 const TrayAppName = "ActiveState Desktop (Preview)"

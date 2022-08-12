@@ -53,10 +53,12 @@ func winVersionName(major, minor int) string {
 
 func newOSVersionInfo(major, minor, micro int) *OSVersionInfo {
 	return &OSVersionInfo{
-		fmt.Sprintf("%d.%d.%d", major, minor, micro),
-		major,
-		minor,
-		micro,
+		&VersionInfo{
+			fmt.Sprintf("%d.%d.%d", major, minor, micro),
+			major,
+			minor,
+			micro,
+		},
 		winVersionName(major, minor),
 	}
 }
@@ -65,6 +67,14 @@ func newOSVersionInfo(major, minor, micro int) *OSVersionInfo {
 func OSVersion() (*OSVersionInfo, error) {
 	if cached, found := sysinfoCache.Get(osVersionInfoCacheKey); found {
 		return cached.(*OSVersionInfo), nil
+	}
+
+	if v := os.Getenv(VersionOverrideEnvVar); v != "" {
+		vInfo, err := parseVersionInfo(v)
+		if err != nil {
+			return nil, fmt.Errorf("Could not parse version info: %w", err)
+		}
+		return &OSVersionInfo{vInfo, "spoofed"}, nil
 	}
 
 	osvi, err := newOSVersionInfoFromRegistry()

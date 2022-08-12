@@ -18,13 +18,10 @@ func (suite *InfoIntegrationTestSuite) TestInfo_LatestVersion() {
 	defer ts.Close()
 
 	cp := ts.Spawn("info", "pylint", "--language", "python")
-	cp.Expect("Details for version 2.4.4")
+	cp.Expect("Details for version")
 	cp.Expect("Authors")
 	cp.Expect("Python Code Quality Authority")
-	cp.Expect("5 Version(s) Available")
-	cp.Expect("2.4.4")
-	cp.Expect("2.3.0")
-	cp.Expect("0.28.0")
+	cp.Expect("Version(s) Available")
 	cp.ExpectExitCode(0)
 }
 

@@ -1,21 +1,38 @@
 package svcctl
 
 import (
-	"context"
 	"errors"
+	"net"
+	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
 )
 
 var (
-	errNotUp = errors.New("server not up")
+	ctlErrNotUp          = errors.New("server not up")
+	ctlErrTempNotUp      = errors.New("server may not be up")
+	ctlErrRequestTimeout = errors.New("request timeout")
 )
 
-func asNotUpError(err error) error {
-	// TODO: simplify this if possible - is it even needed?
-	if errors.Is(err, context.DeadlineExceeded) || errs.Matches(err, &ipc.ServerDownError{}) {
-		return errNotUp
+func asRequestTimeoutCtlErr(err error) error {
+	opErr := &net.OpError{}
+	if errors.Is(err, os.ErrDeadlineExceeded) || (errors.As(err, &opErr) && opErr.Timeout()) {
+		return ctlErrRequestTimeout
+	}
+	return err
+}
+
+func asTempNotUpCtlErr(err error) error {
+	if errors.Is(err, ipc.ErrConnLost) {
+		return ctlErrTempNotUp
+	}
+	return err
+}
+
+func asNotUpCtlErr(err error) error {
+	if errs.Matches(err, &ipc.ServerDownError{}) {
+		return ctlErrNotUp
 	}
 	return err
 }

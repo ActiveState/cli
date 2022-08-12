@@ -39,8 +39,12 @@ func IsNotExistError(err error) bool {
 }
 
 func PropagateEnv() error {
+	lparam, err := syscall.UTF16PtrFromString("ENVIRONMENT")
+	if err != nil {
+		return errs.Wrap(err, "Could convert UTF16 pointer from string")
+	}
 	// Note: Always use SendNotifyMessageW here, as SendMessageW can hang forever (https://stackoverflow.com/a/1956702)
-	result, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr("ENVIRONMENT"))))
+	result, _, err := syscall.NewLazyDLL("user32.dll").NewProc("SendNotifyMessageW").Call(HwndBroadcast, WmSettingChange, 0, uintptr(unsafe.Pointer(lparam)))
 
 	if result == 0 {
 		return errs.Wrap(err, "sendNotifyMessageW failed.")

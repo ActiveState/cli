@@ -69,7 +69,7 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
-	stdoutText, stderrText, err := exeutils.ExecSimple("gio", "set", path, "metadata::trusted", "true")
+	stdoutText, stderrText, err := exeutils.ExecSimple("gio", []string{"set", path, "metadata::trusted", "true"}, []string{})
 	if err != nil {
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)", errs.JoinMessage(err), stdoutText, stderrText)
 	}

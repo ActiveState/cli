@@ -1,19 +1,16 @@
 package ipc
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 )
 
 var (
 	// expose internal errors for outside inspection
-	ErrInUse        = flisten.ErrInUse
-	ErrConnRefused  = flisten.ErrConnRefused
-	ErrFileNotExist = flisten.ErrFileNotExist
-
-	ErrConnsClosed = errors.New("Connections channel closed")
+	ErrInUse    = flisten.ErrInUse
+	ErrConnLost = flisten.ErrConnLost
 )
 
 type ServerDownError struct {
@@ -35,7 +32,7 @@ func (e *ServerDownError) Unwrap() error {
 }
 
 func asServerDownError(err error) error {
-	if errors.Is(err, ErrFileNotExist) || errors.Is(err, ErrConnRefused) {
+	if errs.IsAny(err, flisten.ErrFileNotExist, flisten.ErrConnRefused) {
 		return NewServerDownError(err)
 	}
 	return err

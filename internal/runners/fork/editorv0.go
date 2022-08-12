@@ -44,6 +44,14 @@ func (e *editorV0Error) Unwrap() error {
 	return e.parent
 }
 
+func (e *editorV0Error) AddTips(...string) {
+	return
+}
+
+func (e *editorV0Error) ErrorTips() []string {
+	return []string{}
+}
+
 func (e *editorV0Error) MarshalOutput(output.Format) interface{} {
 	logging.Debug("Marshalling editorv0 error")
 	var code int32 = 1

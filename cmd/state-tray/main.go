@@ -18,11 +18,10 @@ import (
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/machineid"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rollbar"
@@ -60,8 +59,8 @@ func onReady() {
 		}
 		logging.Debug("onReady is done with exit code %d", exitCode)
 
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %v", err)
+		if cfg != nil {
+			events.Close("config", cfg.Close)
 		}
 
 		if err := events.WaitForEvents(1*time.Second, rollbar.Wait, authentication.LegacyClose, logging.Close); err != nil {
@@ -70,14 +69,15 @@ func onReady() {
 		os.Exit(exitCode)
 	}()
 
-	cfg, err := config.New()
+	var err error
+	cfg, err = config.New()
 	if err != nil {
 		multilog.Critical("Could not initialize config: %v", errs.JoinMessage(err))
 		fmt.Fprintf(os.Stderr, "Could not load config, if this problem persists please reinstall the State Tool. Error: %s\n", errs.JoinMessage(err))
 		exitCode = 1
 		return
 	}
-	logging.CurrentHandler().SetConfig(cfg)
+	rollbar.SetConfig(cfg)
 
 	err = run(cfg)
 	if err != nil {
@@ -89,9 +89,6 @@ func onReady() {
 }
 
 func run(cfg *config.Instance) (rerr error) {
-	machineid.Configure(cfg)
-	machineid.SetErrorLogger(logging.Error)
-
 	running, err := isTrayRunning(cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not check for running ActiveState Desktop process")
@@ -100,7 +97,7 @@ func run(cfg *config.Instance) (rerr error) {
 		return errs.New("ActiveState Desktop is already running")
 	}
 
-	if err := cfg.Set(installation.ConfigKeyTrayPid, os.Getpid()); err != nil {
+	if err := cfg.Set(installmgr.ConfigKeyTrayPid, os.Getpid()); err != nil {
 		return errs.Wrap(err, "Could not write pid to config file.")
 	}
 
@@ -264,12 +261,8 @@ func onExit() {
 		multilog.Error("Could not get configuration object on Systray exit")
 		return
 	}
-	defer func() {
-		if err := cfg.Close(); err != nil {
-			multilog.Error("Failed to close config after exiting systray: %v", err)
-		}
-	}()
-	err = cfg.GetThenSet(installation.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
+	defer events.Close("config", cfg.Close)
+	err = cfg.GetThenSet(installmgr.ConfigKeyTrayPid, func(currentValue interface{}) (interface{}, error) {
 		setPid := cast.ToInt(currentValue)
 		if setPid != os.Getpid() {
 			return nil, errs.New("PID in configuration file does not match PID of Systray shutting down")
@@ -294,7 +287,7 @@ func execute(exec string, args []string) error {
 }
 
 func isTrayRunning(cfg *config.Instance) (bool, error) {
-	pid := cfg.GetInt(installation.ConfigKeyTrayPid)
+	pid := cfg.GetInt(installmgr.ConfigKeyTrayPid)
 	if pid <= 0 {
 		return false, nil
 	}

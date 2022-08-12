@@ -34,7 +34,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 
 	// Check if we error out on conflicts properly
 	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
-	cp.Expect(`Could not create project`)
+	cp.Expect(`You already have a project with the name`)
 	cp.ExpectExitCode(1)
 }
 
@@ -48,7 +48,6 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 		e2e.WithArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Could not create project:", 30*time.Second)
 	cp.Expect("You already have a project with the name 'Python3'.", 30*time.Second)
 	cp.ExpectNotExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "Successfully forked project")

@@ -46,7 +46,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
-	cp.Expect("Activated")
+	cp.Expect("Activated", 30*time.Second)
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
@@ -427,7 +427,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json", "--path", ts.Dirs.Work),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`)
+	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`, 60*time.Second)
 	cp.ExpectExitCode(0)
 }
 
@@ -516,4 +516,38 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentN
 	cp.SendLine(fmt.Sprintf("state activate %s", "ActiveState-CLI/Perl-5.32"))
 	cp.Expect("You cannot activate a new project when you are already in an activated state")
 	cp.WaitForInput()
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Branches"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace, "--branch", "firstbranch"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("Activated")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ActivateIntegrationTestSuite) TestActivateBranchNonExistant() {
+	suite.OnlyRunForTags(tagsuite.Activate)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Branches"
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", namespace, "--branch", "does-not-exist"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+
+	cp.Expect("has no branch")
 }

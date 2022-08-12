@@ -57,7 +57,7 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 	// Special handling if the key is PATH
 	if keyName == "PATH" {
 		updatedPath := cleanPath(v, oldValue)
-		return key.SetStringValue(keyName, updatedPath)
+		return key.SetExpandStringValue(keyName, updatedPath)
 	}
 
 	// Check if we are responsible for the value and delete if so

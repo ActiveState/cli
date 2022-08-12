@@ -2,14 +2,16 @@ package resolver
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -19,32 +21,50 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/patrickmn/go-cache"
 )
 
 type Resolver struct {
 	cfg            *config.Instance
-	cache          *cache.Cache
+	depPoller      *poller.Poller
+	updatePoller   *poller.Poller
 	projectIDCache *projectcache.ID
 	an             *sync.Client
+	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
 	rtwatch        *rtwatcher.Watcher
 }
 
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
-func New(cfg *config.Instance, an *sync.Client) *Resolver {
+func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
+	depchecker := deprecation.NewChecker(cfg)
+	pollDep := poller.New(1*time.Hour, func() (interface{}, error) {
+		return depchecker.Check()
+	})
+
+	upchecker := updater.NewDefaultChecker(cfg)
+	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
+		return upchecker.Check()
+	})
+
+	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
-		cache.New(12*time.Hour, time.Hour),
+		pollDep,
+		pollUpdate,
 		projectcache.NewID(),
 		an,
-		rtwatcher.New(cfg, an),
-	}
+		anForClient,
+		rtwatcher.New(cfg, anForClient),
+	}, nil
 }
 
 func (r *Resolver) Close() error {
+	r.depPoller.Close()
+	r.updatePoller.Close()
+	r.anForClient.Close()
 	return r.rtwatch.Close()
 }
 
@@ -71,24 +91,13 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
-	const cacheKey = "AvailableUpdate"
-	if up, exists := r.cache.Get(cacheKey); exists {
-		logging.Debug("Using cache")
-		return up.(*graph.AvailableUpdate), nil
-	}
-
-	var availableUpdate *graph.AvailableUpdate
-	defer func() { r.cache.Set(cacheKey, availableUpdate, cache.DefaultExpiration) }()
-
-	update, err := updater.NewDefaultChecker(r.cfg).Check()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to check for available update: %w", errs.Join(err, ": "))
-	}
-	if update == nil {
+	update, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
+	if !ok || update == nil {
+		logging.Debug("No update info in cache")
 		return nil, nil
 	}
 
-	availableUpdate = &graph.AvailableUpdate{
+	availableUpdate := &graph.AvailableUpdate{
 		Version:  update.Version,
 		Channel:  update.Channel,
 		Path:     update.Path,
@@ -118,7 +127,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
-	logging.Debug("Analytics event resolver")
+	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
 	label := ""
 	if _label != nil {
@@ -133,23 +142,24 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
 	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
 		values.ProjectID = nil
-		if values.ProjectNameSpace == nil {
+		if values.ProjectNameSpace == nil || *values.ProjectNameSpace == "" {
 			return nil
 		}
 		id, err := r.projectIDCache.FromNamespace(*values.ProjectNameSpace)
 		if err != nil {
-			return errs.Wrap(err, "Could not resolve project ID")
+			logging.Error("Could not resolve project ID for analytics: %s", errs.JoinMessage(err))
 		}
 		values.ProjectID = &id
 		return nil
 	})
 
-	r.an.EventWithLabel(category, action, label, dims)
+	r.anForClient.EventWithLabel(category, action, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
 func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
@@ -158,4 +168,20 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	logging.Debug("Check deprecation resolver")
+
+	deprecated, ok := r.depPoller.ValueFromCache().(*graph.DeprecationInfo)
+	if !ok {
+		logging.Debug("No deprecation info in cache")
+	}
+
+	return deprecated, nil
+}
+
+func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
+	go configMediator.NotifyListeners(key)
+	return &graph.ConfigChangedResponse{Received: true}, nil
 }

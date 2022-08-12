@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -17,13 +18,21 @@ func OS() OsInfo {
 }
 
 var (
-	versionRegex = regexp.MustCompile(`^(\d+)\D(\d+)\D(\d+)`)
+	kernelVersionRegex = regexp.MustCompile(`^(\d+)\D(\d+)\D(\d+)`)
 )
 
 // OSVersion returns the system's OS version.
 func OSVersion() (*OSVersionInfo, error) {
 	if cached, found := sysinfoCache.Get(osVersionInfoCacheKey); found {
 		return cached.(*OSVersionInfo), nil
+	}
+
+	if v := os.Getenv(VersionOverrideEnvVar); v != "" {
+		vInfo, err := parseVersionInfo(v)
+		if err != nil {
+			return nil, fmt.Errorf("Could not parse version info: %w", err)
+		}
+		return &OSVersionInfo{vInfo, "spoofed"}, nil
 	}
 
 	// Fetch kernel version.
@@ -35,7 +44,7 @@ func OSVersion() (*OSVersionInfo, error) {
 	version := string(bytes.TrimSpace(osrelData))
 
 	// Parse kernel version parts.
-	versionParts := versionRegex.FindStringSubmatch(version)
+	versionParts := kernelVersionRegex.FindStringSubmatch(version)
 	if len(versionParts) != 4 {
 		return nil, fmt.Errorf("Unable to parse version string %q", versionParts)
 	}
@@ -64,7 +73,7 @@ func OSVersion() (*OSVersionInfo, error) {
 			name = []byte("Unknown")
 		}
 	}
-	info := &OSVersionInfo{version, major, minor, micro, string(name)}
+	info := &OSVersionInfo{&VersionInfo{version, major, minor, micro}, string(name)}
 	sysinfoCache.Set(osVersionInfoCacheKey, info, cache.NoExpiration)
 	return info, nil
 }

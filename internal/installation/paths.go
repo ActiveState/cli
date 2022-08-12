@@ -5,17 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 )
 
 const (
-	// CfgInstallPath is the configuration key for the path where the State Tool is installed
-	CfgInstallPath = "installation_path"
-
 	// CfgTransitionalStateToolPath is the configuration key for the path where a transitional State Tool might still be stored
 	CfgTransitionalStateToolPath = "transitional_installation_path"
 
@@ -28,33 +25,57 @@ func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }
 
-func InstallPath() (string, error) {
+func InstallRoot(path string) (string, error) {
+	installFile, err := fileutils.FindFileInPath(path, InstallDirMarker)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not find install marker file in path")
+	}
+
+	return filepath.Dir(installFile), nil
+}
+
+func InstallPathFromExecPath() (string, error) {
+	exePath := os.Args[0]
+	if exe, err := os.Executable(); err == nil {
+		exePath = exe
+	}
+
 	// Facilitate use-case of running executables from the build dir while developing
-	if !condition.BuiltViaCI() && strings.Contains(os.Args[0], "/build/") {
-		return filepath.Dir(os.Args[0]), nil
+	if !condition.BuiltViaCI() && strings.Contains(exePath, "/build/") {
+		return filepath.Dir(exePath), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
 		return path, nil
 	}
 
-	// If State Tool is already exists then we should detect the install path from there
-	stateInfo := appinfo.StateApp()
-	activeStateOwnedPath := strings.Contains(strings.ToLower(stateInfo.Exec()), "activestate")
-	installRootFile := filepath.Join(filepath.Dir(stateInfo.Exec()), InstallDirMarker)
-	if fileutils.TargetExists(stateInfo.Exec()) && fileutils.FileExists(installRootFile) && activeStateOwnedPath {
-		return filepath.Dir(filepath.Dir(stateInfo.Exec())), nil // <return this>/bin/state.exe
+	return InstallPathFromReference(filepath.Dir(exePath))
+}
+
+func InstallPathFromReference(dir string) (string, error) {
+	cmdName := constants.StateCmd + exeutils.Extension
+	installPath := filepath.Dir(dir)
+	binPath, err := BinPathFromInstallPath(installPath)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not detect installation root")
 	}
 
-	return DefaultInstallPath()
+	stateExe := filepath.Join(binPath, cmdName)
+	if !fileutils.TargetExists(stateExe) {
+		return "", errs.New("Installation bin directory does not contain %s", stateExe)
+	}
+
+	return filepath.Dir(binPath), nil
 }
 
 func BinPathFromInstallPath(installPath string) (string, error) {
 	if installPath == "" {
-		var err error
-		installPath, err = InstallPath()
-		if err != nil {
-			return installPath, errs.Wrap(err, "Could not detect InstallPath while searching for BinPath")
-		}
+		return "", errs.New("Cannot detect bin path empty install path")
+	}
+
+	var err error
+	installPath, err = InstallRoot(installPath)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not detect install root")
 	}
 
 	return filepath.Join(installPath, BinDirName), nil
@@ -67,6 +88,3 @@ func LauncherInstallPath() (string, error) {
 	return defaultSystemInstallPath()
 }
 
-func IsInstallRoot(dir string) bool {
-	return fileutils.FileExists(filepath.Join(dir, InstallDirMarker))
-}

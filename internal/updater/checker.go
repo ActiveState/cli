@@ -34,6 +34,8 @@ type Checker struct {
 	currentChannel string
 	currentVersion string
 	httpreq        httpGetter
+	cache          *AvailableUpdate
+	done           chan struct{}
 
 	InvocationSource InvocationSource
 	VerifyVersion    bool
@@ -59,6 +61,8 @@ func NewChecker(cfg Configurable, infoURL, fileURL, currentChannel, currentVersi
 		currentChannel,
 		currentVersion,
 		httpget,
+		nil,
+		make(chan struct{}),
 		InvocationSourceUpdate,
 		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
