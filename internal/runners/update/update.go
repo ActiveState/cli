@@ -64,6 +64,10 @@ func (u *Update) Run(params *Params) error {
 		return nil
 	}
 
+	if params.Version == "" {
+		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", up.Version))
+	}
+
 	// Handle switching channels
 	var installPath string
 	if params.Channel != "" && params.Channel != constants.BranchName {
