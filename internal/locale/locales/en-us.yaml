@@ -739,6 +739,8 @@ update_available:
      You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
+updating_version:
+  other: Updating State Tool to version {{.V0}}
 runtime_update_notice_known_count:
   other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
