@@ -46,12 +46,6 @@ func New(prime primeable) *Update {
 }
 
 func (u *Update) Run(params *Params) error {
-	if params.Version == "" {
-		u.out.Notice(locale.Tl("updating_latest", "Updating State Tool to latest version available."))
-	} else {
-		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", params.Version))
-	}
-
 	// Check for available update
 	checker := updater.NewDefaultChecker(u.cfg)
 	up, err := checker.CheckFor(params.Channel, params.Version)
@@ -60,12 +54,18 @@ func (u *Update) Run(params *Params) error {
 	}
 	if up == nil {
 		logging.Debug("No update found")
-		u.out.Notice(locale.T("update_none_found"))
+		if params.Version == "" {
+			u.out.Notice(locale.T("update_none_found"))
+		} else {
+			u.out.Notice(locale.Tl("update_to_version_not_found", "No update to version {{.V0}} available", params.Version))
+		}
 		return nil
 	}
 
 	if params.Version == "" {
-		u.out.Notice(locale.Tl("updating_version", "Updating State Tool to version {{.V0}}", up.Version))
+		u.out.Notice(locale.Tr("updating_version", up.Version))
+	} else {
+		u.out.Notice(locale.Tr("updating_version", params.Version))
 	}
 
 	// Handle switching channels
