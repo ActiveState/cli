@@ -118,6 +118,39 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 }
 
+func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
+	// https://activestatef.atlassian.net/browse/DX-1136
+	suite.OnlyRunForTags(tagsuite.Service)
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Windows doesn't seem to read from svc at the moment")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp.Expect("Checking")
+	cp.ExpectNotExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
+	cp.Expect("Starting")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
+	cp.Expect("not start service: An existing")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground", "test this"))
+	cp.Expect("not start service (invoked by \"test this\"): An existing")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.ExpectExitCode(0)
+}
+
 func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
