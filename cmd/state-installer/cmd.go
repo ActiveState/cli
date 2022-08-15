@@ -28,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -257,6 +258,19 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
+	}
+
+  // If the state tool is already installed, but out of date, try to update it first.
+	if stateToolInstalled && !params.isUpdate && !params.force {
+		checker := updater.NewDefaultChecker(cfg)
+		up, err := checker.CheckFor("", "")
+		if err != nil {
+			logging.Debug("Could not check for update.") // not a show-stopper; move on
+		}
+		if up != nil {
+			logging.Debug("Update available. Switching to update flow.")
+			params.isUpdate = true
+		}
 	}
 
 	route := "install"
