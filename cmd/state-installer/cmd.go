@@ -260,7 +260,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
-  // If the state tool is already installed, but out of date, try to update it first.
+	// If the state tool is already installed, but out of date, try to update it first.
 	if stateToolInstalled && !params.isUpdate && !params.force {
 		checker := updater.NewDefaultChecker(cfg)
 		up, err := checker.CheckFor("", "")
