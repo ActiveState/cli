@@ -141,7 +141,6 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 	cp.Expect("Updating State Tool to latest version available")
-	cp.Expect("Updating State Tool to version")
 	cp.Expect("Installing Update")
 }
 
