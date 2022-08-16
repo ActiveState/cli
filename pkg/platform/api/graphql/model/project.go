@@ -16,6 +16,14 @@ type Branch struct {
 
 type Branches []*Branch
 
+type Tag struct {
+	TagID    strfmt.UUID  `json:"tag_id"`
+	Label    string       `json:"label"`
+	CommitID *strfmt.UUID `json:"commit_id"`
+}
+
+type Tags []*Tag
+
 type ForkedProject struct {
 	Name         string       `json:"name"`
 	Organization Organization `json:"organization"`
@@ -23,6 +31,7 @@ type ForkedProject struct {
 
 type Project struct {
 	Branches       Branches       `json:"branches"`
+	Tags           Tags           `json:"tags"`
 	Description    *string        `json:"description"`
 	Name           string         `json:"name"`
 	Added          Time           `json:"added"`
