@@ -52,6 +52,7 @@ constants:
       GOROOT="${GOROOT:=`go env GOROOT`}"
       export CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+      BUILD_EXEC_TARGET=$constants.BUILD_EXEC_TARGET
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
@@ -148,26 +149,32 @@ scripts:
     description: Builds the State Executor application
     language: bash
     value: |
-      zig build-exe --strip -static -O ReleaseFast -target "x86_64-linux" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
-      mv "$BUILD_EXEC_TARGET" "${BUILD_TARGET_PREFIX_DIR}"
+      set -e
+      $constants.SET_ENV
 
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-linux" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
   - name: build-exec
     if: eq .OS.Name "MacOS"
     description: Builds the State Executor application
     language: bash
     value: |
-      zig build-exe --strip -O ReleaseFast -target "x86_64-macos" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
-      mv "$BUILD_EXEC_TARGET" "${BUILD_TARGET_PREFIX_DIR}"
+      set -e
+      $constants.SET_ENV
 
+      zig build-exe --strip -O ReleaseFast -target "x86_64-macos" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
   - name: build-exec
     if: eq .OS.Name "Windows"
     description: Builds the State Executor application
     language: bash
     value: |
+      set -e
+      $constants.SET_ENV
+
       BUILD_EXEC_NAME="${BUILD_EXEC_TARGET%.*}" # trim extension
       zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${BUILD_EXEC_NAME}/${BUILD_EXEC_NAME}.zig"
-      mv "${BUILD_EXEC_NAME}" "${BUILD_TARGET_PREFIX_DIR}/${BUILD_EXEC_TARGET}"
-
+      mv "${BUILD_EXEC_NAME}" "$constantsBUILD_TARGET_PREFIX_DIR/${BUILD_EXEC_TARGET}"
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -181,6 +188,7 @@ scripts:
       echo "Building State Service"
       $scripts.build-svc.path._posix()
       echo "Building State Executor"
+      echo "Scripts path: $scripts.build-exec.path._posix()"
       $scripts.build-exec.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
