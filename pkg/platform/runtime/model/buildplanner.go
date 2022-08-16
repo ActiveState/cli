@@ -56,12 +56,7 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 	}, nil
 }
 
-// var depth int
-
 func runtimeDependencies(baseID string, artifacts []model.Artifact) []model.Artifact {
-	// logging.Debug("Depth: %d", depth)
-	// depth++
-
 	var deps []model.Artifact
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
