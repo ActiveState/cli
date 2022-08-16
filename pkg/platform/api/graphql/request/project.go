@@ -23,6 +23,11 @@ func (p *projectByOrgAndName) Query() string {
 		  tracks
 		  label
 		}
+		tags {
+			tag_id
+			label
+			commit_id
+		}
 		description
 		name
 		added
