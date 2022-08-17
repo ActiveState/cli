@@ -55,12 +55,12 @@ func NewInitWithBinPath(targeter Targeter, executorPath string) *Init {
 	return &Init{targeter, executorPath}
 }
 
-func (f *Init) BinPath() string {
-	return f.executorPath
+func (i *Init) BinPath() string {
+	return i.executorPath
 }
 
-func (f *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
-	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
+func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
+	logging.Debug("Creating executors at %s, exes: %v", i.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
 	// Proper fix scheduled here https://www.pivotaltracker.com/story/show/177845386
@@ -73,13 +73,18 @@ func (f *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 		}
 	}
 
-	if err := f.Clean(); err != nil {
+	if err := i.Clean(); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
+	}
+
+	if err := fileutils.MkdirUnlessExists(i.executorPath); err != nil {
+		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	for _, exe := range exes {
-		if err := f.createExecutor(sockPath, env, exe); err != nil {
+		f := newFile(i.targeter, i.executorPath)
+		if err := f.Save(sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -87,14 +92,14 @@ func (f *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 	return nil
 }
 
-func (f *Init) Clean() error {
-	if !fileutils.DirExists(f.executorPath) {
+func (i *Init) Clean() error {
+	if !fileutils.DirExists(i.executorPath) {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(f.executorPath)
+	files, err := ioutil.ReadDir(i.executorPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not read dir: %s", f.executorPath)
+		return errs.Wrap(err, "Could not read dir: %s", i.executorPath)
 	}
 
 	for _, file := range files {
@@ -102,7 +107,7 @@ func (f *Init) Clean() error {
 			continue
 		}
 
-		filePath := filepath.Join(f.executorPath, file.Name())
+		filePath := filepath.Join(i.executorPath, file.Name())
 		b, err := fileutils.ReadFile(filePath)
 		if err != nil {
 			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())

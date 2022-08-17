@@ -18,18 +18,23 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func (f *Init) createExecutor(sockPath string, env map[string]string, exe string) error {
+type file struct {
+	dir string
+	t   Targeter
+}
+
+func newFile(t Targeter, dir string) *file {
+	return nil
+}
+
+func (f *file) Save(sockPath string, env map[string]string, exe string) error {
 	name := NameForExe(filepath.Base(exe))
-	target := filepath.Clean(filepath.Join(f.executorPath, name))
+	target := filepath.Clean(filepath.Join(f.dir, name))
 
 	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
 		// This is super awkward, but we have a double .exe to temporarily work around an issue that will be fixed
 		// more correctly here - https://www.pivotaltracker.com/story/show/177845386
 		exe = strings.TrimSuffix(exe, exeutils.Extension)
-	}
-
-	if err := fileutils.MkdirUnlessExists(f.executorPath); err != nil {
-		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", f.executorPath)
 	}
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
@@ -60,9 +65,9 @@ func (f *Init) createExecutor(sockPath string, env map[string]string, exe string
 		"targetFile": exe,
 		"denote":     []string{executorDenoter, denoteTarget},
 		"Env":        env,
-		"commitID":   f.targeter.CommitUUID().String(),
-		"nameSpace":  project.NewNamespace(f.targeter.Owner(), f.targeter.Name(), f.targeter.CommitUUID().String()).String(),
-		"headless":   fmt.Sprintf("%t", f.targeter.Headless()),
+		"commitID":   f.t.CommitUUID().String(),
+		"nameSpace":  project.NewNamespace(f.t.Owner(), f.t.Name(), f.t.CommitUUID().String()).String(),
+		"headless":   fmt.Sprintf("%t", f.t.Headless()),
 	}
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
