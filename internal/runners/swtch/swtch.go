@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/uuidutils"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -109,7 +110,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 func resolveIdentifierCommitID(project *mono_models.Project, idParam string) (identifier, error) {
 	var resolveErr error
-	uuid, err := validateUUID(idParam)
+	uuid, err := uuidutils.ValidateUUID(idParam)
 	if err == nil {
 		return commitIdentifier{commitID: uuid}, nil
 	}
@@ -122,17 +123,4 @@ func resolveIdentifierCommitID(project *mono_models.Project, idParam string) (id
 	resolveErr = locale.WrapError(err, "err_identifier_branch", "Project does not have a branch named {{.V0}}", idParam)
 
 	return nil, resolveErr
-}
-
-func validateUUID(uuidStr string) (strfmt.UUID, error) {
-	var uuid strfmt.UUID
-	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return uuid, locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
-	}
-
-	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
-		return uuid, locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
-	}
-
-	return uuid, nil
 }
