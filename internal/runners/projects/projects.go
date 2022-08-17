@@ -37,7 +37,7 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 	for _, v := range o {
 		checkouts := []string{}
 		for _, checkout := range v.LocalCheckouts {
-			checkouts = append(checkouts, locale.Tl("projects_local_chekcout", " └─ ✔ Local Checkout → {{.V0}}", checkout))
+			checkouts = append(checkouts, locale.Tl("projects_local_checkout", " └─ ✔ Local Checkout → {{.V0}}", checkout))
 		}
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n")})
 	}

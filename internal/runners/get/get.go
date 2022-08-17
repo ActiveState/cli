@@ -1,4 +1,4 @@
-package checkout
+package get
 
 import (
 	"os"
@@ -36,7 +36,7 @@ type primeable interface {
 	primer.Analyticer
 }
 
-type Checkout struct {
+type Get struct {
 	auth      *authentication.Auth
 	out       output.Outputer
 	checkout  *checkout.Checkout
@@ -46,8 +46,8 @@ type Checkout struct {
 	analytics analytics.Dispatcher
 }
 
-func NewCheckout(prime primeable) *Checkout {
-	return &Checkout{
+func NewGet(prime primeable) *Get {
+	return &Get{
 		prime.Auth(),
 		prime.Output(),
 		checkout.New(git.NewRepo(), prime),
@@ -58,15 +58,15 @@ func NewCheckout(prime primeable) *Checkout {
 	}
 }
 
-func (u *Checkout) Run(params *Params) error {
-	logging.Debug("Checkout %v", params.Namespace)
+func (u *Get) Run(params *Params) error {
+	logging.Debug("Get %v", params.Namespace)
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
 	if params.PreferredPath == "." {
 		path, err := os.Getwd()
 		if err != nil {
-			return locale.WrapInputError(err, "err_checkout_getwd", "Cannot determine working directory to checkout in")
+			return locale.WrapInputError(err, "err_get_getwd", "Cannot determine working directory to checkout in")
 		}
 		params.PreferredPath = path
 	}
@@ -75,7 +75,7 @@ func (u *Checkout) Run(params *Params) error {
 
 	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.PreferredPath)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_project", "", params.Namespace.String())
+		return locale.WrapError(err, "err_get_project", "", params.Namespace.String())
 	}
 
 	proj, err := project.FromPath(projectDir)
@@ -83,12 +83,12 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	_, _, err = runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
+	_, _, err = runtime.NewFromProject(proj, target.TriggerGet, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
+		return locale.WrapError(err, "err_get_runtime_new", "Could not checkout this project.")
 	}
 
-	u.out.Print(locale.Tl("checkout_notice", "[NOTICE]Checked out[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] to [ACTIONABLE]{{ .V1 }}[/RESET]",
+	u.out.Print(locale.Tl("get_notice", "[NOTICE]Checked out[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] to [ACTIONABLE]{{ .V1 }}[/RESET]",
 		params.Namespace.Project,
 		projectDir),
 	)

@@ -138,7 +138,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	configCmd := newConfigCommand(prime)
 	configCmd.AddChildren(newConfigGetCommand(prime), newConfigSetCommand(prime))
 
-	checkoutCmd := newCheckoutCommand(prime)
+	getCmd := newGetCommand(prime)
 
 	useCmd := newUseCommand(prime)
 	useCmd.AddChildren(newUseResetCommand(prime, globals))
@@ -186,7 +186,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		branchCmd,
 		newLearnCommand(prime),
 		configCmd,
-		checkoutCmd,
+		getCmd,
 		useCmd,
 		shellCmd,
 	)
