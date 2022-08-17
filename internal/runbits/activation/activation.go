@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func ActivateAndWait(
@@ -28,16 +27,20 @@ func ActivateAndWait(
 	out output.Outputer,
 	ss subshell.SubShell,
 	cfg *config.Instance,
-	an analytics.Dispatcher) error {
+	an analytics.Dispatcher,
+	changeDirectory bool) error {
 
 	logging.Debug("Activating and waiting")
 
-	err := os.Chdir(filepath.Dir(proj.Source().Path()))
-	if err != nil {
-		return err
+	projectDir := filepath.Dir(proj.Source().Path())
+	if changeDirectory {
+		err := os.Chdir(projectDir)
+		if err != nil {
+			return err
+		}
 	}
 
-	ve, err := venv.GetEnv(false, true, filepath.Dir(projectfile.Get().Path()))
+	ve, err := venv.GetEnv(false, true, projectDir)
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
 	}

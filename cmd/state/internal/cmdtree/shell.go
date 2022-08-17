@@ -22,7 +22,14 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 		"",
 		locale.Tl("shell_description", "Starts a shell/prompt for the given project runtime"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "cd",
+				Shorthand:   "",
+				Description: locale.Tl("flag_state_shell_cd_description", "Change to the project directory after starting shell/prompt"),
+				Value:       &params.ChangeDirectory,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("arg_state_activate_namespace"),
