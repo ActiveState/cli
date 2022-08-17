@@ -85,8 +85,10 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier {{.V0}}", params.Identifier)
 	}
 
+	idType := "commit"
 	switch id := identifier.(type) {
 	case branchIdentifier:
+		idType = "branch"
 		err = s.project.Source().SetBranch(id.branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
@@ -103,7 +105,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to branch: [NOTICE]{{.V0}}[/RESET]", params.Identifier))
+	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", idType, params.Identifier))
 
 	return nil
 }

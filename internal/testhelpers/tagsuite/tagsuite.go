@@ -54,6 +54,7 @@ const (
 	Run            = "run"
 	Scripts        = "scripts"
 	Secrets        = "secrets"
+	Switch         = "switch"
 	Shell          = "shell"
 	Exec           = "exec"
 	Show           = "show"
