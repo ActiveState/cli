@@ -77,7 +77,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 	orignalCommitID := pjfile.CommitID()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "7c96c968-63e7-4823-9f2f-1d892b387c04"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.Expect("Updating Runtime")
 	cp.ExpectLongString("Successfully switched to commit:", 60*time.Second)
 	cp.ExpectExitCode(0)
