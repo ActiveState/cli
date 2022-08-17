@@ -12,10 +12,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type Params struct {
-	Force bool
+	Force    bool
+	CommitID string
 }
 
 type Reset struct {
@@ -53,15 +55,31 @@ func (r *Reset) Run(params *Params) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	latestCommit, err := model.BranchCommitID(r.project.Owner(), r.project.Name(), r.project.BranchName())
-	if err != nil {
-		return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
-	}
-	if *latestCommit == r.project.CommitUUID() {
-		return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
+	var commitID strfmt.UUID
+	if params.CommitID == "" {
+		latestCommit, err := model.BranchCommitID(r.project.Owner(), r.project.Name(), r.project.BranchName())
+		if err != nil {
+			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
+		}
+		if *latestCommit == r.project.CommitUUID() {
+			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
+		}
+		commitID = *latestCommit
+	} else {
+		if !strfmt.IsUUID(params.CommitID) {
+			return locale.NewInputError("Invalid commit ID")
+		}
+		commitID = strfmt.UUID(params.CommitID)
+		if commitID == r.project.CommitUUID() {
+			return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
+		}
+		history, err := model.CommitHistoryFromID(commitID)
+		if err != nil || len(history) == 0 {
+			return locale.WrapInputError(err, "err_reset_commitid", "The given commit ID does not exist")
+		}
 	}
 
-	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", latestCommit.String()))
+	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 
 	defaultChoice := params.Force
 	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
@@ -72,17 +90,17 @@ func (r *Reset) Run(params *Params) error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	err = r.project.SetCommit(latestCommit.String())
+	err = r.project.SetCommit(commitID.String())
 	if err != nil {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), *latestCommit, true, target.TriggerReset, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), commitID, true, target.TriggerReset, r.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	r.out.Print(locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", latestCommit.String()))
+	r.out.Print(locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()))
 
 	return nil
 }
