@@ -25,8 +25,21 @@ type ErrProjectNameConflict struct{ *locale.LocalizedError }
 
 type ErrProjectNotFound struct{ *locale.LocalizedError }
 
+type ErrBranchNotFound struct{ *locale.LocalizedError }
+
+type ErrTagNotFound struct{ *locale.LocalizedError }
+
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
+	gqlProject, err := fetchProjectByName(orgName, projectName)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_fetch_project", "Could not fetch project")
+	}
+
+	return gqlProject.ToMonoProject()
+}
+
+func fetchProjectByName(orgName string, projectName string) (*model.Project, error) {
 	logging.Debug("fetching project (%s) in organization (%s)", projectName, orgName)
 
 	request := request.ProjectByOrgAndName(orgName, projectName)
@@ -45,7 +58,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 		return nil, &ErrProjectNotFound{locale.NewInputError("err_api_project_not_found", "", projectName, orgName)}
 	}
 
-	return response.Projects[0].ToMonoProject()
+	return response.Projects[0], nil
 }
 
 // FetchOrganizationProjects fetches the projects for an organization
@@ -139,11 +152,30 @@ func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.
 		}
 	}
 
-	return nil, locale.NewInputError(
+	return nil, &ErrBranchNotFound{locale.NewInputError(
 		"err_no_matching_branch_label",
 		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",
 		name,
-	)
+	)}
+}
+
+func TagForProjectByLabel(name, owner, label string) (*model.Tag, error) {
+	proj, err := fetchProjectByName(owner, name)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range proj.Tags {
+		if tag.Label == label {
+			return tag, nil
+		}
+	}
+
+	return nil, &ErrTagNotFound{locale.NewInputError(
+		"err_no_matching_tag_label",
+		"This project has no tag with label matching [NOTICE]{{.V0}}[/RESET].",
+		name,
+	)}
 }
 
 // CreateEmptyProject will create the project on the platform

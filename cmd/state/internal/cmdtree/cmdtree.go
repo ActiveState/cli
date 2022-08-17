@@ -127,10 +127,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
-		/*  Disabled as per https://www.pivotaltracker.com/story/show/177051006
-		newBranchAddCommand(prime),
-		*/
-		newBranchSwitchCommand(prime),
+	/*  Disabled as per https://www.pivotaltracker.com/story/show/177051006
+	newBranchAddCommand(prime),
+	*/
 	)
 	prepareCmd := newPrepareCommand(prime)
 	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
@@ -189,6 +188,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		checkoutCmd,
 		useCmd,
 		shellCmd,
+		newSwitchCommand(prime),
 	)
 
 	return &CmdTree{

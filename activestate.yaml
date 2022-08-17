@@ -188,7 +188,6 @@ scripts:
       echo "Building State Service"
       $scripts.build-svc.path._posix()
       echo "Building State Executor"
-      echo "Scripts path: $scripts.build-exec.path._posix()"
       $scripts.build-exec.path._posix()
       echo "Building State Tray App"
       $scripts.build-tray.path._posix()
