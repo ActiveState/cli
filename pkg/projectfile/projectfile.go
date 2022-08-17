@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/uuidutils"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -627,19 +628,6 @@ func (p *Project) parseURL() (projectURL, error) {
 	return parseURL(p.Project)
 }
 
-func validateUUID(uuidStr string) error {
-	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
-	}
-
-	var uuid strfmt.UUID
-	if err := uuid.UnmarshalText([]byte(uuidStr)); err != nil {
-		return locale.WrapError(err, "err_commit_id_unmarshal", "Failed to unmarshal the commit id {{.V0}} read from activestate.yaml.", uuidStr)
-	}
-
-	return nil
-}
-
 func parseURL(rawURL string) (projectURL, error) {
 	p := projectURL{}
 
@@ -669,8 +657,9 @@ func parseURL(rawURL string) (projectURL, error) {
 	}
 
 	if p.CommitID != "" {
-		if err := validateUUID(p.CommitID); err != nil {
-			return p, err
+		_, err = uuidutils.ValidateUUID(p.CommitID)
+		if err != nil {
+			return p, errs.Wrap(err, "Could not validate commit ID")
 		}
 	}
 

@@ -12,7 +12,7 @@ func newSwitchCommand(prime *primer.Values) *captain.Command {
 
 	params := swtch.SwitchParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"switch",
 		locale.Tl("switch_title", "Switching"),
 		locale.Tl("switch_description", "Switch to a branch, commit, or tag"),
@@ -20,13 +20,17 @@ func newSwitchCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("switch_arg_name", "name"),
-				Description: locale.Tl("switch_arg_name_description", "Branch, commit, or tag to switch to"),
+				Name:        locale.Tl("switch_arg_identifier", "identifier"),
+				Description: locale.Tl("switch_arg_identifier_description", "The commit or branch to switch to"),
 				Value:       &params.Identifier,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
-		}).SetGroup(PlatformGroup).SetUnstable(true)
+		})
+
+	cmd.SetGroup(PlatformGroup)
+	cmd.SetUnstable(true)
+	return cmd
 }
