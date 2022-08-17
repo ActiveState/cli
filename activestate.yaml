@@ -174,7 +174,7 @@ scripts:
 
       BUILD_EXEC_NAME="${BUILD_EXEC_TARGET%.*}" # trim extension
       zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${BUILD_EXEC_NAME}/${BUILD_EXEC_NAME}.zig"
-      mv "${BUILD_EXEC_NAME}" "$constantsBUILD_TARGET_PREFIX_DIR/${BUILD_EXEC_TARGET}"
+      mv "${BUILD_EXEC_NAME}" "$constants.BUILD_TARGET_PREFIX_DIR/${BUILD_EXEC_TARGET}"
   - name: build-all
     description: Builds all our tools
     standalone: true
