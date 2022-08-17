@@ -77,8 +77,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewWithBinPath(target, BinDir())
-	if err := fw.Update(env, exes); err != nil {
+	fw := executor.NewInitWithBinPath(target, BinDir())
+	if err := fw.Apply(env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
@@ -105,8 +105,8 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewWithBinPath(target, BinDir())
-	err = fw.Cleanup()
+	fw := executor.NewInitWithBinPath(target, BinDir())
+	err = fw.Clean()
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
 	}

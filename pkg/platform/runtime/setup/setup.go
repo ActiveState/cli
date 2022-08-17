@@ -266,8 +266,8 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
 	}
 
-	exec := executor.NewWithBinPath(s.target, execPath)
-	if err := exec.Update(env, exePaths); err != nil {
+	exec := executor.NewInitWithBinPath(s.target, execPath)
+	if err := exec.Apply(env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
