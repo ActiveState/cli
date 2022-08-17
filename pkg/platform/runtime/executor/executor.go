@@ -43,28 +43,28 @@ type Targeter interface {
 	Headless() bool
 }
 
-type Executor struct {
+type Init struct {
 	targeter     Targeter
 	executorPath string // The location to store the executors
 }
 
-func New(targeter Targeter) (*Executor, error) {
+func NewInit(targeter Targeter) (*Init, error) {
 	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(targeter, binPath), nil
+	return NewInitWithBinPath(targeter, binPath), nil
 }
 
-func NewWithBinPath(targeter Targeter, executorPath string) *Executor {
-	return &Executor{targeter, executorPath}
+func NewInitWithBinPath(targeter Targeter, executorPath string) *Init {
+	return &Init{targeter, executorPath}
 }
 
-func (f *Executor) BinPath() string {
+func (f *Init) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) error {
+func (f *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -78,7 +78,7 @@ func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) er
 		}
 	}
 
-	if err := f.Cleanup(); err != nil {
+	if err := f.Clean(); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
 	}
 
@@ -92,7 +92,7 @@ func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) er
 	return nil
 }
 
-func (f *Executor) Cleanup() error {
+func (f *Init) Clean() error {
 	if !fileutils.DirExists(f.executorPath) {
 		return nil
 	}
@@ -124,7 +124,7 @@ func (f *Executor) Cleanup() error {
 	return nil
 }
 
-func (f *Executor) createExecutor(sockPath string, env map[string]string, exe string) error {
+func (f *Init) createExecutor(sockPath string, env map[string]string, exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
