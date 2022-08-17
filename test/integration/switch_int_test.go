@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -30,7 +31,10 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("All dependencies have been installed and verified.")
+	if runtime.GOOS != "windows" {
+		cp.ExpectExitCode(0)
+	}
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -42,7 +46,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.Expect("Updating Runtime")
 	cp.ExpectLongString("Successfully switched to branch: secondbranch", 60*time.Second)
-	cp.ExpectExitCode(0)
+	if runtime.GOOS != "windows" {
+		cp.ExpectExitCode(0)
+	}
 
 	// Check that branch and commitID were updated
 	pjfile, err = projectfile.Parse(pjfilepath)
@@ -68,7 +74,10 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("All dependencies have been installed and verified.")
+	if runtime.GOOS != "windows" {
+		cp.ExpectExitCode(0)
+	}
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -80,7 +89,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
 	cp.Expect("Updating Runtime")
 	cp.ExpectLongString("Successfully switched to commit:", 60*time.Second)
-	cp.ExpectExitCode(0)
+	if runtime.GOOS != "windows" {
+		cp.ExpectExitCode(0)
+	}
 
 	// Check that branch and commitID were updated
 	pjfile, err = projectfile.Parse(pjfilepath)
