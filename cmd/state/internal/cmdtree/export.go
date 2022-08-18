@@ -180,3 +180,22 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 
 	return cmd
 }
+
+func newExportEnvCommand(prime *primer.Values) *captain.Command {
+	runner := export.NewEnv(prime)
+
+	cmd := captain.NewCommand(
+		"env",
+		locale.Tl("env_docs_title", "Exporting environment"),
+		locale.Tl("env_docs_description", "Export the environment variables assocated with your runtime."),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run()
+		})
+
+	cmd.SetUnstable(true)
+
+	return cmd
+}

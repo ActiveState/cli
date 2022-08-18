@@ -1704,7 +1704,7 @@ cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
   other: Run `state auth` to authenticate.
-err_activate_platfrom_alternate_branches:
+err_alternate_branches:
   other: |
     There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
 

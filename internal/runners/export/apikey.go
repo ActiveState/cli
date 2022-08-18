@@ -42,6 +42,8 @@ type primeable interface {
 	primer.Outputer
 	primer.Configurer
 	primer.Projecter
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // NewAPIKey is a convenience construction function.

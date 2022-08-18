@@ -179,7 +179,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
 			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
 			if err == nil && len(branches) > 1 {
-				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
+				err = locale.NewInputError("err_alternate_branches", "", branch, strings.Join(branches, "\n - "))
 				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
 			}
 		}
