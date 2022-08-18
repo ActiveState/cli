@@ -84,7 +84,10 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
-	cp := ts.Spawn("export", "config")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("export", "config"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect(`PATH: `)
 	cp.ExpectLongString(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
