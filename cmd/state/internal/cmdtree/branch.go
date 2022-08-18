@@ -69,6 +69,8 @@ func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		})
+	// We set this command to hidden for backwards compatibility as we cannot
+	// alias `state switch` to `state branch switch`
 	cmd.SetHidden(true)
 
 	return cmd
