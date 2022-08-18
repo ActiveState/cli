@@ -2,8 +2,10 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -102,6 +104,58 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 	cp.Expect("Activated")
 	cp.WaitForInput()
 	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ShellIntegrationTestSuite) TestCd() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	subdir := filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")
+	err := fileutils.Mkdir(subdir)
+	suite.Require().NoError(err)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
+		e2e.WithWorkDirectory(subdir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	if runtime.GOOS != "windows" {
+		cp.SendLine("pwd")
+	} else {
+		cp.SendLine("echo %cd%")
+	}
+	cp.ExpectLongString(subdir)
+	cp.SendLine("exit")
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell", "ActiveState-CLI/Python3", "--cd"),
+		e2e.WithWorkDirectory(subdir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	if runtime.GOOS != "windows" {
+		cp.SendLine("ls")
+	} else {
+		cp.SendLine("dir")
+	}
+	cp.Expect("activestate.yaml")
+	cp.SendLine("exit")
+
 	cp.ExpectExitCode(0)
 }
 

@@ -209,7 +209,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics); err != nil {
+	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics, true); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 

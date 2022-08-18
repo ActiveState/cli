@@ -82,11 +82,6 @@ func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 	return expanded, err
 }
 
-// Expand will detect the active project and invoke ExpandFromProject with the given string
-func Expand(s string) (string, error) {
-	return ExpandFromProject(s, Get())
-}
-
 // ExpandFromProject searches for $category.name-style variables in the given
 // string and substitutes them with their contents, derived from the given
 // project, and subject to the given constraints (if any).
@@ -95,7 +90,7 @@ func ExpandFromProject(s string, p *Project) (string, error) {
 }
 
 func ExpandFromScript(s string, script *Script) (string, error) {
-	expansion := &Expansion{Project: Get(), Script: script}
+	expansion := &Expansion{Project: script.project, Script: script}
 	return expansion.ApplyWithMaxDepth(s, 0)
 }
 
