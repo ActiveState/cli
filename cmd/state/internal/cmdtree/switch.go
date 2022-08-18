@@ -30,7 +30,7 @@ func newSwitchCommand(prime *primer.Values) *captain.Command {
 			return runner.Run(params)
 		})
 
-	cmd.SetGroup(PlatformGroup)
+	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetUnstable(true)
 	return cmd
 }

@@ -39,7 +39,7 @@ type primeable interface {
 
 type identifier interface {
 	CommitID() strfmt.UUID
-	Type() string
+	Locale() string
 }
 
 type commitIdentifier struct {
@@ -50,8 +50,8 @@ func (c commitIdentifier) CommitID() strfmt.UUID {
 	return c.commitID
 }
 
-func (c commitIdentifier) Type() string {
-	return "commit"
+func (c commitIdentifier) Locale() string {
+	return locale.Tr("commit_identifier_type", "commit")
 }
 
 type branchIdentifier struct {
@@ -62,8 +62,8 @@ func (b branchIdentifier) CommitID() strfmt.UUID {
 	return *b.branch.CommitID
 }
 
-func (b branchIdentifier) Type() string {
-	return "branch"
+func (b branchIdentifier) Locale() string {
+	return locale.Tr("branch_identifier_type", "branch")
 }
 
 func New(prime primeable) *Switch {
@@ -93,8 +93,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier {{.V0}}", params.Identifier)
 	}
 
-	switch id := identifier.(type) {
-	case branchIdentifier:
+	if id, ok := identifier.(branchIdentifier); ok {
 		err = s.project.Source().SetBranch(id.branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
@@ -106,28 +105,26 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), identifier.CommitID(), false, target.TriggerBranch, s.svcModel)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Type(), params.Identifier))
+	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Locale(), params.Identifier))
 
 	return nil
 }
 
 func resolveIdentifierCommitID(project *mono_models.Project, idParam string) (identifier, error) {
-	var resolveErr error
 	if strfmt.IsUUID(idParam) {
 		return commitIdentifier{strfmt.UUID(idParam)}, nil
 	}
-	resolveErr = locale.NewError("invalid_uuid_val", "Invalid UUID {{.V0}} value.", idParam)
 
 	branch, err := model.BranchForProjectByName(project, idParam)
-	if err == nil {
-		return branchIdentifier{branch: branch}, nil
-	}
-	resolveErr = locale.WrapError(err, "err_identifier_branch", "Project does not have a branch named {{.V0}}", idParam)
+	if err != nil {
+		locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
 
-	return nil, resolveErr
+	}
+
+	return branchIdentifier{branch: branch}, nil
 }
