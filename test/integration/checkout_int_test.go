@@ -56,19 +56,19 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// Test --path for checking out to current working directory.
+	// Test checking out to current working directory.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "--path", "."),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
 	cp.Expect(ts.Dirs.Work)
 	suite.Assert().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out to the current working directory")
 
-	// Test --path for checkout out to a generic path.
+	// Test checkout out to a generic path.
 	python3Dir := filepath.Join(ts.Dirs.Work, "MyPython3")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", python3Dir),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
@@ -82,7 +82,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", "--path", branchPath, "--branch", "doesNotExist"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("This project has no branch with label matching doesNotExist")

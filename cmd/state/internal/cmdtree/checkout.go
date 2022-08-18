@@ -20,13 +20,7 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "path",
-				Shorthand:   "",
-				Description: locale.Tl("flag_state_checkout_path_description", "Where to checkout the project"),
-				Value:       &params.PreferredPath,
-			},
-			{
-				Name:        "branch",
+				Name:        locale.Tl("flag_state_checkout_branch", "branch"),
 				Description: locale.Tl("flag_state_checkout_branch_description", "Defines the branch to checkout"),
 				Value:       &params.Branch,
 			},
@@ -37,6 +31,11 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("arg_state_checkout_namespace_description", "The namespace of the project that you wish to checkout"),
 				Required:    true,
 				Value:       params.Namespace,
+			},
+			{
+				Name:        locale.Tl("arg_state_checkout_path", "path"),
+				Description: locale.Tl("flag_state_checkout_path_description", "Where to checkout the project. If not given, the project is checked out to a sub-folder in the current working directory"),
+				Value:       &params.PreferredPath,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
