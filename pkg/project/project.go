@@ -371,27 +371,27 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all secrets evaluated
 func (p *Platform) Os() (string, error) {
-	return Expand(p.platform.Os)
+	return ExpandFromProject(p.platform.Os, p.project)
 }
 
 // Version returned with all secrets evaluated
 func (p *Platform) Version() (string, error) {
-	return Expand(p.platform.Version)
+	return ExpandFromProject(p.platform.Version, p.project)
 }
 
 // Architecture with all secrets evaluated
 func (p *Platform) Architecture() (string, error) {
-	return Expand(p.platform.Architecture)
+	return ExpandFromProject(p.platform.Architecture, p.project)
 }
 
 // Libc returned are constrained and all secrets evaluated
 func (p *Platform) Libc() (string, error) {
-	return Expand(p.platform.Libc)
+	return ExpandFromProject(p.platform.Libc, p.project)
 }
 
 // Compiler returned are constrained and all secrets evaluated
 func (p *Platform) Compiler() (string, error) {
-	return Expand(p.platform.Compiler)
+	return ExpandFromProject(p.platform.Compiler, p.project)
 }
 
 // Language covers the language structure
@@ -418,7 +418,7 @@ func (l *Language) ID() string {
 func (l *Language) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal, err := Expand(val)
+		newVal, err := ExpandFromProject(val, l.project)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +460,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal, err := Expand(val)
+		newVal, err := ExpandFromProject(val, p.project)
 		if err != nil {
 			return nil, err
 		}
@@ -480,7 +480,7 @@ func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant value
 func (c *Constant) Value() (string, error) {
-	return Expand(c.constant.Value)
+	return ExpandFromProject(c.constant.Value, c.project)
 }
 
 // SecretScope defines the scope of a secret
@@ -592,14 +592,14 @@ func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
 func (e *Event) Value() (string, error) {
-	return Expand(e.event.Value)
+	return ExpandFromProject(e.event.Value, e.project)
 }
 
 // Scope returns the scope property of the event
 func (e *Event) Scope() ([]string, error) {
 	result := []string{}
 	for _, s := range e.event.Scope {
-		v, err := Expand(s)
+		v, err := ExpandFromProject(s, e.project)
 		if err != nil {
 			return result, err
 		}
