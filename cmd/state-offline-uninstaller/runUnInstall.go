@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 )
 
+const licenseFileName = "LICENSE.txt"
+
 // NOTE: From: internal/runners/clean/uninstall.go
 
 func runUnInstall(out output.Outputer, params *Params) error {

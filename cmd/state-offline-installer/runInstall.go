@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/cmdlets/prompts"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -34,7 +35,7 @@ const licenseFileName = "LICENSE.txt"
 func runInstall(out output.Outputer, params *Params) error {
 
 	analytics := blackhole.New()
-	prompter := prompt.New(true, analytics)
+	prompt := prompt.New(true, analytics)
 	default_boolean_answer := true
 
 	tempDir, err := ioutil.TempDir("", "artifacts-")
@@ -58,7 +59,7 @@ func runInstall(out output.Outputer, params *Params) error {
 			return errs.Wrap(err, "Test for directory empty failed")
 		}
 		if !empty {
-			installNonEmpty, err := prompter.Confirm("Setup", "Installation directory is not empty, install anyway?", &default_boolean_answer)
+			installNonEmpty, err := prompt.Confirm("Setup", "Installation directory is not empty, install anyway?", &default_boolean_answer)
 			if err != nil {
 				return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
 			}
@@ -82,13 +83,13 @@ func runInstall(out output.Outputer, params *Params) error {
 		return errs.Wrap(err, "Unable to unzip to assetsPath")
 	}
 
-	eulaAccepted, err := showEULAAndGetAcceptance(&prompter, licenseFilePath)
+	tos := prompts.NewOfflineFileTOS(licenseFilePath)
+	accepted, err := prompts.PromptTOS(tos, out, prompt)
 	if err != nil {
-		return errs.Wrap(err, "Error with EULA acceptance")
+		return errs.Wrap(err, "Error with TOS acceptance")
 	}
-
-	if !eulaAccepted {
-		return locale.NewInputError("err_eula_not_accepted", "End user didn't accept the EULA")
+	if !accepted {
+		return locale.NewInputError("tos_not_accepted", "")
 	}
 
 	out.Print(fmt.Sprintf("Stage 1 of 2 Start: Decompressing assets into: %s", assetsPath))
@@ -109,9 +110,7 @@ func runInstall(out output.Outputer, params *Params) error {
 
 	offlineTarget := target.NewOfflineTarget(installToDir, artifactsPath)
 
-	// FIX: Need to do this more correctly with a New function
-	mockProgress := &OfflineProgressOutput{out: out}
-	// mockProgress := offlineProgressOutput.New(out)
+	mockProgress := newOfflineProgressOutput(out)
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	if err != nil {
 		return errs.Wrap(err, "Unable to create new logfile object")
@@ -126,7 +125,7 @@ func runInstall(out output.Outputer, params *Params) error {
 		}
 	}
 
-	configureEnvironmentAccepted, err := prompter.Confirm("Setup", "Setup environment for installed project?", &default_boolean_answer)
+	configureEnvironmentAccepted, err := prompt.Confirm("Setup", "Setup environment for installed project?", &default_boolean_answer)
 	if err != nil {
 		return errs.Wrap(err, "Error getting confirmation")
 	}

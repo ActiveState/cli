@@ -1,0 +1,97 @@
+package prompts
+
+import (
+	"io"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
+)
+
+type TOS interface {
+	GetTOSText() (string, error)
+}
+
+type onlineTOS struct {
+	TOS
+}
+
+func NewOnlineTOS() *onlineTOS {
+	return &onlineTOS{}
+}
+
+func (tos *onlineTOS) GetTOSText() (string, error) {
+	resp, err := http.Get(constants.TermsOfServiceURLText)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
+	}
+	if resp.StatusCode != http.StatusOK {
+		return "", errs.New("The server responded with status '%s' when trying to download the Terms Of Service document.", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	tosText := new(strings.Builder)
+	_, err = io.Copy(tosText, resp.Body)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to read Terms Of Service contents.")
+	}
+
+	return tosText.String(), nil
+}
+
+type offlineFileTOS struct {
+	TOS
+	tosFilePath string
+}
+
+func NewOfflineFileTOS(tosFilePath string) *offlineFileTOS {
+	return &offlineFileTOS{tosFilePath: tosFilePath}
+}
+
+func (tos *offlineFileTOS) GetTOSText() (string, error) {
+	b, err := os.ReadFile(tos.tosFilePath)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to open TOS file")
+	}
+
+	return string(b), nil
+}
+
+func PromptTOS(tos TOS, out output.Outputer, prompt prompt.Prompter) (bool, error) {
+	choices := []string{
+		locale.T("tos_accept"),
+		locale.T("tos_not_accept"),
+		locale.T("tos_show_full"),
+	}
+
+	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
+	defaultChoice := locale.T("tos_accept")
+	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, &defaultChoice)
+	if err != nil {
+		return false, err
+	}
+
+	switch choice {
+	case locale.T("tos_accept"):
+		return true, nil
+	case locale.T("tos_not_accept"):
+		return false, nil
+	case locale.T("tos_show_full"):
+		tosText, err := tos.GetTOSText()
+		if err != nil {
+			return false, locale.WrapError(err, "err_download_tos", "Could not get terms of service text.")
+		}
+
+		out.Print(tosText)
+
+		tosConfirmDefault := true
+		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
+	}
+
+	return false, nil
+}

@@ -1,19 +1,13 @@
 package auth
 
 import (
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+
+	"github.com/ActiveState/cli/pkg/cmdlets/prompts"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -34,7 +28,8 @@ type signupInput struct {
 
 // Signup will prompt the user to create an account
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
+	tos := prompts.NewOnlineTOS()
+	accepted, err := prompts.PromptTOS(tos, out, prompt)
 	if err != nil {
 		return err
 	}
@@ -73,69 +68,6 @@ func signupFromLogin(username string, password string, out output.Outputer, prom
 	}
 
 	return doSignup(input, out, auth)
-}
-
-func downloadTOS(configPath string) (string, error) {
-	resp, err := http.Get(constants.TermsOfServiceURLText)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", errs.New("The server responded with status '%s' when trying to download the Terms Of Service document.", resp.Status)
-	}
-	defer resp.Body.Close()
-
-	tosPath := filepath.Join(configPath, "platform_tos.txt")
-	tosFile, err := os.Create(tosPath)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not create Terms Of Service file in configuration directory.")
-	}
-	defer tosFile.Close()
-
-	_, err = io.Copy(tosFile, resp.Body)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to write Terms Of Service file contents.")
-	}
-
-	return tosPath, nil
-}
-
-func promptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (bool, error) {
-	choices := []string{
-		locale.T("tos_accept"),
-		locale.T("tos_not_accept"),
-		locale.T("tos_show_full"),
-	}
-
-	out.Notice(locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest))
-	defaultChoice := locale.T("tos_accept")
-	choice, err := prompt.Select(locale.Tl("tos", "Terms of Service"), locale.T("tos_acceptance"), choices, &defaultChoice)
-	if err != nil {
-		return false, err
-	}
-
-	switch choice {
-	case locale.T("tos_accept"):
-		return true, nil
-	case locale.T("tos_not_accept"):
-		return false, nil
-	case locale.T("tos_show_full"):
-		tosFilePath, err := downloadTOS(configPath)
-		if err != nil {
-			return false, locale.WrapError(err, "err_download_tos", "Could not download terms of service file.")
-		}
-
-		tos, err := ioutil.ReadFile(tosFilePath)
-		if err != nil {
-			return false, errs.Wrap(err, "IO failure")
-		}
-		out.Print(tos)
-
-		tosConfirmDefault := true
-		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
-	}
-
-	return false, nil
 }
 
 func promptForSignup(input *signupInput, matchTries int, out output.Outputer, prompter prompt.Prompter) error {
