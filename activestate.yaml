@@ -44,6 +44,9 @@ constants:
   - name: BUILD_INSTALLER_TARGET
     if: ne .OS.Name "Windows"
     value: state-installer
+  - name: BUILD_REMOTE_INSTALLER_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-remote-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -203,6 +206,13 @@ scripts:
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
       fi
+  - name: build-remote-installer
+    language: bash
+    description: Builds the state-remote-installer
+    value: |
+      set -e
+      $constants.SET_ENV
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_REMOTE_INSTALLER_TARGET ./cmd/state-remote-installer
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
