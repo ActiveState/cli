@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/uuidutils"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -40,6 +39,7 @@ type primeable interface {
 
 type identifier interface {
 	CommitID() strfmt.UUID
+	Type() string
 }
 
 type commitIdentifier struct {
@@ -50,12 +50,20 @@ func (c commitIdentifier) CommitID() strfmt.UUID {
 	return c.commitID
 }
 
+func (c commitIdentifier) Type() string {
+	return "commit"
+}
+
 type branchIdentifier struct {
 	branch *mono_models.Branch
 }
 
 func (b branchIdentifier) CommitID() strfmt.UUID {
 	return *b.branch.CommitID
+}
+
+func (b branchIdentifier) Type() string {
+	return "branch"
 }
 
 func New(prime primeable) *Switch {
@@ -85,10 +93,8 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier {{.V0}}", params.Identifier)
 	}
 
-	idType := "commit"
 	switch id := identifier.(type) {
 	case branchIdentifier:
-		idType = "branch"
 		err = s.project.Source().SetBranch(id.branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
@@ -105,18 +111,17 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", idType, params.Identifier))
+	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Type(), params.Identifier))
 
 	return nil
 }
 
 func resolveIdentifierCommitID(project *mono_models.Project, idParam string) (identifier, error) {
 	var resolveErr error
-	uuid, err := uuidutils.ValidateUUID(idParam)
-	if err == nil {
-		return commitIdentifier{commitID: uuid}, nil
+	if strfmt.IsUUID(idParam) {
+		return commitIdentifier{strfmt.UUID(idParam)}, nil
 	}
-	resolveErr = locale.WrapError(err, "err_identifier_uuid", "Identifier is not a valid commitID")
+	resolveErr = locale.NewError("invalid_uuid_val", "Invalid UUID {{.V0}} value.", idParam)
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err == nil {
