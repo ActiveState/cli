@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
@@ -39,7 +40,7 @@ func main() {
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-offline-installer errored out due to input: %s", errMsg)
 		} else {
-			logging.Critical("state-offline-installer errored out: %s", errMsg)
+			multilog.Critical("state-offline-installer errored out: %s", errMsg)
 		}
 
 		fmt.Fprintln(os.Stderr, errMsg)
