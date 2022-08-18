@@ -78,6 +78,18 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ExportIntegrationTestSuite) TestExport_Env() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+	cp := ts.Spawn("export", "config")
+	cp.Expect(`PATH: `)
+	cp.ExpectLongString(ts.Dirs.Config, time.Second)
+	cp.ExpectExitCode(0)
+}
+
 func TestExportIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }
