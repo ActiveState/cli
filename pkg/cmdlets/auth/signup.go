@@ -34,7 +34,7 @@ type signupInput struct {
 
 // Signup will prompt the user to create an account
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	accepted, err := promptTOS(cfg.ConfigPath(), out, prompt)
+	accepted, err := PromptTOS(cfg.ConfigPath(), out, prompt)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func downloadTOS(configPath string) (string, error) {
 	return tosPath, nil
 }
 
-func promptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (bool, error) {
+func PromptTOS(configPath string, out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),

@@ -148,7 +148,16 @@ func main() {
 }
 
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
-	out.Print(output.Title("Starting Installation"))
+	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
+	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, p.BoolP(true))
+	if err != nil {
+		return errs.Wrap(err, "Could not prompt for confirmation")
+	}
+
+	if !cont {
+		return locale.NewInputError("install_cancel", "Installation cancelled")
+	}
 
 	branch := params.branch
 	if branch == "" {
