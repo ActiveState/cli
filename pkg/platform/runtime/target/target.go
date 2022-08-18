@@ -34,7 +34,7 @@ const (
 	TriggerRevert    Trigger = "revert"
 	TriggerOffline   Trigger = "offline"
 	TriggerShell     Trigger = "shell"
-	TriggerCheckout  Trigger = "checkout"
+	TriggerGet       Trigger = "get"
 	TriggerUse       Trigger = "use"
 	triggerUnknown   Trigger = "unknown"
 )
@@ -52,7 +52,7 @@ var usageTriggers = []Trigger{
 	TriggerReset,
 	TriggerRevert,
 	TriggerShell,
-	TriggerCheckout,
+	TriggerGet,
 	TriggerUse,
 }
 
