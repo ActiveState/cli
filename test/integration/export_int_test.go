@@ -86,6 +86,10 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Export")
 	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("pull"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("export", "env"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
