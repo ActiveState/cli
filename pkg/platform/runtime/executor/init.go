@@ -1,14 +1,17 @@
 package executor
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/svcctl"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
 
@@ -81,10 +84,13 @@ func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
-	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
+	m := NewMeta(env, i.targeter)
+	if err := m.WriteToDisk("dir"); err != nil {
+		return nil
+	}
+
 	for _, exe := range exes {
-		f := newFile(i.targeter, i.executorPath)
-		if err := f.Save(sockPath, env, exe); err != nil {
+		if err := copyExecutor(i.executorPath, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -142,4 +148,58 @@ func isOwnedByUs(fileContents []byte) bool {
 		return true
 	}
 	return false
+}
+
+func copyExecutor(dir, exe string) error {
+	name := NameForExe(filepath.Base(exe))
+	target := filepath.Clean(filepath.Join(dir, name))
+
+	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
+		// This is super awkward, but we have a double .exe to temporarily work around an issue that will be fixed
+		// more correctly here - https://www.pivotaltracker.com/story/show/177845386
+		exe = strings.TrimSuffix(exe, exeutils.Extension)
+	}
+
+	logging.Debug("Creating executor for %s at %s", exe, target)
+
+	denoteTarget := executorTarget + exe
+
+	if fileutils.TargetExists(target) {
+		b, err := fileutils.ReadFile(target)
+		if err != nil {
+			return locale.WrapError(err, "err_createexecutor_exists_noread", "Could not create executor as target already exists and could not be read: {{.V0}}.", target)
+		}
+		if !isOwnedByUs(b) {
+			return locale.WrapError(err, "err_createexecutor_exists", "Could not create executor as target already exists: {{.V0}}.", target)
+		}
+		if strings.Contains(string(b), denoteTarget) {
+			return nil
+		}
+	}
+
+	executorExec, err := installation.ExecutorExec()
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
+	}
+	_ = executorExec
+
+	tplParams := map[string]interface{}{}
+	boxFile := "executor.sh"
+	if rt.GOOS == "windows" {
+		boxFile = "executor.bat"
+	}
+	fwBytes, err := assets.ReadFileBytes(fmt.Sprintf("executors/%s", boxFile))
+	if err != nil {
+		return errs.Wrap(err, "Failed to read asset")
+	}
+	fwStr, err := strutils.ParseTemplate(string(fwBytes), tplParams)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s template", boxFile)
+	}
+
+	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
+		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
+	}
+
+	return nil
 }
