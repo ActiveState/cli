@@ -1,9 +1,6 @@
 package cmdtree
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -34,18 +31,13 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        "email1[,email2,..]",
+				Name:        "email1,[email2,..]",
 				Description: locale.Tl("invite_arg_emails", "Email addresses to send the invitations to"),
 				Required:    true,
 				Value:       &params.EmailList,
 			},
 		},
-		func(ccmd *captain.Command, args []string) error {
-			if len(args) > 1 {
-				// User supplied additional e-mails as arguments instead of a single comma-separated list.
-				// That's fine.
-				params.EmailList = fmt.Sprintf("%s,%s", params.EmailList, strings.Join(args[1:], ","))
-			}
+		func(ccmd *captain.Command, _ []string) error {
 			return inviteRunner.Run(&params)
 		},
 	).SetGroup(PlatformGroup).SetUnstable(true).SetHasVariableArguments()
