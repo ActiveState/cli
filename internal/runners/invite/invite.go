@@ -2,6 +2,7 @@ package invite
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -63,7 +64,8 @@ func (i *invite) Run(params *Params) error {
 		}
 	}
 
-	emailList := strings.Trim(strings.ReplaceAll(params.EmailList, ",,", ","), ",")
+	re := regexp.MustCompile(",,+")
+	emailList := strings.Trim(re.ReplaceAllString(params.EmailList, ","), ",")
 	emails := strings.Split(emailList, ",")
 
 	if err := org.CanInvite(len(emails)); err != nil {
