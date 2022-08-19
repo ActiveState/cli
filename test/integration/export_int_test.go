@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Export() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "recipe")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -29,7 +30,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportArg() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "recipe")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -40,7 +41,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ExportPlatform() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "recipe", "--platform", "linux")
 	cp.Expect("{\"camel_flags\":")
 	cp.ExpectExitCode(0)
@@ -51,7 +52,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "recipe", "--platform", "junk")
 	cp.ExpectExitCode(1)
 }
@@ -61,7 +62,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "config", "--filter", "junk")
 	cp.ExpectExitCode(1)
 }
@@ -71,7 +72,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "cli-integration-tests", "Export")
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
 	cp.ExpectLongString(ts.Dirs.Config, time.Second)
@@ -83,7 +84,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Export")
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("export", "env"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
@@ -97,7 +98,7 @@ func TestExportIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }
 
-func (suite *ExportIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Export"`
+func (suite *ExportIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, owner, name string) {
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s"`, owner, name)
 	ts.PrepareActiveStateYAML(asyData)
 }
