@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -26,15 +25,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
-	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
-	cp.ExpectLongString("All dependencies have been installed and verified.")
-	if runtime.GOOS != "windows" {
-		cp.ExpectExitCode(0)
-	}
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -43,9 +35,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	}
 	mainBranchCommitID := pjfile.CommitID()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
-	cp.Expect("Updating Runtime")
-	cp.ExpectLongString("Successfully switched to branch: secondbranch", 60*time.Second)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"))
+	cp.ExpectLongString("Successfully switched to branch:")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(0)
 	}
@@ -69,15 +60,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "History")
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
-	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
-	cp.ExpectLongString("All dependencies have been installed and verified.")
-	if runtime.GOOS != "windows" {
-		cp.ExpectExitCode(0)
-	}
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -86,9 +70,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 	orignalCommitID := pjfile.CommitID()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"), e2e.AppendEnv(constants.DisableRuntime+"=false"))
-	cp.Expect("Updating Runtime")
-	cp.ExpectLongString("Successfully switched to commit:", 60*time.Second)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"))
+	cp.ExpectLongString("Successfully switched to commit:")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(0)
 	}
@@ -101,8 +84,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 }
 
-func (suite *SwitchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project string) {
-	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s"`, username, project)
+func (suite *SwitchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project, commitID string) {
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s?branch=main&commitID=%s"`, username, project, commitID)
 	ts.PrepareActiveStateYAML(asyData)
 }
 
