@@ -1,7 +1,6 @@
 package export
 
 import (
-	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -54,7 +53,7 @@ func (e *Env) Run() error {
 	}
 
 	for k, v := range env {
-		e.out.Print((locale.Tl("env_output_env", "{{.V0}}{{.V1}} {{.V2}}", k, string(os.PathListSeparator), v)))
+		e.out.Print((locale.Tl("env_output_env", "{{.V0}}: {{.V2}}", k, v)))
 	}
 
 	return nil
