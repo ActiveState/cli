@@ -64,8 +64,8 @@ func (i *invite) Run(params *Params) error {
 		}
 	}
 
-	re := regexp.MustCompile(",,+")
-	emailList := strings.Trim(re.ReplaceAllString(params.EmailList, ","), ",")
+	multipleCommas := regexp.MustCompile(",,+")
+	emailList := strings.Trim(multipleCommas.ReplaceAllString(params.EmailList, ","), ",")
 	emails := strings.Split(emailList, ",")
 
 	if err := org.CanInvite(len(emails)); err != nil {
