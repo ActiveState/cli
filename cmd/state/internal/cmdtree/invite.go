@@ -31,7 +31,7 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        "email1[,email2,..]",
+				Name:        "email1,[email2,..]",
 				Description: locale.Tl("invite_arg_emails", "Email addresses to send the invitations to"),
 				Required:    true,
 				Value:       &params.EmailList,
@@ -40,5 +40,5 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return inviteRunner.Run(&params)
 		},
-	).SetGroup(PlatformGroup).SetUnstable(true)
+	).SetGroup(PlatformGroup).SetUnstable(true).SetHasVariableArguments()
 }
