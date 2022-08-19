@@ -85,7 +85,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
-	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/ActiveState-CLI/Export?branch=main&commitID=5397f645-da8a-4591-b106-9d7fa99545fe"`, owner, name)
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/ActiveState-CLI/Export?branch=main&commitID=5397f645-da8a-4591-b106-9d7fa99545fe"`)
 	ts.PrepareActiveStateYAML(asyData)
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("export", "env"),
