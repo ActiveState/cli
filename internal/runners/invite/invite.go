@@ -2,6 +2,7 @@ package invite
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -63,7 +64,9 @@ func (i *invite) Run(params *Params) error {
 		}
 	}
 
-	emails := strings.Split(params.EmailList, ",")
+	multipleCommas := regexp.MustCompile(",,+")
+	emailList := strings.Trim(multipleCommas.ReplaceAllString(params.EmailList, ","), ",")
+	emails := strings.Split(emailList, ",")
 
 	if err := org.CanInvite(len(emails)); err != nil {
 		return locale.WrapError(err, "err_caninvite", "Cannot invite users to {{.V0}}.", org.String())
