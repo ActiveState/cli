@@ -51,7 +51,7 @@ func (c commitIdentifier) CommitID() strfmt.UUID {
 }
 
 func (c commitIdentifier) Locale() string {
-	return locale.Tr("commit_identifier_type", "commit")
+	return locale.Tl("commit_identifier_type", "commit")
 }
 
 type branchIdentifier struct {
@@ -63,7 +63,7 @@ func (b branchIdentifier) CommitID() strfmt.UUID {
 }
 
 func (b branchIdentifier) Locale() string {
-	return locale.Tr("branch_identifier_type", "branch")
+	return locale.Tl("branch_identifier_type", "branch")
 }
 
 func New(prime primeable) *Switch {
