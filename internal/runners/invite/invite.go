@@ -63,7 +63,8 @@ func (i *invite) Run(params *Params) error {
 		}
 	}
 
-	emails := strings.Split(params.EmailList, ",")
+	emailList := strings.Trim(strings.ReplaceAll(params.EmailList, ",,", ","), ",")
+	emails := strings.Split(emailList, ",")
 
 	if err := org.CanInvite(len(emails)); err != nil {
 		return locale.WrapError(err, "err_caninvite", "Cannot invite users to {{.V0}}.", org.String())
