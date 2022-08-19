@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/branch"
+	"github.com/ActiveState/cli/internal/runners/swtch"
 )
 
 func newBranchCommand(prime *primer.Values) *captain.Command {
@@ -47,11 +48,11 @@ func newBranchAddCommand(prime *primer.Values) *captain.Command {
 }
 
 func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
-	runner := branch.NewSwitch(prime)
+	runner := swtch.New(prime)
 
-	params := branch.SwitchParams{}
+	params := swtch.SwitchParams{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"switch",
 		locale.Tl("switch_title", "Switching branches"),
 		locale.Tl("switch_description", "Switch to the given branch name"),
@@ -59,13 +60,18 @@ func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("branch_switch_arg_name", "switch"),
-				Description: locale.Tl("branch_switch_arg_name_description", "Branch to switch to"),
-				Value:       &params.Name,
+				Name:        locale.Tl("switch_arg_identifier", "identifier"),
+				Description: locale.Tl("switch_arg_identifier_description", "The commit or branch to switch to"),
+				Value:       &params.Identifier,
 				Required:    true,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		})
+	// We set this command to hidden for backwards compatibility as we cannot
+	// alias `state switch` to `state branch switch`
+	cmd.SetHidden(true)
+
+	return cmd
 }
