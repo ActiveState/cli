@@ -26,7 +26,7 @@ const (
 	TriggerDeploy    Trigger = "deploy"
 	TriggerExec      Trigger = "exec"
 	TriggerResetExec Trigger = "reset-exec"
-	TriggerBranch    Trigger = "branch"
+	TriggerSwitch    Trigger = "switch"
 	TriggerImport    Trigger = "import"
 	TriggerPackage   Trigger = "package"
 	TriggerPull      Trigger = "pull"
@@ -45,7 +45,7 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
-	TriggerBranch,
+	TriggerSwitch,
 	TriggerImport,
 	TriggerPackage,
 	TriggerPull,

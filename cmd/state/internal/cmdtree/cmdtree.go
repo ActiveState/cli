@@ -189,6 +189,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		getCmd,
 		useCmd,
 		shellCmd,
+		newSwitchCommand(prime),
 	)
 
 	return &CmdTree{
