@@ -93,6 +93,8 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	)
 	cp.Expect(`PATH: `)
 	cp.ExpectExitCode(0)
+
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "ACTIVESTATE_ACTIVATED")
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
