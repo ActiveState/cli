@@ -30,6 +30,10 @@ func NewEnv(prime primeable) *Env {
 }
 
 func (e *Env) Run() error {
+	if e.project == nil {
+		return locale.NewInputError("err_env_no_project", "No project found.")
+	}
+
 	rt, _, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
