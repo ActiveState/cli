@@ -26,7 +26,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 	// Checkout.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python3"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python3")
@@ -55,7 +55,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 	// Checkout another project.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python-3.9"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python-3.9")
@@ -111,7 +111,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python3"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python3")

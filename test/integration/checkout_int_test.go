@@ -15,24 +15,24 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type GetIntegrationTestSuite struct {
+type CheckoutIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *GetIntegrationTestSuite) TestGet() {
-	suite.OnlyRunForTags(tagsuite.Get)
+func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python3"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out Python3")
 	python3Dir := filepath.Join(ts.Dirs.Work, "Python3")
-	suite.Require().True(fileutils.DirExists(python3Dir), "state get should have created "+python3Dir)
+	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	suite.Require().True(fileutils.FileExists(filepath.Join(python3Dir, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify runtime was installed correctly and works.
@@ -50,31 +50,31 @@ func (suite *GetIntegrationTestSuite) TestGet() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *GetIntegrationTestSuite) TestGetWithFlags() {
-	suite.OnlyRunForTags(tagsuite.Get)
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// Test checking out to current working directory.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python3", "."),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
 	cp.Expect(ts.Dirs.Work)
 	suite.Assert().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out to the current working directory")
 
-	// Test checkout to a generic path.
+	// Test checkout out to a generic path.
 	python3Dir := filepath.Join(ts.Dirs.Work, "MyPython3")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	suite.Require().True(fileutils.DirExists(python3Dir), "state get should have created "+python3Dir)
+	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	asy := filepath.Join(python3Dir, constants.ConfigFileName)
 	suite.Require().True(fileutils.FileExists(asy), "ActiveState-CLI/Python3 was not checked out properly")
 	suite.Assert().True(bytes.Contains(fileutils.ReadFileUnsafe(asy), []byte("6d9280e7-75eb-401a-9e71-0d99759fbad3")), "did not check out specific commit ID")
@@ -82,7 +82,7 @@ func (suite *GetIntegrationTestSuite) TestGetWithFlags() {
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("get", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectLongString("This project has no branch with label matching doesNotExist")
@@ -90,6 +90,6 @@ func (suite *GetIntegrationTestSuite) TestGetWithFlags() {
 
 }
 
-func TestGetIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(GetIntegrationTestSuite))
+func TestCheckoutIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }
