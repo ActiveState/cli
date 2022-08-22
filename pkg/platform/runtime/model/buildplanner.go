@@ -51,9 +51,35 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 
 	return &BuildResult{
 		BuildEngine: Alternative,
-		BuildPlan:   resp,
+		BuildPlan:   processBuildPlan(resp),
 		BuildReady:  model.BuildPlanStatusEnum(resp.Status) == model.Ready,
 	}, nil
+}
+
+// TODO: Tempoarary function, remove after dependecy resolution is updated
+func processBuildPlan(bp *model.BuildPlan) *model.BuildPlan {
+	for _, artifact := range bp.Artifacts {
+		if artifact.TypeName == "Step" {
+			bp.Steps = append(bp.Steps, model.Step{
+				TargetID: artifact.TargetID,
+				Name:     artifact.Name,
+				Image:    artifact.Image,
+				Command:  artifact.Command,
+				Inputs:   artifact.Inputs,
+				Outputs:  artifact.Outputs,
+			})
+			continue
+		}
+		if artifact.TypeName == "Source" {
+			bp.Sources = append(bp.Sources, model.Source{
+				TargetID:  artifact.TargetID,
+				Name:      artifact.Name,
+				Namespace: artifact.Namespace,
+				Version:   artifact.Version,
+			})
+		}
+	}
+	return bp
 }
 
 func runtimeDependencies(baseID string, artifacts []model.Artifact) []model.Artifact {

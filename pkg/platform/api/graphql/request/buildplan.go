@@ -12,69 +12,94 @@ type buildPlanByCommitID struct {
 
 // TODO: Add error handling to this query
 func (b *buildPlanByCommitID) Query() string {
-	return `query ($commitID: ID!) {
+	return `query($commitID: ID!) {
 		execute(commitID: $commitID) {
 			... on BuildPlan {
+			buildPlanID
 			status
 			terminals {
 				tag
 				targetIDs
 			}
-			resolvedRequirements {
-				resolvedSource
-				requirement {
-				name
-				namespace
-				versionRequirements {
-					Comparator
-					Version
+			targets {
+				... on Source {
+					__typename
+					targetID
+					namespace
+					name
+					version
+					revision
+					ingredientID
+					ingredientVersionID
 				}
+				... on Step {
+					__typename
+					targetID
+					name
+					inputs {
+						__typename
+						tag
+						targetIDs
+					}
+					outputs
 				}
-			}
-			sources {
-				targetID
-				name
-				namespace
-				version
-			}
-			artifacts {
 				... on ArtifactSucceeded {
-				targetID
-				mimeType
-				generatedBy
-				status
-				url
-				logURL
-				checksum
-				runtimeDependencies
+					__typename
+					mimeType
+					generatedBy
+					runtimeDependencies
+					status
+					logURL
+					url
+					checksum
 				}
 				... on ArtifactUnbuilt {
-				targetID
+					__typename
+					targetID
+					mimeType
+					generatedBy
+					runtimeDependencies
+					status
 				}
 				... on ArtifactBuilding {
-				targetID
+					__typename
+					targetID
+					mimeType
+					generatedBy
+					runtimeDependencies
+					status
+					runningSince
 				}
 				... on ArtifactTransientlyFailed {
-				targetID
-				errors
+					__typename
+					targetID
+					mimeType
+					generatedBy
+					runtimeDependencies
+					status
+					lastBuildTimestamp
+					buildTimeMs
+					logURL
+						errors
+					attempts
+					nextAttemptAt
 				}
 				... on ArtifactPermanentlyFailed {
-				targetID
-				errors
+					__typename
+					targetID
+					mimeType
+					generatedBy
+					runtimeDependencies
+					status
+					lastBuildTimestamp
+					buildTimeMs
+					logURL
+					errors
 				}
-			}
-			steps {
-				targetID
-				name
-				inputs {
-				tag
-				targetIDs
-				}
-				outputs
-			}
 			}
 		}
-	}`
+	}
+}`
 }
 
 func (b *buildPlanByCommitID) Vars() map[string]interface{} {

@@ -19,9 +19,10 @@ type Execute struct {
 	Terminals []Terminals `json:"terminals"`
 	Status    string      `json:"status"`
 	Artifacts []Artifact  `json:"artifacts"`
-	Steps     []Step      `json:"steps"`
-	Sources   []Source    `json:"sources"`
 	Error     string      `json:"error"`
+	// TODO: Temporary workaround, remove after dependency resolution functions are updated
+	Steps   []Step
+	Sources []Source
 }
 
 type Terminals struct {
@@ -30,13 +31,21 @@ type Terminals struct {
 }
 
 type Artifact struct {
+	TypeName            string   `json:"__typename"`
 	TargetID            string   `json:"targetID"`
+	Name                string   `json:"name"`
+	Namespace           string   `json:"namespace"`
+	Version             string   `json:"version"`
 	MimeType            string   `json:"mimeType"`
 	GeneratedBy         string   `json:"generatedBy"`
 	Status              string   `json:"status"`
 	URL                 string   `json:"url"`
 	LogURL              string   `json:"logURL"`
 	Checksum            string   `json:"checksum"`
+	Image               string   `json:"image"`
+	Command             string   `json:"command"`
+	Inputs              []Input  `json:"inputs"`
+	Outputs             []string `json:"outputs"`
 	RuntimeDependencies []string `json:"runtimeDependencies"`
 	Errors              []string `json:"errors"`
 }
