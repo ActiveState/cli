@@ -295,7 +295,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/version"]'), github.ref)
 
     # === Deploy Steps ===
     steps:
