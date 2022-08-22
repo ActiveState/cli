@@ -1,10 +1,7 @@
 package export
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -35,15 +32,6 @@ func NewEnv(prime primeable) *Env {
 func (e *Env) Run() error {
 	rt, _, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
 	if err != nil {
-		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchNamesForProjectFiltered(e.project.Owner(), e.project.Name(), e.project.BranchName())
-			if err == nil && len(branches) > 1 {
-				return locale.NewInputError("err_alternate_branches", "", e.project.BranchName(), strings.Join(branches, "\n - "))
-			}
-		}
-		if !authentication.LegacyGet().Authenticated() {
-			return locale.WrapError(err, "err_export_env_auth", "Could not update runtime files. If this is a private project ensure that you are authenticated.")
-		}
 		return locale.WrapError(err, "err_export_new_runtime", "Could not get new runtime")
 	}
 
@@ -52,9 +40,7 @@ func (e *Env) Run() error {
 		return locale.WrapError(err, "err_env_get_env", "Could not get runtime environment")
 	}
 
-	for k, v := range env {
-		e.out.Print((locale.Tl("env_output_env", "{{.V0}}: {{.V2}}", k, v)))
-	}
+	e.out.Print(env)
 
 	return nil
 }

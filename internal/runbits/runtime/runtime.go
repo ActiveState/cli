@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -38,6 +40,15 @@ func NewFromProject(
 		if err = rti.Update(auth, eh); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return nil, nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+			}
+			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
+				if err == nil && len(branches) > 1 {
+					return nil, nil, locale.NewInputError("err_alternate_branches", "", proj.BranchName(), strings.Join(branches, "\n - "))
+				}
+			}
+			if !auth.Authenticated() {
+				return nil, nil, locale.WrapError(err, "err_export_env_auth", "Could not update runtime files. If this is a private project ensure that you are authenticated.")
 			}
 			return nil, nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
