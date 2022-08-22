@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 )
 
 // APIKeyProvider describes the behavior required to obtain a new api key.
@@ -35,13 +34,6 @@ func prepareAPIKeyRunParams(params APIKeyRunParams) (APIKeyRunParams, error) {
 type APIKey struct {
 	keyPro APIKeyProvider
 	out    output.Outputer
-}
-
-type primeable interface {
-	primer.Auther
-	primer.Outputer
-	primer.Configurer
-	primer.Projecter
 }
 
 // NewAPIKey is a convenience construction function.
