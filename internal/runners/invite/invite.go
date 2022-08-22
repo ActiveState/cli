@@ -50,13 +50,6 @@ func (i *invite) Run(params *Params, args []string) error {
 	}
 
 	if len(args) > 1 {
-		for _, arg := range args {
-			if strings.Contains(arg, ",") {
-				return locale.NewInputError(
-					"err_invite_mixed_commas",
-					"Please supply either a comma-separated list of e-mail addresses or a space-separated list of e-mail addresses, not both")
-			}
-		}
 		params.EmailList = strings.Join(args, ",")
 	} // otherwise CSV-separated list of e-mails is already in params.EmailList
 
