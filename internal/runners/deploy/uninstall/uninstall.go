@@ -56,7 +56,7 @@ func (u *Uninstall) Run(params *Params) error {
 		if runtime.GOOS == "windows" {
 			return locale.NewInputError(
 				"err_deploy_uninstall_cannot_chdir",
-				"Cannot remove deployment in current working directory. Please cd elsewhere and then supply `--path` argument")
+				"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
 		}
 		cwd, err := os.Getwd()
 		if err != nil {
