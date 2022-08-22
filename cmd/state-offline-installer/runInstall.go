@@ -78,10 +78,19 @@ func runInstall(out output.Outputer, params *Params) error {
 		return errs.Wrap(err, "Unable to create artifactsPath directory")
 	}
 
-	err = unzip(params.backpackZipFile, assetsPath)
+	ua := unarchiver.NewZip()
+	out.Print(fmt.Sprintf("Stage 1 of 3 Start: Decompressing assets into: %s", assetsPath))
+	f, siz, err := ua.PrepareUnpacking(params.backpackZipFile, assetsPath)
 	if err != nil {
-		return errs.Wrap(err, "Unable to unzip to assetsPath")
+		return errs.Wrap(err, "Unable to prepare unpacking of backpack")
 	}
+
+	err = ua.Unarchive(f, siz, assetsPath)
+	if err != nil {
+		return errs.Wrap(err, "Unable to unarchive Assets to assetsPath")
+	}
+
+	out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
 
 	tos := prompts.NewOfflineFileTOS(licenseFilePath)
 	accepted, err := prompts.PromptTOS(tos, out, prompt)
@@ -92,22 +101,29 @@ func runInstall(out output.Outputer, params *Params) error {
 		return locale.NewInputError("tos_not_accepted", "")
 	}
 
-	out.Print(fmt.Sprintf("Stage 1 of 2 Start: Decompressing assets into: %s", assetsPath))
-	err = unzip(params.backpackZipFile, assetsPath)
-	if err != nil {
-		return errs.Wrap(err, "Error unzipping assets")
-	}
-	out.Print(fmt.Sprintf("Stage 1 of 2 Finished: Decompressing assets into: %s", assetsPath))
-
 	archivePath := filepath.Join(assetsPath, artifactsTarGZName)
 
-	out.Print(fmt.Sprintf("Stage 2 of 2 Start: Decompressing artifacts into: %s", artifactsPath))
-	err = unpackArtifact(unarchiver.NewTarGz(), archivePath, artifactsPath)
+	out.Print(fmt.Sprintf("Stage 2 of 3 Start: Decompressing artifacts into: %s", artifactsPath))
+	ua = unarchiver.NewTarGz()
+	f, siz, err = ua.PrepareUnpacking(archivePath, artifactsPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not unpack artifact %s", archivePath)
+		return errs.Wrap(err, "Unable to prepare unpacking of artifact tarball")
 	}
-	out.Print(fmt.Sprintf("Stage 2 of 2 Finished: Decompressing artifacts into: %s", artifactsPath))
 
+	ua.SetNotifier(func(filename string, _ int64, isDir bool) {
+		if !isDir {
+			out.Print(fmt.Sprintf("Unpacking artifact %s", filename))
+		}
+	})
+
+	err = ua.Unarchive(f, siz, artifactsPath)
+	if err != nil {
+		return errs.Wrap(err, "Unable to unarchive artifacts to artifactsPath")
+	}
+
+	out.Print(fmt.Sprintf("Stage 2 of 3 Finished: Decompressing artifacts into: %s", artifactsPath))
+
+	out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 	offlineTarget := target.NewOfflineTarget(installToDir, artifactsPath)
 
 	mockProgress := newOfflineProgressOutput(out)
@@ -124,6 +140,7 @@ func runInstall(out output.Outputer, params *Params) error {
 			return errs.Wrap(err, "Had an installation error")
 		}
 	}
+	out.Print(fmt.Sprintf("Stage 3 of 3 Finished: Installing artifacts from: %s", artifactsPath))
 
 	configureEnvironmentAccepted, err := prompt.Confirm("Setup", "Setup environment for installed project?", &default_boolean_answer)
 	if err != nil {

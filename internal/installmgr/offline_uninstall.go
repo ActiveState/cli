@@ -1,4 +1,4 @@
-package main
+package installmgr
 
 import (
 	"os"
@@ -17,13 +17,15 @@ import (
 	"path/filepath"
 )
 
+const licenseFileName = "LICENSE.txt"
+
 // NOTE: From: internal/runners/clean/uninstall.go
 
-func runUnInstall(out output.Outputer, params *Params) error {
+func RunOfflineUnInstall(out output.Outputer, path string) error {
 	analytics := blackhole.New()
 	prompter := prompt.New(true, analytics)
 	default_boolean_answer := true
-	installToDir := params.path
+	installToDir := path
 	licenseFilePath := filepath.Join(installToDir, licenseFileName)
 
 	isInstallDir, err := fileutils.FileContains(licenseFilePath, []byte("ACTIVESTATE"))

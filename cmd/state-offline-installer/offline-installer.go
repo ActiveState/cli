@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -68,28 +69,26 @@ func run() error {
 			return nil
 		},
 	)
-	if isZip(params.backpackZipFile) {
-		cmd.AddChildren(
-			captain.NewCommand(
-				cmdInstall,
-				"Doing offline installation",
-				"Do an offline installation",
-				p, nil,
-				[]*captain.Argument{
-					{
-						Name:        "path",
-						Description: "Install into target directory <path>",
-						Value:       &params.path,
-						Required:    true,
-					},
+	cmd.AddChildren(
+		captain.NewCommand(
+			cmdInstall,
+			"Doing offline installation",
+			"Do an offline installation",
+			p, nil,
+			[]*captain.Argument{
+				{
+					Name:        "path",
+					Description: "Install into target directory <path>",
+					Value:       &params.path,
+					Required:    true,
 				},
-				func(ccmd *captain.Command, args []string) error {
-					logging.Debug("Running CmdInstall")
-					return runInstall(out, params)
-				},
-			),
-		)
-	}
+			},
+			func(ccmd *captain.Command, args []string) error {
+				logging.Debug("Running CmdInstall")
+				return runInstall(out, params)
+			},
+		),
+	)
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdUnInstall,
@@ -106,7 +105,7 @@ func run() error {
 			},
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdUnInstall")
-				return runUnInstall(out, params)
+				return installmgr.RunOfflineUnInstall(out, params.path)
 			},
 		),
 	)

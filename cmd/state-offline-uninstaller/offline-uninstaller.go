@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/installmgr"
 )
 
 const (
@@ -81,7 +82,7 @@ func run() error {
 			},
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdUnInstall")
-				return runUnInstall(out, params)
+				return installmgr.RunOfflineUnInstall(out, params.path)
 			},
 		),
 	)
