@@ -48,7 +48,7 @@ func NewFromProject(
 				}
 			}
 			if !auth.Authenticated() {
-				return nil, nil, locale.WrapError(err, "err_export_env_auth", "Could not update runtime files. If this is a private project ensure that you are authenticated.")
+				return nil, nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime files. If this is a private project ensure that you are authenticated.")
 			}
 			return nil, nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}

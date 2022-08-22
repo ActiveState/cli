@@ -32,7 +32,7 @@ func NewEnv(prime primeable) *Env {
 func (e *Env) Run() error {
 	rt, _, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
 	if err != nil {
-		return locale.WrapError(err, "err_export_new_runtime", "Could not get new runtime")
+		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize new runtime")
 	}
 
 	env, err := rt.Env(false, true)
