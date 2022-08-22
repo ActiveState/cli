@@ -44,10 +44,21 @@ func New(prime primeable) *invite {
 	}
 }
 
-func (i *invite) Run(params *Params) error {
+func (i *invite) Run(params *Params, args []string) error {
 	if i.project == nil {
 		return locale.NewInputError("err_no_projectfile", "Must be in a project directory.")
 	}
+
+	if len(args) > 1 {
+		for _, arg := range args {
+			if strings.Contains(arg, ",") {
+				return locale.NewInputError(
+					"err_invite_mixed_commas",
+					"Please supply either a comma-separated list of e-mail addresses or a space-separated list of e-mail addresses, not both")
+			}
+		}
+		params.EmailList = strings.Join(args, ",")
+	} // otherwise CSV-separated list of e-mails is already in params.EmailList
 
 	org := params.Org
 	if org.String() == "" {
