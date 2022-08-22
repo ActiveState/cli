@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -28,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -260,17 +261,10 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
-	// If the state tool is already installed, but out of date, try to update it first.
-	if stateToolInstalled && !params.isUpdate && !params.force {
-		checker := updater.NewDefaultChecker(cfg)
-		up, err := checker.CheckFor("", "")
-		if err != nil {
-			logging.Debug("Could not check for update.") // not a show-stopper; move on
-		}
-		if up != nil {
-			logging.Debug("Update available. Switching to update flow.")
-			params.isUpdate = true
-		}
+	// If the state tool is already installed, but out of date, continue with update flow.
+	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool() {
+		logging.Debug("Installed state tool should be updated, switching to update flow.")
+		params.isUpdate = true
 	}
 
 	route := "install"
@@ -481,4 +475,41 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 
 func noArgs() bool {
 	return len(os.Args[1:]) == 0
+}
+
+func shouldUpdateInstalledStateTool() bool {
+	logging.Debug("Checking if installed state tool is an older version.")
+
+	stateExe := constants.StateCmd + exeutils.Extension
+	cmd := exec.Command(stateExe, "--version")
+	cmd.Env = os.Environ()
+	output, err := cmd.Output()
+	if err != nil {
+		logging.Debug("Could not determine state tool version.")
+		return true // probably corrupted install
+	}
+
+	branchRegex := regexp.MustCompile("Branch (\\S+)")
+	branchMatch := branchRegex.FindSubmatch(output)
+	if len(branchMatch) == 0 {
+		logging.Debug("Could not read state tool branch.")
+		return true
+	}
+	if string(branchMatch[1]) != constants.BranchName {
+		logging.Debug("State tool branch is different from installer.")
+		return false // do not update, require --force
+	}
+
+	versionRegex := regexp.MustCompile("Version (\\S+)")
+	versionMatch := versionRegex.FindSubmatch(output)
+	if len(versionMatch) == 0 {
+		logging.Debug("Could not read state tool version.")
+		return true
+	}
+	if string(versionMatch[1]) != constants.Version {
+		logging.Debug("State tool version is different from installer.")
+		return true
+	}
+
+	return false
 }
