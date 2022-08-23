@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -163,6 +164,42 @@ echo "Hello $name!"
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Windows does not have `which` command")
+	}
+	suite.OnlyRunForTags(tagsuite.Exec)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.createProjectFile(ts)
+
+	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out Python-3.9")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "--path", pythonDir, "which", "python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "echo", "python3", "--path", pythonDir, "--", "--path", "doesNotExist", "--", "extra"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("python3 --path doesNotExist -- extra")
+	cp.ExpectExitCode(0)
+
 }
 
 func TestExecIntegrationTestSuite(t *testing.T) {
