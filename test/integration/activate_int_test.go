@@ -220,6 +220,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
+	if runtime.GOOS == "windows" {
+		cp.Send("echo %PYTHONPATH%")
+	} else {
+		cp.Send("echo $PYTHONPATH")
+	}
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), constants.LocalRuntimeTempDirectory)
+
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
 	if runtime.GOOS == "windows" {
 		cp.Send("set PYTHONPATH=/custom_pythonpath")

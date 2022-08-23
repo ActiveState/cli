@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package camel
@@ -55,6 +56,27 @@ func (m *MetaData) Prepare(installRoot string) error {
 	if pythonpath, ok := os.LookupEnv("PYTHONPATH"); ok {
 		m.PathListEnv["PYTHONPATH"] = pythonpath
 	} else if fileutils.DirExists(sitePackages) {
+		// installRoot and sitePackages are in the local runtime temp directory.
+		// As it is, PYTHONPATH would include this local directory, and we don't want that.
+		// Walk up installRoot, looking for the local runtime temp directory marker (_runtime_temp)
+		// and rebase sitePackages off of that directory, because that is ultimately where sitePackages
+		// will be installed to (it does not yet exist).
+		runtimeDir := installRoot
+		for {
+			base := filepath.Base(runtimeDir)
+			if base == constants.LocalRuntimeTempDirectory {
+				runtimeDir = filepath.Dir(runtimeDir)
+				break
+			}
+			if base == runtimeDir {
+				runtimeDir = installRoot // reset
+				break
+			}
+			runtimeDir = filepath.Dir(runtimeDir)
+		}
+		if relSitePackages, err := filepath.Rel(installRoot, sitePackages); err == nil {
+			sitePackages = filepath.Join(runtimeDir, relSitePackages)
+		}
 		m.PathListEnv["PYTHONPATH"] = sitePackages
 	}
 
