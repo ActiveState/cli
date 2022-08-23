@@ -1,0 +1,5 @@
+::sock::/tmp/state-ipc/state-ipts.DX-1060.sock
+::env::TESTER="test/best"::env::BESTER="example"
+::commit-id::1234abcd-1234-abcd-1234-abcd1234
+::namespace::ActiveState/Test
+::headless::true

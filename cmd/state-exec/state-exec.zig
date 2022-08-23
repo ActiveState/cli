@@ -9,27 +9,19 @@ const io = std.io;
 const mem = std.mem;
 const net = std.net;
 const os = std.os;
+const path = std.fs.path;
 const process = std.process;
 const Thread = std.Thread;
 
 const execName = "state-exec";
+const metaName = "meta.as";
 
 const Error = error{
-    ArgIterator,
-    ArgInvalidOne,
-    ArgMissingOne,
-    ArgInvalidTwo,
-    ArgMissingTwo,
-    ArgInvalidThree,
-    ArgMissingThree,
-    ArgInvalidFour,
-    ArgMissingFour,
-    ArgInvalidFive,
-    ArgMissingFive,
-    ArgCollector,
-    ArgCollectRunt,
-    ArgCollectUsr,
     InspectSelfPath,
+    DirOfSelfPath,
+    PathOfMeta,
+    MetaOpen,
+    MetaRead,
     ThreadSpawn,
     ChildProcInit,
     ChildProcSpawn,
@@ -42,16 +34,11 @@ pub fn main() !void {
         try stderr.print("{s}: ", .{execName});
 
         switch (err) {
-            Error.ArgIterator => try stderr.print("Cannot process args.\n", .{}),
-            Error.ArgInvalidOne, Error.ArgMissingOne => try stderr.print("First arg should be a socket file.\n", .{}),
-            Error.ArgInvalidTwo, Error.ArgMissingTwo => try stderr.print("Second arg should be a language runtime.\n", .{}),
-            Error.ArgInvalidThree, Error.ArgMissingThree => try stderr.print("Third arg should be a project namespace.\n", .{}),
-            Error.ArgInvalidFour, Error.ArgMissingFour => try stderr.print("Fourth arg should be a project commit ID.\n", .{}),
-            Error.ArgInvalidFive, Error.ArgMissingFive => try stderr.print("Fifth arg should be a project headless status boolean.\n", .{}),
-            Error.ArgCollector => try stderr.print("Cannot setup arg collector.\n", .{}),
-            Error.ArgCollectRunt => try stderr.print("Cannot collect runtime arg.\n", .{}),
-            Error.ArgCollectUsr => try stderr.print("Cannot collect user args.\n", .{}),
             Error.InspectSelfPath => try stderr.print("Cannot obtain path to this executable.\n", .{}),
+            Error.DirOfSelfPath => try stderr.print("Cannot get directory of path to this executable.\n", .{}),
+            Error.PathOfMeta => try stderr.print("Cannot get path of meta data file.\n", .{}),
+            Error.MetaOpen => try stderr.print("Cannot open the meta file\n", .{}),
+            Error.MetaRead => try stderr.print("Cannot read the meta file\n", .{}),
             Error.ThreadSpawn => try stderr.print("Cannot spawn thread for heartbeat.\n", .{}),
             Error.ChildProcInit => try stderr.print("Cannot initialize child process for runtime.\n", .{}),
             Error.ChildProcSpawn => try stderr.print("Cannot spawn child process for runtime.\n", .{}),
@@ -65,13 +52,10 @@ pub fn main() !void {
 }
 
 const MsgData = struct {
-    pub const fmt = "heart<{d}<{s}<{s}<{s}<{s}";
+    pub const fmt = "heart<{d}<{s}";
 
     pid: i32,
     exec: []const u8,
-    nameSpace: []const u8,
-    commitID: []const u8,
-    headless: []const u8,
 };
 
 fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
@@ -81,7 +65,7 @@ fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d
     };
     defer conn.close();
 
-    var clientMsg = try fmt.allocPrint(a, MsgData.fmt, .{ d.pid, d.exec, d.nameSpace, d.commitID, d.headless });
+    var clientMsg = try fmt.allocPrint(a, MsgData.fmt, .{ d.pid, d.exec });
     _ = conn.write(clientMsg) catch |err| {
         try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
         return;
@@ -99,39 +83,35 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     defer arena.deinit();
     const a = arena.allocator();
 
-    var argIt = process.argsWithAllocator(a) catch return Error.ArgIterator;
-    defer argIt.deinit();
-
-    _ = argIt.skip();
-    const sock = (argIt.next(a) orelse return Error.ArgMissingOne) catch return Error.ArgInvalidOne;
-    const runt = (argIt.next(a) orelse return Error.ArgMissingTwo) catch return Error.ArgInvalidTwo;
-    const nmsp = (argIt.next(a) orelse return Error.ArgMissingThree) catch return Error.ArgInvalidThree;
-    const cmid = (argIt.next(a) orelse return Error.ArgMissingFour) catch return Error.ArgInvalidFour;
-    const hdls = (argIt.next(a) orelse return Error.ArgMissingFive) catch return Error.ArgInvalidFive;
-
     var pid: i32 = @truncate(i32, @bitCast(i64, Thread.getCurrentId()));
 
     const exec = fs.selfExePathAlloc(a) catch return Error.InspectSelfPath;
 
+    const execDir = path.dirname(exec) orelse return Error.DirOfSelfPath;
+    const metaPath = path.join(a, &[_][]const u8{ execDir, metaName }) catch return Error.PathOfMeta;
+    const metaFile = fs.openFileAbsolute(metaPath, .{ .read = true }) catch return Error.MetaOpen;
+    defer metaFile.close();
+    const metaReader = metaFile.reader();
+    var metaBuf: [32760]u8 = undefined;
+    while (metaReader.readUntilDelimiterOrEof(&metaBuf, '\n') catch return Error.InspectSelfPath) |line| {
+        // do something with 'line'
+        stderr.print("{s}\n", .{line}) catch return Error.InspectSelfPath;
+    }
+    const sock = "test";
+    const runt = "runt";
+
     const data = MsgData{
         .pid = pid,
         .exec = exec,
-        .nameSpace = nmsp,
-        .commitID = cmid,
-        .headless = hdls,
     };
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, sock, data }) catch {
         return Error.ThreadSpawn;
     };
     defer clientThread.join();
 
-    var usrArgs = process.argsAlloc(a) catch return Error.ArgCollector;
-    defer process.argsFree(a, usrArgs);
-
     var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
-    cmdArgs.append(runt) catch return Error.ArgCollectRunt;
-    cmdArgs.appendSlice(usrArgs[6..]) catch return Error.ArgCollectUsr;
+    cmdArgs.append(runt) catch return Error.InspectSelfPath;
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
     defer childProc.deinit();
