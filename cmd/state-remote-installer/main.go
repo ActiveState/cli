@@ -189,7 +189,10 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 	out.Print("[SUCCESS]✔ Done[/RESET]")
 
-	_, _, err = exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, []string{})
+	env := []string{
+		constants.InstallerNoSubshell + "=true",
+	}
+	_, _, err = exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
