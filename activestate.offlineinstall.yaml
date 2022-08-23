@@ -25,14 +25,3 @@ scripts:
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.OFFLINE_INSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_INSTALL_PKGS
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.OFFLINE_UNINSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_UNINSTALL_PKGS
-  - name: build-offline-install-for
-    language: bash
-    description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
-    value: |
-      set -e
-      $constants.SET_ENV
-      export GOOS=${1}
-      export GOARCH=amd64
-      [ -z "${2}" ] && >&2 echo "must provide output file as 2nd arg" && exit 1
-      go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.OFFLINE_INSTALL_PKGS
-      go build -tags "internal $GO_BUILD_TAGS" -o ${2} $constants.CLI_BUILDFLAGS $constants.OFFLINE_UNINSTALL_PKGS
