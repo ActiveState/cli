@@ -417,6 +417,9 @@ const ExecRecursionAllowEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_RECURSION_ALLOW"
 // ExecRecursionMaxLevelEnvVarName is an environment variable storing the number of times the executor may be called recursively
 const ExecRecursionMaxLevelEnvVarName = "ACTIVESTATE_CLI_EXECUTOR_MAX_RECURSION_LEVEL"
 
+// InstallerNoSubshell is an environment variable that if set to true will tell the installer not to start a subshell
+const InstallerNoSubshell = "ACTIVESTATE_CLI_INSTALLER_NO_SUBSHELL"
+
 // InstallSourceFile is the file we use to record what installed the state tool
 const InstallSourceFile = "installsource.txt"
 
