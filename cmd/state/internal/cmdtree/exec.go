@@ -1,8 +1,6 @@
 package cmdtree
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
@@ -31,7 +29,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 			if len(args) > 0 && (args[0] == "-h" || args[0] == "--help") {
 				prime.Output().Print(ccmd.UsageText())
 				return nil
-			} else if len(args) > 0 && (args[0] == "-v" || args[0] == "--verbose") {
+			} else if len(args) > 0 && (args[0] == "-v" || args[0] == "--verbose" || args[0] == "--") {
 				if len(args) > 1 {
 					args = args[1:]
 				} else {
@@ -44,14 +42,6 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 	)
 	cmd.SetSkipChecks(true)
 	cmd.SetDeferAnalytics(true)
-
-	// Cobra will handle the `--` delimiter if flag parsing is enabled.
-	// If the delimeter is not present we have to disable flag parsing
-	// to ensure flags are passed to the command rather than
-	// parsed as a flag for `state exec`
-	if !strings.Contains(strings.Join(args, " "), " -- ") {
-		cmd.SetDisableFlagParsing(true)
-	}
 
 	cmd.SetGroup(EnvironmentGroup)
 	cmd.SetHasVariableArguments()
