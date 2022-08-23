@@ -477,6 +477,9 @@ func noArgs() bool {
 	return len(os.Args[1:]) == 0
 }
 
+var branchRegex = regexp.MustCompile("Branch (\\S+)")
+var versionRegex = regexp.MustCompile("Version (\\S+)")
+
 func shouldUpdateInstalledStateTool() bool {
 	logging.Debug("Checking if installed state tool is an older version.")
 
@@ -489,7 +492,6 @@ func shouldUpdateInstalledStateTool() bool {
 		return true // probably corrupted install
 	}
 
-	branchRegex := regexp.MustCompile("Branch (\\S+)")
 	branchMatch := branchRegex.FindSubmatch(output)
 	if len(branchMatch) == 0 {
 		logging.Debug("Could not read state tool branch.")
@@ -500,7 +502,6 @@ func shouldUpdateInstalledStateTool() bool {
 		return false // do not update, require --force
 	}
 
-	versionRegex := regexp.MustCompile("Version (\\S+)")
 	versionMatch := versionRegex.FindSubmatch(output)
 	if len(versionMatch) == 0 {
 		logging.Debug("Could not read state tool version.")
