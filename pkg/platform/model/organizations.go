@@ -1,6 +1,7 @@
 package model
 
 import (
+	"net/mail"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
@@ -90,6 +91,11 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 // Note: This method only returns the invitation for the new user, not existing
 // users.
 func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.Invitation, error) {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return nil, locale.NewInputError("err_api_org_invite_invalid_email", "Invalid e-mail address: "+email)
+	}
+
 	params := clientOrgs.NewInviteOrganizationParams()
 	role := mono_models.RoleReader
 	if asOwner {
