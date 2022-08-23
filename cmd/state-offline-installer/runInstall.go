@@ -126,12 +126,12 @@ func runInstall(out output.Outputer, params *Params) error {
 	out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 	offlineTarget := target.NewOfflineTarget(installToDir, artifactsPath)
 
-	mockProgress := newOfflineProgressOutput(out)
+	offlineProgress := newOfflineProgressOutput(out)
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	if err != nil {
 		return errs.Wrap(err, "Unable to create new logfile object")
 	}
-	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
+	eventHandler := events.NewRuntimeEventHandler(offlineProgress, nil, logfile)
 
 	rti, err := runtime.New(offlineTarget, analytics, nil)
 	if err != nil && runtime.IsNeedsUpdateError(err) {

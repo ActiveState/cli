@@ -1,4 +1,4 @@
-package installmgr
+package main
 
 import (
 	"os"
@@ -21,7 +21,7 @@ const licenseFileName = "LICENSE.txt"
 
 // NOTE: From: internal/runners/clean/uninstall.go
 
-func RunOfflineUnInstall(out output.Outputer, path string) error {
+func runOfflineUnInstall(out output.Outputer, path string) error {
 	analytics := blackhole.New()
 	prompter := prompt.New(true, analytics)
 	default_boolean_answer := true

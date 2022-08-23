@@ -9,22 +9,24 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/installmgr"
 )
 
 const (
+	cmdInstall   = "install"
 	cmdUnInstall = "uninstall"
 )
 
 type Params struct {
-	sourcePath string
-	path       string
+	sourcePath      string
+	path            string
+	backpackZipFile string
 }
 
 func newParams() *Params {
-	return &Params{path: "/tmp"}
+	return &Params{sourcePath: ".", path: "/tmp", backpackZipFile: os.Args[0]}
 }
 
 func main() {
@@ -36,9 +38,9 @@ func main() {
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
 		if locale.IsInputError(runErr) {
-			logging.Debug("state-offline-uninstaller errored out due to input: %s", errMsg)
+			logging.Debug("state-offline-installer errored out due to input: %s", errMsg)
 		} else {
-			logging.Critical("state-offline-uninstaller errored out: %s", errMsg)
+			multilog.Critical("state-offline-installer errored out: %s", errMsg)
 		}
 
 		fmt.Fprintln(os.Stderr, errMsg)
@@ -68,9 +70,9 @@ func run() error {
 	)
 	cmd.AddChildren(
 		captain.NewCommand(
-			cmdUnInstall,
-			"Doing offline un-installation",
-			"Do an offline un-installation",
+			cmdInstall,
+			"Doing offline installation",
+			"Do an offline installation",
 			p, nil,
 			[]*captain.Argument{
 				{
@@ -81,8 +83,8 @@ func run() error {
 				},
 			},
 			func(ccmd *captain.Command, args []string) error {
-				logging.Debug("Running CmdUnInstall")
-				return installmgr.RunOfflineUnInstall(out, params.path)
+				logging.Debug("Running CmdInstall")
+				return runInstall(out, params)
 			},
 		),
 	)

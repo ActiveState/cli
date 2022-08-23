@@ -7,27 +7,23 @@ import (
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 )
 
 const (
-	cmdInstall   = "install"
 	cmdUnInstall = "uninstall"
 )
 
 type Params struct {
-	sourcePath      string
-	path            string
-	backpackZipFile string
+	sourcePath string
+	path       string
 }
 
 func newParams() *Params {
-	return &Params{sourcePath: ".", path: "/tmp", backpackZipFile: os.Args[0]}
+	return &Params{path: "/tmp"}
 }
 
 func main() {
@@ -39,9 +35,9 @@ func main() {
 	if runErr != nil {
 		errMsg := errs.Join(runErr, ": ").Error()
 		if locale.IsInputError(runErr) {
-			logging.Debug("state-offline-installer errored out due to input: %s", errMsg)
+			logging.Debug("state-offline-uninstaller errored out due to input: %s", errMsg)
 		} else {
-			multilog.Critical("state-offline-installer errored out: %s", errMsg)
+			logging.Critical("state-offline-uninstaller errored out: %s", errMsg)
 		}
 
 		fmt.Fprintln(os.Stderr, errMsg)
@@ -71,26 +67,6 @@ func run() error {
 	)
 	cmd.AddChildren(
 		captain.NewCommand(
-			cmdInstall,
-			"Doing offline installation",
-			"Do an offline installation",
-			p, nil,
-			[]*captain.Argument{
-				{
-					Name:        "path",
-					Description: "Install into target directory <path>",
-					Value:       &params.path,
-					Required:    true,
-				},
-			},
-			func(ccmd *captain.Command, args []string) error {
-				logging.Debug("Running CmdInstall")
-				return runInstall(out, params)
-			},
-		),
-	)
-	cmd.AddChildren(
-		captain.NewCommand(
 			cmdUnInstall,
 			"Doing offline un-installation",
 			"Do an offline un-installation",
@@ -105,7 +81,7 @@ func run() error {
 			},
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdUnInstall")
-				return installmgr.RunOfflineUnInstall(out, params.path)
+				return runOfflineUnInstall(out, params.path)
 			},
 		),
 	)
