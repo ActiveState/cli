@@ -366,7 +366,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate:
+	case !params.isUpdate && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
 		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
