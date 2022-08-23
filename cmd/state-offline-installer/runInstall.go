@@ -78,6 +78,14 @@ func runInstall(out output.Outputer, params *Params) error {
 		return errs.Wrap(err, "Unable to create artifactsPath directory")
 	}
 
+	accepted, err := prompts.PromptOfflineTOS(out, prompt)
+	if err != nil {
+		return errs.Wrap(err, "Error with TOS acceptance")
+	}
+	if !accepted {
+		return locale.NewInputError("tos_not_accepted", "")
+	}
+
 	ua := unarchiver.NewZip()
 	out.Print(fmt.Sprintf("Stage 1 of 3 Start: Decompressing assets into: %s", assetsPath))
 	f, siz, err := ua.PrepareUnpacking(params.backpackZipFile, assetsPath)
@@ -91,15 +99,6 @@ func runInstall(out output.Outputer, params *Params) error {
 	}
 
 	out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
-
-	tos := prompts.NewOfflineFileTOS(licenseFilePath)
-	accepted, err := prompts.PromptTOS(tos, out, prompt)
-	if err != nil {
-		return errs.Wrap(err, "Error with TOS acceptance")
-	}
-	if !accepted {
-		return locale.NewInputError("tos_not_accepted", "")
-	}
 
 	archivePath := filepath.Join(assetsPath, artifactsTarGZName)
 

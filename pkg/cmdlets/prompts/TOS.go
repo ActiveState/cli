@@ -3,7 +3,6 @@ package prompts
 import (
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -11,7 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/assets"
 )
+
+const TOSPath = "offline/LICENSE.txt"
 
 type TOS interface {
 	GetTOSText() (string, error)
@@ -21,7 +23,7 @@ type onlineTOS struct {
 	TOS
 }
 
-func NewOnlineTOS() *onlineTOS {
+func newOnlineTOS() *onlineTOS {
 	return &onlineTOS{}
 }
 
@@ -44,22 +46,31 @@ func (tos *onlineTOS) GetTOSText() (string, error) {
 	return tosText.String(), nil
 }
 
-type offlineFileTOS struct {
+func PromptOnlineTOS(out output.Outputer, prompt prompt.Prompter)(bool,error) {
+    tos := newOnlineTOS()
+    return PromptTOS(tos,out,prompt)
+}
+
+type offlineTOS struct {
 	TOS
-	tosFilePath string
 }
 
-func NewOfflineFileTOS(tosFilePath string) *offlineFileTOS {
-	return &offlineFileTOS{tosFilePath: tosFilePath}
+func newOfflineTOS() *offlineTOS {
+	return &offlineTOS{}
 }
 
-func (tos *offlineFileTOS) GetTOSText() (string, error) {
-	b, err := os.ReadFile(tos.tosFilePath)
+func (tos *offlineTOS) GetTOSText() (string, error) {
+    b,err := assets.ReadFileBytes(TOSPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to open TOS file")
 	}
 
 	return string(b), nil
+}
+
+func PromptOfflineTOS(out output.Outputer, prompt prompt.Prompter)(bool,error) {
+    tos := newOfflineTOS()
+    return PromptTOS(tos,out,prompt)
 }
 
 func PromptTOS(tos TOS, out output.Outputer, prompt prompt.Prompter) (bool, error) {

@@ -28,8 +28,7 @@ type signupInput struct {
 
 // Signup will prompt the user to create an account
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	tos := prompts.NewOnlineTOS()
-	accepted, err := prompts.PromptTOS(tos, out, prompt)
+	accepted, err := prompts.PromptOnlineTOS(out, prompt)
 	if err != nil {
 		return err
 	}
