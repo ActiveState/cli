@@ -69,9 +69,14 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 }
 
 func cleanPath(keyValue, oldEntry string) string {
+	oldEntries := make(map[string]bool)
+	for _, entry := range strings.Split(oldEntry, string(os.PathListSeparator)) {
+		oldEntries[filepath.Clean(entry)] = true
+	}
+
 	var newValue []string
 	for _, entry := range strings.Split(keyValue, string(os.PathListSeparator)) {
-		if filepath.Clean(entry) == filepath.Clean(oldEntry) {
+		if _, ok := oldEntries[filepath.Clean(entry)]; ok {
 			continue
 		}
 		newValue = append(newValue, entry)
