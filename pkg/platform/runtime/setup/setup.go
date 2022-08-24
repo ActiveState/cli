@@ -543,10 +543,19 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 	// 	return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
 	// }
 
-	b, err := download.GetWithProgress(artifactURL.String(), progress)
+	req, err := download.NewGetRequest(artifactURL.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
+	}
+	// TODO: Remove when underlying mediator bug is fixed
+	// https://activestatef.atlassian.net/browse/PB-3465
+	req.Header.Set("Authorization", "Placeholder")
+
+	b, err := download.GetWithProgress(req, progress)
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
+
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}

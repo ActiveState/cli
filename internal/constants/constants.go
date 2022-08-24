@@ -330,6 +330,7 @@ const RuntimeBuildEngineStore = "build_engine"
 // RuntimeRecipeStore contains a serialization of the recipe used to create this build
 const RuntimeRecipeStore = "recipe"
 
+// RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
 // StateToolMarketingPage links to the marketing page for the state tool
