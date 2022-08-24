@@ -1,11 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -230,7 +229,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, stateExePath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -262,7 +261,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// If the state tool is already installed, but out of date, continue with update flow.
-	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool() {
+	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool(stateExePath) {
 		logging.Debug("Installed state tool should be updated, switching to update flow.")
 		params.isUpdate = true
 	}
@@ -477,37 +476,34 @@ func noArgs() bool {
 	return len(os.Args[1:]) == 0
 }
 
-var branchRegex = regexp.MustCompile("Branch (\\S+)")
-var versionRegex = regexp.MustCompile("Version (\\S+)")
+type stateToolVersionOutput struct {
+	Branch  string `json:"branch"`
+	Version string `json:"version"`
+}
 
-func shouldUpdateInstalledStateTool() bool {
+func shouldUpdateInstalledStateTool(stateExePath string) bool {
 	logging.Debug("Checking if installed state tool is an older version.")
 
-	stateExe := constants.StateCmd + exeutils.Extension
-	cmd := exec.Command(stateExe, "--version")
-	cmd.Env = os.Environ()
-	output, err := cmd.Output()
+	stdout, _, err := exeutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
 	if err != nil {
 		logging.Debug("Could not determine state tool version.")
 		return true // probably corrupted install
 	}
+	stdout = strings.ReplaceAll(stdout, "\x00", "") // TODO: DX-328
 
-	branchMatch := branchRegex.FindSubmatch(output)
-	if len(branchMatch) == 0 {
-		logging.Debug("Could not read state tool branch.")
+	versionInfo := stateToolVersionOutput{}
+	err = json.Unmarshal([]byte(stdout), &versionInfo)
+	if err != nil {
+		logging.Debug("Could not read state tool version output")
 		return true
 	}
-	if string(branchMatch[1]) != constants.BranchName {
+
+	if versionInfo.Branch != constants.BranchName {
 		logging.Debug("State tool branch is different from installer.")
 		return false // do not update, require --force
 	}
 
-	versionMatch := versionRegex.FindSubmatch(output)
-	if len(versionMatch) == 0 {
-		logging.Debug("Could not read state tool version.")
-		return true
-	}
-	if string(versionMatch[1]) != constants.Version {
+	if versionInfo.Version != constants.Version {
 		logging.Debug("State tool version is different from installer.")
 		return true
 	}
