@@ -270,6 +270,10 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 }
 
 func (r *Activate) pathToProject(path string) (*project.Project, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, locale.WrapInputError(err, "err_activate_abs_projectpath", "Could not determine a valid project path. Please try using an absolute path.")
+	}
 	projectToUse, err := project.FromExactPath(path)
 	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
 		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")

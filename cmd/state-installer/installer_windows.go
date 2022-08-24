@@ -28,7 +28,7 @@ func (i *Installer) installLauncher() error {
 // PrepareBinTargets will move aside any targets in the bin dir that we would otherwise overwrite.
 // This guards us from file in use errors as well as false positives by security software
 func (i *Installer) PrepareBinTargets() error {
-	sourceBinPath := filepath.Join(i.sourcePath, "bin")
+	sourceBinPath := filepath.Join(i.payloadPath, "bin")
 	targetBinPath := filepath.Join(i.path, "bin")
 
 	// Clean up exectuables from potentially corrupted installed
