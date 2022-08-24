@@ -20,6 +20,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   what went wrong.
 * Fixed issue where build errors were incorrectly reported.
 * Fixed issue where service could not run due to filepath size limits on macOS.
+* Fixed issue where passing a relative path to `state activate --path` would
+  sometimes not resolve to the correct path.
+* Fixed issues where installer would sometimes give the update user experience.
 
 ### 0.34.0
 
