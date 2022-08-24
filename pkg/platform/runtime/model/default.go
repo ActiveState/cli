@@ -51,8 +51,8 @@ type BuildResult struct {
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.BuildPlan.Artifacts))
-	for _, a := range b.BuildPlan.Artifacts {
+	res := make([]artifact.ArtifactID, 0, len(b.BuildPlan.BPProject.Commit.Build.Targets))
+	for _, a := range b.BuildPlan.BPProject.Commit.Build.Targets {
 		res = append(res, strfmt.UUID(a.TargetID))
 	}
 	return res

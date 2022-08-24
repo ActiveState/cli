@@ -168,11 +168,14 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 		// a completed installation event translates to a completed artifact
 		if t.Step() == Install {
 			eh.numInstallCompleted++
+			logging.Debug("numinstallcompleted: %d", eh.numInstallCompleted)
+			logging.Debug("numinstalltotal: %d", eh.installTotal)
 			err := eh.progress.InstallationStatusUpdate(eh.numInstallCompleted, eh.installTotal)
 			if err != nil {
 				return err
 			}
 			if eh.numInstallCompleted == eh.installTotal {
+				logging.Debug("installcompleted == installTotlal")
 				err := eh.progress.InstallationCompleted(eh.numInstallFailures > 0)
 				if err != nil {
 					return err

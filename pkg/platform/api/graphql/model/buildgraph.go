@@ -2,6 +2,8 @@ package model
 
 type BuildPlanStatusEnum string
 
+type ArtifactStatus string
+
 const (
 	Planning BuildPlanStatusEnum = "PLANNING"
 	Planned  BuildPlanStatusEnum = "PLANNED"
@@ -11,14 +13,33 @@ const (
 	Failed BuildPlanStatusEnum = "FAILED"
 )
 
+const (
+	ArtifactNotSubmitted      ArtifactStatus = "NOT_SUBMITTED"
+	ArtifactBlocked           ArtifactStatus = "BLOCKED"
+	ArtifactFailedPermanently ArtifactStatus = "FAILED_PERMANENTLY"
+	ArtifactFailedTransiently ArtifactStatus = "FAILED_TRANSIENTLY"
+	ArtifactReady             ArtifactStatus = "READY"
+	ArtifactRunning           ArtifactStatus = "RUNNING"
+	ArtifactSkipped           ArtifactStatus = "SKIPPED"
+	ArtifactSucceeded         ArtifactStatus = "SUCCEEDED"
+)
+
 type BuildPlan struct {
-	Execute `json:"execute"`
+	BPProject BPProject `json:"project"`
 }
 
-type Execute struct {
+type BPProject struct {
+	Commit BPCommit `json:"commit"`
+}
+
+type BPCommit struct {
+	Build Build `json:"build"`
+}
+
+type Build struct {
 	Terminals []Terminals `json:"terminals"`
 	Status    string      `json:"status"`
-	Artifacts []Artifact  `json:"artifacts"`
+	Targets   []Target    `json:"targets"`
 	Error     string      `json:"error"`
 	// TODO: Temporary workaround, remove after dependency resolution functions are updated
 	Steps   []Step
@@ -30,7 +51,7 @@ type Terminals struct {
 	TargetIDs []string `json:"targetIDs"`
 }
 
-type Artifact struct {
+type Target struct {
 	TypeName            string   `json:"__typename"`
 	TargetID            string   `json:"targetID"`
 	Name                string   `json:"name"`

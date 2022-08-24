@@ -12,94 +12,68 @@ type buildPlanByCommitID struct {
 
 // TODO: Add error handling to this query
 func (b *buildPlanByCommitID) Query() string {
-	return `query($commitID: ID!) {
-		execute(commitID: $commitID) {
-			... on BuildPlan {
-			buildPlanID
-			status
-			terminals {
-				tag
-				targetIDs
-			}
-			targets {
-				... on Source {
-					__typename
-					targetID
-					namespace
-					name
-					version
-					revision
-					ingredientID
-					ingredientVersionID
-				}
-				... on Step {
-					__typename
-					targetID
-					name
-					inputs {
+	return `query ($commitID: String!) {
+	project(project: "placeholder", organization: "placeholder") {
+		... on Project {
+			name
+			description
+			commit(vcsRef: $commitID) {
+				... on Commit {
+					parentId
+					description
+					build {
 						__typename
-						tag
-						targetIDs
+						... on BuildReady {
+							buildPlanID
+							status
+							terminals {
+								__typename
+								tag
+								targetIDs
+							}
+							targets {
+								... on Source {
+									__typename
+									targetID
+									namespace
+									name
+									version
+									revision
+									ingredientID
+									ingredientVersionID
+								}
+								... on Step {
+									__typename
+									targetID
+									name
+									inputs {
+										__typename
+										tag
+										targetIDs
+									}
+									outputs
+								}
+								... on ArtifactSucceeded {
+									__typename
+									targetID
+									mimeType
+									status
+									generatedBy
+									runtimeDependencies
+									status
+									logURL
+									url
+									checksum
+								}
+							}
+						}
 					}
-					outputs
-				}
-				... on ArtifactSucceeded {
-					__typename
-					mimeType
-					generatedBy
-					runtimeDependencies
-					status
-					logURL
-					url
-					checksum
-				}
-				... on ArtifactUnbuilt {
-					__typename
-					targetID
-					mimeType
-					generatedBy
-					runtimeDependencies
-					status
-				}
-				... on ArtifactBuilding {
-					__typename
-					targetID
-					mimeType
-					generatedBy
-					runtimeDependencies
-					status
-					runningSince
-				}
-				... on ArtifactTransientlyFailed {
-					__typename
-					targetID
-					mimeType
-					generatedBy
-					runtimeDependencies
-					status
-					lastBuildTimestamp
-					buildTimeMs
-					logURL
-						errors
-					attempts
-					nextAttemptAt
-				}
-				... on ArtifactPermanentlyFailed {
-					__typename
-					targetID
-					mimeType
-					generatedBy
-					runtimeDependencies
-					status
-					lastBuildTimestamp
-					buildTimeMs
-					logURL
-					errors
 				}
 			}
 		}
 	}
-}`
+}
+`
 }
 
 func (b *buildPlanByCommitID) Vars() map[string]interface{} {

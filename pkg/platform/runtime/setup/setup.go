@@ -170,9 +170,9 @@ func (s *Setup) Update() error {
 	// Update executors
 	// TODO: Can't do this without actual artifacts
 	// The environment definition is nil
-	// if err := s.updateExecutors(artifacts); err != nil {
-	// 	return errs.Wrap(err, "Failed to update executors")
-	// }
+	if err := s.updateExecutors(artifacts); err != nil {
+		return errs.Wrap(err, "Failed to update executors")
+	}
 
 	// Mark installation as completed
 	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
@@ -279,11 +279,14 @@ func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artif
 }
 
 func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+	s.events.SolverStart()
 	bpModel := model.NewBuildPlanner()
 	buildResult, err := bpModel.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch build plan")
 	}
+
+	s.events.SolverSuccess()
 
 	// Compute and handle the change summary
 	artifacts := artifact.NewMapFromBuildPlan(*buildResult.BuildPlan)
@@ -310,9 +313,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
-	if buildResult.BuildPlan.Status == string(gqlModel.Failed) {
+	if buildResult.BuildPlan.BPProject.Commit.Build.Status == string(gqlModel.Failed) {
 		s.events.BuildFinished()
-		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.Error)
+		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.BPProject.Commit.Build.Error)
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -328,7 +331,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled := reusableArtifacts(buildResult.BuildPlan.Artifacts, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(buildResult.BuildPlan.BPProject.Commit.Build.Targets, storedArtifacts)
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
@@ -535,14 +538,14 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
 
-	downloadURL, err := s.model.SignS3URL(artifactURL)
-	if err != nil {
-		return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
-	}
+	// downloadURL, err := s.model.SignS3URL(artifactURL)
+	// if err != nil {
+	// 	return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
+	// }
 
-	b, err := download.GetWithProgress(downloadURL.String(), progress)
+	b, err := download.GetWithProgress(artifactURL.String(), progress)
 	if err != nil {
-		return errs.Wrap(err, "Download %s failed", downloadURL)
+		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
@@ -589,6 +592,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) 
 	}
 
 	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
+	logging.Debug("Artifact archive path: %s", archivePath)
 	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a.ArtifactID)
 	if err := s.downloadArtifactWithProgress(a.UnsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
@@ -654,7 +658,7 @@ func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
 }
 
-func reusableArtifacts(requestedArtifacts []gqlModel.Artifact, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+func reusableArtifacts(requestedArtifacts []gqlModel.Target, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {

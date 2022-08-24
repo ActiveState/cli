@@ -22,7 +22,7 @@ type BuildPlanner struct {
 
 func NewBuildPlanner() *BuildPlanner {
 	return &BuildPlanner{
-		client: gqlclient.NewWithOpts("https://platform-internal.activestate.com/sv/buildplanner/graphql", 0, graphql.WithHTTPClient(&http.Client{})),
+		client: gqlclient.NewWithOpts("https://platform.activestate.com/sv/buildplanner/graphql", 0, graphql.WithHTTPClient(&http.Client{})),
 	}
 }
 
@@ -45,22 +45,25 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if model.BuildPlanStatusEnum(resp.Execute.Status) != model.Ready {
+	if model.BuildPlanStatusEnum(resp.BPProject.Commit.Build.Status) != model.Ready {
 		return nil, locale.NewError("err_buildplanner_not_ready", "Build plan is not ready")
 	}
 
 	return &BuildResult{
 		BuildEngine: Alternative,
 		BuildPlan:   processBuildPlan(resp),
-		BuildReady:  model.BuildPlanStatusEnum(resp.Status) == model.Ready,
+		BuildReady:  model.BuildPlanStatusEnum(resp.BPProject.Commit.Build.Status) == model.Ready,
 	}, nil
 }
 
 // TODO: Tempoarary function, remove after dependecy resolution is updated
 func processBuildPlan(bp *model.BuildPlan) *model.BuildPlan {
-	for _, artifact := range bp.Artifacts {
+	var targets []model.Target
+	var steps []model.Step
+	var sources []model.Source
+	for _, artifact := range bp.BPProject.Commit.Build.Targets {
 		if artifact.TypeName == "Step" {
-			bp.Steps = append(bp.Steps, model.Step{
+			steps = append(steps, model.Step{
 				TargetID: artifact.TargetID,
 				Name:     artifact.Name,
 				Image:    artifact.Image,
@@ -71,19 +74,24 @@ func processBuildPlan(bp *model.BuildPlan) *model.BuildPlan {
 			continue
 		}
 		if artifact.TypeName == "Source" {
-			bp.Sources = append(bp.Sources, model.Source{
+			sources = append(sources, model.Source{
 				TargetID:  artifact.TargetID,
 				Name:      artifact.Name,
 				Namespace: artifact.Namespace,
 				Version:   artifact.Version,
 			})
+			continue
 		}
+		targets = append(targets, artifact)
 	}
+	bp.BPProject.Commit.Build.Targets = targets
+	bp.BPProject.Commit.Build.Steps = steps
+	bp.BPProject.Commit.Build.Sources = sources
 	return bp
 }
 
-func runtimeDependencies(baseID string, artifacts []model.Artifact) []model.Artifact {
-	var deps []model.Artifact
+func runtimeDependencies(baseID string, artifacts []model.Target) []model.Target {
+	var deps []model.Target
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
 			for _, id := range artifact.RuntimeDependencies {

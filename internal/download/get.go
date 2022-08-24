@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -58,7 +60,13 @@ func httpGetWithProgress(url string, progress DownloadProgress) ([]byte, error) 
 func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
-	resp, err := client.Get(url)
+	req, err := retryablehttp.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not intialize new http request")
+	}
+	req.Header.Set("Authorization", "Blah")
+	resp, err := client.Do(req)
+	// resp, err := client.Get(url)
 	if err != nil {
 		code := -1
 		if resp != nil {

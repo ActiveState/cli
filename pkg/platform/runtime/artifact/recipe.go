@@ -100,18 +100,18 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
 	res := make(map[ArtifactID]ArtifactRecipe)
 	var targetIDs []string
-	for _, terminal := range buildPlan.Terminals {
+	for _, terminal := range buildPlan.BPProject.Commit.Build.Terminals {
 		targetIDs = append(targetIDs, terminal.TargetIDs...)
 	}
 
 	for _, tID := range targetIDs {
-		buildRuntimeDependencies(tID, buildPlan.Artifacts, res)
+		buildRuntimeDependencies(tID, buildPlan.BPProject.Commit.Build.Targets, res)
 	}
 
 	updatedRes := make(map[ArtifactID]ArtifactRecipe)
 	for k, v := range res {
 		var err error
-		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, buildPlan.Steps, buildPlan.Sources)
+		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, buildPlan.BPProject.Commit.Build.Steps, buildPlan.BPProject.Commit.Build.Sources)
 		if err != nil {
 			logging.Error("updateWithSourceInfo failed: %s", errs.JoinMessage(err))
 			return nil
@@ -123,7 +123,7 @@ func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
 	return updatedRes
 }
 
-func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactRecipe) {
+func buildRuntimeDependencies(baseID string, artifacts []model.Target, mapping map[ArtifactID]ArtifactRecipe) {
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
 			entry := ArtifactRecipe{
