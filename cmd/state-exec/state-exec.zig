@@ -56,16 +56,16 @@ const MetaData = struct {
     pub const binDelim = "::bin::";
     pub const envDelim = "::env::";
 
-    sock: []u8,
-    bin: []u8,
+    sock: []const u8,
+    bin: []const u8,
     env: [][]u8,
 };
 
 fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !MetaData {
     var sockBuf: [256]u8 = undefined;
-    var sock: []u8 = undefined;
+    var sock: []const u8 = undefined;
     var binBuf: [256]u8 = undefined;
-    var bin: []u8 = undefined;
+    var bin: []const u8 = undefined;
 
     const metaPath = try path.join(a, &[_][]const u8{ execDir, MetaData.filename });
     const metaFile = try fs.openFileAbsolute(metaPath, .{ .read = true });
@@ -78,14 +78,14 @@ fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !
         switch (lineCt) {
             0 => {
                 const trimmedLine = mem.trimLeft(u8, line, MetaData.sockDelim);
+                mem.copy(u8, sockBuf[0..trimmedLine.len], trimmedLine);
                 sock = sockBuf[0..trimmedLine.len];
-                mem.copy(u8, sock, trimmedLine);
                 try stderr.print("case 0: {s}\n", .{sock});
             },
             1 => {
                 const trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
+                mem.copy(u8, binBuf[0..trimmedLine.len], trimmedLine);
                 bin = binBuf[0..trimmedLine.len];
-                mem.copy(u8, bin, trimmedLine);
                 try stderr.print("case 1: {s}\n", .{bin});
             },
             2 => {
@@ -97,6 +97,7 @@ fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !
         }
     }
 
+    try stderr.print("case 0x: {s}\n", .{sock});
     return MetaData{
         .sock = sock,
         .bin = bin,
@@ -150,6 +151,7 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.InspectSelfPath;
 
     stderr.print("runt: {s}\n", .{runt}) catch return error.InspectSelfPath;
+    stderr.print("sockpath: {s}\n", .{metaData.sock}) catch return error.InspectSelfPath;
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
         return Error.ThreadSpawn;
