@@ -88,7 +88,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
 	}
 
-	identifier, err := resolveIdentifierCommitID(project, params.Identifier)
+	identifier, err := resolveIdentifier(project, params.Identifier)
 	if err != nil {
 		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier {{.V0}}", params.Identifier)
 	}
@@ -115,14 +115,14 @@ func (s *Switch) Run(params SwitchParams) error {
 	return nil
 }
 
-func resolveIdentifierCommitID(project *mono_models.Project, idParam string) (identifier, error) {
+func resolveIdentifier(project *mono_models.Project, idParam string) (identifier, error) {
 	if strfmt.IsUUID(idParam) {
 		return commitIdentifier{strfmt.UUID(idParam)}, nil
 	}
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err != nil {
-		locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
+		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
 
 	}
 
