@@ -83,7 +83,7 @@ func runInstall(out output.Outputer, params *Params) error {
 		return errs.Wrap(err, "Error with TOS acceptance")
 	}
 	if !accepted {
-		return locale.NewInputError("tos_not_accepted", "")
+		return locale.NewInputError("offline_tos_not_accepted", "License not accepted")
 	}
 
 	ua := unarchiver.NewZip()
