@@ -193,9 +193,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "pre-exec")
 	err = cmd.Execute(processedArgs[1:])
 	if err != nil {
-		isInputError := locale.IsInputError(err)
-
-		if isInputError {
+		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
 			multilog.Error("Installer input error: " + errs.JoinMessage(err))
 		} else {
