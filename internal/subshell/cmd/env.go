@@ -76,7 +76,7 @@ func cleanPath(keyValue, oldEntry string) string {
 
 	var newValue []string
 	for _, entry := range strings.Split(keyValue, string(os.PathListSeparator)) {
-		if _, ok := oldEntries[filepath.Clean(entry)]; ok {
+		if oldEntries[filepath.Clean(entry)] {
 			continue
 		}
 		newValue = append(newValue, entry)
