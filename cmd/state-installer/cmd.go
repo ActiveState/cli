@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -202,26 +203,9 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode = errs.UnwrapExitCode(err)
+		exitCode, err = errors.Unwrap(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-
-		if !errs.IsSilent(err) {
-			var outLines []string
-
-			if !isInputError {
-				outLines = append(outLines, output.Heading(locale.T("err_what_happened")).String())
-			}
-
-			errs := locale.UnwrapError(err)
-			if len(errs) == 0 {
-				errs = []error{err} // low-level, non-localized error
-			}
-			for _, errv := range errs {
-				outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", locale.TrimError(locale.ErrorMessage(errv))))
-			}
-
-			out.Error(strings.Join(outLines, "\n"))
-		}
+		out.Error(err)
 	} else {
 		an.Event(AnalyticsFunnelCat, "success")
 	}

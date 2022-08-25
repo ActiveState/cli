@@ -1,4 +1,4 @@
-package main
+package errors
 
 import (
 	"errors"
@@ -67,7 +67,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	return strings.Join(outLines, "\n")
 }
 
-func unwrapError(err error) (int, error) {
+func Unwrap(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
