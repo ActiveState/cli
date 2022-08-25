@@ -192,7 +192,9 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "pre-exec")
 	err = cmd.Execute(processedArgs[1:])
 	if err != nil {
-		if locale.IsInputError(err) {
+		isInputError := locale.IsInputError(err)
+
+		if isInputError {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
 			multilog.Error("Installer input error: " + errs.JoinMessage(err))
 		} else {
@@ -202,8 +204,23 @@ func main() {
 
 		exitCode = errs.UnwrapExitCode(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
+
 		if !errs.IsSilent(err) {
-			out.Error(err.Error())
+			var outLines []string
+
+			if !isInputError {
+				outLines = append(outLines, output.Heading(locale.T("err_what_happened")).String())
+			}
+
+			errs := locale.UnwrapError(err)
+			if len(errs) == 0 {
+				errs = []error{err} // low-level, non-localized error
+			}
+			for _, errv := range errs {
+				outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", locale.TrimError(locale.ErrorMessage(errv))))
+			}
+
+			out.Error(strings.Join(outLines, "\n"))
 		}
 	} else {
 		an.Event(AnalyticsFunnelCat, "success")

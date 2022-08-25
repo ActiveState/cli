@@ -34,7 +34,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 
 	// Print what happened
 	if !isInputError {
-		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+		outLines = append(outLines, output.Heading(locale.T("err_what_happened")).String())
 	}
 
 	errs := locale.UnwrapError(o.error)
@@ -43,7 +43,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		errs = []error{o.error}
 	}
 	for _, errv := range errs {
-		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", locale.TrimError(locale.ErrorMessage(errv))))
 	}
 
 	// Concatenate error tips
@@ -61,17 +61,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
 		outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
 		for _, tip := range errorTips {
-			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
+			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", locale.TrimError(tip)))
 		}
 	}
 	return strings.Join(outLines, "\n")
-}
-
-func trimError(msg string) string {
-	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
-		return msg // Don't trim dots if we have multiple sentences.
-	}
-	return strings.TrimRight(msg, " .")
 }
 
 func unwrapError(err error) (int, error) {

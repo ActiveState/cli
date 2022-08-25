@@ -1911,6 +1911,8 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
+err_what_happened:
+  other: "[ERROR]Something Went Wrong[/RESET]"
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
