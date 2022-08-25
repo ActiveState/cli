@@ -75,12 +75,12 @@ func (u *Uninstall) Run(params *Params) error {
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
 	}
 
-	err = u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
+	err := u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
 	}
 
-	err := os.RemoveAll(path)
+	err = os.RemoveAll(path)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
