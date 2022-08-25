@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -58,15 +57,7 @@ func run() error {
 	p := primer.New(nil, out, nil, nil, nil, nil, nil, nil, nil, nil)
 
 	params := newParams()
-	cmd := captain.NewCommand(
-		path.Base(os.Args[0]), "", "", p, nil, nil,
-		func(ccmd *captain.Command, args []string) error {
-			out.Print(ccmd.UsageText())
-			return nil
-		},
-	)
-	cmd.AddChildren(
-		captain.NewCommand(
+        cmd := captain.NewCommand(
 			cmdUnInstall,
 			"Doing offline un-installation",
 			"Do an offline un-installation",
@@ -83,7 +74,6 @@ func run() error {
 				logging.Debug("Running CmdUnInstall")
 				return runOfflineUnInstall(out, params.path)
 			},
-		),
 	)
 
 	return cmd.Execute(args[1:])

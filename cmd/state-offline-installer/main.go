@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -62,31 +61,22 @@ func run() error {
 
 	params := newParams()
 	cmd := captain.NewCommand(
-		path.Base(os.Args[0]), "", "", p, nil, nil,
-		func(ccmd *captain.Command, args []string) error {
-			out.Print(ccmd.UsageText())
-			return nil
+		cmdInstall,
+		"Doing offline installation",
+		"Do an offline installation",
+		p, nil,
+		[]*captain.Argument{
+			{
+				Name:        "path",
+				Description: "Install into target directory <path>",
+				Value:       &params.path,
+				Required:    true,
+			},
 		},
-	)
-	cmd.AddChildren(
-		captain.NewCommand(
-			cmdInstall,
-			"Doing offline installation",
-			"Do an offline installation",
-			p, nil,
-			[]*captain.Argument{
-				{
-					Name:        "path",
-					Description: "Install into target directory <path>",
-					Value:       &params.path,
-					Required:    true,
-				},
-			},
-			func(ccmd *captain.Command, args []string) error {
-				logging.Debug("Running CmdInstall")
-				return runInstall(out, params)
-			},
-		),
+		func(ccmd *captain.Command, args []string) error {
+			logging.Debug("Running CmdInstall")
+			return runInstall(out, params)
+		},
 	)
 
 	return cmd.Execute(args[1:])
