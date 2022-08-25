@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"os"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/thoas/go-funk"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/thoas/go-funk"
 )
 
 type RegistryKeyMock struct {
@@ -281,4 +283,15 @@ func registryValidator(t *testing.T, got []string, want *[]string, name string) 
 			}
 		}
 	}
+}
+
+func TestCleanPath(t *testing.T) {
+	paths := []string{"foo", "bar", "baz/quux"}
+	path := strings.Join(paths, string(os.PathListSeparator))
+
+	cleaned := cleanPath(path, "bar")
+	assert.Equal(t, cleaned, strings.Join([]string{"foo", "baz/quux"}, string(os.PathListSeparator)))
+
+	cleaned = cleanPath(path, strings.Join([]string{"bar", "baz/quux"}, string(os.PathListSeparator)))
+	assert.Equal(t, cleaned, "foo")
 }
