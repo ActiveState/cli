@@ -476,11 +476,6 @@ func noArgs() bool {
 	return len(os.Args[1:]) == 0
 }
 
-type stateToolVersionOutput struct {
-	Branch  string `json:"branch"`
-	Version string `json:"version"`
-}
-
 func shouldUpdateInstalledStateTool(stateExePath string) bool {
 	logging.Debug("Checking if installed state tool is an older version.")
 
@@ -489,21 +484,21 @@ func shouldUpdateInstalledStateTool(stateExePath string) bool {
 		logging.Debug("Could not determine state tool version.")
 		return true // probably corrupted install
 	}
-	stdout = strings.ReplaceAll(stdout, "\x00", "") // TODO: DX-328
+	stdout = strings.Split(stdout, "\x00")[0] // TODO: DX-328
 
-	versionInfo := stateToolVersionOutput{}
-	err = json.Unmarshal([]byte(stdout), &versionInfo)
+	versionData := installation.VersionData{}
+	err = json.Unmarshal([]byte(stdout), &versionData)
 	if err != nil {
 		logging.Debug("Could not read state tool version output")
 		return true
 	}
 
-	if versionInfo.Branch != constants.BranchName {
+	if versionData.Branch != constants.BranchName {
 		logging.Debug("State tool branch is different from installer.")
 		return false // do not update, require --force
 	}
 
-	if versionInfo.Version != constants.Version {
+	if versionData.Version != constants.Version {
 		logging.Debug("State tool version is different from installer.")
 		return true
 	}
