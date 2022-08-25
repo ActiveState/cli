@@ -59,50 +59,61 @@ const MetaData = struct {
     sock: []const u8,
     bin: []const u8,
     env: std.BufMap,
-};
 
-fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !MetaData {
-    var sock: []const u8 = undefined;
-    var bin: []const u8 = undefined;
+    pub fn init(a: mem.Allocator, execDir: []const u8) !MetaData {
+        var sock: []const u8 = undefined;
+        var bin: []const u8 = undefined;
+        var env = std.BufMap.init(a);
 
-    const metaPath = try path.join(a, &[_][]const u8{ execDir, MetaData.filename });
-    const metaFile = try fs.openFileAbsolute(metaPath, .{ .read = true });
-    defer metaFile.close();
+        const metaPath = try path.join(a, &[_][]const u8{ execDir, MetaData.filename });
+        const metaFile = try fs.openFileAbsolute(metaPath, .{ .read = true });
+        defer metaFile.close();
 
-    const metaReader = metaFile.reader();
-    var metaBuf: [32760]u8 = undefined;
-    var lineCt: i32 = 0;
-    while (try metaReader.readUntilDelimiterOrEof(&metaBuf, '\n')) |line| : (lineCt += 1) {
-        switch (lineCt) {
-            0 => {
-                const trimmedLine = mem.trimLeft(u8, line, MetaData.sockDelim);
-                const dim = try a.alloc(u8, trimmedLine.len);
-                mem.copy(u8, dim, trimmedLine);
-                sock = dim;
-            },
-            1 => {
-                var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
-                const dim = try a.alloc(u8, trimmedLine.len);
-                mem.copy(u8, dim, trimmedLine);
-                bin = dim;
-            },
-            2 => {
-                // add values to env:bufmap
-                break;
-            },
-            else => {
-                break;
-            },
+        const metaReader = metaFile.reader();
+        var metaBuf: [32760]u8 = undefined;
+        var lineCt: i32 = 0;
+        while (try metaReader.readUntilDelimiterOrEof(&metaBuf, '\n')) |line| : (lineCt += 1) {
+            switch (lineCt) {
+                0 => {
+                    const trimmedLine = mem.trimLeft(u8, line, MetaData.sockDelim);
+                    const dim = try a.alloc(u8, trimmedLine.len);
+                    mem.copy(u8, dim, trimmedLine);
+                    sock = dim;
+                },
+                1 => {
+                    var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
+                    const dim = try a.alloc(u8, trimmedLine.len);
+                    mem.copy(u8, dim, trimmedLine);
+                    bin = dim;
+                },
+                2 => {
+                    const trimmedLine = mem.trimLeft(u8, line, MetaData.envDelim);
+                    var split = mem.split(u8, trimmedLine, MetaData.envDelim);
+                    while (split.next()) |kv| {
+                        const delim = '=';
+                        const k = mem.sliceTo(kv, delim);
+                        const v = kv[k.len + 1 ..];
+                        try env.put(k, v);
+                    }
+                    break;
+                },
+                else => {
+                    break;
+                },
+            }
         }
+
+        return MetaData{
+            .sock = sock,
+            .bin = bin,
+            .env = env,
+        };
     }
 
-    try stderr.print("sock: {s}\n", .{sock});
-    return MetaData{
-        .sock = sock,
-        .bin = bin,
-        .env = undefined,
-    };
-}
+    pub fn deinit(self: *MetaData) void {
+        self.env.deinit();
+    }
+};
 
 const MsgData = struct {
     pub const fmt = "heart<{d}<{s}";
@@ -145,10 +156,9 @@ fn run(stderr: fs.File.Writer) Error!u8 {
 
     const msgData = makeMsgData(a) catch return Error.InspectSelfPath;
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
-    const metaData = makeMetaData(a, stderr, execDir) catch return Error.InspectSelfPath;
+    var metaData = MetaData.init(a, execDir) catch return Error.InspectSelfPath;
+    defer metaData.deinit();
     const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.InspectSelfPath;
-
-    stderr.print("runt: {s}\n", .{runt}) catch return error.InspectSelfPath;
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
         return Error.ThreadSpawn;
@@ -165,6 +175,7 @@ fn run(stderr: fs.File.Writer) Error!u8 {
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
     defer childProc.deinit();
+    childProc.env_map = &metaData.env;
     var term = childProc.spawnAndWait() catch return Error.ChildProcSpawn;
     return term.Exited;
 }
