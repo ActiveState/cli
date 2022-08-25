@@ -188,13 +188,11 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 	} else {
 		rp.installBar.SetTotal(0, true)
 		// This causes the state tool to hang on activation with the noop artifact
-		rp.prg.Wait()
+		// rp.prg.Wait()
 		rp.out.Notice(locale.Tl("runtime_verification_notice", "[SUCCESS]✔ All dependencies have been installed and verified.[/RESET]"))
 	}
 	return nil
 }
-
-var started int
 
 // ArtifactStepStarted adds a new progress bar for an artifact progress
 func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName, title string, total int64, countsBytes bool) error {
@@ -202,9 +200,6 @@ func (rp *RuntimeProgress) ArtifactStepStarted(artifactID artifact.ArtifactID, a
 	if as.bar != nil {
 		return errs.New("Progress bar can be initialized only once.")
 	}
-
-	started++
-	// logging.Debug("ArtifactStepStarted: %s %s started=%d", artifactID.String(), title, started)
 	as.bar = rp.addArtifactStepBar(fmt.Sprintf("%s %s", title, artifactName), total, countsBytes)
 	as.started = time.Now()
 
@@ -223,8 +218,6 @@ func (rp *RuntimeProgress) ArtifactStepIncrement(artifactID artifact.ArtifactID,
 	return nil
 }
 
-var completed int
-
 // ArtifactStepCompleted ensures that the artifact progress bar is in a completed state
 func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID, _, title string) error {
 	as := rp.artifactBar(artifactID, title)
@@ -232,8 +225,6 @@ func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID,
 		return errs.New("Progress bar needs to be initialized.")
 	}
 
-	completed++
-	// logging.Debug("Artifact %s completed %d", artifactID.String(), completed)
 	as.bar.SetTotal(0, true)
 	return nil
 }
