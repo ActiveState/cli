@@ -58,7 +58,7 @@ const MetaData = struct {
 
     sock: []const u8,
     bin: []const u8,
-    env: [][]u8,
+    env: std.BufMap,
 };
 
 fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !MetaData {
@@ -79,16 +79,15 @@ fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !
                 const dim = try a.alloc(u8, trimmedLine.len);
                 mem.copy(u8, dim, trimmedLine);
                 sock = dim;
-                try stderr.print("case 0: {s}\n", .{sock});
             },
             1 => {
                 var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
                 const dim = try a.alloc(u8, trimmedLine.len);
                 mem.copy(u8, dim, trimmedLine);
                 bin = dim;
-                try stderr.print("case 1: {s}\n", .{bin});
             },
             2 => {
+                // add values to env:bufmap
                 break;
             },
             else => {
@@ -97,7 +96,7 @@ fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !
         }
     }
 
-    try stderr.print("case 0x: {s}\n", .{sock});
+    try stderr.print("sock: {s}\n", .{sock});
     return MetaData{
         .sock = sock,
         .bin = bin,
@@ -150,7 +149,6 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.InspectSelfPath;
 
     stderr.print("runt: {s}\n", .{runt}) catch return error.InspectSelfPath;
-    stderr.print("sockpath: {s}\n", .{metaData.sock}) catch return error.InspectSelfPath;
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
         return Error.ThreadSpawn;
@@ -163,7 +161,7 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
     cmdArgs.append(runt) catch return Error.InspectSelfPath;
-    cmdArgs.appendSlice(usrArgs[6..]) catch return Error.InspectSelfPath;
+    cmdArgs.appendSlice(usrArgs[1..]) catch return Error.InspectSelfPath;
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
     defer childProc.deinit();
