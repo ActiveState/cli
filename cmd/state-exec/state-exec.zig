@@ -16,12 +16,14 @@ const Thread = std.Thread;
 const execName = "state-exec";
 
 const Error = error{
-    InspectSelfPath,
+    InitMsgData,
     DirOfSelfPath,
-    PathOfMeta,
-    MetaOpen,
-    MetaRead,
+    InitMetaData,
     ThreadSpawn,
+    FormRuntimePath,
+    ProcessArgs,
+    SetRuntimeCmd,
+    SetRuntimeUserArgs,
     ChildProcInit,
     ChildProcSpawn,
 };
@@ -33,12 +35,14 @@ pub fn main() !void {
         try stderr.print("{s}: ", .{execName});
 
         switch (err) {
-            Error.InspectSelfPath => try stderr.print("Cannot obtain path to this executable.\n", .{}),
+            Error.InitMsgData => try stderr.print("Cannot initialize MsgData type.\n.", .{}),
             Error.DirOfSelfPath => try stderr.print("Cannot get directory of path to this executable.\n", .{}),
-            Error.PathOfMeta => try stderr.print("Cannot get path of meta data file.\n", .{}),
-            Error.MetaOpen => try stderr.print("Cannot open the meta file\n", .{}),
-            Error.MetaRead => try stderr.print("Cannot read the meta file\n", .{}),
+            Error.InitMetaData => try stderr.print("Cannot initialize MetaData type.\n", .{}),
             Error.ThreadSpawn => try stderr.print("Cannot spawn thread for heartbeat.\n", .{}),
+            Error.FormRuntimePath => try stderr.print("Cannot form runtime path.\n", .{}),
+            Error.ProcessArgs => try stderr.print("Cannot process command args.\n", .{}),
+            Error.SetRuntimeCmd => try stderr.print("Cannot set runtime command for child process.\n", .{}),
+            Error.SetRuntimeUserArgs => try stderr.print("Cannot set user args for child process.\n", .{}),
             Error.ChildProcInit => try stderr.print("Cannot initialize child process for runtime.\n", .{}),
             Error.ChildProcSpawn => try stderr.print("Cannot spawn child process for runtime.\n", .{}),
         }
@@ -120,14 +124,14 @@ const MsgData = struct {
 
     pid: i32,
     exec: []const u8,
-};
 
-fn makeMsgData(a: mem.Allocator) !MsgData {
-    return MsgData{
-        .pid = @truncate(i32, @bitCast(i64, Thread.getCurrentId())),
-        .exec = try fs.selfExePathAlloc(a),
-    };
-}
+    pub fn init(a: mem.Allocator) !MsgData {
+        return MsgData{
+            .pid = @truncate(i32, @bitCast(i64, Thread.getCurrentId())),
+            .exec = try fs.selfExePathAlloc(a),
+        };
+    }
+};
 
 fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
     const conn = net.connectUnixSocket(sock) catch |err| {
@@ -154,24 +158,25 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     defer arena.deinit();
     const a = arena.allocator();
 
-    const msgData = makeMsgData(a) catch return Error.InspectSelfPath;
+    const msgData = MsgData.init(a) catch return Error.InitMsgData;
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
-    var metaData = MetaData.init(a, execDir) catch return Error.InspectSelfPath;
+    var metaData = MetaData.init(a, execDir) catch return Error.InitMetaData;
     defer metaData.deinit();
-    const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.InspectSelfPath;
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
         return Error.ThreadSpawn;
     };
     defer clientThread.join();
 
-    var usrArgs = process.argsAlloc(a) catch return Error.InspectSelfPath;
+    const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.FormRuntimePath;
+
+    var usrArgs = process.argsAlloc(a) catch return Error.ProcessArgs;
     defer process.argsFree(a, usrArgs);
 
     var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
-    cmdArgs.append(runt) catch return Error.InspectSelfPath;
-    cmdArgs.appendSlice(usrArgs[1..]) catch return Error.InspectSelfPath;
+    cmdArgs.append(runt) catch return Error.SetRuntimeCmd;
+    cmdArgs.appendSlice(usrArgs[1..]) catch return Error.SetRuntimeUserArgs;
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
     defer childProc.deinit();
