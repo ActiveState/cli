@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -200,10 +201,10 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode = errs.UnwrapExitCode(err)
+		exitCode, err = errors.Unwrap(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		if !errs.IsSilent(err) {
-			out.Error(err.Error())
+			out.Error(err)
 		}
 	} else {
 		an.Event(AnalyticsFunnelCat, "success")

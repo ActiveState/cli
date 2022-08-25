@@ -1,4 +1,4 @@
-package main
+package errors
 
 import (
 	"errors"
@@ -74,7 +74,7 @@ func trimError(msg string) string {
 	return strings.TrimRight(msg, " .")
 }
 
-func unwrapError(err error) (int, error) {
+func Unwrap(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
