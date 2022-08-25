@@ -242,6 +242,10 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		return artifacts, errs.Wrap(err, "Error setting up runtime")
 	}
 
+	// for k, v := range s.artifactCache.Artifacts() {
+	// 	logging.Debug("Artifact %s: %s", k, v)
+	// }
+
 	return artifacts, nil
 }
 
@@ -431,6 +435,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, buildRe
 
 func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	s.events.TotalArtifacts(len(downloads) - len(alreadyInstalled))
+	// logging.Debug("Downloads: %d, already installed: %d", len(downloads), len(alreadyInstalled))
 
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -538,11 +543,6 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
 
-	// downloadURL, err := s.model.SignS3URL(artifactURL)
-	// if err != nil {
-	// 	return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
-	// }
-
 	req, err := download.NewGetRequest(artifactURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
@@ -556,6 +556,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
 
+	logging.Debug("Writing target file %s", targetFile)
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}
@@ -588,12 +589,13 @@ func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) 
 
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
-	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
-		if err := s.verifyArtifact(cachedPath, a); err == nil {
-			return cachedPath, nil
-		}
-		// otherwise re-download it; do not return an error
-	}
+	// TODO: Reenable
+	// if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
+	// 	if err := s.verifyArtifact(cachedPath, a); err == nil {
+	// 		return cachedPath, nil
+	// 	}
+	// 	// otherwise re-download it; do not return an error
+	// }
 
 	targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {

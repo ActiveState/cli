@@ -200,3 +200,7 @@ func (cache *ArtifactCache) Save() error {
 
 	return nil
 }
+
+func (a *ArtifactCache) Artifacts() map[artifact.ArtifactID]*cachedArtifact {
+	return a.artifacts
+}
