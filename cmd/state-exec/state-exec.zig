@@ -62,9 +62,7 @@ const MetaData = struct {
 };
 
 fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !MetaData {
-    var sockBuf: [256]u8 = undefined;
     var sock: []const u8 = undefined;
-    var binBuf: [256]u8 = undefined;
     var bin: []const u8 = undefined;
 
     const metaPath = try path.join(a, &[_][]const u8{ execDir, MetaData.filename });
@@ -78,14 +76,16 @@ fn makeMetaData(a: mem.Allocator, stderr: fs.File.Writer, execDir: []const u8) !
         switch (lineCt) {
             0 => {
                 const trimmedLine = mem.trimLeft(u8, line, MetaData.sockDelim);
-                mem.copy(u8, sockBuf[0..trimmedLine.len], trimmedLine);
-                sock = sockBuf[0..trimmedLine.len];
+                const dim = try a.alloc(u8, trimmedLine.len);
+                mem.copy(u8, dim, trimmedLine);
+                sock = dim;
                 try stderr.print("case 0: {s}\n", .{sock});
             },
             1 => {
-                const trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
-                mem.copy(u8, binBuf[0..trimmedLine.len], trimmedLine);
-                bin = binBuf[0..trimmedLine.len];
+                var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
+                const dim = try a.alloc(u8, trimmedLine.len);
+                mem.copy(u8, dim, trimmedLine);
+                bin = dim;
                 try stderr.print("case 1: {s}\n", .{bin});
             },
             2 => {
@@ -122,7 +122,6 @@ fn makeMsgData(a: mem.Allocator) !MsgData {
 fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
     const conn = net.connectUnixSocket(sock) catch |err| {
         try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
-        try stderr.print("{s}\n", .{sock});
         return;
     };
     defer conn.close();
