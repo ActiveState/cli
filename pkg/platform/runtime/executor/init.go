@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -85,7 +86,8 @@ func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 	}
 
 	m := NewMeta(env, i.targeter)
-	if err := m.WriteToDisk("dir"); err != nil {
+	buf := &bytes.Buffer{}
+	if _, err := m.WriteTo(buf); err != nil {
 		return nil
 	}
 
