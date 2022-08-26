@@ -25,14 +25,14 @@ const (
 )
 
 type BuildPlan struct {
-	BPProject BPProject `json:"project"`
+	Project Project `json:"project"`
 }
 
-type BPProject struct {
-	Commit BPCommit `json:"commit"`
+type Project struct {
+	Commit Commit `json:"commit"`
 }
 
-type BPCommit struct {
+type Commit struct {
 	Build Build `json:"build"`
 }
 

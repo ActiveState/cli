@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
@@ -99,50 +99,21 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 
 func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
 	res := make(map[ArtifactID]ArtifactRecipe)
-	var targetIDs []string
-	for _, terminal := range buildPlan.BPProject.Commit.Build.Terminals {
-		targetIDs = append(targetIDs, terminal.TargetIDs...)
-	}
-
-	for _, tID := range targetIDs {
-		buildRuntimeDependencies(tID, buildPlan.BPProject.Commit.Build.Targets, res)
-	}
 
 	updatedRes := make(map[ArtifactID]ArtifactRecipe)
 	for k, v := range res {
 		var err error
-		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, buildPlan.BPProject.Commit.Build.Steps, buildPlan.BPProject.Commit.Build.Sources)
+		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, buildPlan.Project.Commit.Build.Steps, buildPlan.Project.Commit.Build.Sources)
 		if err != nil {
 			logging.Error("updateWithSourceInfo failed: %s", errs.JoinMessage(err))
 			return nil
 		}
 	}
 
-	// logging.Debug("len res: %d", len(updatedRes))
-
 	return updatedRes
 }
 
-func buildRuntimeDependencies(baseID string, artifacts []model.Target, mapping map[ArtifactID]ArtifactRecipe) {
-	for _, artifact := range artifacts {
-		if artifact.TargetID == baseID {
-			entry := ArtifactRecipe{
-				ArtifactID:       strfmt.UUID(artifact.TargetID),
-				RequestedByOrder: true,
-				generatedBy:      artifact.GeneratedBy,
-			}
-
-			var deps []strfmt.UUID
-			for _, dep := range artifact.RuntimeDependencies {
-				deps = append(deps, strfmt.UUID(dep))
-				buildRuntimeDependencies(dep, artifacts, mapping)
-			}
-			entry.Dependencies = deps
-			mapping[strfmt.UUID(artifact.TargetID)] = entry
-		}
-	}
-}
-
+// TODO: Should this be moved to where we fetch the build plan?
 func updateWithSourceInfo(generatedByID string, original ArtifactRecipe, steps []model.Step, sources []model.Source) (ArtifactRecipe, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {

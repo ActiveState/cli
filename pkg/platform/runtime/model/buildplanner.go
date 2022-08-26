@@ -7,13 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
+	"github.com/thoas/go-funk"
 )
 
 type BuildPlanner struct {
@@ -45,23 +46,41 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if model.BuildPlanStatusEnum(resp.BPProject.Commit.Build.Status) != model.Ready {
+	if model.BuildPlanStatusEnum(resp.Project.Commit.Build.Status) != model.Ready {
 		return nil, locale.NewError("err_buildplanner_not_ready", "Build plan is not ready")
 	}
 
+	originalTargets := resp.Project.Commit.Build.Targets
+	var targets []model.Target
+	for _, terminal := range resp.Project.Commit.Build.Terminals {
+		// TODO: Add proper tag handling
+		if terminal.Tag == "orphans" {
+			continue
+		}
+		for _, id := range terminal.TargetIDs {
+			targets = append(targets, runtimeDependencies(id, resp.Project.Commit.Build.Targets)...)
+		}
+	}
+	var uniqueTargets []model.Target
+	for _, target := range targets {
+		if !funk.Contains(uniqueTargets, target) {
+			uniqueTargets = append(uniqueTargets, target)
+		}
+	}
+	resp.Project.Commit.Build.Targets = uniqueTargets
+
 	return &BuildResult{
 		BuildEngine: Alternative,
-		BuildPlan:   processBuildPlan(resp),
-		BuildReady:  model.BuildPlanStatusEnum(resp.BPProject.Commit.Build.Status) == model.Ready,
+		BuildPlan:   processOriginalTargets(resp, originalTargets),
+		BuildReady:  model.BuildPlanStatusEnum(resp.Project.Commit.Build.Status) == model.Ready,
 	}, nil
 }
 
 // TODO: Tempoarary function, remove after dependecy resolution is updated
-func processBuildPlan(bp *model.BuildPlan) *model.BuildPlan {
-	var targets []model.Target
+func processOriginalTargets(bp *model.BuildPlan, orignal []model.Target) *model.BuildPlan {
 	var steps []model.Step
 	var sources []model.Source
-	for _, artifact := range bp.BPProject.Commit.Build.Targets {
+	for _, artifact := range orignal {
 		if artifact.TypeName == "Step" {
 			steps = append(steps, model.Step{
 				TargetID: artifact.TargetID,
@@ -82,11 +101,9 @@ func processBuildPlan(bp *model.BuildPlan) *model.BuildPlan {
 			})
 			continue
 		}
-		targets = append(targets, artifact)
 	}
-	bp.BPProject.Commit.Build.Targets = targets
-	bp.BPProject.Commit.Build.Steps = steps
-	bp.BPProject.Commit.Build.Sources = sources
+	bp.Project.Commit.Build.Steps = steps
+	bp.Project.Commit.Build.Sources = sources
 	return bp
 }
 

@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -185,7 +185,7 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	return nil
 }
 
-func (s *Store) StoreBuildPlan(buildPlan gqlModel.BuildPlan) error {
+func (s *Store) StoreBuildPlan(buildPlan bpModel.BuildPlan) error {
 	data, err := json.Marshal(buildPlan)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildPlan.")

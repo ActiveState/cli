@@ -3,7 +3,7 @@ package artifact
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -29,7 +29,7 @@ func NewFailedArtifactsFromBuild(buildStatus *headchef_models.V1BuildStatusRespo
 
 func NewFailedArtifactsFromBuildPlan(buildPlan model.BuildPlan) []FailedArtifact {
 	var failed []FailedArtifact
-	for _, a := range buildPlan.BPProject.Commit.Build.Targets {
+	for _, a := range buildPlan.Project.Commit.Build.Targets {
 		if a.Status == string(model.Failed) || len(a.Errors) > 0 {
 			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}

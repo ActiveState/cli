@@ -1,7 +1,7 @@
 package artifact
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 )
 

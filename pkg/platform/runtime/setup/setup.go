@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	bpmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -132,7 +132,7 @@ type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(buildPlan gqlModel.BuildPlan) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(buildPlan bpmodel.BuildPlan) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -168,8 +168,6 @@ func (s *Setup) Update() error {
 	logging.Debug("Artifacts: %+v", artifacts)
 
 	// Update executors
-	// TODO: Can't do this without actual artifacts
-	// The environment definition is nil
 	if err := s.updateExecutors(artifacts); err != nil {
 		return errs.Wrap(err, "Failed to update executors")
 	}
@@ -295,6 +293,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
+	// The artifacts above have been processed to only the runtime dependencies.
+	// When we send the buildplan here it is not processed, need to update the build
+	// plan before we send it or in the DownloadsFromBuild function
 	downloads, err := setup.DownloadsFromBuild(*buildResult.BuildPlan)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
@@ -313,9 +314,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
-	if buildResult.BuildPlan.BPProject.Commit.Build.Status == string(gqlModel.Failed) {
+	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpmodel.Failed) {
 		s.events.BuildFinished()
-		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.BPProject.Commit.Build.Error)
+		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.Project.Commit.Build.Error)
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -331,7 +332,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled := reusableArtifacts(buildResult.BuildPlan.BPProject.Commit.Build.Targets, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(buildResult.BuildPlan.Project.Commit.Build.Targets, storedArtifacts)
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
@@ -667,7 +668,7 @@ func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
 }
 
-func reusableArtifacts(requestedArtifacts []gqlModel.Target, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+func reusableArtifacts(requestedArtifacts []bpmodel.Target, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {
