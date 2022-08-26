@@ -145,6 +145,7 @@ const MetaData = struct {
     pub const sockDelim = "::sock::";
     pub const binDelim = "::bin::";
     pub const envDelim = "::env::";
+    pub const envVarDelim = '=';
 
     sock: []const u8,
     bin: []const u8,
@@ -153,7 +154,13 @@ const MetaData = struct {
     pub fn init(a: mem.Allocator, execDir: []const u8) Error!MetaData {
         var sock: []const u8 = undefined;
         var bin: []const u8 = undefined;
+
         var env = BufMap.init(a);
+        for (os.environ) |envEntry| {
+            const k = mem.sliceTo(envEntry, envVarDelim);
+            const v = envEntry[k.len + 1 .. mem.len(envEntry)];
+            env.put(k, v) catch return Error.InitMetaData_AddToMap;
+        }
 
         const metaPath = path.join(a, &[_][]const u8{ execDir, MetaData.filename }) catch return Error.InitMetaData_FormMetaFilePath;
         const metaFile = fs.openFileAbsolute(metaPath, .{ .read = true }) catch return Error.InitMetaData_OpenMetaFile;
@@ -180,8 +187,7 @@ const MetaData = struct {
                     const trimmedLine = mem.trimLeft(u8, line, MetaData.envDelim);
                     var split = mem.split(u8, trimmedLine, MetaData.envDelim);
                     while (split.next()) |kv| {
-                        const delim = '=';
-                        const k = mem.sliceTo(kv, delim);
+                        const k = mem.sliceTo(kv, envVarDelim);
                         const v = kv[k.len + 1 ..];
                         env.put(k, v) catch return Error.InitMetaData_AddToMap;
                     }
