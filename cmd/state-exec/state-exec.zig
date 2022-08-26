@@ -1,7 +1,9 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const ArrayList = std.ArrayList;
+const BufMap = std.BufMap;
 const ChildProcess = std.ChildProcess;
+const Thread = std.Thread;
 const fmt = std.fmt;
 const fs = std.fs;
 const heap = std.heap;
@@ -11,7 +13,6 @@ const net = std.net;
 const os = std.os;
 const path = std.fs.path;
 const process = std.process;
-const Thread = std.Thread;
 
 const execName = "state-exec";
 
@@ -73,6 +74,72 @@ pub fn main() !void {
     os.exit(exitCode);
 }
 
+fn run(stderr: fs.File.Writer) Error!u8 {
+    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const msgData = try MsgData.init(a);
+    const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
+    var metaData = try MetaData.init(a, execDir);
+    defer metaData.deinit();
+
+    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
+        return Error.ThreadSpawn;
+    };
+    defer clientThread.join();
+
+    const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.FormRuntimePath;
+
+    var usrArgs = process.argsAlloc(a) catch return Error.ProcessArgs;
+    defer process.argsFree(a, usrArgs);
+
+    var cmdArgs = ArrayList([]const u8).init(a);
+    defer cmdArgs.deinit();
+    cmdArgs.append(runt) catch return Error.SetRuntimeCmd;
+    cmdArgs.appendSlice(usrArgs[1..]) catch return Error.SetRuntimeUserArgs;
+
+    const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
+    defer childProc.deinit();
+    childProc.env_map = &metaData.env;
+    var term = childProc.spawnAndWait() catch return Error.ChildProcSpawn;
+    return term.Exited;
+}
+
+const MsgData = struct {
+    pub const fmt = "heart<{d}<{s}";
+
+    pid: i32,
+    exec: []const u8,
+
+    pub fn init(a: mem.Allocator) Error!MsgData {
+        return MsgData{
+            .pid = @truncate(i32, @bitCast(i64, Thread.getCurrentId())),
+            .exec = fs.selfExePathAlloc(a) catch return Error.InitMsgData_InspectSelfPath,
+        };
+    }
+};
+
+fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
+    const conn = net.connectUnixSocket(sock) catch |err| {
+        try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
+        return;
+    };
+    defer conn.close();
+
+    var clientMsg = try fmt.allocPrint(a, MsgData.fmt, .{ d.pid, d.exec });
+    _ = conn.write(clientMsg) catch |err| {
+        try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
+        return;
+    };
+
+    var buf: [1024]u8 = undefined;
+    _ = conn.read(buf[0..]) catch |err| {
+        try stderr.print("{s}: Cannot read from socket connection: {s}.\n", .{ execName, err });
+        return;
+    };
+}
+
 const MetaData = struct {
     pub const filename = "meta.as";
     pub const sockDelim = "::sock::";
@@ -81,12 +148,12 @@ const MetaData = struct {
 
     sock: []const u8,
     bin: []const u8,
-    env: std.BufMap,
+    env: BufMap,
 
     pub fn init(a: mem.Allocator, execDir: []const u8) Error!MetaData {
         var sock: []const u8 = undefined;
         var bin: []const u8 = undefined;
-        var env = std.BufMap.init(a);
+        var env = BufMap.init(a);
 
         const metaPath = path.join(a, &[_][]const u8{ execDir, MetaData.filename }) catch return Error.InitMetaData_FormMetaFilePath;
         const metaFile = fs.openFileAbsolute(metaPath, .{ .read = true }) catch return Error.InitMetaData_OpenMetaFile;
@@ -137,69 +204,3 @@ const MetaData = struct {
         self.env.deinit();
     }
 };
-
-const MsgData = struct {
-    pub const fmt = "heart<{d}<{s}";
-
-    pid: i32,
-    exec: []const u8,
-
-    pub fn init(a: mem.Allocator) Error!MsgData {
-        return MsgData{
-            .pid = @truncate(i32, @bitCast(i64, Thread.getCurrentId())),
-            .exec = fs.selfExePathAlloc(a) catch return Error.InitMsgData_InspectSelfPath,
-        };
-    }
-};
-
-fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
-    const conn = net.connectUnixSocket(sock) catch |err| {
-        try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
-        return;
-    };
-    defer conn.close();
-
-    var clientMsg = try fmt.allocPrint(a, MsgData.fmt, .{ d.pid, d.exec });
-    _ = conn.write(clientMsg) catch |err| {
-        try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
-        return;
-    };
-
-    var buf: [1024]u8 = undefined;
-    _ = conn.read(buf[0..]) catch |err| {
-        try stderr.print("{s}: Cannot read from socket connection: {s}.\n", .{ execName, err });
-        return;
-    };
-}
-
-fn run(stderr: fs.File.Writer) Error!u8 {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
-    defer arena.deinit();
-    const a = arena.allocator();
-
-    const msgData = try MsgData.init(a);
-    const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
-    var metaData = try MetaData.init(a, execDir);
-    defer metaData.deinit();
-
-    const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
-        return Error.ThreadSpawn;
-    };
-    defer clientThread.join();
-
-    const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.FormRuntimePath;
-
-    var usrArgs = process.argsAlloc(a) catch return Error.ProcessArgs;
-    defer process.argsFree(a, usrArgs);
-
-    var cmdArgs = ArrayList([]const u8).init(a);
-    defer cmdArgs.deinit();
-    cmdArgs.append(runt) catch return Error.SetRuntimeCmd;
-    cmdArgs.appendSlice(usrArgs[1..]) catch return Error.SetRuntimeUserArgs;
-
-    const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
-    defer childProc.deinit();
-    childProc.env_map = &metaData.env;
-    var term = childProc.spawnAndWait() catch return Error.ChildProcSpawn;
-    return term.Exited;
-}
