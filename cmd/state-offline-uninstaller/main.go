@@ -65,7 +65,7 @@ func run() error {
 			[]*captain.Argument{
 				{
 					Name:        "path",
-					Description: "Install into target directory <path>",
+					Description: "Directory to uninstall <path>",
 					Value:       &params.path,
 					Required:    true,
 				},
