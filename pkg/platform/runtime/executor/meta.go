@@ -22,8 +22,6 @@ import (
 */
 
 var (
-	metaFileName = "meta.as"
-
 	sockDelim      = "::sock::"
 	binDelim       = "::bin::"
 	envDelim       = "::env::"
@@ -101,8 +99,8 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 	return &m, nil
 }
 
-func (m *Meta) WriteTo(w io.Writer) (int, error) {
-	aw := makeAccumulatingWrite(w)
+func (m *Meta) WriteTo(w io.Writer) (int64, error) {
+	aw := newAccumulatingWrite(w)
 
 	aw.fprintf("%s%s\n", sockDelim, m.SockPath)
 	aw.fprintf("%s%s\n", binDelim, m.BinDir)
@@ -119,17 +117,17 @@ func (m *Meta) WriteTo(w io.Writer) (int, error) {
 
 type accumulatingWrite struct {
 	w   io.Writer
-	n   int
+	n   int64
 	err error
 }
 
-func makeAccumulatingWrite(w io.Writer) accumulatingWrite {
-	return accumulatingWrite{
+func newAccumulatingWrite(w io.Writer) *accumulatingWrite {
+	return &accumulatingWrite{
 		w: w,
 	}
 }
 
-func (aw accumulatingWrite) fprintf(format string, as ...interface{}) {
+func (aw *accumulatingWrite) fprintf(format string, as ...interface{}) {
 	if aw.err != nil {
 		return
 	}
@@ -138,9 +136,9 @@ func (aw accumulatingWrite) fprintf(format string, as ...interface{}) {
 		aw.err = err
 		return
 	}
-	aw.n += n
+	aw.n += int64(n)
 }
 
-func (aw accumulatingWrite) total() (int, error) {
+func (aw accumulatingWrite) total() (int64, error) {
 	return aw.n, aw.err
 }
