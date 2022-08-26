@@ -15,10 +15,17 @@ const Thread = std.Thread;
 
 const execName = "state-exec";
 
+const initMsgDataErrPrefix = "InitMsgData_";
+const initMetaDataErrPrefix = "InitMetaData_";
+
 const Error = error{
-    InitMsgData,
+    InitMsgData_InspectSelfPath,
     DirOfSelfPath,
-    InitMetaData,
+    InitMetaData_FormMetaFilePath,
+    InitMetaData_OpenMetaFile,
+    InitMetaData_ReadMetaFile,
+    InitMetaData_AllocLine,
+    InitMetaData_AddToMap,
     ThreadSpawn,
     FormRuntimePath,
     ProcessArgs,
@@ -34,10 +41,22 @@ pub fn main() !void {
     const exitCode = run(stderr) catch |err| {
         try stderr.print("{s}: ", .{execName});
 
+        const errName = @errorName(err);
+        if (errName.len >= initMsgDataErrPrefix.len and mem.eql(u8, errName[0..initMsgDataErrPrefix.len], initMsgDataErrPrefix)) {
+            try stderr.print("Cannot initialize MsgData type: ", .{});
+        }
+        if (errName.len >= initMetaDataErrPrefix.len and mem.eql(u8, errName[0..initMetaDataErrPrefix.len], initMetaDataErrPrefix)) {
+            try stderr.print("Cannot initialize MetaData type: ", .{});
+        }
+
         switch (err) {
-            Error.InitMsgData => try stderr.print("Cannot initialize MsgData type.\n.", .{}),
+            Error.InitMsgData_InspectSelfPath => try stderr.print("Cannot inspect path of this executable.\n", .{}),
             Error.DirOfSelfPath => try stderr.print("Cannot get directory of path to this executable.\n", .{}),
-            Error.InitMetaData => try stderr.print("Cannot initialize MetaData type.\n", .{}),
+            Error.InitMetaData_FormMetaFilePath => try stderr.print("Cannot form meta file path.\n", .{}),
+            Error.InitMetaData_OpenMetaFile => try stderr.print("Cannot open meta file.\n", .{}),
+            Error.InitMetaData_ReadMetaFile => try stderr.print("Cannot read meta file.\n", .{}),
+            Error.InitMetaData_AllocLine => try stderr.print("Cannot allocate memory for line.\n", .{}),
+            Error.InitMetaData_AddToMap => try stderr.print("Cannot add value to map.\n", .{}),
             Error.ThreadSpawn => try stderr.print("Cannot spawn thread for heartbeat.\n", .{}),
             Error.FormRuntimePath => try stderr.print("Cannot form runtime path.\n", .{}),
             Error.ProcessArgs => try stderr.print("Cannot process command args.\n", .{}),
@@ -64,29 +83,29 @@ const MetaData = struct {
     bin: []const u8,
     env: std.BufMap,
 
-    pub fn init(a: mem.Allocator, execDir: []const u8) !MetaData {
+    pub fn init(a: mem.Allocator, execDir: []const u8) Error!MetaData {
         var sock: []const u8 = undefined;
         var bin: []const u8 = undefined;
         var env = std.BufMap.init(a);
 
-        const metaPath = try path.join(a, &[_][]const u8{ execDir, MetaData.filename });
-        const metaFile = try fs.openFileAbsolute(metaPath, .{ .read = true });
+        const metaPath = path.join(a, &[_][]const u8{ execDir, MetaData.filename }) catch return Error.InitMetaData_FormMetaFilePath;
+        const metaFile = fs.openFileAbsolute(metaPath, .{ .read = true }) catch return Error.InitMetaData_OpenMetaFile;
         defer metaFile.close();
 
         const metaReader = metaFile.reader();
         var metaBuf: [32760]u8 = undefined;
         var lineCt: i32 = 0;
-        while (try metaReader.readUntilDelimiterOrEof(&metaBuf, '\n')) |line| : (lineCt += 1) {
+        while (metaReader.readUntilDelimiterOrEof(&metaBuf, '\n') catch return Error.InitMetaData_ReadMetaFile) |line| : (lineCt += 1) {
             switch (lineCt) {
                 0 => {
                     const trimmedLine = mem.trimLeft(u8, line, MetaData.sockDelim);
-                    const dim = try a.alloc(u8, trimmedLine.len);
+                    const dim = a.alloc(u8, trimmedLine.len) catch return Error.InitMetaData_AllocLine;
                     mem.copy(u8, dim, trimmedLine);
                     sock = dim;
                 },
                 1 => {
                     var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
-                    const dim = try a.alloc(u8, trimmedLine.len);
+                    const dim = a.alloc(u8, trimmedLine.len) catch return Error.InitMetaData_AllocLine;
                     mem.copy(u8, dim, trimmedLine);
                     bin = dim;
                 },
@@ -97,7 +116,7 @@ const MetaData = struct {
                         const delim = '=';
                         const k = mem.sliceTo(kv, delim);
                         const v = kv[k.len + 1 ..];
-                        try env.put(k, v);
+                        env.put(k, v) catch return Error.InitMetaData_AddToMap;
                     }
                     break;
                 },
@@ -125,10 +144,10 @@ const MsgData = struct {
     pid: i32,
     exec: []const u8,
 
-    pub fn init(a: mem.Allocator) !MsgData {
+    pub fn init(a: mem.Allocator) Error!MsgData {
         return MsgData{
             .pid = @truncate(i32, @bitCast(i64, Thread.getCurrentId())),
-            .exec = try fs.selfExePathAlloc(a),
+            .exec = fs.selfExePathAlloc(a) catch return Error.InitMsgData_InspectSelfPath,
         };
     }
 };
@@ -158,9 +177,9 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     defer arena.deinit();
     const a = arena.allocator();
 
-    const msgData = MsgData.init(a) catch return Error.InitMsgData;
+    const msgData = try MsgData.init(a);
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
-    var metaData = MetaData.init(a, execDir) catch return Error.InitMetaData;
+    var metaData = try MetaData.init(a, execDir);
     defer metaData.deinit();
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
