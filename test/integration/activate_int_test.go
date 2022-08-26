@@ -178,8 +178,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
-	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput()
+	cp.WaitForInput(40 * time.Second)
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {
 		pythonShim = pythonExe + ".bat"
