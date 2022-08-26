@@ -2,12 +2,14 @@ package executor
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -99,6 +101,16 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 	return &m, nil
 }
 
+// NewMetaFromFile is a convenience func, not intended to be tested.
+func NewMetaFromFile(path string) (*Meta, error) {
+	data, err := fileutils.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewBuffer(data)
+	return NewMetaFromReader(buf)
+}
+
 func (m *Meta) WriteTo(w io.Writer) (int64, error) {
 	aw := newAccumulatingWrite(w)
 
@@ -113,6 +125,18 @@ func (m *Meta) WriteTo(w io.Writer) (int64, error) {
 	aw.fprintf("%s%t\n", headlessDelim, m.Headless)
 
 	return aw.total()
+}
+
+// WriteToFile is a convenience func, not intended to be unit tested.
+func (m *Meta) WriteToFile(path string) error {
+	buf := &bytes.Buffer{}
+	if _, err := m.WriteTo(buf); err != nil {
+		return err
+	}
+	if err := fileutils.WriteFile(path, buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
 }
 
 type accumulatingWrite struct {
