@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 
-	bpmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 )
 
 // var _ runtime.ClientProvider = &Default{}
@@ -44,7 +44,7 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
-	BuildPlan           *bpmodel.BuildPlan
+	BuildPlan           *bpModel.BuildPlan
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool

@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	bpmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -40,10 +40,10 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
-func NewDownloadsFromBuildPlan(bp bpmodel.BuildPlan) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuildPlan(bp bpModel.BuildPlan) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for _, a := range bp.Project.Commit.Build.Targets {
-		if a.Status == string(bpmodel.ArtifactSucceeded) && a.URL != "" {
+		if a.Status == string(bpModel.ArtifactSucceeded) && a.URL != "" {
 			if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
 				continue
 			}

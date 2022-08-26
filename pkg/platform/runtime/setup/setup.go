@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	bpmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -132,7 +132,7 @@ type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(buildPlan bpmodel.BuildPlan) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(buildPlan bpModel.BuildPlan) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -278,8 +278,8 @@ func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artif
 
 func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
 	s.events.SolverStart()
-	bpModel := model.NewBuildPlanner()
-	buildResult, err := bpModel.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
+	buildPlan := model.NewBuildPlanner()
+	buildResult, err := buildPlan.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch build plan")
 	}
@@ -314,7 +314,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
-	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpmodel.Failed) {
+	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpModel.Failed) {
 		s.events.BuildFinished()
 		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.Project.Commit.Build.Error)
 	}
@@ -668,7 +668,7 @@ func ExecDir(targetDir string) string {
 	return filepath.Join(targetDir, "exec")
 }
 
-func reusableArtifacts(requestedArtifacts []bpmodel.Target, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
+func reusableArtifacts(requestedArtifacts []bpModel.Target, storedArtifacts store.StoredArtifactMap) store.StoredArtifactMap {
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {
