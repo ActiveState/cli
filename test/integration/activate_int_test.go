@@ -65,7 +65,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	)
 
 	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -81,7 +81,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("doskey /macros | findstr state=")
@@ -112,8 +112,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
-		cp.Expect("Activated")
-		cp.WaitForInput(40 * time.Second)
+		cp.Expect("Activated", 40*time.Second)
+		cp.WaitForInput()
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else if runtime.GOOS == "windows" {
@@ -178,7 +178,8 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
-	cp.WaitForInput(40 * time.Second)
+	cp.Expect("Activated", 40*time.Second)
+	cp.WaitForInput()
 	pythonShim := pythonExe
 	if runtime.GOOS == "windows" {
 		pythonShim = pythonExe + ".bat"
@@ -327,9 +328,9 @@ version: %s
 		e2e.WithArgs("activate"),
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
 	)
-	c2.Expect("Activated")
+	c2.Expect("Activated", 40*time.Second)
 
-	c2.WaitForInput(40 * time.Second)
+	c2.WaitForInput()
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -361,9 +362,9 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 		e2e.WithWorkDirectory(targetPath),
 	)
 	c2.ExpectLongString("ActiveState-CLI/Python2")
-	c2.Expect("Activated")
+	c2.Expect("Activated", 40*time.Second)
 
-	c2.WaitForInput(40 * time.Second)
+	c2.WaitForInput()
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {

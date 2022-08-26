@@ -111,7 +111,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 
 	cp := ts.Spawn("activate")
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("3")
@@ -146,7 +146,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"), e2e.AppendEnv("SHELL=bash"))
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 
 	cp.SendLine("helloWorld")
 	cp.Expect("Hello World!")
@@ -236,7 +236,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(120 * time.Second)
+	cp.WaitForInput()
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("2")
@@ -302,7 +302,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 		),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 
 	cp.SendLine("perl -MEnglish -e 'print $PERL_VERSION'")
 	cp.Expect("v5.32.0")

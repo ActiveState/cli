@@ -171,7 +171,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
 	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

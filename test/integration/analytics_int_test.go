@@ -64,8 +64,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("Activated", 120*time.Second)
+	cp.WaitForInput()
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -255,8 +255,8 @@ scripts:
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("Activated", 120*time.Second)
+	cp.WaitForInput()
 
 	cp = ts.Spawn("run", "pip")
 	cp.Wait()
